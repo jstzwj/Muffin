@@ -105,6 +105,19 @@ qreal xArrowHeightEm(const QString& key) {
   return heights.value(key, 0.522);
 }
 
+QString stretchyAccentCharacter(const QString& label) {
+  static const QHash<QString, QChar> characters{
+      {QStringLiteral("\\overleftarrow"), QChar(0x2190)},
+      {QStringLiteral("\\underleftarrow"), QChar(0x2190)},
+      {QStringLiteral("\\overrightarrow"), QChar(0x2192)},
+      {QStringLiteral("\\underrightarrow"), QChar(0x2192)},
+      {QStringLiteral("\\overleftrightarrow"), QChar(0x2194)},
+      {QStringLiteral("\\underleftrightarrow"), QChar(0x2194)},
+  };
+  const auto it = characters.constFind(label);
+  return it == characters.cend() ? QString{} : QString(*it);
+}
+
 }  // namespace
 
 std::unique_ptr<MathRenderNode> MathBuilder::buildNode(const MathParseNode& node) {
@@ -1327,6 +1340,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& nod
     auto result = renderNodeFromLayout(*layout);
     result->accentKind = MathAccentKind::Over;
     result->accentLabel = node.label;
+    result->accentCharacter = stretchyAccentCharacter(node.label);
     return result;
   } else {
     QString accentText = QStringLiteral("^");
@@ -1420,12 +1434,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccentUnder(const MathParseNode
   result->atomClass = QStringLiteral("mord");
   result->accentKind = MathAccentKind::Under;
   result->accentLabel = node.label;
-  if (node.label == QLatin1String("\\underleftarrow"))
-    result->accentCharacter = QString(QChar(0x2190));
-  else if (node.label == QLatin1String("\\underrightarrow"))
-    result->accentCharacter = QString(QChar(0x2192));
-  else if (node.label == QLatin1String("\\underleftrightarrow"))
-    result->accentCharacter = QString(QChar(0x2194));
+  result->accentCharacter = stretchyAccentCharacter(node.label);
   return result;
 }
 

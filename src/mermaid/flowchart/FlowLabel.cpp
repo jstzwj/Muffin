@@ -2,6 +2,7 @@
 #include "mermaid/MermaidFontRegistry.h"
 
 #include "math/MathCssBox.h"
+#include "math/OpenTypeMathFont.h"
 #include "math/MathRenderer.h"
 
 #include <QFont>
@@ -13,6 +14,8 @@
 #include <QRegularExpression>
 
 #include <algorithm>
+#include <cmath>
+#include <functional>
 #include <vector>
 
 namespace muffin::mermaid::flowchart {
@@ -32,6 +35,351 @@ struct MathMlInlineMetrics {
   qreal inkTop = 0.0;
   qreal inkBottom = 0.0;
 };
+
+const muffin::math::MathRenderNode* findMathNode(
+    const muffin::math::MathRenderNode* node,
+    muffin::math::MathRenderKind kind) {
+  if (!node) return nullptr;
+  if (node->kind == kind) return node;
+  for (const auto& child : node->children)
+    if (const auto* found = findMathNode(child.get(), kind)) return found;
+  return nullptr;
+}
+
+const muffin::math::MathRenderNode* singleMathSymbol(
+    const muffin::math::MathRenderNode* node) {
+  if (!node) return nullptr;
+  if (node->kind == muffin::math::MathRenderKind::Symbol) return node;
+  const muffin::math::MathRenderNode* result = nullptr;
+  for (const auto& child : node->children) {
+    const auto* symbol = singleMathSymbol(child.get());
+    if (!symbol) {
+      if (findMathNode(child.get(), muffin::math::MathRenderKind::Symbol))
+        return nullptr;
+      continue;
+    }
+    if (result) return nullptr;
+    result = symbol;
+  }
+  return result;
+}
+
+QString mathMlDelimiterCharacter(QString delimiter) {
+  if (delimiter == QLatin1String("\\lbrace") || delimiter == QLatin1String("\\{"))
+    return QStringLiteral("{");
+  if (delimiter == QLatin1String("\\rbrace") || delimiter == QLatin1String("\\}"))
+    return QStringLiteral("}");
+  return delimiter;
+}
+
+bool paintMathMlArrayAssembly(QPainter& painter,
+                              const muffin::math::MathLayoutResult& layout,
+                              const muffin::math::MathCssBox& box,
+                              QColor color) {
+  using namespace muffin::math;
+  const MathRenderNode* leftRight = findMathNode(layout.root.get(), MathRenderKind::LeftRight);
+  if (!leftRight || !findMathNode(leftRight, MathRenderKind::Array) ||
+      leftRight->leftDelimiter == QLatin1String(".") ||
+      leftRight->rightDelimiter != QLatin1String("."))
+    return false;
+
+  const QString character = mathMlDelimiterCharacter(leftRight->leftDelimiter);
+  const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+  const auto assembly = font.verticalAssemblyParts(character, box.height);
+  if (!assembly || assembly->parts.isEmpty()) return false;
+
+  // The array body still uses the mature KaTeX render tree. Exclude its old
+  // SVG fence and replace that region with the exact OpenType MATH assembly.
+  const qreal scaleX = box.width / layout.naturalSize.width();
+  const qreal scaleY = box.height / layout.naturalSize.height();
+  painter.save();
+  painter.setClipRect(QRectF(assembly->advance, 0.0,
+                             std::max<qreal>(0.0, box.width - assembly->advance),
+                             box.height), Qt::IntersectClip);
+  painter.scale(scaleX, scaleY);
+  layout.paint(painter, QPointF());
+  painter.restore();
+
+  painter.save();
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(color);
+  for (const MathGlyphAssemblyPart& part : assembly->parts) {
+    QPainterPath path = font.glyphPath(part.glyphIndex);
+    const QRectF bounds = path.boundingRect();
+    if (bounds.isEmpty()) continue;
+    QTransform placement;
+    placement.translate((assembly->advance - bounds.width()) / 2.0 - bounds.left(),
+                        part.offset - bounds.top());
+    painter.drawPath(placement.map(path));
+  }
+  painter.restore();
+  return true;
+}
+
+bool paintMathMlHorizontalAccent(QPainter& painter,
+                                 const muffin::math::MathLayoutResult& layout,
+                                 const muffin::math::MathCssBox& box,
+                                 QColor color,
+                                 qreal renderFontPixelSize) {
+  using namespace muffin::math;
+  const auto accentBox = layoutMathMlAccentBox(
+      layout, renderFontPixelSize, 16.0);
+  if (!accentBox) return false;
+  const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+  const qreal designExtent = accentBox->accent.width() / accentBox->fontScale;
+  const auto fixedVariant = font.horizontalVariant(
+      accentBox->character, designExtent);
+  const bool useFixedVariant = fixedVariant &&
+      fixedVariant->extent >= designExtent;
+  const auto assembly = useFixedVariant ? std::optional<MathGlyphAssembly>{}
+      : font.horizontalAssemblyParts(
+            accentBox->character, designExtent);
+  if (!useFixedVariant && (!assembly || assembly->parts.isEmpty())) return false;
+
+  const qreal scaleX = box.width / layout.naturalSize.width();
+  const qreal scaleY = box.height / layout.naturalSize.height();
+  const auto paintClipped = [&](QRectF clip) {
+    if (clip.isEmpty()) return;
+    painter.save();
+    painter.setClipRect(clip, Qt::IntersectClip);
+    painter.scale(scaleX, scaleY);
+    layout.paint(painter, QPointF());
+    painter.restore();
+  };
+  paintClipped(accentBox->body);
+  paintClipped(accentBox->annotation);
+
+  painter.save();
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(color);
+  if (useFixedVariant) {
+    QPainterPath path = font.glyphPath(fixedVariant->glyphIndex);
+    const QRectF bounds = path.boundingRect();
+    const qreal stretchScale = designExtent / fixedVariant->extent;
+    QTransform placement;
+    placement.translate(accentBox->accent.center().x(),
+                        accentBox->accent.center().y());
+    placement.scale(accentBox->fontScale * stretchScale,
+                    accentBox->fontScale);
+    placement.translate(-bounds.center().x(), -bounds.center().y());
+    painter.drawPath(placement.map(path));
+  } else for (const MathGlyphAssemblyPart& part : assembly->parts) {
+    QPainterPath path = font.glyphPath(part.glyphIndex);
+    const QRectF bounds = path.boundingRect();
+    if (bounds.isEmpty()) continue;
+    QTransform placement;
+    placement.translate(accentBox->accent.left() +
+                            part.offset * accentBox->fontScale,
+                        accentBox->accent.center().y());
+    placement.scale(accentBox->fontScale, accentBox->fontScale);
+    placement.translate(-bounds.left(), -bounds.center().y());
+    painter.drawPath(placement.map(path));
+  }
+  painter.restore();
+  return true;
+}
+
+bool paintMathMlFraction(QPainter& painter,
+                         const muffin::math::MathLayoutResult& layout,
+                         const muffin::math::MathCssBox& box,
+                         QColor color,
+                         qreal renderFontPixelSize) {
+  using namespace muffin::math;
+  const auto operation = layoutMathMlFractionOperations(
+      layout, renderFontPixelSize, 16.0);
+  if (!operation || operation->box.fraction.isEmpty()) return false;
+
+  const qreal scaleX = box.width / layout.naturalSize.width();
+  const qreal scaleY = box.height / layout.naturalSize.height();
+  const auto paintContent = [&](const QPainterPath& clip) {
+    if (clip.isEmpty()) return;
+    painter.save();
+    painter.setClipPath(clip, Qt::IntersectClip);
+    painter.scale(scaleX, scaleY);
+    layout.paint(painter, QPointF());
+    painter.restore();
+  };
+
+  const auto paintDelimiter = [&](QString delimiter, QRectF target) {
+    if (delimiter.isEmpty() || delimiter == QLatin1String(".") ||
+        target.isEmpty())
+      return;
+    const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+    const QString character = mathMlDelimiterCharacter(std::move(delimiter));
+    const auto variant = font.verticalVariant(character, target.height());
+    if (!variant) return;
+    const QPainterPath path = font.glyphPath(variant->glyphIndex);
+    const QRectF bounds = path.boundingRect();
+    if (bounds.isEmpty()) return;
+    QTransform placement;
+    placement.translate(target.center().x(), target.center().y());
+    placement.translate(-bounds.center().x(), -bounds.center().y());
+    painter.save();
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(color);
+    painter.drawPath(placement.map(path));
+    painter.restore();
+  };
+
+  const auto paintSubtree = [&](const MathRenderNode* node, QRectF target) {
+    if (!node || target.isEmpty() || node->width <= 0.0 ||
+        node->height + node->depth <= 0.0)
+      return;
+    if (const MathRenderNode* symbol = singleMathSymbol(node);
+        symbol && symbol->text.size() == 1) {
+      const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+      const QChar character = symbol->text.front();
+      const bool italic = character.isLetter() &&
+          (symbol->fontClass == QLatin1String("mathnormal") ||
+           symbol->fontClass == QLatin1String("mathit"));
+      const auto glyph = italic ? font.mathItalicGlyph(character)
+                                : font.glyph(symbol->text);
+      if (glyph && glyph->advance > 0.0 && !glyph->inkBounds.isEmpty()) {
+        const QPainterPath path = font.glyphPath(glyph->glyphIndex);
+        const qreal scaleX = target.width() / glyph->advance;
+        const qreal scaleY = target.height() / glyph->inkBounds.height();
+        QTransform placement;
+        placement.translate(target.left(),
+                            target.top() - glyph->inkBounds.top() * scaleY);
+        placement.scale(scaleX, scaleY);
+        painter.save();
+        painter.setClipRect(target, Qt::IntersectClip);
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(color);
+        painter.drawPath(placement.map(path));
+        painter.restore();
+        return;
+      }
+    }
+    painter.save();
+    painter.setClipRect(target, Qt::IntersectClip);
+    painter.translate(target.left(), target.top());
+    painter.scale(target.width() / node->width,
+                  target.height() / (node->height + node->depth));
+    node->paint(painter, QPointF(0.0, node->height));
+    painter.restore();
+  };
+
+  const auto paintSolidRect = [&](QRectF rule) {
+    if (rule.isEmpty()) return;
+    const QTransform transform = painter.transform();
+    QRectF deviceRule = transform.mapRect(rule);
+    deviceRule.setLeft(std::ceil(deviceRule.left()));
+    deviceRule.setWidth(std::max<qreal>(1.0, std::floor(deviceRule.width())));
+    deviceRule.setTop(std::ceil(deviceRule.top()));
+    deviceRule.setHeight(std::max<qreal>(
+        1.0, std::floor(deviceRule.height())));
+    painter.save();
+    painter.resetTransform();
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(color);
+    painter.drawRect(deviceRule);
+    painter.restore();
+  };
+  const auto paintRule = [&](const MathCssFractionBox& fraction) {
+    if (fraction.hasRule) paintSolidRect(fraction.rule);
+  };
+
+  const auto paintRadical = [&](const MathCssRadicalOperation& radical) {
+    if (radical.glyphIndex == 0 || radical.glyph.isEmpty()) return;
+    const QPainterPath path = OpenTypeMathFont::instance().glyphPath(
+        radical.glyphIndex);
+    const QRectF bounds = path.boundingRect();
+    if (bounds.isEmpty()) return;
+    QTransform placement;
+    placement.translate(radical.glyph.left() - bounds.left(),
+                        radical.glyph.top() - bounds.top());
+    painter.save();
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(color);
+    painter.drawPath(placement.map(path));
+    painter.restore();
+    paintSolidRect(radical.rule);
+  };
+
+  std::function<void(const MathCssFractionOperation&)> paintOperation;
+  paintOperation = [&](const MathCssFractionOperation& current) {
+    const auto paintRow = [&](const MathRenderNode* node, QRectF row) {
+      if (row.isEmpty()) return;
+      const bool containsChild = std::any_of(
+          current.children.cbegin(), current.children.cend(),
+          [&](const MathCssFractionOperation& child) {
+            return child.box.container.intersects(row);
+          }) || std::any_of(
+          current.scripts.cbegin(), current.scripts.cend(),
+          [&](const MathCssScriptOperation& child) {
+            return child.container.intersects(row);
+          }) || std::any_of(
+          current.radicals.cbegin(), current.radicals.cend(),
+          [&](const MathCssRadicalOperation& child) {
+            return child.container.intersects(row);
+          });
+      if (current.nested && !containsChild) {
+        paintSubtree(node, row);
+        return;
+      }
+      QPainterPath clip;
+      clip.setFillRule(Qt::OddEvenFill);
+      const QRectF expandedRow = row.adjusted(-1.0, -2.0, 1.0, 2.0);
+      clip.addRect(expandedRow);
+      const auto exclusion = [&](QRectF container) {
+        constexpr qreal kOwnershipTolerance = 0.25;
+        const bool ownsRow = std::abs(container.left() - row.left()) <=
+                                 kOwnershipTolerance &&
+                             std::abs(container.right() - row.right()) <=
+                                 kOwnershipTolerance &&
+                             std::abs(container.top() - row.top()) <=
+                                 kOwnershipTolerance &&
+                             std::abs(container.bottom() - row.bottom()) <=
+                                 kOwnershipTolerance;
+        return ownsRow ? expandedRow : container;
+      };
+      for (const MathCssFractionOperation& child : current.children) {
+        if (child.box.container.intersects(row))
+          clip.addRect(exclusion(child.box.container));
+      }
+      for (const MathCssScriptOperation& child : current.scripts) {
+        if (child.container.intersects(row))
+          clip.addRect(exclusion(child.container));
+      }
+      for (const MathCssRadicalOperation& child : current.radicals) {
+        if (child.container.intersects(row))
+          clip.addRect(exclusion(child.container));
+      }
+      paintContent(clip);
+    };
+    paintRow(current.numeratorNode, current.box.numerator);
+    paintRow(current.denominatorNode, current.box.denominator);
+    for (const MathCssScriptOperation& child : current.scripts) {
+      paintSubtree(child.baseNode, child.base);
+      paintSubtree(child.superscriptNode, child.superscript);
+      paintSubtree(child.subscriptNode, child.subscript);
+    }
+    for (const MathCssRadicalOperation& child : current.radicals) {
+      paintSubtree(child.bodyNode, child.body);
+      paintRadical(child);
+    }
+    for (const MathCssFractionOperation& child : current.children)
+      paintOperation(child);
+    paintDelimiter(current.box.leftDelimiterCharacter,
+                   current.box.leftDelimiter);
+    paintDelimiter(current.box.rightDelimiterCharacter,
+                   current.box.rightDelimiter);
+    paintRule(current.box);
+  };
+  paintOperation(*operation);
+
+  QPainterPath outside;
+  const qreal fractionLeft = operation->box.container.left();
+  const qreal fractionRight = operation->box.container.right();
+  outside.addRect(QRectF(0.0, 0.0, std::max<qreal>(0.0, fractionLeft),
+                         box.height));
+  outside.addRect(QRectF(fractionRight, 0.0,
+                         std::max<qreal>(0.0, box.width - fractionRight),
+                         box.height));
+  paintContent(outside);
+  return true;
+}
 
 FlowLabelMathStructure flowMathStructure(muffin::math::MathSemanticKind kind) {
   switch (kind) {
@@ -682,6 +1030,9 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
           const auto& inlineMetrics = mathMetrics.at(static_cast<size_t>(i));
           const bool radical = paintedLabel.sequenceMathMlModel &&
                                inlineMetrics.structure == FlowLabelMathStructure::Radical;
+          const muffin::math::MathCssBox cssBox = paintedLabel.sequenceMathMlModel
+              ? muffin::math::layoutMathMlCssBox(mathLayout, fontPixelSize * 1.21, 16.0)
+              : muffin::math::MathCssBox{};
           const QRectF inkBounds = radical && mathLayout.root
               ? mathLayout.root->boundsAt(QPointF(0.0, mathLayout.baseline)) : QRectF{};
           const qreal scaleX = radical && inkBounds.width() > 0.0
@@ -692,6 +1043,24 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
               : inlineMetrics.height / mathLayout.naturalSize.height();
           const qreal targetTop = lineTop + measuredLine.baseline -
                                   mathLayout.baseline * scaleY;
+          bool paintedAsMathMlAssembly = false;
+          if (paintedLabel.sequenceMathMlModel) {
+            painter.save();
+            painter.translate(x, lineTop + measuredLine.baseline - cssBox.baseline);
+            paintedAsMathMlAssembly = paintMathMlFraction(
+                painter, mathLayout, cssBox, color, fontPixelSize * 1.21) ||
+                paintMathMlHorizontalAccent(
+                    painter, mathLayout, cssBox, color, fontPixelSize * 1.21) ||
+                paintMathMlArrayAssembly(painter, mathLayout, cssBox, color);
+            painter.restore();
+          }
+          if (paintedAsMathMlAssembly) {
+            x = runIndex < measuredLine.runs.size()
+                ? rect.left() + (rect.width() - lineWidth) / 2.0 + measuredLine.runs.at(runIndex).x
+                : x + inlineMetrics.advance;
+            cursor = mathSpans.at(i).start + mathSpans.at(i).length;
+            continue;
+          }
           painter.save();
           painter.translate(x - (radical ? inkBounds.left() * scaleX : 0.0),
                             targetTop - (radical ? inkBounds.top() * scaleY : 0.0));

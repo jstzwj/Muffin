@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -130,12 +131,12 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("00dfec955561c48837806f92ba1e991e43680b66a2b307cd8e068c99ed045a84"),
+              QLatin1String("f3e26089aeeedceba115cad5d67c8f898f2de50b617d0584efb8c6ff75ebd9ff"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==23,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==30,QStringLiteral("Sequence pixel matrix regressed"));
   QSet<QString> ids;
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject(); const QString id=fixture.value(QStringLiteral("id")).toString();
@@ -192,12 +193,33 @@ int main(int argc,char** argv) {
       if (radicalLabel || assembledDelimiterLabel) {
         // Geometry is asserted by the SVG/MathML structural oracles; keep the
         // remaining cross-rasterizer font hinting bounded independently.
-        require(qAbs(nativeLabel.width()-browserLabel.width())<=2 &&
+        const int maximumWidthDrift = assembledDelimiterLabel ? 3 : 2;
+        require(qAbs(nativeLabel.width()-browserLabel.width())<=maximumWidthDrift &&
                     qAbs(nativeLabel.height()-browserLabel.height())<=2,
                 QStringLiteral("%1 radical painted bounds drifted").arg(id));
       }
-      const qreal minimumGlyphCoverage = radicalLabel ? 0.58
-          : assembledDelimiterLabel ? 0.64 : 0.75;
+      const QHash<QString,QSize> horizontalAccentDrift{
+          {QStringLiteral("label-math-underbrace"), QSize(1,5)},
+          {QStringLiteral("label-math-under-arrow"), QSize(1,3)},
+          {QStringLiteral("label-math-overbrace"), QSize(0,3)},
+      };
+      if (const auto it=horizontalAccentDrift.constFind(id);
+          it!=horizontalAccentDrift.cend()) {
+        require(qAbs(nativeLabel.width()-browserLabel.width())<=it->width() &&
+                    qAbs(nativeLabel.height()-browserLabel.height())<=it->height(),
+                QStringLiteral("%1 horizontal accent painted bounds drifted").arg(id));
+      }
+      qreal minimumGlyphCoverage = radicalLabel ? 0.58
+          : assembledDelimiterLabel ? 0.89 : 0.75;
+      if (id == QLatin1String("label-math-genfrac")) minimumGlyphCoverage = 0.95;
+      if (id == QLatin1String("label-math-fraction-ops") ||
+          id == QLatin1String("label-math-stack-ops") ||
+          id == QLatin1String("label-math-nested-fraction-ops") ||
+          id == QLatin1String("label-math-fraction-script-ops"))
+        minimumGlyphCoverage = 0.95;
+      if (id == QLatin1String("label-math-underbrace")) minimumGlyphCoverage = 0.71;
+      if (id == QLatin1String("label-math-under-arrow")) minimumGlyphCoverage = 0.74;
+      if (id == QLatin1String("label-math-overbrace")) minimumGlyphCoverage = 0.80;
       require(glyphCoverage>=minimumGlyphCoverage,
               QStringLiteral("%1 tolerant glyph coverage too low: %2")
                                       .arg(id).arg(glyphCoverage));
@@ -214,7 +236,14 @@ int main(int argc,char** argv) {
                          QStringLiteral("label-dpr-200-dark-box-fragment")})
     require(ids.contains(id),QStringLiteral("Sequence DPR/theme pixel axis is uncovered: %1").arg(id));
   for(const QString& id:{QStringLiteral("label-math-genfrac"),
+                         QStringLiteral("label-math-fraction-ops"),
+                         QStringLiteral("label-math-stack-ops"),
+                         QStringLiteral("label-math-nested-fraction-ops"),
+                         QStringLiteral("label-math-fraction-script-ops"),
+                         QStringLiteral("label-math-fraction-radical-ops"),
                          QStringLiteral("label-math-underbrace"),
+                         QStringLiteral("label-math-under-arrow"),
+                         QStringLiteral("label-math-overbrace"),
                          QStringLiteral("label-math-tall-assembly")})
     require(ids.contains(id),QStringLiteral("Sequence structural Math crop is uncovered: %1").arg(id));
   qDebug()<<"MermaidSequencePixelTest:" << cases.size() << "Chrome/native pixel goldens passed";

@@ -55,6 +55,7 @@ const formulas = [
   ["matrix-2x2", "\\begin{matrix}a&b\\\\c&d\\end{matrix}"],
   ["matrix-3x3", "\\begin{matrix}a&b&c\\\\d&e&f\\\\g&h&i\\end{matrix}"],
   ["fraction-sup", "\\frac{x_i^2}{y_j^3}"],
+  ["fraction-radical", "\\frac{\\sqrt{x+1}}{\\sqrt{y}}"],
   ["sqrt-fraction", "\\sqrt{\\frac{a}{b}}"],
   ["greek-row", "\\alpha+\\beta=\\gamma"],
   ["relations", "x\\le y\\ne z"],

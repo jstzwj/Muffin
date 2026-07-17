@@ -650,6 +650,9 @@ TokenValidationResult validateTokenStream(const QString& source, int maxVertices
     if (token.kind == FlowTokenKind::Newline || token.kind == FlowTokenKind::Semi ||
         token.kind == FlowTokenKind::NoDir) {
       flushCandidate();
+      // A definite resource violation is terminal. Continuing to tokenize the
+      // untrusted suffix would defeat the bound that this pass establishes.
+      if (result.vertexLimitSpan || result.edgeLimitSpan) return result;
       continue;
     }
     if (token.kind == FlowTokenKind::Space) continue;

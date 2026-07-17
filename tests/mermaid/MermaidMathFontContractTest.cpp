@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QGuiApplication>
 
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -50,6 +51,10 @@ int main(int argc, char** argv) {
     near(font.constants().axisHeight, 4.128, 0.001, QStringLiteral("axis height"));
     near(font.constants().fractionRuleThickness, 1.088, 0.001,
          QStringLiteral("fraction rule"));
+    near(font.constants().superscriptShiftUpCramped, 4.032, 0.001,
+         QStringLiteral("cramped superscript shift"));
+    near(font.constants().superscriptBottomMaxWithSubscript, 6.08, 0.001,
+         QStringLiteral("superscript bottom with subscript"));
 
     const auto italicX = font.mathItalicGlyph(QLatin1Char('x'));
     require(italicX.has_value(), QStringLiteral("Mathematical italic x is missing"));
@@ -72,6 +77,76 @@ int main(int argc, char** argv) {
     require(stretchedBrace.has_value(), QStringLiteral("Stretchable brace assembly is missing"));
     near(stretchedBrace->extent, 100.0, 0.001,
          QStringLiteral("brace extender assembly extent"));
+    const auto braceParts = font.verticalAssemblyParts(QStringLiteral("{"), 100.0);
+    require(braceParts.has_value(), QStringLiteral("Brace paint assembly is missing"));
+    require(braceParts->parts.size() == 7,
+            QStringLiteral("Brace assembly operation sequence drifted"));
+    require(braceParts->parts.front().offset == 0.0 &&
+                !braceParts->parts.front().extender &&
+                !braceParts->parts.back().extender,
+            QStringLiteral("Brace terminal assembly parts drifted"));
+    int extenderCount = 0;
+    qreal previousOffset = -1.0;
+    for (qsizetype i = 0; i < braceParts->parts.size(); ++i) {
+      const auto& part = braceParts->parts.at(i);
+      if (part.extender) ++extenderCount;
+      require(part.offset > previousOffset && part.fullAdvance > 0.0,
+              QStringLiteral("Brace assembly offsets are not monotonic"));
+      require(!font.glyphPath(part.glyphIndex).isEmpty(),
+              QStringLiteral("Brace assembly glyph outline is missing"));
+      previousOffset = part.offset;
+      if (i + 1 < braceParts->parts.size()) {
+        near(braceParts->parts.at(i + 1).offset,
+             part.offset + part.fullAdvance - part.connectorOverlap,
+             0.0001, QStringLiteral("Brace connector continuity"));
+      }
+    }
+    require(extenderCount == 4,
+            QStringLiteral("Brace extender consumption order drifted"));
+    near(braceParts->extent, 100.0, 0.001,
+         QStringLiteral("Brace paint operation extent"));
+    near(braceParts->parts.back().offset + braceParts->parts.back().fullAdvance,
+         braceParts->extent, 0.0001,
+         QStringLiteral("Brace operation terminal extent"));
+    const auto underBraceParts = font.horizontalAssemblyParts(
+        QString(QChar(0x23DF)), 80.0);
+    require(underBraceParts.has_value(),
+            QStringLiteral("Horizontal underbrace assembly is missing"));
+    const auto shortUnderBrace = font.horizontalVariant(
+        QString(QChar(0x23DF)), 35.75);
+    require(shortUnderBrace.has_value(),
+            QStringLiteral("Horizontal underbrace variants are missing"));
+    near(shortUnderBrace->extent, 41.616, 0.001,
+         QStringLiteral("Horizontal underbrace fixed variant extent"));
+    near(shortUnderBrace->advance, 3.952, 0.001,
+         QStringLiteral("Horizontal underbrace fixed variant height"));
+    const auto cssUnderBrace = font.horizontalAssemblyParts(
+        QString(QChar(0x23DF)), 35.75 / font.constants().scriptPercentScaleDown);
+    require(cssUnderBrace.has_value(),
+            QStringLiteral("Script-style underbrace assembly is missing"));
+    near(cssUnderBrace->extent * font.constants().scriptPercentScaleDown,
+         35.75, 0.001,
+         QStringLiteral("Script-style underbrace CSS extent"));
+    require(underBraceParts->parts.size() == 7,
+            QStringLiteral("Horizontal underbrace part sequence drifted"));
+    require(std::count_if(underBraceParts->parts.cbegin(),
+                          underBraceParts->parts.cend(),
+                          [](const auto& part) { return part.extender; }) == 4,
+            QStringLiteral("Horizontal underbrace extender sequence drifted"));
+    near(underBraceParts->extent, 80.0, 0.001,
+         QStringLiteral("Horizontal underbrace assembly extent"));
+    const auto underArrowParts = font.horizontalAssemblyParts(
+        QString(QChar(0x2194)), 80.0);
+    require(underArrowParts.has_value(),
+            QStringLiteral("Horizontal arrow assembly is missing"));
+    require(underArrowParts->parts.size() == 11,
+            QStringLiteral("Horizontal arrow part sequence drifted"));
+    require(std::count_if(underArrowParts->parts.cbegin(),
+                          underArrowParts->parts.cend(),
+                          [](const auto& part) { return part.extender; }) == 9,
+            QStringLiteral("Horizontal arrow extender sequence drifted"));
+    near(underArrowParts->extent, 80.0, 0.001,
+         QStringLiteral("Horizontal arrow assembly extent"));
     const auto assembledParen = font.verticalAssembly(QStringLiteral("("), 50.0);
     require(assembledParen.has_value(), QStringLiteral("Parenthesis assembly is missing"));
     near(assembledParen->extent, 52.768, 0.001,

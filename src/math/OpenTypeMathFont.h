@@ -2,6 +2,7 @@
 
 #include <QByteArray>
 #include <QHash>
+#include <QPainterPath>
 #include <QRawFont>
 #include <QRectF>
 #include <QString>
@@ -20,9 +21,11 @@ struct MathFontConstants {
   qreal subscriptTopMax = 0.0;
   qreal subscriptBaselineDropMin = 0.0;
   qreal superscriptShiftUp = 0.0;
+  qreal superscriptShiftUpCramped = 0.0;
   qreal superscriptBottomMin = 0.0;
   qreal superscriptBaselineDropMax = 0.0;
   qreal subSuperscriptGapMin = 0.0;
+  qreal superscriptBottomMaxWithSubscript = 0.0;
   qreal spaceAfterScript = 0.0;
   qreal upperLimitGapMin = 0.0;
   qreal upperLimitBaselineRiseMin = 0.0;
@@ -72,6 +75,21 @@ struct MathGlyphVariant {
   qreal extent = 0.0;
 };
 
+struct MathGlyphAssemblyPart {
+  quint32 glyphIndex = 0;
+  qreal offset = 0.0;
+  qreal fullAdvance = 0.0;
+  qreal connectorOverlap = 0.0;
+  bool extender = false;
+};
+
+struct MathGlyphAssembly {
+  qreal advance = 0.0;
+  qreal extent = 0.0;
+  qreal italicCorrection = 0.0;
+  QVector<MathGlyphAssemblyPart> parts;
+};
+
 // Loads the bundled strict-oracle font and exposes the OpenType MATH data used
 // by Chromium's MathML layout. All returned dimensions are CSS pixels.
 class OpenTypeMathFont {
@@ -90,6 +108,14 @@ public:
                                                   bool allowAssembly = false) const;
   std::optional<MathGlyphVariant> verticalAssembly(const QString& character,
                                                    qreal targetExtent) const;
+  std::optional<MathGlyphAssembly> verticalAssemblyParts(
+      const QString& character, qreal targetExtent) const;
+  std::optional<MathGlyphVariant> horizontalVariant(
+      const QString& character, qreal minimumExtent,
+      bool allowAssembly = false) const;
+  std::optional<MathGlyphAssembly> horizontalAssemblyParts(
+      const QString& character, qreal targetExtent) const;
+  QPainterPath glyphPath(quint32 glyphIndex) const;
   qreal textAdvance(const QString& text) const;
   QRectF textInkBounds(const QString& text) const;
 
@@ -98,6 +124,8 @@ private:
 
   qreal designUnitsToPixels(qint16 value) const;
   void parseMathTable(const QByteArray& table);
+  std::optional<MathGlyphAssembly> assemblyParts(
+      const QString& character, qreal targetExtent, bool vertical) const;
 
   QRawFont font_;
   MathFontConstants constants_;
@@ -106,6 +134,7 @@ private:
   QHash<quint32, bool> extendedShapes_;
   struct RawVariant { quint16 glyphIndex = 0; quint16 extent = 0; };
   QHash<quint32, QVector<RawVariant>> verticalVariants_;
+  QHash<quint32, QVector<RawVariant>> horizontalVariants_;
   struct RawAssemblyPart {
     quint16 glyphIndex = 0;
     quint16 startConnector = 0;
@@ -116,6 +145,8 @@ private:
   qreal minimumConnectorOverlap_ = 0.0;
   QHash<quint32, QVector<RawAssemblyPart>> verticalAssemblyParts_;
   QHash<quint32, qint16> verticalAssemblyCorrections_;
+  QHash<quint32, QVector<RawAssemblyPart>> horizontalAssemblyParts_;
+  QHash<quint32, qint16> horizontalAssemblyCorrections_;
 };
 
 }  // namespace muffin::math

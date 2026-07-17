@@ -115,9 +115,11 @@ void OpenTypeMathFont::parseMathTable(const QByteArray& table) {
     constants_.subscriptTopMax = value(5);
     constants_.subscriptBaselineDropMin = value(6);
     constants_.superscriptShiftUp = value(7);
+    constants_.superscriptShiftUpCramped = value(8);
     constants_.superscriptBottomMin = value(9);
     constants_.superscriptBaselineDropMax = value(10);
     constants_.subSuperscriptGapMin = value(11);
+    constants_.superscriptBottomMaxWithSubscript = value(12);
     constants_.spaceAfterScript = value(13);
     constants_.upperLimitGapMin = value(14);
     constants_.upperLimitBaselineRiseMin = value(15);
@@ -163,12 +165,20 @@ void OpenTypeMathFont::parseMathTable(const QByteArray& table) {
   }
   if (variants > 0 && variants + 10 <= table.size()) {
     minimumConnectorOverlap_ = designUnitsToPixels(u16(table, variants));
-    const quint16 coverageOffset = u16(table, variants + 2);
-    const quint16 count = u16(table, variants + 6);
-    const QVector<quint16> bases = coverageGlyphs(table, variants + coverageOffset);
-    if (bases.size() >= count && variants + 10 + qsizetype(count) * 2 <= table.size()) {
+    const quint16 verticalCount = u16(table, variants + 6);
+    const quint16 horizontalCount = u16(table, variants + 8);
+    const auto parseConstructions = [&](bool vertical) {
+      const quint16 count = vertical ? verticalCount : horizontalCount;
+      const quint16 coverageOffset = u16(table, variants + (vertical ? 2 : 4));
+      const qsizetype constructionArray = variants + 10 +
+          (vertical ? 0 : qsizetype(verticalCount) * 2);
+      const QVector<quint16> bases = coverageGlyphs(
+          table, variants + coverageOffset);
+      if (bases.size() < count ||
+          constructionArray + qsizetype(count) * 2 > table.size())
+        return;
       for (quint16 i = 0; i < count; ++i) {
-        const quint16 constructionOffset = u16(table, variants + 10 + i * 2);
+        const quint16 constructionOffset = u16(table, constructionArray + i * 2);
         const qsizetype construction = variants + constructionOffset;
         if (!constructionOffset || construction + 4 > table.size()) continue;
         const quint16 assemblyOffset = u16(table, construction);
@@ -180,7 +190,7 @@ void OpenTypeMathFont::parseMathTable(const QByteArray& table) {
           const qsizetype offset = construction + 4 + record * 4;
           records.push_back({u16(table, offset), u16(table, offset + 2)});
         }
-        verticalVariants_.insert(bases[i], records);
+        (vertical ? verticalVariants_ : horizontalVariants_).insert(bases[i], records);
         const qsizetype assembly = construction + assemblyOffset;
         if (assemblyOffset && assembly + 6 <= table.size()) {
           const quint16 partCount = u16(table, assembly + 4);
@@ -195,12 +205,16 @@ void OpenTypeMathFont::parseMathTable(const QByteArray& table) {
                                u16(table, partOffset + 6),
                                (u16(table, partOffset + 8) & 1u) != 0});
             }
-            verticalAssemblyParts_.insert(bases[i], parts);
-            verticalAssemblyCorrections_.insert(bases[i], s16(table, assembly));
+            (vertical ? verticalAssemblyParts_ : horizontalAssemblyParts_)
+                .insert(bases[i], parts);
+            (vertical ? verticalAssemblyCorrections_ : horizontalAssemblyCorrections_)
+                .insert(bases[i], s16(table, assembly));
           }
         }
       }
-    }
+    };
+    parseConstructions(true);
+    parseConstructions(false);
   }
 }
 
@@ -283,33 +297,86 @@ std::optional<MathGlyphVariant> OpenTypeMathFont::verticalVariant(
 
 std::optional<MathGlyphVariant> OpenTypeMathFont::verticalAssembly(
     const QString& character, qreal targetExtent) const {
+  const auto assembly = verticalAssemblyParts(character, targetExtent);
+  if (!assembly || assembly->parts.isEmpty()) return std::nullopt;
+  return MathGlyphVariant{assembly->parts.front().glyphIndex,
+                          assembly->advance, assembly->extent};
+}
+
+std::optional<MathGlyphAssembly> OpenTypeMathFont::verticalAssemblyParts(
+    const QString& character, qreal targetExtent) const {
+  return assemblyParts(character, targetExtent, true);
+}
+
+std::optional<MathGlyphVariant> OpenTypeMathFont::horizontalVariant(
+    const QString& character, qreal minimumExtent, bool allowAssembly) const {
   const auto base = glyph(character);
   if (!base) return std::nullopt;
-  const QVector<RawAssemblyPart> parts = verticalAssemblyParts_.value(base->glyphIndex);
+  const QVector<RawVariant> records = horizontalVariants_.value(base->glyphIndex);
+  if (records.isEmpty()) return std::nullopt;
+  const RawVariant* selected = nullptr;
+  for (const RawVariant& record : records) {
+    if (designUnitsToPixels(record.extent) >= minimumExtent) {
+      selected = &record;
+      break;
+    }
+  }
+  if (selected == nullptr && allowAssembly) {
+    if (const auto assembly = horizontalAssemblyParts(character, minimumExtent);
+        assembly && !assembly->parts.isEmpty())
+      return MathGlyphVariant{assembly->parts.front().glyphIndex,
+                              assembly->advance, assembly->extent};
+  }
+  if (selected == nullptr) selected = &records.back();
+  const qreal outlineScale = kCssMathPixelSize / kOutlineLoadPixelSize;
+  return MathGlyphVariant{
+      selected->glyphIndex,
+      font_.boundingRect(selected->glyphIndex).height() * outlineScale,
+      designUnitsToPixels(selected->extent)};
+}
+
+std::optional<MathGlyphAssembly> OpenTypeMathFont::horizontalAssemblyParts(
+    const QString& character, qreal targetExtent) const {
+  return assemblyParts(character, targetExtent, false);
+}
+
+std::optional<MathGlyphAssembly> OpenTypeMathFont::assemblyParts(
+    const QString& character, qreal targetExtent, bool vertical) const {
+  const auto base = glyph(character);
+  if (!base) return std::nullopt;
+  const QVector<RawAssemblyPart> parts = (vertical ? verticalAssemblyParts_
+                                                    : horizontalAssemblyParts_)
+      .value(base->glyphIndex);
   if (parts.isEmpty()) return std::nullopt;
   QList<quint32> indexes;
   indexes.reserve(parts.size());
   for (const RawAssemblyPart& part : parts) indexes.push_back(part.glyphIndex);
   const QList<QPointF> advances = font_.advancesForGlyphIndexes(indexes);
-  qreal advance = base->advance * kOutlineLoadPixelSize / kCssMathPixelSize;
+  qreal advance = vertical
+      ? base->advance * kOutlineLoadPixelSize / kCssMathPixelSize
+      : font_.boundingRect(base->glyphIndex).height();
   for (qsizetype i = 0; i < indexes.size(); ++i) {
-    if (i < advances.size())
+    if (vertical && i < advances.size())
       advance = std::max(advance, advances[i].x() +
                                   italicCorrections_.value(indexes[i]));
-    advance = std::max(advance, font_.boundingRect(indexes[i]).width());
+    const QRectF bounds = font_.boundingRect(indexes[i]);
+    advance = std::max(advance, vertical ? bounds.width() : bounds.height());
   }
   const qreal outlineScale = kCssMathPixelSize / kOutlineLoadPixelSize;
   const bool hasExtender = std::any_of(parts.cbegin(), parts.cend(),
                                        [](const RawAssemblyPart& part) {
                                          return part.extender;
                                        });
-  const auto extentRange = [&](int extenderCopies) {
+  const auto makeSequence = [&](int extenderCopies) {
     QVector<const RawAssemblyPart*> sequence;
     sequence.reserve(parts.size() * extenderCopies);
     for (const RawAssemblyPart& part : parts) {
       const int copies = part.extender ? extenderCopies : 1;
       for (int copy = 0; copy < copies; ++copy) sequence.push_back(&part);
     }
+    return sequence;
+  };
+  const auto extentRange = [&](const QVector<const RawAssemblyPart*>& sequence) {
     qreal minimumExtent = 0.0;
     qreal maximumExtent = 0.0;
     for (qsizetype i = 0; i < sequence.size(); ++i) {
@@ -328,18 +395,67 @@ std::optional<MathGlyphVariant> OpenTypeMathFont::verticalAssembly(
   };
 
   int extenderCopies = 1;
-  auto [minimumExtent, maximumExtent] = extentRange(extenderCopies);
+  QVector<const RawAssemblyPart*> sequence = makeSequence(extenderCopies);
+  auto [minimumExtent, maximumExtent] = extentRange(sequence);
   while (hasExtender && maximumExtent < targetExtent && extenderCopies < 4096) {
     ++extenderCopies;
-    std::tie(minimumExtent, maximumExtent) = extentRange(extenderCopies);
+    sequence = makeSequence(extenderCopies);
+    std::tie(minimumExtent, maximumExtent) = extentRange(sequence);
   }
-  const qreal realizedExtent = std::clamp(targetExtent, minimumExtent,
-                                          maximumExtent);
-  return MathGlyphVariant{
-      parts.front().glyphIndex,
-      advance * outlineScale + designUnitsToPixels(
-          verticalAssemblyCorrections_.value(base->glyphIndex)),
-      realizedExtent};
+  const qreal realizedExtent = std::clamp(targetExtent, minimumExtent, maximumExtent);
+
+  QVector<qreal> maximumOverlaps;
+  maximumOverlaps.reserve(std::max<qsizetype>(0, sequence.size() - 1));
+  qreal fullExtent = 0.0;
+  for (qsizetype i = 0; i < sequence.size(); ++i) {
+    fullExtent += designUnitsToPixels(sequence[i]->fullAdvance);
+    if (i > 0) {
+      maximumOverlaps.push_back(designUnitsToPixels(std::min(
+          sequence[i - 1]->endConnector, sequence[i]->startConnector)));
+    }
+  }
+  const qreal requiredOverlap = fullExtent - realizedExtent;
+  qreal low = minimumConnectorOverlap_;
+  qreal high = low;
+  for (qreal limit : maximumOverlaps) high = std::max(high, limit);
+  for (int iteration = 0; iteration < 48; ++iteration) {
+    const qreal candidate = (low + high) / 2.0;
+    qreal total = 0.0;
+    for (qreal limit : maximumOverlaps)
+      total += std::min(limit, candidate);
+    if (total < requiredOverlap) low = candidate;
+    else high = candidate;
+  }
+
+  MathGlyphAssembly result;
+  result.advance = advance * outlineScale;
+  result.italicCorrection = designUnitsToPixels(
+      (vertical ? verticalAssemblyCorrections_ : horizontalAssemblyCorrections_)
+          .value(base->glyphIndex));
+  result.extent = realizedExtent;
+  result.parts.reserve(sequence.size());
+  qreal offset = 0.0;
+  for (qsizetype i = 0; i < sequence.size(); ++i) {
+    const RawAssemblyPart& part = *sequence[i];
+    const qreal fullAdvance = designUnitsToPixels(part.fullAdvance);
+    const qreal overlap = i + 1 < sequence.size()
+        ? std::min(maximumOverlaps[i], high) : 0.0;
+    result.parts.push_back({part.glyphIndex, offset, fullAdvance,
+                            overlap, part.extender});
+    offset += fullAdvance - overlap;
+  }
+  if (!result.parts.isEmpty())
+    result.extent = result.parts.back().offset + result.parts.back().fullAdvance;
+  return result;
+}
+
+QPainterPath OpenTypeMathFont::glyphPath(quint32 glyphIndex) const {
+  if (!valid() || glyphIndex == 0) return {};
+  QPainterPath path = font_.pathForGlyph(glyphIndex);
+  QTransform scale;
+  scale.scale(kCssMathPixelSize / kOutlineLoadPixelSize,
+              kCssMathPixelSize / kOutlineLoadPixelSize);
+  return scale.map(path);
 }
 
 qreal OpenTypeMathFont::textAdvance(const QString& text) const {

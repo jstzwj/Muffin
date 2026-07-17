@@ -39,13 +39,13 @@ int main(int argc,char** argv) {
               root.value(QStringLiteral("fontMode")).toString()==
                   QLatin1String("bundled-noto-stix-two-math-2.13b171")&&
               root.value(QStringLiteral("fixtureSha256")).toString()==
-                  QLatin1String("00dfec955561c48837806f92ba1e991e43680b66a2b307cd8e068c99ed045a84"),
+                  QLatin1String("f3e26089aeeedceba115cad5d67c8f898f2de50b617d0584efb8c6ff75ebd9ff"),
           QStringLiteral("Sequence SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;
   int mathCases=0,foreignObjectCases=0,ariaCases=0,labelCases=0,domEntries=0,markerEntries=0;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==23,QStringLiteral("Sequence SVG structural matrix regressed"));
+  require(cases.size()==30,QStringLiteral("Sequence SVG structural matrix regressed"));
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject();
     const QString id=fixture.value(QStringLiteral("id")).toString();
@@ -151,7 +151,7 @@ int main(int argc,char** argv) {
               QStringLiteral("combined SVG/native container order coverage regressed"));
     }
   }
-  require(mathCases>=3&&foreignObjectCases>=3&&ariaCases>=1&&labelCases>=10&&domEntries>=500&&
+  require(mathCases>=5&&foreignObjectCases>=5&&ariaCases>=1&&labelCases>=12&&domEntries>=500&&
               markerEntries>=160,
           QStringLiteral("Sequence SVG structural coverage regressed"));
   qDebug()<<"MermaidSequenceSvgStructuralTest:"<<cases.size()<<"cases,"<<domEntries

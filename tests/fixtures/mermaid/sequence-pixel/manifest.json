@@ -4970,24 +4970,22 @@
       }
     },
     {
-      "id": "label-math-underbrace",
-      "dpr": 1.5,
-      "theme": "dark",
+      "id": "label-math-fraction-ops",
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
-      "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{x+y}_{n}$$",
-      "file": "label-math-underbrace.png",
-      "sha256": "5153da3f69f8546ace7192f60d887c3698937724f30eb47b81a5dcc7727f6448",
-      "cropFile": "label-math-underbrace-label.png",
-      "cropSha256": "cbd43c7e8f06df65f86a6e6bbf78d47be240d569525fb8e3c062067bde7249f6",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{a+b}{c+d}$$\nB-->>A:done",
+      "file": "label-math-fraction-ops.png",
+      "sha256": "6939e15c6bec66cc0c39692a25675c0475e531e8aa2c448b7ba6e36ebc2e5ea8",
+      "cropFile": "label-math-fraction-ops-label.png",
+      "cropSha256": "80b3a424139d69aa87a5584c23e6f845190a840d591d48d106cf80be1858fb53",
       "width": 350,
-      "height": 267,
+      "height": 322,
       "structure": {
-        "viewBox": "0 0 350 267",
+        "viewBox": "0 0 350 322",
         "role": "graphics-document document",
         "ariaRoleDescription": "sequence",
         "ariaLabelledBy": "",
-        "text": 5,
+        "text": 6,
         "tspan": 4,
         "foreignObject": 1,
         "math": 1,
@@ -5116,6 +5114,7 @@
           "actor-top",
           "katex",
           "messageLine0",
+          "messageLine1",
           "messageText",
           "note"
         ],
@@ -5125,9 +5124,9 @@
         "labelClass": "",
         "labelParentTag": "g",
         "labelAttributes": {
-          "height": "33",
-          "width": "36",
-          "x": "157",
+          "height": "34",
+          "width": "38",
+          "x": "156",
           "y": "139"
         },
         "labelParentAttributes": {
@@ -5158,33 +5157,38 @@
           {
             "tag": "foreignObject",
             "class": "",
-            "text": "x+y⏟n"
+            "text": "a+bc+d"
           },
           {
             "tag": "text",
             "class": "messageText",
             "text": "start"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "done"
           }
         ],
         "styles": {
           "actor": {
-            "fill": "rgb(31, 32, 32)",
-            "stroke": "rgb(204, 204, 204)",
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
             "color": "rgb(0, 0, 0)"
           },
           "message": {
             "fill": "none",
-            "stroke": "rgb(211, 211, 211)",
+            "stroke": "rgb(51, 51, 51)",
             "color": "rgb(0, 0, 0)"
           },
           "messageText": {
-            "fill": "rgb(211, 211, 211)",
+            "fill": "rgb(51, 51, 51)",
             "stroke": "none",
             "color": "rgb(0, 0, 0)"
           },
           "note": {
-            "fill": "rgb(71, 73, 73)",
-            "stroke": "rgb(47, 47, 47)",
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
             "color": "rgb(0, 0, 0)"
           },
           "loopText": {}
@@ -5214,27 +5218,29 @@
           "foreignObject:",
           "math:",
           "text:messageText",
-          "line:messageLine0"
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
         ]
       }
     },
     {
-      "id": "label-math-tall-assembly",
+      "id": "label-math-stack-ops",
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
-      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\{\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right.$$",
-      "file": "label-math-tall-assembly.png",
-      "sha256": "9baa61fca149e7375ec4dec45000ff1a33a8e30456e117c41b836766de32f658",
-      "cropFile": "label-math-tall-assembly-label.png",
-      "cropSha256": "794ad3d44b1e906c007197ecd371de65f2071caf48b0a2d7f175fa07ed481607",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\genfrac{}{}{0pt}{1}{n}{k}$$\nB-->>A:done",
+      "file": "label-math-stack-ops.png",
+      "sha256": "22e110fd1d69079279e5ce43ccbb48fddf2b45d5332924bca4e541c2f8987298",
+      "cropFile": "label-math-stack-ops-label.png",
+      "cropSha256": "78c42ee5252d061a89ae6d764988a42b975dd2d7c126eb86cdda9c25f71d60be",
       "width": 350,
-      "height": 307,
+      "height": 308,
       "structure": {
-        "viewBox": "0 0 350 307",
+        "viewBox": "0 0 350 308",
         "role": "graphics-document document",
         "ariaRoleDescription": "sequence",
         "ariaLabelledBy": "",
-        "text": 5,
+        "text": 6,
         "tspan": 4,
         "foreignObject": 1,
         "math": 1,
@@ -5341,6 +5347,1771 @@
           },
           {
             "id": "sequence-pixel-20-stickBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "0",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 7 L 7 0"
+          }
+        ],
+        "classSet": [
+          "200",
+          "actor",
+          "actor-bottom",
+          "actor-box",
+          "actor-line",
+          "actor-top",
+          "katex",
+          "messageLine0",
+          "messageLine1",
+          "messageText",
+          "note"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "20",
+          "width": "8",
+          "x": "171",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "nk"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "done"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
+    },
+    {
+      "id": "label-math-nested-fraction-ops",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{\\frac{a}{b}}{c}$$\nB-->>A:done",
+      "file": "label-math-nested-fraction-ops.png",
+      "sha256": "08d264dd014fe7ef5e6b33aa65a62f8636ce04355cceaadf6483aa12e80ed3ba",
+      "cropFile": "label-math-nested-fraction-ops-label.png",
+      "cropSha256": "c6d516b7414281a15e66a2cf3b3beb2f53b26251c9e21c255dec7475106240b1",
+      "width": 350,
+      "height": 330,
+      "structure": {
+        "viewBox": "0 0 350 330",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 6,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "defs": 11,
+        "markers": [
+          {
+            "id": "sequence-pixel-21-arrowhead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "5",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M -1 0 L 10 5 L 0 10 z"
+          },
+          {
+            "id": "sequence-pixel-21-crosshead",
+            "class": "",
+            "viewBox": "",
+            "refX": "4",
+            "refY": "4.5",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
+          },
+          {
+            "id": "sequence-pixel-21-filled-head",
+            "class": "",
+            "viewBox": "",
+            "refX": "15.5",
+            "refY": "7",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
+          },
+          {
+            "id": "sequence-pixel-21-sequencenumber",
+            "class": "",
+            "viewBox": "",
+            "refX": "15",
+            "refY": "15",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "circle",
+            "childClass": "",
+            "childPath": ""
+          },
+          {
+            "id": "sequence-pixel-21-solidTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "7.25",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 8 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-21-solidBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "0.75",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 0 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-21-stickTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "7",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 7 7"
+          },
+          {
+            "id": "sequence-pixel-21-stickBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "0",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 7 L 7 0"
+          }
+        ],
+        "classSet": [
+          "200",
+          "actor",
+          "actor-bottom",
+          "actor-box",
+          "actor-line",
+          "actor-top",
+          "katex",
+          "messageLine0",
+          "messageLine1",
+          "messageText",
+          "note"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "42",
+          "width": "10",
+          "x": "170",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "abc"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "done"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
+    },
+    {
+      "id": "label-math-fraction-script-ops",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{x_i^2}{y_j^3}$$\nB-->>A:done",
+      "file": "label-math-fraction-script-ops.png",
+      "sha256": "84099bac96e2b1435bc034844e21dcf8ca750341bc7de45c141a81a15ea435b9",
+      "cropFile": "label-math-fraction-script-ops-label.png",
+      "cropSha256": "e4f7cd5d77a7fe13a55747584303d146a2b72f30aa093d8718fb10a0157f5bbb",
+      "width": 350,
+      "height": 331,
+      "structure": {
+        "viewBox": "0 0 350 331",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 6,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "defs": 11,
+        "markers": [
+          {
+            "id": "sequence-pixel-22-arrowhead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "5",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M -1 0 L 10 5 L 0 10 z"
+          },
+          {
+            "id": "sequence-pixel-22-crosshead",
+            "class": "",
+            "viewBox": "",
+            "refX": "4",
+            "refY": "4.5",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
+          },
+          {
+            "id": "sequence-pixel-22-filled-head",
+            "class": "",
+            "viewBox": "",
+            "refX": "15.5",
+            "refY": "7",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
+          },
+          {
+            "id": "sequence-pixel-22-sequencenumber",
+            "class": "",
+            "viewBox": "",
+            "refX": "15",
+            "refY": "15",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "circle",
+            "childClass": "",
+            "childPath": ""
+          },
+          {
+            "id": "sequence-pixel-22-solidTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "7.25",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 8 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-22-solidBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "0.75",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 0 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-22-stickTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "7",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 7 7"
+          },
+          {
+            "id": "sequence-pixel-22-stickBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "0",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 7 L 7 0"
+          }
+        ],
+        "classSet": [
+          "200",
+          "actor",
+          "actor-bottom",
+          "actor-box",
+          "actor-line",
+          "actor-top",
+          "katex",
+          "messageLine0",
+          "messageLine1",
+          "messageText",
+          "note"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "43",
+          "width": "17",
+          "x": "166",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "xi2yj3"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "done"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
+    },
+    {
+      "id": "label-math-fraction-radical-ops",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{\\sqrt{x+1}}{\\sqrt{y}}$$\nB-->>A:done",
+      "file": "label-math-fraction-radical-ops.png",
+      "sha256": "4e293653597d1451859994e04341ccf0b57825a7fb3e85bb73435b04911b1f3c",
+      "cropFile": "label-math-fraction-radical-ops-label.png",
+      "cropSha256": "db331bfda085c6bd2502098ba92a1e7a59e9bac569ece0e43245a1c75f8c0dbb",
+      "width": 350,
+      "height": 334,
+      "structure": {
+        "viewBox": "0 0 350 334",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 6,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "defs": 11,
+        "markers": [
+          {
+            "id": "sequence-pixel-23-arrowhead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "5",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M -1 0 L 10 5 L 0 10 z"
+          },
+          {
+            "id": "sequence-pixel-23-crosshead",
+            "class": "",
+            "viewBox": "",
+            "refX": "4",
+            "refY": "4.5",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
+          },
+          {
+            "id": "sequence-pixel-23-filled-head",
+            "class": "",
+            "viewBox": "",
+            "refX": "15.5",
+            "refY": "7",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
+          },
+          {
+            "id": "sequence-pixel-23-sequencenumber",
+            "class": "",
+            "viewBox": "",
+            "refX": "15",
+            "refY": "15",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "circle",
+            "childClass": "",
+            "childPath": ""
+          },
+          {
+            "id": "sequence-pixel-23-solidTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "7.25",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 8 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-23-solidBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "0.75",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 0 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-23-stickTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "7",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 7 7"
+          },
+          {
+            "id": "sequence-pixel-23-stickBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "0",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 7 L 7 0"
+          }
+        ],
+        "classSet": [
+          "200",
+          "actor",
+          "actor-bottom",
+          "actor-box",
+          "actor-line",
+          "actor-top",
+          "katex",
+          "messageLine0",
+          "messageLine1",
+          "messageText",
+          "note"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "46",
+          "width": "57",
+          "x": "147",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "x+1y"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "done"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0",
+          "text:messageText",
+          "line:messageLine1"
+        ]
+      }
+    },
+    {
+      "id": "label-math-underbrace",
+      "dpr": 1.5,
+      "theme": "dark",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{x+y}_{n}$$",
+      "file": "label-math-underbrace.png",
+      "sha256": "5153da3f69f8546ace7192f60d887c3698937724f30eb47b81a5dcc7727f6448",
+      "cropFile": "label-math-underbrace-label.png",
+      "cropSha256": "4eb2b1014ea4f2d8e3f38da478c35c57c64f1d27506ca32e05c8a5d9c0c4ba6d",
+      "width": 350,
+      "height": 267,
+      "structure": {
+        "viewBox": "0 0 350 267",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 5,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "defs": 11,
+        "markers": [
+          {
+            "id": "sequence-pixel-24-arrowhead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "5",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M -1 0 L 10 5 L 0 10 z"
+          },
+          {
+            "id": "sequence-pixel-24-crosshead",
+            "class": "",
+            "viewBox": "",
+            "refX": "4",
+            "refY": "4.5",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
+          },
+          {
+            "id": "sequence-pixel-24-filled-head",
+            "class": "",
+            "viewBox": "",
+            "refX": "15.5",
+            "refY": "7",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
+          },
+          {
+            "id": "sequence-pixel-24-sequencenumber",
+            "class": "",
+            "viewBox": "",
+            "refX": "15",
+            "refY": "15",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "circle",
+            "childClass": "",
+            "childPath": ""
+          },
+          {
+            "id": "sequence-pixel-24-solidTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "7.25",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 8 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-24-solidBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "0.75",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 0 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-24-stickTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "7",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 7 7"
+          },
+          {
+            "id": "sequence-pixel-24-stickBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "0",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 7 L 7 0"
+          }
+        ],
+        "classSet": [
+          "200",
+          "actor",
+          "actor-bottom",
+          "actor-box",
+          "actor-line",
+          "actor-top",
+          "katex",
+          "messageLine0",
+          "messageText",
+          "note"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "33",
+          "width": "36",
+          "x": "157",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "x+y⏟n"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(31, 32, 32)",
+            "stroke": "rgb(204, 204, 204)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(211, 211, 211)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(211, 211, 211)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(71, 73, 73)",
+            "stroke": "rgb(47, 47, 47)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-math-under-arrow",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\underleftrightarrow{x+y}$$",
+      "file": "label-math-under-arrow.png",
+      "sha256": "5dc0d0fafcb3a6389480f19de47055a61e953918a8c9cc8f7ed714542efc4dc7",
+      "cropFile": "label-math-under-arrow-label.png",
+      "cropSha256": "cda6d50662b7664153e398757f4a85963b4c08af4f98c4a7933b4cafb44a8d27",
+      "width": 350,
+      "height": 256,
+      "structure": {
+        "viewBox": "0 0 350 256",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 5,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "defs": 11,
+        "markers": [
+          {
+            "id": "sequence-pixel-25-arrowhead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "5",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M -1 0 L 10 5 L 0 10 z"
+          },
+          {
+            "id": "sequence-pixel-25-crosshead",
+            "class": "",
+            "viewBox": "",
+            "refX": "4",
+            "refY": "4.5",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
+          },
+          {
+            "id": "sequence-pixel-25-filled-head",
+            "class": "",
+            "viewBox": "",
+            "refX": "15.5",
+            "refY": "7",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
+          },
+          {
+            "id": "sequence-pixel-25-sequencenumber",
+            "class": "",
+            "viewBox": "",
+            "refX": "15",
+            "refY": "15",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "circle",
+            "childClass": "",
+            "childPath": ""
+          },
+          {
+            "id": "sequence-pixel-25-solidTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "7.25",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 8 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-25-solidBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "0.75",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 0 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-25-stickTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "7",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 7 7"
+          },
+          {
+            "id": "sequence-pixel-25-stickBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "0",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 7 L 7 0"
+          }
+        ],
+        "classSet": [
+          "200",
+          "actor",
+          "actor-bottom",
+          "actor-box",
+          "actor-line",
+          "actor-top",
+          "katex",
+          "messageLine0",
+          "messageText",
+          "note"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "22",
+          "width": "36",
+          "x": "157",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "x+y↔"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(51, 51, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(51, 51, 51)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "rgb(170, 170, 51)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-math-overbrace",
+      "dpr": 2,
+      "theme": "dark",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{x+y}^{n}$$",
+      "file": "label-math-overbrace.png",
+      "sha256": "e42690436f2add67076b5c39066a35755d14ec5a3e362239de1dd9379a1bb7da",
+      "cropFile": "label-math-overbrace-label.png",
+      "cropSha256": "720b5cb788499b5bb7abb823e206a27d0027cf338b4adcd773cb6cd86123d82e",
+      "width": 350,
+      "height": 267,
+      "structure": {
+        "viewBox": "0 0 350 267",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 5,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "defs": 11,
+        "markers": [
+          {
+            "id": "sequence-pixel-26-arrowhead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "5",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M -1 0 L 10 5 L 0 10 z"
+          },
+          {
+            "id": "sequence-pixel-26-crosshead",
+            "class": "",
+            "viewBox": "",
+            "refX": "4",
+            "refY": "4.5",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
+          },
+          {
+            "id": "sequence-pixel-26-filled-head",
+            "class": "",
+            "viewBox": "",
+            "refX": "15.5",
+            "refY": "7",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
+          },
+          {
+            "id": "sequence-pixel-26-sequencenumber",
+            "class": "",
+            "viewBox": "",
+            "refX": "15",
+            "refY": "15",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "circle",
+            "childClass": "",
+            "childPath": ""
+          },
+          {
+            "id": "sequence-pixel-26-solidTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "7.25",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 8 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-26-solidBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "0.75",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 0 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-26-stickTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "7",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 7 7"
+          },
+          {
+            "id": "sequence-pixel-26-stickBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "0",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 7 L 7 0"
+          }
+        ],
+        "classSet": [
+          "200",
+          "actor",
+          "actor-bottom",
+          "actor-box",
+          "actor-line",
+          "actor-top",
+          "katex",
+          "messageLine0",
+          "messageText",
+          "note"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "labelTag": "foreignObject",
+        "labelClass": "",
+        "labelParentTag": "g",
+        "labelAttributes": {
+          "height": "33",
+          "width": "36",
+          "x": "157",
+          "y": "139"
+        },
+        "labelParentAttributes": {
+          "data-et": "note",
+          "data-id": "i1"
+        },
+        "textNodes": [
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "B"
+          },
+          {
+            "tag": "text",
+            "class": "actor actor-box",
+            "text": "A"
+          },
+          {
+            "tag": "foreignObject",
+            "class": "",
+            "text": "x+y⏞n"
+          },
+          {
+            "tag": "text",
+            "class": "messageText",
+            "text": "start"
+          }
+        ],
+        "styles": {
+          "actor": {
+            "fill": "rgb(31, 32, 32)",
+            "stroke": "rgb(204, 204, 204)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "message": {
+            "fill": "none",
+            "stroke": "rgb(211, 211, 211)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "messageText": {
+            "fill": "rgb(211, 211, 211)",
+            "stroke": "none",
+            "color": "rgb(0, 0, 0)"
+          },
+          "note": {
+            "fill": "rgb(71, 73, 73)",
+            "stroke": "rgb(47, 47, 47)",
+            "color": "rgb(0, 0, 0)"
+          },
+          "loopText": {}
+        },
+        "domOrder": [
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "rect:actor actor-bottom",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "line:actor-line 200",
+          "rect:actor actor-top",
+          "text:actor actor-box",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "path:",
+          "rect:note",
+          "foreignObject:",
+          "math:",
+          "text:messageText",
+          "line:messageLine0"
+        ]
+      }
+    },
+    {
+      "id": "label-math-tall-assembly",
+      "cropSelector": "[data-et=\"note\"] foreignObject",
+      "cropKind": "note",
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\{\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right.$$",
+      "file": "label-math-tall-assembly.png",
+      "sha256": "9baa61fca149e7375ec4dec45000ff1a33a8e30456e117c41b836766de32f658",
+      "cropFile": "label-math-tall-assembly-label.png",
+      "cropSha256": "794ad3d44b1e906c007197ecd371de65f2071caf48b0a2d7f175fa07ed481607",
+      "width": 350,
+      "height": 307,
+      "structure": {
+        "viewBox": "0 0 350 307",
+        "role": "graphics-document document",
+        "ariaRoleDescription": "sequence",
+        "ariaLabelledBy": "",
+        "text": 5,
+        "tspan": 4,
+        "foreignObject": 1,
+        "math": 1,
+        "clipPath": 0,
+        "defs": 11,
+        "markers": [
+          {
+            "id": "sequence-pixel-27-arrowhead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "5",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M -1 0 L 10 5 L 0 10 z"
+          },
+          {
+            "id": "sequence-pixel-27-crosshead",
+            "class": "",
+            "viewBox": "",
+            "refX": "4",
+            "refY": "4.5",
+            "markerWidth": "15",
+            "markerHeight": "8",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
+          },
+          {
+            "id": "sequence-pixel-27-filled-head",
+            "class": "",
+            "viewBox": "",
+            "refX": "15.5",
+            "refY": "7",
+            "markerWidth": "20",
+            "markerHeight": "28",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
+          },
+          {
+            "id": "sequence-pixel-27-sequencenumber",
+            "class": "",
+            "viewBox": "",
+            "refX": "15",
+            "refY": "15",
+            "markerWidth": "60",
+            "markerHeight": "40",
+            "markerUnits": "",
+            "orient": "auto",
+            "childTag": "circle",
+            "childClass": "",
+            "childPath": ""
+          },
+          {
+            "id": "sequence-pixel-27-solidTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "7.25",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 8 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-27-solidBottomArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.9",
+            "refY": "0.75",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 10 0 L 0 8 z"
+          },
+          {
+            "id": "sequence-pixel-27-stickTopArrowHead",
+            "class": "",
+            "viewBox": "",
+            "refX": "7.5",
+            "refY": "7",
+            "markerWidth": "12",
+            "markerHeight": "12",
+            "markerUnits": "userSpaceOnUse",
+            "orient": "auto-start-reverse",
+            "childTag": "path",
+            "childClass": "",
+            "childPath": "M 0 0 L 7 7"
+          },
+          {
+            "id": "sequence-pixel-27-stickBottomArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.5",
@@ -5476,7 +7247,7 @@
         "viewBox": "0 0 350 204",
         "role": "graphics-document document",
         "ariaRoleDescription": "sequence",
-        "ariaLabelledBy": "chart-title-sequence-pixel-21",
+        "ariaLabelledBy": "chart-title-sequence-pixel-28",
         "text": 5,
         "tspan": 4,
         "foreignObject": 0,
@@ -5485,7 +7256,7 @@
         "defs": 11,
         "markers": [
           {
-            "id": "sequence-pixel-21-arrowhead",
+            "id": "sequence-pixel-28-arrowhead",
             "class": "",
             "viewBox": "",
             "refX": "7.9",
@@ -5499,7 +7270,7 @@
             "childPath": "M -1 0 L 10 5 L 0 10 z"
           },
           {
-            "id": "sequence-pixel-21-crosshead",
+            "id": "sequence-pixel-28-crosshead",
             "class": "",
             "viewBox": "",
             "refX": "4",
@@ -5513,7 +7284,7 @@
             "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
           },
           {
-            "id": "sequence-pixel-21-filled-head",
+            "id": "sequence-pixel-28-filled-head",
             "class": "",
             "viewBox": "",
             "refX": "15.5",
@@ -5527,7 +7298,7 @@
             "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
           },
           {
-            "id": "sequence-pixel-21-sequencenumber",
+            "id": "sequence-pixel-28-sequencenumber",
             "class": "",
             "viewBox": "",
             "refX": "15",
@@ -5541,7 +7312,7 @@
             "childPath": ""
           },
           {
-            "id": "sequence-pixel-21-solidTopArrowHead",
+            "id": "sequence-pixel-28-solidTopArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.9",
@@ -5555,7 +7326,7 @@
             "childPath": "M 0 0 L 10 8 L 0 8 z"
           },
           {
-            "id": "sequence-pixel-21-solidBottomArrowHead",
+            "id": "sequence-pixel-28-solidBottomArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.9",
@@ -5569,7 +7340,7 @@
             "childPath": "M 0 0 L 10 0 L 0 8 z"
           },
           {
-            "id": "sequence-pixel-21-stickTopArrowHead",
+            "id": "sequence-pixel-28-stickTopArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.5",
@@ -5583,7 +7354,7 @@
             "childPath": "M 0 0 L 7 7"
           },
           {
-            "id": "sequence-pixel-21-stickBottomArrowHead",
+            "id": "sequence-pixel-28-stickBottomArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.5",
@@ -5706,7 +7477,7 @@
         "defs": 11,
         "markers": [
           {
-            "id": "sequence-pixel-22-arrowhead",
+            "id": "sequence-pixel-29-arrowhead",
             "class": "",
             "viewBox": "",
             "refX": "7.9",
@@ -5720,7 +7491,7 @@
             "childPath": "M -1 0 L 10 5 L 0 10 z"
           },
           {
-            "id": "sequence-pixel-22-crosshead",
+            "id": "sequence-pixel-29-crosshead",
             "class": "",
             "viewBox": "",
             "refX": "4",
@@ -5734,7 +7505,7 @@
             "childPath": "M 1,2 L 6,7 M 6,2 L 1,7"
           },
           {
-            "id": "sequence-pixel-22-filled-head",
+            "id": "sequence-pixel-29-filled-head",
             "class": "",
             "viewBox": "",
             "refX": "15.5",
@@ -5748,7 +7519,7 @@
             "childPath": "M 18,7 L9,13 L14,7 L9,1 Z"
           },
           {
-            "id": "sequence-pixel-22-sequencenumber",
+            "id": "sequence-pixel-29-sequencenumber",
             "class": "",
             "viewBox": "",
             "refX": "15",
@@ -5762,7 +7533,7 @@
             "childPath": ""
           },
           {
-            "id": "sequence-pixel-22-solidTopArrowHead",
+            "id": "sequence-pixel-29-solidTopArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.9",
@@ -5776,7 +7547,7 @@
             "childPath": "M 0 0 L 10 8 L 0 8 z"
           },
           {
-            "id": "sequence-pixel-22-solidBottomArrowHead",
+            "id": "sequence-pixel-29-solidBottomArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.9",
@@ -5790,7 +7561,7 @@
             "childPath": "M 0 0 L 10 0 L 0 8 z"
           },
           {
-            "id": "sequence-pixel-22-stickTopArrowHead",
+            "id": "sequence-pixel-29-stickTopArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.5",
@@ -5804,7 +7575,7 @@
             "childPath": "M 0 0 L 7 7"
           },
           {
-            "id": "sequence-pixel-22-stickBottomArrowHead",
+            "id": "sequence-pixel-29-stickBottomArrowHead",
             "class": "",
             "viewBox": "",
             "refX": "7.5",
@@ -6000,5 +7771,5 @@
       }
     }
   ],
-  "fixtureSha256": "00dfec955561c48837806f92ba1e991e43680b66a2b307cd8e068c99ed045a84"
+  "fixtureSha256": "f3e26089aeeedceba115cad5d67c8f898f2de50b617d0584efb8c6ff75ebd9ff"
 }

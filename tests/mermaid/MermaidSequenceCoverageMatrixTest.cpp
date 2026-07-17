@@ -119,6 +119,7 @@ int main(int argc,char** argv) {
               mathmlCases.size()>=50&&mathmlDprs.size()>=4&&mathmlFonts.size()>=3&&
               mathmlIds.contains(QStringLiteral("fraction-nested"))&&
               mathmlIds.contains(QStringLiteral("fraction-sup"))&&
+              mathmlIds.contains(QStringLiteral("fraction-radical"))&&
               mathmlIds.contains(QStringLiteral("sqrt-fraction"))&&
               mathmlIds.contains(QStringLiteral("matrix-3x3")),
           QStringLiteral("sequence recursive MathML CSS box coverage regressed"));

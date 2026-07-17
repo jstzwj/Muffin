@@ -19,6 +19,18 @@ qreal snapEighth(qreal value) {
   return std::round(value * 8.0) / 8.0;
 }
 
+qreal snapLayoutUnit(qreal value) {
+  return std::round(value * 64.0) / 64.0;
+}
+
+QRectF snapVerticalLayoutRect(QRectF rect) {
+  const qreal top = snapLayoutUnit(rect.top());
+  const qreal height = snapLayoutUnit(rect.height());
+  rect.setY(top);
+  rect.setHeight(height);
+  return rect;
+}
+
 const MathRenderNode* primarySemanticNode(const MathRenderNode* node) {
   if (node == nullptr) return nullptr;
   if (node->semanticKind != MathSemanticKind::None) return node;
@@ -317,16 +329,13 @@ const MathRenderNode* enclosingKind(const MathRenderNode* node,
 }
 
 const MathRenderNode* singleSymbol(const MathRenderNode* node) {
-  if (node == nullptr) return nullptr;
+  if (node == nullptr || symbolCount(node) != 1) return nullptr;
   if (node->kind == MathRenderKind::Symbol) return node;
-  const MathRenderNode* result = nullptr;
   for (const auto& child : node->children) {
     const MathRenderNode* candidate = singleSymbol(child.get());
-    if (candidate == nullptr) continue;
-    if (result != nullptr) return nullptr;
-    result = candidate;
+    if (candidate != nullptr) return candidate;
   }
-  return result;
+  return nullptr;
 }
 
 struct NativeGlyphBox {
@@ -339,9 +348,25 @@ struct GlyphInkExtents {
   qreal bottom = 0.0;
 };
 
+std::optional<NativeGlyphBox> nativeGlyphBox(const MathRenderNode* symbol);
+
+struct FractionMetrics {
+  const MathRenderNode* numerator = nullptr;
+  const MathRenderNode* denominator = nullptr;
+  GlyphInkExtents numeratorInk;
+  GlyphInkExtents denominatorInk;
+  qreal numeratorShift = 0.0;
+  qreal denominatorShift = 0.0;
+  qreal ruleThickness = 0.0;
+  GlyphInkExtents extents;
+};
+
 GlyphInkExtents fractionMathMlExtents(const MathRenderNode* fraction,
                                       qreal cssFontSize,
                                       qreal renderScale);
+std::optional<FractionMetrics> fractionMetrics(const MathRenderNode* fraction,
+                                               qreal cssFontSize,
+                                               qreal renderScale);
 qreal braceAccentCssHeight(const MathRenderNode* container,
                            const MathRenderNode* accent,
                            qreal scale);
@@ -378,6 +403,34 @@ GlyphInkExtents glyphInkExtents(const MathRenderNode* node, qreal fontScale) {
         ? base.top : std::max(base.top, supShift + superscript.top);
     result.bottom = node->scriptKind == MathScriptKind::Superscript
         ? base.bottom : std::max(base.bottom, subShift + subscript.bottom);
+    return result;
+  }
+  if (node->semanticKind == MathSemanticKind::Radical) {
+    const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+    const MathFontConstants& constants = font.constants();
+    const MathRenderNode* radicalBox = node->radicalIndex
+        ? nestedSemanticNode(node, MathSemanticKind::Radical) : node;
+    const MathRenderNode* body = radicalBody(radicalBox);
+    if (!body) return result;
+    const GlyphInkExtents bodyInk = glyphInkExtents(body, fontScale);
+    qreal bodyHeight = std::ceil(bodyInk.top + bodyInk.bottom);
+    if (const auto glyph = nativeGlyphBox(singleSymbol(body)))
+      bodyHeight = std::round(glyph->height * fontScale);
+    else if (symbolCount(body) > 1)
+      bodyHeight += 1.0;
+    const qreal target = bodyInk.top + bodyInk.bottom +
+                         constants.radicalVerticalGap +
+                         constants.radicalRuleThickness;
+    const auto variant = font.verticalVariant(QString(QChar(0x221A)), target);
+    if (!variant) return bodyInk;
+    const qreal bodyAscent = std::min(bodyHeight, bodyInk.top);
+    result.top = std::max(
+        bodyAscent, bodyInk.top + constants.radicalVerticalGap +
+                        constants.radicalRuleThickness +
+                        constants.radicalExtraAscender);
+    result.bottom = std::max(
+        bodyHeight - bodyAscent,
+        variant->extent + constants.radicalExtraAscender - result.top);
     return result;
   }
   if (node->kind == MathRenderKind::Symbol && node->text.size() == 1) {
@@ -582,6 +635,26 @@ qreal cssNodeHeight(const MathRenderNode* node, qreal scale) {
          (hasAtomClass(node, QLatin1StringView("mbin")) ? 1.0 : 0.0);
 }
 
+std::optional<qreal> cssNodeOffset(const MathRenderNode* node,
+                                   const MathRenderNode* target,
+                                   qreal scale) {
+  if (!node || !target) return std::nullopt;
+  if (node == target) return 0.0;
+  qreal sequentialOffset = 0.0;
+  const bool sequential = node->kind == MathRenderKind::Span;
+  for (const auto& child : node->children) {
+    if (!child) continue;
+    if (const auto nested = cssNodeOffset(child.get(), target, scale)) {
+      const qreal localOffset = sequential
+          ? sequentialOffset
+          : child->xOffset * scale;
+      return localOffset + *nested;
+    }
+    if (sequential) sequentialOffset += cssNodeWidth(child.get(), scale);
+  }
+  return std::nullopt;
+}
+
 qreal fractionMathMlHeight(const MathRenderNode* fraction, qreal cssFontSize,
                            qreal renderScale) {
   const GlyphInkExtents extents = fractionMathMlExtents(
@@ -592,6 +665,13 @@ qreal fractionMathMlHeight(const MathRenderNode* fraction, qreal cssFontSize,
 GlyphInkExtents fractionMathMlExtents(const MathRenderNode* fraction,
                                       qreal cssFontSize,
                                       qreal renderScale) {
+  const auto metrics = fractionMetrics(fraction, cssFontSize, renderScale);
+  return metrics ? metrics->extents : GlyphInkExtents{};
+}
+
+std::optional<FractionMetrics> fractionMetrics(const MathRenderNode* fraction,
+                                               qreal cssFontSize,
+                                               qreal renderScale) {
   if (!fraction) return {};
   const MathRenderNode* stack = directChild(fraction, MathRenderKind::VList);
   if (!stack) return {};
@@ -602,7 +682,7 @@ GlyphInkExtents fractionMathMlExtents(const MathRenderNode* fraction,
     if (!denominator) denominator = child.get();
     numerator = child.get();
   }
-  if (!numerator || !denominator || numerator == denominator) return {};
+  if (!numerator || !denominator || numerator == denominator) return std::nullopt;
 
   const MathFontConstants& constants = OpenTypeMathFont::instance().constants();
   const bool displayStyle = fraction->fractionStyleSize == 0;
@@ -619,6 +699,12 @@ GlyphInkExtents fractionMathMlExtents(const MathRenderNode* fraction,
       *ink = fractionMathMlExtents(nested, cssFontSize, renderScale);
       ink->top += std::floor(constants.fractionRuleThickness *
                              nested->fractionSizeMultiplier);
+      return;
+    }
+    if (const MathRenderNode* nested = primarySemanticNode(child);
+        nested && nested->semanticKind == MathSemanticKind::Radical) {
+      // glyphInkExtents() already returns the complete MathML radical line
+      // box, including the body row's operator leading.
       return;
     }
     if (const MathRenderNode* nested = primarySemanticNode(child);
@@ -657,12 +743,21 @@ GlyphInkExtents fractionMathMlExtents(const MathRenderNode* fraction,
     const qreal adjustment = std::max<qreal>(0.0, minimumGap - currentGap) / 2.0;
     topShift += adjustment;
     bottomShift += adjustment;
-    GlyphInkExtents result{topShift + numeratorInk.top,
-                           bottomShift + denominatorInk.bottom};
-    const qreal snappedHeight = std::round((result.top + result.bottom) * 2.0) / 2.0;
-    result.bottom += snappedHeight - result.top - result.bottom;
+    FractionMetrics result;
+    result.numerator = numerator;
+    result.denominator = denominator;
+    result.numeratorInk = numeratorInk;
+    result.denominatorInk = denominatorInk;
+    result.numeratorShift = topShift;
+    result.denominatorShift = bottomShift;
+    result.extents = {topShift + numeratorInk.top,
+                      bottomShift + denominatorInk.bottom};
+    const qreal snappedHeight = std::round(
+        (result.extents.top + result.extents.bottom) * 2.0) / 2.0;
+    result.extents.bottom += snappedHeight - result.extents.top -
+                             result.extents.bottom;
     if (!displayStyle)
-      result.top += constants.fractionRuleThickness * styleScale;
+      result.extents.top += constants.fractionRuleThickness * styleScale;
     return result;
   }
 
@@ -689,9 +784,19 @@ GlyphInkExtents fractionMathMlExtents(const MathRenderNode* fraction,
                                      ruleThickness / 2.0 -
                                      denominatorInk.top + bottomShift;
   bottomShift += std::max<qreal>(0.0, denominatorGap - denominatorClearance);
-  return {topShift + numeratorInk.top +
-              (hasScriptRow ? constants.fractionRuleThickness * styleScale / 2.0 : 0.0),
-          bottomShift + denominatorInk.bottom};
+  FractionMetrics result;
+  result.numerator = numerator;
+  result.denominator = denominator;
+  result.numeratorInk = numeratorInk;
+  result.denominatorInk = denominatorInk;
+  result.numeratorShift = topShift;
+  result.denominatorShift = bottomShift;
+  result.ruleThickness = ruleThickness;
+  result.extents = {
+      topShift + numeratorInk.top +
+          (hasScriptRow ? constants.fractionRuleThickness * styleScale / 2.0 : 0.0),
+      bottomShift + denominatorInk.bottom};
+  return result;
 }
 
 qreal maxLeftRightFenceExtent(const MathRenderNode* node, qreal minimumExtent) {
@@ -775,6 +880,7 @@ qreal braceAccentCssHeight(const MathRenderNode* container,
   qreal bodyHeight = bodyInk.top + bodyInk.bottom;
   if (hasMathMlOperatorOverflow(body))
     bodyHeight += std::floor(constants.fractionRuleThickness);
+  bodyHeight = std::ceil(bodyHeight);
   const qreal gap = over ? constants.overbarVerticalGap
                          : constants.underbarVerticalGap;
   const qreal rule = over ? constants.overbarRuleThickness
@@ -1143,6 +1249,615 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
       break;
   }
   return root;
+}
+
+std::optional<MathCssAccentBox> layoutMathMlAccentBox(
+    const MathLayoutResult& layout, qreal renderFontPixelSize,
+    qreal cssRootFontPixelSize) {
+  if (!layout.valid() || renderFontPixelSize <= 0.0 || cssRootFontPixelSize <= 0.0)
+    return std::nullopt;
+  const MathRenderNode* semantic = primarySemanticNode(layout.root.get());
+  const MathRenderNode* accent = semantic &&
+          semantic->semanticKind == MathSemanticKind::SupSub
+      ? firstKind(semantic, MathRenderKind::Accent)
+      : firstKind(layout.root.get(), MathRenderKind::Accent);
+  if (!accent || accent->children.size() < 2)
+    return std::nullopt;
+
+  const bool brace = accent->accentKind == MathAccentKind::UnderBrace ||
+                     accent->accentKind == MathAccentKind::OverBrace;
+  const bool arrow = (accent->accentKind == MathAccentKind::Under ||
+                      accent->accentKind == MathAccentKind::Over) &&
+                     !accent->accentCharacter.isEmpty();
+  if (!brace && !arrow) return std::nullopt;
+  const bool over = accent->accentKind == MathAccentKind::OverBrace ||
+                    accent->accentKind == MathAccentKind::Over;
+  const bool bodyIsLast = accent->accentKind == MathAccentKind::Under ||
+                          accent->accentKind == MathAccentKind::OverBrace;
+  const MathRenderNode* body = bodyIsLast ? accent->children.back().get()
+                                         : accent->children.front().get();
+  const MathFontConstants& constants = OpenTypeMathFont::instance().constants();
+  GlyphInkExtents bodyInk = glyphInkExtents(body, 1.0);
+  qreal bodyHeight = bodyInk.top + bodyInk.bottom;
+  if (hasMathMlOperatorOverflow(body))
+    bodyHeight += std::floor(constants.fractionRuleThickness);
+  const qreal gap = over ? constants.overbarVerticalGap
+                         : constants.underbarVerticalGap;
+  const qreal accentHeight = std::round(gap + 2.0 *
+      (over ? constants.overbarRuleThickness : constants.underbarRuleThickness));
+  const qreal extra = over ? constants.overbarExtraAscender
+                           : constants.underbarExtraDescender;
+  const MathCssBox root = layoutMathMlCssBox(
+      layout, renderFontPixelSize, cssRootFontPixelSize);
+  const qreal rootHeight = snapEighth(root.height);
+
+  if (arrow) {
+    const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+    const auto fixed = font.horizontalVariant(accent->accentCharacter, root.width);
+    const bool useFixed = fixed && fixed->extent >= root.width;
+    const auto assembly = useFixed ? std::optional<MathGlyphAssembly>{}
+        : font.horizontalAssemblyParts(accent->accentCharacter, root.width);
+    if (!useFixed && !assembly) return std::nullopt;
+    const qreal arrowHeight = std::ceil(
+        useFixed ? fixed->advance : assembly->advance);
+    MathCssAccentBox result;
+    result.over = over;
+    result.character = accent->accentCharacter;
+    result.body = QRectF(0.0, over ? rootHeight - bodyHeight : 0.0,
+                         root.width, bodyHeight);
+    result.accent = QRectF(0.0, over ? result.body.top() - arrowHeight
+                                    : result.body.bottom(),
+                           root.width, arrowHeight);
+    return result;
+  }
+
+  const qreal annotationHeight = std::max<qreal>(
+      0.0, rootHeight - bodyHeight - accentHeight - 2.0 * gap - extra);
+
+  MathCssAccentBox result;
+  result.over = over;
+  result.character = QString(QChar(over ? 0x23DE : 0x23DF));
+  result.fontScale = constants.scriptPercentScaleDown;
+  if (over) {
+    result.annotation = QRectF(0.0, 0.0, root.width, annotationHeight);
+    result.body = QRectF(0.0, rootHeight - bodyHeight, root.width, bodyHeight);
+    result.accent = QRectF(0.0, result.body.top() - gap - accentHeight,
+                           root.width, accentHeight);
+  } else {
+    result.body = QRectF(0.0, 0.0, root.width, bodyHeight);
+    result.accent = QRectF(0.0, result.body.bottom() + gap,
+                           root.width, accentHeight);
+    result.annotation = QRectF(0.0, rootHeight - annotationHeight,
+                               root.width, annotationHeight);
+  }
+  return result;
+}
+
+namespace {
+
+void collectImmediateFractions(const MathRenderNode* node,
+                               QVector<const MathRenderNode*>* fractions) {
+  if (!node || !fractions) return;
+  if (node->semanticKind == MathSemanticKind::Fraction) {
+    fractions->push_back(node);
+    return;
+  }
+  for (const auto& child : node->children)
+    collectImmediateFractions(child.get(), fractions);
+}
+
+void collectImmediateScripts(const MathRenderNode* node,
+                             QVector<const MathRenderNode*>* scripts) {
+  if (!node || !scripts) return;
+  if (node->semanticKind == MathSemanticKind::SupSub) {
+    scripts->push_back(node);
+    return;
+  }
+  if (node->semanticKind == MathSemanticKind::Fraction ||
+      node->semanticKind == MathSemanticKind::Radical)
+    return;
+  for (const auto& child : node->children)
+    collectImmediateScripts(child.get(), scripts);
+}
+
+void collectImmediateRadicals(const MathRenderNode* node,
+                              QVector<const MathRenderNode*>* radicals) {
+  if (!node || !radicals) return;
+  if (node->semanticKind == MathSemanticKind::Radical) {
+    radicals->push_back(node);
+    return;
+  }
+  if (node->semanticKind == MathSemanticKind::Fraction ||
+      node->semanticKind == MathSemanticKind::SupSub)
+    return;
+  for (const auto& child : node->children)
+    collectImmediateRadicals(child.get(), radicals);
+}
+
+GlyphInkExtents preciseTokenInkExtents(const MathRenderNode* node,
+                                       qreal fontScale) {
+  const MathRenderNode* symbol = singleSymbol(node);
+  if (!symbol || symbol->text.size() != 1)
+    return glyphInkExtents(node, fontScale);
+  const QChar character = symbol->text.front();
+  const bool italic = character.isLetter() &&
+      (symbol->fontClass == QLatin1String("mathnormal") ||
+       symbol->fontClass == QLatin1String("mathit"));
+  const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+  const auto glyph = italic ? font.mathItalicGlyph(character)
+                            : font.glyph(symbol->text);
+  if (!glyph) return glyphInkExtents(node, fontScale);
+  return {std::max<qreal>(0.0, -glyph->inkBounds.top()) * fontScale,
+          std::max<qreal>(0.0, glyph->inkBounds.bottom()) * fontScale};
+}
+
+struct CssTokenLineMetrics {
+  GlyphInkExtents ink;
+  qreal ascent = 0.0;
+  qreal descent = 0.0;
+
+  qreal height() const { return ascent + descent; }
+};
+
+CssTokenLineMetrics cssTokenLineMetrics(const MathRenderNode* node,
+                                        qreal renderScale,
+                                        qreal fontScale) {
+  CssTokenLineMetrics result;
+  result.ink = preciseTokenInkExtents(node, fontScale);
+  if (const MathRenderNode* symbol = singleSymbol(node)) {
+    const qreal height = std::round(result.ink.top + result.ink.bottom);
+    result.ascent = std::min(height, std::round(result.ink.top));
+    result.descent = std::max<qreal>(0.0, height - result.ascent);
+    if (fontScale >= 0.999) {
+      if (const auto glyph = nativeGlyphBox(symbol)) {
+        const qreal glyphHeight = std::round(glyph->height);
+        result.descent += std::max<qreal>(0.0, glyphHeight - result.height());
+      }
+    }
+    return result;
+  }
+  const qreal height = cssNodeHeight(node, renderScale);
+  result.ascent = std::min(height, std::round(result.ink.top));
+  result.descent = std::max<qreal>(0.0, height - result.ascent);
+  return result;
+}
+
+std::optional<MathCssScriptOperation> buildScriptOperation(
+    const MathRenderNode* script, const MathRenderNode* containingNode,
+    QRectF containingRect, qreal renderScale) {
+  if (!script || script->semanticKind != MathSemanticKind::SupSub ||
+      script->children.size() != 2)
+    return std::nullopt;
+  const MathRenderNode* base = script->children.front().get();
+  const MathRenderNode* scriptBox = script->children.back().get();
+  const MathRenderNode* superscript = nullptr;
+  const MathRenderNode* subscript = nullptr;
+  if (script->scriptKind == MathScriptKind::SubSup &&
+      scriptBox && scriptBox->children.size() >= 2) {
+    subscript = scriptBox->children.front().get();
+    superscript = scriptBox->children.back().get();
+  } else if (script->scriptKind == MathScriptKind::Subscript) {
+    subscript = scriptBox;
+  } else {
+    superscript = scriptBox;
+  }
+
+  const MathFontConstants& constants = OpenTypeMathFont::instance().constants();
+  const CssTokenLineMetrics baseMetrics = cssTokenLineMetrics(
+      base, renderScale, 1.0);
+  const CssTokenLineMetrics supMetrics = cssTokenLineMetrics(
+      superscript, renderScale, constants.scriptPercentScaleDown);
+  const CssTokenLineMetrics subMetrics = cssTokenLineMetrics(
+      subscript, renderScale, constants.scriptPercentScaleDown);
+  const GlyphInkExtents& baseInk = baseMetrics.ink;
+  const GlyphInkExtents& supInk = supMetrics.ink;
+  const GlyphInkExtents& subInk = subMetrics.ink;
+  qreal supShift = std::max({
+      constants.superscriptShiftUpCramped,
+      constants.superscriptBottomMin + supInk.bottom,
+      baseInk.top - constants.superscriptBaselineDropMax});
+  qreal subShift = std::max({
+      constants.subscriptShiftDown,
+      subInk.top - constants.subscriptTopMax,
+      constants.subscriptBaselineDropMin + baseInk.bottom});
+  if (script->scriptKind == MathScriptKind::SubSup) {
+    qreal gap = supShift + subShift - supInk.bottom - subInk.top;
+    const qreal missingGap = constants.subSuperscriptGapMin - gap;
+    if (missingGap > 0.0) {
+      const qreal superscriptRoom =
+          constants.superscriptBottomMaxWithSubscript -
+          (supShift - supInk.bottom);
+      const qreal raise = std::max<qreal>(
+          0.0, std::min(superscriptRoom, missingGap));
+      supShift += raise;
+      gap += raise;
+      subShift += std::max<qreal>(
+          0.0, constants.subSuperscriptGapMin - gap);
+    }
+  }
+  const qreal lineAscent = script->scriptKind == MathScriptKind::Subscript
+      ? baseInk.top
+      : std::max(baseInk.top, supShift + supInk.top);
+  const qreal lineDescent = script->scriptKind == MathScriptKind::Superscript
+      ? baseInk.bottom
+      : std::max(baseInk.bottom, subShift + subInk.bottom);
+  const qreal width = cssNodeWidth(script, renderScale);
+  const qreal height = lineAscent + lineDescent;
+  const qreal left = containingRect.left() + cssNodeOffset(
+      containingNode, script, renderScale).value_or(0.0);
+  const bool fillsContainingRow = primarySemanticNode(containingNode) == script;
+  const qreal top = fillsContainingRow
+      ? containingRect.top()
+      : containingRect.top() + (containingRect.height() - height) / 2.0;
+  const qreal baseWidth = cssNodeWidth(base, renderScale);
+
+  MathCssScriptOperation result;
+  result.kind = script->scriptKind;
+  result.lineAscent = lineAscent;
+  result.lineDescent = lineDescent;
+  result.container = fillsContainingRow
+      ? QRectF(left, containingRect.top(), width, containingRect.height())
+      : QRectF(left, top, width, height);
+  result.baseNode = base;
+  result.superscriptNode = superscript;
+  result.subscriptNode = subscript;
+  result.base = QRectF(left, top + lineAscent - baseMetrics.ascent,
+                       baseWidth, baseMetrics.height());
+  if (superscript) {
+    result.superscript = QRectF(
+        left + baseWidth, top + lineAscent - supShift - supInk.top,
+        cssNodeWidth(superscript, renderScale),
+        supMetrics.height());
+  }
+  if (subscript) {
+    result.subscript = QRectF(
+        left + baseWidth, top + lineAscent + subShift - subInk.top,
+        cssNodeWidth(subscript, renderScale),
+        subMetrics.height());
+  }
+  result.container = snapVerticalLayoutRect(result.container);
+  result.base = snapVerticalLayoutRect(result.base);
+  result.superscript = snapVerticalLayoutRect(result.superscript);
+  result.subscript = snapVerticalLayoutRect(result.subscript);
+  return result;
+}
+
+std::optional<MathCssRadicalOperation> buildRadicalOperation(
+    const MathRenderNode* radical, const MathRenderNode* containingNode,
+    QRectF containingRect, qreal renderScale) {
+  if (!radical || radical->semanticKind != MathSemanticKind::Radical)
+    return std::nullopt;
+  const MathRenderNode* radicalBox = radical->radicalIndex
+      ? nestedSemanticNode(radical, MathSemanticKind::Radical) : radical;
+  const MathRenderNode* body = radicalBody(radicalBox);
+  if (!body) return std::nullopt;
+
+  const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+  const MathFontConstants& constants = font.constants();
+  const GlyphInkExtents bodyInk = glyphInkExtents(body, 1.0);
+  const qreal bodyWidth = cssNodeWidth(body, renderScale);
+  qreal bodyHeight = std::ceil(bodyInk.top + bodyInk.bottom);
+  if (const auto glyph = nativeGlyphBox(singleSymbol(body)))
+    bodyHeight = std::round(glyph->height);
+  else if (symbolCount(body) > 1)
+    bodyHeight += 1.0;
+  const qreal target = bodyInk.top + bodyInk.bottom +
+                       constants.radicalVerticalGap +
+                       constants.radicalRuleThickness;
+  const auto variant = font.verticalVariant(QString(QChar(0x221A)), target);
+  if (!variant) return std::nullopt;
+
+  const qreal bodyAscent = std::min(bodyHeight, bodyInk.top);
+  const qreal lineAscent = std::max(
+      bodyAscent, bodyInk.top + constants.radicalVerticalGap +
+                      constants.radicalRuleThickness +
+                      constants.radicalExtraAscender);
+  const qreal lineDescent = std::max(
+      bodyHeight - bodyAscent,
+      variant->extent + constants.radicalExtraAscender - lineAscent);
+  const qreal height = lineAscent + lineDescent;
+  const qreal left = containingRect.left() + cssNodeOffset(
+      containingNode, radical, renderScale).value_or(0.0);
+  const bool fillsContainingRow = primarySemanticNode(containingNode) == radical;
+  const qreal top = fillsContainingRow
+      ? containingRect.top()
+      : containingRect.top() + (containingRect.height() - height) / 2.0;
+
+  MathCssRadicalOperation result;
+  result.lineAscent = lineAscent;
+  result.lineDescent = lineDescent;
+  result.container = fillsContainingRow
+      ? QRectF(left, containingRect.top(), radicalCssWidth(radical, renderScale),
+               containingRect.height())
+      : QRectF(left, top, radicalCssWidth(radical, renderScale), height);
+  result.body = QRectF(left + variant->advance,
+                       top + lineAscent - bodyAscent,
+                       bodyWidth, bodyHeight);
+  result.rule = QRectF(result.body.left(),
+                       top + constants.radicalExtraAscender,
+                       bodyWidth, constants.radicalRuleThickness);
+  result.glyph = QRectF(left, top + constants.radicalExtraAscender,
+                        variant->advance, variant->extent);
+  result.bodyNode = body;
+  result.glyphIndex = variant->glyphIndex;
+  result.container = snapVerticalLayoutRect(result.container);
+  result.body = snapVerticalLayoutRect(result.body);
+  result.rule = snapVerticalLayoutRect(result.rule);
+  result.glyph = snapVerticalLayoutRect(result.glyph);
+  return result;
+}
+
+qreal nestedFractionCssHeight(const MathRenderNode* fraction,
+                              qreal cssRootFontPixelSize,
+                              qreal renderScale) {
+  return fractionMathMlHeight(
+             fraction, cssRootFontPixelSize, renderScale) +
+         std::round(OpenTypeMathFont::instance().constants()
+                        .fractionRuleThickness *
+                    fraction->fractionSizeMultiplier);
+}
+
+std::optional<MathCssFractionOperation> buildFractionOperation(
+    const MathRenderNode* fraction, qreal fractionOffset, qreal semanticTop,
+    qreal semanticHeight, qreal renderScale, qreal cssRootFontPixelSize,
+    bool nested) {
+  const auto metrics = fractionMetrics(
+      fraction, cssRootFontPixelSize, renderScale);
+  if (!metrics) return std::nullopt;
+  const MathRenderNode* stack = directChild(fraction, MathRenderKind::VList);
+  if (!stack) return std::nullopt;
+  const qreal contentWidth = cssNodeWidth(stack, renderScale) + 2.0;
+  const qreal targetHeight = (fraction->height + fraction->depth) * renderScale;
+  const qreal leftWidth = arrayDelimiterWidth(
+      fraction->leftDelimiter, targetHeight);
+  const qreal rightWidth = arrayDelimiterWidth(
+      fraction->rightDelimiter, targetHeight);
+  const qreal fractionLeft = fractionOffset + leftWidth;
+  qreal fractionHeight = metrics->extents.top + metrics->extents.bottom;
+  const qreal alignmentRule = metrics->ruleThickness > 0.0
+      ? metrics->ruleThickness
+      : OpenTypeMathFont::instance().constants().fractionRuleThickness *
+            fraction->fractionSizeMultiplier;
+  const bool hasDelimiter = leftWidth > 0.0 || rightWidth > 0.0;
+  if (nested && !hasDelimiter) {
+    fractionHeight += std::round(
+        OpenTypeMathFont::instance().constants().fractionRuleThickness *
+        fraction->fractionSizeMultiplier);
+  }
+  if (!hasDelimiter) fractionHeight = std::max(fractionHeight, semanticHeight);
+  const qreal fractionTop = hasDelimiter
+      ? semanticTop + (semanticHeight - fractionHeight) / 2.0 -
+            alignmentRule / 2.0
+      : semanticTop;
+  const qreal numeratorWidth = cssNodeWidth(metrics->numerator, renderScale);
+  const qreal denominatorWidth = cssNodeWidth(metrics->denominator, renderScale);
+  qreal numeratorHeight = metrics->numeratorInk.top + metrics->numeratorInk.bottom;
+  qreal denominatorHeight = metrics->denominatorInk.top +
+                            metrics->denominatorInk.bottom;
+  const bool plainRows = !primarySemanticNode(metrics->numerator) &&
+                         !primarySemanticNode(metrics->denominator);
+  const int numeratorSymbols = symbolCount(metrics->numerator);
+  const int denominatorSymbols = symbolCount(metrics->denominator);
+  if (plainRows && numeratorSymbols > 1 && denominatorSymbols > 1) {
+    // Native mfrac gives sibling token rows the same inline ink line box.
+    const qreal sharedRowHeight = std::max(numeratorHeight, denominatorHeight);
+    numeratorHeight = sharedRowHeight;
+    denominatorHeight = sharedRowHeight;
+  } else {
+    const MathFontConstants& constants = OpenTypeMathFont::instance().constants();
+    const qreal childStyleScale = fraction->fractionStyleSize == 0
+        ? 1.0
+        : fraction->fractionStyleSize == 1
+            ? constants.scriptPercentScaleDown
+            : constants.scriptScriptPercentScaleDown;
+    if (const auto glyph = nativeGlyphBox(singleSymbol(metrics->numerator)))
+      numeratorHeight = std::round(glyph->height * childStyleScale);
+    else
+      numeratorHeight = cssNodeHeight(metrics->numerator, renderScale);
+    if (const auto glyph = nativeGlyphBox(singleSymbol(metrics->denominator)))
+      denominatorHeight = std::round(glyph->height * childStyleScale);
+    else
+      denominatorHeight = cssNodeHeight(metrics->denominator, renderScale);
+  }
+  const auto includeImmediateFractionHeight = [&](const MathRenderNode* row,
+                                                   qreal height) {
+    QVector<const MathRenderNode*> nestedFractions;
+    collectImmediateFractions(row, &nestedFractions);
+    for (const MathRenderNode* nested : nestedFractions)
+      height = std::max(height, nestedFractionCssHeight(
+          nested, cssRootFontPixelSize, renderScale));
+    return snapLayoutUnit(height);
+  };
+  numeratorHeight = includeImmediateFractionHeight(
+      metrics->numerator, numeratorHeight);
+  denominatorHeight = includeImmediateFractionHeight(
+      metrics->denominator, denominatorHeight);
+  const auto includeImmediateScriptHeight = [&](const MathRenderNode* row,
+                                                 qreal height) {
+    QVector<const MathRenderNode*> scripts;
+    collectImmediateScripts(row, &scripts);
+    const QRectF intrinsicRow(0.0, 0.0, cssNodeWidth(row, renderScale), 0.0);
+    for (const MathRenderNode* script : scripts) {
+      const auto child = buildScriptOperation(
+          script, row, intrinsicRow, renderScale);
+      if (!child) continue;
+      height = std::max({height,
+                         child->lineAscent + child->lineDescent,
+                         child->base.bottom(),
+                         child->superscript.bottom(),
+                         child->subscript.bottom()});
+    }
+    return height;
+  };
+  numeratorHeight = includeImmediateScriptHeight(
+      metrics->numerator, numeratorHeight);
+  denominatorHeight = includeImmediateScriptHeight(
+      metrics->denominator, denominatorHeight);
+  const auto includeImmediateRadicalHeight = [&](const MathRenderNode* row,
+                                                  qreal height) {
+    QVector<const MathRenderNode*> radicals;
+    collectImmediateRadicals(row, &radicals);
+    const QRectF intrinsicRow(0.0, 0.0, cssNodeWidth(row, renderScale), 0.0);
+    for (const MathRenderNode* radical : radicals) {
+      const auto child = buildRadicalOperation(
+          radical, row, intrinsicRow, renderScale);
+      if (!child) continue;
+      height = std::max({height,
+                         child->lineAscent + child->lineDescent,
+                         child->glyph.bottom(),
+                         child->rule.bottom(),
+                         child->body.bottom()});
+    }
+    return snapLayoutUnit(height);
+  };
+  numeratorHeight = includeImmediateRadicalHeight(
+      metrics->numerator, numeratorHeight);
+  denominatorHeight = includeImmediateRadicalHeight(
+      metrics->denominator, denominatorHeight);
+  MathCssFractionOperation operation;
+  operation.numeratorNode = metrics->numerator;
+  operation.denominatorNode = metrics->denominator;
+  operation.nested = nested;
+  MathCssFractionBox& result = operation.box;
+  result.hasRule = fraction->fractionHasBarLine;
+  result.styleSize = fraction->fractionStyleSize;
+  result.fontScale = fraction->fractionSizeMultiplier;
+  result.container = QRectF(fractionOffset, semanticTop,
+                            leftWidth + contentWidth + rightWidth,
+                            semanticHeight);
+  result.fraction = QRectF(fractionLeft, fractionTop, contentWidth,
+                           fractionHeight);
+  result.numerator = QRectF(
+      fractionLeft + 1.0 + (contentWidth - 2.0 - numeratorWidth) / 2.0,
+      fractionTop, numeratorWidth, numeratorHeight);
+  result.denominator = QRectF(
+      fractionLeft + 1.0 + (contentWidth - 2.0 - denominatorWidth) / 2.0,
+      fractionTop + fractionHeight - denominatorHeight,
+      denominatorWidth, denominatorHeight);
+  result.leftDelimiter = QRectF(fractionOffset, semanticTop, leftWidth,
+                                semanticHeight);
+  result.rightDelimiter = QRectF(fractionLeft + contentWidth, semanticTop,
+                                  rightWidth, semanticHeight);
+  result.leftDelimiterCharacter = mathDelimiterCharacter(fraction->leftDelimiter);
+  result.rightDelimiterCharacter = mathDelimiterCharacter(fraction->rightDelimiter);
+
+  const auto appendChildren = [&](const MathRenderNode* row, QRectF rowRect) {
+    QVector<const MathRenderNode*> nestedFractions;
+    collectImmediateFractions(row, &nestedFractions);
+    for (const MathRenderNode* nested : nestedFractions) {
+      const qreal nestedLeft = rowRect.left() + cssNodeOffset(
+          row, nested, renderScale).value_or(0.0);
+      const qreal nestedFractionHeight = nestedFractionCssHeight(
+          nested, cssRootFontPixelSize, renderScale);
+      qreal nestedHeight = nestedFractionHeight;
+      qreal delimiterTarget = nestedFractionHeight;
+      if (nested->fractionHasBarLine) {
+        delimiterTarget += nested->fractionLineThicknessEm >= 0.0
+            ? nested->fractionLineThicknessEm * cssRootFontPixelSize *
+                  nested->fractionSizeMultiplier
+            : OpenTypeMathFont::instance().constants().fractionRuleThickness *
+                  nested->fractionSizeMultiplier;
+      }
+      nestedHeight = std::max(nestedHeight, std::ceil(
+          fractionDelimiterExtent(nested, delimiterTarget)));
+      const qreal nestedTop = rowRect.top() +
+          (rowRect.height() - nestedHeight) / 2.0;
+      if (auto child = buildFractionOperation(
+              nested, nestedLeft, nestedTop, nestedHeight,
+              renderScale, cssRootFontPixelSize, true))
+        operation.children.push_back(std::move(*child));
+    }
+  };
+  appendChildren(metrics->numerator, result.numerator);
+  appendChildren(metrics->denominator, result.denominator);
+  const auto appendScripts = [&](const MathRenderNode* row, QRectF rowRect) {
+    QVector<const MathRenderNode*> scripts;
+    collectImmediateScripts(row, &scripts);
+    for (const MathRenderNode* script : scripts) {
+      if (auto child = buildScriptOperation(
+              script, row, rowRect, renderScale))
+        operation.scripts.push_back(std::move(*child));
+    }
+  };
+  appendScripts(metrics->numerator, result.numerator);
+  appendScripts(metrics->denominator, result.denominator);
+  const auto appendRadicals = [&](const MathRenderNode* row, QRectF rowRect) {
+    QVector<const MathRenderNode*> radicals;
+    collectImmediateRadicals(row, &radicals);
+    for (const MathRenderNode* radical : radicals) {
+      if (auto child = buildRadicalOperation(
+              radical, row, rowRect, renderScale))
+        operation.radicals.push_back(std::move(*child));
+    }
+  };
+  appendRadicals(metrics->numerator, result.numerator);
+  appendRadicals(metrics->denominator, result.denominator);
+
+  const auto rowLineAscent = [&](const MathRenderNode* row, QRectF rowRect) {
+    for (const MathCssFractionOperation& child : operation.children) {
+      if (child.box.container.intersects(rowRect))
+        return child.box.container.top() - rowRect.top() + child.lineAscent;
+    }
+    for (const MathCssScriptOperation& child : operation.scripts) {
+      if (child.container.intersects(rowRect))
+        return child.container.top() - rowRect.top() + child.lineAscent;
+    }
+    for (const MathCssRadicalOperation& child : operation.radicals) {
+      if (child.container.intersects(rowRect))
+        return child.container.top() - rowRect.top() + child.lineAscent;
+    }
+    const qreal operatorLeading = symbolCount(row) > 1 ? 1.0 : 0.0;
+    return std::max<qreal>(0.0, rowRect.height() - operatorLeading);
+  };
+  const qreal numeratorAscent = rowLineAscent(
+      metrics->numerator, result.numerator);
+  const qreal denominatorAscent = rowLineAscent(
+      metrics->denominator, result.denominator);
+  const MathFontConstants& constants = OpenTypeMathFont::instance().constants();
+  if (result.hasRule) {
+    operation.lineAscent = std::max({
+        metrics->numeratorShift + numeratorAscent,
+        -metrics->denominatorShift + denominatorAscent,
+        constants.axisHeight + metrics->ruleThickness / 2.0});
+    const qreal ruleCenter = fractionTop + operation.lineAscent -
+                             constants.axisHeight;
+    result.rule = QRectF(fractionLeft + 1.0,
+                         ruleCenter - metrics->ruleThickness / 2.0,
+                         contentWidth - 2.0, metrics->ruleThickness);
+  } else {
+    operation.lineAscent = metrics->extents.top;
+  }
+  return operation;
+}
+
+}  // namespace
+
+std::optional<MathCssFractionOperation> layoutMathMlFractionOperations(
+    const MathLayoutResult& layout, qreal renderFontPixelSize,
+    qreal cssRootFontPixelSize) {
+  if (!layout.valid() || renderFontPixelSize <= 0.0 ||
+      cssRootFontPixelSize <= 0.0)
+    return std::nullopt;
+  const qreal renderScale = cssRootFontPixelSize / renderFontPixelSize;
+  const MathRenderNode* fraction = primarySemanticNode(layout.root.get());
+  if (!fraction || fraction->semanticKind != MathSemanticKind::Fraction)
+    return std::nullopt;
+  const MathCssBox root = layoutMathMlCssBox(
+      layout, renderFontPixelSize, cssRootFontPixelSize);
+  const qreal fractionOffset = cssNodeOffset(
+      layout.root.get(), fraction, renderScale).value_or(0.0);
+  return buildFractionOperation(
+      fraction, fractionOffset, 0.0, root.height, renderScale,
+      cssRootFontPixelSize, false);
+}
+
+std::optional<MathCssFractionBox> layoutMathMlFractionBox(
+    const MathLayoutResult& layout, qreal renderFontPixelSize,
+    qreal cssRootFontPixelSize) {
+  const auto operation = layoutMathMlFractionOperations(
+      layout, renderFontPixelSize, cssRootFontPixelSize);
+  return operation ? std::optional<MathCssFractionBox>{operation->box}
+                   : std::nullopt;
 }
 
 }  // namespace muffin::math
