@@ -39,13 +39,13 @@ int main(int argc,char** argv) {
               root.value(QStringLiteral("fontMode")).toString()==
                   QLatin1String("bundled-noto-stix-two-math-2.13b171")&&
               root.value(QStringLiteral("fixtureSha256")).toString()==
-                  QLatin1String("f3e26089aeeedceba115cad5d67c8f898f2de50b617d0584efb8c6ff75ebd9ff"),
+                  QLatin1String("bf8fe5285d487f7c8e36a1bfbb2e5b03f85dc52f26a1b2510a195f8b2c891844"),
           QStringLiteral("Sequence SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;
   int mathCases=0,foreignObjectCases=0,ariaCases=0,labelCases=0,domEntries=0,markerEntries=0;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==30,QStringLiteral("Sequence SVG structural matrix regressed"));
+  require(cases.size()==38,QStringLiteral("Sequence SVG structural matrix regressed"));
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject();
     const QString id=fixture.value(QStringLiteral("id")).toString();

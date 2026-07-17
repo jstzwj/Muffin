@@ -56,6 +56,9 @@ const formulas = [
   ["matrix-3x3", "\\begin{matrix}a&b&c\\\\d&e&f\\\\g&h&i\\end{matrix}"],
   ["fraction-sup", "\\frac{x_i^2}{y_j^3}"],
   ["fraction-radical", "\\frac{\\sqrt{x+1}}{\\sqrt{y}}"],
+  ["radical-script-fraction", "\\sqrt{x^{\\frac{a}{b}}}"],
+  ["script-radical-fraction", "x_{\\sqrt{\\frac{a}{b}}}"],
+  ["fraction-cross-recursive", "\\frac{\\sqrt{x_i^2}}{y^{\\frac{a}{b}}}"],
   ["sqrt-fraction", "\\sqrt{\\frac{a}{b}}"],
   ["greek-row", "\\alpha+\\beta=\\gamma"],
   ["relations", "x\\le y\\ne z"],
@@ -91,6 +94,9 @@ const formulas = [
   ["accent-under-arrow", "\\underleftrightarrow{x+y}"],
   ["tall-delimiter-assembly", "\\left\\{\\begin{matrix}a\\\\b\\\\c\\\\d\\\\e\\\\f\\end{matrix}\\right."],
   ["nested-mathml-structure", "\\left(\\frac{\\underbrace{x+y}_{n}}{\\genfrac{[}{]}{0pt}{}{a}{b}}\\right)"],
+  ["accent-fraction-recursive", "\\underbrace{\\frac{a}{b}}_{n}"],
+  ["accent-radical-recursive", "\\overbrace{\\sqrt{x_i^2}}^{n}"],
+  ["accent-array-recursive", "\\underbrace{\\begin{matrix}\\frac{a}{b}&\\sqrt{x_i^2}\\\\c&d\\end{matrix}}_{n}"],
 ];
 const cases = [];
 for (const [id, tex] of formulas) cases.push({id, tex, fontSize: 16, dpr: 1});

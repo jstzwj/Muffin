@@ -73,6 +73,10 @@ const cases = [
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{x_i^2}{y_j^3}$$\nB-->>A:done" },
   { id: "label-math-fraction-radical-ops", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{\\sqrt{x+1}}{\\sqrt{y}}$$\nB-->>A:done" },
+  { id: "label-math-radical-script-fraction-ops", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt{x^{\\frac{a}{b}}}$$\nB-->>A:done" },
+  { id: "label-math-fraction-cross-recursive-ops", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{\\sqrt{x_i^2}}{y^{\\frac{a}{b}}}$$\nB-->>A:done" },
   { id: "label-math-underbrace", dpr: 1.5, theme: "dark",
     cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{x+y}_{n}$$' },
@@ -81,8 +85,20 @@ const cases = [
   { id: "label-math-overbrace", dpr: 2, theme: "dark",
     cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{x+y}^{n}$$' },
+  { id: "label-math-accent-fraction-recursive", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{\\frac{a}{b}}_{n}$$" },
+  { id: "label-math-accent-radical-recursive", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{\\sqrt{x_i^2}}^{n}$$" },
+  { id: "label-math-accent-array-recursive", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{\\begin{matrix}\\frac{a}{b}&\\sqrt{x_i^2}\\\\c&d\\end{matrix}}_{n}$$' },
   { id: "label-math-tall-assembly", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\{\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right.$$" },
+  { id: "label-math-matrix-basic", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{matrix}a&b\\\\c&d\\end{matrix}$$" },
+  { id: "label-math-matrix-recursive", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{matrix}\\frac{a}{b}&x^2\\\\\\sqrt{y}&z_i\\end{matrix}$$" },
+  { id: "label-math-cases", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{cases}x^2&x>0\\\\-x&x\\le0\\end{cases}$$" },
   { id: "structural-aria", source: "sequenceDiagram\naccTitle: Checkout sequence\naccDescr: Client request lifecycle\nA->>B:go" },
   { id: "structural-combined-order", source: [
       '%%{init: {"sequence": {"mirrorActors": false, "hideUnusedParticipants": true}}}%%',
@@ -183,6 +199,8 @@ try {
           for(const child of node.querySelectorAll("*")) child.style.visibility="visible";
         }
       },cases[i].cropCount ?? (cases[i].cropFirst ? 1 : 0));
+      await page.evaluate(()=>new Promise((resolve)=>
+        requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       await page.screenshot({path:path.join(outDir,cropFile),omitBackground:true,clip});
     }
     const sha256=createHash("sha256").update(fs.readFileSync(path.join(outDir,file))).digest("hex");

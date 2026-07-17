@@ -4277,6 +4277,649 @@
       }
     },
     {
+      "id": "radical-script-fraction",
+      "tex": "\\sqrt{x^{\\frac{a}{b}}}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$\\sqrt{x^{\\frac{a}{b}}}$$ Hg",
+      "foreignObject": {
+        "x": 135,
+        "y": 129,
+        "width": 79,
+        "height": 30
+      },
+      "math": {
+        "x": 156.703,
+        "y": 129,
+        "width": 35.859,
+        "height": 30.234
+      },
+      "text": {
+        "x": 135,
+        "y": 133.109,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 150,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 35.859,
+        "height": 30.234,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\"",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 35.859,
+            "height": 30.234,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\"",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/msqrt:0",
+                "tag": "msqrt",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 35.859,
+                "height": 30.234,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\"",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/msqrt:0/msup:0",
+                    "tag": "msup",
+                    "x": 16.641,
+                    "y": 5.031,
+                    "parentX": 16.641,
+                    "parentY": 5.031,
+                    "width": 16.469,
+                    "height": 20,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/msqrt:0/msup:0/mi:0",
+                        "tag": "mi",
+                        "x": 16.641,
+                        "y": 17.031,
+                        "parentX": 0,
+                        "parentY": 12,
+                        "width": 8.953,
+                        "height": 8,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "x",
+                        "textRect": {
+                          "x": 16.641,
+                          "y": 13.031,
+                          "width": 8.953,
+                          "height": 16
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/msqrt:0/msup:0/mfrac:0",
+                        "tag": "mfrac",
+                        "x": 25.594,
+                        "y": 5.031,
+                        "parentX": 8.953,
+                        "parentY": 0,
+                        "width": 6.891,
+                        "height": 18.094,
+                        "display": "block math",
+                        "fontSize": "11.2px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "children": [
+                          {
+                            "path": "math:0/mrow:0/msqrt:0/msup:0/mfrac:0/mi:0",
+                            "tag": "mi",
+                            "x": 26.594,
+                            "y": 5.031,
+                            "parentX": 1,
+                            "parentY": 0,
+                            "width": 4.891,
+                            "height": 5,
+                            "display": "block math",
+                            "fontSize": "8.8px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "a",
+                            "textRect": {
+                              "x": 26.594,
+                              "y": 3.031,
+                              "width": 4.891,
+                              "height": 9
+                            }
+                          },
+                          {
+                            "path": "math:0/mrow:0/msqrt:0/msup:0/mfrac:0/mi:1",
+                            "tag": "mi",
+                            "x": 26.75,
+                            "y": 16.125,
+                            "parentX": 1.156,
+                            "parentY": 11.094,
+                            "width": 4.563,
+                            "height": 7,
+                            "display": "block math",
+                            "fontSize": "8.8px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "b",
+                            "textRect": {
+                              "x": 26.75,
+                              "y": 16.125,
+                              "width": 4.563,
+                              "height": 9
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "script-radical-fraction",
+      "tex": "x_{\\sqrt{\\frac{a}{b}}}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$x_{\\sqrt{\\frac{a}{b}}}$$ Hg",
+      "foreignObject": {
+        "x": 138,
+        "y": 129,
+        "width": 73,
+        "height": 24
+      },
+      "math": {
+        "x": 159.703,
+        "y": 129,
+        "width": 30.031,
+        "height": 23.984
+      },
+      "text": {
+        "x": 138,
+        "y": 129.984,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 147,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 30.031,
+        "height": 23.984,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\"",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 30.031,
+            "height": 23.984,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\"",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/msub:0",
+                "tag": "msub",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 30.031,
+                "height": 23.984,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\"",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/msub:0/mi:0",
+                    "tag": "mi",
+                    "x": 0,
+                    "y": 0,
+                    "parentX": 0,
+                    "parentY": 0,
+                    "width": 8.953,
+                    "height": 8,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "text": "x",
+                    "textRect": {
+                      "x": 0,
+                      "y": -4,
+                      "width": 8.953,
+                      "height": 16
+                    }
+                  },
+                  {
+                    "path": "math:0/mrow:0/msub:0/msqrt:0",
+                    "tag": "msqrt",
+                    "x": 8.953,
+                    "y": 2.125,
+                    "parentX": 8.953,
+                    "parentY": 2.125,
+                    "width": 20.453,
+                    "height": 21.859,
+                    "display": "block math",
+                    "fontSize": "11.2px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/msub:0/msqrt:0/mfrac:0",
+                        "tag": "mfrac",
+                        "x": 20.61,
+                        "y": 4.672,
+                        "parentX": 11.657,
+                        "parentY": 2.547,
+                        "width": 6.891,
+                        "height": 18.094,
+                        "display": "block math",
+                        "fontSize": "11.2px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "children": [
+                          {
+                            "path": "math:0/mrow:0/msub:0/msqrt:0/mfrac:0/mi:0",
+                            "tag": "mi",
+                            "x": 21.61,
+                            "y": 4.672,
+                            "parentX": 1,
+                            "parentY": 0,
+                            "width": 4.891,
+                            "height": 5,
+                            "display": "block math",
+                            "fontSize": "8.8px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "a",
+                            "textRect": {
+                              "x": 21.609,
+                              "y": 2.672,
+                              "width": 4.891,
+                              "height": 9
+                            }
+                          },
+                          {
+                            "path": "math:0/mrow:0/msub:0/msqrt:0/mfrac:0/mi:1",
+                            "tag": "mi",
+                            "x": 21.766,
+                            "y": 15.766,
+                            "parentX": 1.156,
+                            "parentY": 11.094,
+                            "width": 4.563,
+                            "height": 7,
+                            "display": "block math",
+                            "fontSize": "8.8px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "b",
+                            "textRect": {
+                              "x": 21.766,
+                              "y": 15.766,
+                              "width": 4.563,
+                              "height": 9
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "fraction-cross-recursive",
+      "tex": "\\frac{\\sqrt{x_i^2}}{y^{\\frac{a}{b}}}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$\\frac{\\sqrt{x_i^2}}{y^{\\frac{a}{b}}}$$ Hg",
+      "foreignObject": {
+        "x": 135,
+        "y": 129,
+        "width": 80,
+        "height": 60
+      },
+      "math": {
+        "x": 156.703,
+        "y": 129,
+        "width": 36.516,
+        "height": 60.078
+      },
+      "text": {
+        "x": 135,
+        "y": 148.031,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 165,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 36.516,
+        "height": 60.078,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\"",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 36.516,
+            "height": 60.078,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\"",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/mfrac:0",
+                "tag": "mfrac",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 36.516,
+                "height": 60.078,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\"",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/mfrac:0/msqrt:0",
+                    "tag": "msqrt",
+                    "x": 1,
+                    "y": 0,
+                    "parentX": 1,
+                    "parentY": 0,
+                    "width": 34.516,
+                    "height": 30.234,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/mfrac:0/msqrt:0/msubsup:0",
+                        "tag": "msubsup",
+                        "x": 17.641,
+                        "y": 3.672,
+                        "parentX": 16.641,
+                        "parentY": 3.672,
+                        "width": 15.125,
+                        "height": 17.391,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "children": [
+                          {
+                            "path": "math:0/mrow:0/mfrac:0/msqrt:0/msubsup:0/mi:0",
+                            "tag": "mi",
+                            "x": 17.641,
+                            "y": 8.75,
+                            "parentX": 0,
+                            "parentY": 5.078,
+                            "width": 8.953,
+                            "height": 8,
+                            "display": "block math",
+                            "fontSize": "16px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "x",
+                            "textRect": {
+                              "x": 17.641,
+                              "y": 4.75,
+                              "width": 8.953,
+                              "height": 16
+                            }
+                          },
+                          {
+                            "path": "math:0/mrow:0/mfrac:0/msqrt:0/msubsup:0/mi:1",
+                            "tag": "mi",
+                            "x": 26.594,
+                            "y": 13.063,
+                            "parentX": 8.953,
+                            "parentY": 9.391,
+                            "width": 3.078,
+                            "height": 8,
+                            "display": "block math",
+                            "fontSize": "11.2px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "i",
+                            "textRect": {
+                              "x": 26.594,
+                              "y": 12.063,
+                              "width": 3.078,
+                              "height": 12
+                            }
+                          },
+                          {
+                            "path": "math:0/mrow:0/mfrac:0/msqrt:0/msubsup:0/mn:0",
+                            "tag": "mn",
+                            "x": 26.594,
+                            "y": 3.672,
+                            "parentX": 8.953,
+                            "parentY": 0,
+                            "width": 5.547,
+                            "height": 7,
+                            "display": "block math",
+                            "fontSize": "11.2px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "2",
+                            "textRect": {
+                              "x": 26.594,
+                              "y": 1.672,
+                              "width": 5.547,
+                              "height": 12
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "path": "math:0/mrow:0/mfrac:0/msup:0",
+                    "tag": "msup",
+                    "x": 10.406,
+                    "y": 36.078,
+                    "parentX": 10.406,
+                    "parentY": 36.078,
+                    "width": 15.688,
+                    "height": 24,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/mfrac:0/msup:0/mi:0",
+                        "tag": "mi",
+                        "x": 10.406,
+                        "y": 48.078,
+                        "parentX": 0,
+                        "parentY": 12,
+                        "width": 8.172,
+                        "height": 12,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "y",
+                        "textRect": {
+                          "x": 10.406,
+                          "y": 44.078,
+                          "width": 8.172,
+                          "height": 16
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/mfrac:0/msup:0/mfrac:0",
+                        "tag": "mfrac",
+                        "x": 18.578,
+                        "y": 36.078,
+                        "parentX": 8.172,
+                        "parentY": 0,
+                        "width": 6.891,
+                        "height": 18.094,
+                        "display": "block math",
+                        "fontSize": "11.2px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "children": [
+                          {
+                            "path": "math:0/mrow:0/mfrac:0/msup:0/mfrac:0/mi:0",
+                            "tag": "mi",
+                            "x": 19.578,
+                            "y": 36.078,
+                            "parentX": 1,
+                            "parentY": 0,
+                            "width": 4.891,
+                            "height": 5,
+                            "display": "block math",
+                            "fontSize": "8.8px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "a",
+                            "textRect": {
+                              "x": 19.578,
+                              "y": 34.078,
+                              "width": 4.891,
+                              "height": 9
+                            }
+                          },
+                          {
+                            "path": "math:0/mrow:0/mfrac:0/msup:0/mfrac:0/mi:1",
+                            "tag": "mi",
+                            "x": 19.735,
+                            "y": 47.172,
+                            "parentX": 1.157,
+                            "parentY": 11.094,
+                            "width": 4.563,
+                            "height": 7,
+                            "display": "block math",
+                            "fontSize": "8.8px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "b",
+                            "textRect": {
+                              "x": 19.734,
+                              "y": 47.172,
+                              "width": 4.563,
+                              "height": 9
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": "sqrt-fraction",
       "tex": "\\sqrt{\\frac{a}{b}}",
       "fontSize": 16,
@@ -13618,6 +14261,1015 @@
       }
     },
     {
+      "id": "accent-fraction-recursive",
+      "tex": "\\underbrace{\\frac{a}{b}}_{n}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$\\underbrace{\\frac{a}{b}}_{n}$$ Hg",
+      "foreignObject": {
+        "x": 148,
+        "y": 129,
+        "width": 54,
+        "height": 47
+      },
+      "math": {
+        "x": 169.703,
+        "y": 129,
+        "width": 10.891,
+        "height": 46.781
+      },
+      "text": {
+        "x": 148,
+        "y": 141.391,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 158.5,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 10.891,
+        "height": 46.781,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\"",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 10.891,
+            "height": 46.781,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\"",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/munder:0",
+                "tag": "munder",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 10.891,
+                "height": 46.781,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\"",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/munder:0/munder:0",
+                    "tag": "munder",
+                    "x": 0,
+                    "y": 0,
+                    "parentX": 0,
+                    "parentY": 0,
+                    "width": 10.891,
+                    "height": 36.906,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/munder:0/munder:0/mfrac:0",
+                        "tag": "mfrac",
+                        "x": 0,
+                        "y": 0,
+                        "parentX": 0,
+                        "parentY": 0,
+                        "width": 10.891,
+                        "height": 29.031,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "children": [
+                          {
+                            "path": "math:0/mrow:0/munder:0/munder:0/mfrac:0/mi:0",
+                            "tag": "mi",
+                            "x": 1,
+                            "y": 0,
+                            "parentX": 1,
+                            "parentY": 0,
+                            "width": 8.891,
+                            "height": 8,
+                            "display": "block math",
+                            "fontSize": "16px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "a",
+                            "textRect": {
+                              "x": 1,
+                              "y": -4,
+                              "width": 8.891,
+                              "height": 16
+                            }
+                          },
+                          {
+                            "path": "math:0/mrow:0/munder:0/munder:0/mfrac:0/mi:1",
+                            "tag": "mi",
+                            "x": 1.297,
+                            "y": 17.031,
+                            "parentX": 1.297,
+                            "parentY": 17.031,
+                            "width": 8.297,
+                            "height": 12,
+                            "display": "block math",
+                            "fontSize": "16px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "text": "b",
+                            "textRect": {
+                              "x": 1.297,
+                              "y": 17.031,
+                              "width": 8.297,
+                              "height": 16
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "path": "math:0/mrow:0/munder:0/munder:0/mo:0",
+                        "tag": "mo",
+                        "x": 1.922,
+                        "y": 31.828,
+                        "parentX": 1.922,
+                        "parentY": 31.828,
+                        "width": 7.047,
+                        "height": 4,
+                        "display": "block math",
+                        "fontSize": "11.2px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "attributes": {
+                          "stretchy": "true"
+                        },
+                        "text": "⏟",
+                        "textRect": {
+                          "x": 1.922,
+                          "y": 32.828,
+                          "width": 7.063,
+                          "height": 12
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "math:0/mrow:0/munder:0/mi:0",
+                    "tag": "mi",
+                    "x": 2.281,
+                    "y": 39.703,
+                    "parentX": 2.281,
+                    "parentY": 39.703,
+                    "width": 6.328,
+                    "height": 6,
+                    "display": "block math",
+                    "fontSize": "11.2px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "text": "n",
+                    "textRect": {
+                      "x": 2.281,
+                      "y": 36.703,
+                      "width": 6.328,
+                      "height": 12
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accent-radical-recursive",
+      "tex": "\\overbrace{\\sqrt{x_i^2}}^{n}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$\\overbrace{\\sqrt{x_i^2}}^{n}$$ Hg",
+      "foreignObject": {
+        "x": 136,
+        "y": 129,
+        "width": 78,
+        "height": 49
+      },
+      "math": {
+        "x": 157.703,
+        "y": 129,
+        "width": 34.516,
+        "height": 48.984
+      },
+      "text": {
+        "x": 136,
+        "y": 142.484,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 159.5,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 34.516,
+        "height": 48.984,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\"",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 34.516,
+            "height": 48.984,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\"",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/mover:0",
+                "tag": "mover",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 34.516,
+                "height": 48.984,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\"",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/mover:0/mover:0",
+                    "tag": "mover",
+                    "x": 0,
+                    "y": 9.875,
+                    "parentX": 0,
+                    "parentY": 9.875,
+                    "width": 34.516,
+                    "height": 39.109,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/mover:0/mover:0/msqrt:0",
+                        "tag": "msqrt",
+                        "x": 0,
+                        "y": 18.75,
+                        "parentX": 0,
+                        "parentY": 18.75,
+                        "width": 34.516,
+                        "height": 30.234,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "children": [
+                          {
+                            "path": "math:0/mrow:0/mover:0/mover:0/msqrt:0/msubsup:0",
+                            "tag": "msubsup",
+                            "x": 16.641,
+                            "y": 23.781,
+                            "parentX": 16.641,
+                            "parentY": 5.031,
+                            "width": 15.125,
+                            "height": 17.391,
+                            "display": "block math",
+                            "fontSize": "16px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "children": [
+                              {
+                                "path": "math:0/mrow:0/mover:0/mover:0/msqrt:0/msubsup:0/mi:0",
+                                "tag": "mi",
+                                "x": 16.641,
+                                "y": 28.859,
+                                "parentX": 0,
+                                "parentY": 5.078,
+                                "width": 8.953,
+                                "height": 8,
+                                "display": "block math",
+                                "fontSize": "16px",
+                                "fontFamily": "\"STIX Two Math\"",
+                                "lineHeight": "normal",
+                                "verticalAlign": "baseline",
+                                "text": "x",
+                                "textRect": {
+                                  "x": 16.641,
+                                  "y": 24.859,
+                                  "width": 8.953,
+                                  "height": 16
+                                }
+                              },
+                              {
+                                "path": "math:0/mrow:0/mover:0/mover:0/msqrt:0/msubsup:0/mi:1",
+                                "tag": "mi",
+                                "x": 25.594,
+                                "y": 33.172,
+                                "parentX": 8.953,
+                                "parentY": 9.391,
+                                "width": 3.078,
+                                "height": 8,
+                                "display": "block math",
+                                "fontSize": "11.2px",
+                                "fontFamily": "\"STIX Two Math\"",
+                                "lineHeight": "normal",
+                                "verticalAlign": "baseline",
+                                "text": "i",
+                                "textRect": {
+                                  "x": 25.594,
+                                  "y": 32.172,
+                                  "width": 3.078,
+                                  "height": 12
+                                }
+                              },
+                              {
+                                "path": "math:0/mrow:0/mover:0/mover:0/msqrt:0/msubsup:0/mn:0",
+                                "tag": "mn",
+                                "x": 25.594,
+                                "y": 23.781,
+                                "parentX": 8.953,
+                                "parentY": 0,
+                                "width": 5.547,
+                                "height": 7,
+                                "display": "block math",
+                                "fontSize": "11.2px",
+                                "fontFamily": "\"STIX Two Math\"",
+                                "lineHeight": "normal",
+                                "verticalAlign": "baseline",
+                                "text": "2",
+                                "textRect": {
+                                  "x": 25.594,
+                                  "y": 21.781,
+                                  "width": 5.547,
+                                  "height": 12
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "path": "math:0/mrow:0/mover:0/mover:0/mo:0",
+                        "tag": "mo",
+                        "x": 13.735,
+                        "y": 10.953,
+                        "parentX": 13.735,
+                        "parentY": 10.953,
+                        "width": 7.047,
+                        "height": 5,
+                        "display": "block math",
+                        "fontSize": "11.2px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "attributes": {
+                          "stretchy": "true"
+                        },
+                        "text": "⏞",
+                        "textRect": {
+                          "x": 13.734,
+                          "y": 11.953,
+                          "width": 7.063,
+                          "height": 12
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "math:0/mrow:0/mover:0/mi:0",
+                    "tag": "mi",
+                    "x": 14.094,
+                    "y": 1.078,
+                    "parentX": 14.094,
+                    "parentY": 1.078,
+                    "width": 6.328,
+                    "height": 6,
+                    "display": "block math",
+                    "fontSize": "11.2px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "text": "n",
+                    "textRect": {
+                      "x": 14.094,
+                      "y": -1.922,
+                      "width": 6.328,
+                      "height": 12
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "accent-array-recursive",
+      "tex": "\\underbrace{\\begin{matrix}\\frac{a}{b}&\\sqrt{x_i^2}\\\\c&d\\end{matrix}}_{n}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$\\underbrace{\\begin{matrix}\\frac{a}{b}&\\sqrt{x_i^2}\\\\c&d\\end{matrix}}_{n}$$ Hg",
+      "foreignObject": {
+        "x": 119,
+        "y": 129,
+        "width": 112,
+        "height": 76
+      },
+      "math": {
+        "x": 140.703,
+        "y": 129,
+        "width": 68.297,
+        "height": 76.109
+      },
+      "text": {
+        "x": 119,
+        "y": 156.047,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 173,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 68.297,
+        "height": 76.109,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\"",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 68.297,
+            "height": 76.109,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\"",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/munder:0",
+                "tag": "munder",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 68.297,
+                "height": 76.109,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\"",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/munder:0/munder:0",
+                    "tag": "munder",
+                    "x": 0,
+                    "y": 0,
+                    "parentX": 0,
+                    "parentY": 0,
+                    "width": 68.297,
+                    "height": 66.234,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/munder:0/munder:0/mtable:0",
+                        "tag": "mtable",
+                        "x": 0,
+                        "y": 0,
+                        "parentX": 0,
+                        "parentY": 0,
+                        "width": 68.297,
+                        "height": 57.359,
+                        "display": "table",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "attributes": {
+                          "rowspacing": "0.16em",
+                          "columnalign": "center center",
+                          "columnspacing": "1em"
+                        },
+                        "children": [
+                          {
+                            "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0",
+                            "tag": "mtr",
+                            "x": 0,
+                            "y": 0,
+                            "parentX": 0,
+                            "parentY": 0,
+                            "width": 68.297,
+                            "height": 37.797,
+                            "display": "table-row",
+                            "fontSize": "16px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "children": [
+                              {
+                                "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:0",
+                                "tag": "mtd",
+                                "x": 0,
+                                "y": 0,
+                                "parentX": 0,
+                                "parentY": 0,
+                                "width": 21,
+                                "height": 37.797,
+                                "display": "table-cell",
+                                "fontSize": "16px",
+                                "fontFamily": "\"STIX Two Math\"",
+                                "lineHeight": "normal",
+                                "verticalAlign": "baseline",
+                                "children": [
+                                  {
+                                    "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:0/mstyle:0",
+                                    "tag": "mstyle",
+                                    "x": 6.391,
+                                    "y": 5.172,
+                                    "parentX": 6.391,
+                                    "parentY": 5.172,
+                                    "width": 8.219,
+                                    "height": 24.719,
+                                    "display": "block math",
+                                    "fontSize": "16px",
+                                    "fontFamily": "\"STIX Two Math\"",
+                                    "lineHeight": "normal",
+                                    "verticalAlign": "baseline",
+                                    "attributes": {
+                                      "scriptlevel": "0",
+                                      "displaystyle": "false"
+                                    },
+                                    "children": [
+                                      {
+                                        "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:0/mstyle:0/mfrac:0",
+                                        "tag": "mfrac",
+                                        "x": 6.391,
+                                        "y": 5.172,
+                                        "parentX": 6.391,
+                                        "parentY": 5.172,
+                                        "width": 8.219,
+                                        "height": 24.719,
+                                        "display": "block math",
+                                        "fontSize": "16px",
+                                        "fontFamily": "\"STIX Two Math\"",
+                                        "lineHeight": "normal",
+                                        "verticalAlign": "baseline",
+                                        "children": [
+                                          {
+                                            "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:0/mstyle:0/mfrac:0/mi:0",
+                                            "tag": "mi",
+                                            "x": 7.391,
+                                            "y": 5.172,
+                                            "parentX": 1,
+                                            "parentY": 0,
+                                            "width": 6.219,
+                                            "height": 6,
+                                            "display": "block math",
+                                            "fontSize": "11.2px",
+                                            "fontFamily": "\"STIX Two Math\"",
+                                            "lineHeight": "normal",
+                                            "verticalAlign": "baseline",
+                                            "text": "a",
+                                            "textRect": {
+                                              "x": 7.391,
+                                              "y": 2.172,
+                                              "width": 6.219,
+                                              "height": 12
+                                            }
+                                          },
+                                          {
+                                            "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:0/mstyle:0/mfrac:0/mi:1",
+                                            "tag": "mi",
+                                            "x": 7.594,
+                                            "y": 21.891,
+                                            "parentX": 1.203,
+                                            "parentY": 16.719,
+                                            "width": 5.813,
+                                            "height": 8,
+                                            "display": "block math",
+                                            "fontSize": "11.2px",
+                                            "fontFamily": "\"STIX Two Math\"",
+                                            "lineHeight": "normal",
+                                            "verticalAlign": "baseline",
+                                            "text": "b",
+                                            "textRect": {
+                                              "x": 7.594,
+                                              "y": 20.891,
+                                              "width": 5.813,
+                                              "height": 12
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:1",
+                                "tag": "mtd",
+                                "x": 21,
+                                "y": 0,
+                                "parentX": 21,
+                                "parentY": 0,
+                                "width": 47.297,
+                                "height": 37.797,
+                                "display": "table-cell",
+                                "fontSize": "16px",
+                                "fontFamily": "\"STIX Two Math\"",
+                                "lineHeight": "normal",
+                                "verticalAlign": "baseline",
+                                "children": [
+                                  {
+                                    "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:1/mstyle:0",
+                                    "tag": "mstyle",
+                                    "x": 27.391,
+                                    "y": 3.781,
+                                    "parentX": 6.391,
+                                    "parentY": 3.781,
+                                    "width": 34.516,
+                                    "height": 30.234,
+                                    "display": "block math",
+                                    "fontSize": "16px",
+                                    "fontFamily": "\"STIX Two Math\"",
+                                    "lineHeight": "normal",
+                                    "verticalAlign": "baseline",
+                                    "attributes": {
+                                      "scriptlevel": "0",
+                                      "displaystyle": "false"
+                                    },
+                                    "children": [
+                                      {
+                                        "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:1/mstyle:0/msqrt:0",
+                                        "tag": "msqrt",
+                                        "x": 27.391,
+                                        "y": 3.781,
+                                        "parentX": 6.391,
+                                        "parentY": 3.781,
+                                        "width": 34.516,
+                                        "height": 30.234,
+                                        "display": "block math",
+                                        "fontSize": "16px",
+                                        "fontFamily": "\"STIX Two Math\"",
+                                        "lineHeight": "normal",
+                                        "verticalAlign": "baseline",
+                                        "children": [
+                                          {
+                                            "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:1/mstyle:0/msqrt:0/msubsup:0",
+                                            "tag": "msubsup",
+                                            "x": 44.031,
+                                            "y": 7.453,
+                                            "parentX": 16.64,
+                                            "parentY": 3.672,
+                                            "width": 15.125,
+                                            "height": 17.391,
+                                            "display": "block math",
+                                            "fontSize": "16px",
+                                            "fontFamily": "\"STIX Two Math\"",
+                                            "lineHeight": "normal",
+                                            "verticalAlign": "baseline",
+                                            "children": [
+                                              {
+                                                "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:1/mstyle:0/msqrt:0/msubsup:0/mi:0",
+                                                "tag": "mi",
+                                                "x": 44.031,
+                                                "y": 12.531,
+                                                "parentX": 0,
+                                                "parentY": 5.078,
+                                                "width": 8.953,
+                                                "height": 8,
+                                                "display": "block math",
+                                                "fontSize": "16px",
+                                                "fontFamily": "\"STIX Two Math\"",
+                                                "lineHeight": "normal",
+                                                "verticalAlign": "baseline",
+                                                "text": "x",
+                                                "textRect": {
+                                                  "x": 44.031,
+                                                  "y": 8.531,
+                                                  "width": 8.953,
+                                                  "height": 16
+                                                }
+                                              },
+                                              {
+                                                "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:1/mstyle:0/msqrt:0/msubsup:0/mi:1",
+                                                "tag": "mi",
+                                                "x": 52.985,
+                                                "y": 16.844,
+                                                "parentX": 8.954,
+                                                "parentY": 9.391,
+                                                "width": 3.078,
+                                                "height": 8,
+                                                "display": "block math",
+                                                "fontSize": "11.2px",
+                                                "fontFamily": "\"STIX Two Math\"",
+                                                "lineHeight": "normal",
+                                                "verticalAlign": "baseline",
+                                                "text": "i",
+                                                "textRect": {
+                                                  "x": 52.985,
+                                                  "y": 15.844,
+                                                  "width": 3.078,
+                                                  "height": 12
+                                                }
+                                              },
+                                              {
+                                                "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:0/mtd:1/mstyle:0/msqrt:0/msubsup:0/mn:0",
+                                                "tag": "mn",
+                                                "x": 52.985,
+                                                "y": 7.453,
+                                                "parentX": 8.954,
+                                                "parentY": 0,
+                                                "width": 5.547,
+                                                "height": 7,
+                                                "display": "block math",
+                                                "fontSize": "11.2px",
+                                                "fontFamily": "\"STIX Two Math\"",
+                                                "lineHeight": "normal",
+                                                "verticalAlign": "baseline",
+                                                "text": "2",
+                                                "textRect": {
+                                                  "x": 52.985,
+                                                  "y": 5.453,
+                                                  "width": 5.547,
+                                                  "height": 12
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:1",
+                            "tag": "mtr",
+                            "x": 0,
+                            "y": 37.797,
+                            "parentX": 0,
+                            "parentY": 37.797,
+                            "width": 68.297,
+                            "height": 19.563,
+                            "display": "table-row",
+                            "fontSize": "16px",
+                            "fontFamily": "\"STIX Two Math\"",
+                            "lineHeight": "normal",
+                            "verticalAlign": "baseline",
+                            "children": [
+                              {
+                                "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:1/mtd:0",
+                                "tag": "mtd",
+                                "x": 0,
+                                "y": 37.797,
+                                "parentX": 0,
+                                "parentY": 0,
+                                "width": 21,
+                                "height": 19.563,
+                                "display": "table-cell",
+                                "fontSize": "16px",
+                                "fontFamily": "\"STIX Two Math\"",
+                                "lineHeight": "normal",
+                                "verticalAlign": "baseline",
+                                "children": [
+                                  {
+                                    "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:1/mtd:0/mstyle:0",
+                                    "tag": "mstyle",
+                                    "x": 7.188,
+                                    "y": 45.578,
+                                    "parentX": 7.188,
+                                    "parentY": 7.781,
+                                    "width": 6.625,
+                                    "height": 8,
+                                    "display": "block math",
+                                    "fontSize": "16px",
+                                    "fontFamily": "\"STIX Two Math\"",
+                                    "lineHeight": "normal",
+                                    "verticalAlign": "baseline",
+                                    "attributes": {
+                                      "scriptlevel": "0",
+                                      "displaystyle": "false"
+                                    },
+                                    "children": [
+                                      {
+                                        "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:1/mtd:0/mstyle:0/mi:0",
+                                        "tag": "mi",
+                                        "x": 7.188,
+                                        "y": 45.578,
+                                        "parentX": 7.188,
+                                        "parentY": 7.781,
+                                        "width": 6.625,
+                                        "height": 8,
+                                        "display": "block math",
+                                        "fontSize": "16px",
+                                        "fontFamily": "\"STIX Two Math\"",
+                                        "lineHeight": "normal",
+                                        "verticalAlign": "baseline",
+                                        "text": "c",
+                                        "textRect": {
+                                          "x": 7.188,
+                                          "y": 41.578,
+                                          "width": 6.625,
+                                          "height": 16
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              },
+                              {
+                                "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:1/mtd:1",
+                                "tag": "mtd",
+                                "x": 21,
+                                "y": 37.797,
+                                "parentX": 21,
+                                "parentY": 0,
+                                "width": 47.297,
+                                "height": 19.563,
+                                "display": "table-cell",
+                                "fontSize": "16px",
+                                "fontFamily": "\"STIX Two Math\"",
+                                "lineHeight": "normal",
+                                "verticalAlign": "baseline",
+                                "children": [
+                                  {
+                                    "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:1/mtd:1/mstyle:0",
+                                    "tag": "mstyle",
+                                    "x": 40.188,
+                                    "y": 41.578,
+                                    "parentX": 19.188,
+                                    "parentY": 3.781,
+                                    "width": 8.906,
+                                    "height": 12,
+                                    "display": "block math",
+                                    "fontSize": "16px",
+                                    "fontFamily": "\"STIX Two Math\"",
+                                    "lineHeight": "normal",
+                                    "verticalAlign": "baseline",
+                                    "attributes": {
+                                      "scriptlevel": "0",
+                                      "displaystyle": "false"
+                                    },
+                                    "children": [
+                                      {
+                                        "path": "math:0/mrow:0/munder:0/munder:0/mtable:0/mtr:1/mtd:1/mstyle:0/mi:0",
+                                        "tag": "mi",
+                                        "x": 40.188,
+                                        "y": 41.578,
+                                        "parentX": 19.188,
+                                        "parentY": 3.781,
+                                        "width": 8.906,
+                                        "height": 12,
+                                        "display": "block math",
+                                        "fontSize": "16px",
+                                        "fontFamily": "\"STIX Two Math\"",
+                                        "lineHeight": "normal",
+                                        "verticalAlign": "baseline",
+                                        "text": "d",
+                                        "textRect": {
+                                          "x": 40.188,
+                                          "y": 41.578,
+                                          "width": 8.906,
+                                          "height": 16
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "path": "math:0/mrow:0/munder:0/munder:0/mo:0",
+                        "tag": "mo",
+                        "x": 30.625,
+                        "y": 60.156,
+                        "parentX": 30.625,
+                        "parentY": 60.156,
+                        "width": 7.047,
+                        "height": 5,
+                        "display": "block math",
+                        "fontSize": "11.2px",
+                        "fontFamily": "\"STIX Two Math\"",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "attributes": {
+                          "stretchy": "true"
+                        },
+                        "text": "⏟",
+                        "textRect": {
+                          "x": 30.625,
+                          "y": 61.156,
+                          "width": 7.063,
+                          "height": 12
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "math:0/mrow:0/munder:0/mi:0",
+                    "tag": "mi",
+                    "x": 30.985,
+                    "y": 69.031,
+                    "parentX": 30.985,
+                    "parentY": 69.031,
+                    "width": 6.328,
+                    "height": 6,
+                    "display": "block math",
+                    "fontSize": "11.2px",
+                    "fontFamily": "\"STIX Two Math\"",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "text": "n",
+                    "textRect": {
+                      "x": 30.984,
+                      "y": 66.031,
+                      "width": 6.328,
+                      "height": 12
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": "sup-18px",
       "tex": "x^2",
       "fontSize": 18,
@@ -18263,5 +19915,5 @@
       }
     }
   ],
-  "fixtureSha256": "47c3e447d384606073d8df70acc3addd0d4187e9b1524ccb1b9bd63cf5b9329f"
+  "fixtureSha256": "a8084c306326177b3b492961142e10597bfc884759a00eb43814e105cfcd0a95"
 }

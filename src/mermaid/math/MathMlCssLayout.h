@@ -6,6 +6,7 @@
 #include <QVector>
 
 #include <optional>
+#include <variant>
 
 namespace muffin::math {
 
@@ -84,15 +85,73 @@ struct MathCssRadicalOperation {
   quint32 glyphIndex = 0;
 };
 
-struct MathCssFractionOperation {
+struct MathCssFractionPaint {
   MathCssFractionBox box;
   qreal lineAscent = 0.0;
   const MathRenderNode* numeratorNode = nullptr;
   const MathRenderNode* denominatorNode = nullptr;
   bool nested = false;
-  QVector<MathCssFractionOperation> children;
-  QVector<MathCssScriptOperation> scripts;
-  QVector<MathCssRadicalOperation> radicals;
+};
+
+struct MathCssArrayCell {
+  int row = 0;
+  int column = 0;
+  QRectF box;
+  QRectF content;
+  const MathRenderNode* contentNode = nullptr;
+};
+
+struct MathCssArrayOperation {
+  QRectF container;
+  QRectF table;
+  QVector<QRectF> rows;
+  QVector<MathCssArrayCell> cells;
+  QRectF leftDelimiter;
+  QRectF rightDelimiter;
+  QString leftDelimiterCharacter;
+  QString rightDelimiterCharacter;
+  qreal lineAscent = 0.0;
+};
+
+struct MathCssAccentOperation {
+  MathCssAccentBox box;
+  QRectF container;
+  QRectF annotationContent;
+  const MathRenderNode* bodyNode = nullptr;
+  const MathRenderNode* annotationNode = nullptr;
+  QPointF bodySourceOrigin;
+  QPointF annotationSourceOrigin;
+  bool hasBodySourceOrigin = false;
+  bool hasAnnotationSourceOrigin = false;
+  bool bodyUsesLayoutScale = false;
+  bool fixedVariantUsesNaturalScale = false;
+  qreal fixedVariantTargetWidth = 0.0;
+  qreal lineAscent = 0.0;
+};
+
+enum class MathCssPaintKind {
+  Fraction,
+  Radical,
+  SupSub,
+  Array,
+  Accent
+};
+
+using MathCssPaintPayload = std::variant<MathCssFractionPaint,
+                                         MathCssScriptOperation,
+                                         MathCssRadicalOperation,
+                                         MathCssArrayOperation,
+                                         MathCssAccentOperation>;
+
+struct MathCssPaintOperation {
+  MathCssPaintPayload payload;
+  QVector<MathCssPaintOperation> children;
+
+  MathCssPaintKind kind() const;
+  MathSemanticKind semanticKind() const;
+  QRectF container() const;
+  qreal lineAscent() const;
+  qreal alignmentBaseline() const;
 };
 
 // Models Chromium's native MathML CSS boxes produced by Mermaid/KaTeX. The
@@ -107,7 +166,7 @@ std::optional<MathCssAccentBox> layoutMathMlAccentBox(
 std::optional<MathCssFractionBox> layoutMathMlFractionBox(
     const MathLayoutResult& layout, qreal renderFontPixelSize,
     qreal cssRootFontPixelSize = 16.0);
-std::optional<MathCssFractionOperation> layoutMathMlFractionOperations(
+std::optional<MathCssPaintOperation> layoutMathMlPaintOperations(
     const MathLayoutResult& layout, qreal renderFontPixelSize,
     qreal cssRootFontPixelSize = 16.0);
 

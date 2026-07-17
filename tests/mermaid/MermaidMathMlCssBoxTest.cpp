@@ -1,4 +1,4 @@
-#include "math/MathCssBox.h"
+#include "mermaid/math/MathMlCssLayout.h"
 #include "math/MathRenderer.h"
 #include "math/OpenTypeMathFont.h"
 
@@ -41,6 +41,89 @@ void collectNodes(const QJsonObject& node, QStringView tag,
   if (node.value(QStringLiteral("tag")).toString() == tag) nodes->push_back(node);
   for (const QJsonValue& child : node.value(QStringLiteral("children")).toArray())
     collectNodes(child.toObject(), tag, nodes);
+}
+
+const math::MathCssFractionPaint* fractionPaint(
+    const math::MathCssPaintOperation& operation) {
+  return std::get_if<math::MathCssFractionPaint>(&operation.payload);
+}
+
+QVector<const math::MathCssPaintOperation*> childrenOfKind(
+    const math::MathCssPaintOperation& operation,
+    math::MathSemanticKind kind) {
+  QVector<const math::MathCssPaintOperation*> result;
+  for (const auto& child : operation.children)
+    if (child.semanticKind() == kind) result.push_back(&child);
+  return result;
+}
+
+int semanticNodeCount(const math::MathRenderNode* node) {
+  if (!node) return 0;
+  int result = node->semanticKind == math::MathSemanticKind::Fraction ||
+                       node->semanticKind == math::MathSemanticKind::Radical ||
+                       node->semanticKind == math::MathSemanticKind::SupSub ||
+                       node->semanticKind == math::MathSemanticKind::Array
+                   ? 1
+                   : 0;
+  for (const auto& child : node->children)
+    result += semanticNodeCount(child.get());
+  return result;
+}
+
+int paintOperationCount(const math::MathCssPaintOperation& operation) {
+  int result = 1;
+  for (const auto& child : operation.children)
+    result += paintOperationCount(child);
+  return result;
+}
+
+bool hasOperationPath(const math::MathCssPaintOperation& operation,
+                      std::initializer_list<math::MathSemanticKind> path) {
+  if (path.size() == 0 || operation.semanticKind() != *path.begin())
+    return false;
+  auto next = path.begin();
+  ++next;
+  const math::MathCssPaintOperation* current = &operation;
+  for (; next != path.end(); ++next) {
+    const auto child = std::find_if(
+        current->children.cbegin(), current->children.cend(),
+        [&](const math::MathCssPaintOperation& candidate) {
+          return candidate.semanticKind() == *next;
+        });
+    if (child == current->children.cend()) return false;
+    current = &*child;
+  }
+  return true;
+}
+
+bool hasPaintKindPath(const math::MathCssPaintOperation& operation,
+                      std::initializer_list<math::MathCssPaintKind> path) {
+  if (path.size() == 0 || operation.kind() != *path.begin()) return false;
+  auto next = path.begin();
+  ++next;
+  const math::MathCssPaintOperation* current = &operation;
+  for (; next != path.end(); ++next) {
+    const auto child = std::find_if(
+        current->children.cbegin(), current->children.cend(),
+        [&](const math::MathCssPaintOperation& candidate) {
+          return candidate.kind() == *next;
+        });
+    if (child == current->children.cend()) return false;
+    current = &*child;
+  }
+  return true;
+}
+
+QString paintKindTree(const math::MathCssPaintOperation& operation) {
+  QString result = QString::number(static_cast<int>(operation.kind()));
+  if (!operation.children.isEmpty()) {
+    QStringList children;
+    for (const auto& child : operation.children)
+      children.push_back(paintKindTree(child));
+    result += QLatin1Char('(') + children.join(QLatin1Char(',')) +
+              QLatin1Char(')');
+  }
+  return result;
 }
 
 const math::MathRenderNode* findArray(const math::MathRenderNode* node) {
@@ -94,7 +177,7 @@ int main(int argc, char** argv) {
                 QLatin1String("bundled-noto-stix-two-math-2.13b171"),
             QStringLiteral("MathML CSS box must use the fixed STIX oracle"));
     require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-                QLatin1String("47c3e447d384606073d8df70acc3addd0d4187e9b1524ccb1b9bd63cf5b9329f"),
+                QLatin1String("a8084c306326177b3b492961142e10597bfc884759a00eb43814e105cfcd0a95"),
             QStringLiteral("MathML CSS box fixture changed; regenerate and audit"));
 
     const math::OpenTypeMathFont& mathFont = math::OpenTypeMathFont::instance();
@@ -123,7 +206,7 @@ int main(int argc, char** argv) {
     near(radicalVariant->extent, 37.936, 0.001,
          QStringLiteral("MATH radical variant extent"));
     const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-    require(cases.size() == 85, QStringLiteral("MathML CSS box case count regressed"));
+    require(cases.size() == 91, QStringLiteral("MathML CSS box case count regressed"));
     math::MathRenderer renderer;
     QSet<QString> tags;
     QHash<QString, QSizeF> invariantBoxes;
@@ -210,6 +293,10 @@ int main(int argc, char** argv) {
              id + QStringLiteral(" arrow y"));
         near(accentBox->accent.height(), 7.0, 0.02,
              id + QStringLiteral(" arrow height"));
+        const auto operation = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operation && operation->kind() == math::MathCssPaintKind::Accent,
+                id + QStringLiteral(" accent operation is missing"));
       }
       const math::MathCssBox box = math::layoutMathMlCssBox(layout, kKatexRootFontSize);
       const QJsonObject expected = fixture.value(QStringLiteral("math")).toObject();
@@ -223,27 +310,79 @@ int main(int argc, char** argv) {
       collectTags(fixture.value(QStringLiteral("tree")).toObject(), &tags);
 
       const QJsonObject tree = fixture.value(QStringLiteral("tree")).toObject();
+      if (id == QLatin1String("matrix-2x2") ||
+          id == QLatin1String("matrix-3x3") ||
+          id == QLatin1String("matrix-fractions") ||
+          id == QLatin1String("aligned-equations") ||
+          id == QLatin1String("cases-piecewise") ||
+          id == QLatin1String("tall-delimiter-assembly")) {
+        QVector<QJsonObject> tables;
+        QVector<QJsonObject> rows;
+        QVector<QJsonObject> cells;
+        QVector<QJsonObject> contents;
+        collectNodes(tree, u"mtable", &tables);
+        collectNodes(tree, u"mtr", &rows);
+        collectNodes(tree, u"mtd", &cells);
+        collectNodes(tree, u"mstyle", &contents);
+        const auto operations = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        const auto* array = operations
+            ? std::get_if<math::MathCssArrayOperation>(&operations->payload)
+            : nullptr;
+        require(array && tables.size() == 1 &&
+                    rows.size() == array->rows.size() &&
+                    cells.size() == array->cells.size() &&
+                    contents.size() == array->cells.size(),
+                id + QStringLiteral(" array operation structure drifted"));
+        const auto compare = [&](QRectF actual, const QJsonObject& browser,
+                                 QStringView component) {
+          near(actual.x(), browser.value(QStringLiteral("x")).toDouble(), 0.22,
+               id + QLatin1Char(' ') + component + QStringLiteral(" x"));
+          near(actual.y(), browser.value(QStringLiteral("y")).toDouble(), 0.22,
+               id + QLatin1Char(' ') + component + QStringLiteral(" y"));
+          near(actual.width(), browser.value(QStringLiteral("width")).toDouble(),
+               0.22, id + QLatin1Char(' ') + component + QStringLiteral(" width"));
+          near(actual.height(), browser.value(QStringLiteral("height")).toDouble(),
+               0.22, id + QLatin1Char(' ') + component + QStringLiteral(" height"));
+        };
+        compare(array->table, tables.front(), u"table");
+        for (qsizetype index = 0; index < rows.size(); ++index)
+          compare(array->rows.at(index), rows.at(index), u"row");
+        for (qsizetype index = 0; index < cells.size(); ++index) {
+          compare(array->cells.at(index).box, cells.at(index), u"cell");
+          compare(array->cells.at(index).content, contents.at(index),
+                  u"cell content");
+        }
+        if (id == QLatin1String("matrix-fractions"))
+          require(paintOperationCount(*operations) ==
+                      semanticNodeCount(layout.root.get()),
+                  id + QStringLiteral(" array cell operation ownership drifted: %1/%2")
+                           .arg(paintOperationCount(*operations))
+                           .arg(semanticNodeCount(layout.root.get())));
+      }
       if (id == QLatin1String("fraction-nested")) {
         QVector<QJsonObject> fractions;
         collectNodes(tree, u"mfrac", &fractions);
         require(fractions.size() == 2,
                 id + QStringLiteral(" browser nesting drifted"));
-        const auto operations = math::layoutMathMlFractionOperations(
+        const auto operations = math::layoutMathMlPaintOperations(
             layout, kKatexRootFontSize);
         require(operations.has_value() && operations->children.size() == 1 &&
                     operations->children.front().children.isEmpty(),
                 id + QStringLiteral(" must produce a two-level operation tree"));
-        const auto compareFraction = [&](const math::MathCssFractionOperation& op,
+        const auto compareFraction = [&](const math::MathCssPaintOperation& op,
                                          const QJsonObject& browser,
                                          QStringView name) {
-          near(op.box.fraction.x(), browser.value(QStringLiteral("x")).toDouble(),
+          const auto* fraction = fractionPaint(op);
+          require(fraction, id + QStringLiteral(" operation kind drifted"));
+          near(fraction->box.fraction.x(), browser.value(QStringLiteral("x")).toDouble(),
                0.22, id + QLatin1Char(' ') + name + QStringLiteral(" x"));
-          near(op.box.fraction.y(), browser.value(QStringLiteral("y")).toDouble(),
+          near(fraction->box.fraction.y(), browser.value(QStringLiteral("y")).toDouble(),
                0.22, id + QLatin1Char(' ') + name + QStringLiteral(" y"));
-          near(op.box.fraction.width(),
+          near(fraction->box.fraction.width(),
                browser.value(QStringLiteral("width")).toDouble(), 0.22,
                id + QLatin1Char(' ') + name + QStringLiteral(" width"));
-          near(op.box.fraction.height(),
+          near(fraction->box.fraction.height(),
                browser.value(QStringLiteral("height")).toDouble(), 0.22,
                id + QLatin1Char(' ') + name + QStringLiteral(" height"));
         };
@@ -266,12 +405,14 @@ int main(int argc, char** argv) {
                browser.value(QStringLiteral("height")).toDouble(), 0.22,
                id + QLatin1Char(' ') + name + QStringLiteral(" height"));
         };
-        compareChild(operations->children.front().box.numerator,
+        const auto* outer = fractionPaint(*operations);
+        const auto* inner = fractionPaint(operations->children.front());
+        require(outer && inner, id + QStringLiteral(" fraction payload missing"));
+        compareChild(inner->box.numerator,
                      innerChildren.at(0).toObject(), u"inner numerator");
-        compareChild(operations->children.front().box.denominator,
+        compareChild(inner->box.denominator,
                      innerChildren.at(1).toObject(), u"inner denominator");
-        require(operations->box.hasRule &&
-                    operations->children.front().box.hasRule,
+        require(outer->box.hasRule && inner->box.hasRule,
                 id + QStringLiteral(" must own both rule operations"));
       }
       if (id == QLatin1String("fraction-sup")) {
@@ -279,12 +420,17 @@ int main(int argc, char** argv) {
         collectNodes(tree, u"msubsup", &scripts);
         require(scripts.size() == 2,
                 id + QStringLiteral(" browser script nesting drifted"));
-        const auto operations = math::layoutMathMlFractionOperations(
+        const auto operations = math::layoutMathMlPaintOperations(
             layout, kKatexRootFontSize);
-        require(operations.has_value() && operations->scripts.size() == 2,
+        const auto scriptOperations = operations
+            ? childrenOfKind(*operations, math::MathSemanticKind::SupSub)
+            : QVector<const math::MathCssPaintOperation*>{};
+        require(operations.has_value() && scriptOperations.size() == 2,
                 id + QStringLiteral(" must expose two script operations"));
         for (qsizetype index = 0; index < scripts.size(); ++index) {
-          const auto& actual = operations->scripts.at(index);
+          const auto* actual = std::get_if<math::MathCssScriptOperation>(
+              &scriptOperations.at(index)->payload);
+          require(actual, id + QStringLiteral(" script payload missing"));
           const QJsonObject browser = scripts.at(index);
           const QJsonArray children = browser.value(
               QStringLiteral("children")).toArray();
@@ -302,10 +448,10 @@ int main(int argc, char** argv) {
                  expected.value(QStringLiteral("height")).toDouble(), 0.22,
                  id + QLatin1Char(' ') + component + QStringLiteral(" height"));
           };
-          compare(actual.container, browser, u"script container");
-          compare(actual.base, children.at(0).toObject(), u"script base");
-          compare(actual.subscript, children.at(1).toObject(), u"subscript");
-          compare(actual.superscript, children.at(2).toObject(), u"superscript");
+          compare(actual->container, browser, u"script container");
+          compare(actual->base, children.at(0).toObject(), u"script base");
+          compare(actual->subscript, children.at(1).toObject(), u"subscript");
+          compare(actual->superscript, children.at(2).toObject(), u"superscript");
         }
       }
       if (id == QLatin1String("fraction-radical")) {
@@ -313,12 +459,17 @@ int main(int argc, char** argv) {
         collectNodes(tree, u"msqrt", &radicals);
         require(radicals.size() == 2,
                 id + QStringLiteral(" browser radical nesting drifted"));
-        const auto operations = math::layoutMathMlFractionOperations(
+        const auto operations = math::layoutMathMlPaintOperations(
             layout, kKatexRootFontSize);
-        require(operations.has_value() && operations->radicals.size() == 2,
+        const auto radicalOperations = operations
+            ? childrenOfKind(*operations, math::MathSemanticKind::Radical)
+            : QVector<const math::MathCssPaintOperation*>{};
+        require(operations.has_value() && radicalOperations.size() == 2,
                 id + QStringLiteral(" must expose two radical operations"));
         for (qsizetype index = 0; index < radicals.size(); ++index) {
-          const auto& actual = operations->radicals.at(index);
+          const auto* actual = std::get_if<math::MathCssRadicalOperation>(
+              &radicalOperations.at(index)->payload);
+          require(actual, id + QStringLiteral(" radical payload missing"));
           const QJsonObject browser = radicals.at(index);
           const QJsonArray children = browser.value(
               QStringLiteral("children")).toArray();
@@ -335,11 +486,117 @@ int main(int argc, char** argv) {
             near(rect.height(), expected.value(QStringLiteral("height")).toDouble(),
                  0.22, id + QLatin1Char(' ') + component + QStringLiteral(" height"));
           };
-          compare(actual.container, browser, u"radical container");
-          compare(actual.body, children.at(0).toObject(), u"radical body");
-          require(actual.glyphIndex != 0 && !actual.glyph.isEmpty() &&
-                      !actual.rule.isEmpty(),
+          compare(actual->container, browser, u"radical container");
+          compare(actual->body, children.at(0).toObject(), u"radical body");
+          require(actual->glyphIndex != 0 && !actual->glyph.isEmpty() &&
+                      !actual->rule.isEmpty(),
                   id + QStringLiteral(" radical paint operations are incomplete"));
+        }
+      }
+      if (id == QLatin1String("sqrt-fraction")) {
+        QVector<QJsonObject> fractions;
+        collectNodes(tree, u"mfrac", &fractions);
+        require(fractions.size() == 1,
+                id + QStringLiteral(" browser fraction nesting drifted"));
+        const auto operations = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operations &&
+                    operations->semanticKind() == math::MathSemanticKind::Radical &&
+                    operations->children.size() == 1 &&
+                    operations->children.front().semanticKind() ==
+                        math::MathSemanticKind::Fraction,
+                id + QStringLiteral(" reverse operation nesting drifted"));
+        require(paintOperationCount(*operations) ==
+                    semanticNodeCount(layout.root.get()),
+                id + QStringLiteral(" operation ownership is incomplete"));
+        const QRectF actual = operations->children.front().container();
+        const QJsonObject browser = fractions.front();
+        near(actual.x(), browser.value(QStringLiteral("x")).toDouble(), 0.22,
+             id + QStringLiteral(" nested fraction x"));
+        near(actual.y(), browser.value(QStringLiteral("y")).toDouble(), 0.22,
+             id + QStringLiteral(" nested fraction y"));
+        near(actual.width(), browser.value(QStringLiteral("width")).toDouble(),
+             0.22, id + QStringLiteral(" nested fraction width"));
+        near(actual.height(), browser.value(QStringLiteral("height")).toDouble(),
+             0.22, id + QStringLiteral(" nested fraction height"));
+      }
+      if (id == QLatin1String("sqrt")) {
+        QVector<QJsonObject> radicals;
+        collectNodes(tree, u"msqrt", &radicals);
+        const auto operations = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operations &&
+                    operations->semanticKind() == math::MathSemanticKind::Radical &&
+                    childrenOfKind(*operations, math::MathSemanticKind::SupSub)
+                            .size() == 2 &&
+                    paintOperationCount(*operations) ==
+                        semanticNodeCount(layout.root.get()),
+                id + QStringLiteral(" radical/script ownership drifted"));
+        require(radicals.size() == 1,
+                id + QStringLiteral(" browser radical root drifted"));
+        const auto* radical = std::get_if<math::MathCssRadicalOperation>(
+            &operations->payload);
+        const QJsonObject browser = radicals.front();
+        const QJsonArray children = browser.value(
+            QStringLiteral("children")).toArray();
+        require(radical && children.size() == 1,
+                id + QStringLiteral(" radical payload/body missing"));
+        const auto compare = [&](QRectF rect, const QJsonObject& expected,
+                                 QStringView component) {
+          near(rect.x(), expected.value(QStringLiteral("x")).toDouble(), 0.22,
+               id + QLatin1Char(' ') + component + QStringLiteral(" x"));
+          near(rect.y(), expected.value(QStringLiteral("y")).toDouble(), 0.22,
+               id + QLatin1Char(' ') + component + QStringLiteral(" y"));
+          near(rect.width(), expected.value(QStringLiteral("width")).toDouble(),
+               0.22, id + QLatin1Char(' ') + component + QStringLiteral(" width"));
+          near(rect.height(), expected.value(QStringLiteral("height")).toDouble(),
+               0.22, id + QLatin1Char(' ') + component + QStringLiteral(" height"));
+        };
+        compare(radical->container, browser, u"radical container");
+        compare(radical->body, children.at(0).toObject(), u"radical body");
+      }
+      if (id == QLatin1String("nested-script")) {
+        const auto operations = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operations &&
+                    operations->semanticKind() == math::MathSemanticKind::SupSub &&
+                    operations->children.size() == 1 &&
+                    operations->children.front().semanticKind() ==
+                        math::MathSemanticKind::SupSub &&
+                    paintOperationCount(*operations) ==
+                        semanticNodeCount(layout.root.get()),
+                id + QStringLiteral(" recursive script ownership drifted"));
+      }
+      if (id == QLatin1String("radical-script-fraction") ||
+          id == QLatin1String("script-radical-fraction") ||
+          id == QLatin1String("fraction-cross-recursive")) {
+        const auto operations = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operations && paintOperationCount(*operations) ==
+                                  semanticNodeCount(layout.root.get()),
+                id + QStringLiteral(" recursive operation coverage drifted"));
+        if (id == QLatin1String("radical-script-fraction")) {
+          require(hasOperationPath(
+                      *operations,
+                      {math::MathSemanticKind::Radical,
+                       math::MathSemanticKind::SupSub,
+                       math::MathSemanticKind::Fraction}),
+                  id + QStringLiteral(" operation path drifted"));
+        } else if (id == QLatin1String("script-radical-fraction")) {
+          require(hasOperationPath(
+                      *operations,
+                      {math::MathSemanticKind::SupSub,
+                       math::MathSemanticKind::Radical,
+                       math::MathSemanticKind::Fraction}),
+                  id + QStringLiteral(" operation path drifted"));
+        } else {
+          require(operations->semanticKind() ==
+                      math::MathSemanticKind::Fraction &&
+                      childrenOfKind(*operations,
+                                     math::MathSemanticKind::Radical).size() == 1 &&
+                      childrenOfKind(*operations,
+                                     math::MathSemanticKind::SupSub).size() == 1,
+                  id + QStringLiteral(" branch ownership drifted"));
         }
       }
       if (id == QLatin1String("genfrac-display-rule") ||
@@ -385,12 +642,12 @@ int main(int argc, char** argv) {
                0.001, id + QStringLiteral(" rule left padding"));
           near(fractionBox->rule.right(), fractionBox->fraction.right() - 1.0,
                0.001, id + QStringLiteral(" rule right padding"));
-          const auto operations = math::layoutMathMlFractionOperations(
+          const auto operations = math::layoutMathMlPaintOperations(
               layout, kKatexRootFontSize);
           require(operations.has_value(),
                   id + QStringLiteral(" rule operation tree is missing"));
           near(fractionBox->rule.center().y(),
-               fractionBox->fraction.top() + operations->lineAscent -
+               fractionBox->fraction.top() + operations->lineAscent() -
                    mathFont.constants().axisHeight,
                0.001, id + QStringLiteral(" rule axis"));
         }
@@ -435,6 +692,29 @@ int main(int argc, char** argv) {
              id + QStringLiteral(" brace height"));
         near(accentBox->annotation.y(), 25.672, 0.02,
              id + QStringLiteral(" annotation y"));
+        const auto operation = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        const auto* accent = operation
+            ? std::get_if<math::MathCssAccentOperation>(&operation->payload)
+            : nullptr;
+        QVector<QJsonObject> identifiers;
+        collectNodes(tree, u"mi", &identifiers);
+        require(accent && accent->bodyNode && accent->annotationNode &&
+                    identifiers.size() == 3,
+                id + QStringLiteral(" accent operation ownership drifted"));
+        const QJsonObject annotation = identifiers.back();
+        near(accent->annotationContent.x(),
+             annotation.value(QStringLiteral("x")).toDouble(), 0.22,
+             id + QStringLiteral(" annotation content x"));
+        near(accent->annotationContent.y(),
+             annotation.value(QStringLiteral("y")).toDouble(), 0.22,
+             id + QStringLiteral(" annotation content y"));
+        near(accent->annotationContent.width(),
+             annotation.value(QStringLiteral("width")).toDouble(), 0.22,
+             id + QStringLiteral(" annotation content width"));
+        near(accent->annotationContent.height(),
+             annotation.value(QStringLiteral("height")).toDouble(), 0.22,
+             id + QStringLiteral(" annotation content height"));
       }
       if (id == QLatin1String("accent-overbrace")) {
         const auto accentBox = math::layoutMathMlAccentBox(
@@ -450,6 +730,12 @@ int main(int argc, char** argv) {
              id + QStringLiteral(" brace height"));
         near(accentBox->body.y(), 18.75, 0.02,
              id + QStringLiteral(" body y"));
+        const auto operation = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operation && operation->kind() == math::MathCssPaintKind::Accent &&
+                    std::get_if<math::MathCssAccentOperation>(
+                        &operation->payload),
+                id + QStringLiteral(" accent operation is missing"));
       }
       if (id == QLatin1String("tall-delimiter-assembly")) {
         QVector<QJsonObject> tables;
@@ -474,6 +760,40 @@ int main(int argc, char** argv) {
              id + QStringLiteral(" outer mfrac height"));
         near(fractions.back().value(QStringLiteral("height")).toDouble(), 19.672, 0.001,
              id + QStringLiteral(" inner mfrac height"));
+        const auto operation = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operation &&
+                    hasPaintKindPath(*operation,
+                        {math::MathCssPaintKind::Fraction,
+                         math::MathCssPaintKind::Accent}),
+                id + QStringLiteral(" fraction-to-accent operation path drifted: ") +
+                    (operation ? paintKindTree(*operation)
+                               : QStringLiteral("missing")));
+      }
+      if (id == QLatin1String("accent-fraction-recursive") ||
+          id == QLatin1String("accent-radical-recursive") ||
+          id == QLatin1String("accent-array-recursive")) {
+        const auto operation = math::layoutMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operation && operation->kind() == math::MathCssPaintKind::Accent,
+                id + QStringLiteral(" root accent operation is missing"));
+        const math::MathCssPaintKind nestedKind =
+            id == QLatin1String("accent-fraction-recursive")
+                ? math::MathCssPaintKind::Fraction
+                : id == QLatin1String("accent-radical-recursive")
+                    ? math::MathCssPaintKind::Radical
+                    : math::MathCssPaintKind::Array;
+        require(hasPaintKindPath(
+                    *operation, {math::MathCssPaintKind::Accent, nestedKind}),
+                id + QStringLiteral(" recursive accent operation path drifted"));
+        const auto* accent = std::get_if<math::MathCssAccentOperation>(
+            &operation->payload);
+        require(accent && accent->hasBodySourceOrigin &&
+                    accent->hasAnnotationSourceOrigin,
+                id + QStringLiteral(" SupSub/VList source origins are missing"));
+        if (id == QLatin1String("accent-array-recursive"))
+          require(accent->fixedVariantTargetWidth > 0.0,
+                  id + QStringLiteral(" array accent target is missing"));
       }
 
       if (fixture.value(QStringLiteral("fontSize")).toInt() == 16 &&

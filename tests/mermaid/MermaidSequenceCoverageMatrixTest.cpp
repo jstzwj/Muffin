@@ -80,6 +80,16 @@ int main(int argc,char** argv) {
                          QStringLiteral("label-box-markdown-math"),QStringLiteral("central-autonumber"),
                          QStringLiteral("structural-aria"),QStringLiteral("structural-combined-order")})
     require(pixelIds.contains(id),QStringLiteral("sequence semantic axis missing: %1").arg(id));
+  for(const QString& id:{QStringLiteral("label-math-radical-script-fraction-ops"),
+                         QStringLiteral("label-math-fraction-cross-recursive-ops"),
+                         QStringLiteral("label-math-accent-fraction-recursive"),
+                         QStringLiteral("label-math-accent-radical-recursive"),
+                         QStringLiteral("label-math-accent-array-recursive"),
+                         QStringLiteral("label-math-matrix-basic"),
+                         QStringLiteral("label-math-matrix-recursive"),
+                         QStringLiteral("label-math-cases")})
+    require(pixelIds.contains(id),
+            QStringLiteral("sequence recursive Math paint axis missing: %1").arg(id));
 
   QSet<QString> themes; QSet<QString> dprs;
   int mathCases=0,bidiCases=0,cjkCases=0,cropCases=0,markerCases=0,ariaCases=0;
@@ -121,6 +131,9 @@ int main(int argc,char** argv) {
               mathmlIds.contains(QStringLiteral("fraction-sup"))&&
               mathmlIds.contains(QStringLiteral("fraction-radical"))&&
               mathmlIds.contains(QStringLiteral("sqrt-fraction"))&&
+              mathmlIds.contains(QStringLiteral("radical-script-fraction"))&&
+              mathmlIds.contains(QStringLiteral("script-radical-fraction"))&&
+              mathmlIds.contains(QStringLiteral("fraction-cross-recursive"))&&
               mathmlIds.contains(QStringLiteral("matrix-3x3")),
           QStringLiteral("sequence recursive MathML CSS box coverage regressed"));
   for(const QString& tag:{QStringLiteral("math"),QStringLiteral("mfrac"),
