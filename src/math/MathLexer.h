@@ -21,6 +21,7 @@ public:
   void pushFront(MathToken token);
   QString readVerbBody(bool& starred, bool& ok, MathToken& delimiter);
   bool atEnd();
+  void setPreserveSpaces(bool preserve);
 
 private:
   MathToken readToken();
@@ -30,6 +31,7 @@ private:
   bool hasLookahead_ = false;
   MathToken lookahead_;
   QVector<MathToken> pushed_;
+  bool preserveSpaces_ = false;
 };
 
 }  // namespace muffin::math

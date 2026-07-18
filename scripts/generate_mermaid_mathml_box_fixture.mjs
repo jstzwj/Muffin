@@ -51,6 +51,7 @@ const formulas = [
   ["fraction-wide", "\\frac{x+y}{a+b}"],
   ["fraction-nested", "\\frac{\\frac{a}{b}}{c}"],
   ["sqrt", "\\sqrt{x_i^2+y^2}"],
+  ["sqrt-plain", "\\sqrt{x}"],
   ["root-index", "\\sqrt[3]{x+1}"],
   ["matrix-2x2", "\\begin{matrix}a&b\\\\c&d\\end{matrix}"],
   ["matrix-3x3", "\\begin{matrix}a&b&c\\\\d&e&f\\\\g&h&i\\end{matrix}"],
@@ -68,6 +69,14 @@ const formulas = [
   ["accent-hat", "\\hat{x}"],
   ["accent-vector", "\\vec{x+y}"],
   ["delimiter-row", "\\left(x+y\\right)"],
+  ["left-right-nullable-plain", "\\left.x+y\\right\\rangle"],
+  ["left-right-middle", "\\left\\langle x\\middle|y\\right\\rangle"],
+  ["left-right-multiple-middle", "\\left(x\\middle|y\\middle\\|z\\right)"],
+  ["left-right-nested-plain", "\\left[ x+\\left(y-z\\right)\\right]"],
+  ["left-right-middle-fraction", "\\left(\\frac{a\\middle|b}{c}\\right)"],
+  ["left-right-middle-radical", "\\left(\\sqrt{x\\middle|y}\\right)"],
+  ["left-right-middle-script", "\\left(x^{a\\middle|b}\\right)"],
+  ["left-right-middle-array", "\\left(\\begin{matrix}a\\middle|b&c\\\\d&e\\end{matrix}\\right)"],
   ["nested-script", "x^{y_i^2}"],
   ["fraction-greek", "\\frac{\\alpha+\\beta}{\\gamma}"],
   ["sqrt-matrix", "\\sqrt{\\begin{matrix}a&b\\\\c&d\\end{matrix}}"],
@@ -79,6 +88,12 @@ const formulas = [
   ["operator-name", "\\operatorname{rank}(A)=n"],
   ["accent-overline", "\\overline{x+y}"],
   ["accent-widehat", "\\widehat{x+y+z}"],
+  ["accent-text-shaping", "\\widehat{\\text{office}}"],
+  ["accent-double-right-arrow", "\\Overrightarrow{x+y}"],
+  ["accent-left-harpoon", "\\overleftharpoon{x+y}"],
+  ["accent-right-harpoon", "\\overrightharpoon{x+y}"],
+  ["accent-overgroup", "\\overgroup{x+y}"],
+  ["accent-overlinesegment-upstream-text", "\\overlinesegment{x+y}"],
   ["nested-delimiters", "\\left[\\frac{x}{\\left(y+1\\right)}\\right]"],
   ["greek-variants", "\\varepsilon+\\vartheta+\\varphi+\\varrho"],
   ["binomial", "\\binom{n}{k}"],
@@ -93,10 +108,68 @@ const formulas = [
   ["accent-overbrace", "\\overbrace{x+y}^{n}"],
   ["accent-under-arrow", "\\underleftrightarrow{x+y}"],
   ["tall-delimiter-assembly", "\\left\\{\\begin{matrix}a\\\\b\\\\c\\\\d\\\\e\\\\f\\end{matrix}\\right."],
+  ["tall-paren-assembly", "\\left(\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right)"],
+  ["tall-bracket-assembly", "\\left[\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right]"],
+  ["tall-bar-assembly", "\\left|\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right|"],
+  ["nested-delimiter-array", "\\left(\\begin{matrix}\\left[\\frac{a}{b}\\right]&c\\\\d&\\left\\{\\frac{x}{y}\\right\\}\\end{matrix}\\right)"],
+  ["tall-double-bar", "\\left\\|\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\|"],
+  ["tall-floor", "\\left\\lfloor\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\rfloor"],
+  ["tall-ceil", "\\left\\lceil\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\rceil"],
+  ["tall-angle", "\\left\\langle\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\rangle"],
+  ["nullable-delimiter", "\\left.\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\rceil"],
+  ["delimiter-recursive", "\\left\\langle\\frac{\\sqrt{x_i^2}}{\\overbrace{a+b}^{n}}\\right\\rangle"],
   ["nested-mathml-structure", "\\left(\\frac{\\underbrace{x+y}_{n}}{\\genfrac{[}{]}{0pt}{}{a}{b}}\\right)"],
   ["accent-fraction-recursive", "\\underbrace{\\frac{a}{b}}_{n}"],
   ["accent-radical-recursive", "\\overbrace{\\sqrt{x_i^2}}^{n}"],
   ["accent-array-recursive", "\\underbrace{\\begin{matrix}\\frac{a}{b}&\\sqrt{x_i^2}\\\\c&d\\end{matrix}}_{n}"],
+  ["array-cell-accent-recursive", "\\begin{matrix}\\underbrace{a}_{n}&b\\\\c&d\\end{matrix}"],
+  ["radical-accent-recursive", "\\sqrt{\\underbrace{x}_{n}}"],
+  ["supsub-accent-recursive", "x^{\\overbrace{a}^{n}}"],
+  ["accent-accent-recursive", "\\overbrace{\\underbrace{x}_{i}}^{n}"],
+  ["fraction-array-accent-recursive", "\\frac{\\begin{matrix}\\underbrace{a}_{n}&b\\end{matrix}}{c}"],
+  ["accent-arrow-recursive", "\\overbrace{\\underleftrightarrow{x+y}}^{n}"],
+  ["accent-mixed-fraction-body", "\\overbrace{x+\\frac{a}{b}+y}^{n}"],
+  ["accent-mixed-radical-body", "\\overrightarrow{x+\\sqrt{y}}"],
+  ["accent-mixed-fraction-annotation", "\\overbrace{x}^{i+\\frac{a}{b}}"],
+  ["root-mixed-fraction", "p+\\frac{a}{b}+q"],
+  ["root-mixed-radical", "p+\\sqrt{x}+q"],
+  ["root-multiple-semantics", "\\sqrt{x}+\\frac{a}{b}+y_i"],
+  ["root-mixed-accent", "p+\\overbrace{x}^{n}+q"],
+  ["root-mixed-array", "p+\\begin{matrix}a&b\\\\c&d\\end{matrix}+q"],
+  ["root-mixed-left-right", "p+\\left(x+y\\right)+q"],
+  ["root-double-fraction", "\\frac{a}{b}+\\frac{c}{d}"],
+  ["root-all-paint-kinds", "\\overbrace{x}^{n}+\\left(y+z\\right)+\\begin{matrix}a&b\\end{matrix}"],
+  ["root-mixed-underbrace", "p+\\underbrace{x}_{n}+q"],
+  ["root-mixed-under-arrow", "p+\\underleftrightarrow{x}+q"],
+  ["root-mixed-sum-limits", "p+\\sum_{i=1}^{n}+q"],
+  ["root-mixed-integral-scripts", "p+\\int_0^1+q"],
+  ["root-limits-fraction", "\\sum_{i=1}^{n}+\\frac{a}{b}"],
+  ["root-mixed-product-limits", "p+\\prod_{k=1}^{n}+q"],
+  ["root-mixed-coproduct-limits", "p+\\coprod_{k=1}^{n}+q"],
+  ["root-mixed-double-integral", "p+\\iint_D+q"],
+  ["root-mixed-triple-integral", "p+\\iiint_D+q"],
+  ["root-mixed-cjk-fraction", "p+\\text{中文}+\\frac{a}{b}+q"],
+  ["root-mixed-rtl-fraction", "p+\\text{سلام}+\\frac{a}{b}+q"],
+  ["text-hebrew", "\\text{שלום}"],
+  ["text-arabic-hebrew", "\\text{سلام שלום}"],
+  ["text-bidi-digits-punctuation", "\\text{سلام (123), שלום!}"],
+  ["text-bidi-isolates", "\\text{\u2067سلام 123\u2069, \u2066ABC\u2069}"],
+  ["fraction-fallback-text", "\\frac{\\text{中文}}{\\text{سلام}}"],
+  ["radical-fallback-text", "\\sqrt{\\text{שלום}+x}"],
+  ["supsub-fallback-text", "x_{\\text{中文}}^{\\text{سلام}}"],
+  ["accent-fallback-text", "\\overbrace{\\text{中文}}^{\\text{שלום}}"],
+  ["array-fallback-text", "\\begin{matrix}\\text{中文}&\\text{سلام}\\\\\\text{שלום}&x\\end{matrix}"],
+  ["limits-fallback-text", "\\sum_{\\text{\u4e2d\u6587}}^{\\text{\u0633\u0644\u0627\u0645}}"],
+  ["limits-fallback-recursive", "\\sum_{\\frac{\\text{\u4e2d\u6587}}{x}}^{\\sqrt{\\text{\u05e9\u05dc\u05d5\u05dd}}}"],
+  ["under-accent-fallback-text", "\\underbrace{\\text{\u0633\u0644\u0627\u0645}}_{\\text{\u4e2d\u6587}}"],
+  ["delimiter-assembly-fallback-text", "\\left(\\begin{matrix}\\text{\u4e2d\u6587}\\\\\\text{\u0633\u0644\u0627\u0645}\\\\\\text{\u05e9\u05dc\u05d5\u05dd}\\\\x\\end{matrix}\\right)"],
+  ["product-fallback-limits", "\\prod_{\\text{\u4e2d\u6587}}^{\\text{\u0633\u0644\u0627\u0645}}"],
+  ["coproduct-fallback-limits", "\\coprod_{\\text{\u05e9\u05dc\u05d5\u05dd}}^{\\text{\u4e2d\u6587}}"],
+  ["over-arrow-fallback-text", "\\overleftrightarrow{\\text{\u0633\u0644\u0627\u0645 \u4e2d\u6587}}"],
+  ["under-arrow-fallback-text", "\\underleftrightarrow{\\text{\u05e9\u05dc\u05d5\u05dd \u4e2d\u6587}}"],
+  ["brace-assembly-fallback-text", "\\left\\{\\begin{matrix}\\text{\u4e2d\u6587}\\\\\\text{\u0633\u0644\u0627\u0645}\\\\\\text{\u05e9\u05dc\u05d5\u05dd}\\\\x\\end{matrix}\\right\\}"],
+  ["bracket-assembly-fallback-text", "\\left[\\begin{matrix}\\text{\u4e2d\u6587}\\\\\\text{\u0633\u0644\u0627\u0645}\\\\\\text{\u05e9\u05dc\u05d5\u05dd}\\\\x\\end{matrix}\\right]"],
+  ["angle-assembly-fallback-text", "\\left\\langle\\begin{matrix}\\text{\u4e2d\u6587}\\\\\\text{\u0633\u0644\u0627\u0645}\\\\\\text{\u05e9\u05dc\u05d5\u05dd}\\\\x\\end{matrix}\\right\\rangle"],
 ];
 const cases = [];
 for (const [id, tex] of formulas) cases.push({id, tex, fontSize: 16, dpr: 1});
@@ -131,9 +204,16 @@ try {
     await page.goto(harness);
     const snapshot = await page.evaluate(async ({fixture, index, mermaidModule, fontFaces, fontStack, mathFontFace}) => {
       const style = document.createElement("style");
-      style.textContent = `${fontFaces}\n${mathFontFace}\nmath{font-family:"STIX Two Math" !important}`;
+      style.textContent = `${fontFaces}\n${mathFontFace}\nmath{font-family:"STIX Two Math",${fontStack} !important}`;
       document.head.appendChild(style);
-      await document.fonts.load('16px "STIX Two Math"', "x+∑√");
+      await Promise.all([
+        document.fonts.load('16px "Noto Sans"', "Latin"),
+        document.fonts.load('16px "Noto Sans CJK SC"', "\u4e2d\u6587"),
+        document.fonts.load('16px "Noto Sans Arabic"', "\u0633\u0644\u0627\u0645"),
+        document.fonts.load('16px "Noto Sans Hebrew"', "\u05e9\u05dc\u05d5\u05dd"),
+        document.fonts.load('16px "STIX Two Math"',
+          "x+\u2211\u221a\u220f\u2210\u2194\u23de\u23df()[]{}\u27e8\u27e9"),
+      ]);
       await document.fonts.ready;
       const {default: mermaid} = await import(mermaidModule);
       mermaid.initialize({
@@ -146,6 +226,9 @@ try {
       const source = `sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$${fixture.tex}$$ Hg`;
       const {svg} = await mermaid.render(`mathml-box-${index}`, source);
       document.getElementById("container").innerHTML = svg;
+      await document.fonts.ready;
+      await new Promise((resolve) => requestAnimationFrame(() =>
+        requestAnimationFrame(resolve)));
       const svgRoot = document.querySelector("svg");
       const foreignObject = svgRoot.querySelector('[data-et="note"] foreignObject');
       const math = foreignObject?.querySelector("math");

@@ -39,13 +39,13 @@ int main(int argc,char** argv) {
               root.value(QStringLiteral("fontMode")).toString()==
                   QLatin1String("bundled-noto-stix-two-math-2.13b171")&&
               root.value(QStringLiteral("fixtureSha256")).toString()==
-                  QLatin1String("bf8fe5285d487f7c8e36a1bfbb2e5b03f85dc52f26a1b2510a195f8b2c891844"),
+                  QLatin1String("7b5884495702b5195ed8add05edbbcb14a283c1ed34b7e5e25f1c95cf0a25f67"),
           QStringLiteral("Sequence SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;
   int mathCases=0,foreignObjectCases=0,ariaCases=0,labelCases=0,domEntries=0,markerEntries=0;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==38,QStringLiteral("Sequence SVG structural matrix regressed"));
+  require(cases.size()==113,QStringLiteral("Sequence SVG structural matrix regressed"));
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject();
     const QString id=fixture.value(QStringLiteral("id")).toString();
@@ -74,6 +74,42 @@ int main(int argc,char** argv) {
             QStringLiteral("%1 SVG element counts are invalid").arg(id));
     require((mathCount>0)==(foreignCount>0),
             QStringLiteral("%1 MathML/foreignObject pairing drifted").arg(id));
+    const QJsonObject mathBox=structure.value(QStringLiteral("mathMlBox")).toObject();
+    const QJsonArray mathRuns=structure.value(QStringLiteral("mathMlRuns")).toArray();
+    if(mathCount>0) {
+      require(mathBox.value(QStringLiteral("width")).toDouble()>0.0&&
+                  mathBox.value(QStringLiteral("height")).toDouble()>0.0&&
+                  mathBox.value(QStringLiteral("fontFamily")).toString()
+                      .contains(QLatin1String("STIX Two Math"))&&
+                  !mathRuns.isEmpty(),
+              QStringLiteral("%1 MathML bbox/run oracle is incomplete").arg(id));
+      for(const QJsonValue& runValue:mathRuns) {
+        const QJsonObject run=runValue.toObject();
+        const QString tag=run.value(QStringLiteral("tag")).toString();
+        const qreal width=run.value(QStringLiteral("width")).toDouble();
+        const bool zeroAdvanceOperator=tag==QLatin1String("mo")&&
+            !run.value(QStringLiteral("text")).toString().isEmpty()&&
+            qFuzzyIsNull(width);
+        require(!tag.isEmpty()&&width>=0.0&&
+                    (width>0.0||zeroAdvanceOperator)&&
+                    run.value(QStringLiteral("height")).toDouble()>0.0,
+                QStringLiteral("%1 MathML run coordinate is invalid").arg(id));
+      }
+      if(!fixture.value(QStringLiteral("mathAccent")).toString().isEmpty()) {
+        bool hasBody=false,hasAccent=false;
+        for(const QJsonValue& runValue:mathRuns) {
+          const QString tag=runValue.toObject()
+                                .value(QStringLiteral("tag")).toString();
+          hasBody=hasBody||tag!=QLatin1String("mo");
+          hasAccent=hasAccent||tag==QLatin1String("mo");
+        }
+        require(hasBody&&hasAccent,
+                QStringLiteral("%1 MathML accent/body structure drifted").arg(id));
+      }
+    } else {
+      require(mathBox.isEmpty()&&mathRuns.isEmpty(),
+              QStringLiteral("%1 non-Math label gained MathML coordinates").arg(id));
+    }
     mathCases+=mathCount>0; foreignObjectCases+=foreignCount>0;
     const QJsonArray markers=structure.value(QStringLiteral("markers")).toArray();
     require(structure.value(QStringLiteral("defs")).toInt()>=markers.size()&&markers.size()>=8,
@@ -122,7 +158,8 @@ int main(int argc,char** argv) {
 
     const auto entry=cache.getSync(cache.makeKey(source),source);
     require(entry.status==editor::MermaidRenderStatus::Ready&&entry.sequenceScene,
-            QStringLiteral("%1 native structural scene failed").arg(id));
+            QStringLiteral("%1 native structural scene failed: %2")
+                .arg(id,entry.errorMessage));
     const auto& scene=*entry.sequenceScene;
     require(scene.participantLabels.size()==scene.participants.size()&&
                 scene.messageLabels.size()==scene.messages.size()&&

@@ -336,11 +336,16 @@ QJsonObject MathRenderNode::toJson() const {
   if (!text.isEmpty()) object.insert(QStringLiteral("text"), text);
   if (!operatorText.isEmpty()) object.insert(QStringLiteral("operatorText"), operatorText);
   if (!accentLabel.isEmpty()) object.insert(QStringLiteral("accentLabel"), accentLabel);
+  if (accentUsesNaturalWidth)
+    object.insert(QStringLiteral("accentUsesNaturalWidth"), true);
+  if (textModeRun) object.insert(QStringLiteral("textModeRun"), true);
   if (!accentCharacter.isEmpty())
     object.insert(QStringLiteral("accentCharacter"), accentCharacter);
   if (!leftDelimiter.isEmpty()) object.insert(QStringLiteral("leftDelimiter"), leftDelimiter);
   if (!rightDelimiter.isEmpty()) object.insert(QStringLiteral("rightDelimiter"), rightDelimiter);
   if (!atomClass.isEmpty()) object.insert(QStringLiteral("atomClass"), atomClass);
+  if (!middleDelimiter.isEmpty())
+    object.insert(QStringLiteral("middleDelimiter"), middleDelimiter);
   if (!fontClass.isEmpty()) object.insert(QStringLiteral("fontClass"), fontClass);
   if (!pathName.isEmpty()) object.insert(QStringLiteral("pathName"), pathName);
   if (!svgPath.isEmpty()) object.insert(QStringLiteral("hasSvgPath"), true);
@@ -430,6 +435,7 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->operatorKind = node.operatorKind;
   copy->accentKind = node.accentKind;
   copy->radicalIndex = node.radicalIndex;
+  copy->middleDelimiter = node.middleDelimiter;
   copy->fractionHasBarLine = node.fractionHasBarLine;
   copy->fractionLineThicknessEm = node.fractionLineThicknessEm;
   copy->fractionStyleSize = node.fractionStyleSize;
@@ -438,6 +444,8 @@ std::unique_ptr<MathRenderNode> cloneNode(const MathRenderNode& node) {
   copy->operatorText = node.operatorText;
   copy->accentLabel = node.accentLabel;
   copy->accentCharacter = node.accentCharacter;
+  copy->accentUsesNaturalWidth = node.accentUsesNaturalWidth;
+  copy->textModeRun = node.textModeRun;
   copy->leftDelimiter = node.leftDelimiter;
   copy->rightDelimiter = node.rightDelimiter;
   copy->atomClass = node.atomClass;

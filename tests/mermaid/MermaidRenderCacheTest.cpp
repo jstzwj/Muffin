@@ -5,6 +5,7 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/sequence/SequenceLabel.h"
+#include "mermaid/sequence/SequenceScenePainter.h"
 
 #include <QDebug>
 #include <QEventLoop>
@@ -76,6 +77,51 @@ int main(int argc, char** argv) {
     require(e.sequenceScene->participants.size() == 2 && e.sequenceScene->messages.size() == 1 &&
                 e.naturalSize.width() > 0 && e.naturalSize.height() > 0,
             QStringLiteral("sequenceDiagram scene must contain participant/message geometry"));
+  }
+
+  // --- sequence MathML is compiled into the immutable scene once ---
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "sequenceDiagram\nA->>B: $$\\frac{\\sqrt{x}}{y^2}$$");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    require(entry.status == kReady && entry.sequenceScene &&
+                entry.sequenceScene->messageLabels.size() == 1,
+            QStringLiteral("sequence MathML cache case must render"));
+    const auto& math = entry.sequenceScene->messageLabels.first().richText.math;
+    require(math.size() == 1 && math.front().prepared,
+            QStringLiteral("sequence scene must own a prepared MathML operation"));
+    const auto* prepared = math.front().prepared.get();
+    const QImage first = muffin::mermaid::sequence::renderSequenceSceneToImage(
+        *entry.sequenceScene, 1.0, 0.0);
+    const QImage second = muffin::mermaid::sequence::renderSequenceSceneToImage(
+        *entry.sequenceScene, 1.0, 0.0);
+    require(!first.isNull() && first == second &&
+                math.front().prepared.get() == prepared,
+            QStringLiteral("repaint must reuse the immutable MathML operation"));
+  }
+
+  // --- prepared MathML crosses the worker/GUI thread boundary read-only ---
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "sequenceDiagram\nA->>B: $$\\hat{\\frac{x}{y}}$$");
+    const MermaidRenderKey key = MermaidRenderCache::makeKey(source);
+    require(cache.request(key, source).status == kLoading,
+            QStringLiteral("async sequence MathML request must start loading"));
+    require(waitForReady(cache, key),
+            QStringLiteral("async sequence MathML renderReady must fire"));
+    const MermaidRenderEntry entry = cache.request(key, source);
+    require(entry.status == kReady && entry.sequenceScene &&
+                !entry.sequenceScene->messageLabels.isEmpty() &&
+                entry.sequenceScene->messageLabels.first()
+                    .richText.math.front().prepared,
+            QStringLiteral("worker-built MathML scene must retain operations"));
+    const QImage image = muffin::mermaid::sequence::renderSequenceSceneToImage(
+        *entry.sequenceScene, 1.0, 0.0);
+    require(!image.isNull(),
+            QStringLiteral("worker-built MathML operations must paint on GUI thread"));
   }
 
   // --- sequence config + box measurements reach the production scene ---

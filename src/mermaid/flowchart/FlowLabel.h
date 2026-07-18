@@ -5,11 +5,15 @@
 #include <QTextLayout>
 #include <QVector>
 
+#include <memory>
+
 class QColor;
 class QPainter;
 class QRectF;
 
 namespace muffin::mermaid::flowchart {
+
+struct FlowLabelPreparedMath;
 
 inline constexpr qreal kFlowMathMlScaleX = 46.21875 / 56.796875;
 inline constexpr qreal kFlowMathMlScaleY = 32.8125 / 38.864;
@@ -21,6 +25,7 @@ struct FlowLabelMathSpan {
   qsizetype start = 0;
   qsizetype length = 1;
   QString source;
+  std::shared_ptr<const FlowLabelPreparedMath> prepared;
 };
 
 struct FlowLabelDocument {
@@ -77,6 +82,11 @@ struct FlowLabelLayoutMetrics {
 // QPainter as literal text and no HTML engine is involved.
 FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType,
                                  bool mathEnabled = true);
+
+// Compiles sequence MathML into immutable, color-independent paint operations.
+// The resulting document is safe to copy into an immutable scene and reuse for
+// every layout/paint pass.
+void prepareFlowLabelMath(FlowLabelDocument& label, qreal fontPixelSize);
 
 FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        const QString& fontFamily,

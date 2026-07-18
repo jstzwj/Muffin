@@ -82,6 +82,8 @@ private:
   qsizetype offset_ = 0;
   int line_ = 1;
   int column_ = 0;
+  int braceDepth_ = 0;
+  bool labelMode_ = false;
 };
 
 }  // namespace muffin::mermaid::sequence

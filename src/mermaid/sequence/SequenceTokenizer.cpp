@@ -81,8 +81,14 @@ void SequenceTokenizer::advance(QStringView text) {
     if (ch == QLatin1Char('\n')) {
       ++line_;
       column_ = 0;
+      braceDepth_ = 0;
+      labelMode_ = false;
     } else {
       ++column_;
+      if (!labelMode_) {
+        if (ch == QLatin1Char('{')) ++braceDepth_;
+        else if (ch == QLatin1Char('}') && braceDepth_ > 0) --braceDepth_;
+      }
     }
   }
   offset_ += text.size();
@@ -97,11 +103,30 @@ SequenceToken SequenceTokenizer::take(SequenceTokenKind kind, qsizetype length) 
 SequenceToken SequenceTokenizer::next() {
   while (!atEnd()) {
     if (peek() == QLatin1Char('\r')) {
-      if (peek(1) == QLatin1Char('\n')) return take(SequenceTokenKind::Newline, 2);
-      return take(SequenceTokenKind::Newline, 1);
+      SequenceToken token = take(
+          SequenceTokenKind::Newline,
+          peek(1) == QLatin1Char('\n') ? 2 : 1);
+      braceDepth_ = 0;
+      labelMode_ = false;
+      return token;
     }
     if (peek() == QLatin1Char('\n')) return take(SequenceTokenKind::Newline, 1);
-    if (peek() == QLatin1Char(';')) return take(SequenceTokenKind::Semi, 1);
+    if (peek() == QLatin1Char(';')) {
+      SequenceToken token = take(SequenceTokenKind::Semi, 1);
+      braceDepth_ = 0;
+      labelMode_ = false;
+      return token;
+    }
+    if (labelMode_) {
+      const qsizetype start = offset_;
+      while (!atEnd() && peek() != QLatin1Char('\n') &&
+             peek() != QLatin1Char('\r') && peek() != QLatin1Char(';'))
+        advance(QStringView(source_).mid(offset_, 1));
+      return SequenceToken{SequenceTokenKind::Word,
+                           source_.mid(start, offset_ - start),
+                           start, offset_ - start, line_,
+                           column_ - static_cast<int>(offset_ - start)};
+    }
     if (peek().isSpace()) {
       const qsizetype start = offset_;
       while (!atEnd() && peek().isSpace() && peek() != QLatin1Char('\n') &&
@@ -124,7 +149,11 @@ SequenceToken SequenceTokenizer::next() {
     switch (peek().unicode()) {
       case '+': return take(SequenceTokenKind::Plus, 1);
       case '-': return take(SequenceTokenKind::Minus, 1);
-      case ':': return take(SequenceTokenKind::Colon, 1);
+      case ':': {
+        SequenceToken token = take(SequenceTokenKind::Colon, 1);
+        if (braceDepth_ == 0) labelMode_ = true;
+        return token;
+      }
       case ',': return take(SequenceTokenKind::Comma, 1);
       default: break;
     }

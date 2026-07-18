@@ -13,17 +13,27 @@ SequenceScene buildSequenceScene(const SequenceLayoutResult& layout, SequenceSce
   scene.fragments = layout.fragments;
   scene.sequenceNumbers = layout.sequenceNumbers;
   scene.style = std::move(style);
+  const auto preparedLabel = [&](const QString& text,
+                                 SequenceLabelKind kind) {
+    return prepareSequenceLabel(
+        parseSequenceLabel(text, kind), scene.style.fontSize);
+  };
   for (const auto& box : scene.boxes)
-    scene.boxLabels.append(parseSequenceLabel(box.label, SequenceLabelKind::Box));
+    scene.boxLabels.append(preparedLabel(box.label, SequenceLabelKind::Box));
   for (const auto& actor : scene.participants)
-    scene.participantLabels.append(parseSequenceLabel(actor.label, SequenceLabelKind::Participant));
+    scene.participantLabels.append(
+        preparedLabel(actor.label, SequenceLabelKind::Participant));
   for (const auto& message : scene.messages)
-    scene.messageLabels.append(parseSequenceLabel(message.label, SequenceLabelKind::Message));
+    scene.messageLabels.append(
+        preparedLabel(message.label, SequenceLabelKind::Message));
   for (const auto& note : scene.notes)
-    scene.noteLabels.append(parseSequenceLabel(note.label, SequenceLabelKind::Note));
+    scene.noteLabels.append(
+        preparedLabel(note.label, SequenceLabelKind::Note));
   for (const auto& fragment : scene.fragments) {
-    scene.fragmentKindLabels.append(parseSequenceLabel(fragment.kind, SequenceLabelKind::Box));
-    scene.fragmentLabels.append(parseSequenceLabel(fragment.label, SequenceLabelKind::Fragment));
+    scene.fragmentKindLabels.append(
+        preparedLabel(fragment.kind, SequenceLabelKind::Box));
+    scene.fragmentLabels.append(
+        preparedLabel(fragment.label, SequenceLabelKind::Fragment));
   }
   return scene;
 }

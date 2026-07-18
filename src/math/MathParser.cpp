@@ -271,11 +271,13 @@ MathParseNode MathParser::parseAtom() {
 
   // KaTeX: $ in text mode switches to inline math, consuming until matching $.
   if (inTextBody_ && token.text == QStringLiteral("$")) {
+    lexer_.setPreserveSpaces(false);
     MathParseNode styling;
     styling.type = MathNodeType::Styling;
     styling.style = QStringLiteral("\\textstyle");
     styling.body = parseExpression(QStringLiteral("$"));
     expect(QStringLiteral("$"), QStringLiteral("text-math"));
+    lexer_.setPreserveSpaces(true);
     return styling;
   }
 
@@ -605,8 +607,10 @@ MathParseNode MathParser::parseTag(const MathToken& token) {
   // extra glyphs that don't appear in the KaTeX golden data.
   const bool wasInTextBody = inTextBody_;
   inTextBody_ = true;
+  lexer_.setPreserveSpaces(true);
   tag.tag = parseRequiredGroup(token.text);
   inTextBody_ = wasInTextBody;
+  lexer_.setPreserveSpaces(wasInTextBody);
   return tag;
 }
 
@@ -744,8 +748,10 @@ MathParseNode MathParser::parseText(const MathToken& token, const MathFunctionSp
     // KaTeX: \hbox sets up text mode where $ switches to inline math.
     const bool wasInTextBody = inTextBody_;
     inTextBody_ = true;
+    lexer_.setPreserveSpaces(true);
     node.body = parseRequiredGroup(token.text);
     inTextBody_ = wasInTextBody;
+    lexer_.setPreserveSpaces(wasInTextBody);
     return parseScripts(std::move(node));
   }
   const auto fontClassForCommand = [](const QString& command) {
@@ -793,8 +799,10 @@ MathParseNode MathParser::parseText(const MathToken& token, const MathFunctionSp
     // need $ to act as math-mode switch when already inside a text body.
     const bool wasInTextBody = inTextBody_;
     inTextBody_ = true;
+    lexer_.setPreserveSpaces(true);
     text.body = parseExpressionUntilAny(textBreaks);
     inTextBody_ = wasInTextBody;
+    lexer_.setPreserveSpaces(wasInTextBody);
     return parseScripts(std::move(text));
   }
   MathParseNode text;
@@ -808,9 +816,11 @@ MathParseNode MathParser::parseText(const MathToken& token, const MathFunctionSp
   const bool wasInTextBody = inTextBody_;
   if (function.typeName == QStringLiteral("text")) {
     inTextBody_ = true;
+    lexer_.setPreserveSpaces(true);
   }
   text.body = parseRequiredGroup(token.text);
   inTextBody_ = wasInTextBody;
+  lexer_.setPreserveSpaces(wasInTextBody);
   return parseScripts(std::move(text));
 }
 
@@ -1332,6 +1342,16 @@ QString MathParser::delimiterReplacement(const QString& token) const {
 }
 
 MathParseNode MathParser::parseSymbol(const MathToken& token) {
+  if (inTextBody_ &&
+      std::all_of(token.text.cbegin(), token.text.cend(), [](QChar character) {
+        return character.isSpace() ||
+               character.category() == QChar::Other_Format;
+      })) {
+    MathParseNode text;
+    text.type = MathNodeType::Text;
+    text.text = token.text;
+    return text;
+  }
   // Handle surrogate pair tokens (mathematical alphanumeric symbols U+1D400–U+1D7FF).
   // The lexer combines surrogate pairs into 2-char tokens. Map them to base char + font class.
   if (token.text.size() == 2 && token.text.at(0).isHighSurrogate()) {

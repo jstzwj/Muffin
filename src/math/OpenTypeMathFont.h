@@ -6,6 +6,7 @@
 #include <QRawFont>
 #include <QRectF>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 #include <optional>
@@ -73,6 +74,7 @@ struct MathGlyphVariant {
   quint32 glyphIndex = 0;
   qreal advance = 0.0;
   qreal extent = 0.0;
+  qreal italicCorrection = 0.0;
 };
 
 struct MathGlyphAssemblyPart {
@@ -87,7 +89,28 @@ struct MathGlyphAssembly {
   qreal advance = 0.0;
   qreal extent = 0.0;
   qreal italicCorrection = 0.0;
+  QRectF inkBounds;
   QVector<MathGlyphAssemblyPart> parts;
+};
+
+struct MathShapedTextRun {
+  QRawFont rawFont;
+  QString familyName;
+  QString text;
+  QVector<quint32> glyphIndexes;
+  QVector<QPointF> positions;
+  qreal advance = 0.0;
+  QRectF inkBounds;
+};
+
+struct MathShapedText {
+  QVector<MathShapedTextRun> runs;
+  qreal advance = 0.0;
+  QRectF inkBounds;
+  bool compoundLineBox = false;
+  bool formatControlledLineBox = false;
+  bool fullEmLineBox = false;
+  qreal fontPixelSize = 0.0;
 };
 
 // Loads the bundled strict-oracle font and exposes the OpenType MATH data used
@@ -116,6 +139,14 @@ public:
   std::optional<MathGlyphAssembly> horizontalAssemblyParts(
       const QString& character, qreal targetExtent) const;
   QPainterPath glyphPath(quint32 glyphIndex) const;
+  QRawFont rasterFont(qreal fontScale = 1.0) const;
+  QRectF rasterGlyphBounds(quint32 glyphIndex,
+                           qreal fontScale = 1.0) const;
+  std::optional<MathShapedTextRun> shapeMathMlText(
+      const QString& text, qreal fontScale = 1.0) const;
+  std::optional<MathShapedText> shapeMathMlTextWithFallback(
+      const QString& text, const QStringList& fallbackFamilies,
+      qreal fontScale = 1.0) const;
   qreal textAdvance(const QString& text) const;
   QRectF textInkBounds(const QString& text) const;
 
@@ -128,6 +159,7 @@ private:
       const QString& character, qreal targetExtent, bool vertical) const;
 
   QRawFont font_;
+  QRawFont rasterFont_;
   MathFontConstants constants_;
   QHash<quint32, qint16> italicCorrections_;
   QHash<quint32, qint16> accentAttachments_;

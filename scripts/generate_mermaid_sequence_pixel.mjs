@@ -85,20 +85,160 @@ const cases = [
   { id: "label-math-overbrace", dpr: 2, theme: "dark",
     cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{x+y}^{n}$$' },
+  { id: "label-math-accent-text-shaping", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\widehat{\\text{office}}$$" },
+  { id: "label-math-accent-double-right-arrow", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\Overrightarrow{x+y}$$" },
+  { id: "label-math-accent-left-harpoon", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overleftharpoon{x+y}$$" },
+  { id: "label-math-accent-right-harpoon", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overrightharpoon{x+y}$$" },
+  { id: "label-math-accent-overgroup", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overgroup{x+y}$$" },
+  { id: "label-math-accent-overlinesegment-upstream-text", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overlinesegment{x+y}$$" },
+  { id: "label-math-accent-mixed-fraction-body", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{x+\\frac{a}{b}+y}^{n}$$" },
+  { id: "label-math-accent-mixed-radical-body", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overrightarrow{x+\\sqrt{y}}$$" },
+  { id: "label-math-accent-mixed-fraction-annotation", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{x}^{i+\\frac{a}{b}}$$" },
+  { id: "label-math-root-mixed-fraction", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\frac{a}{b}+q$$" },
+  { id: "label-math-root-mixed-radical", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\sqrt{x}+q$$" },
+  { id: "label-math-root-multiple-semantics", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt{x}+\\frac{a}{b}+y_i$$" },
+  { id: "label-math-root-mixed-accent", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\overbrace{x}^{n}+q$$" },
+  { id: "label-math-root-mixed-array", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\begin{matrix}a&b\\\\c&d\\end{matrix}+q$$" },
+  { id: "label-math-root-mixed-left-right", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\left(x+y\\right)+q$$" },
+  { id: "label-math-root-double-fraction", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{a}{b}+\\frac{c}{d}$$" },
+  { id: "label-math-root-all-paint-kinds", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{x}^{n}+\\left(y+z\\right)+\\begin{matrix}a&b\\end{matrix}$$" },
+  { id: "label-math-root-mixed-underbrace", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\underbrace{x}_{n}+q$$" },
+  { id: "label-math-root-mixed-under-arrow", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\underleftrightarrow{x}+q$$" },
+  { id: "label-math-root-mixed-sum-limits", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\sum_{i=1}^{n}+q$$' },
+  { id: "label-math-root-mixed-integral-scripts", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\int_0^1+q$$" },
+  { id: "label-math-root-limits-fraction", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sum_{i=1}^{n}+\\frac{a}{b}$$" },
+  { id: "label-math-root-product-limits", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\prod_{k=1}^{n}+q$$" },
+  { id: "label-math-root-coproduct-limits", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\coprod_{k=1}^{n}+q$$' },
+  { id: "label-math-root-double-integral", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iint_D+q$$" },
+  { id: "label-math-root-triple-integral", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iiint_D+q$$" },
+  { id: "label-math-root-cjk-fraction", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\text{中文}+\\frac{a}{b}+q$$" },
+  { id: "label-math-root-rtl-fraction", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\text{سلام}+\\frac{a}{b}+q$$' },
   { id: "label-math-accent-fraction-recursive", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{\\frac{a}{b}}_{n}$$" },
   { id: "label-math-accent-radical-recursive", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{\\sqrt{x_i^2}}^{n}$$" },
   { id: "label-math-accent-array-recursive", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{\\begin{matrix}\\frac{a}{b}&\\sqrt{x_i^2}\\\\c&d\\end{matrix}}_{n}$$' },
-  { id: "label-math-tall-assembly", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-array-body-recursive", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{matrix}\\frac{a}{b}&\\sqrt{x_i^2}\\\\c&d\\end{matrix}$$' },
+  { id: "label-math-array-cell-accent-recursive", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{matrix}\\underbrace{a}_{n}&b\\\\c&d\\end{matrix}$$" },
+  { id: "label-math-radical-accent-recursive", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt{\\underbrace{x}_{n}}$$" },
+  { id: "label-math-accent-accent-recursive", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{\\underbrace{x}_{i}}^{n}$$' },
+  { id: "label-math-tall-assembly", verticalDelimiter: "brace", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\{\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right.$$" },
+  { id: "label-math-tall-paren-assembly", verticalDelimiter: "paren", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left(\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right)$$" },
+  { id: "label-math-tall-bracket-assembly", verticalDelimiter: "bracket", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left[\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right]$$" },
+  { id: "label-math-tall-bar-assembly", verticalDelimiter: "bar", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left|\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right|$$" },
+  { id: "label-math-nested-delimiters", verticalDelimiter: "nested", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left(\\begin{matrix}\\left[\\frac{a}{b}\\right]&c\\\\d&\\left\\{\\frac{x}{y}\\right\\}\\end{matrix}\\right)$$" },
+  { id: "label-math-tall-double-bar", verticalDelimiter: "double-bar", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\|\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\|$$" },
+  { id: "label-math-tall-floor", verticalDelimiter: "floor", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\lfloor\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\rfloor$$" },
+  { id: "label-math-tall-ceil", verticalDelimiter: "ceil", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\lceil\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\rceil$$" },
+  { id: "label-math-tall-angle", verticalDelimiter: "angle", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\langle\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\rangle$$" },
+  { id: "label-math-nullable-delimiter", verticalDelimiter: "nullable", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left.\\begin{matrix}a\\\\b\\\\c\\\\d\\end{matrix}\\right\\rceil$$" },
+  { id: "label-math-delimiter-recursive", verticalDelimiter: "recursive", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\langle\\frac{\\sqrt{x_i^2}}{\\overbrace{a+b}^{n}}\\right\\rangle$$" },
+  { id: "label-math-middle-delimiter", verticalDelimiter: "middle", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\langle x\\middle|y\\right\\rangle$$" },
+  { id: "label-math-multiple-middle-delimiter", verticalDelimiter: "multiple-middle", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left(x\\middle|y\\middle\\|z\\right)$$" },
+  { id: "label-math-nested-plain-delimiter", verticalDelimiter: "nested-plain", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left[x+\\left(y-z\\right)\\right]$$" },
+  { id: "label-math-middle-fraction", verticalDelimiter: "middle-fraction", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left(\\frac{a\\middle|b}{c}\\right)$$" },
+  { id: "label-math-middle-radical", verticalDelimiter: "middle-radical", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left(\\sqrt{x\\middle|y}\\right)$$" },
+  { id: "label-math-middle-script", verticalDelimiter: "middle-script", theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\left(x^{a\\middle|b}\\right)$$' },
+  { id: "label-math-middle-array", verticalDelimiter: "middle-array", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left(\\begin{matrix}a\\middle|b&c\\\\d&e\\end{matrix}\\right)$$" },
   { id: "label-math-matrix-basic", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{matrix}a&b\\\\c&d\\end{matrix}$$" },
   { id: "label-math-matrix-recursive", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{matrix}\\frac{a}{b}&x^2\\\\\\sqrt{y}&z_i\\end{matrix}$$" },
   { id: "label-math-cases", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{cases}x^2&x>0\\\\-x&x\\le0\\end{cases}$$" },
+  { id: "label-math-bidi-isolates", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\text{abc ⁧שלום 123⁩ ⁦中文⁩}$$" },
+  { id: "label-math-fallback-fraction", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{\\text{中文}}{\\text{سلام}}$$" },
+  { id: "label-math-fallback-radical", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt{\\text{שלום}+x}$$" },
+  { id: "label-math-fallback-supsub", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$x_{\\text{中文}}^{\\text{سلام}}$$' },
+  { id: "label-math-fallback-accent", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{\\text{中文}}^{\\text{שלום}}$$" },
+  { id: "label-math-fallback-array", dpr: 1.5, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\begin{matrix}\\text{中文}&\\text{سلام}\\\\\\text{שלום}&x\\end{matrix}$$' },
+  { id: "label-math-fallback-limits", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sum_{\\text{\u4e2d\u6587}}^{\\text{\u0633\u0644\u0627\u0645}}$$" },
+  { id: "label-math-fallback-limits-recursive", dpr: 1.5, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\sum_{\\frac{\\text{\u4e2d\u6587}}{x}}^{\\sqrt{\\text{\u05e9\u05dc\u05d5\u05dd}}}$$' },
+  { id: "label-math-fallback-under-accent", dpr: 2, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{\\text{\u0633\u0644\u0627\u0645}}_{\\text{\u4e2d\u6587}}$$" },
+  { id: "label-math-fallback-delimiter-assembly", dpr: 1.5, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\left(\\begin{matrix}\\text{\u4e2d\u6587}\\\\\\text{\u0633\u0644\u0627\u0645}\\\\\\text{\u05e9\u05dc\u05d5\u05dd}\\\\x\\end{matrix}\\right)$$' },
+  { id: "label-math-fallback-product-limits", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\prod_{\\text{\u4e2d\u6587}}^{\\text{\u0633\u0644\u0627\u0645}}$$" },
+  { id: "label-math-fallback-coproduct-limits", dpr: 1.5, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\coprod_{\\text{\u05e9\u05dc\u05d5\u05dd}}^{\\text{\u4e2d\u6587}}$$' },
+  { id: "label-math-fallback-over-arrow", dpr: 2, mathAccent: "over", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overleftrightarrow{\\text{\u0633\u0644\u0627\u0645 \u4e2d\u6587}}$$" },
+  { id: "label-math-fallback-under-arrow", dpr: 1.25, theme: "dark", mathAccent: "under", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underleftrightarrow{\\text{\u05e9\u05dc\u05d5\u05dd \u4e2d\u6587}}$$' },
+  { id: "label-math-arrow-left-dpr-100", mathAccent: "over", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overleftarrow{\\text{\u0633\u0644\u0627\u0645 \u4e2d\u6587}}$$" },
+  { id: "label-math-arrow-right-dpr-125", dpr: 1.25, theme: "dark", mathAccent: "over", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\overrightarrow{\\text{\u05e9\u05dc\u05d5\u05dd \u4e2d\u6587}}$$' },
+  { id: "label-math-arrow-double-dpr-150", dpr: 1.5, mathAccent: "over", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\Overrightarrow{\\text{\u4e2d\u6587 \u0633\u0644\u0627\u0645}}$$" },
+  { id: "label-math-arrow-under-dpr-200", dpr: 2, theme: "dark", mathAccent: "under", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underleftrightarrow{\\text{\u0633\u0644\u0627\u0645 \u4e2d\u6587}}$$' },
+  { id: "label-math-fallback-brace-assembly", dpr: 1.5, verticalDelimiter: "brace", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\{\\begin{matrix}\\text{\u4e2d\u6587}\\\\\\text{\u0633\u0644\u0627\u0645}\\\\\\text{\u05e9\u05dc\u05d5\u05dd}\\\\x\\end{matrix}\\right\\}$$" },
+  { id: "label-math-fallback-bracket-assembly", dpr: 2, theme: "dark", verticalDelimiter: "bracket", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\left[\\begin{matrix}\\text{\u4e2d\u6587}\\\\\\text{\u0633\u0644\u0627\u0645}\\\\\\text{\u05e9\u05dc\u05d5\u05dd}\\\\x\\end{matrix}\\right]$$' },
+  { id: "label-math-fallback-angle-assembly", verticalDelimiter: "angle", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\left\\langle\\begin{matrix}\\text{\u4e2d\u6587}\\\\\\text{\u0633\u0644\u0627\u0645}\\\\\\text{\u05e9\u05dc\u05d5\u05dd}\\\\x\\end{matrix}\\right\\rangle$$" },
   { id: "structural-aria", source: "sequenceDiagram\naccTitle: Checkout sequence\naccDescr: Client request lifecycle\nA->>B:go" },
   { id: "structural-combined-order", source: [
       '%%{init: {"sequence": {"mirrorActors": false, "hideUnusedParticipants": true}}}%%',
@@ -106,6 +246,17 @@ const cases = [
       "participant A", "participant B", "end", "A->>+B:call", "alt branch",
       "Note over A,B:note", "B-->>-A:return", "end", "create participant C", "A->>C:create",
       "destroy C", "C-xA:destroy"].join("\n") },
+  { id: "label-math-accent-hat", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\hat{x}$$" },
+  { id: "label-math-accent-vector", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\vec{x+y}$$" },
+  { id: "label-math-accent-overline", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overline{x+y}$$" },
+  { id: "label-math-accent-underline", dpr: 2, theme: "dark",
+    cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underline{x+y}$$' },
+  { id: "label-math-relation-overlay", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$x\\le y\\ne z$$" },
 ];
 const { default: puppeteer } = await import(pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js")));
 const browser = await puppeteer.launch({headless:true, executablePath:chrome, args:["--allow-file-access-from-files"]});
@@ -120,12 +271,21 @@ try {
     await page.setViewport({width:2200,height:1600,deviceScaleFactor:cases[i].dpr ?? 1});
     await page.goto(harness);
     const dimensions = await page.evaluate(async ({fixture,i,module,faces,stack,mathFace}) => {
-      const style=document.createElement("style"); style.textContent=`${faces}\n${mathFace}\nmath{font-family:"STIX Two Math" !important}`; document.head.appendChild(style);
-      await Promise.all([document.fonts.load('16px "Noto Sans"'), document.fonts.load('16px "STIX Two Math"', 'x+\u2211\u221a')]); await document.fonts.ready;
+      const style=document.createElement("style"); style.textContent=`${faces}\n${mathFace}\nmath{font-family:"STIX Two Math",${stack} !important}.katex-html .text,.katex-html .text *{font-family:${stack} !important}`; document.head.appendChild(style);
+      await Promise.all([
+        document.fonts.load('16px "Noto Sans"', 'Latin'),
+        document.fonts.load('16px "Noto Sans CJK SC"', '中文'),
+        document.fonts.load('16px "Noto Sans Arabic"', 'سلام'),
+        document.fonts.load('16px "Noto Sans Hebrew"', 'שלום'),
+        document.fonts.load('16px "STIX Two Math"',
+          'x+\u2211\u221a\u220f\u2210\u2190\u2192\u2194\u21d2\u23de\u23df()[]{}\u27e8\u27e9'),
+      ]); await document.fonts.ready;
       const {default:mermaid}=await import(module);
       mermaid.initialize({startOnLoad:false,securityLevel:"strict",theme:fixture.theme ?? "default",fontFamily:stack,sequence:{useMaxWidth:false}});
       const {svg}=await mermaid.render(`sequence-pixel-${i}`,fixture.source);
       document.getElementById("container").innerHTML=svg;
+      await document.fonts.ready;
+      await new Promise((resolve)=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
       const root=document.querySelector("svg"); const b=root.getBBox();
       root.setAttribute("viewBox",`${b.x} ${b.y} ${b.width} ${b.height}`);
       root.setAttribute("width",Math.ceil(b.width)); root.setAttribute("height",Math.ceil(b.height));
@@ -166,6 +326,17 @@ try {
               [attribute.name,attribute.value])) : {},
         textNodes:[...root.querySelectorAll("text,foreignObject")].map((node)=>({
           tag:node.tagName,class:node.getAttribute("class") ?? "",text:node.textContent ?? ""})),
+        mathMlBox:(()=>{ const node=root.querySelector("math"); if(!node) return {};
+          const rect=node.getBoundingClientRect(); const computed=getComputedStyle(node);
+          return {x:Number(rect.x.toFixed(3)),y:Number(rect.y.toFixed(3)),
+            width:Number(rect.width.toFixed(3)),height:Number(rect.height.toFixed(3)),
+            fontFamily:computed.fontFamily,fontSize:computed.fontSize,
+            lineHeight:computed.lineHeight,direction:computed.direction}; })(),
+        mathMlRuns:[...root.querySelectorAll("math mi,math mo,math mtext,math mfrac")]
+          .map((node)=>{ const rect=node.getBoundingClientRect(); return {
+            tag:node.tagName,text:node.textContent ?? "",
+            x:Number(rect.x.toFixed(3)),y:Number(rect.y.toFixed(3)),
+            width:Number(rect.width.toFixed(3)),height:Number(rect.height.toFixed(3))}; }),
         styles:{actor:styleOf(".actor"),message:styleOf(".messageLine0,.messageLine1"),
           messageText:styleOf(".messageText"),note:styleOf(".note"),loopText:styleOf(".loopText")},
         domOrder:[...root.querySelectorAll("text,foreignObject,rect,line,path,math")].slice(0,160)
@@ -176,6 +347,35 @@ try {
     const file=`${cases[i].id}.png`;
     const svg = await page.$("svg");
     await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
+    let mathBodyFile,mathAccentFile;
+    const captureMathComponent=async(selector,suffix)=>{
+      const clip=await page.$eval(selector,(node)=>{
+        const rect=node.closest("math").getBoundingClientRect();
+        return {x:rect.left,y:rect.top,width:Math.max(1,rect.width),
+          height:Math.max(1,rect.height)};
+      });
+      await page.evaluate((selector)=>{
+        const root=document.querySelector("svg");
+        for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+        const selected=root.querySelector(selector);
+        for(let node=selected;node&&node!==root;node=node.parentElement)
+          node.style.visibility="visible";
+        for(const node of selected.querySelectorAll("*")) node.style.visibility="visible";
+      },selector);
+      const componentFile=`${cases[i].id}-${suffix}.png`;
+      await page.screenshot({path:path.join(outDir,componentFile),
+        omitBackground:true,clip});
+      await page.evaluate(()=>{
+        const root=document.querySelector("svg");
+        for(const node of root.querySelectorAll("*"))
+          node.style.removeProperty("visibility");
+      });
+      return componentFile;
+    };
+    if(cases[i].mathAccent) {
+      mathBodyFile=await captureMathComponent("math mtext","math-body");
+      mathAccentFile=await captureMathComponent("math mo","math-accent");
+    }
     let cropFile;
     if (cases[i].cropSelector) {
       cropFile=`${cases[i].id}-label.png`;
@@ -206,7 +406,12 @@ try {
     const sha256=createHash("sha256").update(fs.readFileSync(path.join(outDir,file))).digest("hex");
     const cropSha256=cropFile
       ? createHash("sha256").update(fs.readFileSync(path.join(outDir,cropFile))).digest("hex") : undefined;
-    manifestCases.push({...cases[i],file,sha256,cropFile,cropSha256,...dimensions});
+    const mathBodySha256=mathBodyFile
+      ? createHash("sha256").update(fs.readFileSync(path.join(outDir,mathBodyFile))).digest("hex") : undefined;
+    const mathAccentSha256=mathAccentFile
+      ? createHash("sha256").update(fs.readFileSync(path.join(outDir,mathAccentFile))).digest("hex") : undefined;
+    manifestCases.push({...cases[i],file,sha256,cropFile,cropSha256,
+      mathBodyFile,mathBodySha256,mathAccentFile,mathAccentSha256,...dimensions});
   }
   const payload={mermaidVersion:pkg.version,fontMode:"bundled-noto-stix-two-math-2.13b171",cases:manifestCases};
   payload.fixtureSha256=createHash("sha256").update(JSON.stringify(payload)).digest("hex");

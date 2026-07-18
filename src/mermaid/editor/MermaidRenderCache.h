@@ -20,6 +20,7 @@
 #include "mermaid/sequence/SequenceScene.h"
 
 #include <QHash>
+#include <QJsonObject>
 #include <QList>
 #include <QObject>
 #include <QSize>
@@ -47,6 +48,7 @@ struct MermaidRenderEntry {
   std::shared_ptr<const sequence::SequenceScene> sequenceScene;
   QSize naturalSize;                                   // scene.bounds size (logical px)
   QString errorMessage;                                // set when Error
+  QJsonObject errorDiagnostic;                         // structured Error details when available
 };
 
 class MermaidRenderCache : public QObject {

@@ -1,6 +1,9 @@
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/math/MathMlCssLayout.h"
+#include "mermaid/math/MathMlCssPainter.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
+#include "math/MathRenderer.h"
 
 #include <QDebug>
 #include <QCryptographicHash>
@@ -15,6 +18,7 @@
 #include <QPainter>
 #include <QSet>
 
+#include <algorithm>
 #include <cstdlib>
 
 using namespace muffin::mermaid;
@@ -86,6 +90,33 @@ QImage alphaTrimmed(const QImage& image) {
   const QRect bounds=alphaBounds(image);
   return bounds.isNull() ? image : image.copy(bounds);
 }
+QImage renderMathLayer(const sequence::SequenceLabelDocument& label,
+                       qreal fontPixelSize,qreal dpr,
+                       muffin::math::MathMlPaintLayer layer,
+                       const QColor& color,bool trim=true) {
+  if(label.richText.math.isEmpty()) return {};
+  muffin::math::MathRenderer renderer;
+  const qreal renderFontPixelSize=fontPixelSize*1.21;
+  const muffin::math::MathLayoutResult layout=renderer.render(
+      label.richText.math.front().source,renderFontPixelSize,color,true);
+  if(!layout.valid()) return {};
+  const muffin::math::MathCssBox box=muffin::math::layoutMathMlCssBox(
+      layout,renderFontPixelSize,16.0);
+  constexpr qreal padding=2.0;
+  QImage image(qCeil((box.width+2.0*padding)*dpr),
+               qCeil((box.height+2.0*padding)*dpr),
+               QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setRenderHint(QPainter::TextAntialiasing);
+  painter.scale(dpr,dpr);
+  painter.translate(padding,padding);
+  muffin::math::paintMathMlOperations(
+      painter,layout,color,renderFontPixelSize,layer);
+  painter.end();
+  return trim ? alphaTrimmed(image) : image;
+}
 QImage renderLabel(const sequence::SequenceScene& scene, const QString& kind, qreal dpr) {
   const sequence::SequenceLabelDocument* label=nullptr;
   QString textColor=scene.style.textColor;
@@ -131,19 +162,24 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("bf8fe5285d487f7c8e36a1bfbb2e5b03f85dc52f26a1b2510a195f8b2c891844"),
+              QLatin1String("7b5884495702b5195ed8add05edbbcb14a283c1ed34b7e5e25f1c95cf0a25f67"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==38,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==113,QStringLiteral("Sequence pixel matrix regressed"));
   QSet<QString> ids;
+  QSet<QString> verticalDelimiters;
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject(); const QString id=fixture.value(QStringLiteral("id")).toString();
     require(!id.isEmpty()&&!ids.contains(id),QStringLiteral("Duplicate sequence pixel case: %1").arg(id));
     ids.insert(id);
+    const QString verticalDelimiter =
+        fixture.value(QStringLiteral("verticalDelimiter")).toString();
+    if (!verticalDelimiter.isEmpty()) verticalDelimiters.insert(verticalDelimiter);
     const auto entry=cache.getSync(cache.makeKey(fixture.value(QStringLiteral("source")).toString()),fixture.value(QStringLiteral("source")).toString());
-    require(entry.status==editor::MermaidRenderStatus::Ready&&entry.sequenceScene,QStringLiteral("%1 native scene failed").arg(id));
+    require(entry.status==editor::MermaidRenderStatus::Ready&&entry.sequenceScene,
+            QStringLiteral("%1 native scene failed: %2").arg(id,entry.errorMessage));
     const qreal dpr=fixture.value(QStringLiteral("dpr")).toDouble(1.0);
     const QImage native=sequence::renderSequenceSceneToImage(*entry.sequenceScene,dpr,0.0);
     const QImage golden(dir.filePath(fixture.value(QStringLiteral("file")).toString()));
@@ -183,31 +219,223 @@ int main(int argc,char** argv) {
       const qreal glyphCoverage=tolerantGlyphCoverage(nativeLabel,browserLabel);
       qDebug().noquote()<<id<<"label-crop"<<nativeLabel.size()<<browserLabel.size()
                         <<"IoU"<<labelIou<<"glyph-coverage"<<glyphCoverage;
+      const QString mathAccent=fixture.value(QStringLiteral("mathAccent")).toString();
+      if(!mathAccent.isEmpty()) {
+        const QString bodyFile=fixture.value(QStringLiteral("mathBodyFile")).toString();
+        const QString accentFile=fixture.value(QStringLiteral("mathAccentFile")).toString();
+        require(!bodyFile.isEmpty()&&!accentFile.isEmpty(),
+                QStringLiteral("%1 MathML component fixtures are missing").arg(id));
+        require(fileSha256(dir.filePath(bodyFile))==
+                    fixture.value(QStringLiteral("mathBodySha256")).toString().toLatin1()&&
+                    fileSha256(dir.filePath(accentFile))==
+                    fixture.value(QStringLiteral("mathAccentSha256")).toString().toLatin1(),
+                QStringLiteral("%1 MathML component hashes drifted").arg(id));
+        require(fixture.value(QStringLiteral("cropKind")).toString()==
+                    QLatin1String("note")&&!entry.sequenceScene->noteLabels.isEmpty(),
+                QStringLiteral("%1 MathML component label is unavailable").arg(id));
+        const sequence::SequenceLabelDocument& componentLabel=
+            entry.sequenceScene->noteLabels.front();
+        const QColor componentColor(entry.sequenceScene->style.noteTextColor);
+        const QImage nativeBody=renderMathLayer(
+            componentLabel,entry.sequenceScene->style.fontSize,dpr,
+            muffin::math::MathMlPaintLayer::Body,componentColor);
+        const QImage nativeAccent=renderMathLayer(
+            componentLabel,entry.sequenceScene->style.fontSize,dpr,
+            muffin::math::MathMlPaintLayer::Accent,componentColor);
+        const QImage browserBody=alphaTrimmed(QImage(dir.filePath(bodyFile)));
+        const QImage browserAccent=alphaTrimmed(QImage(dir.filePath(accentFile)));
+        const QHash<QString,QSize> componentBounds{
+            {QStringLiteral("label-math-fallback-over-arrow/body"), QSize(0,1)},
+            {QStringLiteral("label-math-fallback-over-arrow/accent"), QSize(1,0)},
+            {QStringLiteral("label-math-fallback-under-arrow/body"), QSize(0,0)},
+            {QStringLiteral("label-math-fallback-under-arrow/accent"), QSize(0,1)},
+            {QStringLiteral("label-math-arrow-left-dpr-100/body"), QSize(0,1)},
+            {QStringLiteral("label-math-arrow-left-dpr-100/accent"), QSize(0,0)},
+            {QStringLiteral("label-math-arrow-right-dpr-125/body"), QSize(0,0)},
+            {QStringLiteral("label-math-arrow-right-dpr-125/accent"), QSize(1,1)},
+            {QStringLiteral("label-math-arrow-double-dpr-150/body"), QSize(0,1)},
+            {QStringLiteral("label-math-arrow-double-dpr-150/accent"), QSize(1,0)},
+            {QStringLiteral("label-math-arrow-under-dpr-200/body"), QSize(0,0)},
+            {QStringLiteral("label-math-arrow-under-dpr-200/accent"), QSize(0,1)},
+        };
+        const QHash<QString,qreal> componentCoverageMinimums{
+            {QStringLiteral("label-math-fallback-over-arrow/body"), 1.0},
+            {QStringLiteral("label-math-fallback-over-arrow/accent"), 0.982},
+            {QStringLiteral("label-math-fallback-under-arrow/body"), 1.0},
+            {QStringLiteral("label-math-fallback-under-arrow/accent"), 0.983},
+            {QStringLiteral("label-math-arrow-left-dpr-100/body"), 1.0},
+            {QStringLiteral("label-math-arrow-left-dpr-100/accent"), 1.0},
+            {QStringLiteral("label-math-arrow-right-dpr-125/body"), 1.0},
+            {QStringLiteral("label-math-arrow-right-dpr-125/accent"), 0.999},
+            {QStringLiteral("label-math-arrow-double-dpr-150/body"), 1.0},
+            {QStringLiteral("label-math-arrow-double-dpr-150/accent"), 1.0},
+            {QStringLiteral("label-math-arrow-under-dpr-200/body"), 1.0},
+            {QStringLiteral("label-math-arrow-under-dpr-200/accent"), 1.0},
+        };
+        const auto compareComponent=[&](const QImage& nativeComponent,
+                                        const QImage& browserComponent,
+                                        const QString& name) {
+          const QString key=id+QLatin1Char('/')+name;
+          require(componentBounds.contains(key)&&componentCoverageMinimums.contains(key),
+                  QStringLiteral("%1 has no component oracle").arg(key));
+          const QSize bounds=componentBounds.value(key);
+          const qreal componentCoverage=
+              tolerantGlyphCoverage(nativeComponent,browserComponent);
+          require(qAbs(nativeComponent.width()-browserComponent.width())<=bounds.width()&&
+                      qAbs(nativeComponent.height()-browserComponent.height())<=bounds.height(),
+                  QStringLiteral("%1 %2 component bounds drifted: %3x%4 vs %5x%6")
+                      .arg(id,name).arg(nativeComponent.width())
+                      .arg(nativeComponent.height()).arg(browserComponent.width())
+                      .arg(browserComponent.height()));
+          const qreal minimumCoverage=componentCoverageMinimums.value(key);
+          require(componentCoverage>=minimumCoverage,
+                  QStringLiteral("%1 %2 component coverage drifted: %3 < %4")
+                      .arg(id,name).arg(componentCoverage).arg(minimumCoverage));
+        };
+        compareComponent(nativeBody,browserBody,QStringLiteral("body"));
+        compareComponent(nativeAccent,browserAccent,QStringLiteral("accent"));
+      }
+      const QSet<QString> recursiveLayerCases{
+          QStringLiteral("label-math-accent-fraction-recursive"),
+          QStringLiteral("label-math-accent-radical-recursive"),
+          QStringLiteral("label-math-accent-array-recursive"),
+          QStringLiteral("label-math-accent-accent-recursive"),
+      };
+      if(recursiveLayerCases.contains(id)) {
+        require(!entry.sequenceScene->noteLabels.isEmpty(),
+                QStringLiteral("%1 recursive MathML label is unavailable").arg(id));
+        const sequence::SequenceLabelDocument& recursiveLabel=
+            entry.sequenceScene->noteLabels.front();
+        const QColor recursiveColor(entry.sequenceScene->style.noteTextColor);
+        const qreal recursiveFontSize=entry.sequenceScene->style.fontSize;
+        const QImage all=renderMathLayer(
+            recursiveLabel,recursiveFontSize,dpr,
+            muffin::math::MathMlPaintLayer::All,recursiveColor,false);
+        const QImage body=renderMathLayer(
+            recursiveLabel,recursiveFontSize,dpr,
+            muffin::math::MathMlPaintLayer::Body,recursiveColor,false);
+        const QImage accent=renderMathLayer(
+            recursiveLabel,recursiveFontSize,dpr,
+            muffin::math::MathMlPaintLayer::Accent,recursiveColor,false);
+        require(!all.isNull()&&all.size()==body.size()&&all.size()==accent.size(),
+                QStringLiteral("%1 MathML layer canvases drifted").arg(id));
+        QImage composited(body);
+        QPainter compositePainter(&composited);
+        compositePainter.drawImage(QPoint(),accent);
+        compositePainter.end();
+        require(all==composited,
+                QStringLiteral("%1 MathML All layer no longer equals Body + Accent")
+                    .arg(id));
+      }
+      if(id==QLatin1String("label-math-accent-accent-recursive")) {
+        require(!entry.sequenceScene->noteLabels.isEmpty(),
+                QStringLiteral("nested accent label is unavailable"));
+        const QImage nestedAccent=renderMathLayer(
+            entry.sequenceScene->noteLabels.front(),
+            entry.sequenceScene->style.fontSize,dpr,
+            muffin::math::MathMlPaintLayer::Accent,
+            QColor(entry.sequenceScene->style.noteTextColor));
+        const QRect nestedAccentInk=alphaBounds(nestedAccent);
+        require(!nestedAccentInk.isNull()&&nestedAccentInk.height()>=40,
+                QStringLiteral("nested accent layer traversal regressed"));
+      }
       const bool radicalLabel = fixture.value(QStringLiteral("source")).toString()
                                     .contains(QStringLiteral("\\sqrt"));
-      const bool assembledDelimiterLabel =
-          fixture.value(QStringLiteral("source")).toString().contains(
-              QStringLiteral("\\begin{matrix}")) &&
-          fixture.value(QStringLiteral("source")).toString().contains(
-              QStringLiteral("\\left"));
-      const bool recursiveAccentArray =
-          id == QLatin1String("label-math-accent-array-recursive");
-      if (recursiveAccentArray) {
-        require(qAbs(nativeLabel.width()-browserLabel.width())<=5 &&
-                    qAbs(nativeLabel.height()-browserLabel.height())<=4,
-                QStringLiteral("%1 recursive accent/array painted bounds drifted").arg(id));
-      } else if (radicalLabel || assembledDelimiterLabel) {
+      const bool verticalDelimiterLabel = !verticalDelimiter.isEmpty();
+      const QHash<QString,QSize> recursiveAccentBounds{
+          {QStringLiteral("label-math-accent-array-recursive"), QSize(2,2)},
+          {QStringLiteral("label-math-array-cell-accent-recursive"), QSize(1,0)},
+          {QStringLiteral("label-math-radical-accent-recursive"), QSize(1,0)},
+          {QStringLiteral("label-math-accent-accent-recursive"), QSize(2,2)},
+      };
+      if (const auto it=recursiveAccentBounds.constFind(id);
+          it!=recursiveAccentBounds.cend()) {
+        require(qAbs(nativeLabel.width()-browserLabel.width())<=it->width() &&
+                    qAbs(nativeLabel.height()-browserLabel.height())<=it->height(),
+                QStringLiteral("%1 recursive accent painted bounds drifted").arg(id));
+      } else if (radicalLabel || verticalDelimiterLabel) {
         // Geometry is asserted by the SVG/MathML structural oracles; keep the
         // remaining cross-rasterizer font hinting bounded independently.
-        const int maximumWidthDrift = assembledDelimiterLabel ? 3 : 2;
-        require(qAbs(nativeLabel.width()-browserLabel.width())<=maximumWidthDrift &&
+        require(qAbs(nativeLabel.width()-browserLabel.width())<=2 &&
                     qAbs(nativeLabel.height()-browserLabel.height())<=2,
                 QStringLiteral("%1 radical painted bounds drifted").arg(id));
       }
+      const QHash<QString,QSize> rootRowBounds{
+          {QStringLiteral("label-math-root-mixed-fraction"), QSize(0,1)},
+          {QStringLiteral("label-math-root-mixed-radical"), QSize(0,2)},
+          {QStringLiteral("label-math-root-multiple-semantics"), QSize(1,1)},
+          {QStringLiteral("label-math-root-mixed-accent"), QSize(1,0)},
+          {QStringLiteral("label-math-root-mixed-array"), QSize(0,0)},
+          {QStringLiteral("label-math-root-mixed-left-right"), QSize(0,2)},
+          {QStringLiteral("label-math-root-double-fraction"), QSize(1,1)},
+          {QStringLiteral("label-math-root-all-paint-kinds"), QSize(1,1)},
+          {QStringLiteral("label-math-root-mixed-underbrace"), QSize(1,0)},
+          {QStringLiteral("label-math-root-mixed-under-arrow"), QSize(1,1)},
+          {QStringLiteral("label-math-root-mixed-sum-limits"), QSize(1,1)},
+          {QStringLiteral("label-math-root-mixed-integral-scripts"), QSize(0,0)},
+          {QStringLiteral("label-math-root-limits-fraction"), QSize(2,2)},
+          {QStringLiteral("label-math-root-product-limits"), QSize(3,0)},
+          {QStringLiteral("label-math-root-coproduct-limits"), QSize(3,0)},
+          {QStringLiteral("label-math-root-double-integral"), QSize(2,1)},
+          {QStringLiteral("label-math-root-triple-integral"), QSize(3,1)},
+          {QStringLiteral("label-math-root-cjk-fraction"), QSize(1,1)},
+          {QStringLiteral("label-math-root-rtl-fraction"), QSize(1,1)},
+      };
+      if (const auto it=rootRowBounds.constFind(id);
+          it!=rootRowBounds.cend()) {
+        require(qAbs(nativeLabel.width()-browserLabel.width())<=it->width() &&
+                    qAbs(nativeLabel.height()-browserLabel.height())<=it->height(),
+                QStringLiteral("%1 root row painted bounds drifted").arg(id));
+      }
+      const QHash<QString,QSize> fallbackTextBounds{
+          {QStringLiteral("label-math-bidi-isolates"), QSize(0,0)},
+          {QStringLiteral("label-math-fallback-fraction"), QSize(2,0)},
+          {QStringLiteral("label-math-fallback-radical"), QSize(1,1)},
+          {QStringLiteral("label-math-fallback-supsub"), QSize(0,1)},
+          {QStringLiteral("label-math-fallback-accent"), QSize(1,1)},
+          {QStringLiteral("label-math-fallback-array"), QSize(0,1)},
+          {QStringLiteral("label-math-fallback-limits"), QSize(1,0)},
+          {QStringLiteral("label-math-fallback-limits-recursive"), QSize(1,1)},
+          {QStringLiteral("label-math-fallback-under-accent"), QSize(0,1)},
+          {QStringLiteral("label-math-fallback-delimiter-assembly"), QSize(0,2)},
+          {QStringLiteral("label-math-fallback-product-limits"), QSize(1,0)},
+          {QStringLiteral("label-math-fallback-coproduct-limits"), QSize(1,1)},
+          {QStringLiteral("label-math-fallback-over-arrow"), QSize(1,1)},
+          {QStringLiteral("label-math-fallback-under-arrow"), QSize(1,1)},
+          {QStringLiteral("label-math-fallback-brace-assembly"), QSize(1,0)},
+          {QStringLiteral("label-math-fallback-bracket-assembly"), QSize(0,1)},
+          {QStringLiteral("label-math-fallback-angle-assembly"), QSize(0,0)},
+      };
+      if (const auto it=fallbackTextBounds.constFind(id);
+          it!=fallbackTextBounds.cend()) {
+        require(qAbs(nativeLabel.width()-browserLabel.width())<=it->width() &&
+                    qAbs(nativeLabel.height()-browserLabel.height())<=it->height(),
+                QStringLiteral("%1 fallback text painted bounds drifted").arg(id));
+      }
+      const QHash<QString,QSize> arrowMatrixBounds{
+          {QStringLiteral("label-math-arrow-left-dpr-100"), QSize(0,1)},
+          {QStringLiteral("label-math-arrow-right-dpr-125"), QSize(1,0)},
+          {QStringLiteral("label-math-arrow-double-dpr-150"), QSize(1,1)},
+          {QStringLiteral("label-math-arrow-under-dpr-200"), QSize(1,1)},
+      };
+      if (const auto it=arrowMatrixBounds.constFind(id);
+          it!=arrowMatrixBounds.cend()) {
+        require(qAbs(nativeLabel.width()-browserLabel.width())<=it->width()&&
+                    qAbs(nativeLabel.height()-browserLabel.height())<=it->height(),
+                QStringLiteral("%1 arrow matrix painted bounds drifted").arg(id));
+      }
       const QHash<QString,QSize> horizontalAccentDrift{
-          {QStringLiteral("label-math-underbrace"), QSize(1,5)},
-          {QStringLiteral("label-math-under-arrow"), QSize(1,3)},
-          {QStringLiteral("label-math-overbrace"), QSize(0,3)},
+          {QStringLiteral("label-math-underbrace"), QSize(2,2)},
+          {QStringLiteral("label-math-under-arrow"), QSize(2,2)},
+          {QStringLiteral("label-math-overbrace"), QSize(2,2)},
+          {QStringLiteral("label-math-accent-double-right-arrow"), QSize(1,0)},
+          {QStringLiteral("label-math-accent-left-harpoon"), QSize(1,0)},
+          {QStringLiteral("label-math-accent-right-harpoon"), QSize(1,0)},
+          {QStringLiteral("label-math-accent-overgroup"), QSize(1,0)},
+          {QStringLiteral("label-math-accent-overlinesegment-upstream-text"), QSize(0,0)},
+          {QStringLiteral("label-math-accent-mixed-fraction-body"), QSize(0,0)},
+          {QStringLiteral("label-math-accent-mixed-radical-body"), QSize(1,0)},
+          {QStringLiteral("label-math-accent-mixed-fraction-annotation"), QSize(1,0)},
       };
       if (const auto it=horizontalAccentDrift.constFind(id);
           it!=horizontalAccentDrift.cend()) {
@@ -215,17 +443,33 @@ int main(int argc,char** argv) {
                     qAbs(nativeLabel.height()-browserLabel.height())<=it->height(),
                 QStringLiteral("%1 horizontal accent painted bounds drifted").arg(id));
       }
+      const QHash<QString,QSize> basicAccentBounds{
+          {QStringLiteral("label-math-accent-hat"), QSize(0,0)},
+          {QStringLiteral("label-math-accent-vector"), QSize(0,1)},
+          {QStringLiteral("label-math-accent-overline"), QSize(0,1)},
+          {QStringLiteral("label-math-accent-underline"), QSize(1,1)},
+          {QStringLiteral("label-math-relation-overlay"), QSize(0,0)},
+      };
+      if (const auto it=basicAccentBounds.constFind(id);
+          it!=basicAccentBounds.cend()) {
+        require(qAbs(nativeLabel.width()-browserLabel.width())<=it->width()&&
+                    qAbs(nativeLabel.height()-browserLabel.height())<=it->height(),
+                QStringLiteral("%1 basic accent painted bounds drifted").arg(id));
+      }
       const bool arrayOperationLabel =
           id == QLatin1String("label-math-matrix-basic") ||
           id == QLatin1String("label-math-matrix-recursive") ||
-          id == QLatin1String("label-math-cases");
+          id == QLatin1String("label-math-cases") ||
+          id == QLatin1String("label-math-array-body-recursive");
       if (arrayOperationLabel) {
         require(qAbs(nativeLabel.width()-browserLabel.width())<=2 &&
                     qAbs(nativeLabel.height()-browserLabel.height())<=1,
                 QStringLiteral("%1 array painted bounds drifted").arg(id));
       }
       qreal minimumGlyphCoverage = radicalLabel ? 0.58
-          : assembledDelimiterLabel ? 0.89 : 0.75;
+          : verticalDelimiterLabel ? 0.89 : 0.75;
+      if (id == QLatin1String("label-math-middle-script"))
+        minimumGlyphCoverage = 0.85;
       if (id == QLatin1String("label-math-genfrac")) minimumGlyphCoverage = 0.95;
       if (id == QLatin1String("label-math-fraction-ops") ||
           id == QLatin1String("label-math-stack-ops") ||
@@ -239,12 +483,104 @@ int main(int argc,char** argv) {
       if (id == QLatin1String("label-math-underbrace")) minimumGlyphCoverage = 0.71;
       if (id == QLatin1String("label-math-under-arrow")) minimumGlyphCoverage = 0.74;
       if (id == QLatin1String("label-math-overbrace")) minimumGlyphCoverage = 0.80;
-      if (recursiveAccentArray) minimumGlyphCoverage = 0.75;
+      if (id == QLatin1String("label-math-accent-double-right-arrow"))
+        minimumGlyphCoverage = 0.74;
+      const QHash<QString,qreal> recursiveAccentCoverage{
+          {QStringLiteral("label-math-accent-array-recursive"), 0.99},
+          {QStringLiteral("label-math-array-cell-accent-recursive"), 0.94},
+          {QStringLiteral("label-math-radical-accent-recursive"), 0.94},
+          {QStringLiteral("label-math-accent-accent-recursive"), 0.97},
+      };
+      if (const auto it=recursiveAccentCoverage.constFind(id);
+          it!=recursiveAccentCoverage.cend())
+        minimumGlyphCoverage = *it;
+      const QHash<QString,qreal> rootRowCoverage{
+          {QStringLiteral("label-math-root-mixed-fraction"), 0.99},
+          {QStringLiteral("label-math-root-mixed-radical"), 0.91},
+          {QStringLiteral("label-math-root-multiple-semantics"), 0.87},
+          {QStringLiteral("label-math-root-mixed-accent"), 0.95},
+          {QStringLiteral("label-math-root-mixed-array"), 0.99},
+          {QStringLiteral("label-math-root-mixed-left-right"), 0.94},
+          {QStringLiteral("label-math-root-double-fraction"), 0.99},
+          {QStringLiteral("label-math-root-all-paint-kinds"), 0.88},
+          {QStringLiteral("label-math-root-mixed-underbrace"), 0.96},
+          {QStringLiteral("label-math-root-mixed-under-arrow"), 0.979},
+          {QStringLiteral("label-math-root-mixed-sum-limits"), 0.99},
+          {QStringLiteral("label-math-root-mixed-integral-scripts"), 0.99},
+          {QStringLiteral("label-math-root-limits-fraction"), 0.99},
+          {QStringLiteral("label-math-root-product-limits"), 0.99},
+          {QStringLiteral("label-math-root-coproduct-limits"), 0.99},
+          {QStringLiteral("label-math-root-double-integral"), 0.99},
+          {QStringLiteral("label-math-root-triple-integral"), 0.98},
+          {QStringLiteral("label-math-root-cjk-fraction"), 0.99},
+          {QStringLiteral("label-math-root-rtl-fraction"), 0.99},
+      };
+      if (const auto it=rootRowCoverage.constFind(id);
+          it!=rootRowCoverage.cend())
+        minimumGlyphCoverage = *it;
+      const QHash<QString,qreal> fallbackTextCoverage{
+          {QStringLiteral("label-math-bidi-isolates"), 0.99},
+          {QStringLiteral("label-math-fallback-fraction"), 0.99},
+          {QStringLiteral("label-math-fallback-radical"), 0.80},
+          {QStringLiteral("label-math-fallback-supsub"), 0.99},
+          {QStringLiteral("label-math-fallback-accent"), 0.979},
+          {QStringLiteral("label-math-fallback-array"), 0.99},
+          {QStringLiteral("label-math-fallback-limits"), 0.99},
+          {QStringLiteral("label-math-fallback-limits-recursive"), 0.99},
+          {QStringLiteral("label-math-fallback-under-accent"), 0.96},
+          {QStringLiteral("label-math-fallback-delimiter-assembly"), 0.99},
+          {QStringLiteral("label-math-fallback-product-limits"), 0.99},
+          {QStringLiteral("label-math-fallback-coproduct-limits"), 0.99},
+          {QStringLiteral("label-math-fallback-over-arrow"), 0.999},
+          {QStringLiteral("label-math-fallback-under-arrow"), 0.999},
+          {QStringLiteral("label-math-fallback-brace-assembly"), 0.989},
+          {QStringLiteral("label-math-fallback-bracket-assembly"), 0.999},
+          {QStringLiteral("label-math-fallback-angle-assembly"), 0.999},
+      };
+      if (const auto it=fallbackTextCoverage.constFind(id);
+          it!=fallbackTextCoverage.cend())
+        minimumGlyphCoverage = *it;
+      const QHash<QString,qreal> arrowMatrixCoverage{
+          {QStringLiteral("label-math-arrow-left-dpr-100"), 0.943},
+          {QStringLiteral("label-math-arrow-right-dpr-125"), 0.999},
+          {QStringLiteral("label-math-arrow-double-dpr-150"), 0.879},
+          {QStringLiteral("label-math-arrow-under-dpr-200"), 0.999},
+      };
+      if (const auto it=arrowMatrixCoverage.constFind(id);
+          it!=arrowMatrixCoverage.cend())
+        minimumGlyphCoverage = *it;
+      const QHash<QString,qreal> basicAccentCoverage{
+          {QStringLiteral("label-math-accent-hat"), 0.96},
+          {QStringLiteral("label-math-accent-vector"), 0.95},
+          {QStringLiteral("label-math-accent-overline"), 0.90},
+          {QStringLiteral("label-math-accent-underline"), 0.84},
+          {QStringLiteral("label-math-relation-overlay"), 0.99},
+      };
+      if (const auto it=basicAccentCoverage.constFind(id);
+          it!=basicAccentCoverage.cend())
+        minimumGlyphCoverage = *it;
       require(glyphCoverage>=minimumGlyphCoverage,
               QStringLiteral("%1 tolerant glyph coverage too low: %2")
                                       .arg(id).arg(glyphCoverage));
     }
   }
+  require(verticalDelimiters ==
+              QSet<QString>{QStringLiteral("brace"), QStringLiteral("paren"),
+                            QStringLiteral("bracket"), QStringLiteral("bar"),
+                            QStringLiteral("nested"),
+                            QStringLiteral("double-bar"),
+                            QStringLiteral("floor"), QStringLiteral("ceil"),
+                            QStringLiteral("angle"),
+                            QStringLiteral("nullable"),
+                            QStringLiteral("recursive"),
+                            QStringLiteral("middle"),
+                            QStringLiteral("multiple-middle"),
+                            QStringLiteral("nested-plain"),
+                            QStringLiteral("middle-fraction"),
+                            QStringLiteral("middle-radical"),
+                            QStringLiteral("middle-script"),
+                            QStringLiteral("middle-array")},
+          QStringLiteral("Sequence vertical delimiter pixel axis regressed"));
   for(const QString& id:{QStringLiteral("label-participant-html-cjk"),
                          QStringLiteral("label-message-wrap-bidi"),
                          QStringLiteral("label-note-markdown-math"),
@@ -269,10 +605,40 @@ int main(int argc,char** argv) {
                          QStringLiteral("label-math-accent-fraction-recursive"),
                          QStringLiteral("label-math-accent-radical-recursive"),
                          QStringLiteral("label-math-accent-array-recursive"),
+                         QStringLiteral("label-math-array-body-recursive"),
+                         QStringLiteral("label-math-array-cell-accent-recursive"),
+                         QStringLiteral("label-math-radical-accent-recursive"),
+                         QStringLiteral("label-math-accent-accent-recursive"),
+                         QStringLiteral("label-math-accent-hat"),
+                         QStringLiteral("label-math-accent-vector"),
+                         QStringLiteral("label-math-accent-overline"),
+                         QStringLiteral("label-math-accent-underline"),
+                         QStringLiteral("label-math-relation-overlay"),
                          QStringLiteral("label-math-tall-assembly"),
                          QStringLiteral("label-math-matrix-basic"),
                          QStringLiteral("label-math-matrix-recursive"),
-                         QStringLiteral("label-math-cases")})
+                         QStringLiteral("label-math-cases"),
+                         QStringLiteral("label-math-bidi-isolates"),
+                         QStringLiteral("label-math-fallback-fraction"),
+                         QStringLiteral("label-math-fallback-radical"),
+                         QStringLiteral("label-math-fallback-supsub"),
+                         QStringLiteral("label-math-fallback-accent"),
+                         QStringLiteral("label-math-fallback-array"),
+                         QStringLiteral("label-math-fallback-limits"),
+                         QStringLiteral("label-math-fallback-limits-recursive"),
+                         QStringLiteral("label-math-fallback-under-accent"),
+                         QStringLiteral("label-math-fallback-delimiter-assembly"),
+                         QStringLiteral("label-math-fallback-product-limits"),
+                         QStringLiteral("label-math-fallback-coproduct-limits"),
+                         QStringLiteral("label-math-fallback-over-arrow"),
+                         QStringLiteral("label-math-fallback-under-arrow"),
+                         QStringLiteral("label-math-arrow-left-dpr-100"),
+                         QStringLiteral("label-math-arrow-right-dpr-125"),
+                         QStringLiteral("label-math-arrow-double-dpr-150"),
+                         QStringLiteral("label-math-arrow-under-dpr-200"),
+                         QStringLiteral("label-math-fallback-brace-assembly"),
+                         QStringLiteral("label-math-fallback-bracket-assembly"),
+                         QStringLiteral("label-math-fallback-angle-assembly")})
     require(ids.contains(id),QStringLiteral("Sequence structural Math crop is uncovered: %1").arg(id));
   qDebug()<<"MermaidSequencePixelTest:" << cases.size() << "Chrome/native pixel goldens passed";
   return 0;

@@ -88,6 +88,12 @@ SequenceLabelDocument wrapSequenceLabel(SequenceLabelDocument label,
   return label;
 }
 
+SequenceLabelDocument prepareSequenceLabel(SequenceLabelDocument label,
+                                           qreal fontPixelSize) {
+  flowchart::prepareFlowLabelMath(label.richText, fontPixelSize);
+  return label;
+}
+
 SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& label,
                                                const QString& fontFamily,
                                                qreal fontPixelSize,

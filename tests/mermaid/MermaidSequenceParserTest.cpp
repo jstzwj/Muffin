@@ -102,6 +102,23 @@ int main(int argc, char** argv) {
                 .arg(id, json(actual), json(expected)));
   }
 
+  {
+    const QString mathLabel = QStringLiteral(
+        "sequenceDiagram\nA->>B:start\n"
+        "Note over A,B:$$p+\\sum_{i=1}^{n}+q:100%#ok$$");
+    const QVector<SequenceToken> tokens = SequenceTokenizer(mathLabel).tokenize();
+    require(std::none_of(tokens.cbegin(), tokens.cend(),
+                         [](const SequenceToken& token) {
+                           return token.kind == SequenceTokenKind::Invalid;
+                         }),
+            QStringLiteral("Math label lexical state emitted an invalid token"));
+    const SequenceDiagram diagram = SequenceDiagram::parse(mathLabel);
+    require(!diagram.data().messages.isEmpty() &&
+                diagram.data().messages.back().message.toString() ==
+                    QLatin1String("$$p+\\sum_{i=1}^{n}+q:100%#ok$$"),
+            QStringLiteral("Math label lexical state lost opaque punctuation"));
+  }
+
   QSet<int> diagnosticCodes;
   for (const QJsonValue& value : root.value(QStringLiteral("invalidCases")).toArray()) {
     const QJsonObject fixture = value.toObject();

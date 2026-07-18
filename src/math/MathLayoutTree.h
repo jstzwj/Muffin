@@ -25,7 +25,10 @@ struct MathLayoutNode {
   MathScriptKind scriptKind = MathScriptKind::None;
   MathOperatorKind operatorKind = MathOperatorKind::None;
   MathAccentKind accentKind = MathAccentKind::None;
+  bool accentUsesNaturalWidth = false;
+  bool textModeRun = false;
   bool radicalIndex = false;
+  QString middleDelimiter;
   bool fractionHasBarLine = false;
   qreal fractionLineThicknessEm = -1.0;
   int fractionStyleSize = 1;

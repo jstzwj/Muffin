@@ -5,6 +5,7 @@
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/flowchart/Flowchart.h"
 #include "mermaid/flowchart/FlowchartLayout.h"
+#include "mermaid/math/MathMlCssLayout.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/scene/FlowScenePainter.h"
 #include "mermaid/sequence/SequenceDiagram.h"
@@ -384,6 +385,16 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(scene.bounds.width(), scene.bounds.height());
     entry.scene = std::make_shared<const flowscene::FlowScene>(std::move(scene));
+    return entry;
+  } catch (const math::MathMlPaintError& error) {
+    MermaidRenderEntry entry;
+    entry.status = MermaidRenderStatus::Error;
+    entry.errorMessage = QString::fromUtf8(error.what());
+    entry.errorDiagnostic = error.failure().toJson();
+    entry.errorDiagnostic.insert(QStringLiteral("stage"),
+                                 QStringLiteral("native-render"));
+    entry.errorDiagnostic.insert(QStringLiteral("component"),
+                                 QStringLiteral("sequence-label-mathml"));
     return entry;
   } catch (const flowchart::FlowchartParseError& error) {
     MermaidRenderEntry entry;

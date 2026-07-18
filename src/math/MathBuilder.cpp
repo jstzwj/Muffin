@@ -107,15 +107,27 @@ qreal xArrowHeightEm(const QString& key) {
 
 QString stretchyAccentCharacter(const QString& label) {
   static const QHash<QString, QChar> characters{
+      {QStringLiteral("\\widehat"), QChar(0x005e)},
+      {QStringLiteral("\\widetilde"), QChar(0x007e)},
+      {QStringLiteral("\\widecheck"), QChar(0x02c7)},
       {QStringLiteral("\\overleftarrow"), QChar(0x2190)},
       {QStringLiteral("\\underleftarrow"), QChar(0x2190)},
       {QStringLiteral("\\overrightarrow"), QChar(0x2192)},
       {QStringLiteral("\\underrightarrow"), QChar(0x2192)},
       {QStringLiteral("\\overleftrightarrow"), QChar(0x2194)},
       {QStringLiteral("\\underleftrightarrow"), QChar(0x2194)},
+      {QStringLiteral("\\Overrightarrow"), QChar(0x21d2)},
+      {QStringLiteral("\\overleftharpoon"), QChar(0x21bc)},
+      {QStringLiteral("\\overrightharpoon"), QChar(0x21c0)},
+      {QStringLiteral("\\overgroup"), QChar(0x23e0)},
   };
   const auto it = characters.constFind(label);
-  return it == characters.cend() ? QString{} : QString(*it);
+  if (it != characters.cend()) return QString(*it);
+  // KaTeX 0.16.45 intentionally exposes its missing stretchyCodePoint entry
+  // as literal MathML text. Preserve that observable upstream behavior.
+  if (label == QStringLiteral("\\overlinesegment"))
+    return QStringLiteral("undefined");
+  return {};
 }
 
 }  // namespace
@@ -375,7 +387,17 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeText(const MathParseNode& node)
       if (childNode.text.isEmpty() && childNode.body.isEmpty()) {
         children.push_back(buildNode(childNode));
       } else if (!childNode.text.isEmpty()) {
-        children.push_back(makeSymbol(childNode.text, fontNodeType, options_, node.fontClass));
+        auto child = makeSymbol(
+            childNode.text, fontNodeType, options_, node.fontClass);
+        const bool shapingOnly = std::all_of(
+            childNode.text.cbegin(), childNode.text.cend(),
+            [](QChar character) {
+              return character.isSpace() ||
+                     character.category() == QChar::Other_Format;
+            });
+        if (shapingOnly)
+          child->kind = MathRenderKind::Span;
+        children.push_back(std::move(child));
       } else if (childNode.type == MathNodeType::Text) {
         // Inner Text nodes (from \it, \tt, etc. inside \text) must be built
         // via buildNode to preserve text-mode processing (ligatures, fonts).
@@ -385,7 +407,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeText(const MathParseNode& node)
         children.push_back(MathBuilder(options_).buildExpression(childNode.body));
       }
     }
-    return makeSpan(std::move(children));
+    auto result = makeSpan(std::move(children));
+    result->textModeRun = !contentIsMath;
+    result->mathStyleSize = options_.style().size();
+    return result;
   }
   if (node.text.size() > 1) {
     return makeTextSpan(node.text, fontNodeType, options_, node.fontClass);
@@ -1341,6 +1366,10 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& nod
     result->accentKind = MathAccentKind::Over;
     result->accentLabel = node.label;
     result->accentCharacter = stretchyAccentCharacter(node.label);
+    result->accentUsesNaturalWidth =
+        node.label == QStringLiteral("\\widehat") ||
+        node.label == QStringLiteral("\\widetilde") ||
+        node.label == QStringLiteral("\\widecheck");
     return result;
   } else {
     QString accentText = QStringLiteral("^");
@@ -1644,7 +1673,8 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeDelimSizing(const MathParseNode
   // that will be resized by makeLeftRight to match the \left/\right height.
   if (node.delimiterSize == 0) {
     auto mid = MathDelimiter::makeSized(node.text, 1, node.body.isEmpty() ? MathNodeType::Ord : node.body.first().type, options_);
-    mid->atomClass = QStringLiteral("middle");
+    mid->middleDelimiter = node.text;
+    mid->mathStyleSize = options_.style().size();
     return mid;
   }
   return MathDelimiter::makeSized(node.text, qMax(1, node.delimiterSize), node.body.isEmpty() ? MathNodeType::Ord : node.body.first().type, options_);
@@ -1654,24 +1684,27 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeLeftRight(const MathParseNode& 
   auto inner = MathBuilder(options_).buildExpression(node.body);
 
   // KaTeX: resize \middle delimiters to match the inner height/depth.
-  // Middle delimiters are marked with atomClass="middle" by makeDelimSizing.
+  // The semantic marker is independent of atomClass because spacing rewrites
+  // the latter to the delimiter's final MathML atom class.
   struct MiddleResizer {
     const MathOptions& options;
     qreal targetHeight;
     qreal targetDepth;
     void resize(MathRenderNode& parent) {
       for (auto& child : parent.children) {
-        if (child->atomClass == QStringLiteral("middle")) {
+        if (!child->middleDelimiter.isEmpty()) {
           const GlobalFontMetrics metrics = MathFontMetrics::globalMetrics(options.style().size());
           const qreal axisH = metrics.axisHeight * options.fontPointSize();
           const qreal maxDist = qMax(targetHeight - axisH, targetDepth + axisH);
           const qreal extend = (5.0 / metrics.ptPerEm) * options.fontPointSize();
           const qreal totalH = qMax(maxDist / 500.0 * 901.0, 2.0 * maxDist - extend);
-          auto sized = MathDelimiter::makeCustom(child->text, totalH, true,
+          auto sized = MathDelimiter::makeCustom(
+              child->middleDelimiter, totalH, true,
               MathNodeType::Ord, options);
           sized->xOffset = child->xOffset;
           sized->yOffset = child->yOffset;
-          sized->atomClass = QStringLiteral("middle");
+          sized->middleDelimiter = child->middleDelimiter;
+          sized->mathStyleSize = child->mathStyleSize;
           child = std::move(sized);
         }
         // Recurse into every composite kind (not just Span) so a \middle inside a Fraction/Accent/

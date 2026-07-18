@@ -27,6 +27,8 @@ SequenceLabelDocument wrapSequenceLabel(SequenceLabelDocument label,
                                         const QString& fontFamily,
                                         qreal fontPixelSize,
                                         qreal maximumWidth);
+SequenceLabelDocument prepareSequenceLabel(SequenceLabelDocument label,
+                                           qreal fontPixelSize = 16.0);
 SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& label,
                                                const QString& fontFamily,
                                                qreal fontPixelSize = 16.0,

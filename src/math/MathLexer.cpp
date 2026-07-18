@@ -69,10 +69,17 @@ bool MathLexer::atEnd() {
   return peek().text == QStringLiteral("EOF");
 }
 
+void MathLexer::setPreserveSpaces(bool preserve) {
+  preserveSpaces_ = preserve;
+}
+
 MathToken MathLexer::readToken() {
-  while (pos_ < input_.size() && input_.at(pos_).isSpace()) {
-    ++pos_;
+  if (preserveSpaces_ && pos_ < input_.size() && input_.at(pos_).isSpace()) {
+    const qsizetype start = pos_;
+    while (pos_ < input_.size() && input_.at(pos_).isSpace()) ++pos_;
+    return {input_.mid(start, pos_ - start), start, pos_};
   }
+  while (pos_ < input_.size() && input_.at(pos_).isSpace()) ++pos_;
   if (pos_ >= input_.size()) {
     return {QStringLiteral("EOF"), pos_, pos_};
   }
@@ -84,7 +91,11 @@ MathToken MathLexer::readToken() {
       while (pos_ < input_.size() && (input_.at(pos_).isLetter() || input_.at(pos_) == QLatin1Char('@'))) {
         ++pos_;
       }
-      return {input_.mid(start, pos_ - start), start, pos_};
+      const qsizetype tokenEnd = pos_;
+      // TeX consumes whitespace that terminates a control word as part of
+      // lexing the command. It is not text-mode content.
+      while (pos_ < input_.size() && input_.at(pos_).isSpace()) ++pos_;
+      return {input_.mid(start, tokenEnd - start), start, tokenEnd};
     }
     if (pos_ < input_.size()) {
       ++pos_;

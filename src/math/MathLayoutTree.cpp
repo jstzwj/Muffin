@@ -91,7 +91,10 @@ std::unique_ptr<MathLayoutNode> layoutFromRenderNode(std::unique_ptr<MathRenderN
   layout->scriptKind = node->scriptKind;
   layout->operatorKind = node->operatorKind;
   layout->accentKind = node->accentKind;
+  layout->accentUsesNaturalWidth = node->accentUsesNaturalWidth;
+  layout->textModeRun = node->textModeRun;
   layout->radicalIndex = node->radicalIndex;
+  layout->middleDelimiter = node->middleDelimiter;
   layout->fractionHasBarLine = node->fractionHasBarLine;
   layout->fractionLineThicknessEm = node->fractionLineThicknessEm;
   layout->fractionStyleSize = node->fractionStyleSize;
@@ -149,7 +152,10 @@ std::unique_ptr<MathRenderNode> renderNodeFromLayout(const MathLayoutNode& node)
   render->scriptKind = node.scriptKind;
   render->operatorKind = node.operatorKind;
   render->accentKind = node.accentKind;
+  render->accentUsesNaturalWidth = node.accentUsesNaturalWidth;
+  render->textModeRun = node.textModeRun;
   render->radicalIndex = node.radicalIndex;
+  render->middleDelimiter = node.middleDelimiter;
   render->fractionHasBarLine = node.fractionHasBarLine;
   render->fractionLineThicknessEm = node.fractionLineThicknessEm;
   render->fractionStyleSize = node.fractionStyleSize;

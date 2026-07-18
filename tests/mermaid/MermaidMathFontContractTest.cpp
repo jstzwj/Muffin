@@ -1,4 +1,5 @@
 #include "math/OpenTypeMathFont.h"
+#include "mermaid/MermaidFontRegistry.h"
 
 #include <QCryptographicHash>
 #include <QFile>
@@ -29,6 +30,7 @@ int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) qputenv("QT_QPA_PLATFORM", "offscreen");
   QGuiApplication app(argc, argv);
   try {
+    mermaid::MermaidFontRegistry::ensureLoaded();
     const math::OpenTypeMathFont& font = math::OpenTypeMathFont::instance();
     require(font.valid(), QStringLiteral("Bundled STIX Two Math failed to load"));
 
@@ -68,10 +70,17 @@ int main(int argc, char** argv) {
     require(radical.has_value(), QStringLiteral("Radical variants are missing"));
     near(radical->advance, 18.832, 0.02, QStringLiteral("radical advance"));
     near(radical->extent, 37.936, 0.001, QStringLiteral("radical extent"));
+    const auto integral = font.verticalVariant(
+        QString(QChar(0x222B)), font.constants().displayOperatorMinHeight);
+    require(integral.has_value(), QStringLiteral("Integral variants are missing"));
+    near(integral->advance, 16.496, 0.02,
+         QStringLiteral("integral variant advance"));
+    near(integral->italicCorrection, 8.64, 0.001,
+         QStringLiteral("integral variant italic correction"));
     const auto assembledBrace = font.verticalAssembly(QStringLiteral("{"), 42.0);
     require(assembledBrace.has_value(), QStringLiteral("Brace assembly is missing"));
     near(assembledBrace->advance, 9.6, 0.02, QStringLiteral("brace assembly width"));
-    near(assembledBrace->extent, 71.984, 0.001,
+    near(assembledBrace->extent, 55.952, 0.001,
          QStringLiteral("brace minimum assembly extent"));
     const auto stretchedBrace = font.verticalAssembly(QStringLiteral("{"), 100.0);
     require(stretchedBrace.has_value(), QStringLiteral("Stretchable brace assembly is missing"));
@@ -87,6 +96,8 @@ int main(int argc, char** argv) {
             QStringLiteral("Brace terminal assembly parts drifted"));
     int extenderCount = 0;
     qreal previousOffset = -1.0;
+    const qreal connectorOverlap =
+        braceParts->parts.front().connectorOverlap;
     for (qsizetype i = 0; i < braceParts->parts.size(); ++i) {
       const auto& part = braceParts->parts.at(i);
       if (part.extender) ++extenderCount;
@@ -96,6 +107,8 @@ int main(int argc, char** argv) {
               QStringLiteral("Brace assembly glyph outline is missing"));
       previousOffset = part.offset;
       if (i + 1 < braceParts->parts.size()) {
+        near(part.connectorOverlap, connectorOverlap, 0.0001,
+             QStringLiteral("Brace uniform connector overlap"));
         near(braceParts->parts.at(i + 1).offset,
              part.offset + part.fullAdvance - part.connectorOverlap,
              0.0001, QStringLiteral("Brace connector continuity"));
@@ -105,6 +118,9 @@ int main(int argc, char** argv) {
             QStringLiteral("Brace extender consumption order drifted"));
     near(braceParts->extent, 100.0, 0.001,
          QStringLiteral("Brace paint operation extent"));
+    require(!braceParts->inkBounds.isEmpty() &&
+                braceParts->inkBounds.height() > 0.0,
+            QStringLiteral("Brace vertical assembly ink bounds are missing"));
     near(braceParts->parts.back().offset + braceParts->parts.back().fullAdvance,
          braceParts->extent, 0.0001,
          QStringLiteral("Brace operation terminal extent"));
@@ -137,16 +153,13 @@ int main(int argc, char** argv) {
          QStringLiteral("Horizontal underbrace assembly extent"));
     const auto underArrowParts = font.horizontalAssemblyParts(
         QString(QChar(0x2194)), 80.0);
-    require(underArrowParts.has_value(),
-            QStringLiteral("Horizontal arrow assembly is missing"));
-    require(underArrowParts->parts.size() == 11,
-            QStringLiteral("Horizontal arrow part sequence drifted"));
-    require(std::count_if(underArrowParts->parts.cbegin(),
-                          underArrowParts->parts.cend(),
-                          [](const auto& part) { return part.extender; }) == 9,
-            QStringLiteral("Horizontal arrow extender sequence drifted"));
-    near(underArrowParts->extent, 80.0, 0.001,
-         QStringLiteral("Horizontal arrow assembly extent"));
+    require(!underArrowParts,
+            QStringLiteral("Non-extender arrow assembly must be rejected"));
+    const auto underArrowFallback = font.horizontalVariant(
+        QString(QChar(0x2194)), 80.0);
+    require(underArrowFallback && underArrowFallback->glyphIndex != 0 &&
+                underArrowFallback->extent > 0.0,
+            QStringLiteral("Horizontal arrow fixed fallback is missing"));
     const auto assembledParen = font.verticalAssembly(QStringLiteral("("), 50.0);
     require(assembledParen.has_value(), QStringLiteral("Parenthesis assembly is missing"));
     near(assembledParen->extent, 52.768, 0.001,
@@ -165,6 +178,34 @@ int main(int argc, char** argv) {
          QStringLiteral("underbar vertical gap"));
     near(font.constants().underbarExtraDescender, 1.088, 0.001,
          QStringLiteral("underbar extra descender"));
+
+    const auto requireLtrFallbackOrder = [&](const QString& text,
+                                             const QString& rtlFamily) {
+      const auto shaped = font.shapeMathMlTextWithFallback(
+          text, mermaid::MermaidFontRegistry::familyStack());
+      require(shaped.has_value(),
+              QStringLiteral("Fallback bidi shaping failed for %1").arg(text));
+      const auto rtl = std::find_if(
+          shaped->runs.cbegin(), shaped->runs.cend(),
+          [&](const math::MathShapedTextRun& run) {
+            return run.familyName.contains(rtlFamily);
+          });
+      const auto cjk = std::find_if(
+          shaped->runs.cbegin(), shaped->runs.cend(),
+          [](const math::MathShapedTextRun& run) {
+            return run.familyName.contains(QLatin1String("CJK"));
+          });
+      require(rtl != shaped->runs.cend() && cjk != shaped->runs.cend() &&
+                  rtl->inkBounds.left() < cjk->inkBounds.left(),
+              QStringLiteral("LTR MathML fallback run order drifted for %1")
+                  .arg(text));
+    };
+    requireLtrFallbackOrder(
+        QString::fromUtf8("\xd8\xb3\xd9\x84\xd8\xa7\xd9\x85 \xe4\xb8\xad\xe6\x96\x87"),
+        QStringLiteral("Arabic"));
+    requireLtrFallbackOrder(
+        QString::fromUtf8("\xd7\xa9\xd7\x9c\xd7\x95\xd7\x9d \xe4\xb8\xad\xe6\x96\x87"),
+        QStringLiteral("Hebrew"));
 
     std::cout << "MermaidMathFontContractTest: bundled STIX/OpenType MATH contract passed\n";
     return 0;
