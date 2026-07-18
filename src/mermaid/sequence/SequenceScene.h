@@ -30,6 +30,15 @@ struct SequenceSceneStyle {
   qreal fontSize = 16.0;
 };
 
+struct SequencePreparedLabels {
+  QMap<int, SequenceLabelDocument> boxesByIndex;
+  QMap<QString, SequenceLabelDocument> participantsById;
+  QMap<int, SequenceLabelDocument> messagesByIndex;
+  QMap<int, SequenceLabelDocument> notesByIndex;
+  QMap<int, SequenceLabelDocument> fragmentKindsByIndex;
+  QMap<int, SequenceLabelDocument> fragmentsByIndex;
+};
+
 // Immutable geometry consumed by the sequence painter. The scene never reads
 // the parser DB and never performs placement.
 struct SequenceScene {
@@ -51,6 +60,8 @@ struct SequenceScene {
 };
 
 SequenceScene buildSequenceScene(const SequenceLayoutResult& layout,
-                                 SequenceSceneStyle style = {});
+                                 SequenceSceneStyle style = {},
+                                 const SequencePreparedLabels& prepared = {},
+                                 bool requirePrepared = false);
 
 }  // namespace muffin::mermaid::sequence

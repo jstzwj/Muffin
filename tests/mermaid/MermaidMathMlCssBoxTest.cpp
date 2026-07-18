@@ -1881,6 +1881,9 @@ int main(int argc, char** argv) {
           id == QLatin1String("root-mixed-left-right") ||
           id == QLatin1String("root-double-fraction") ||
           id == QLatin1String("root-all-paint-kinds") ||
+          id == QLatin1String("root-mixed-product-limits") ||
+          id == QLatin1String("root-mixed-coproduct-limits") ||
+          id == QLatin1String("root-mixed-triple-integral") ||
           id == QLatin1String("root-mixed-cjk-fraction") ||
           id == QLatin1String("root-mixed-rtl-fraction")) {
         const auto operation = math::checkedMathMlPaintOperations(
@@ -2311,7 +2314,7 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     require(paintOperationHash ==
-                QLatin1String("ced18c59a2bab2504a0ec3ffb3bed8fe1d2899ca62c23fe7f990a25ce9425e3e"),
+                QLatin1String("e6fff50d3b23e63e9f14195a09cd98e6af5d79eb9cc76b2507c90c0e07a95466"),
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),

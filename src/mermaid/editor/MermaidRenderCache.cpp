@@ -97,6 +97,61 @@ qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback
   return value.isDouble() && value.toDouble() >= 0.0 ? value.toDouble() : fallback;
 }
 
+sequence::SequenceSceneStyle sequenceStyleFromConfig(
+    const QJsonObject& config) {
+  sequence::SequenceSceneStyle style;
+  style.fontFamily = MermaidFontRegistry::cssFamilyStack();
+  if (themeFromConfig(config).compare(
+          QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
+    style.actorFill = QStringLiteral("#1f2020");
+    style.actorStroke = QStringLiteral("#cccccc");
+    style.textColor = QStringLiteral("#d3d3d3");
+    style.actorTextColor = QStringLiteral("#d3d3d3");
+    style.signalColor = QStringLiteral("#d3d3d3");
+    style.signalTextColor = QStringLiteral("#d3d3d3");
+    style.lifelineColor = QStringLiteral("#cccccc");
+    style.noteFill = QStringLiteral("#474949");
+    style.noteStroke = QStringLiteral("#2f2f2f");
+    style.noteTextColor = QStringLiteral("#ffffff");
+    style.activationFill = QStringLiteral("#2f3030");
+    style.activationStroke = QStringLiteral("#cccccc");
+    style.fragmentStroke = QStringLiteral("#d3d3d3");
+    style.loopTextColor = QStringLiteral("#d3d3d3");
+    style.labelFill = QStringLiteral("#1f2020");
+    style.labelStroke = QStringLiteral("#bdbccc");
+    style.labelTextColor = QStringLiteral("#d3d3d3");
+    style.sequenceNumberColor = QStringLiteral("#ffffff");
+    style.boxStroke = QStringLiteral("rgba(204,204,204,0.5)");
+  }
+  const QHash<QString, QString> theme = themeOverrides(config);
+  const auto apply = [&](QString& target, const QString& key) {
+    if (theme.contains(key)) target = theme.value(key);
+  };
+  apply(style.actorFill, QStringLiteral("actorBkg"));
+  apply(style.actorStroke, QStringLiteral("actorBorder"));
+  apply(style.actorTextColor, QStringLiteral("actorTextColor"));
+  apply(style.lifelineColor, QStringLiteral("actorLineColor"));
+  apply(style.signalColor, QStringLiteral("signalColor"));
+  apply(style.signalTextColor, QStringLiteral("signalTextColor"));
+  apply(style.noteFill, QStringLiteral("noteBkgColor"));
+  apply(style.noteStroke, QStringLiteral("noteBorderColor"));
+  apply(style.noteTextColor, QStringLiteral("noteTextColor"));
+  apply(style.activationFill, QStringLiteral("activationBkgColor"));
+  apply(style.activationStroke, QStringLiteral("activationBorderColor"));
+  apply(style.fragmentFill, QStringLiteral("rectBkgColor"));
+  apply(style.fragmentStroke, QStringLiteral("labelBoxBorderColor"));
+  apply(style.loopTextColor, QStringLiteral("loopTextColor"));
+  apply(style.labelFill, QStringLiteral("labelBoxBkgColor"));
+  apply(style.labelStroke, QStringLiteral("labelBoxBorderColor"));
+  apply(style.labelTextColor, QStringLiteral("labelTextColor"));
+  apply(style.sequenceNumberColor, QStringLiteral("sequenceNumberColor"));
+  apply(style.fontFamily, QStringLiteral("fontFamily"));
+  if (theme.contains(QStringLiteral("fontSize")))
+    style.fontSize = pixelValue(
+        theme.value(QStringLiteral("fontSize")), style.fontSize);
+  return style;
+}
+
 }  // namespace
 
 MermaidRenderCache::MermaidRenderCache(QObject* parent, int capacity) : QObject(parent), capacity_(capacity) {}
@@ -220,7 +275,10 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     if (type == QLatin1String("sequence")) {
       const sequence::SequenceDiagram diagram = sequence::SequenceDiagram::parse(pre.code);
       sequence::SequenceLayoutMeasurements measurements;
+      sequence::SequencePreparedLabels preparedLabels;
       const QJsonObject sequenceConfig = pre.config.value(QStringLiteral("sequence")).toObject();
+      sequence::SequenceSceneStyle style = sequenceStyleFromConfig(pre.config);
+      const qreal labelLineHeight = style.fontSize * (22.0 / 16.0);
       const qreal actorMargin = configNumber(sequenceConfig, QStringLiteral("actorMargin"), 50.0);
       const qreal actorWidth = configNumber(sequenceConfig, QStringLiteral("width"), 150.0);
       const qreal wrapPadding = configNumber(sequenceConfig, QStringLiteral("wrapPadding"), 10.0);
@@ -228,22 +286,32 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       const auto labelDocument = [&](const QString& text, sequence::SequenceLabelKind kind) {
         return sequence::parseSequenceLabel(text, kind);
       };
+      const auto prepare = [&](sequence::SequenceLabelDocument label) {
+        return sequence::prepareSequenceLabel(std::move(label), style.fontSize);
+      };
       const auto measure = [&](const sequence::SequenceLabelDocument& label) {
-        return sequence::layoutSequenceLabel(label, MermaidFontRegistry::cssFamilyStack(),
-                                             16.0, 22.0).size;
+        return sequence::layoutSequenceLabel(
+            label, style.fontFamily, style.fontSize, labelLineHeight).size;
       };
       for (const auto& actor : diagram.data().actors) {
         auto document = labelDocument(actor.description, sequence::SequenceLabelKind::Participant);
         if (actor.wrap || globalWrap) {
           document = sequence::wrapSequenceLabel(std::move(document),
-              MermaidFontRegistry::cssFamilyStack(), 16.0,
+              style.fontFamily, style.fontSize,
               std::max(1.0, actorWidth - 2.0 * wrapPadding));
           measurements.participantDisplayById.insert(actor.id, document.richText.text);
         }
+        document = prepare(std::move(document));
         measurements.participants.insert(actor.id, measure(document));
+        preparedLabels.participantsById.insert(actor.id, std::move(document));
       }
-      for (const auto& box : diagram.data().boxes)
-        measurements.boxes.append(measure(labelDocument(box.name, sequence::SequenceLabelKind::Box)));
+      for (qsizetype index = 0; index < diagram.data().boxes.size(); ++index) {
+        auto document = prepare(labelDocument(
+            diagram.data().boxes.at(index).name, sequence::SequenceLabelKind::Box));
+        measurements.boxes.append(measure(document));
+        preparedLabels.boxesByIndex.insert(
+            static_cast<int>(index), std::move(document));
+      }
       for (qsizetype index = 0; index < diagram.data().messages.size(); ++index) {
         const auto& message = diagram.data().messages[index];
         const bool note = message.type == 2;
@@ -262,8 +330,9 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
                 : actorWidth - 2.0 * wrapPadding;
           }
           document = sequence::wrapSequenceLabel(std::move(document),
-              MermaidFontRegistry::cssFamilyStack(), 16.0, maximumWidth);
+              style.fontFamily, style.fontSize, maximumWidth);
         }
+        document = prepare(std::move(document));
         const QSizeF size = measure(document);
         if (!note && !fragment && document.richText.math.isEmpty())
           measurements.messageDisplayByIndex.insert(static_cast<int>(index), document.richText.text);
@@ -275,6 +344,15 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         else if (fragment)
           measurements.fragmentsByIndex.insert(static_cast<int>(index), size);
         else measurements.messagesByIndex.insert(static_cast<int>(index), size);
+        if (note)
+          preparedLabels.notesByIndex.insert(
+              static_cast<int>(index), std::move(document));
+        else if (fragment)
+          preparedLabels.fragmentsByIndex.insert(
+              static_cast<int>(index), std::move(document));
+        else
+          preparedLabels.messagesByIndex.insert(
+              static_cast<int>(index), std::move(document));
       }
       sequence::SequenceLayoutOptions layoutOptions;
       layoutOptions.actorMargin = actorMargin;
@@ -294,55 +372,13 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
           sequenceConfig.value(QStringLiteral("hideUnusedParticipants")).toBool(false);
       const sequence::SequenceLayoutResult layout =
           sequence::layoutSequence(diagram.data(), measurements, layoutOptions);
-      sequence::SequenceSceneStyle style;
-      style.fontFamily = MermaidFontRegistry::cssFamilyStack();
-      if (themeFromConfig(pre.config).compare(QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
-        style.actorFill = QStringLiteral("#1f2020");
-        style.actorStroke = QStringLiteral("#cccccc");
-        style.textColor = QStringLiteral("#d3d3d3");
-        style.actorTextColor = QStringLiteral("#d3d3d3");
-        style.signalColor = QStringLiteral("#d3d3d3");
-        style.signalTextColor = QStringLiteral("#d3d3d3");
-        style.lifelineColor = QStringLiteral("#cccccc");
-        style.noteFill = QStringLiteral("#474949");
-        style.noteStroke = QStringLiteral("#2f2f2f");
-        style.noteTextColor = QStringLiteral("#ffffff");
-        style.activationFill = QStringLiteral("#2f3030");
-        style.activationStroke = QStringLiteral("#cccccc");
-        style.fragmentStroke = QStringLiteral("#d3d3d3");
-        style.loopTextColor = QStringLiteral("#d3d3d3");
-        style.labelFill = QStringLiteral("#1f2020");
-        style.labelStroke = QStringLiteral("#bdbccc");
-        style.labelTextColor = QStringLiteral("#d3d3d3");
-        style.sequenceNumberColor = QStringLiteral("#ffffff");
-        style.boxStroke = QStringLiteral("rgba(204,204,204,0.5)");
+      for (const auto& fragment : layout.fragments) {
+        preparedLabels.fragmentKindsByIndex.insert(
+            fragment.messageIndex,
+            prepare(labelDocument(fragment.kind, sequence::SequenceLabelKind::Box)));
       }
-      const QHash<QString, QString> sequenceTheme = themeOverrides(pre.config);
-      const auto applyTheme = [&](QString& target, const QString& key) {
-        if (sequenceTheme.contains(key)) target = sequenceTheme.value(key);
-      };
-      applyTheme(style.actorFill, QStringLiteral("actorBkg"));
-      applyTheme(style.actorStroke, QStringLiteral("actorBorder"));
-      applyTheme(style.actorTextColor, QStringLiteral("actorTextColor"));
-      applyTheme(style.lifelineColor, QStringLiteral("actorLineColor"));
-      applyTheme(style.signalColor, QStringLiteral("signalColor"));
-      applyTheme(style.signalTextColor, QStringLiteral("signalTextColor"));
-      applyTheme(style.noteFill, QStringLiteral("noteBkgColor"));
-      applyTheme(style.noteStroke, QStringLiteral("noteBorderColor"));
-      applyTheme(style.noteTextColor, QStringLiteral("noteTextColor"));
-      applyTheme(style.activationFill, QStringLiteral("activationBkgColor"));
-      applyTheme(style.activationStroke, QStringLiteral("activationBorderColor"));
-      applyTheme(style.fragmentFill, QStringLiteral("rectBkgColor"));
-      applyTheme(style.fragmentStroke, QStringLiteral("labelBoxBorderColor"));
-      applyTheme(style.loopTextColor, QStringLiteral("loopTextColor"));
-      applyTheme(style.labelFill, QStringLiteral("labelBoxBkgColor"));
-      applyTheme(style.labelStroke, QStringLiteral("labelBoxBorderColor"));
-      applyTheme(style.labelTextColor, QStringLiteral("labelTextColor"));
-      applyTheme(style.sequenceNumberColor, QStringLiteral("sequenceNumberColor"));
-      applyTheme(style.fontFamily, QStringLiteral("fontFamily"));
-      if (sequenceTheme.contains(QStringLiteral("fontSize")))
-        style.fontSize = pixelValue(sequenceTheme.value(QStringLiteral("fontSize")), style.fontSize);
-      sequence::SequenceScene scene = sequence::buildSequenceScene(layout, style);
+      sequence::SequenceScene scene = sequence::buildSequenceScene(
+          layout, std::move(style), preparedLabels, true);
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));

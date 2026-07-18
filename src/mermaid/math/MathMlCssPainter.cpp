@@ -28,7 +28,8 @@ void paintMathMlOperation(QPainter& painter,
         QTransform placement;
         placement.translate(glyph.target.center().x(),
                             glyph.target.center().y());
-        placement.scale(1.0, glyph.target.height() / bounds.height());
+        placement.scale(glyph.inkBounds.width() / bounds.width(),
+                        glyph.target.height() / bounds.height());
         placement.translate(-bounds.center().x(), -bounds.center().y());
         painter.save();
         painter.setClipRect(glyph.target, Qt::IntersectClip);

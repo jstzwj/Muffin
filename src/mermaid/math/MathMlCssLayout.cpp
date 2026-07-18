@@ -891,6 +891,26 @@ GlyphInkExtents glyphInkExtents(const MathRenderNode* node, qreal fontScale) {
   return result;
 }
 
+qreal nativeOperatorPadding(const MathRenderNode* symbol) {
+  if (!symbol) return 0.0;
+  const qreal styleScale = symbol->mathStyleSize >= 3
+      ? OpenTypeMathFont::instance().constants().scriptScriptPercentScaleDown
+      : symbol->mathStyleSize >= 2 || symbol->tightSpacing
+          ? OpenTypeMathFont::instance().constants().scriptPercentScaleDown
+          : 1.0;
+  if (symbol->atomClass == QLatin1String("mbin") ||
+      symbol->text == QLatin1String("+"))
+    return 4.0 / 18.0 * OpenTypeMathFont::instance().pixelSize() *
+           styleScale;
+  if (symbol->atomClass == QLatin1String("mrel"))
+    return 5.0 / 18.0 * OpenTypeMathFont::instance().pixelSize() *
+           styleScale;
+  if (symbol->atomClass == QLatin1String("mop"))
+    return 3.0 / 18.0 * OpenTypeMathFont::instance().pixelSize() *
+           styleScale;
+  return 0.0;
+}
+
 std::optional<NativeGlyphBox> nativeGlyphBox(const MathRenderNode* symbol) {
   if (symbol == nullptr || symbol->text.size() != 1) return std::nullopt;
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
@@ -911,12 +931,7 @@ std::optional<NativeGlyphBox> nativeGlyphBox(const MathRenderNode* symbol) {
         symbol->text, font.constants().displayOperatorMinHeight);
     if (variant) width = variant->advance * styleScale;
   }
-  if (symbol->atomClass == QLatin1String("mbin") || symbol->text == QLatin1String("+"))
-    width += 2.0 * 4.0 / 18.0 * font.pixelSize() * styleScale;
-  else if (symbol->atomClass == QLatin1String("mrel"))
-    width += 2.0 * 5.0 / 18.0 * font.pixelSize() * styleScale;
-  else if (symbol->atomClass == QLatin1String("mop"))
-    width += 2.0 * 3.0 / 18.0 * font.pixelSize() * styleScale;
+  width += 2.0 * nativeOperatorPadding(symbol);
   const bool binaryOperator = symbol->atomClass == QLatin1String("mbin") ||
                               symbol->text == QLatin1String("+");
   const bool usesInkDescent = (character.isLetter() &&
@@ -2519,7 +2534,8 @@ bool collectGlyphRunSymbols(const MathRenderNode* node,
 
 std::optional<QVector<MathCssGlyphRunOperation>> buildGlyphRunOperations(
     const MathRenderNode* node, QRectF target, qreal fontScale,
-    bool allowPartialOwnership = false) {
+    bool allowPartialOwnership = false,
+    std::optional<qreal> cssPositionScale = std::nullopt) {
   if (!node || target.isEmpty() || node->width <= 0.0) return std::nullopt;
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
   QVector<const MathRenderNode*> symbols;
@@ -2551,6 +2567,11 @@ std::optional<QVector<MathCssGlyphRunOperation>> buildGlyphRunOperations(
       if (!findCssPaintX(node, symbol, 0.0, &cssX)) return std::nullopt;
       sourceOrigin.setX(cssX);
     }
+    if (cssPositionScale) {
+      const auto cssX = cssNodeOffset(node, symbol, *cssPositionScale);
+      if (!cssX) return std::nullopt;
+      sourceOrigin.setX(*cssX + nativeOperatorPadding(symbol));
+    }
     if (singleSymbol(node) == symbol) sourceOrigin.setX(0.0);
     if (const MathRenderNode* textRun = wrappedTextModeRun(symbol)) {
       QString text;
@@ -2573,7 +2594,8 @@ std::optional<QVector<MathCssGlyphRunOperation>> buildGlyphRunOperations(
         run.fontScale = fontScale;
         run.baselineOrigin.setX(
             target.left() + sourceOrigin.x() *
-                (hasTextModeSource ? 1.0 : horizontalScale));
+                (hasTextModeSource || cssPositionScale ? 1.0
+                                                       : horizontalScale));
         run.inkBounds = shapedRun.inkBounds;
         inkTop = std::min(inkTop, run.inkBounds.top());
         inkBottom = std::max(inkBottom, run.inkBounds.bottom());
@@ -2589,7 +2611,8 @@ std::optional<QVector<MathCssGlyphRunOperation>> buildGlyphRunOperations(
     run.fontScale = fontScale;
     run.baselineOrigin = QPointF(
         target.left() + sourceOrigin.x() *
-            (hasTextModeSource ? 1.0 : horizontalScale),
+            (hasTextModeSource || cssPositionScale ? 1.0
+                                                   : horizontalScale),
         0.0);
     if (symbol->text.size() == 1) {
       const QChar character = symbol->text.front();
@@ -4822,6 +4845,21 @@ MathMlPaintOperationBuildResult buildMathMlPaintOperations(
       row.children.push_back(std::move(*child));
     }
     auto& rowPayload = std::get<MathCssRowOperation>(row.payload);
+    const bool containsLargeOperator = std::any_of(
+        row.children.cbegin(), row.children.cend(),
+        [](const MathCssPaintOperation& child) {
+          const auto* script = std::get_if<MathCssScriptOperation>(
+              &child.payload);
+          return script && script->largeOperatorGlyph.has_value();
+        });
+    if (containsLargeOperator) {
+      auto cssPositionedRuns = buildGlyphRunOperations(
+          layout.root.get(), rootRect, 1.0, true, renderScale);
+      if (!cssPositionedRuns)
+        return fail(MathMlPaintFailureCode::RootGlyphRunsUnavailable,
+                    layout.root.get());
+      rowPayload.glyphRuns = std::move(*cssPositionedRuns);
+    }
     const auto operationContentBaseline =
         [](const MathCssPaintOperation& operation) -> std::optional<qreal> {
       if (const auto* accent =

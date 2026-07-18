@@ -374,10 +374,10 @@ int main(int argc,char** argv) {
           {QStringLiteral("label-math-root-mixed-sum-limits"), QSize(1,1)},
           {QStringLiteral("label-math-root-mixed-integral-scripts"), QSize(0,0)},
           {QStringLiteral("label-math-root-limits-fraction"), QSize(2,2)},
-          {QStringLiteral("label-math-root-product-limits"), QSize(3,0)},
-          {QStringLiteral("label-math-root-coproduct-limits"), QSize(3,0)},
+          {QStringLiteral("label-math-root-product-limits"), QSize(1,0)},
+          {QStringLiteral("label-math-root-coproduct-limits"), QSize(1,0)},
           {QStringLiteral("label-math-root-double-integral"), QSize(2,1)},
-          {QStringLiteral("label-math-root-triple-integral"), QSize(3,1)},
+          {QStringLiteral("label-math-root-triple-integral"), QSize(0,1)},
           {QStringLiteral("label-math-root-cjk-fraction"), QSize(1,1)},
           {QStringLiteral("label-math-root-rtl-fraction"), QSize(1,1)},
       };

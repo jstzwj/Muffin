@@ -207,6 +207,25 @@ int main(int argc, char** argv) {
         QString::fromUtf8("\xd7\xa9\xd7\x9c\xd7\x95\xd7\x9d \xe4\xb8\xad\xe6\x96\x87"),
         QStringLiteral("Hebrew"));
 
+    const auto productVariant = font.verticalVariant(
+        QString(QChar(0x220F)), 22.0);
+    const auto tripleIntegralVariant = font.verticalVariant(
+        QString(QChar(0x222D)), 38.0);
+    require(productVariant && tripleIntegralVariant,
+            QStringLiteral("Large-operator raster variants are missing"));
+    near(font.rasterGlyphBounds(productVariant->glyphIndex).width(), 22.0,
+         0.001, QStringLiteral("product raster width"));
+    near(font.rasterGlyphBounds(tripleIntegralVariant->glyphIndex).width(),
+         31.0, 0.001, QStringLiteral("triple-integral raster width"));
+    require(font.rasterGlyphBounds(productVariant->glyphIndex).width() >
+                font.glyphPath(productVariant->glyphIndex)
+                    .boundingRect().width() &&
+                font.rasterGlyphBounds(tripleIntegralVariant->glyphIndex)
+                    .width() >
+                font.glyphPath(tripleIntegralVariant->glyphIndex)
+                    .boundingRect().width(),
+            QStringLiteral("Raster/outline width distinction was lost"));
+
     std::cout << "MermaidMathFontContractTest: bundled STIX/OpenType MATH contract passed\n";
     return 0;
   } catch (const std::exception& error) {

@@ -290,10 +290,12 @@ FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType
   return {.text = normalizeBreaks(source)};
 }
 
-void prepareFlowLabelMath(FlowLabelDocument& label, qreal fontPixelSize) {
-  if (!label.sequenceMathMlModel || label.math.isEmpty()) return;
+qsizetype prepareFlowLabelMath(FlowLabelDocument& label,
+                               qreal fontPixelSize) {
+  if (!label.sequenceMathMlModel || label.math.isEmpty()) return 0;
   const qreal renderFontPixelSize = fontPixelSize * 1.21;
   muffin::math::MathRenderer renderer;
+  qsizetype preparedCount = 0;
   for (FlowLabelMathSpan& span : label.math) {
     if (span.prepared &&
         qFuzzyCompare(span.prepared->fontPixelSize, fontPixelSize))
@@ -314,7 +316,9 @@ void prepareFlowLabelMath(FlowLabelDocument& label, qreal fontPixelSize) {
         layout, renderFontPixelSize, 16.0);
     prepared->operation = std::move(*build.operation);
     span.prepared = std::move(prepared);
+    ++preparedCount;
   }
+  return preparedCount;
 }
 
 qreal measureTextRange(const FlowLabelDocument& label, qsizetype start, qsizetype length,

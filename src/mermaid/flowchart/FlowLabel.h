@@ -86,7 +86,8 @@ FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType
 // Compiles sequence MathML into immutable, color-independent paint operations.
 // The resulting document is safe to copy into an immutable scene and reuse for
 // every layout/paint pass.
-void prepareFlowLabelMath(FlowLabelDocument& label, qreal fontPixelSize);
+qsizetype prepareFlowLabelMath(FlowLabelDocument& label,
+                               qreal fontPixelSize);
 
 FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        const QString& fontFamily,

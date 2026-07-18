@@ -1,8 +1,13 @@
 #include "mermaid/sequence/SequenceScene.h"
 
+#include <stdexcept>
+
 namespace muffin::mermaid::sequence {
 
-SequenceScene buildSequenceScene(const SequenceLayoutResult& layout, SequenceSceneStyle style) {
+SequenceScene buildSequenceScene(const SequenceLayoutResult& layout,
+                                 SequenceSceneStyle style,
+                                 const SequencePreparedLabels& prepared,
+                                 bool requirePrepared) {
   SequenceScene scene;
   scene.bounds = layout.bounds;
   scene.boxes = layout.boxes;
@@ -13,27 +18,43 @@ SequenceScene buildSequenceScene(const SequenceLayoutResult& layout, SequenceSce
   scene.fragments = layout.fragments;
   scene.sequenceNumbers = layout.sequenceNumbers;
   scene.style = std::move(style);
-  const auto preparedLabel = [&](const QString& text,
+  const auto fallbackLabel = [&](const QString& text,
                                  SequenceLabelKind kind) {
     return prepareSequenceLabel(
         parseSequenceLabel(text, kind), scene.style.fontSize);
   };
+  const auto labelFor = [&](const auto& labels, const auto& key,
+                            const QString& text, SequenceLabelKind kind) {
+    const auto found = labels.constFind(key);
+    if (found != labels.cend()) return found.value();
+    if (requirePrepared)
+      throw std::logic_error(
+          QStringLiteral("Missing prepared sequence label for key '%1'")
+              .arg(key).toStdString());
+    return fallbackLabel(text, kind);
+  };
   for (const auto& box : scene.boxes)
-    scene.boxLabels.append(preparedLabel(box.label, SequenceLabelKind::Box));
+    scene.boxLabels.append(labelFor(prepared.boxesByIndex, box.boxIndex,
+                                    box.label, SequenceLabelKind::Box));
   for (const auto& actor : scene.participants)
-    scene.participantLabels.append(
-        preparedLabel(actor.label, SequenceLabelKind::Participant));
+    scene.participantLabels.append(labelFor(
+        prepared.participantsById, actor.id, actor.label,
+        SequenceLabelKind::Participant));
   for (const auto& message : scene.messages)
-    scene.messageLabels.append(
-        preparedLabel(message.label, SequenceLabelKind::Message));
+    scene.messageLabels.append(labelFor(
+        prepared.messagesByIndex, message.messageIndex, message.label,
+        SequenceLabelKind::Message));
   for (const auto& note : scene.notes)
-    scene.noteLabels.append(
-        preparedLabel(note.label, SequenceLabelKind::Note));
+    scene.noteLabels.append(labelFor(
+        prepared.notesByIndex, note.messageIndex, note.label,
+        SequenceLabelKind::Note));
   for (const auto& fragment : scene.fragments) {
-    scene.fragmentKindLabels.append(
-        preparedLabel(fragment.kind, SequenceLabelKind::Box));
-    scene.fragmentLabels.append(
-        preparedLabel(fragment.label, SequenceLabelKind::Fragment));
+    scene.fragmentKindLabels.append(labelFor(
+        prepared.fragmentKindsByIndex, fragment.messageIndex, fragment.kind,
+        SequenceLabelKind::Box));
+    scene.fragmentLabels.append(labelFor(
+        prepared.fragmentsByIndex, fragment.messageIndex, fragment.label,
+        SequenceLabelKind::Fragment));
   }
   return scene;
 }

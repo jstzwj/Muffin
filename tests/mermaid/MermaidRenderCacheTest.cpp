@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <stdexcept>
 
 using namespace muffin::mermaid::editor;
 
@@ -122,6 +123,80 @@ int main(int argc, char** argv) {
         *entry.sequenceScene, 1.0, 0.0);
     require(!image.isNull(),
             QStringLiteral("worker-built MathML operations must paint on GUI thread"));
+  }
+
+  // --- preparation is idempotent and strict scene assembly preserves identity ---
+  {
+    auto label = muffin::mermaid::sequence::parseSequenceLabel(
+        QStringLiteral("$$\\frac{x}{y}$$"),
+        muffin::mermaid::sequence::SequenceLabelKind::Message);
+    require(muffin::mermaid::flowchart::prepareFlowLabelMath(
+                label.richText, 16.0) == 1,
+            QStringLiteral("first MathML preparation must build one operation"));
+    const auto* first = label.richText.math.front().prepared.get();
+    require(muffin::mermaid::flowchart::prepareFlowLabelMath(
+                label.richText, 16.0) == 0 &&
+                label.richText.math.front().prepared.get() == first,
+            QStringLiteral("same-font preparation must reuse the operation"));
+    require(muffin::mermaid::flowchart::prepareFlowLabelMath(
+                label.richText, 20.0) == 1 &&
+                label.richText.math.front().prepared.get() != first,
+            QStringLiteral("font-size changes must rebuild the operation"));
+
+    muffin::mermaid::sequence::SequenceLayoutResult layout;
+    muffin::mermaid::sequence::SequenceLayoutMessage message;
+    message.messageIndex = 7;
+    message.label = label.richText.text;
+    layout.messages.append(message);
+    muffin::mermaid::sequence::SequencePreparedLabels labels;
+    labels.messagesByIndex.insert(7, label);
+    const auto* prepared = label.richText.math.front().prepared.get();
+    const auto scene = muffin::mermaid::sequence::buildSequenceScene(
+        layout, {}, labels, true);
+    require(scene.messageLabels.size() == 1 &&
+                scene.messageLabels.front().richText.math.front()
+                    .prepared.get() == prepared,
+            QStringLiteral("scene assembly must preserve prepared identity"));
+    bool rejectedMissing = false;
+    try {
+      (void)muffin::mermaid::sequence::buildSequenceScene(
+          layout, {}, {}, true);
+    } catch (const std::logic_error&) {
+      rejectedMissing = true;
+    }
+    require(rejectedMissing,
+            QStringLiteral("strict scene assembly must reject missing labels"));
+  }
+
+  // --- sequence font style is resolved before measurement and preparation ---
+  {
+    MermaidRenderCache cache;
+    const QString body = QStringLiteral(
+        "sequenceDiagram\nA->>B: a deliberately long message label\n"
+        "A->>B: $$\\hat{\\frac{x}{y}}$$");
+    const QString large = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"fontSize\": \"20px\"}}}%%\n") +
+        body;
+    const auto normal = cache.getSync(
+        MermaidRenderCache::makeKey(body), body);
+    const auto enlarged = cache.getSync(
+        MermaidRenderCache::makeKey(large), large);
+    require(normal.status == kReady && normal.sequenceScene &&
+                enlarged.status == kReady && enlarged.sequenceScene,
+            QStringLiteral("sequence font-size comparison must render"));
+    require(normal.sequenceScene->style.fontSize == 16.0 &&
+                enlarged.sequenceScene->style.fontSize == 20.0 &&
+                enlarged.sequenceScene->messages.first().labelRect.width() >
+                    normal.sequenceScene->messages.first().labelRect.width() &&
+                enlarged.sequenceScene->messages.first().labelRect.height() >
+                    normal.sequenceScene->messages.first().labelRect.height(),
+            QStringLiteral("sequence font size must affect measured geometry"));
+    const auto& normalMath = normal.sequenceScene->messageLabels.at(1)
+                                 .richText.math.front().prepared;
+    const auto& enlargedMath = enlarged.sequenceScene->messageLabels.at(1)
+                                   .richText.math.front().prepared;
+    require(normalMath && enlargedMath && normalMath.get() != enlargedMath.get(),
+            QStringLiteral("font-size changes must produce a new Math operation"));
   }
 
   // --- sequence config + box measurements reach the production scene ---
