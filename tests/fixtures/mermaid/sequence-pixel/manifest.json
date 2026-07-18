@@ -14071,6 +14071,7 @@
       "id": "label-math-root-mixed-sum-limits",
       "dpr": 2,
       "theme": "dark",
+      "mathGlyph": "∑",
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\sum_{i=1}^{n}+q$$",
@@ -14078,6 +14079,14 @@
       "sha256": "aa95150e551b6483670b9cf2ce88f80820cfb59e5f7afb737394aa030e6011d3",
       "cropFile": "label-math-root-mixed-sum-limits-label.png",
       "cropSha256": "a114989d8cf4f07c4a2cd4979a214bed06160619d4017b6310913ae432e41993",
+      "mathGlyphFile": "label-math-root-mixed-sum-limits-math-glyph.png",
+      "mathGlyphSha256": "444d52e34136e3015d9f17424878b0fd50fb7b340df1d6940357ce6640786276",
+      "mathGlyphBox": {
+        "x": 166.359,
+        "y": 149.797,
+        "width": 17.781,
+        "height": 22
+      },
       "width": 350,
       "height": 278,
       "structure": {
@@ -14394,6 +14403,7 @@
     },
     {
       "id": "label-math-root-mixed-integral-scripts",
+      "mathGlyph": "∫",
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\int_0^1+q$$",
@@ -14401,6 +14411,14 @@
       "sha256": "9900fa74e1e61cabf2a9a3dfdc4cb2fe957b18c0e3b2b5a0f50306d75852d53d",
       "cropFile": "label-math-root-mixed-integral-scripts-label.png",
       "cropSha256": "d6b6e9e7d18edb2e4c4da7ad159e0c502656010a26c86c0e3c42374a5596f195",
+      "mathGlyphFile": "label-math-root-mixed-integral-scripts-math-glyph.png",
+      "mathGlyphSha256": "c4842a10f73c5d49b9c983e5d8ed66359022abd422ee3981dfd67ccd11093ea6",
+      "mathGlyphBox": {
+        "x": 163.859,
+        "y": 142.328,
+        "width": 16.5,
+        "height": 38
+      },
       "width": 350,
       "height": 278,
       "structure": {
@@ -15018,6 +15036,7 @@
     {
       "id": "label-math-root-product-limits",
       "dpr": 1.5,
+      "mathGlyph": "∏",
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\prod_{k=1}^{n}+q$$",
@@ -15025,6 +15044,14 @@
       "sha256": "40bd990d393a3d312ea28ece0be1494a6e3b208d9252f3a691c2fba1bf991ebe",
       "cropFile": "label-math-root-product-limits-label.png",
       "cropSha256": "bf99e4048ca695fa5ed05ba2af16b2b9260a8777da95a3e63bdb3d3d5a0f14d5",
+      "mathGlyphFile": "label-math-root-product-limits-math-glyph.png",
+      "mathGlyphSha256": "f100ad8bb55b8627db890041bc5b4139ce50476f9a3e309cffc41036b77c826e",
+      "mathGlyphBox": {
+        "x": 164.375,
+        "y": 149.797,
+        "width": 22.672,
+        "height": 22
+      },
       "width": 350,
       "height": 278,
       "structure": {
@@ -15343,6 +15370,7 @@
       "id": "label-math-root-coproduct-limits",
       "dpr": 2,
       "theme": "dark",
+      "mathGlyph": "∐",
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\coprod_{k=1}^{n}+q$$",
@@ -15350,6 +15378,14 @@
       "sha256": "c7b4914c997ed363068f3e55587190948af4ccccc6cbcb6580112d016219c823",
       "cropFile": "label-math-root-coproduct-limits-label.png",
       "cropSha256": "52b705c1a03440a89cd4d3931a3656e7d418c72bec47b15006605e8ec8bf88f5",
+      "mathGlyphFile": "label-math-root-coproduct-limits-math-glyph.png",
+      "mathGlyphSha256": "6f215a494e863e28c69c3fae5ffa0e63ca99004641d0984ee48a91466dc84023",
+      "mathGlyphBox": {
+        "x": 164.375,
+        "y": 149.797,
+        "width": 22.672,
+        "height": 22
+      },
       "width": 350,
       "height": 278,
       "structure": {
@@ -15667,6 +15703,7 @@
     {
       "id": "label-math-root-double-integral",
       "dpr": 1.25,
+      "mathGlyph": "∬",
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iint_D+q$$",
@@ -15674,6 +15711,14 @@
       "sha256": "c71469b5fc0bf43e64efb77f06c846fd155a50ffc20ed60c68e38142eb0d63f2",
       "cropFile": "label-math-root-double-integral-label.png",
       "cropSha256": "cc4c0826edf8d1be4ff0f5406f82b40e5476a155dba4f1cbb5c1c973a76f45f4",
+      "mathGlyphFile": "label-math-root-double-integral-math-glyph.png",
+      "mathGlyphSha256": "59dcd6b945971d188af1056b7fe1360f4945773038a404f11d9039155498384a",
+      "mathGlyphBox": {
+        "x": 159.859,
+        "y": 139,
+        "width": 23.813,
+        "height": 38
+      },
       "width": 350,
       "height": 275,
       "structure": {
@@ -15974,6 +16019,7 @@
     },
     {
       "id": "label-math-root-triple-integral",
+      "mathGlyph": "∭",
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iiint_D+q$$",
@@ -15981,6 +16027,14 @@
       "sha256": "610200196ce73cc034375e9004031705f68bd6151e13ca2b45716884542b79ba",
       "cropFile": "label-math-root-triple-integral-label.png",
       "cropSha256": "472a059b55601fe1ce5e1c9d728c7a800edfaef8ca61c5c60f00448fb9c626a5",
+      "mathGlyphFile": "label-math-root-triple-integral-math-glyph.png",
+      "mathGlyphSha256": "93027659eabcac61d65cc9157e1f8312d2ca60aa4fdca30727d335780de4bb9e",
+      "mathGlyphBox": {
+        "x": 155.859,
+        "y": 139,
+        "width": 31.125,
+        "height": 38
+      },
       "width": 350,
       "height": 275,
       "structure": {
@@ -33720,5 +33774,5 @@
       }
     }
   ],
-  "fixtureSha256": "7b5884495702b5195ed8add05edbbcb14a283c1ed34b7e5e25f1c95cf0a25f67"
+  "fixtureSha256": "48b085f32f41e1f9a9b43879392c4ad113b3853852473790c3574839bfaec1e4"
 }

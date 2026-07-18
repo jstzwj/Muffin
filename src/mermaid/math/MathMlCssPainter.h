@@ -9,6 +9,10 @@ namespace muffin::math {
 
 enum class MathMlPaintLayer { All, Body, Accent };
 
+void paintMathMlVerticalGlyphOperation(
+    QPainter& painter, const MathCssVerticalGlyphOperation& glyph,
+    const QColor& color);
+
 void paintMathMlOperation(
     QPainter& painter, const MathCssPaintOperation& operation,
     const QColor& color,

@@ -13,58 +13,64 @@
 
 namespace muffin::math {
 
+void paintMathMlVerticalGlyphOperation(
+    QPainter& painter, const MathCssVerticalGlyphOperation& glyph,
+    const QColor& color) {
+  const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+  if (glyph.kind == MathCssVerticalGlyphKind::FixedVariant &&
+      glyph.fixedGlyphIndex != 0 && !glyph.inkBounds.isEmpty() &&
+      glyph.scalePolicy == MathCssVerticalScalePolicy::FitTargetExtent) {
+    const QPainterPath path = font.glyphPath(glyph.fixedGlyphIndex);
+    const QRectF bounds = path.boundingRect();
+    if (!bounds.isEmpty()) {
+      QTransform placement;
+      placement.translate(glyph.target.center().x(),
+                          glyph.target.center().y());
+      placement.scale(glyph.inkBounds.width() / bounds.width(),
+                      glyph.target.height() / bounds.height());
+      placement.translate(-bounds.center().x(), -bounds.center().y());
+      painter.save();
+      painter.setClipRect(glyph.target, Qt::IntersectClip);
+      painter.setPen(Qt::NoPen);
+      painter.setBrush(color);
+      painter.drawPath(placement.map(path));
+      painter.restore();
+      return;
+    }
+  }
+  QVector<quint32> indexes;
+  QVector<QPointF> positions;
+  if (glyph.kind == MathCssVerticalGlyphKind::FixedVariant) {
+    if (glyph.fixedGlyphIndex == 0) return;
+    indexes = {glyph.fixedGlyphIndex};
+    positions = {QPointF()};
+  } else {
+    indexes.reserve(glyph.parts.size());
+    positions.reserve(glyph.parts.size());
+    for (const MathCssVerticalGlyphPart& part : glyph.parts) {
+      indexes.push_back(part.glyphIndex);
+      positions.push_back(part.position);
+    }
+  }
+  if (indexes.isEmpty()) return;
+  QGlyphRun run;
+  run.setRawFont(font.rasterFont());
+  run.setGlyphIndexes(indexes);
+  run.setPositions(positions);
+  painter.save();
+  if (glyph.scalePolicy == MathCssVerticalScalePolicy::FitTargetExtent)
+    painter.setClipRect(glyph.target, Qt::IntersectClip);
+  painter.setPen(color);
+  painter.drawGlyphRun(glyph.baselineOrigin, run);
+  painter.restore();
+}
+
 void paintMathMlOperation(QPainter& painter,
                           const MathCssPaintOperation& operation,
                           const QColor& color,
                           MathMlPaintLayer layer) {
   const auto paintVerticalGlyph = [&](const MathCssVerticalGlyphOperation& glyph) {
-    const OpenTypeMathFont& font = OpenTypeMathFont::instance();
-    if (glyph.kind == MathCssVerticalGlyphKind::FixedVariant &&
-        glyph.fixedGlyphIndex != 0 && !glyph.inkBounds.isEmpty() &&
-        glyph.scalePolicy == MathCssVerticalScalePolicy::FitTargetExtent) {
-      const QPainterPath path = font.glyphPath(glyph.fixedGlyphIndex);
-      const QRectF bounds = path.boundingRect();
-      if (!bounds.isEmpty()) {
-        QTransform placement;
-        placement.translate(glyph.target.center().x(),
-                            glyph.target.center().y());
-        placement.scale(glyph.inkBounds.width() / bounds.width(),
-                        glyph.target.height() / bounds.height());
-        placement.translate(-bounds.center().x(), -bounds.center().y());
-        painter.save();
-        painter.setClipRect(glyph.target, Qt::IntersectClip);
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(color);
-        painter.drawPath(placement.map(path));
-        painter.restore();
-        return;
-      }
-    }
-    QVector<quint32> indexes;
-    QVector<QPointF> positions;
-    if (glyph.kind == MathCssVerticalGlyphKind::FixedVariant) {
-      if (glyph.fixedGlyphIndex == 0) return;
-      indexes = {glyph.fixedGlyphIndex};
-      positions = {QPointF()};
-    } else {
-      indexes.reserve(glyph.parts.size());
-      positions.reserve(glyph.parts.size());
-      for (const MathCssVerticalGlyphPart& part : glyph.parts) {
-        indexes.push_back(part.glyphIndex);
-        positions.push_back(part.position);
-      }
-    }
-    if (indexes.isEmpty()) return;
-    QGlyphRun run;
-    run.setRawFont(font.rasterFont());
-    run.setGlyphIndexes(indexes);
-    run.setPositions(positions);
-    painter.save();
-    if (glyph.scalePolicy == MathCssVerticalScalePolicy::FitTargetExtent)
-      painter.setClipRect(glyph.target, Qt::IntersectClip);
-    painter.setPen(color);
-    painter.drawGlyphRun(glyph.baselineOrigin, run);
-    painter.restore();
+    paintMathMlVerticalGlyphOperation(painter, glyph, color);
   };
 
   const auto paintSolidRect = [&](QRectF rule) {

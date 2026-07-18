@@ -123,19 +123,19 @@ const cases = [
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\underbrace{x}_{n}+q$$" },
   { id: "label-math-root-mixed-under-arrow", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\underleftrightarrow{x}+q$$" },
-  { id: "label-math-root-mixed-sum-limits", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-mixed-sum-limits", dpr: 2, theme: "dark", mathGlyph: "∑", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\sum_{i=1}^{n}+q$$' },
-  { id: "label-math-root-mixed-integral-scripts", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-mixed-integral-scripts", mathGlyph: "∫", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\int_0^1+q$$" },
   { id: "label-math-root-limits-fraction", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sum_{i=1}^{n}+\\frac{a}{b}$$" },
-  { id: "label-math-root-product-limits", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-product-limits", dpr: 1.5, mathGlyph: "∏", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\prod_{k=1}^{n}+q$$" },
-  { id: "label-math-root-coproduct-limits", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-coproduct-limits", dpr: 2, theme: "dark", mathGlyph: "∐", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\coprod_{k=1}^{n}+q$$' },
-  { id: "label-math-root-double-integral", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-double-integral", dpr: 1.25, mathGlyph: "∬", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iint_D+q$$" },
-  { id: "label-math-root-triple-integral", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-triple-integral", mathGlyph: "∭", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iiint_D+q$$" },
   { id: "label-math-root-cjk-fraction", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\text{中文}+\\frac{a}{b}+q$$" },
@@ -347,7 +347,7 @@ try {
     const file=`${cases[i].id}.png`;
     const svg = await page.$("svg");
     await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
-    let mathBodyFile,mathAccentFile;
+    let mathBodyFile,mathAccentFile,mathGlyphFile,mathGlyphBox;
     const captureMathComponent=async(selector,suffix)=>{
       const clip=await page.$eval(selector,(node)=>{
         const rect=node.closest("math").getBoundingClientRect();
@@ -375,6 +375,41 @@ try {
     if(cases[i].mathAccent) {
       mathBodyFile=await captureMathComponent("math mtext","math-body");
       mathAccentFile=await captureMathComponent("math mo","math-accent");
+    }
+    if(cases[i].mathGlyph) {
+      mathGlyphBox=await page.$$eval("math mi,math mo",(nodes,text)=>{
+        const node=nodes.find((candidate)=>(candidate.textContent ?? "")===text);
+        if(!node) return null;
+        node.setAttribute("data-muffin-glyph-oracle","");
+        const rect=node.getBoundingClientRect();
+        return {x:Number(rect.x.toFixed(3)),y:Number(rect.y.toFixed(3)),
+          width:Number(rect.width.toFixed(3)),height:Number(rect.height.toFixed(3))};
+      },cases[i].mathGlyph);
+      if(!mathGlyphBox)
+        throw new Error(`${cases[i].id}: Math glyph ${cases[i].mathGlyph} was not found`);
+      const selector="[data-muffin-glyph-oracle]";
+      const clip=await page.$eval(selector,(node)=>{
+        const rect=node.getBoundingClientRect();
+        return {x:rect.left,y:rect.top,width:Math.max(1,rect.width),
+          height:Math.max(1,rect.height)};
+      });
+      await page.evaluate((selector)=>{
+        const root=document.querySelector("svg");
+        for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+        const selected=root.querySelector(selector);
+        for(let node=selected;node&&node!==root;node=node.parentElement)
+          node.style.visibility="visible";
+        for(const node of selected.querySelectorAll("*")) node.style.visibility="visible";
+      },selector);
+      mathGlyphFile=`${cases[i].id}-math-glyph.png`;
+      await page.screenshot({path:path.join(outDir,mathGlyphFile),
+        omitBackground:true,clip});
+      await page.evaluate((selector)=>{
+        const root=document.querySelector("svg");
+        for(const node of root.querySelectorAll("*"))
+          node.style.removeProperty("visibility");
+        root.querySelector(selector)?.removeAttribute("data-muffin-glyph-oracle");
+      },selector);
     }
     let cropFile;
     if (cases[i].cropSelector) {
@@ -410,8 +445,11 @@ try {
       ? createHash("sha256").update(fs.readFileSync(path.join(outDir,mathBodyFile))).digest("hex") : undefined;
     const mathAccentSha256=mathAccentFile
       ? createHash("sha256").update(fs.readFileSync(path.join(outDir,mathAccentFile))).digest("hex") : undefined;
+    const mathGlyphSha256=mathGlyphFile
+      ? createHash("sha256").update(fs.readFileSync(path.join(outDir,mathGlyphFile))).digest("hex") : undefined;
     manifestCases.push({...cases[i],file,sha256,cropFile,cropSha256,
-      mathBodyFile,mathBodySha256,mathAccentFile,mathAccentSha256,...dimensions});
+      mathBodyFile,mathBodySha256,mathAccentFile,mathAccentSha256,
+      mathGlyphFile,mathGlyphSha256,mathGlyphBox,...dimensions});
   }
   const payload={mermaidVersion:pkg.version,fontMode:"bundled-noto-stix-two-math-2.13b171",cases:manifestCases};
   payload.fixtureSha256=createHash("sha256").update(JSON.stringify(payload)).digest("hex");

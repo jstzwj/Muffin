@@ -59,6 +59,31 @@ qreal alphaIou(const QImage& a, const QImage& b) {
   }
   return united ? qreal(intersection)/united : 0.0;
 }
+struct MaskAlignment { qreal iou=0.0; QPoint offset; };
+MaskAlignment bestRawAlphaAlignment(const QImage& native,
+                                    const QImage& browser,
+                                    int radius=2) {
+  MaskAlignment best;
+  for(int dy=-radius;dy<=radius;++dy) for(int dx=-radius;dx<=radius;++dx) {
+    const int left=std::min(0,dx),top=std::min(0,dy);
+    const int right=std::max(native.width(),dx+browser.width());
+    const int bottom=std::max(native.height(),dy+browser.height());
+    int intersection=0,united=0;
+    for(int y=top;y<bottom;++y) for(int x=left;x<right;++x) {
+      const bool nativeInk=x>=0&&y>=0&&x<native.width()&&y<native.height()&&
+          native.pixelColor(x,y).alpha()>=32;
+      const int browserX=x-dx,browserY=y-dy;
+      const bool browserInk=browserX>=0&&browserY>=0&&
+          browserX<browser.width()&&browserY<browser.height()&&
+          browser.pixelColor(browserX,browserY).alpha()>=32;
+      intersection+=nativeInk&&browserInk;
+      united+=nativeInk||browserInk;
+    }
+    const qreal iou=united?qreal(intersection)/united:0.0;
+    if(iou>best.iou) best={iou,QPoint(dx,dy)};
+  }
+  return best;
+}
 qreal tolerantGlyphCoverage(const QImage& a,const QImage& b,int radius=20) {
   constexpr int side=400;
   constexpr int inkAlpha=32;
@@ -117,6 +142,56 @@ QImage renderMathLayer(const sequence::SequenceLabelDocument& label,
   painter.end();
   return trim ? alphaTrimmed(image) : image;
 }
+const muffin::math::MathCssVerticalGlyphOperation* findLargeOperatorGlyph(
+    const muffin::math::MathCssPaintOperation& operation) {
+  if (const auto* script = std::get_if<muffin::math::MathCssScriptOperation>(
+          &operation.payload);
+      script && script->largeOperatorGlyph)
+    return &*script->largeOperatorGlyph;
+  for (const auto& child : operation.children)
+    if (const auto* glyph = findLargeOperatorGlyph(child)) return glyph;
+  return nullptr;
+}
+struct LargeOperatorRaster {
+  QImage image;
+  QRectF target;
+  QRectF inkBounds;
+  qsizetype partCount=0;
+  bool fixedVariant=false;
+};
+LargeOperatorRaster renderLargeOperatorGlyph(
+    const sequence::SequenceLabelDocument& label, qreal fontPixelSize,
+    qreal dpr) {
+  if (label.richText.math.isEmpty()) return {};
+  muffin::math::MathRenderer renderer;
+  const qreal renderFontPixelSize=fontPixelSize*1.21;
+  const muffin::math::MathLayoutResult layout=renderer.render(
+      label.richText.math.front().source,renderFontPixelSize,Qt::white,true);
+  if(!layout.valid()) return {};
+  const auto built=muffin::math::buildMathMlPaintOperations(
+      layout,renderFontPixelSize,16.0);
+  if(!built.operation) return {};
+  const auto* glyph=findLargeOperatorGlyph(*built.operation);
+  if(!glyph) return {};
+  const muffin::math::MathCssBox box=muffin::math::layoutMathMlCssBox(
+      layout,renderFontPixelSize,16.0);
+  constexpr qreal padding=2.0;
+  QImage image(qCeil((box.width+2.0*padding)*dpr),
+               qCeil((box.height+2.0*padding)*dpr),
+               QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setRenderHint(QPainter::TextAntialiasing);
+  painter.scale(dpr,dpr);
+  painter.translate(padding,padding);
+  muffin::math::paintMathMlVerticalGlyphOperation(
+      painter,*glyph,Qt::white);
+  painter.end();
+  return {alphaTrimmed(image),glyph->target,glyph->inkBounds,
+          glyph->parts.size(),
+          glyph->kind==muffin::math::MathCssVerticalGlyphKind::FixedVariant};
+}
 QImage renderLabel(const sequence::SequenceScene& scene, const QString& kind, qreal dpr) {
   const sequence::SequenceLabelDocument* label=nullptr;
   QString textColor=scene.style.textColor;
@@ -162,7 +237,7 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("7b5884495702b5195ed8add05edbbcb14a283c1ed34b7e5e25f1c95cf0a25f67"),
+              QLatin1String("48b085f32f41e1f9a9b43879392c4ad113b3853852473790c3574839bfaec1e4"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
@@ -219,6 +294,66 @@ int main(int argc,char** argv) {
       const qreal glyphCoverage=tolerantGlyphCoverage(nativeLabel,browserLabel);
       qDebug().noquote()<<id<<"label-crop"<<nativeLabel.size()<<browserLabel.size()
                         <<"IoU"<<labelIou<<"glyph-coverage"<<glyphCoverage;
+      const QString mathGlyphFile=fixture.value(
+          QStringLiteral("mathGlyphFile")).toString();
+      if(!mathGlyphFile.isEmpty()) {
+        require(!entry.sequenceScene->noteLabels.isEmpty(),
+                QStringLiteral("%1 large-operator label is missing").arg(id));
+        const LargeOperatorRaster nativeGlyph=renderLargeOperatorGlyph(
+            entry.sequenceScene->noteLabels.first(),
+            entry.sequenceScene->style.fontSize,dpr);
+        const QImage browserGlyph=alphaTrimmed(
+            QImage(dir.filePath(mathGlyphFile)));
+        require(fileSha256(dir.filePath(mathGlyphFile))==
+                    fixture.value(QStringLiteral("mathGlyphSha256"))
+                        .toString().toLatin1(),
+                QStringLiteral("%1 glyph raster golden hash drifted").arg(id));
+        require(!nativeGlyph.image.isNull()&&!browserGlyph.isNull(),
+                QStringLiteral("%1 glyph raster image missing").arg(id));
+        const QJsonObject browserBox=fixture.value(
+            QStringLiteral("mathGlyphBox")).toObject();
+        require(qAbs(nativeGlyph.target.width()-
+                     browserBox.value(QStringLiteral("width")).toDouble())<=0.22&&
+                    qAbs(nativeGlyph.target.height()-
+                     browserBox.value(QStringLiteral("height")).toDouble())<=0.22,
+                QStringLiteral("%1 glyph CSS allocation mismatch: native=%2x%3 browser=%4x%5")
+                    .arg(id).arg(nativeGlyph.target.width())
+                    .arg(nativeGlyph.target.height())
+                    .arg(browserBox.value(QStringLiteral("width")).toDouble())
+                    .arg(browserBox.value(QStringLiteral("height")).toDouble()));
+        const qreal glyphIou=alphaIou(nativeGlyph.image,browserGlyph);
+        const qreal isolatedCoverage=tolerantGlyphCoverage(
+            nativeGlyph.image,browserGlyph);
+        const MaskAlignment rawAlignment=bestRawAlphaAlignment(
+            nativeGlyph.image,browserGlyph);
+        qDebug().noquote()<<id<<"glyph-raster"<<nativeGlyph.image.size()
+                          <<browserGlyph.size()<<"IoU"<<glyphIou
+                          <<"coverage"<<isolatedCoverage
+                          <<"raw-best"<<rawAlignment.iou
+                          <<"offset"<<rawAlignment.offset
+                          <<"target"<<nativeGlyph.target
+                          <<"ink"<<nativeGlyph.inkBounds
+                          <<"fixed"<<nativeGlyph.fixedVariant
+                          <<"parts"<<nativeGlyph.partCount;
+        require(qAbs(nativeGlyph.image.width()-browserGlyph.width())<=2&&
+                    qAbs(nativeGlyph.image.height()-browserGlyph.height())<=2,
+                QStringLiteral("%1 glyph raster bounds drifted").arg(id));
+        require(isolatedCoverage>=0.95,
+                QStringLiteral("%1 glyph raster coverage too low: %2")
+                    .arg(id).arg(isolatedCoverage));
+        const qreal minimumGlyphIou=
+            id==QLatin1String("label-math-root-mixed-integral-scripts")||
+                    id==QLatin1String("label-math-root-triple-integral")
+                ? 0.74 : 0.80;
+        require(glyphIou>=minimumGlyphIou,
+                QStringLiteral("%1 isolated glyph IoU too low: %2")
+                    .arg(id).arg(glyphIou));
+        require(qAbs(rawAlignment.offset.x())<=1&&
+                    qAbs(rawAlignment.offset.y())<=1,
+                QStringLiteral("%1 glyph raster origin drifted: %2,%3")
+                    .arg(id).arg(rawAlignment.offset.x())
+                    .arg(rawAlignment.offset.y()));
+      }
       const QString mathAccent=fixture.value(QStringLiteral("mathAccent")).toString();
       if(!mathAccent.isEmpty()) {
         const QString bodyFile=fixture.value(QStringLiteral("mathBodyFile")).toString();

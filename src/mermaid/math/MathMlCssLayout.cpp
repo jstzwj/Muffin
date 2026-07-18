@@ -3085,7 +3085,7 @@ std::optional<MathCssVerticalGlyphOperation> buildVerticalGlyphOperation(
   const auto largestFixed = font.verticalVariant(
       character, std::numeric_limits<qreal>::max());
   const auto assembly = largestFixed &&
-          target.height() > largestFixed->extent + 0.001
+          target.height() > std::ceil(largestFixed->extent + 0.001)
       ? font.verticalAssemblyParts(character, target.height())
       : std::optional<MathGlyphAssembly>{};
 

@@ -964,6 +964,10 @@ int main(int argc, char** argv) {
             &scriptOperations.front()->payload);
         require(actual && actual->limits && actual->largeOperatorGlyph,
                 id + QStringLiteral(" large operator glyph is missing"));
+        require(actual->largeOperatorGlyph->kind ==
+                    math::MathCssVerticalGlyphKind::FixedVariant &&
+                    actual->largeOperatorGlyph->parts.isEmpty(),
+                id + QStringLiteral(" rounded fixed operator became an assembly"));
         const QJsonObject browser = limits.front();
         const QJsonArray children = browser.value(
             QStringLiteral("children")).toArray();
@@ -1003,6 +1007,10 @@ int main(int argc, char** argv) {
             &scriptOperations.front()->payload);
         require(actual && !actual->limits && actual->largeOperatorGlyph,
                 id + QStringLiteral(" integral large glyph is missing"));
+        require(actual->largeOperatorGlyph->kind ==
+                    math::MathCssVerticalGlyphKind::FixedVariant &&
+                    actual->largeOperatorGlyph->parts.isEmpty(),
+                id + QStringLiteral(" rounded integral became an assembly"));
         const QJsonObject browser = scripts.front();
         const QJsonArray children = browser.value(
             QStringLiteral("children")).toArray();
@@ -1043,6 +1051,10 @@ int main(int argc, char** argv) {
             &scriptOperations.front()->payload);
         require(actual && !actual->limits && actual->largeOperatorGlyph,
                 id + QStringLiteral(" multi-integral large glyph is missing"));
+        require(actual->largeOperatorGlyph->kind ==
+                    math::MathCssVerticalGlyphKind::FixedVariant &&
+                    actual->largeOperatorGlyph->parts.isEmpty(),
+                id + QStringLiteral(" rounded multi-integral became an assembly"));
         const QJsonObject browser = scripts.front();
         const QJsonArray children = browser.value(
             QStringLiteral("children")).toArray();
@@ -2314,7 +2326,7 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     require(paintOperationHash ==
-                QLatin1String("e6fff50d3b23e63e9f14195a09cd98e6af5d79eb9cc76b2507c90c0e07a95466"),
+                QLatin1String("684ffda0e33a334d10e559b84ceb5636ee197ff4d50913145850e48406692deb"),
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),
