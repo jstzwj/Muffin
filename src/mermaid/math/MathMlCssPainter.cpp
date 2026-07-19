@@ -1,6 +1,7 @@
 #include "mermaid/math/MathMlCssPainter.h"
 
 #include "mermaid/math/MathMlCssLayout.h"
+#include "mermaid/math/MathGlyphRasterizer.h"
 #include "math/OpenTypeMathFont.h"
 
 #include <QGlyphRun>
@@ -291,35 +292,11 @@ void paintMathMlPrimitives(
     for (const MathCssGlyphRunOperation& glyph : runs) {
       if (glyph.glyphIndexes.isEmpty() || glyph.clip.isEmpty()) continue;
       if (outlineScale && !glyph.rawFont.isValid()) {
-        QPainterPath path;
-        for (qsizetype index = 0; index < glyph.glyphIndexes.size(); ++index) {
-          const QPainterPath glyphPath = font.glyphPath(
-              glyph.glyphIndexes.at(index));
-          if (glyphPath.isEmpty()) continue;
-          const QRectF outlineBounds = glyphPath.boundingRect();
-          const QRectF rasterBounds = font.rasterGlyphBounds(
-              glyph.glyphIndexes.at(index), glyph.fontScale);
-          const QPointF rasterOriginCorrection(
-              rasterBounds.left() - outlineBounds.left() * glyph.fontScale,
-              rasterBounds.top() - outlineBounds.top() * glyph.fontScale);
-          QTransform placement;
-          placement.translate(
-              glyph.baselineOrigin.x() + glyph.positions.at(index).x() +
-                  rasterOriginCorrection.x() + outlineOffset.x(),
-              glyph.baselineOrigin.y() + glyph.positions.at(index).y() +
-                  rasterOriginCorrection.y() + outlineOffset.y());
-          placement.scale(glyph.fontScale, glyph.fontScale);
-          path.addPath(placement.map(glyphPath));
-        }
-        if (!path.isEmpty()) {
-          painter.save();
-          painter.setClipRect(glyph.clip, Qt::IntersectClip);
-          painter.setPen(Qt::NoPen);
-          painter.setBrush(color);
-          painter.drawPath(path);
-          painter.restore();
+        if (muffin::mermaid::math::MathGlyphRasterizer::paintOutlineRun(
+                painter, glyph.glyphIndexes, glyph.positions,
+                glyph.baselineOrigin, glyph.fontScale, glyph.clip, color,
+                outlineOffset))
           continue;
-        }
       }
       QGlyphRun run;
       run.setRawFont(glyph.rawFont.isValid()

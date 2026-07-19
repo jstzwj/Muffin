@@ -142,6 +142,31 @@ QImage renderMathLayer(const sequence::SequenceLabelDocument& label,
   painter.end();
   return trim ? alphaTrimmed(image) : image;
 }
+QImage renderMathAtPhase(const sequence::SequenceLabelDocument& label,
+                         qreal fontPixelSize,qreal dpr,qreal phase) {
+  if(label.richText.math.isEmpty()) return {};
+  muffin::math::MathRenderer renderer;
+  const qreal renderFontPixelSize=fontPixelSize*1.21;
+  const muffin::math::MathLayoutResult layout=renderer.render(
+      label.richText.math.front().source,renderFontPixelSize,Qt::white,true);
+  if(!layout.valid()) return {};
+  const muffin::math::MathCssBox box=muffin::math::layoutMathMlCssBox(
+      layout,renderFontPixelSize,16.0);
+  constexpr qreal padding=4.0;
+  QImage image(qCeil((box.width+2.0*padding+1.0)*dpr),
+               qCeil((box.height+2.0*padding+1.0)*dpr),
+               QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setRenderHint(QPainter::TextAntialiasing);
+  painter.scale(dpr,dpr);
+  painter.translate(padding+phase,padding+phase);
+  muffin::math::paintMathMlOperations(
+      painter,layout,Qt::white,renderFontPixelSize);
+  painter.end();
+  return alphaTrimmed(image);
+}
 const muffin::math::MathCssVerticalGlyphOperation* findLargeOperatorGlyph(
     const muffin::math::MathCssPaintOperation& operation) {
   if (const auto* script = std::get_if<muffin::math::MathCssScriptOperation>(
@@ -302,7 +327,7 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("51465bf814f4b471b34fb42b04a6f6b8c9cb0169115bae8e377527e821ad3b21"),
+              QLatin1String("1384eafde18363ec7003ba378447163294ad6729a7026445e37a604168606b4f"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
@@ -473,6 +498,46 @@ int main(int argc,char** argv) {
         require(groupIou>=0.75&&groupCoverage>=0.94,
                 QStringLiteral("%1 %2 token-group raster drifted: IoU=%3 coverage=%4")
                     .arg(id,role).arg(groupIou).arg(groupCoverage));
+      }
+      for(const QJsonValue& phaseValue:
+          fixture.value(QStringLiteral("mathRasterPhases")).toArray()) {
+        const QJsonObject phaseFixture=phaseValue.toObject();
+        const qreal phase=phaseFixture.value(QStringLiteral("phase")).toDouble();
+        const QString phaseFile=phaseFixture.value(QStringLiteral("file")).toString();
+        require(fileSha256(dir.filePath(phaseFile))==
+                    phaseFixture.value(QStringLiteral("sha256")).toString().toLatin1(),
+                QStringLiteral("%1 phase %2 hash drifted").arg(id).arg(phase));
+        require(!entry.sequenceScene->noteLabels.isEmpty(),
+                QStringLiteral("%1 phase oracle label is missing").arg(id));
+        const QImage nativePhase=renderMathAtPhase(
+            entry.sequenceScene->noteLabels.first(),
+            entry.sequenceScene->style.fontSize,dpr,phase);
+        const QImage browserPhase=alphaTrimmed(QImage(dir.filePath(phaseFile)));
+        require(!nativePhase.isNull()&&!browserPhase.isNull(),
+                QStringLiteral("%1 phase %2 image missing").arg(id).arg(phase));
+        const qreal phaseIou=alphaIou(nativePhase,browserPhase);
+        const qreal phaseCoverage=tolerantGlyphCoverage(nativePhase,browserPhase);
+        const MaskAlignment phaseAlignment=bestRawAlphaAlignment(
+            nativePhase,browserPhase);
+        qDebug().noquote()<<id<<"math-phase"<<phase<<"DPR"<<dpr
+                          <<nativePhase.size()<<browserPhase.size()
+                          <<"IoU"<<phaseIou<<"coverage"<<phaseCoverage
+                          <<"raw-best"<<phaseAlignment.iou
+                          <<"offset"<<phaseAlignment.offset;
+        require(qAbs(nativePhase.width()-browserPhase.width())<=2&&
+                    qAbs(nativePhase.height()-browserPhase.height())<=2,
+                QStringLiteral("%1 phase %2 bounds drifted").arg(id).arg(phase));
+        require(phaseCoverage>=0.95,
+                QStringLiteral("%1 phase %2 coverage too low: %3")
+                    .arg(id).arg(phase).arg(phaseCoverage));
+        require(phaseIou>=0.58,
+                QStringLiteral("%1 phase %2 IoU too low: %3")
+                    .arg(id).arg(phase).arg(phaseIou));
+        require(qAbs(phaseAlignment.offset.x())<=1&&
+                    qAbs(phaseAlignment.offset.y())<=1,
+                QStringLiteral("%1 phase %2 origin drifted: %3,%4")
+                    .arg(id).arg(phase).arg(phaseAlignment.offset.x())
+                    .arg(phaseAlignment.offset.y()));
       }
       const QJsonArray browserTokens=fixture.value(
           QStringLiteral("mathTokens")).toArray();

@@ -129,13 +129,13 @@ const cases = [
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\int_0^1+q$$" },
   { id: "label-math-root-limits-fraction", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sum_{i=1}^{n}+\\frac{a}{b}$$" },
-  { id: "label-math-root-product-limits", dpr: 1.5, mathGlyph: "∏", mathTokenOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-product-limits", dpr: 1.5, mathGlyph: "∏", mathTokenOracle: true, mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\prod_{k=1}^{n}+q$$" },
-  { id: "label-math-root-coproduct-limits", dpr: 2, theme: "dark", mathGlyph: "∐", mathTokenOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-coproduct-limits", dpr: 2, theme: "dark", mathGlyph: "∐", mathTokenOracle: true, mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\coprod_{k=1}^{n}+q$$' },
-  { id: "label-math-root-double-integral", dpr: 1.25, mathGlyph: "∬", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-double-integral", dpr: 1.25, mathGlyph: "∬", mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iint_D+q$$" },
-  { id: "label-math-root-triple-integral", mathGlyph: "∭", mathTokenOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-triple-integral", mathGlyph: "∭", mathTokenOracle: true, mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iiint_D+q$$" },
   { id: "label-math-root-cjk-fraction", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\text{中文}+\\frac{a}{b}+q$$" },
@@ -348,7 +348,7 @@ try {
     const svg = await page.$("svg");
     await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
     let mathBodyFile,mathAccentFile,mathGlyphFile,mathGlyphBox;
-    let mathTokens,mathTokenGroups;
+    let mathTokens,mathTokenGroups,mathRasterPhases;
     const captureMathComponent=async(selector,suffix)=>{
       const clip=await page.$eval(selector,(node)=>{
         const rect=node.closest("math").getBoundingClientRect();
@@ -486,6 +486,48 @@ try {
           node.removeAttribute("data-muffin-token-role");
       });
     }
+    if(cases[i].mathPhaseOracle) {
+      mathRasterPhases=[];
+      const clip=await page.$eval("math",(node)=>{
+        const rect=node.getBoundingClientRect();
+        const guard=2;
+        return {x:rect.left-guard,y:rect.top-guard,
+          width:Math.max(1,rect.width+2*guard),
+          height:Math.max(1,rect.height+2*guard)};
+      });
+      await page.evaluate(()=>{
+        const root=document.querySelector("svg");
+        for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+        const selected=root.querySelector("math");
+        for(let node=selected;node&&node!==root;node=node.parentElement)
+          node.style.visibility="visible";
+        for(const node of selected.querySelectorAll("*"))
+          node.style.visibility="visible";
+      });
+      for(const phase of [0.25,0.5,0.75]) {
+        await page.$eval("math",(node,phase)=>{
+          node.style.transformOrigin="0 0";
+          node.style.transform=`translate(${phase}px,${phase}px)`;
+          node.getBoundingClientRect();
+        },phase);
+        const suffix=String(phase).replace(".","-");
+        const phaseFile=`${cases[i].id}-math-phase-${suffix}.png`;
+        await page.screenshot({path:path.join(outDir,phaseFile),
+          omitBackground:true,clip});
+        mathRasterPhases.push({phase,file:phaseFile,
+          sha256:createHash("sha256").update(
+            fs.readFileSync(path.join(outDir,phaseFile))).digest("hex")});
+      }
+      await page.$eval("math",(node)=>{
+        node.style.removeProperty("transform");
+        node.style.removeProperty("transform-origin");
+      });
+      await page.evaluate(()=>{
+        const root=document.querySelector("svg");
+        for(const node of root.querySelectorAll("*"))
+          node.style.removeProperty("visibility");
+      });
+    }
     let cropFile;
     if (cases[i].cropSelector) {
       cropFile=`${cases[i].id}-label.png`;
@@ -525,7 +567,7 @@ try {
     manifestCases.push({...cases[i],file,sha256,cropFile,cropSha256,
       mathBodyFile,mathBodySha256,mathAccentFile,mathAccentSha256,
       mathGlyphFile,mathGlyphSha256,mathGlyphBox,mathTokens,mathTokenGroups,
-      ...dimensions});
+      mathRasterPhases,...dimensions});
   }
   const payload={mermaidVersion:pkg.version,fontMode:"bundled-noto-stix-two-math-2.13b171",cases:manifestCases};
   payload.fixtureSha256=createHash("sha256").update(JSON.stringify(payload)).digest("hex");

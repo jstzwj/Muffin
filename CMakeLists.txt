@@ -445,6 +445,8 @@ set(MUFFIN_CORE_SOURCES
   src/math/MathParserEnvironment.cpp
   src/math/MathRenderer.cpp
   src/mermaid/math/MathMlCssLayout.cpp
+  src/mermaid/math/MathGlyphRasterizer.cpp
+  src/mermaid/math/MathGlyphRasterizer.h
   src/mermaid/math/MathMlCssPainter.cpp
   src/mermaid/math/MathMlCssPainter.h
   src/math/OpenTypeMathFont.cpp

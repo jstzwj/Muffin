@@ -15038,6 +15038,7 @@
       "dpr": 1.5,
       "mathGlyph": "∏",
       "mathTokenOracle": true,
+      "mathPhaseOracle": true,
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\prod_{k=1}^{n}+q$$",
@@ -15205,6 +15206,23 @@
             "width": 6.328,
             "height": 6
           }
+        }
+      ],
+      "mathRasterPhases": [
+        {
+          "phase": 0.25,
+          "file": "label-math-root-product-limits-math-phase-0-25.png",
+          "sha256": "cef869a663ddd5d1367f214c8aae41aa4f9a23da3ec03bb9e1a5cce12a6bd0af"
+        },
+        {
+          "phase": 0.5,
+          "file": "label-math-root-product-limits-math-phase-0-5.png",
+          "sha256": "c4d2a8f58098ce0e7b170d9ae99bd11b1f9019f9898277c4e023d294fd729335"
+        },
+        {
+          "phase": 0.75,
+          "file": "label-math-root-product-limits-math-phase-0-75.png",
+          "sha256": "5dd8c4aa8d7f15a1d79051a95a1f00741b8e4705bdf39fff98b53ebb4a665f05"
         }
       ],
       "width": 350,
@@ -15527,6 +15545,7 @@
       "theme": "dark",
       "mathGlyph": "∐",
       "mathTokenOracle": true,
+      "mathPhaseOracle": true,
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\coprod_{k=1}^{n}+q$$",
@@ -15694,6 +15713,23 @@
             "width": 6.328,
             "height": 6
           }
+        }
+      ],
+      "mathRasterPhases": [
+        {
+          "phase": 0.25,
+          "file": "label-math-root-coproduct-limits-math-phase-0-25.png",
+          "sha256": "fb1295dfbbec424886bc239efdd82fd95cea3df8504266d96eead5b04d39384d"
+        },
+        {
+          "phase": 0.5,
+          "file": "label-math-root-coproduct-limits-math-phase-0-5.png",
+          "sha256": "0a472ae73c970328e5006b12a9ff2695875ef6a0b4cd0c79625980130bebb899"
+        },
+        {
+          "phase": 0.75,
+          "file": "label-math-root-coproduct-limits-math-phase-0-75.png",
+          "sha256": "7949628e7f8afa9f601eb82acb47dfd58f19287df7b312ad8cae30915781a3c8"
         }
       ],
       "width": 350,
@@ -16014,6 +16050,7 @@
       "id": "label-math-root-double-integral",
       "dpr": 1.25,
       "mathGlyph": "∬",
+      "mathPhaseOracle": true,
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iint_D+q$$",
@@ -16029,6 +16066,23 @@
         "width": 23.813,
         "height": 38
       },
+      "mathRasterPhases": [
+        {
+          "phase": 0.25,
+          "file": "label-math-root-double-integral-math-phase-0-25.png",
+          "sha256": "8ed74661b4667ecb85d5f272adcf51b5e488097a2422ef980540407529e1db8f"
+        },
+        {
+          "phase": 0.5,
+          "file": "label-math-root-double-integral-math-phase-0-5.png",
+          "sha256": "e772419bc3f2f4112222ad7a7ef57bfce074e86692a1798b952dadd62ba602e8"
+        },
+        {
+          "phase": 0.75,
+          "file": "label-math-root-double-integral-math-phase-0-75.png",
+          "sha256": "a445ec60735c9a4bfc6e0665a1d2dc6e718f4c3c281bec8f611a7e3d42b057cc"
+        }
+      ],
       "width": 350,
       "height": 275,
       "structure": {
@@ -16331,6 +16385,7 @@
       "id": "label-math-root-triple-integral",
       "mathGlyph": "∭",
       "mathTokenOracle": true,
+      "mathPhaseOracle": true,
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iiint_D+q$$",
@@ -16448,6 +16503,23 @@
             "width": 7.875,
             "height": 8
           }
+        }
+      ],
+      "mathRasterPhases": [
+        {
+          "phase": 0.25,
+          "file": "label-math-root-triple-integral-math-phase-0-25.png",
+          "sha256": "f4783bdc3d43108d2656345364fb862bc5900f8a90cbc30197c02835766b8270"
+        },
+        {
+          "phase": 0.5,
+          "file": "label-math-root-triple-integral-math-phase-0-5.png",
+          "sha256": "3dccf13f71483a59aaaa3e6e4f48f959074d27a6b95bdcab5eb3c8c1f625ecd2"
+        },
+        {
+          "phase": 0.75,
+          "file": "label-math-root-triple-integral-math-phase-0-75.png",
+          "sha256": "7218f7c5022cb7d464d4cd20fe4b0c6d3471522ecce4ce14a76935c2c2af169d"
         }
       ],
       "width": 350,
@@ -34189,5 +34261,5 @@
       }
     }
   ],
-  "fixtureSha256": "51465bf814f4b471b34fb42b04a6f6b8c9cb0169115bae8e377527e821ad3b21"
+  "fixtureSha256": "1384eafde18363ec7003ba378447163294ad6729a7026445e37a604168606b4f"
 }
