@@ -14,6 +14,12 @@
 
 namespace muffin::math {
 
+namespace {
+
+constexpr qreal kChromiumLargeOperatorRowBaselinePhase = -0.5;
+
+}  // namespace
+
 QVector<MathMlPaintPrimitive> collectMathMlPaintPrimitives(
     const MathCssPaintOperation& operation, MathMlPaintLayer layer) {
   QVector<MathMlPaintPrimitive> result;
@@ -174,6 +180,22 @@ QVector<MathMlPaintPrimitive> collectMathMlPaintPrimitives(
     visitChildren();
   };
   visit(operation, QStringLiteral("root"));
+  const bool containsLargeOperator = std::any_of(
+      result.cbegin(), result.cend(), [](const MathMlPaintPrimitive& primitive) {
+        return primitive.role == MathMlPaintPrimitiveRole::LargeOperator;
+      });
+  for (MathMlPaintPrimitive& primitive : result) {
+    if (primitive.kind != MathMlPaintPrimitiveKind::GlyphRun) continue;
+    if (primitive.role == MathMlPaintPrimitiveRole::ScriptSubscript)
+      primitive.glyphRasterMode = MathMlGlyphRasterMode::Outline;
+    if (containsLargeOperator &&
+        primitive.role == MathMlPaintPrimitiveRole::Row) {
+      primitive.glyphRasterMode = MathMlGlyphRasterMode::Outline;
+      primitive.deterministicCoverage = true;
+      primitive.rasterPhase =
+          QPointF(0.0, kChromiumLargeOperatorRowBaselinePhase);
+    }
+  }
   return result;
 }
 
@@ -232,11 +254,6 @@ void paintMathMlVerticalGlyphOperation(
 void paintMathMlPrimitives(
     QPainter& painter, const QVector<MathMlPaintPrimitive>& primitives,
     const QColor& color) {
-  const bool containsLargeOperator = std::any_of(
-      primitives.cbegin(), primitives.cend(),
-      [](const MathMlPaintPrimitive& primitive) {
-        return primitive.role == MathMlPaintPrimitiveRole::LargeOperator;
-      });
   const auto paintVerticalGlyph = [&](const MathCssVerticalGlyphOperation& glyph) {
     paintMathMlVerticalGlyphOperation(painter, glyph, color);
   };
@@ -287,6 +304,7 @@ void paintMathMlPrimitives(
 
   const auto paintGlyphRuns = [&](const QVector<MathCssGlyphRunOperation>& runs,
                                   bool outlineScale = false,
+                                  bool deterministicCoverage = false,
                                   QPointF outlineOffset = {}) {
     const OpenTypeMathFont& font = OpenTypeMathFont::instance();
     for (const MathCssGlyphRunOperation& glyph : runs) {
@@ -295,7 +313,7 @@ void paintMathMlPrimitives(
         if (muffin::mermaid::math::MathGlyphRasterizer::paintOutlineRun(
                 painter, glyph.glyphIndexes, glyph.positions,
                 glyph.baselineOrigin, glyph.fontScale, glyph.clip, color,
-                outlineOffset))
+                deterministicCoverage, outlineOffset))
           continue;
       }
       QGlyphRun run;
@@ -347,7 +365,7 @@ void paintMathMlPrimitives(
                            run);
     } else {
       const qreal assemblyLeft = glyph.target.center().x() -
-                                 glyph.selectionTarget / 2.0;
+                                 glyph.placementExtent / 2.0;
       const qreal assemblyBaseline = glyph.target.center().y() -
                                      glyph.inkBounds.center().y() +
                                      glyph.paintOffset.y();
@@ -373,15 +391,11 @@ void paintMathMlPrimitives(
   for (const MathMlPaintPrimitive& primitive : primitives) {
     switch (primitive.kind) {
       case MathMlPaintPrimitiveKind::GlyphRun: {
-        const bool largeOperatorRow = containsLargeOperator &&
-            primitive.role == MathMlPaintPrimitiveRole::Row;
-        const bool outlineSubscript =
-            primitive.role == MathMlPaintPrimitiveRole::ScriptSubscript;
-        const QPointF outlineOffset = largeOperatorRow
-            ? QPointF(0.0, -0.5) : QPointF();
         paintGlyphRuns(
             {*std::get<const MathCssGlyphRunOperation*>(primitive.payload)},
-            largeOperatorRow || outlineSubscript, outlineOffset);
+            primitive.glyphRasterMode == MathMlGlyphRasterMode::Outline,
+            primitive.deterministicCoverage,
+            primitive.rasterPhase);
         break;
       }
       case MathMlPaintPrimitiveKind::VerticalGlyph:

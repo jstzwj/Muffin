@@ -144,11 +144,6 @@ struct HorizontalAccentSelection {
   }
 };
 
-bool chromiumAssemblesHorizontalAccentOperator(const QString& character) {
-  return character == QString(QChar(0x2190)) ||
-         character == QString(QChar(0x21D2));
-}
-
 HorizontalAccentSelection selectHorizontalAccent(
     const QString& character, qreal target, bool allowAssembly = false) {
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
@@ -170,6 +165,11 @@ HorizontalAccentSelection selectHorizontalAccent(
   if (fixed && (fixedReachesTarget || !assembly)) result.fixed = fixed;
   else result.assembly = assembly;
   return result;
+}
+
+bool chromiumCapsHorizontalAssembly(const QString& character) {
+  return character == QString(QChar(0x2190)) ||
+         character == QString(QChar(0x21D2));
 }
 
 QString mathDelimiterCharacter(const QString& delimiter) {
@@ -3629,13 +3629,21 @@ std::optional<MathCssPaintOperation> buildAccentOperation(
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
   MathCssHorizontalGlyphOperation& glyph = result.glyph;
   glyph.target = result.box.accent;
-  // Chromium keeps the operator's logical MathML box at its fixed-variant
-  // width while allowing selected operators' assembled ink to overflow across
-  // the body. Keep those two extents independent in the paint operation.
-  const bool operatorAssembly =
-      chromiumAssemblesHorizontalAccentOperator(result.box.character);
-  glyph.selectionTarget = operatorAssembly ? result.box.body.width()
-                                           : result.box.accent.width();
+  const bool basicAccent = !basicAccentCharacter(accent).isEmpty();
+  const bool cappedAssembly =
+      chromiumCapsHorizontalAssembly(result.box.character);
+  glyph.selectionTarget = accent->accentUsesNaturalWidth || basicAccent
+      ? result.box.accent.width()
+      : result.box.body.width();
+  // Chromium keeps placement tied to the annotated body, but caps the
+  // OpenType stretch request for these arrows at three intrinsic operator
+  // widths. Quantize that request at the CSS pixel boundary.
+  const qreal stretchTarget = cappedAssembly
+      ? std::floor(3.0 * result.box.accent.width())
+      : glyph.selectionTarget;
+  glyph.placementExtent =
+      result.box.character == QString(QChar(0x21D2))
+      ? stretchTarget : glyph.selectionTarget;
   glyph.fontScale = result.box.fontScale * style.fontScale();
   if (rootRowChild && accent->accentKind == MathAccentKind::Under) {
     glyph.paintOffset.setY(std::round(
@@ -3646,15 +3654,13 @@ std::optional<MathCssPaintOperation> buildAccentOperation(
           !result.bodyGlyphRuns.isEmpty() || bodySemantic
       ? MathCssHorizontalScalePolicy::PreserveVariantScale
       : MathCssHorizontalScalePolicy::StretchToTarget;
-  const bool basicAccent = !basicAccentCharacter(accent).isEmpty();
   const auto natural = accent->accentUsesNaturalWidth || basicAccent
       ? font.glyph(result.box.character)
       : std::optional<MathGlyphMetrics>{};
   const HorizontalAccentSelection selection = natural
       ? HorizontalAccentSelection{}
-      : selectHorizontalAccent(result.box.character,
-                               glyph.selectionTarget,
-                               brace || operatorAssembly);
+      : selectHorizontalAccent(result.box.character, stretchTarget,
+                               brace || cappedAssembly);
   if (natural) {
     glyph.kind = MathCssHorizontalGlyphKind::FixedVariant;
     glyph.fixedGlyphIndex = natural->glyphIndex;

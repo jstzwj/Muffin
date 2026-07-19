@@ -15,7 +15,7 @@ public:
       QPainter& painter, const QVector<quint32>& glyphIndexes,
       const QVector<QPointF>& positions, QPointF baselineOrigin,
       qreal fontScale, QRectF clip, const QColor& color,
-      QPointF rasterPhase = {});
+      bool deterministicCoverage = false, QPointF rasterPhase = {});
 };
 
 }  // namespace muffin::mermaid::math

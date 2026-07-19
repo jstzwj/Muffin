@@ -261,6 +261,7 @@ struct MathCssHorizontalGlyphOperation {
       MathCssHorizontalScalePolicy::StretchToTarget;
   QRectF target;
   qreal selectionTarget = 0.0;
+  qreal placementExtent = 0.0;
   qreal fontScale = 1.0;
   qreal realizedExtent = 0.0;
   qreal italicCorrection = 0.0;

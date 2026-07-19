@@ -219,7 +219,8 @@ LargeOperatorRaster renderLargeOperatorGlyph(
 }
 QImage renderMathPrimitiveRole(
     const sequence::SequenceLabelDocument& label, qreal fontPixelSize,
-    qreal dpr, muffin::math::MathMlPaintPrimitiveRole role,bool trim=true) {
+    qreal dpr, muffin::math::MathMlPaintPrimitiveRole role,bool trim=true,
+    QPointF phase={}) {
   if(label.richText.math.isEmpty()) return {};
   muffin::math::MathRenderer renderer;
   const qreal renderFontPixelSize=fontPixelSize*1.21;
@@ -245,7 +246,7 @@ QImage renderMathPrimitiveRole(
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setRenderHint(QPainter::TextAntialiasing);
   painter.scale(dpr,dpr);
-  painter.translate(padding,padding);
+  painter.translate(QPointF(padding,padding)+phase);
   muffin::math::paintMathMlPrimitives(painter,selected,Qt::white);
   painter.end();
   return trim?alphaTrimmed(image):image;
@@ -327,7 +328,7 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("1384eafde18363ec7003ba378447163294ad6729a7026445e37a604168606b4f"),
+              QLatin1String("50f4747601cb7bb6467ebc9b080551f2a9df8717210d2b45637a8cb4bbb723ce"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
@@ -538,6 +539,85 @@ int main(int argc,char** argv) {
                 QStringLiteral("%1 phase %2 origin drifted: %3,%4")
                     .arg(id).arg(phase).arg(phaseAlignment.offset.x())
                     .arg(phaseAlignment.offset.y()));
+        for(const QJsonValue& componentValue:
+            phaseFixture.value(QStringLiteral("components")).toArray()) {
+          const QJsonObject component=componentValue.toObject();
+          const QString role=component.value(QStringLiteral("role")).toString();
+          const QString componentFile=component.value(QStringLiteral("file")).toString();
+          require(fileSha256(dir.filePath(componentFile))==
+                      component.value(QStringLiteral("sha256")).toString().toLatin1(),
+                  QStringLiteral("%1 phase %2 %3 hash drifted")
+                      .arg(id).arg(phase).arg(role));
+          const auto nativeRole=role==QLatin1String("large-operator")
+              ? muffin::math::MathMlPaintPrimitiveRole::LargeOperator
+              : role==QLatin1String("subscript")
+                  ? muffin::math::MathMlPaintPrimitiveRole::ScriptSubscript
+                  : role==QLatin1String("superscript")
+                      ? muffin::math::MathMlPaintPrimitiveRole::ScriptSuperscript
+                      : muffin::math::MathMlPaintPrimitiveRole::Row;
+          const QImage nativeComponent=renderMathPrimitiveRole(
+              entry.sequenceScene->noteLabels.first(),
+              entry.sequenceScene->style.fontSize,dpr,nativeRole,true,
+              QPointF(phase,phase));
+          const QImage browserComponent=alphaTrimmed(
+              QImage(dir.filePath(componentFile)));
+          require(!nativeComponent.isNull()&&!browserComponent.isNull(),
+                  QStringLiteral("%1 phase %2 %3 component image missing")
+                      .arg(id).arg(phase).arg(role));
+          const qreal componentIou=alphaIou(nativeComponent,browserComponent);
+          const qreal componentCoverage=tolerantGlyphCoverage(
+              nativeComponent,browserComponent);
+          const MaskAlignment componentAlignment=bestRawAlphaAlignment(
+              nativeComponent,browserComponent);
+          qDebug().noquote()<<id<<"math-phase-component"<<phase<<role
+                            <<nativeComponent.size()<<browserComponent.size()
+                            <<"IoU"<<componentIou
+                            <<"coverage"<<componentCoverage
+                            <<"raw-best"<<componentAlignment.iou
+                            <<"offset"<<componentAlignment.offset;
+          const QHash<QString,QSize> boundsTolerance{
+              {QStringLiteral("row"),QSize(1,2)},
+              {QStringLiteral("large-operator"),QSize(1,1)},
+              {QStringLiteral("subscript"),QSize(4,2)},
+              {QStringLiteral("superscript"),QSize(1,1)},
+          };
+          const QHash<QString,qreal> coverageMinimum{
+              {QStringLiteral("row"),0.985},
+              {QStringLiteral("large-operator"),1.0},
+              {QStringLiteral("subscript"),0.82},
+              {QStringLiteral("superscript"),0.95},
+          };
+          const QHash<QString,qreal> iouMinimum{
+              {QStringLiteral("row"),0.60},
+              {QStringLiteral("large-operator"),0.78},
+              {QStringLiteral("subscript"),0.30},
+              {QStringLiteral("superscript"),0.74},
+          };
+          require(boundsTolerance.contains(role),
+                  QStringLiteral("%1 phase %2 has unknown component role %3")
+                      .arg(id).arg(phase).arg(role));
+          const QSize tolerance=boundsTolerance.value(role);
+          require(qAbs(nativeComponent.width()-browserComponent.width())<=
+                      tolerance.width()&&
+                      qAbs(nativeComponent.height()-browserComponent.height())<=
+                      tolerance.height(),
+                  QStringLiteral("%1 phase %2 %3 bounds drifted: %4x%5 vs %6x%7")
+                      .arg(id).arg(phase).arg(role)
+                      .arg(nativeComponent.width()).arg(nativeComponent.height())
+                      .arg(browserComponent.width()).arg(browserComponent.height()));
+          require(componentCoverage>=coverageMinimum.value(role),
+                  QStringLiteral("%1 phase %2 %3 coverage too low: %4")
+                      .arg(id).arg(phase).arg(role).arg(componentCoverage));
+          require(componentIou>=iouMinimum.value(role),
+                  QStringLiteral("%1 phase %2 %3 IoU too low: %4")
+                      .arg(id).arg(phase).arg(role).arg(componentIou));
+          require(qAbs(componentAlignment.offset.x())<=1&&
+                      qAbs(componentAlignment.offset.y())<=1,
+                  QStringLiteral("%1 phase %2 %3 origin drifted: %4,%5")
+                      .arg(id).arg(phase).arg(role)
+                      .arg(componentAlignment.offset.x())
+                      .arg(componentAlignment.offset.y()));
+        }
       }
       const QJsonArray browserTokens=fixture.value(
           QStringLiteral("mathTokens")).toArray();

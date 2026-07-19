@@ -412,7 +412,7 @@ try {
         root.querySelector(selector)?.removeAttribute("data-muffin-glyph-oracle");
       },selector);
     }
-    if(cases[i].mathTokenOracle) {
+    if(cases[i].mathTokenOracle||cases[i].mathPhaseOracle) {
       mathTokens=await page.evaluate(()=>{
         const math=document.querySelector("math");
         const nodes=[...math.querySelectorAll("mi,mo,mn,mtext")];
@@ -443,48 +443,46 @@ try {
               height:Number(rect.height.toFixed(3))}};
         });
       });
-      mathTokenGroups=[];
-      for(const role of [...new Set(mathTokens.map((token)=>token.role))]) {
-        if(role==="large-operator") continue;
-        const selector=`[data-muffin-token-role="${role}"]`;
-        const clip=await page.$$eval(selector,(nodes)=>{
-          const rects=nodes.map((node)=>node.getBoundingClientRect());
-          const left=Math.min(...rects.map((rect)=>rect.left));
-          const top=Math.min(...rects.map((rect)=>rect.top));
-          const right=Math.max(...rects.map((rect)=>rect.right));
-          const bottom=Math.max(...rects.map((rect)=>rect.bottom));
-          return {x:left,y:top,width:Math.max(1,right-left),
-            height:Math.max(1,bottom-top)};
-        });
-        await page.evaluate((selector)=>{
-          const root=document.querySelector("svg");
-          for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
-          for(const selected of root.querySelectorAll(selector)) {
-            for(let node=selected;node&&node!==root;node=node.parentElement)
-              node.style.visibility="visible";
-            for(const child of selected.querySelectorAll("*"))
-              child.style.visibility="visible";
-          }
-        },selector);
-        const tokenFile=`${cases[i].id}-math-${role}.png`;
-        await page.screenshot({path:path.join(outDir,tokenFile),
-          omitBackground:true,clip});
-        await page.evaluate(()=>{
-          const root=document.querySelector("svg");
-          for(const node of root.querySelectorAll("*"))
-            node.style.removeProperty("visibility");
-        });
-        mathTokenGroups.push({role,file:tokenFile,
-          sha256:createHash("sha256").update(
-            fs.readFileSync(path.join(outDir,tokenFile))).digest("hex"),
-          box:{x:Number(clip.x.toFixed(3)),y:Number(clip.y.toFixed(3)),
-            width:Number(clip.width.toFixed(3)),
-            height:Number(clip.height.toFixed(3))}});
+      if(cases[i].mathTokenOracle) {
+        mathTokenGroups=[];
+        for(const role of [...new Set(mathTokens.map((token)=>token.role))]) {
+          if(role==="large-operator") continue;
+          const selector=`[data-muffin-token-role="${role}"]`;
+          const clip=await page.$$eval(selector,(nodes)=>{
+            const rects=nodes.map((node)=>node.getBoundingClientRect());
+            const left=Math.min(...rects.map((rect)=>rect.left));
+            const top=Math.min(...rects.map((rect)=>rect.top));
+            const right=Math.max(...rects.map((rect)=>rect.right));
+            const bottom=Math.max(...rects.map((rect)=>rect.bottom));
+            return {x:left,y:top,width:Math.max(1,right-left),
+              height:Math.max(1,bottom-top)};
+          });
+          await page.evaluate((selector)=>{
+            const root=document.querySelector("svg");
+            for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+            for(const selected of root.querySelectorAll(selector)) {
+              for(let node=selected;node&&node!==root;node=node.parentElement)
+                node.style.visibility="visible";
+              for(const child of selected.querySelectorAll("*"))
+                child.style.visibility="visible";
+            }
+          },selector);
+          const tokenFile=`${cases[i].id}-math-${role}.png`;
+          await page.screenshot({path:path.join(outDir,tokenFile),
+            omitBackground:true,clip});
+          await page.evaluate(()=>{
+            const root=document.querySelector("svg");
+            for(const node of root.querySelectorAll("*"))
+              node.style.removeProperty("visibility");
+          });
+          mathTokenGroups.push({role,file:tokenFile,
+            sha256:createHash("sha256").update(
+              fs.readFileSync(path.join(outDir,tokenFile))).digest("hex"),
+            box:{x:Number(clip.x.toFixed(3)),y:Number(clip.y.toFixed(3)),
+              width:Number(clip.width.toFixed(3)),
+              height:Number(clip.height.toFixed(3))}});
+        }
       }
-      await page.evaluate(()=>{
-        for(const node of document.querySelectorAll("[data-muffin-token-role]"))
-          node.removeAttribute("data-muffin-token-role");
-      });
     }
     if(cases[i].mathPhaseOracle) {
       mathRasterPhases=[];
@@ -514,9 +512,38 @@ try {
         const phaseFile=`${cases[i].id}-math-phase-${suffix}.png`;
         await page.screenshot({path:path.join(outDir,phaseFile),
           omitBackground:true,clip});
+        const components=[];
+        for(const role of [...new Set(mathTokens.map((token)=>token.role))]) {
+          const selector=`[data-muffin-token-role="${role}"]`;
+          await page.evaluate((selector)=>{
+            const root=document.querySelector("svg");
+            for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+            for(const selected of root.querySelectorAll(selector)) {
+              for(let node=selected;node&&node!==root;node=node.parentElement)
+                node.style.visibility="visible";
+              for(const child of selected.querySelectorAll("*"))
+                child.style.visibility="visible";
+            }
+          },selector);
+          const componentFile=`${cases[i].id}-math-phase-${suffix}-${role}.png`;
+          await page.screenshot({path:path.join(outDir,componentFile),
+            omitBackground:true,clip});
+          components.push({role,file:componentFile,
+            sha256:createHash("sha256").update(
+              fs.readFileSync(path.join(outDir,componentFile))).digest("hex")});
+        }
+        await page.evaluate(()=>{
+          const root=document.querySelector("svg");
+          for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+          const selected=root.querySelector("math");
+          for(let node=selected;node&&node!==root;node=node.parentElement)
+            node.style.visibility="visible";
+          for(const node of selected.querySelectorAll("*"))
+            node.style.visibility="visible";
+        });
         mathRasterPhases.push({phase,file:phaseFile,
           sha256:createHash("sha256").update(
-            fs.readFileSync(path.join(outDir,phaseFile))).digest("hex")});
+            fs.readFileSync(path.join(outDir,phaseFile))).digest("hex"),components});
       }
       await page.$eval("math",(node)=>{
         node.style.removeProperty("transform");
@@ -526,6 +553,12 @@ try {
         const root=document.querySelector("svg");
         for(const node of root.querySelectorAll("*"))
           node.style.removeProperty("visibility");
+      });
+    }
+    if(mathTokens) {
+      await page.evaluate(()=>{
+        for(const node of document.querySelectorAll("[data-muffin-token-role]"))
+          node.removeAttribute("data-muffin-token-role");
       });
     }
     let cropFile;

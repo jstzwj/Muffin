@@ -39,6 +39,8 @@ enum class MathMlPaintPrimitiveRole {
   Middle
 };
 
+enum class MathMlGlyphRasterMode { Native, Outline };
+
 using MathMlPaintPrimitivePayload = std::variant<
     const MathCssGlyphRunOperation*,
     const MathCssVerticalGlyphOperation*,
@@ -52,6 +54,9 @@ struct MathMlPaintPrimitive {
   QString operationPath;
   MathMlPaintPrimitivePayload payload =
       static_cast<const MathCssGlyphRunOperation*>(nullptr);
+  MathMlGlyphRasterMode glyphRasterMode = MathMlGlyphRasterMode::Native;
+  bool deterministicCoverage = false;
+  QPointF rasterPhase;
 };
 
 // Primitive payloads remain valid while the source operation tree is alive.

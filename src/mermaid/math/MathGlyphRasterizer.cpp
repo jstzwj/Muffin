@@ -63,7 +63,7 @@ bool MathGlyphRasterizer::paintOutlineRun(
     QPainter& painter, const QVector<quint32>& glyphIndexes,
     const QVector<QPointF>& positions, QPointF baselineOrigin,
     qreal fontScale, QRectF clip, const QColor& color,
-    QPointF rasterPhase) {
+    bool deterministicCoverage, QPointF rasterPhase) {
   if (glyphIndexes.isEmpty() || glyphIndexes.size() != positions.size() ||
       clip.isEmpty() || fontScale <= 0.0)
     return false;
@@ -89,7 +89,7 @@ bool MathGlyphRasterizer::paintOutlineRun(
     path.addPath(placement.map(glyphPath));
   }
   if (path.isEmpty()) return false;
-  if (!rasterPhase.isNull())
+  if (deterministicCoverage)
     return paintDeterministicCoverage(painter, path, clip, color);
   painter.save();
   painter.setClipRect(clip, Qt::IntersectClip);
