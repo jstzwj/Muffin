@@ -22149,6 +22149,20 @@
       "sha256": "9baa61fca149e7375ec4dec45000ff1a33a8e30456e117c41b836766de32f658",
       "cropFile": "label-math-tall-assembly-label.png",
       "cropSha256": "794ad3d44b1e906c007197ecd371de65f2071caf48b0a2d7f175fa07ed481607",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "{",
+          "box": {
+            "x": 159,
+            "y": 139,
+            "width": 9.594,
+            "height": 72.578
+          },
+          "file": "label-math-tall-assembly-math-delimiter-0.png",
+          "sha256": "7dfe017165c71db8877ec23313cd031a30b3e2a19dcf39f3c0308aaedfdd425f"
+        }
+      ],
       "width": 350,
       "height": 307,
       "structure": {
@@ -22449,6 +22463,32 @@
       "sha256": "aea59aeae97e4740b8b28d1abf7612d9660bce7a07902f7475927ce35922d62b",
       "cropFile": "label-math-tall-paren-assembly-label.png",
       "cropSha256": "ecdf0d9905ed991c93fbc99f7aafc9c562324a525972231245937d7ea41cc36e",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "(",
+          "box": {
+            "x": 154,
+            "y": 139,
+            "width": 10.125,
+            "height": 70.875
+          },
+          "file": "label-math-tall-paren-assembly-math-delimiter-0.png",
+          "sha256": "0a2db4a0f5a6a16a7d597794eaf96b0f56f51988b4e964e795f758420fd77cbb"
+        },
+        {
+          "index": 1,
+          "text": ")",
+          "box": {
+            "x": 185.813,
+            "y": 139,
+            "width": 10.125,
+            "height": 70.875
+          },
+          "file": "label-math-tall-paren-assembly-math-delimiter-1.png",
+          "sha256": "cbd16d6985b4a6c1619a99af79d5f700c20868ecf0b56aa4b65974d4bd37f9c4"
+        }
+      ],
       "width": 350,
       "height": 305,
       "structure": {
@@ -22757,6 +22797,32 @@
       "sha256": "fc703f93b2457c9bc96ca33ad55c9487d323a898b6f595ba33135d622821c8d3",
       "cropFile": "label-math-tall-bracket-assembly-label.png",
       "cropSha256": "872cc811dda2aae36a68affb0c609a751bca3fad56f011261c15d8b9f51c7962",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "[",
+          "box": {
+            "x": 155,
+            "y": 139,
+            "width": 9.391,
+            "height": 70.844
+          },
+          "file": "label-math-tall-bracket-assembly-math-delimiter-0.png",
+          "sha256": "41e20bfa04c652cbea8bee5265b65971455ef687c5f20458d0d1f71a9fa87984"
+        },
+        {
+          "index": 1,
+          "text": "]",
+          "box": {
+            "x": 186.078,
+            "y": 139,
+            "width": 9.391,
+            "height": 70.844
+          },
+          "file": "label-math-tall-bracket-assembly-math-delimiter-1.png",
+          "sha256": "f4d203fc16b07581fff55542fd93aff71f03a89c84346c80992dc82ba177668d"
+        }
+      ],
       "width": 350,
       "height": 305,
       "structure": {
@@ -23065,6 +23131,32 @@
       "sha256": "b53c660f87b58b7c46f066277524d6d3eeb5e7762d258126333fc0b2ce6a5d9c",
       "cropFile": "label-math-tall-bar-assembly-label.png",
       "cropSha256": "5b483b11b73f540c53edf9cc255cc238f46bd8f943b6393fe346a5ab4f0802c3",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "∣",
+          "box": {
+            "x": 155.438,
+            "y": 166.25,
+            "width": 4.359,
+            "height": 15
+          },
+          "file": "label-math-tall-bar-assembly-math-delimiter-0.png",
+          "sha256": "74f759470c068be165e091e612160426b4db68fc16507b9da89f94314b416fec"
+        },
+        {
+          "index": 1,
+          "text": "∣",
+          "box": {
+            "x": 190.359,
+            "y": 166.25,
+            "width": 4.359,
+            "height": 15
+          },
+          "file": "label-math-tall-bar-assembly-math-delimiter-1.png",
+          "sha256": "d051c8ed19ff3aa2b86464e4dbe8710061775ce1e5ee9efa30647188e3aa3188"
+        }
+      ],
       "width": 350,
       "height": 304,
       "structure": {
@@ -23373,6 +23465,80 @@
       "sha256": "d0c60c98741197d6fc88ae531421416d652b14adf5fc89203fc547147bfb8c74",
       "cropFile": "label-math-nested-delimiters-label.png",
       "cropSha256": "4db7fcbc6428764b200c44d958adecb49b3885a66ac510705b17328eb2687cc8",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "(",
+          "box": {
+            "x": 125,
+            "y": 139,
+            "width": 10.125,
+            "height": 73.75
+          },
+          "file": "label-math-nested-delimiters-math-delimiter-0.png",
+          "sha256": "171e29c206de2499b1d70060e4a98e2d89cfb92266a96de65c29e5787597a71d"
+        },
+        {
+          "index": 1,
+          "text": "[",
+          "box": {
+            "x": 141.516,
+            "y": 143.094,
+            "width": 9.391,
+            "height": 27
+          },
+          "file": "label-math-nested-delimiters-math-delimiter-1.png",
+          "sha256": "b2c05a66395445c492e5324df41c1db7a4561bb02ce423f394001b502dcf702d"
+        },
+        {
+          "index": 2,
+          "text": "]",
+          "box": {
+            "x": 159.125,
+            "y": 143.094,
+            "width": 9.391,
+            "height": 27
+          },
+          "file": "label-math-nested-delimiters-math-delimiter-2.png",
+          "sha256": "9ebc42e8f8e02af28b82993ded5b34aaa69980ebf836165b7c2fd8fc2b4c5978"
+        },
+        {
+          "index": 3,
+          "text": "{",
+          "box": {
+            "x": 181.297,
+            "y": 177.656,
+            "width": 9.594,
+            "height": 31
+          },
+          "file": "label-math-nested-delimiters-math-delimiter-3.png",
+          "sha256": "922e1317702e012b0c4ebcf828fa7d94d953e3241a94d26bff73c958665b668e"
+        },
+        {
+          "index": 4,
+          "text": "}",
+          "box": {
+            "x": 199.156,
+            "y": 177.656,
+            "width": 9.594,
+            "height": 31
+          },
+          "file": "label-math-nested-delimiters-math-delimiter-4.png",
+          "sha256": "0756e073c87daf11d8e16bb267304a58f0d701f7c13919f86a3d2978707cd6d6"
+        },
+        {
+          "index": 5,
+          "text": ")",
+          "box": {
+            "x": 215.141,
+            "y": 139,
+            "width": 10.125,
+            "height": 73.75
+          },
+          "file": "label-math-nested-delimiters-math-delimiter-5.png",
+          "sha256": "65f87300b55178d3b91ee47c9f13c10bd8c05849902b1172aa13b0268c0ea92a"
+        }
+      ],
       "width": 350,
       "height": 308,
       "structure": {
@@ -23745,6 +23911,32 @@
       "sha256": "5653238132271e49080d1075e7c4a7009fe3c040369a6af14f396f37b42e76f9",
       "cropFile": "label-math-tall-double-bar-label.png",
       "cropSha256": "e713785abf41485115b55a5c34713785ee69466ce7c027bc070aa25f0ffa6499",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "∥",
+          "box": {
+            "x": 151.438,
+            "y": 166.25,
+            "width": 8.563,
+            "height": 15
+          },
+          "file": "label-math-tall-double-bar-math-delimiter-0.png",
+          "sha256": "6f762d4b2ec1c5a7d02e8b0db18aaff0f66df21a1b0393353fe27452f1c70dc7"
+        },
+        {
+          "index": 1,
+          "text": "∥",
+          "box": {
+            "x": 190.563,
+            "y": 166.25,
+            "width": 8.563,
+            "height": 15
+          },
+          "file": "label-math-tall-double-bar-math-delimiter-1.png",
+          "sha256": "d54297cc724b860fb4b5d7cdd6f98631ed778c937375c512ddddc5276c752a24"
+        }
+      ],
       "width": 350,
       "height": 304,
       "structure": {
@@ -24053,6 +24245,32 @@
       "sha256": "db7caac7fa6312fdc701de971667192e2c79bda6afb89c9e7651fc911360915f",
       "cropFile": "label-math-tall-floor-label.png",
       "cropSha256": "1f8883f8575a510a286c25333d08e47c16396d23bfcbb5e77189ab2f451441d3",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "⌊",
+          "box": {
+            "x": 155,
+            "y": 139,
+            "width": 9.391,
+            "height": 70.844
+          },
+          "file": "label-math-tall-floor-math-delimiter-0.png",
+          "sha256": "3f5e2576fbc802d88f6f8fbf6d019cac5f67a7e9e19011a1ea68b0d6c1ce22a1"
+        },
+        {
+          "index": 1,
+          "text": "⌋",
+          "box": {
+            "x": 186.078,
+            "y": 139,
+            "width": 9.391,
+            "height": 70.844
+          },
+          "file": "label-math-tall-floor-math-delimiter-1.png",
+          "sha256": "745cd9494b3a17923af3d2a894f840847b6bbdc3539bd8b8a6dc1005cfc1accd"
+        }
+      ],
       "width": 350,
       "height": 305,
       "structure": {
@@ -24361,6 +24579,32 @@
       "sha256": "9f17992620ee8127633ad716c467baa7938b666d6b518fca7afda53d803fa1c5",
       "cropFile": "label-math-tall-ceil-label.png",
       "cropSha256": "384ca91eb8e4d51f213611c801475c84950798d3dc7f33564b0c315edaf078cf",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "⌈",
+          "box": {
+            "x": 155,
+            "y": 139.016,
+            "width": 9.391,
+            "height": 70.219
+          },
+          "file": "label-math-tall-ceil-math-delimiter-0.png",
+          "sha256": "1be662bc3efaba2953c8a6d65196cb9eafcc2382d65f9221a1ea533607a08cd3"
+        },
+        {
+          "index": 1,
+          "text": "⌉",
+          "box": {
+            "x": 186.078,
+            "y": 139.016,
+            "width": 9.391,
+            "height": 70.219
+          },
+          "file": "label-math-tall-ceil-math-delimiter-1.png",
+          "sha256": "28bc728b46c875d5a5daa395d6542df951e2c8fa49c960e9243ac9399a761dbc"
+        }
+      ],
       "width": 350,
       "height": 304,
       "structure": {
@@ -24669,6 +24913,32 @@
       "sha256": "2b62e394e7f3764d8689f2602fd20b271c2cb62fffb0eb823e4539e9adab7e17",
       "cropFile": "label-math-tall-angle-label.png",
       "cropSha256": "7f100e849bb6bd9ebf6cdc81099f3a0ee65ad69a13bbe36f5cbe6a6302e3cd0e",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "⟨",
+          "box": {
+            "x": 153,
+            "y": 143.125,
+            "width": 10.797,
+            "height": 62
+          },
+          "file": "label-math-tall-angle-math-delimiter-0.png",
+          "sha256": "3160168b67148a4b7502dcf6b377661939776c14e91db6ac39c01579e97c033f"
+        },
+        {
+          "index": 1,
+          "text": "⟩",
+          "box": {
+            "x": 185.484,
+            "y": 143.125,
+            "width": 10.797,
+            "height": 62
+          },
+          "file": "label-math-tall-angle-math-delimiter-1.png",
+          "sha256": "f8f0ddc4f1d966627b65caa23330261489f3bd91fd610772a9be429d9a90ef23"
+        }
+      ],
       "width": 350,
       "height": 304,
       "structure": {
@@ -24977,6 +25247,20 @@
       "sha256": "d75b2fcfcf1b2eede48e561f2bb827420b8fb2fa444bf850e7d8abd9304eb4a5",
       "cropFile": "label-math-nullable-delimiter-label.png",
       "cropSha256": "265186e976b27eb49721c6c27a8be3a83811cf240e3fd2be746ad598152ff26d",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "⌉",
+          "box": {
+            "x": 180.688,
+            "y": 139.016,
+            "width": 9.391,
+            "height": 70.219
+          },
+          "file": "label-math-nullable-delimiter-math-delimiter-0.png",
+          "sha256": "439299f3edfbfee2fa48aedeb5cacf10cfcf3a40327dd640730cd2d3e12193e0"
+        }
+      ],
       "width": 350,
       "height": 304,
       "structure": {
@@ -25277,6 +25561,32 @@
       "sha256": "18eff7cf701ab77f6cd1b58683ddc6f653543dccb8a6d25b550b3159aa9303d1",
       "cropFile": "label-math-delimiter-recursive-label.png",
       "cropSha256": "51f73d8b566c00c6b81ad2c7a233f12f26e248cc24d4dc84682caf889a02a879",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "⟨",
+          "box": {
+            "x": 145,
+            "y": 141.156,
+            "width": 10.797,
+            "height": 62
+          },
+          "file": "label-math-delimiter-recursive-math-delimiter-0.png",
+          "sha256": "78d3578379c07230a2ed50b4fbc546a16fa87e0fe7b3a24b0bafa4c6d6aa87f3"
+        },
+        {
+          "index": 3,
+          "text": "⟩",
+          "box": {
+            "x": 193.609,
+            "y": 141.156,
+            "width": 10.797,
+            "height": 62
+          },
+          "file": "label-math-delimiter-recursive-math-delimiter-1.png",
+          "sha256": "ce49f85be59e57951620e7cd5e3f48c9149a220e32e19f9ce754503dd320e4d9"
+        }
+      ],
       "width": 350,
       "height": 302,
       "structure": {
@@ -25617,6 +25927,44 @@
       "sha256": "683dc64bb407687a3a0a33e01bc81edbaaa5b11bee7cd10666d3107b64edfd0e",
       "cropFile": "label-math-middle-delimiter-label.png",
       "cropSha256": "2b196390332f225f54cc99ea79c4e5b80959ad3d7ae66104b0ca385752f1c852",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "⟨",
+          "box": {
+            "x": 153,
+            "y": 139,
+            "width": 10.797,
+            "height": 19
+          },
+          "file": "label-math-middle-delimiter-math-delimiter-0.png",
+          "sha256": "0438bffc59a02eade38e0741c1ae2a6f3d7753d707002785b9b3e14e6260d0ee"
+        },
+        {
+          "index": 1,
+          "text": "|",
+          "box": {
+            "x": 173.547,
+            "y": 140.625,
+            "width": 4.281,
+            "height": 16
+          },
+          "file": "label-math-middle-delimiter-math-delimiter-1.png",
+          "sha256": "06eb85daefabb25a5b749d60c035f30bdb5b4fe795c9dad10da190d2a13b19aa"
+        },
+        {
+          "index": 2,
+          "text": "⟩",
+          "box": {
+            "x": 186.797,
+            "y": 139,
+            "width": 10.797,
+            "height": 19
+          },
+          "file": "label-math-middle-delimiter-math-delimiter-2.png",
+          "sha256": "904e4c610ee398aba7ea0d99d8a4efc6fd8f243253d0b7bf8bf30e4471cbda03"
+        }
+      ],
       "width": 350,
       "height": 253,
       "structure": {
@@ -25917,6 +26265,56 @@
       "sha256": "8ae0f1043228224b8368662f6d28406d9999da3d26c643e6e19e173332a98af5",
       "cropFile": "label-math-multiple-middle-delimiter-label.png",
       "cropSha256": "3497af15df58cc58741ebda45a9cb0c3be7f286c21919e401d04ab3b19bde40c",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "(",
+          "box": {
+            "x": 144,
+            "y": 139,
+            "width": 10.125,
+            "height": 19
+          },
+          "file": "label-math-multiple-middle-delimiter-math-delimiter-0.png",
+          "sha256": "390bb259c4db31ec19f6d233804696cdc80cb716bd6096624296fbea5ed1606c"
+        },
+        {
+          "index": 1,
+          "text": "|",
+          "box": {
+            "x": 163.875,
+            "y": 140.625,
+            "width": 4.281,
+            "height": 16
+          },
+          "file": "label-math-multiple-middle-delimiter-math-delimiter-1.png",
+          "sha256": "2be206fd91db60eaaf11be953bcef714fb47eeac5df1062902c5d40748875b00"
+        },
+        {
+          "index": 2,
+          "text": "∥",
+          "box": {
+            "x": 177.922,
+            "y": 140.625,
+            "width": 8.563,
+            "height": 15
+          },
+          "file": "label-math-multiple-middle-delimiter-math-delimiter-2.png",
+          "sha256": "15b11e70870d2818d1ec179b3ca2c35232ddaf205c5d5505e11e5d3af6638023"
+        },
+        {
+          "index": 3,
+          "text": ")",
+          "box": {
+            "x": 195.172,
+            "y": 139,
+            "width": 10.125,
+            "height": 19
+          },
+          "file": "label-math-multiple-middle-delimiter-math-delimiter-3.png",
+          "sha256": "11b127ba58977c87e73e263517dc5cec8a24b98b840531fd4436c4e9be19f256"
+        }
+      ],
       "width": 350,
       "height": 253,
       "structure": {
@@ -26233,6 +26631,56 @@
       "sha256": "fda6ae10bf8e3ae341c65526e154d9b5793b1742271d9d24ec8fcba444c68a18",
       "cropFile": "label-math-nested-plain-delimiter-label.png",
       "cropSha256": "37d1643da7f1a885bcfb1a124989535781e6bbcab1a5a38d5e024f54f8c7f1d8",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "[",
+          "box": {
+            "x": 124,
+            "y": 139,
+            "width": 9.391,
+            "height": 19
+          },
+          "file": "label-math-nested-plain-delimiter-math-delimiter-0.png",
+          "sha256": "d4f4ce66bc8fe5c76bf04527ca20a841ad26c69608eacb5aea40b6fb006aecdd"
+        },
+        {
+          "index": 2,
+          "text": "(",
+          "box": {
+            "x": 160.969,
+            "y": 139,
+            "width": 10.125,
+            "height": 19
+          },
+          "file": "label-math-nested-plain-delimiter-math-delimiter-1.png",
+          "sha256": "5b58a162ce2f8e407c03e0ce09d8f9f889e98f97c989b16560fdbcc7e64e5a2e"
+        },
+        {
+          "index": 4,
+          "text": ")",
+          "box": {
+            "x": 205.781,
+            "y": 139,
+            "width": 10.125,
+            "height": 19
+          },
+          "file": "label-math-nested-plain-delimiter-math-delimiter-2.png",
+          "sha256": "dad6e1de3db8c079842e8dc7d6f00caceb9d718a896799b97ef3fadcc42f24c0"
+        },
+        {
+          "index": 5,
+          "text": "]",
+          "box": {
+            "x": 215.906,
+            "y": 139,
+            "width": 9.391,
+            "height": 19
+          },
+          "file": "label-math-nested-plain-delimiter-math-delimiter-3.png",
+          "sha256": "8496244537d678961889cc7d2b69157b2cbcbe3d6be9efd49dbefafaf8b18c43"
+        }
+      ],
       "width": 350,
       "height": 253,
       "structure": {
@@ -26565,6 +27013,44 @@
       "sha256": "95895e9a548b49cb3599c59bfd8b5c09dd200d5cc6719c7ac292783d324ca9e8",
       "cropFile": "label-math-middle-fraction-label.png",
       "cropSha256": "deac1e48874e1eafb699af4fbd642338a07df5055bec0ade345ce78a0a407d0c",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "(",
+          "box": {
+            "x": 152,
+            "y": 139,
+            "width": 10.125,
+            "height": 39
+          },
+          "file": "label-math-middle-fraction-math-delimiter-0.png",
+          "sha256": "f54bb8930ab0c84cce3674224235de9e0c211b1583f55d4c0e09a03f502ae160"
+        },
+        {
+          "index": 1,
+          "text": "|",
+          "box": {
+            "x": 172.813,
+            "y": 139.578,
+            "width": 4.281,
+            "height": 16
+          },
+          "file": "label-math-middle-fraction-math-delimiter-1.png",
+          "sha256": "351b74201e20d21972757348fd643332cf068cceb0bd87d9df04f086848d3068"
+        },
+        {
+          "index": 2,
+          "text": ")",
+          "box": {
+            "x": 187.188,
+            "y": 139,
+            "width": 10.125,
+            "height": 39
+          },
+          "file": "label-math-middle-fraction-math-delimiter-2.png",
+          "sha256": "a3e0fba5e2f6f627b99aad600ecff4cfe7c0da72ce77a5288bb0ff94ba5172b0"
+        }
+      ],
       "width": 350,
       "height": 273,
       "structure": {
@@ -26881,6 +27367,44 @@
       "sha256": "cfd394320cb0d7139524dad02c78b3dabfae172640d5d1c08c213cfcf7b1c6aa",
       "cropFile": "label-math-middle-radical-label.png",
       "cropSha256": "2815e372d407855f196b89046bdeff10f6f39e9733c0f4e951e63189eae2345e",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "(",
+          "box": {
+            "x": 144,
+            "y": 139,
+            "width": 10.125,
+            "height": 35
+          },
+          "file": "label-math-middle-radical-math-delimiter-0.png",
+          "sha256": "201a69dfcf18d8487bcfa344c1771ed5b8d6ed474196919c7410b9fc0273671f"
+        },
+        {
+          "index": 1,
+          "text": "|",
+          "box": {
+            "x": 180.516,
+            "y": 148.625,
+            "width": 4.281,
+            "height": 16
+          },
+          "file": "label-math-middle-radical-math-delimiter-1.png",
+          "sha256": "c17460cbbc1141fceaffd467884b027420835a9774d304cf990deb2c2ff48afb"
+        },
+        {
+          "index": 2,
+          "text": ")",
+          "box": {
+            "x": 196.516,
+            "y": 139,
+            "width": 10.125,
+            "height": 35
+          },
+          "file": "label-math-middle-radical-math-delimiter-2.png",
+          "sha256": "be64665b11f906f9719cca3e7893ec6f4d0f51c35b357db5984d59e52880e83c"
+        }
+      ],
       "width": 350,
       "height": 269,
       "structure": {
@@ -27182,6 +27706,44 @@
       "sha256": "fe2f9fc7e6d5cdd96f2970a3ed75b44340fd2943caecdfad77a18bea7b673ed8",
       "cropFile": "label-math-middle-script-label.png",
       "cropSha256": "84b37396e2624781d5d8b116a6697678af164d22c41076ac46517cafaf158a74",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "(",
+          "box": {
+            "x": 152,
+            "y": 139,
+            "width": 10.125,
+            "height": 23
+          },
+          "file": "label-math-middle-script-math-delimiter-0.png",
+          "sha256": "7825a4ac9c5f63757bfa93cfa437cf8fb7ff31ce08dd82d3be37dcf9ec6cc076"
+        },
+        {
+          "index": 1,
+          "text": "|",
+          "box": {
+            "x": 177.844,
+            "y": 140.875,
+            "width": 3,
+            "height": 10
+          },
+          "file": "label-math-middle-script-math-delimiter-1.png",
+          "sha256": "e3b61ed9aefc2808dfe6a21dc5fa64ea4bf346dc6396f211e246690156db2362"
+        },
+        {
+          "index": 2,
+          "text": ")",
+          "box": {
+            "x": 187.828,
+            "y": 139,
+            "width": 10.125,
+            "height": 23
+          },
+          "file": "label-math-middle-script-math-delimiter-2.png",
+          "sha256": "a1e5c7cce68691be145d1875d2c9a135189744be8b2b3fff8200dc3606a212ba"
+        }
+      ],
       "width": 350,
       "height": 257,
       "structure": {
@@ -27490,6 +28052,44 @@
       "sha256": "e8b3fb4e694bcb76fbec2fe0bc8c697f47ac6ca447b04dccefe95e2d16a9c201",
       "cropFile": "label-math-middle-array-label.png",
       "cropSha256": "bad6238cdc24985b389c6ea24a8fdd6e0a5647b6cc29c2486959275429e6baf6",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "(",
+          "box": {
+            "x": 137,
+            "y": 139,
+            "width": 10.125,
+            "height": 46
+          },
+          "file": "label-math-middle-array-math-delimiter-0.png",
+          "sha256": "d442961220bbc926839837864809a060484d8981bfaf8601d5e54934bd905fda"
+        },
+        {
+          "index": 1,
+          "text": "|",
+          "box": {
+            "x": 163.203,
+            "y": 144.219,
+            "width": 4.281,
+            "height": 16
+          },
+          "file": "label-math-middle-array-math-delimiter-1.png",
+          "sha256": "147e980f5383c7a323e5f8cb1451213dd54d02e1039253f3bbb29dade05c2507"
+        },
+        {
+          "index": 2,
+          "text": ")",
+          "box": {
+            "x": 202.547,
+            "y": 139,
+            "width": 10.125,
+            "height": 46
+          },
+          "file": "label-math-middle-array-math-delimiter-2.png",
+          "sha256": "2dd3513e4fc1596dadfdc6e757d0b8eda585bb21841bfcdc43298d1412f68c9b"
+        }
+      ],
       "width": 350,
       "height": 280,
       "structure": {
@@ -33876,6 +34476,32 @@
       "sha256": "006fd8f1e08513e1afb3e559648d658437580e5287851406cc1c40a8f6548b57",
       "cropFile": "label-math-fallback-brace-assembly-label.png",
       "cropSha256": "b3747c690df0e6aadd0f4a88b3bdf59e8b8a49ee5cae48a957d9211b3674f6e8",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "{",
+          "box": {
+            "x": 141,
+            "y": 139,
+            "width": 9.594,
+            "height": 84.844
+          },
+          "file": "label-math-fallback-brace-assembly-math-delimiter-0.png",
+          "sha256": "acd8ab7649d87ce37f1dc44a7eeadfc4a9a3b519857d9712e17f60103f0da42c"
+        },
+        {
+          "index": 1,
+          "text": "}",
+          "box": {
+            "x": 199.016,
+            "y": 139,
+            "width": 9.594,
+            "height": 84.844
+          },
+          "file": "label-math-fallback-brace-assembly-math-delimiter-1.png",
+          "sha256": "616fa0fc15f8e48fc89e859c702040b3c3d92e3a8b26d9903923618b81d71683"
+        }
+      ],
       "width": 350,
       "height": 319,
       "structure": {
@@ -34186,6 +34812,32 @@
       "sha256": "237c3c660f76b35f437a0aba470b0a895b430ae93f2de57a6406eb2be11aee50",
       "cropFile": "label-math-fallback-bracket-assembly-label.png",
       "cropSha256": "4fa1b92ad911838e12c431337854cd7f56ccd8bdd866bf2f276be03a1ed25f02",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "[",
+          "box": {
+            "x": 141,
+            "y": 139,
+            "width": 9.391,
+            "height": 84.844
+          },
+          "file": "label-math-fallback-bracket-assembly-math-delimiter-0.png",
+          "sha256": "012fce2d1fd5dbe76b7a8aebed9e4aa0876acc227c2ad0ca18610cdc711e269e"
+        },
+        {
+          "index": 1,
+          "text": "]",
+          "box": {
+            "x": 198.813,
+            "y": 139,
+            "width": 9.391,
+            "height": 84.844
+          },
+          "file": "label-math-fallback-bracket-assembly-math-delimiter-1.png",
+          "sha256": "ac506f344c2f48ad1f8c6ec534d9410f82f3c5755771faf365058a7f4b7fbc19"
+        }
+      ],
       "width": 350,
       "height": 319,
       "structure": {
@@ -34494,6 +35146,32 @@
       "sha256": "b09823facb81c9ad090bafd3b1e1594d151e4601899503ae45e73878bfbf5bdb",
       "cropFile": "label-math-fallback-angle-assembly-label.png",
       "cropSha256": "ea3157860979ffe030a97da462e87041995e6ebe62ecf7e9a183e0cfc649bc31",
+      "mathDelimiters": [
+        {
+          "index": 0,
+          "text": "⟨",
+          "box": {
+            "x": 140,
+            "y": 150.125,
+            "width": 10.797,
+            "height": 62
+          },
+          "file": "label-math-fallback-angle-assembly-math-delimiter-0.png",
+          "sha256": "9ae75d68ab858b58c171500575d39dccef098ff944bb99d692ee695e7512e6b4"
+        },
+        {
+          "index": 1,
+          "text": "⟩",
+          "box": {
+            "x": 199.219,
+            "y": 150.125,
+            "width": 10.797,
+            "height": 62
+          },
+          "file": "label-math-fallback-angle-assembly-math-delimiter-1.png",
+          "sha256": "91bbf57fda8261ae443c63d913c8ac3173c82a6ff7b3c7039860ceb674d849c4"
+        }
+      ],
       "width": 350,
       "height": 318,
       "structure": {
@@ -36782,5 +37460,5 @@
       }
     }
   ],
-  "fixtureSha256": "72ea28c20c4841d6e4926acb599576e63fe2ee1fcff5b25ee4e1c41db8d4ef4f"
+  "fixtureSha256": "288e79bb04dc478ee131e322282b9b213082733a934c785b52054ed5149bf71c"
 }

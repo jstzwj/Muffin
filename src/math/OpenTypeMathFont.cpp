@@ -442,6 +442,7 @@ std::optional<MathGlyphAssembly> OpenTypeMathFont::assemblyParts(
     const int copies = part.extender ? repetitionCount : 1;
     for (int copy = 0; copy < copies; ++copy) sequence.push_back(&part);
   }
+  if (vertical) std::reverse(sequence.begin(), sequence.end());
 
   MathGlyphAssembly result;
   result.advance = advance * outlineScale;

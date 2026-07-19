@@ -217,6 +217,60 @@ LargeOperatorRaster renderLargeOperatorGlyph(
           glyph->parts.size(),
           glyph->kind==muffin::math::MathCssVerticalGlyphKind::FixedVariant};
 }
+struct NativeDelimiterRaster {
+  QString character;
+  QImage image;
+  QRectF target;
+  QRectF inkBounds;
+  QVector<muffin::math::MathCssVerticalGlyphPart> parts;
+};
+QVector<NativeDelimiterRaster> renderDelimiterGlyphs(
+    const sequence::SequenceLabelDocument& label, qreal fontPixelSize,
+    qreal dpr) {
+  QVector<NativeDelimiterRaster> result;
+  if(label.richText.math.isEmpty()) return result;
+  muffin::math::MathRenderer renderer;
+  const qreal renderFontPixelSize=fontPixelSize*1.21;
+  const auto layout=renderer.render(label.richText.math.front().source,
+                                    renderFontPixelSize,Qt::white,true);
+  if(!layout.valid()) return result;
+  const auto built=muffin::math::buildMathMlPaintOperations(
+      layout,renderFontPixelSize,16.0);
+  if(!built.operation) return result;
+  QVector<const muffin::math::MathCssVerticalGlyphOperation*> glyphs;
+  for(const auto& primitive:
+      muffin::math::collectMathMlPaintPrimitives(*built.operation)) {
+    if(primitive.kind!=muffin::math::MathMlPaintPrimitiveKind::VerticalGlyph||
+       primitive.role==muffin::math::MathMlPaintPrimitiveRole::LargeOperator)
+      continue;
+    glyphs.push_back(std::get<
+        const muffin::math::MathCssVerticalGlyphOperation*>(primitive.payload));
+  }
+  std::stable_sort(glyphs.begin(),glyphs.end(),[](const auto* left,const auto* right) {
+    if(!qFuzzyCompare(left->target.left()+1.0,right->target.left()+1.0))
+      return left->target.left()<right->target.left();
+    return left->target.top()<right->target.top();
+  });
+  const muffin::math::MathCssBox box=muffin::math::layoutMathMlCssBox(
+      layout,renderFontPixelSize,16.0);
+  constexpr qreal padding=4.0;
+  for(const auto* glyph:glyphs) {
+    QImage image(qCeil((box.width+2.0*padding)*dpr),
+                 qCeil((box.height+2.0*padding)*dpr),
+                 QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::TextAntialiasing);
+    painter.scale(dpr,dpr);
+    painter.translate(padding,padding);
+    muffin::math::paintMathMlVerticalGlyphOperation(painter,*glyph,Qt::white);
+    painter.end();
+    result.push_back({glyph->character,alphaTrimmed(image),glyph->target,
+                      glyph->inkBounds,glyph->parts});
+  }
+  return result;
+}
 QImage renderMathPrimitiveRole(
     const sequence::SequenceLabelDocument& label, qreal fontPixelSize,
     qreal dpr, muffin::math::MathMlPaintPrimitiveRole role,bool trim=true,
@@ -328,7 +382,7 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("72ea28c20c4841d6e4926acb599576e63fe2ee1fcff5b25ee4e1c41db8d4ef4f"),
+              QLatin1String("288e79bb04dc478ee131e322282b9b213082733a934c785b52054ed5149bf71c"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
@@ -385,6 +439,85 @@ int main(int argc,char** argv) {
       const qreal glyphCoverage=tolerantGlyphCoverage(nativeLabel,browserLabel);
       qDebug().noquote()<<id<<"label-crop"<<nativeLabel.size()<<browserLabel.size()
                         <<"IoU"<<labelIou<<"glyph-coverage"<<glyphCoverage;
+      const QJsonArray browserDelimiters=fixture.value(
+          QStringLiteral("mathDelimiters")).toArray();
+      if(!browserDelimiters.isEmpty()) {
+        require(!entry.sequenceScene->noteLabels.isEmpty(),
+                QStringLiteral("%1 delimiter label is missing").arg(id));
+        const QVector<NativeDelimiterRaster> nativeDelimiters=
+            renderDelimiterGlyphs(entry.sequenceScene->noteLabels.first(),
+                                  entry.sequenceScene->style.fontSize,dpr);
+        require(nativeDelimiters.size()==browserDelimiters.size(),
+                QStringLiteral("%1 delimiter operation count drifted: native=%2 browser=%3")
+                    .arg(id).arg(nativeDelimiters.size())
+                    .arg(browserDelimiters.size()));
+        for(qsizetype delimiterIndex=0;
+            delimiterIndex<nativeDelimiters.size();++delimiterIndex) {
+          const NativeDelimiterRaster& nativeDelimiter=
+              nativeDelimiters.at(delimiterIndex);
+          const QJsonObject browserDelimiter=
+              browserDelimiters.at(delimiterIndex).toObject();
+          const QString delimiterFile=browserDelimiter.value(
+              QStringLiteral("file")).toString();
+          require(fileSha256(dir.filePath(delimiterFile))==
+                      browserDelimiter.value(QStringLiteral("sha256"))
+                          .toString().toLatin1(),
+                  QStringLiteral("%1 delimiter %2 hash drifted")
+                      .arg(id).arg(delimiterIndex));
+          const QImage browserDelimiterImage=alphaTrimmed(
+              QImage(dir.filePath(delimiterFile)));
+          require(!nativeDelimiter.image.isNull()&&
+                      !browserDelimiterImage.isNull(),
+                  QStringLiteral("%1 delimiter %2 raster is missing")
+                      .arg(id).arg(delimiterIndex));
+          require(nativeDelimiter.character==browserDelimiter.value(
+                      QStringLiteral("text")).toString(),
+                  QStringLiteral("%1 delimiter %2 character drifted: native=%3 browser=%4")
+                      .arg(id).arg(delimiterIndex)
+                      .arg(nativeDelimiter.character,
+                           browserDelimiter.value(QStringLiteral("text")).toString()));
+          qreal previousOffset=-1.0;
+          for(const auto& part:nativeDelimiter.parts) {
+            require(part.glyphIndex!=0&&!part.inkBounds.isEmpty()&&
+                        part.offset>previousOffset&&
+                        qAbs(part.inkBounds.top()-part.offset)<=0.001&&
+                        part.fullAdvance>0.0&&part.connectorOverlap>=0.0,
+                    QStringLiteral("%1 delimiter %2 assembly part drifted")
+                        .arg(id).arg(delimiterIndex));
+            previousOffset=part.offset;
+          }
+          const qreal delimiterCoverage=tolerantGlyphCoverage(
+              nativeDelimiter.image,browserDelimiterImage);
+          const qreal delimiterIou=alphaIou(
+              nativeDelimiter.image,browserDelimiterImage);
+          const MaskAlignment delimiterAlignment=bestRawAlphaAlignment(
+              nativeDelimiter.image,browserDelimiterImage);
+          qDebug().noquote()<<id<<"delimiter"<<delimiterIndex
+                            <<nativeDelimiter.character
+                            <<nativeDelimiter.image.size()
+                            <<browserDelimiterImage.size()
+                            <<"IoU"<<delimiterIou
+                            <<"coverage"<<delimiterCoverage
+                            <<"offset"<<delimiterAlignment.offset
+                            <<"target"<<nativeDelimiter.target
+                            <<"parts"<<nativeDelimiter.parts.size();
+          require(qAbs(nativeDelimiter.image.width()-
+                           browserDelimiterImage.width())<=1&&
+                      qAbs(nativeDelimiter.image.height()-
+                           browserDelimiterImage.height())<=1,
+                  QStringLiteral("%1 delimiter %2 raster bounds drifted")
+                      .arg(id).arg(delimiterIndex));
+          require(qAbs(delimiterAlignment.offset.x())<=1&&
+                      qAbs(delimiterAlignment.offset.y())<=1,
+                  QStringLiteral("%1 delimiter %2 raster origin drifted: %3,%4")
+                      .arg(id).arg(delimiterIndex)
+                      .arg(delimiterAlignment.offset.x())
+                      .arg(delimiterAlignment.offset.y()));
+          require(delimiterCoverage>=0.85,
+                  QStringLiteral("%1 delimiter %2 coverage too low: %3")
+                      .arg(id).arg(delimiterIndex).arg(delimiterCoverage));
+        }
+      }
       const QString mathGlyphFile=fixture.value(
           QStringLiteral("mathGlyphFile")).toString();
       if(!mathGlyphFile.isEmpty()) {
@@ -877,7 +1010,7 @@ int main(int argc,char** argv) {
           {QStringLiteral("label-math-fallback-coproduct-limits"), QSize(1,1)},
           {QStringLiteral("label-math-fallback-over-arrow"), QSize(1,1)},
           {QStringLiteral("label-math-fallback-under-arrow"), QSize(1,1)},
-          {QStringLiteral("label-math-fallback-brace-assembly"), QSize(1,0)},
+          {QStringLiteral("label-math-fallback-brace-assembly"), QSize(1,2)},
           {QStringLiteral("label-math-fallback-bracket-assembly"), QSize(0,1)},
           {QStringLiteral("label-math-fallback-angle-assembly"), QSize(0,0)},
       };

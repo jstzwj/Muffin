@@ -356,6 +356,7 @@ try {
     const svg = await page.$("svg");
     await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
     let mathBodyFile,mathAccentFile,mathGlyphFile,mathGlyphBox;
+    let mathDelimiters;
     let mathTokens,mathTokenGroups,mathRasterPhases;
     const captureMathComponent=async(selector,suffix)=>{
       const clip=await page.$eval(selector,(node)=>{
@@ -419,6 +420,67 @@ try {
           node.style.removeProperty("visibility");
         root.querySelector(selector)?.removeAttribute("data-muffin-glyph-oracle");
       },selector);
+    }
+    if(cases[i].verticalDelimiter) {
+      const delimiterCharacters=new Set([
+        "(",")","[","]","{","}","|","\u2016","\u2223","\u2225",
+        "\u2308","\u2309","\u230a","\u230b","\u27e8","\u27e9"]);
+      const delimiterNodes=await page.$$eval("math mo",(nodes,characters)=>
+        nodes.map((node,index)=>({node,index,text:node.textContent ?? "",
+          rect:node.getBoundingClientRect()}))
+          .filter(({text,rect})=>characters.includes(text)&&rect.width>0&&rect.height>0)
+          .sort((left,right)=>left.rect.left-right.rect.left||
+            left.rect.top-right.rect.top)
+          .map(({node,index,text,rect},delimiterIndex)=>{
+            node.setAttribute("data-muffin-delimiter-oracle",String(delimiterIndex));
+            return {index,text,box:{x:Number(rect.x.toFixed(3)),
+              y:Number(rect.y.toFixed(3)),width:Number(rect.width.toFixed(3)),
+              height:Number(rect.height.toFixed(3))}};
+          }),[...delimiterCharacters]);
+      if(!delimiterNodes.length)
+        throw new Error(`${cases[i].id}: no MathML delimiter nodes were found`);
+      mathDelimiters=[];
+      for(let delimiterIndex=0;delimiterIndex<delimiterNodes.length;++delimiterIndex) {
+        const selector=`[data-muffin-delimiter-oracle="${delimiterIndex}"]`;
+        const clip=await page.$eval(selector,(node)=>{
+          const rect=node.closest("math").getBoundingClientRect();
+          return {x:rect.left,y:rect.top,width:Math.max(1,rect.width),
+            height:Math.max(1,rect.height)};
+        });
+        await page.evaluate((selector)=>{
+          const root=document.querySelector("svg");
+          for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+          const selected=root.querySelector(selector);
+          const selectedColor=getComputedStyle(selected).color;
+          for(let node=selected.parentElement;node&&node!==root;
+              node=node.parentElement) {
+            node.style.visibility="visible";
+            node.style.color="transparent";
+          }
+          selected.style.color=selectedColor;
+          selected.style.visibility="visible";
+          for(const node of selected.querySelectorAll("*"))
+            node.style.visibility="visible";
+        },selector);
+        const delimiterFile=`${cases[i].id}-math-delimiter-${delimiterIndex}.png`;
+        await page.screenshot({path:path.join(outDir,delimiterFile),
+          omitBackground:true,clip});
+        await page.evaluate(()=>{
+          const root=document.querySelector("svg");
+          for(const node of root.querySelectorAll("*")) {
+            node.style.removeProperty("visibility");
+            node.style.removeProperty("color");
+          }
+        });
+        mathDelimiters.push({...delimiterNodes[delimiterIndex],file:delimiterFile,
+          sha256:createHash("sha256").update(
+            fs.readFileSync(path.join(outDir,delimiterFile))).digest("hex")});
+      }
+      await page.evaluate(()=>{
+        for(const node of document.querySelectorAll(
+            "[data-muffin-delimiter-oracle]"))
+          node.removeAttribute("data-muffin-delimiter-oracle");
+      });
     }
     if(cases[i].mathTokenOracle||cases[i].mathPhaseOracle) {
       mathTokens=await page.evaluate(()=>{
@@ -608,7 +670,7 @@ try {
     manifestCases.push({...cases[i],file,sha256,cropFile,cropSha256,
       mathBodyFile,mathBodySha256,mathAccentFile,mathAccentSha256,
       mathGlyphFile,mathGlyphSha256,mathGlyphBox,mathTokens,mathTokenGroups,
-      mathRasterPhases,...dimensions});
+      mathRasterPhases,mathDelimiters,...dimensions});
   }
   const payload={mermaidVersion:pkg.version,fontMode:"bundled-noto-stix-two-math-2.13b171",cases:manifestCases};
   payload.fixtureSha256=createHash("sha256").update(JSON.stringify(payload)).digest("hex");

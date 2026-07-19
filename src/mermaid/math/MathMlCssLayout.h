@@ -99,12 +99,14 @@ enum class MathCssVerticalGlyphKind {
 
 enum class MathCssVerticalScalePolicy {
   PreserveVariantScale,
-  FitTargetExtent
+  FitTargetExtent,
+  FitSelectedExtent
 };
 
 struct MathCssVerticalGlyphPart {
   quint32 glyphIndex = 0;
   QPointF position;
+  QRectF inkBounds;
   qreal offset = 0.0;
   qreal fullAdvance = 0.0;
   qreal connectorOverlap = 0.0;
@@ -115,7 +117,9 @@ struct MathCssVerticalGlyphOperation {
   MathCssVerticalGlyphKind kind = MathCssVerticalGlyphKind::FixedVariant;
   MathCssVerticalScalePolicy scalePolicy =
       MathCssVerticalScalePolicy::PreserveVariantScale;
+  bool clipToBlockExtent = false;
   QRectF target;
+  QString character;
   QPointF baselineOrigin;
   qreal selectionTarget = 0.0;
   qreal realizedExtent = 0.0;
@@ -219,6 +223,7 @@ struct MathCssMiddlePaintOperation {
   QRectF container;
   QRectF allocation;
   MathCssGlyphRunOperation glyphRun;
+  std::optional<MathCssVerticalGlyphOperation> glyph;
   qreal lineAscent = 0.0;
 };
 

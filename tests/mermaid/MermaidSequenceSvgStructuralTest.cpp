@@ -39,7 +39,7 @@ int main(int argc,char** argv) {
               root.value(QStringLiteral("fontMode")).toString()==
                   QLatin1String("bundled-noto-stix-two-math-2.13b171")&&
               root.value(QStringLiteral("fixtureSha256")).toString()==
-                  QLatin1String("72ea28c20c4841d6e4926acb599576e63fe2ee1fcff5b25ee4e1c41db8d4ef4f"),
+                  QLatin1String("288e79bb04dc478ee131e322282b9b213082733a934c785b52054ed5149bf71c"),
           QStringLiteral("Sequence SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;

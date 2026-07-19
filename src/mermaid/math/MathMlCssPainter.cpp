@@ -63,11 +63,15 @@ QVector<MathMlPaintPrimitive> collectMathMlPaintPrimitives(
     }
     if (const auto* middle =
             std::get_if<MathCssMiddlePaintOperation>(&current.payload)) {
-      if (body)
+      if (middle->glyph) {
+        appendVertical(middle->glyph, MathMlPaintPrimitiveRole::Middle,
+                       path + QStringLiteral("/middle"));
+      } else if (body) {
         result.push_back({MathMlPaintPrimitiveKind::GlyphRun,
                           MathMlPaintPrimitiveRole::Middle,
                           path + QStringLiteral("/middle"),
                           &middle->glyphRun});
+      }
       return;
     }
     if (const auto* fraction =
@@ -198,22 +202,49 @@ void paintMathMlVerticalGlyphOperation(
   if (glyph.kind == MathCssVerticalGlyphKind::FixedVariant &&
       glyph.fixedGlyphIndex != 0 && !glyph.inkBounds.isEmpty() &&
       glyph.scalePolicy == MathCssVerticalScalePolicy::FitTargetExtent) {
+    const qreal strikeScale = glyph.advance > 0.0
+        ? glyph.target.width() / glyph.advance : 1.0;
+    if (muffin::mermaid::math::MathGlyphRasterizer::paintStrikeGlyphFitBlock(
+            painter, glyph.fixedGlyphIndex,
+            QRectF(glyph.inkBounds.topLeft() * strikeScale,
+                   glyph.inkBounds.size() * strikeScale),
+            strikeScale, glyph.target, !glyph.clipToBlockExtent, color))
+      return;
+    QGlyphRun run;
+    run.setRawFont(font.rasterFont());
+    run.setGlyphIndexes({glyph.fixedGlyphIndex});
+    run.setPositions({QPointF()});
+    const QPointF naturalOrigin =
+        glyph.target.center() - glyph.inkBounds.center();
+    painter.save();
+    painter.setClipRect(glyph.target, Qt::IntersectClip);
+    painter.translate(glyph.target.center());
+    painter.scale(1.0, glyph.target.height() / glyph.inkBounds.height());
+    painter.translate(-glyph.target.center());
+    painter.setPen(color);
+    painter.drawGlyphRun(naturalOrigin, run);
+    painter.restore();
+    return;
+  }
+  if (glyph.kind == MathCssVerticalGlyphKind::FixedVariant &&
+      glyph.fixedGlyphIndex != 0 && !glyph.inkBounds.isEmpty() &&
+      glyph.scalePolicy ==
+          MathCssVerticalScalePolicy::FitSelectedExtent) {
     const QPainterPath path = font.glyphPath(glyph.fixedGlyphIndex);
     const QRectF bounds = path.boundingRect();
     if (!bounds.isEmpty()) {
+      const qreal paintExtent = glyph.realizedExtent > 0.0
+          ? std::min(glyph.target.height(), glyph.realizedExtent)
+          : glyph.target.height();
       QTransform placement;
       placement.translate(glyph.target.center().x(),
                           glyph.target.center().y());
       placement.scale(glyph.inkBounds.width() / bounds.width(),
-                      glyph.target.height() / bounds.height());
+                      paintExtent / bounds.height());
       placement.translate(-bounds.center().x(), -bounds.center().y());
-      painter.save();
-      painter.setClipRect(glyph.target, Qt::IntersectClip);
-      painter.setPen(Qt::NoPen);
-      painter.setBrush(color);
-      painter.drawPath(placement.map(path));
-      painter.restore();
-      return;
+      if (muffin::mermaid::math::MathGlyphRasterizer::paintPath(
+              painter, placement.map(path), glyph.target, color))
+        return;
     }
   }
   QVector<quint32> indexes;
@@ -231,13 +262,48 @@ void paintMathMlVerticalGlyphOperation(
     }
   }
   if (indexes.isEmpty()) return;
+  if (glyph.kind == MathCssVerticalGlyphKind::Assembly) {
+    painter.save();
+    painter.setPen(color);
+    for (qsizetype index = 0; index < indexes.size(); ++index) {
+      const MathCssVerticalGlyphPart& part = glyph.parts.at(index);
+      if (!part.extender) {
+        const QRectF partClip = part.inkBounds
+            .translated(glyph.baselineOrigin)
+            .adjusted(-1.0, -1.0, 1.0, 1.0);
+        if (muffin::mermaid::math::MathGlyphRasterizer::paintOutlineRun(
+                painter, {indexes.at(index)}, {positions.at(index)},
+                glyph.baselineOrigin, 1.0, partClip, color, true))
+          continue;
+      }
+      QGlyphRun partRun;
+      partRun.setRawFont(font.rasterFont());
+      partRun.setGlyphIndexes({indexes.at(index)});
+      partRun.setPositions({positions.at(index)});
+      painter.drawGlyphRun(glyph.baselineOrigin, partRun);
+    }
+    painter.restore();
+    return;
+  }
   QGlyphRun run;
   run.setRawFont(font.rasterFont());
   run.setGlyphIndexes(indexes);
   run.setPositions(positions);
   painter.save();
-  if (glyph.scalePolicy == MathCssVerticalScalePolicy::FitTargetExtent)
+  if (glyph.clipToBlockExtent) {
+    const QTransform world = painter.transform();
+    const QRectF deviceTarget = painter.combinedTransform().mapRect(
+        glyph.target);
+    constexpr qreal kUnboundedInlineExtent = 32768.0;
+    painter.resetTransform();
+    painter.setClipRect(
+        QRectF(-kUnboundedInlineExtent, deviceTarget.top(),
+               2.0 * kUnboundedInlineExtent, deviceTarget.height()),
+        Qt::IntersectClip);
+    painter.setTransform(world);
+  } else if (glyph.scalePolicy == MathCssVerticalScalePolicy::FitTargetExtent) {
     painter.setClipRect(glyph.target, Qt::IntersectClip);
+  }
   painter.setPen(color);
   painter.drawGlyphRun(glyph.baselineOrigin, run);
   painter.restore();

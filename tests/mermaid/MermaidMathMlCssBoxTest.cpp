@@ -694,7 +694,10 @@ int main(int argc, char** argv) {
                   &middleOperation->payload)
             : nullptr;
         require(middle && middle->character == QLatin1String("|") &&
-                    middle->glyphRun.glyphIndexes.size() == 1,
+                    middle->glyphRun.glyphIndexes.size() == 1 &&
+                    middle->glyph &&
+                    middle->glyph->kind ==
+                        math::MathCssVerticalGlyphKind::FixedVariant,
                 id + QStringLiteral(" recursive middle operation is missing"));
 
         QVector<QJsonObject> operators;
@@ -1507,6 +1510,8 @@ int main(int argc, char** argv) {
         qreal previousOffset = -1.0;
         for (const auto& part : array->leftDelimiterGlyph->parts) {
           require(part.glyphIndex != 0 && part.offset > previousOffset &&
+                      !part.inkBounds.isEmpty() &&
+                      part.inkBounds.top() >= part.offset - 0.001 &&
                       part.fullAdvance > 0.0 &&
                       part.connectorOverlap >= 0.0,
                   id + QStringLiteral(" vertical assembly part drifted"));
@@ -1607,6 +1612,11 @@ int main(int argc, char** argv) {
                     array->rightDelimiterGlyph->kind ==
                         math::MathCssVerticalGlyphKind::Assembly,
                 id + QStringLiteral(" floor/ceiling assembly policy drifted"));
+        require(array->leftDelimiterGlyph->parts.front().inkBounds.top() ==
+                        0.0 &&
+                    array->rightDelimiterGlyph->parts.front().inkBounds.top() ==
+                        0.0,
+                id + QStringLiteral(" assembly raster origin drifted"));
       }
       if (id == QLatin1String("tall-angle")) {
         const auto operation = math::checkedMathMlPaintOperations(
@@ -2358,7 +2368,7 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     require(paintOperationHash ==
-                QLatin1String("f8abd2d63b8834481f5c833c1c4ecbcc83f265ead4af772752b92478574d284a"),
+                QLatin1String("cdeb13e4923619307856cdc3a094c9936798b4240262e39709eaa805e002701e"),
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),

@@ -164,6 +164,19 @@ int main(int argc, char** argv) {
     require(assembledParen.has_value(), QStringLiteral("Parenthesis assembly is missing"));
     near(assembledParen->extent, 52.768, 0.001,
          QStringLiteral("parenthesis minimum assembly extent"));
+    for (const QChar delimiter : {QChar(0x2308), QChar(0x230A)}) {
+      const auto parts = font.verticalAssemblyParts(QString(delimiter), 70.0);
+      require(parts && !parts->parts.isEmpty(),
+              QStringLiteral("Floor/ceiling assembly is missing"));
+      const QList<quint32> indexes{
+          parts->parts.front().glyphIndex, parts->parts.back().glyphIndex};
+      const QRectF firstInk = font.rasterGlyphBounds(indexes.front());
+      const QRectF lastInk = font.rasterGlyphBounds(indexes.back());
+      require((delimiter == QChar(0x2308)
+                   ? firstInk.width() > lastInk.width()
+                   : lastInk.width() > firstInk.width()),
+              QStringLiteral("Floor/ceiling terminal order drifted"));
+    }
     near(font.constants().stackTopDisplayStyleShiftUp, 12.48, 0.001,
          QStringLiteral("display stack top shift"));
     near(font.constants().stackBottomDisplayStyleShiftDown, 11.04, 0.001,

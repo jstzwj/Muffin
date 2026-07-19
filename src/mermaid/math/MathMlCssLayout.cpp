@@ -3089,7 +3089,9 @@ std::optional<MathCssVerticalGlyphOperation> buildVerticalGlyphOperation(
     const auto base = font.glyph(character);
     if (!base || base->glyphIndex == 0) return std::nullopt;
     MathCssVerticalGlyphOperation result;
+    result.clipToBlockExtent = normalizeDelimiter;
     result.target = target;
+    result.character = character;
     result.selectionTarget = target.height();
     result.kind = MathCssVerticalGlyphKind::FixedVariant;
     result.fixedGlyphIndex = base->glyphIndex;
@@ -3109,33 +3111,42 @@ std::optional<MathCssVerticalGlyphOperation> buildVerticalGlyphOperation(
 
   MathCssVerticalGlyphOperation result;
   result.target = target;
+  result.character = character;
   result.selectionTarget = target.height();
   if (assembly && !assembly->parts.isEmpty()) {
     result.kind = MathCssVerticalGlyphKind::Assembly;
     result.realizedExtent = assembly->extent;
     result.advance = assembly->advance;
     result.italicCorrection = assembly->italicCorrection;
-    result.baselineOrigin = QPointF(
-        target.center().x(), target.center().y() - assembly->extent / 2.0);
+    result.baselineOrigin.setX(target.center().x());
     result.parts.reserve(assembly->parts.size());
     for (const MathGlyphAssemblyPart& part : assembly->parts) {
       const QRectF partInk = font.rasterGlyphBounds(part.glyphIndex);
       if (partInk.isEmpty()) return std::nullopt;
-      const QPointF position(-partInk.center().x(),
+      const QList<QPointF> advances = font.rasterFont().advancesForGlyphIndexes(
+          {part.glyphIndex});
+      if (advances.isEmpty()) return std::nullopt;
+      const QPointF position(-advances.front().x() / 2.0,
                              part.offset - partInk.top());
-      result.parts.push_back({part.glyphIndex, position, part.offset,
+      const QRectF positionedInk = partInk.translated(position);
+      result.parts.push_back({part.glyphIndex, position, positionedInk,
+                              part.offset,
                               part.fullAdvance, part.connectorOverlap,
                               part.extender});
-      const QRectF positionedInk = partInk.translated(position);
       result.inkBounds = result.inkBounds.isNull()
           ? positionedInk : result.inkBounds.united(positionedInk);
     }
+    result.baselineOrigin.setY(target.top() - result.inkBounds.top());
     return result;
   }
 
   const auto fixed = font.verticalVariant(character, target.height());
   if (!fixed) return std::nullopt;
   result.kind = MathCssVerticalGlyphKind::FixedVariant;
+  if (normalizeDelimiter) {
+    result.scalePolicy = MathCssVerticalScalePolicy::FitSelectedExtent;
+    result.clipToBlockExtent = true;
+  }
   result.fixedGlyphIndex = fixed->glyphIndex;
   result.realizedExtent = fixed->extent;
   result.advance = fixed->advance;
@@ -3160,7 +3171,9 @@ std::optional<MathCssVerticalGlyphOperation> buildInlineFenceGlyphOperation(
   MathCssVerticalGlyphOperation result;
   result.kind = MathCssVerticalGlyphKind::FixedVariant;
   result.scalePolicy = MathCssVerticalScalePolicy::FitTargetExtent;
+  result.clipToBlockExtent = true;
   result.target = target;
+  result.character = character;
   result.selectionTarget = target.height();
   result.fixedGlyphIndex = glyph->glyphIndex;
   result.realizedExtent = ink.height();
@@ -3345,6 +3358,15 @@ std::optional<MathCssPaintOperation> buildMiddlePaintOperation(
       box.topLeft() - ink.topLeft());
   result.glyphRun.baselineOrigin = box.topLeft() - ink.topLeft();
   result.glyphRun.clip = box;
+  result.glyph = buildInlineFenceGlyphOperation(character, box);
+  if (result.glyph) {
+    result.glyph->character = character;
+    result.glyph->fixedGlyphIndex = glyph->glyphIndex;
+    result.glyph->advance = glyph->advance;
+    result.glyph->inkBounds = font.rasterGlyphBounds(glyph->glyphIndex);
+    result.glyph->realizedExtent = result.glyph->inkBounds.height();
+    result.glyph->clipToBlockExtent = false;
+  }
   return operation;
 }
 
@@ -3763,10 +3785,18 @@ std::optional<MathCssPaintOperation> buildArrayOperation(
   const qreal leftWidth = arrayDelimiterWidth(leftDelimiter, tableHeight);
   const qreal rightWidth = arrayDelimiterWidth(rightDelimiter, tableHeight);
   const qreal intrinsicWidth = leftWidth + tableWidth + rightWidth;
+  const bool wrappedByLeftRight =
+      enclosingKind(containingNode, array, MathRenderKind::LeftRight);
+  const bool wrappedMiddleArray =
+      wrappedByLeftRight && middleDelimiterMarker(array);
+  const qreal middleLeading = wrappedMiddleArray
+      ? 2.0 * std::floor(OpenTypeMathFont::instance()
+                             .constants().fractionRuleThickness)
+      : 0.0;
   const bool fillsContainingRegion =
       primarySemanticNode(containingNode) == array &&
       (symbolCount(containingNode) == symbolCount(array) ||
-       enclosingKind(containingNode, array, MathRenderKind::LeftRight));
+       wrappedByLeftRight);
   const qreal left = fillsContainingRegion
       ? containingRect.left()
       : containingRect.left() + cssNodeOffset(
@@ -3779,10 +3809,10 @@ std::optional<MathCssPaintOperation> buildArrayOperation(
       delimiterHeight = std::max(delimiterHeight, variant->extent);
   }
   const qreal height = fillsContainingRegion
-      ? containingRect.height()
+      ? containingRect.height() + middleLeading
       : std::max(tableHeight, std::ceil(delimiterHeight));
   const qreal top = fillsContainingRegion
-      ? containingRect.top()
+      ? containingRect.top() - middleLeading / 2.0
       : containingRect.top() + (containingRect.height() - height) / 2.0;
 
   MathCssPaintOperation operation;
@@ -4467,6 +4497,7 @@ QJsonObject verticalGlyphJson(const MathCssVerticalGlyphOperation& glyph) {
     parts.push_back(QJsonObject{
         {QStringLiteral("glyphIndex"), static_cast<qint64>(part.glyphIndex)},
         {QStringLiteral("position"), pointJson(part.position)},
+        {QStringLiteral("inkBounds"), rectJson(part.inkBounds)},
         {QStringLiteral("offset"), jsonNumber(part.offset)},
         {QStringLiteral("fullAdvance"), jsonNumber(part.fullAdvance)},
         {QStringLiteral("connectorOverlap"),
@@ -4480,8 +4511,13 @@ QJsonObject verticalGlyphJson(const MathCssVerticalGlyphOperation& glyph) {
       {QStringLiteral("scalePolicy"),
        glyph.scalePolicy == MathCssVerticalScalePolicy::FitTargetExtent
            ? QStringLiteral("fitTargetExtent")
-           : QStringLiteral("preserveVariantScale")},
+           : glyph.scalePolicy ==
+                     MathCssVerticalScalePolicy::FitSelectedExtent
+               ? QStringLiteral("fitSelectedExtent")
+               : QStringLiteral("preserveVariantScale")},
+      {QStringLiteral("clipToBlockExtent"), glyph.clipToBlockExtent},
       {QStringLiteral("target"), rectJson(glyph.target)},
+      {QStringLiteral("character"), glyph.character},
       {QStringLiteral("baselineOrigin"), pointJson(glyph.baselineOrigin)},
       {QStringLiteral("selectionTarget"), jsonNumber(glyph.selectionTarget)},
       {QStringLiteral("realizedExtent"), jsonNumber(glyph.realizedExtent)},
@@ -4577,6 +4613,9 @@ QJsonObject MathCssPaintOperation::toJson() const {
                   rectJson(middle->allocation));
     result.insert(QStringLiteral("glyphRun"),
                   glyphRunsJson({middle->glyphRun}).at(0));
+    if (middle->glyph)
+      result.insert(QStringLiteral("glyph"),
+                    verticalGlyphJson(*middle->glyph));
   } else if (const auto* fraction = std::get_if<MathCssFractionPaint>(&payload)) {
     result.insert(QStringLiteral("fraction"), rectJson(fraction->box.fraction));
     result.insert(QStringLiteral("numerator"), rectJson(fraction->box.numerator));

@@ -22,6 +22,18 @@ QRect enclosingDeviceRect(const QRectF& bounds) {
                std::max(0, bottom - top));
 }
 
+QRect alphaInkBounds(const QImage& image) {
+  QRect result;
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      if (image.pixelColor(x, y).alpha() == 0) continue;
+      result = result.isNull() ? QRect(x, y, 1, 1)
+                               : result.united(QRect(x, y, 1, 1));
+    }
+  }
+  return result;
+}
+
 QImage downsampleCoverage(const QImage& source, const QSize& targetSize) {
   QImage result(targetSize, QImage::Format_ARGB32_Premultiplied);
   constexpr int sampleCount = kCoverageScale * kCoverageScale;
@@ -88,6 +100,63 @@ bool paintDeterministicCoverage(QPainter& target, const QPainterPath& logicalPat
 }  // namespace
 
 namespace muffin::mermaid::math {
+
+bool MathGlyphRasterizer::paintPath(QPainter& painter,
+                                    const QPainterPath& path, QRectF clip,
+                                    const QColor& color) {
+  if (path.isEmpty() || clip.isEmpty()) return false;
+  return paintDeterministicCoverage(painter, path, clip, color);
+}
+
+bool MathGlyphRasterizer::paintStrikeGlyphFitBlock(
+    QPainter& painter, quint32 glyphIndex, QRectF inkBounds, qreal fontScale,
+    QRectF target, bool allowBlockOverflow, const QColor& color) {
+  if (glyphIndex == 0 || inkBounds.isEmpty() || fontScale <= 0.0 ||
+      target.isEmpty())
+    return false;
+  const QTransform toDevice = painter.combinedTransform();
+  const qreal deviceScale = std::hypot(toDevice.m11(), toDevice.m12());
+  if (deviceScale <= 0.0) return false;
+  const QRawFont strikeFont =
+      muffin::math::OpenTypeMathFont::instance().rasterFont(
+          fontScale * deviceScale);
+  if (!strikeFont.isValid()) return false;
+  const QImage alpha = strikeFont.alphaMapForGlyph(
+      glyphIndex, QRawFont::PixelAntialiasing);
+  if (alpha.isNull()) return false;
+  const QRect alphaBounds = alphaInkBounds(alpha);
+  if (alphaBounds.isEmpty()) return false;
+  const QImage croppedAlpha = alpha.copy(alphaBounds);
+
+  const QRectF deviceTarget = toDevice.mapRect(target);
+  const qreal inlineScale = std::hypot(toDevice.m11(), toDevice.m12());
+  const int targetWidth = std::max(
+      1, qCeil(inkBounds.right() * inlineScale) -
+             qFloor(inkBounds.left() * inlineScale));
+  const int targetHeight = allowBlockOverflow
+      ? std::max(croppedAlpha.height(),
+                 std::max(1, qRound(deviceTarget.height())))
+      : std::max(1, qRound(deviceTarget.height()));
+  QImage tinted(croppedAlpha.size(), QImage::Format_ARGB32_Premultiplied);
+  tinted.fill(color);
+  tinted.setAlphaChannel(croppedAlpha);
+  if (tinted.height() != targetHeight)
+    tinted = tinted.scaled(tinted.width(), targetHeight,
+                           Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+  if (tinted.width() != targetWidth)
+    tinted = tinted.scaled(targetWidth, tinted.height(),
+                           Qt::IgnoreAspectRatio, Qt::FastTransformation);
+  const QPoint topLeft(
+      qRound(deviceTarget.center().x() - tinted.width() / 2.0),
+      qRound(deviceTarget.center().y() - tinted.height() / 2.0));
+  painter.save();
+  painter.resetTransform();
+  if (!allowBlockOverflow)
+    painter.setClipRect(deviceTarget, Qt::IntersectClip);
+  painter.drawImage(topLeft, tinted);
+  painter.restore();
+  return true;
+}
 
 bool MathGlyphRasterizer::paintOutlineRun(
     QPainter& painter, const QVector<quint32>& glyphIndexes,
