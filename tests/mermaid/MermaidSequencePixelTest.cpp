@@ -192,6 +192,71 @@ LargeOperatorRaster renderLargeOperatorGlyph(
           glyph->parts.size(),
           glyph->kind==muffin::math::MathCssVerticalGlyphKind::FixedVariant};
 }
+QImage renderMathPrimitiveRole(
+    const sequence::SequenceLabelDocument& label, qreal fontPixelSize,
+    qreal dpr, muffin::math::MathMlPaintPrimitiveRole role,bool trim=true) {
+  if(label.richText.math.isEmpty()) return {};
+  muffin::math::MathRenderer renderer;
+  const qreal renderFontPixelSize=fontPixelSize*1.21;
+  const muffin::math::MathLayoutResult layout=renderer.render(
+      label.richText.math.front().source,renderFontPixelSize,Qt::white,true);
+  if(!layout.valid()) return {};
+  const auto built=muffin::math::buildMathMlPaintOperations(
+      layout,renderFontPixelSize,16.0);
+  if(!built.operation) return {};
+  QVector<muffin::math::MathMlPaintPrimitive> selected;
+  for(const auto& primitive:
+      muffin::math::collectMathMlPaintPrimitives(*built.operation))
+    if(primitive.role==role) selected.push_back(primitive);
+  if(selected.isEmpty()) return {};
+  const muffin::math::MathCssBox box=muffin::math::layoutMathMlCssBox(
+      layout,renderFontPixelSize,16.0);
+  constexpr qreal padding=2.0;
+  QImage image(qCeil((box.width+2.0*padding)*dpr),
+               qCeil((box.height+2.0*padding)*dpr),
+               QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setRenderHint(QPainter::TextAntialiasing);
+  painter.scale(dpr,dpr);
+  painter.translate(padding,padding);
+  muffin::math::paintMathMlPrimitives(painter,selected,Qt::white);
+  painter.end();
+  return trim?alphaTrimmed(image):image;
+}
+struct NativeMathToken {
+  muffin::math::MathMlPaintPrimitiveRole role;
+  QString text;
+  QRectF clip;
+  QPointF baseline;
+  qreal fontScale=1.0;
+  QString path;
+};
+QVector<NativeMathToken> nativeMathTokens(
+    const sequence::SequenceLabelDocument& label,qreal fontPixelSize) {
+  QVector<NativeMathToken> result;
+  if(label.richText.math.isEmpty()) return result;
+  muffin::math::MathRenderer renderer;
+  const qreal renderFontPixelSize=fontPixelSize*1.21;
+  const auto layout=renderer.render(label.richText.math.front().source,
+                                    renderFontPixelSize,Qt::white,true);
+  if(!layout.valid()) return result;
+  const auto built=muffin::math::buildMathMlPaintOperations(
+      layout,renderFontPixelSize,16.0);
+  if(!built.operation) return result;
+  for(const auto& primitive:
+      muffin::math::collectMathMlPaintPrimitives(*built.operation)) {
+    if(primitive.kind!=muffin::math::MathMlPaintPrimitiveKind::GlyphRun)
+      continue;
+    const auto* run=std::get<const muffin::math::MathCssGlyphRunOperation*>(
+        primitive.payload);
+    result.push_back({primitive.role,run->text,run->clip,
+                      run->baselineOrigin,run->fontScale,
+                      primitive.operationPath});
+  }
+  return result;
+}
 QImage renderLabel(const sequence::SequenceScene& scene, const QString& kind, qreal dpr) {
   const sequence::SequenceLabelDocument* label=nullptr;
   QString textColor=scene.style.textColor;
@@ -237,7 +302,7 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("48b085f32f41e1f9a9b43879392c4ad113b3853852473790c3574839bfaec1e4"),
+              QLatin1String("51465bf814f4b471b34fb42b04a6f6b8c9cb0169115bae8e377527e821ad3b21"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
@@ -353,6 +418,115 @@ int main(int argc,char** argv) {
                 QStringLiteral("%1 glyph raster origin drifted: %2,%3")
                     .arg(id).arg(rawAlignment.offset.x())
                     .arg(rawAlignment.offset.y()));
+      }
+      for(const QJsonValue& groupValue:
+          fixture.value(QStringLiteral("mathTokenGroups")).toArray()) {
+        const QJsonObject group=groupValue.toObject();
+        const QString role=group.value(QStringLiteral("role")).toString();
+        const auto nativeRole=role==QLatin1String("row")
+            ? muffin::math::MathMlPaintPrimitiveRole::Row
+            : role==QLatin1String("subscript")
+                ? muffin::math::MathMlPaintPrimitiveRole::ScriptSubscript
+                : muffin::math::MathMlPaintPrimitiveRole::ScriptSuperscript;
+        const QString groupFile=group.value(QStringLiteral("file")).toString();
+        require(fileSha256(dir.filePath(groupFile))==
+                    group.value(QStringLiteral("sha256")).toString().toLatin1(),
+                QStringLiteral("%1 %2 token-group hash drifted").arg(id,role));
+        const QImage nativeGroupRaw=renderMathPrimitiveRole(
+            entry.sequenceScene->noteLabels.first(),
+            entry.sequenceScene->style.fontSize,dpr,nativeRole,false);
+        const QImage browserGroupRaw=QImage(dir.filePath(groupFile));
+        const QImage nativeGroup=alphaTrimmed(nativeGroupRaw);
+        const QImage browserGroup=alphaTrimmed(browserGroupRaw);
+        require(!nativeGroup.isNull()&&!browserGroup.isNull(),
+                QStringLiteral("%1 %2 token-group image missing").arg(id,role));
+        const qreal groupIou=alphaIou(nativeGroup,browserGroup);
+        const qreal groupCoverage=tolerantGlyphCoverage(nativeGroup,browserGroup);
+        const MaskAlignment groupAlignment=bestRawAlphaAlignment(
+            nativeGroup,browserGroup);
+        const QRect nativeInk=alphaBounds(nativeGroupRaw);
+        const QRect browserInk=alphaBounds(browserGroupRaw);
+        const QJsonObject groupBox=group.value(QStringLiteral("box")).toObject();
+        const QJsonObject mathRootBox=fixture.value(QStringLiteral("structure"))
+            .toObject().value(QStringLiteral("mathMlBox")).toObject();
+        const QPointF nativeDeviceOrigin(
+            nativeInk.x()-2.0*dpr,nativeInk.y()-2.0*dpr);
+        const QPointF browserDeviceOrigin(
+            (groupBox.value(QStringLiteral("x")).toDouble()-
+             mathRootBox.value(QStringLiteral("x")).toDouble())*dpr+
+                browserInk.x(),
+            (groupBox.value(QStringLiteral("y")).toDouble()-
+             mathRootBox.value(QStringLiteral("y")).toDouble())*dpr+
+                browserInk.y());
+        qDebug().noquote()<<id<<"token-group"<<role<<nativeGroup.size()
+                          <<browserGroup.size()<<"IoU"<<groupIou
+                          <<"coverage"<<groupCoverage
+                          <<"raw-best"<<groupAlignment.iou
+                          <<"offset"<<groupAlignment.offset
+                          <<"origin"<<nativeDeviceOrigin
+                          <<browserDeviceOrigin
+                          <<"delta"<<nativeDeviceOrigin-browserDeviceOrigin;
+        require(qAbs(nativeGroup.width()-browserGroup.width())<=1&&
+                    qAbs(nativeGroup.height()-browserGroup.height())<=1,
+                QStringLiteral("%1 %2 token-group bounds drifted")
+                    .arg(id,role));
+        require(groupIou>=0.75&&groupCoverage>=0.94,
+                QStringLiteral("%1 %2 token-group raster drifted: IoU=%3 coverage=%4")
+                    .arg(id,role).arg(groupIou).arg(groupCoverage));
+      }
+      const QJsonArray browserTokens=fixture.value(
+          QStringLiteral("mathTokens")).toArray();
+      if(!browserTokens.isEmpty()) {
+        const QVector<NativeMathToken> nativeTokens=nativeMathTokens(
+            entry.sequenceScene->noteLabels.first(),
+            entry.sequenceScene->style.fontSize);
+        const QJsonObject mathBox=fixture.value(QStringLiteral("structure"))
+            .toObject().value(QStringLiteral("mathMlBox")).toObject();
+        QHash<int,qsizetype> roleCursor;
+        const auto enumRole=[](const QString& role) {
+          return role==QLatin1String("row")
+              ? muffin::math::MathMlPaintPrimitiveRole::Row
+              : role==QLatin1String("subscript")
+                  ? muffin::math::MathMlPaintPrimitiveRole::ScriptSubscript
+                  : muffin::math::MathMlPaintPrimitiveRole::ScriptSuperscript;
+        };
+        for(const QJsonValue& tokenValue:browserTokens) {
+          const QJsonObject token=tokenValue.toObject();
+          const QString role=token.value(QStringLiteral("role")).toString();
+          if(role==QLatin1String("large-operator")) continue;
+          const auto nativeRole=enumRole(role);
+          const int roleKey=static_cast<int>(nativeRole);
+          qsizetype& cursor=roleCursor[roleKey];
+          while(cursor<nativeTokens.size()&&
+                nativeTokens.at(cursor).role!=nativeRole) ++cursor;
+          require(cursor<nativeTokens.size(),
+                  QStringLiteral("%1 %2 native token missing").arg(id,role));
+          const NativeMathToken& nativeToken=nativeTokens.at(cursor++);
+          const QJsonObject browserBox=token.value(QStringLiteral("box")).toObject();
+          const QRectF relativeBrowser(
+              browserBox.value(QStringLiteral("x")).toDouble()-
+                  mathBox.value(QStringLiteral("x")).toDouble(),
+              browserBox.value(QStringLiteral("y")).toDouble()-
+                  mathBox.value(QStringLiteral("y")).toDouble(),
+              browserBox.value(QStringLiteral("width")).toDouble(),
+              browserBox.value(QStringLiteral("height")).toDouble());
+          qDebug().noquote()<<id<<"token"<<role
+                            <<token.value(QStringLiteral("text")).toString()
+                            <<"native-text"<<nativeToken.text
+                            <<"browser"<<relativeBrowser
+                            <<"clip"<<nativeToken.clip
+                            <<"baseline"<<nativeToken.baseline
+                            <<"scale"<<nativeToken.fontScale
+                            <<"path"<<nativeToken.path;
+          require(nativeToken.text==token.value(QStringLiteral("text")).toString(),
+                  QStringLiteral("%1 %2 token order drifted: native=%3 browser=%4")
+                      .arg(id,role,nativeToken.text,
+                           token.value(QStringLiteral("text")).toString()));
+          require(qAbs(nativeToken.baseline.x()-relativeBrowser.x())<=0.22,
+                  QStringLiteral("%1 %2 token x drifted: native=%3 browser=%4")
+                      .arg(id,role).arg(nativeToken.baseline.x())
+                      .arg(relativeBrowser.x()));
+        }
       }
       const QString mathAccent=fixture.value(QStringLiteral("mathAccent")).toString();
       if(!mathAccent.isEmpty()) {
@@ -653,6 +827,16 @@ int main(int argc,char** argv) {
       if (const auto it=rootRowCoverage.constFind(id);
           it!=rootRowCoverage.cend())
         minimumGlyphCoverage = *it;
+      const QHash<QString,qreal> largeOperatorLabelIou{
+          {QStringLiteral("label-math-root-product-limits"), 0.74},
+          {QStringLiteral("label-math-root-coproduct-limits"), 0.75},
+          {QStringLiteral("label-math-root-triple-integral"), 0.74},
+      };
+      if (const auto it=largeOperatorLabelIou.constFind(id);
+          it!=largeOperatorLabelIou.cend())
+        require(labelIou>=*it,
+                QStringLiteral("%1 complete large-operator label IoU too low: %2")
+                    .arg(id).arg(labelIou));
       const QHash<QString,qreal> fallbackTextCoverage{
           {QStringLiteral("label-math-bidi-isolates"), 0.99},
           {QStringLiteral("label-math-fallback-fraction"), 0.99},

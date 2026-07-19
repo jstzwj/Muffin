@@ -2,12 +2,66 @@
 
 #include "mermaid/math/MathMlCssLayout.h"
 
+#include <variant>
+
 class QColor;
 class QPainter;
 
 namespace muffin::math {
 
 enum class MathMlPaintLayer { All, Body, Accent };
+
+enum class MathMlPaintPrimitiveKind {
+  GlyphRun,
+  VerticalGlyph,
+  FractionRule,
+  Radical,
+  Accent
+};
+
+enum class MathMlPaintPrimitiveRole {
+  Row,
+  FractionNumerator,
+  FractionDenominator,
+  FractionDelimiter,
+  LeftRightBody,
+  LeftRightDelimiter,
+  ArrayCell,
+  ArrayDelimiter,
+  AccentBody,
+  AccentAnnotation,
+  ScriptBase,
+  ScriptSuperscript,
+  ScriptSubscript,
+  LargeOperator,
+  Fence,
+  RadicalBody,
+  Middle
+};
+
+using MathMlPaintPrimitivePayload = std::variant<
+    const MathCssGlyphRunOperation*,
+    const MathCssVerticalGlyphOperation*,
+    const MathCssFractionBox*,
+    const MathCssRadicalOperation*,
+    const MathCssAccentOperation*>;
+
+struct MathMlPaintPrimitive {
+  MathMlPaintPrimitiveKind kind = MathMlPaintPrimitiveKind::GlyphRun;
+  MathMlPaintPrimitiveRole role = MathMlPaintPrimitiveRole::Row;
+  QString operationPath;
+  MathMlPaintPrimitivePayload payload =
+      static_cast<const MathCssGlyphRunOperation*>(nullptr);
+};
+
+// Primitive payloads remain valid while the source operation tree is alive.
+QVector<MathMlPaintPrimitive> collectMathMlPaintPrimitives(
+    const MathCssPaintOperation& operation,
+    MathMlPaintLayer layer = MathMlPaintLayer::All);
+
+void paintMathMlPrimitives(
+    QPainter& painter, const QVector<MathMlPaintPrimitive>& primitives,
+    const QColor& color);
 
 void paintMathMlVerticalGlyphOperation(
     QPainter& painter, const MathCssVerticalGlyphOperation& glyph,

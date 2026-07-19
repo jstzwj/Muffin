@@ -129,13 +129,13 @@ const cases = [
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\int_0^1+q$$" },
   { id: "label-math-root-limits-fraction", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sum_{i=1}^{n}+\\frac{a}{b}$$" },
-  { id: "label-math-root-product-limits", dpr: 1.5, mathGlyph: "∏", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-product-limits", dpr: 1.5, mathGlyph: "∏", mathTokenOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\prod_{k=1}^{n}+q$$" },
-  { id: "label-math-root-coproduct-limits", dpr: 2, theme: "dark", mathGlyph: "∐", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-coproduct-limits", dpr: 2, theme: "dark", mathGlyph: "∐", mathTokenOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\coprod_{k=1}^{n}+q$$' },
   { id: "label-math-root-double-integral", dpr: 1.25, mathGlyph: "∬", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iint_D+q$$" },
-  { id: "label-math-root-triple-integral", mathGlyph: "∭", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-root-triple-integral", mathGlyph: "∭", mathTokenOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iiint_D+q$$" },
   { id: "label-math-root-cjk-fraction", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\text{中文}+\\frac{a}{b}+q$$" },
@@ -348,6 +348,7 @@ try {
     const svg = await page.$("svg");
     await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
     let mathBodyFile,mathAccentFile,mathGlyphFile,mathGlyphBox;
+    let mathTokens,mathTokenGroups;
     const captureMathComponent=async(selector,suffix)=>{
       const clip=await page.$eval(selector,(node)=>{
         const rect=node.closest("math").getBoundingClientRect();
@@ -411,6 +412,80 @@ try {
         root.querySelector(selector)?.removeAttribute("data-muffin-glyph-oracle");
       },selector);
     }
+    if(cases[i].mathTokenOracle) {
+      mathTokens=await page.evaluate(()=>{
+        const math=document.querySelector("math");
+        const nodes=[...math.querySelectorAll("mi,mo,mn,mtext")];
+        const nodePath=(node)=>{
+          const parts=[];
+          for(let current=node;current&&current!==math;current=current.parentElement)
+            parts.unshift([...current.parentElement.children].indexOf(current));
+          return parts.join("/");
+        };
+        const tokenRole=(node)=>{
+          const script=node.closest("munderover,msubsup,msub");
+          if(!script) return "row";
+          let branch=node;
+          while(branch.parentElement!==script) branch=branch.parentElement;
+          const index=[...script.children].indexOf(branch);
+          if(index===0) return "large-operator";
+          if(index===1) return "subscript";
+          return "superscript";
+        };
+        return nodes.map((node,index)=>{
+          const role=tokenRole(node);
+          node.setAttribute("data-muffin-token-role",role);
+          const rect=node.getBoundingClientRect();
+          return {index,path:nodePath(node),tag:node.tagName,
+            text:node.textContent ?? "",role,
+            box:{x:Number(rect.x.toFixed(3)),y:Number(rect.y.toFixed(3)),
+              width:Number(rect.width.toFixed(3)),
+              height:Number(rect.height.toFixed(3))}};
+        });
+      });
+      mathTokenGroups=[];
+      for(const role of [...new Set(mathTokens.map((token)=>token.role))]) {
+        if(role==="large-operator") continue;
+        const selector=`[data-muffin-token-role="${role}"]`;
+        const clip=await page.$$eval(selector,(nodes)=>{
+          const rects=nodes.map((node)=>node.getBoundingClientRect());
+          const left=Math.min(...rects.map((rect)=>rect.left));
+          const top=Math.min(...rects.map((rect)=>rect.top));
+          const right=Math.max(...rects.map((rect)=>rect.right));
+          const bottom=Math.max(...rects.map((rect)=>rect.bottom));
+          return {x:left,y:top,width:Math.max(1,right-left),
+            height:Math.max(1,bottom-top)};
+        });
+        await page.evaluate((selector)=>{
+          const root=document.querySelector("svg");
+          for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
+          for(const selected of root.querySelectorAll(selector)) {
+            for(let node=selected;node&&node!==root;node=node.parentElement)
+              node.style.visibility="visible";
+            for(const child of selected.querySelectorAll("*"))
+              child.style.visibility="visible";
+          }
+        },selector);
+        const tokenFile=`${cases[i].id}-math-${role}.png`;
+        await page.screenshot({path:path.join(outDir,tokenFile),
+          omitBackground:true,clip});
+        await page.evaluate(()=>{
+          const root=document.querySelector("svg");
+          for(const node of root.querySelectorAll("*"))
+            node.style.removeProperty("visibility");
+        });
+        mathTokenGroups.push({role,file:tokenFile,
+          sha256:createHash("sha256").update(
+            fs.readFileSync(path.join(outDir,tokenFile))).digest("hex"),
+          box:{x:Number(clip.x.toFixed(3)),y:Number(clip.y.toFixed(3)),
+            width:Number(clip.width.toFixed(3)),
+            height:Number(clip.height.toFixed(3))}});
+      }
+      await page.evaluate(()=>{
+        for(const node of document.querySelectorAll("[data-muffin-token-role]"))
+          node.removeAttribute("data-muffin-token-role");
+      });
+    }
     let cropFile;
     if (cases[i].cropSelector) {
       cropFile=`${cases[i].id}-label.png`;
@@ -449,7 +524,8 @@ try {
       ? createHash("sha256").update(fs.readFileSync(path.join(outDir,mathGlyphFile))).digest("hex") : undefined;
     manifestCases.push({...cases[i],file,sha256,cropFile,cropSha256,
       mathBodyFile,mathBodySha256,mathAccentFile,mathAccentSha256,
-      mathGlyphFile,mathGlyphSha256,mathGlyphBox,...dimensions});
+      mathGlyphFile,mathGlyphSha256,mathGlyphBox,mathTokens,mathTokenGroups,
+      ...dimensions});
   }
   const payload={mermaidVersion:pkg.version,fontMode:"bundled-noto-stix-two-math-2.13b171",cases:manifestCases};
   payload.fixtureSha256=createHash("sha256").update(JSON.stringify(payload)).digest("hex");

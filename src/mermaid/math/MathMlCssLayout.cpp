@@ -4275,6 +4275,9 @@ std::optional<MathCssPaintOperation> buildPaintOperation(
       radical->bodyGlyphRuns = std::move(*runs);
   }
   if (auto* script = std::get_if<MathCssScriptOperation>(&result.payload)) {
+    const std::optional<qreal> cssPositionScale =
+        script->largeOperatorGlyph ? std::optional<qreal>(renderScale)
+                                   : std::nullopt;
     if (!script->largeOperatorGlyph) {
       if (auto runs = buildGlyphRunOperations(
               script->baseNode, script->base, style.fontScale(), true))
@@ -4282,11 +4285,11 @@ std::optional<MathCssPaintOperation> buildPaintOperation(
     }
     if (auto runs = buildGlyphRunOperations(
             script->superscriptNode, script->superscript,
-            style.scriptStyle().fontScale(), true))
+            style.scriptStyle().fontScale(), true, cssPositionScale))
       script->superscriptGlyphRuns = std::move(*runs);
     if (auto runs = buildGlyphRunOperations(
             script->subscriptNode, script->subscript,
-            style.scriptStyle().fontScale(), true))
+            style.scriptStyle().fontScale(), true, cssPositionScale))
       script->subscriptGlyphRuns = std::move(*runs);
   }
   if (const auto* script = std::get_if<MathCssScriptOperation>(&result.payload)) {

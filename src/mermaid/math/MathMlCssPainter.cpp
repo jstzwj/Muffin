@@ -13,6 +13,169 @@
 
 namespace muffin::math {
 
+QVector<MathMlPaintPrimitive> collectMathMlPaintPrimitives(
+    const MathCssPaintOperation& operation, MathMlPaintLayer layer) {
+  QVector<MathMlPaintPrimitive> result;
+  const bool body = layer != MathMlPaintLayer::Accent;
+  const bool accentLayer = layer != MathMlPaintLayer::Body;
+  const auto appendRuns = [&](const QVector<MathCssGlyphRunOperation>& runs,
+                              MathMlPaintPrimitiveRole role,
+                              const QString& path) {
+    if (!body) return;
+    for (qsizetype index = 0; index < runs.size(); ++index)
+      result.push_back({MathMlPaintPrimitiveKind::GlyphRun, role,
+                        path + QStringLiteral("/g%1").arg(index),
+                        &runs.at(index)});
+  };
+  const auto appendVertical = [&](
+      const std::optional<MathCssVerticalGlyphOperation>& glyph,
+      MathMlPaintPrimitiveRole role, const QString& path) {
+    if (body && glyph)
+      result.push_back({MathMlPaintPrimitiveKind::VerticalGlyph, role, path,
+                        &*glyph});
+  };
+  const auto appendFences = [&](const std::optional<MathCssFencePair>& fences,
+                                const QString& path) {
+    if (!fences) return;
+    appendVertical(fences->leftGlyph, MathMlPaintPrimitiveRole::Fence,
+                   path + QStringLiteral("/left"));
+    appendVertical(fences->rightGlyph, MathMlPaintPrimitiveRole::Fence,
+                   path + QStringLiteral("/right"));
+  };
+
+  std::function<void(const MathCssPaintOperation&, const QString&)> visit;
+  visit = [&](const MathCssPaintOperation& current, const QString& path) {
+    const auto visitChildren = [&] {
+      for (qsizetype index = 0; index < current.children.size(); ++index)
+        visit(current.children.at(index),
+              path + QStringLiteral("/c%1").arg(index));
+    };
+    if (const auto* group =
+            std::get_if<MathCssGlyphRunGroupOperation>(&current.payload)) {
+      appendRuns(group->runs, MathMlPaintPrimitiveRole::Row, path);
+      return;
+    }
+    if (const auto* row = std::get_if<MathCssRowOperation>(&current.payload)) {
+      appendRuns(row->glyphRuns, MathMlPaintPrimitiveRole::Row, path);
+      visitChildren();
+      return;
+    }
+    if (const auto* middle =
+            std::get_if<MathCssMiddlePaintOperation>(&current.payload)) {
+      if (body)
+        result.push_back({MathMlPaintPrimitiveKind::GlyphRun,
+                          MathMlPaintPrimitiveRole::Middle,
+                          path + QStringLiteral("/middle"),
+                          &middle->glyphRun});
+      return;
+    }
+    if (const auto* fraction =
+            std::get_if<MathCssFractionPaint>(&current.payload)) {
+      appendRuns(fraction->numeratorGlyphRuns,
+                 MathMlPaintPrimitiveRole::FractionNumerator,
+                 path + QStringLiteral("/numerator"));
+      appendRuns(fraction->denominatorGlyphRuns,
+                 MathMlPaintPrimitiveRole::FractionDenominator,
+                 path + QStringLiteral("/denominator"));
+      visitChildren();
+      appendVertical(fraction->leftDelimiterGlyph,
+                     MathMlPaintPrimitiveRole::FractionDelimiter,
+                     path + QStringLiteral("/left"));
+      appendVertical(fraction->rightDelimiterGlyph,
+                     MathMlPaintPrimitiveRole::FractionDelimiter,
+                     path + QStringLiteral("/right"));
+      if (body && fraction->box.hasRule)
+        result.push_back({MathMlPaintPrimitiveKind::FractionRule,
+                          MathMlPaintPrimitiveRole::Row,
+                          path + QStringLiteral("/rule"), &fraction->box});
+      return;
+    }
+    if (const auto* leftRight =
+            std::get_if<MathCssLeftRightOperation>(&current.payload)) {
+      for (qsizetype index = 0; index < leftRight->bodyRegions.size(); ++index)
+        appendRuns(leftRight->bodyRegions.at(index).glyphRuns,
+                   MathMlPaintPrimitiveRole::LeftRightBody,
+                   path + QStringLiteral("/body%1").arg(index));
+      visitChildren();
+      for (qsizetype index = 0;
+           index < leftRight->middleDelimiters.size(); ++index)
+        appendVertical(leftRight->middleDelimiters.at(index).glyph,
+                       MathMlPaintPrimitiveRole::LeftRightDelimiter,
+                       path + QStringLiteral("/middle%1").arg(index));
+      appendVertical(leftRight->leftDelimiterGlyph,
+                     MathMlPaintPrimitiveRole::LeftRightDelimiter,
+                     path + QStringLiteral("/left"));
+      appendVertical(leftRight->rightDelimiterGlyph,
+                     MathMlPaintPrimitiveRole::LeftRightDelimiter,
+                     path + QStringLiteral("/right"));
+      return;
+    }
+    if (const auto* array =
+            std::get_if<MathCssArrayOperation>(&current.payload)) {
+      for (qsizetype index = 0; index < array->cells.size(); ++index)
+        appendRuns(array->cells.at(index).glyphRuns,
+                   MathMlPaintPrimitiveRole::ArrayCell,
+                   path + QStringLiteral("/cell%1").arg(index));
+      visitChildren();
+      appendVertical(array->leftDelimiterGlyph,
+                     MathMlPaintPrimitiveRole::ArrayDelimiter,
+                     path + QStringLiteral("/left"));
+      appendVertical(array->rightDelimiterGlyph,
+                     MathMlPaintPrimitiveRole::ArrayDelimiter,
+                     path + QStringLiteral("/right"));
+      return;
+    }
+    if (const auto* accent =
+            std::get_if<MathCssAccentOperation>(&current.payload)) {
+      appendRuns(accent->bodyGlyphRuns, MathMlPaintPrimitiveRole::AccentBody,
+                 path + QStringLiteral("/body"));
+      appendRuns(accent->annotationGlyphRuns,
+                 MathMlPaintPrimitiveRole::AccentAnnotation,
+                 path + QStringLiteral("/annotation"));
+      visitChildren();
+      if (accentLayer)
+        result.push_back({MathMlPaintPrimitiveKind::Accent,
+                          MathMlPaintPrimitiveRole::Row,
+                          path + QStringLiteral("/accent"), accent});
+      return;
+    }
+    if (const auto* script =
+            std::get_if<MathCssScriptOperation>(&current.payload)) {
+      appendVertical(script->largeOperatorGlyph,
+                     MathMlPaintPrimitiveRole::LargeOperator,
+                     path + QStringLiteral("/operator"));
+      appendRuns(script->baseGlyphRuns,
+                 MathMlPaintPrimitiveRole::ScriptBase,
+                 path + QStringLiteral("/base"));
+      appendRuns(script->superscriptGlyphRuns,
+                 MathMlPaintPrimitiveRole::ScriptSuperscript,
+                 path + QStringLiteral("/sup"));
+      appendRuns(script->subscriptGlyphRuns,
+                 MathMlPaintPrimitiveRole::ScriptSubscript,
+                 path + QStringLiteral("/sub"));
+      visitChildren();
+      appendFences(script->fences, path + QStringLiteral("/fence"));
+      return;
+    }
+    if (const auto* radical =
+            std::get_if<MathCssRadicalOperation>(&current.payload)) {
+      appendRuns(radical->bodyGlyphRuns,
+                 MathMlPaintPrimitiveRole::RadicalBody,
+                 path + QStringLiteral("/body"));
+      visitChildren();
+      if (body)
+        result.push_back({MathMlPaintPrimitiveKind::Radical,
+                          MathMlPaintPrimitiveRole::Row,
+                          path + QStringLiteral("/radical"), radical});
+      appendFences(radical->fences, path + QStringLiteral("/fence"));
+      return;
+    }
+    visitChildren();
+  };
+  visit(operation, QStringLiteral("root"));
+  return result;
+}
+
 void paintMathMlVerticalGlyphOperation(
     QPainter& painter, const MathCssVerticalGlyphOperation& glyph,
     const QColor& color) {
@@ -65,10 +228,14 @@ void paintMathMlVerticalGlyphOperation(
   painter.restore();
 }
 
-void paintMathMlOperation(QPainter& painter,
-                          const MathCssPaintOperation& operation,
-                          const QColor& color,
-                          MathMlPaintLayer layer) {
+void paintMathMlPrimitives(
+    QPainter& painter, const QVector<MathMlPaintPrimitive>& primitives,
+    const QColor& color) {
+  const bool containsLargeOperator = std::any_of(
+      primitives.cbegin(), primitives.cend(),
+      [](const MathMlPaintPrimitive& primitive) {
+        return primitive.role == MathMlPaintPrimitiveRole::LargeOperator;
+      });
   const auto paintVerticalGlyph = [&](const MathCssVerticalGlyphOperation& glyph) {
     paintMathMlVerticalGlyphOperation(painter, glyph, color);
   };
@@ -117,10 +284,43 @@ void paintMathMlOperation(QPainter& painter,
     paintSolidRect(radical.rule);
   };
 
-  const auto paintGlyphRuns = [&](const QVector<MathCssGlyphRunOperation>& runs) {
+  const auto paintGlyphRuns = [&](const QVector<MathCssGlyphRunOperation>& runs,
+                                  bool outlineScale = false,
+                                  QPointF outlineOffset = {}) {
     const OpenTypeMathFont& font = OpenTypeMathFont::instance();
     for (const MathCssGlyphRunOperation& glyph : runs) {
       if (glyph.glyphIndexes.isEmpty() || glyph.clip.isEmpty()) continue;
+      if (outlineScale && !glyph.rawFont.isValid()) {
+        QPainterPath path;
+        for (qsizetype index = 0; index < glyph.glyphIndexes.size(); ++index) {
+          const QPainterPath glyphPath = font.glyphPath(
+              glyph.glyphIndexes.at(index));
+          if (glyphPath.isEmpty()) continue;
+          const QRectF outlineBounds = glyphPath.boundingRect();
+          const QRectF rasterBounds = font.rasterGlyphBounds(
+              glyph.glyphIndexes.at(index), glyph.fontScale);
+          const QPointF rasterOriginCorrection(
+              rasterBounds.left() - outlineBounds.left() * glyph.fontScale,
+              rasterBounds.top() - outlineBounds.top() * glyph.fontScale);
+          QTransform placement;
+          placement.translate(
+              glyph.baselineOrigin.x() + glyph.positions.at(index).x() +
+                  rasterOriginCorrection.x() + outlineOffset.x(),
+              glyph.baselineOrigin.y() + glyph.positions.at(index).y() +
+                  rasterOriginCorrection.y() + outlineOffset.y());
+          placement.scale(glyph.fontScale, glyph.fontScale);
+          path.addPath(placement.map(glyphPath));
+        }
+        if (!path.isEmpty()) {
+          painter.save();
+          painter.setClipRect(glyph.clip, Qt::IntersectClip);
+          painter.setPen(Qt::NoPen);
+          painter.setBrush(color);
+          painter.drawPath(path);
+          painter.restore();
+          continue;
+        }
+      }
       QGlyphRun run;
       run.setRawFont(glyph.rawFont.isValid()
                          ? glyph.rawFont
@@ -133,12 +333,6 @@ void paintMathMlOperation(QPainter& painter,
       painter.drawGlyphRun(glyph.baselineOrigin, run);
       painter.restore();
     }
-  };
-
-  const auto paintFences = [&](const std::optional<MathCssFencePair>& fences) {
-    if (!fences) return;
-    if (fences->leftGlyph) paintVerticalGlyph(*fences->leftGlyph);
-    if (fences->rightGlyph) paintVerticalGlyph(*fences->rightGlyph);
   };
 
   const auto paintAccent = [&](const MathCssAccentOperation& accent) {
@@ -199,137 +393,45 @@ void paintMathMlOperation(QPainter& painter,
     painter.restore();
   };
 
-  std::function<void(const MathCssPaintOperation&)> paintOperation;
-  paintOperation = [&](const MathCssPaintOperation& current) {
-    const bool paintBody = layer != MathMlPaintLayer::Accent;
-    if (const auto* glyphRun =
-            std::get_if<MathCssGlyphRunGroupOperation>(&current.payload)) {
-      if (paintBody) paintGlyphRuns(glyphRun->runs);
-      return;
-    }
-    if (const auto* row =
-            std::get_if<MathCssRowOperation>(&current.payload)) {
-      if (paintBody) paintGlyphRuns(row->glyphRuns);
-      for (const MathCssPaintOperation& child : current.children)
-        paintOperation(child);
-      return;
-    }
-    if (const auto* middle =
-            std::get_if<MathCssMiddlePaintOperation>(&current.payload)) {
-      if (paintBody) paintGlyphRuns({middle->glyphRun});
-      return;
-    }
-    if (const auto* fraction =
-            std::get_if<MathCssFractionPaint>(&current.payload)) {
-      const auto paintRow = [&] (
-          QRectF row,
-          const QVector<MathCssGlyphRunOperation>& glyphRuns) {
-      if (!row.isEmpty() && !glyphRuns.isEmpty())
-        paintGlyphRuns(glyphRuns);
-      };
-      if (paintBody) {
-        paintRow(fraction->box.numerator,
-                 fraction->numeratorGlyphRuns);
-        paintRow(fraction->box.denominator,
-                 fraction->denominatorGlyphRuns);
+  for (const MathMlPaintPrimitive& primitive : primitives) {
+    switch (primitive.kind) {
+      case MathMlPaintPrimitiveKind::GlyphRun: {
+        const bool largeOperatorRow = containsLargeOperator &&
+            primitive.role == MathMlPaintPrimitiveRole::Row;
+        const bool outlineSubscript =
+            primitive.role == MathMlPaintPrimitiveRole::ScriptSubscript;
+        const QPointF outlineOffset = largeOperatorRow
+            ? QPointF(0.0, -0.5) : QPointF();
+        paintGlyphRuns(
+            {*std::get<const MathCssGlyphRunOperation*>(primitive.payload)},
+            largeOperatorRow || outlineSubscript, outlineOffset);
+        break;
       }
-      for (const MathCssPaintOperation& child : current.children)
-        paintOperation(child);
-      if (paintBody) {
-        if (fraction->leftDelimiterGlyph)
-          paintVerticalGlyph(*fraction->leftDelimiterGlyph);
-        if (fraction->rightDelimiterGlyph)
-          paintVerticalGlyph(*fraction->rightDelimiterGlyph);
-        paintRule(fraction->box);
-      }
-      return;
+      case MathMlPaintPrimitiveKind::VerticalGlyph:
+        paintVerticalGlyph(*std::get<const MathCssVerticalGlyphOperation*>(
+            primitive.payload));
+        break;
+      case MathMlPaintPrimitiveKind::FractionRule:
+        paintRule(*std::get<const MathCssFractionBox*>(primitive.payload));
+        break;
+      case MathMlPaintPrimitiveKind::Radical:
+        paintRadical(*std::get<const MathCssRadicalOperation*>(
+            primitive.payload));
+        break;
+      case MathMlPaintPrimitiveKind::Accent:
+        paintAccent(*std::get<const MathCssAccentOperation*>(
+            primitive.payload));
+        break;
     }
+  }
+}
 
-    if (const auto* leftRight =
-            std::get_if<MathCssLeftRightOperation>(&current.payload)) {
-      if (paintBody)
-        for (const MathCssLeftRightBodyRegion& region :
-             leftRight->bodyRegions) {
-          if (!region.glyphRuns.isEmpty())
-            paintGlyphRuns(region.glyphRuns);
-        }
-      for (const MathCssPaintOperation& child : current.children)
-        paintOperation(child);
-      if (paintBody) {
-        for (const MathCssMiddleDelimiterOperation& middle :
-             leftRight->middleDelimiters)
-          if (middle.glyph) paintVerticalGlyph(*middle.glyph);
-        if (leftRight->leftDelimiterGlyph)
-          paintVerticalGlyph(*leftRight->leftDelimiterGlyph);
-        if (leftRight->rightDelimiterGlyph)
-          paintVerticalGlyph(*leftRight->rightDelimiterGlyph);
-      }
-      return;
-    }
-
-    if (const auto* array =
-            std::get_if<MathCssArrayOperation>(&current.payload)) {
-      if (paintBody)
-        for (const MathCssArrayCell& cell : array->cells) {
-          if (!cell.glyphRuns.isEmpty())
-            paintGlyphRuns(cell.glyphRuns);
-        }
-      for (const MathCssPaintOperation& child : current.children)
-        paintOperation(child);
-      if (paintBody) {
-        if (array->leftDelimiterGlyph)
-          paintVerticalGlyph(*array->leftDelimiterGlyph);
-        if (array->rightDelimiterGlyph)
-          paintVerticalGlyph(*array->rightDelimiterGlyph);
-      }
-      return;
-    }
-
-    if (const auto* accent =
-            std::get_if<MathCssAccentOperation>(&current.payload)) {
-      if (paintBody) {
-        if (!accent->bodyGlyphRuns.isEmpty())
-          paintGlyphRuns(accent->bodyGlyphRuns);
-        if (!accent->annotationGlyphRuns.isEmpty())
-          paintGlyphRuns(accent->annotationGlyphRuns);
-      }
-      for (const MathCssPaintOperation& child : current.children)
-        paintOperation(child);
-      if (layer != MathMlPaintLayer::Body) paintAccent(*accent);
-      return;
-    }
-
-    if (const auto* script =
-            std::get_if<MathCssScriptOperation>(&current.payload)) {
-      if (paintBody) {
-        if (script->largeOperatorGlyph)
-          paintVerticalGlyph(*script->largeOperatorGlyph);
-        if (!script->baseGlyphRuns.isEmpty())
-          paintGlyphRuns(script->baseGlyphRuns);
-        if (!script->superscriptGlyphRuns.isEmpty())
-          paintGlyphRuns(script->superscriptGlyphRuns);
-        if (!script->subscriptGlyphRuns.isEmpty())
-          paintGlyphRuns(script->subscriptGlyphRuns);
-      }
-    } else if (const auto* radical =
-                   std::get_if<MathCssRadicalOperation>(&current.payload)) {
-      if (paintBody && !radical->bodyGlyphRuns.isEmpty())
-        paintGlyphRuns(radical->bodyGlyphRuns);
-    }
-    for (const MathCssPaintOperation& child : current.children)
-      paintOperation(child);
-    if (const auto* radical =
-            std::get_if<MathCssRadicalOperation>(&current.payload)) {
-      if (paintBody) {
-        paintRadical(*radical);
-        paintFences(radical->fences);
-      }
-    } else if (const auto* script =
-                   std::get_if<MathCssScriptOperation>(&current.payload)) {
-      if (paintBody) paintFences(script->fences);
-    }
-  };
-  paintOperation(operation);
+void paintMathMlOperation(QPainter& painter,
+                          const MathCssPaintOperation& operation,
+                          const QColor& color,
+                          MathMlPaintLayer layer) {
+  paintMathMlPrimitives(
+      painter, collectMathMlPaintPrimitives(operation, layer), color);
 }
 
 MathMlPaintOperationBuildResult paintMathMlOperations(

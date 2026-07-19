@@ -1,4 +1,5 @@
 #include "mermaid/math/MathMlCssLayout.h"
+#include "mermaid/math/MathMlCssPainter.h"
 #include "math/MathRenderer.h"
 #include "math/OpenTypeMathFont.h"
 
@@ -1033,6 +1034,37 @@ int main(int argc, char** argv) {
         compare(actual->base, children.at(0).toObject(), u"integral operator");
         compare(actual->subscript, children.at(1).toObject(), u"integral subscript");
         compare(actual->superscript, children.at(2).toObject(), u"integral superscript");
+      }
+      if (id == QLatin1String("root-mixed-product-limits") ||
+          id == QLatin1String("root-mixed-coproduct-limits") ||
+          id == QLatin1String("root-mixed-triple-integral")) {
+        const auto operation = math::checkedMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        require(operation.has_value(),
+                id + QStringLiteral(" primitive operation is missing"));
+        const auto primitives = math::collectMathMlPaintPrimitives(*operation);
+        QSet<QString> paths;
+        QHash<int, int> roleCounts;
+        for (const auto& primitive : primitives) {
+          require(!primitive.operationPath.isEmpty() &&
+                      !paths.contains(primitive.operationPath),
+                  id + QStringLiteral(" primitive path is missing or duplicated: ") +
+                      primitive.operationPath);
+          paths.insert(primitive.operationPath);
+          ++roleCounts[static_cast<int>(primitive.role)];
+        }
+        const bool limits = id != QLatin1String("root-mixed-triple-integral");
+        require(roleCounts.value(static_cast<int>(
+                    math::MathMlPaintPrimitiveRole::Row)) == 4 &&
+                    roleCounts.value(static_cast<int>(
+                    math::MathMlPaintPrimitiveRole::LargeOperator)) == 1 &&
+                    roleCounts.value(static_cast<int>(
+                    math::MathMlPaintPrimitiveRole::ScriptSubscript)) ==
+                        (limits ? 3 : 1) &&
+                    roleCounts.value(static_cast<int>(
+                    math::MathMlPaintPrimitiveRole::ScriptSuperscript)) ==
+                        (limits ? 1 : 0),
+                id + QStringLiteral(" primitive role coverage drifted"));
       }
       if (id == QLatin1String("root-mixed-double-integral") ||
           id == QLatin1String("root-mixed-triple-integral")) {
@@ -2326,7 +2358,7 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     require(paintOperationHash ==
-                QLatin1String("684ffda0e33a334d10e559b84ceb5636ee197ff4d50913145850e48406692deb"),
+                QLatin1String("b84e4fa58ad28e6462ed67923d7a7595119af8f958910da7b5dc3a11bd498663"),
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),

@@ -15037,6 +15037,7 @@
       "id": "label-math-root-product-limits",
       "dpr": 1.5,
       "mathGlyph": "∏",
+      "mathTokenOracle": true,
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\prod_{k=1}^{n}+q$$",
@@ -15052,6 +15053,160 @@
         "width": 22.672,
         "height": 22
       },
+      "mathTokens": [
+        {
+          "index": 0,
+          "path": "0/0",
+          "tag": "mi",
+          "text": "p",
+          "role": "row",
+          "box": {
+            "x": 132,
+            "y": 156.922,
+            "width": 9.578,
+            "height": 12
+          }
+        },
+        {
+          "index": 1,
+          "path": "0/1",
+          "tag": "mo",
+          "text": "+",
+          "role": "row",
+          "box": {
+            "x": 145.125,
+            "y": 154.922,
+            "width": 11.531,
+            "height": 11
+          }
+        },
+        {
+          "index": 2,
+          "path": "0/2/0",
+          "tag": "mo",
+          "text": "∏",
+          "role": "large-operator",
+          "box": {
+            "x": 164.375,
+            "y": 149.797,
+            "width": 22.672,
+            "height": 22
+          }
+        },
+        {
+          "index": 3,
+          "path": "0/2/1/0",
+          "tag": "mi",
+          "text": "k",
+          "role": "subscript",
+          "box": {
+            "x": 162.859,
+            "y": 174.516,
+            "width": 5.984,
+            "height": 8
+          }
+        },
+        {
+          "index": 4,
+          "path": "0/2/1/1",
+          "tag": "mo",
+          "text": "=",
+          "role": "subscript",
+          "box": {
+            "x": 171.891,
+            "y": 178.516,
+            "width": 8.078,
+            "height": 3
+          }
+        },
+        {
+          "index": 5,
+          "path": "0/2/1/2",
+          "tag": "mn",
+          "text": "1",
+          "role": "subscript",
+          "box": {
+            "x": 183.016,
+            "y": 175.516,
+            "width": 5.547,
+            "height": 7
+          }
+        },
+        {
+          "index": 6,
+          "path": "0/2/2",
+          "tag": "mi",
+          "text": "n",
+          "role": "superscript",
+          "box": {
+            "x": 172.547,
+            "y": 139,
+            "width": 6.328,
+            "height": 6
+          }
+        },
+        {
+          "index": 7,
+          "path": "0/3",
+          "tag": "mo",
+          "text": "+",
+          "role": "row",
+          "box": {
+            "x": 194.766,
+            "y": 154.922,
+            "width": 11.531,
+            "height": 11
+          }
+        },
+        {
+          "index": 8,
+          "path": "0/4",
+          "tag": "mi",
+          "text": "q",
+          "role": "row",
+          "box": {
+            "x": 209.844,
+            "y": 156.922,
+            "width": 8.281,
+            "height": 12
+          }
+        }
+      ],
+      "mathTokenGroups": [
+        {
+          "role": "row",
+          "file": "label-math-root-product-limits-math-row.png",
+          "sha256": "b4b66e8a6d12c4f3794c5aed771a96354e332b8812aba41eb64aa29c516c309f",
+          "box": {
+            "x": 132,
+            "y": 154.922,
+            "width": 86.125,
+            "height": 14
+          }
+        },
+        {
+          "role": "subscript",
+          "file": "label-math-root-product-limits-math-subscript.png",
+          "sha256": "4c469b71e7c743366339b20c29a9b85bc1fc1ad9327ab2e44d3269e50ef34c99",
+          "box": {
+            "x": 162.859,
+            "y": 174.516,
+            "width": 25.703,
+            "height": 8
+          }
+        },
+        {
+          "role": "superscript",
+          "file": "label-math-root-product-limits-math-superscript.png",
+          "sha256": "4eda4049eba989bf97723a3a1466336fc1af3495bd0fb92e4df930de23470c54",
+          "box": {
+            "x": 172.547,
+            "y": 139,
+            "width": 6.328,
+            "height": 6
+          }
+        }
+      ],
       "width": 350,
       "height": 278,
       "structure": {
@@ -15371,6 +15526,7 @@
       "dpr": 2,
       "theme": "dark",
       "mathGlyph": "∐",
+      "mathTokenOracle": true,
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "%%{init: {\"theme\": \"dark\"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\coprod_{k=1}^{n}+q$$",
@@ -15386,6 +15542,160 @@
         "width": 22.672,
         "height": 22
       },
+      "mathTokens": [
+        {
+          "index": 0,
+          "path": "0/0",
+          "tag": "mi",
+          "text": "p",
+          "role": "row",
+          "box": {
+            "x": 132,
+            "y": 156.922,
+            "width": 9.578,
+            "height": 12
+          }
+        },
+        {
+          "index": 1,
+          "path": "0/1",
+          "tag": "mo",
+          "text": "+",
+          "role": "row",
+          "box": {
+            "x": 145.125,
+            "y": 154.922,
+            "width": 11.531,
+            "height": 11
+          }
+        },
+        {
+          "index": 2,
+          "path": "0/2/0",
+          "tag": "mo",
+          "text": "∐",
+          "role": "large-operator",
+          "box": {
+            "x": 164.375,
+            "y": 149.797,
+            "width": 22.672,
+            "height": 22
+          }
+        },
+        {
+          "index": 3,
+          "path": "0/2/1/0",
+          "tag": "mi",
+          "text": "k",
+          "role": "subscript",
+          "box": {
+            "x": 162.859,
+            "y": 174.516,
+            "width": 5.984,
+            "height": 8
+          }
+        },
+        {
+          "index": 4,
+          "path": "0/2/1/1",
+          "tag": "mo",
+          "text": "=",
+          "role": "subscript",
+          "box": {
+            "x": 171.891,
+            "y": 178.516,
+            "width": 8.078,
+            "height": 3
+          }
+        },
+        {
+          "index": 5,
+          "path": "0/2/1/2",
+          "tag": "mn",
+          "text": "1",
+          "role": "subscript",
+          "box": {
+            "x": 183.016,
+            "y": 175.516,
+            "width": 5.547,
+            "height": 7
+          }
+        },
+        {
+          "index": 6,
+          "path": "0/2/2",
+          "tag": "mi",
+          "text": "n",
+          "role": "superscript",
+          "box": {
+            "x": 172.547,
+            "y": 139,
+            "width": 6.328,
+            "height": 6
+          }
+        },
+        {
+          "index": 7,
+          "path": "0/3",
+          "tag": "mo",
+          "text": "+",
+          "role": "row",
+          "box": {
+            "x": 194.766,
+            "y": 154.922,
+            "width": 11.531,
+            "height": 11
+          }
+        },
+        {
+          "index": 8,
+          "path": "0/4",
+          "tag": "mi",
+          "text": "q",
+          "role": "row",
+          "box": {
+            "x": 209.844,
+            "y": 156.922,
+            "width": 8.281,
+            "height": 12
+          }
+        }
+      ],
+      "mathTokenGroups": [
+        {
+          "role": "row",
+          "file": "label-math-root-coproduct-limits-math-row.png",
+          "sha256": "6c26c6d5bb74d610222e07778b8a444914afdccd3f2ee54faca7fefab688c7d2",
+          "box": {
+            "x": 132,
+            "y": 154.922,
+            "width": 86.125,
+            "height": 14
+          }
+        },
+        {
+          "role": "subscript",
+          "file": "label-math-root-coproduct-limits-math-subscript.png",
+          "sha256": "04356ad60353cc262de1e1fa212e0e549c071bfadafcb8d758dff0cc581b4fd5",
+          "box": {
+            "x": 162.859,
+            "y": 174.516,
+            "width": 25.703,
+            "height": 8
+          }
+        },
+        {
+          "role": "superscript",
+          "file": "label-math-root-coproduct-limits-math-superscript.png",
+          "sha256": "7a1e8f4ab88675438ea30b322c4c6453cb7b2aa7f1ddee0b39a8693b3d4763e2",
+          "box": {
+            "x": 172.547,
+            "y": 139,
+            "width": 6.328,
+            "height": 6
+          }
+        }
+      ],
       "width": 350,
       "height": 278,
       "structure": {
@@ -16020,6 +16330,7 @@
     {
       "id": "label-math-root-triple-integral",
       "mathGlyph": "∭",
+      "mathTokenOracle": true,
       "cropSelector": "[data-et=\"note\"] foreignObject",
       "cropKind": "note",
       "source": "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iiint_D+q$$",
@@ -16035,6 +16346,110 @@
         "width": 31.125,
         "height": 38
       },
+      "mathTokens": [
+        {
+          "index": 0,
+          "path": "0/0",
+          "tag": "mi",
+          "text": "p",
+          "role": "row",
+          "box": {
+            "x": 125,
+            "y": 154.125,
+            "width": 9.578,
+            "height": 12
+          }
+        },
+        {
+          "index": 1,
+          "path": "0/1",
+          "tag": "mo",
+          "text": "+",
+          "role": "row",
+          "box": {
+            "x": 138.125,
+            "y": 152.125,
+            "width": 11.531,
+            "height": 11
+          }
+        },
+        {
+          "index": 2,
+          "path": "0/2/0",
+          "tag": "mo",
+          "text": "∭",
+          "role": "large-operator",
+          "box": {
+            "x": 155.859,
+            "y": 139,
+            "width": 31.125,
+            "height": 38
+          }
+        },
+        {
+          "index": 3,
+          "path": "0/2/1",
+          "tag": "mi",
+          "text": "D",
+          "role": "subscript",
+          "box": {
+            "x": 178.359,
+            "y": 171.547,
+            "width": 7.875,
+            "height": 8
+          }
+        },
+        {
+          "index": 4,
+          "path": "0/3",
+          "tag": "mo",
+          "text": "+",
+          "role": "row",
+          "box": {
+            "x": 201.688,
+            "y": 152.125,
+            "width": 11.531,
+            "height": 11
+          }
+        },
+        {
+          "index": 5,
+          "path": "0/4",
+          "tag": "mi",
+          "text": "q",
+          "role": "row",
+          "box": {
+            "x": 216.766,
+            "y": 154.125,
+            "width": 8.281,
+            "height": 12
+          }
+        }
+      ],
+      "mathTokenGroups": [
+        {
+          "role": "row",
+          "file": "label-math-root-triple-integral-math-row.png",
+          "sha256": "d1a24bcd4ac48956c826bbfb506fc65cb4069c0a8807b3096a18daa02ccdea81",
+          "box": {
+            "x": 125,
+            "y": 152.125,
+            "width": 100.047,
+            "height": 14
+          }
+        },
+        {
+          "role": "subscript",
+          "file": "label-math-root-triple-integral-math-subscript.png",
+          "sha256": "22d83b9f9bffddac93d48e8b215bc5484c1ae26a9b8905d1900b97c5bc107ea2",
+          "box": {
+            "x": 178.359,
+            "y": 171.547,
+            "width": 7.875,
+            "height": 8
+          }
+        }
+      ],
       "width": 350,
       "height": 275,
       "structure": {
@@ -33774,5 +34189,5 @@
       }
     }
   ],
-  "fixtureSha256": "48b085f32f41e1f9a9b43879392c4ad113b3853852473790c3574839bfaec1e4"
+  "fixtureSha256": "51465bf814f4b471b34fb42b04a6f6b8c9cb0169115bae8e377527e821ad3b21"
 }
