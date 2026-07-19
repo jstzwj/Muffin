@@ -14,12 +14,6 @@
 
 namespace muffin::math {
 
-namespace {
-
-constexpr qreal kChromiumLargeOperatorRowBaselinePhase = -0.5;
-
-}  // namespace
-
 QVector<MathMlPaintPrimitive> collectMathMlPaintPrimitives(
     const MathCssPaintOperation& operation, MathMlPaintLayer layer) {
   QVector<MathMlPaintPrimitive> result;
@@ -187,13 +181,11 @@ QVector<MathMlPaintPrimitive> collectMathMlPaintPrimitives(
   for (MathMlPaintPrimitive& primitive : result) {
     if (primitive.kind != MathMlPaintPrimitiveKind::GlyphRun) continue;
     if (primitive.role == MathMlPaintPrimitiveRole::ScriptSubscript)
-      primitive.glyphRasterMode = MathMlGlyphRasterMode::Outline;
+      primitive.glyphRasterMode = MathMlGlyphRasterMode::Strike;
     if (containsLargeOperator &&
         primitive.role == MathMlPaintPrimitiveRole::Row) {
       primitive.glyphRasterMode = MathMlGlyphRasterMode::Outline;
       primitive.deterministicCoverage = true;
-      primitive.rasterPhase =
-          QPointF(0.0, kChromiumLargeOperatorRowBaselinePhase);
     }
   }
   return result;
@@ -303,17 +295,27 @@ void paintMathMlPrimitives(
   };
 
   const auto paintGlyphRuns = [&](const QVector<MathCssGlyphRunOperation>& runs,
-                                  bool outlineScale = false,
-                                  bool deterministicCoverage = false,
-                                  QPointF outlineOffset = {}) {
+                                  MathMlGlyphRasterMode rasterMode =
+                                      MathMlGlyphRasterMode::Native,
+                                  bool deterministicCoverage = false) {
     const OpenTypeMathFont& font = OpenTypeMathFont::instance();
     for (const MathCssGlyphRunOperation& glyph : runs) {
       if (glyph.glyphIndexes.isEmpty() || glyph.clip.isEmpty()) continue;
-      if (outlineScale && !glyph.rawFont.isValid()) {
+      if (rasterMode == MathMlGlyphRasterMode::Strike &&
+          std::hypot(painter.combinedTransform().m11(),
+                     painter.combinedTransform().m12()) >= 2.0 &&
+          !glyph.rawFont.isValid() &&
+          muffin::mermaid::math::MathGlyphRasterizer::paintStrikeRun(
+              painter, glyph.glyphIndexes, glyph.positions,
+              glyph.baselineOrigin, glyph.fontScale, glyph.clip, color))
+        continue;
+      if ((rasterMode == MathMlGlyphRasterMode::Outline ||
+           rasterMode == MathMlGlyphRasterMode::Strike) &&
+          !glyph.rawFont.isValid()) {
         if (muffin::mermaid::math::MathGlyphRasterizer::paintOutlineRun(
                 painter, glyph.glyphIndexes, glyph.positions,
                 glyph.baselineOrigin, glyph.fontScale, glyph.clip, color,
-                deterministicCoverage, outlineOffset))
+                deterministicCoverage))
           continue;
       }
       QGlyphRun run;
@@ -393,9 +395,8 @@ void paintMathMlPrimitives(
       case MathMlPaintPrimitiveKind::GlyphRun: {
         paintGlyphRuns(
             {*std::get<const MathCssGlyphRunOperation*>(primitive.payload)},
-            primitive.glyphRasterMode == MathMlGlyphRasterMode::Outline,
-            primitive.deterministicCoverage,
-            primitive.rasterPhase);
+            primitive.glyphRasterMode,
+            primitive.deterministicCoverage);
         break;
       }
       case MathMlPaintPrimitiveKind::VerticalGlyph:

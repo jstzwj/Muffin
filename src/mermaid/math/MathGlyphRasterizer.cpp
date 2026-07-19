@@ -22,6 +22,37 @@ QRect enclosingDeviceRect(const QRectF& bounds) {
                std::max(0, bottom - top));
 }
 
+QImage downsampleCoverage(const QImage& source, const QSize& targetSize) {
+  QImage result(targetSize, QImage::Format_ARGB32_Premultiplied);
+  constexpr int sampleCount = kCoverageScale * kCoverageScale;
+  for (int y = 0; y < targetSize.height(); ++y) {
+    QRgb* target = reinterpret_cast<QRgb*>(result.scanLine(y));
+    for (int x = 0; x < targetSize.width(); ++x) {
+      int alpha = 0;
+      int red = 0;
+      int green = 0;
+      int blue = 0;
+      for (int sampleY = 0; sampleY < kCoverageScale; ++sampleY) {
+        const QRgb* sourceLine = reinterpret_cast<const QRgb*>(
+            source.constScanLine(y * kCoverageScale + sampleY));
+        for (int sampleX = 0; sampleX < kCoverageScale; ++sampleX) {
+          const QRgb sample =
+              sourceLine[x * kCoverageScale + sampleX];
+          alpha += qAlpha(sample);
+          red += qRed(sample);
+          green += qGreen(sample);
+          blue += qBlue(sample);
+        }
+      }
+      target[x] = qRgba((red + sampleCount / 2) / sampleCount,
+                        (green + sampleCount / 2) / sampleCount,
+                        (blue + sampleCount / 2) / sampleCount,
+                        (alpha + sampleCount / 2) / sampleCount);
+    }
+  }
+  return result;
+}
+
 bool paintDeterministicCoverage(QPainter& target, const QPainterPath& logicalPath,
                                 const QRectF& logicalClip,
                                 const QColor& color) {
@@ -46,8 +77,7 @@ bool paintDeterministicCoverage(QPainter& target, const QPainterPath& logicalPat
   coveragePainter.drawPath(devicePath);
   coveragePainter.end();
 
-  const QImage downsampled = coverage.scaled(
-      deviceBounds.size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+  const QImage downsampled = downsampleCoverage(coverage, deviceBounds.size());
   target.save();
   target.resetTransform();
   target.drawImage(deviceBounds.topLeft(), downsampled);
@@ -63,7 +93,7 @@ bool MathGlyphRasterizer::paintOutlineRun(
     QPainter& painter, const QVector<quint32>& glyphIndexes,
     const QVector<QPointF>& positions, QPointF baselineOrigin,
     qreal fontScale, QRectF clip, const QColor& color,
-    bool deterministicCoverage, QPointF rasterPhase) {
+    bool deterministicCoverage) {
   if (glyphIndexes.isEmpty() || glyphIndexes.size() != positions.size() ||
       clip.isEmpty() || fontScale <= 0.0)
     return false;
@@ -82,9 +112,9 @@ bool MathGlyphRasterizer::paintOutlineRun(
     QTransform placement;
     placement.translate(
         baselineOrigin.x() + positions.at(index).x() +
-            rasterOriginCorrection.x() + rasterPhase.x(),
+            rasterOriginCorrection.x(),
         baselineOrigin.y() + positions.at(index).y() +
-            rasterOriginCorrection.y() + rasterPhase.y());
+            rasterOriginCorrection.y());
     placement.scale(fontScale, fontScale);
     path.addPath(placement.map(glyphPath));
   }
@@ -96,6 +126,51 @@ bool MathGlyphRasterizer::paintOutlineRun(
   painter.setPen(Qt::NoPen);
   painter.setBrush(color);
   painter.drawPath(path);
+  painter.restore();
+  return true;
+}
+
+bool MathGlyphRasterizer::paintStrikeRun(
+    QPainter& painter, const QVector<quint32>& glyphIndexes,
+    const QVector<QPointF>& positions, QPointF baselineOrigin,
+    qreal fontScale, QRectF clip, const QColor& color) {
+  if (glyphIndexes.isEmpty() || glyphIndexes.size() != positions.size() ||
+      clip.isEmpty() || fontScale <= 0.0)
+    return false;
+
+  const QTransform toDevice = painter.combinedTransform();
+  const qreal deviceScale = std::hypot(toDevice.m11(), toDevice.m12());
+  if (deviceScale <= 0.0) return false;
+  const muffin::math::OpenTypeMathFont& mathFont =
+      muffin::math::OpenTypeMathFont::instance();
+  const QRawFont strikeFont = mathFont.rasterFont(fontScale * deviceScale);
+  if (!strikeFont.isValid()) return false;
+
+  painter.save();
+  painter.resetTransform();
+  painter.setClipRect(toDevice.mapRect(clip), Qt::IntersectClip);
+  for (qsizetype index = 0; index < glyphIndexes.size(); ++index) {
+    const quint32 glyphIndex = glyphIndexes.at(index);
+    const QPointF deviceBaseline = toDevice.map(
+        baselineOrigin + positions.at(index));
+    const QPoint deviceOrigin(qFloor(deviceBaseline.x()),
+                              qFloor(deviceBaseline.y()));
+    const QPointF devicePhase = deviceBaseline - QPointF(deviceOrigin);
+    const QTransform strikeTransform(
+        1.0, 0.0, 0.0, 1.0,
+        devicePhase.x(), devicePhase.y());
+    const QImage alpha = strikeFont.alphaMapForGlyph(
+        glyphIndex, QRawFont::PixelAntialiasing, strikeTransform);
+    if (alpha.isNull()) continue;
+    QImage tinted(alpha.size(), QImage::Format_ARGB32_Premultiplied);
+    tinted.fill(color);
+    tinted.setAlphaChannel(alpha);
+    const QRectF bounds = strikeTransform.mapRect(
+        strikeFont.boundingRect(glyphIndex));
+    const QPoint topLeft(deviceOrigin.x() + qFloor(bounds.left()),
+                         deviceOrigin.y() + qCeil(bounds.top()));
+    painter.drawImage(topLeft, tinted);
+  }
   painter.restore();
   return true;
 }

@@ -137,6 +137,14 @@ const cases = [
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iint_D+q$$" },
   { id: "label-math-root-triple-integral", mathGlyph: "∭", mathTokenOracle: true, mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\iiint_D+q$$" },
+  { id: "label-math-root-sum-limits", mathGlyph: "\u2211", mathTokenOracle: true, mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\sum_{i=1}^{n}+q$$" },
+  { id: "label-math-root-contour-integral", dpr: 1.25, mathGlyph: "\u222e", mathTokenOracle: true, mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\oint_C+q$$" },
+  { id: "label-math-root-big-union", dpr: 1.5, mathGlyph: "\u22c3", mathTokenOracle: true, mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\bigcup_{i=1}^{n}+q$$" },
+  { id: "label-math-root-big-intersection", dpr: 2, theme: "dark", mathGlyph: "\u22c2", mathTokenOracle: true, mathPhaseOracle: true, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\bigcap_{i=1}^{n}+q$$' },
   { id: "label-math-root-cjk-fraction", dpr: 1.5, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$p+\\text{中文}+\\frac{a}{b}+q$$" },
   { id: "label-math-root-rtl-fraction", dpr: 2, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
@@ -488,7 +496,7 @@ try {
       mathRasterPhases=[];
       const clip=await page.$eval("math",(node)=>{
         const rect=node.getBoundingClientRect();
-        const guard=2;
+        const guard=8;
         return {x:rect.left-guard,y:rect.top-guard,
           width:Math.max(1,rect.width+2*guard),
           height:Math.max(1,rect.height+2*guard)};

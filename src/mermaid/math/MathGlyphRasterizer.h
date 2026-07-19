@@ -15,7 +15,11 @@ public:
       QPainter& painter, const QVector<quint32>& glyphIndexes,
       const QVector<QPointF>& positions, QPointF baselineOrigin,
       qreal fontScale, QRectF clip, const QColor& color,
-      bool deterministicCoverage = false, QPointF rasterPhase = {});
+      bool deterministicCoverage = false);
+  static bool paintStrikeRun(
+      QPainter& painter, const QVector<quint32>& glyphIndexes,
+      const QVector<QPointF>& positions, QPointF baselineOrigin,
+      qreal fontScale, QRectF clip, const QColor& color);
 };
 
 }  // namespace muffin::mermaid::math

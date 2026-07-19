@@ -168,8 +168,7 @@ HorizontalAccentSelection selectHorizontalAccent(
 }
 
 bool chromiumCapsHorizontalAssembly(const QString& character) {
-  return character == QString(QChar(0x2190)) ||
-         character == QString(QChar(0x21D2));
+  return character == QString(QChar(0x2190));
 }
 
 QString mathDelimiterCharacter(const QString& delimiter) {
@@ -549,6 +548,26 @@ bool hasAtomClass(const MathRenderNode* node, QLatin1StringView atomClass) {
   return false;
 }
 
+bool isIntegralOperator(const QString& character) {
+  if (character.size() != 1) return false;
+  const ushort codepoint = character.front().unicode();
+  return (codepoint >= 0x222B && codepoint <= 0x2233) ||
+         (codepoint >= 0x2A0B && codepoint <= 0x2A1C);
+}
+
+qreal largeOperatorAllocationHeight(const QString& character,
+                                    const MathGlyphVariant& variant,
+                                    qreal fontScale = 1.0) {
+  const qreal mathExtent = std::ceil(variant.extent * fontScale);
+  if (isIntegralOperator(character)) return mathExtent;
+  const QRectF rasterInk = OpenTypeMathFont::instance().rasterGlyphBounds(
+      variant.glyphIndex, fontScale);
+  const qreal rasterLineHeight =
+      std::ceil(std::max<qreal>(0.0, -rasterInk.top())) +
+      std::ceil(std::max<qreal>(0.0, rasterInk.bottom()));
+  return std::max(mathExtent, rasterLineHeight);
+}
+
 qreal maxLargeOperatorExtent(const MathRenderNode* node) {
   if (node == nullptr) return 0.0;
   qreal extent = 0.0;
@@ -556,7 +575,10 @@ qreal maxLargeOperatorExtent(const MathRenderNode* node) {
     const OpenTypeMathFont& font = OpenTypeMathFont::instance();
     const auto variant = font.verticalVariant(node->text,
                                               font.constants().displayOperatorMinHeight);
-    if (variant) extent = variant->extent;
+    if (variant)
+      extent = isIntegralOperator(node->text)
+          ? variant->extent
+          : largeOperatorAllocationHeight(node->text, *variant);
   }
   for (const auto& child : node->children)
     extent = std::max(extent, maxLargeOperatorExtent(child.get()));
@@ -2782,7 +2804,8 @@ CssTokenLineMetrics cssTokenLineMetrics(const MathRenderNode* node,
           variant->glyphIndex, fontScale);
       result.ink = {std::max<qreal>(0.0, -ink.top()),
                     std::max<qreal>(0.0, ink.bottom())};
-      const qreal height = std::ceil(variant->extent * fontScale);
+      const qreal height = largeOperatorAllocationHeight(
+          symbol->text, *variant, fontScale);
       result.ascent = std::min(height, std::round(result.ink.top));
       result.descent = std::max<qreal>(0.0, height - result.ascent);
       return result;
@@ -2847,7 +2870,8 @@ std::optional<MathCssScriptOperation> buildScriptOperation(
         ? supMetrics.height() : supInk.top + supInk.bottom;
     const qreal subHeight = textModeLimits
         ? subMetrics.height() : subInk.top + subInk.bottom;
-    const qreal operatorHeight = std::ceil(variant->extent);
+    const qreal operatorHeight = largeOperatorAllocationHeight(
+        operatorSymbol->text, *variant);
     const qreal upperGap = textModeLimits
         ? std::max(constants.upperLimitGapMin,
                    constants.upperLimitBaselineRiseMin - supInk.bottom)
@@ -2895,9 +2919,6 @@ std::optional<MathCssScriptOperation> buildScriptOperation(
     result.subscript = snapVerticalLayoutRect(result.subscript);
     result.largeOperatorGlyph = buildVerticalGlyphOperation(
         operatorSymbol->text, result.base, false);
-    if (result.largeOperatorGlyph)
-      result.largeOperatorGlyph->scalePolicy =
-          MathCssVerticalScalePolicy::FitTargetExtent;
     return result;
   }
   if (script->children.size() != 2) return std::nullopt;
@@ -3049,9 +3070,6 @@ std::optional<MathCssScriptOperation> buildScriptOperation(
   if (largeOperator) {
     result.largeOperatorGlyph = buildVerticalGlyphOperation(
         operatorSymbol->text, result.base, false);
-    if (result.largeOperatorGlyph)
-      result.largeOperatorGlyph->scalePolicy =
-          MathCssVerticalScalePolicy::FitTargetExtent;
   }
   return result;
 }
@@ -3632,6 +3650,8 @@ std::optional<MathCssPaintOperation> buildAccentOperation(
   const bool basicAccent = !basicAccentCharacter(accent).isEmpty();
   const bool cappedAssembly =
       chromiumCapsHorizontalAssembly(result.box.character);
+  const bool operatorAssembly = cappedAssembly ||
+      result.box.character == QString(QChar(0x21D2));
   glyph.selectionTarget = accent->accentUsesNaturalWidth || basicAccent
       ? result.box.accent.width()
       : result.box.body.width();
@@ -3660,7 +3680,7 @@ std::optional<MathCssPaintOperation> buildAccentOperation(
   const HorizontalAccentSelection selection = natural
       ? HorizontalAccentSelection{}
       : selectHorizontalAccent(result.box.character, stretchTarget,
-                               brace || cappedAssembly);
+                               brace || operatorAssembly);
   if (natural) {
     glyph.kind = MathCssHorizontalGlyphKind::FixedVariant;
     glyph.fixedGlyphIndex = natural->glyphIndex;

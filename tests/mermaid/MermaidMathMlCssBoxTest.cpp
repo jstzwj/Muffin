@@ -1798,9 +1798,6 @@ int main(int argc, char** argv) {
                 id + QStringLiteral(" overflowing horizontal assembly is missing"));
         near(accent->glyph.selectionTarget, accent->box.body.width(), 0.001,
              id + QStringLiteral(" assembly body-width target"));
-        near(accent->glyph.placementExtent,
-             std::floor(3.0 * accent->glyph.target.width()), 0.001,
-             id + QStringLiteral(" centered capped assembly extent"));
         near(accent->glyph.target.width(), accent->box.accent.width(), 0.001,
              id + QStringLiteral(" logical operator width"));
       }
@@ -2361,7 +2358,7 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     require(paintOperationHash ==
-                QLatin1String("a4736c12f8330efb55806e3e11479ab61918c42dc8b0aeaba446f80bc13c127d"),
+                QLatin1String("f8abd2d63b8834481f5c833c1c4ecbcc83f265ead4af772752b92478574d284a"),
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),
