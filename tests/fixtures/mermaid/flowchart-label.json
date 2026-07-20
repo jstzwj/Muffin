@@ -649,7 +649,9 @@
             "width": 9.844,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "e",
@@ -659,7 +661,9 @@
             "width": 9.047,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "f",
@@ -669,7 +673,9 @@
             "width": 5.516,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "o",
@@ -679,7 +685,9 @@
             "width": 9.703,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "r",
@@ -689,7 +697,9 @@
             "width": 6.297,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": "e",
@@ -699,7 +709,9 @@
             "width": 9.047,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
         },
         {
           "value": " ",
@@ -709,7 +721,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 6
         },
         {
           "value": " ",
@@ -719,7 +733,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "a",
@@ -729,7 +745,9 @@
             "width": 8.984,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "f",
@@ -739,7 +757,9 @@
             "width": 5.516,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "t",
@@ -749,7 +769,9 @@
             "width": 5.797,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "e",
@@ -759,7 +781,9 @@
             "width": 9.031,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         },
         {
           "value": "r",
@@ -769,17 +793,29 @@
             "width": 6.625,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 5
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 13,
+          "length": 6,
           "x": 0,
-          "width": 96.219,
+          "width": 49.375,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
+          "length": 5,
+          "x": 60.328,
+          "width": 35.891,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -962,7 +998,9 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "e",
@@ -972,7 +1010,9 @@
             "width": 9.031,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "f",
@@ -982,7 +1022,9 @@
             "width": 5.516,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "t",
@@ -992,7 +1034,9 @@
             "width": 5.797,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": " ",
@@ -1002,7 +1046,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": " ",
@@ -1012,7 +1058,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "m",
@@ -1022,7 +1070,9 @@
             "width": 14.969,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "i",
@@ -1032,7 +1082,9 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "d",
@@ -1042,7 +1094,9 @@
             "width": 9.859,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "d",
@@ -1052,7 +1106,9 @@
             "width": 9.859,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         },
         {
           "value": "l",
@@ -1062,7 +1118,9 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 5
         },
         {
           "value": "e",
@@ -1072,7 +1130,9 @@
             "width": 9.031,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 6
         },
         {
           "value": " ",
@@ -1082,7 +1142,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 7
         },
         {
           "value": " ",
@@ -1092,7 +1154,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 0
         },
         {
           "value": "r",
@@ -1102,7 +1166,9 @@
             "width": 6.609,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 1
         },
         {
           "value": "i",
@@ -1112,7 +1178,9 @@
             "width": 4.156,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 2
         },
         {
           "value": "g",
@@ -1122,7 +1190,9 @@
             "width": 9.844,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 3
         },
         {
           "value": "h",
@@ -1132,7 +1202,9 @@
             "width": 9.906,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 4
         },
         {
           "value": "t",
@@ -1142,17 +1214,38 @@
             "width": 5.797,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 5
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 19,
+          "length": 4,
           "x": 0,
-          "width": 135.906,
+          "width": 24.438,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
+          "length": 6,
+          "x": 33.391,
+          "width": 51.921,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
+        },
+        {
+          "start": 0,
+          "length": 5,
+          "x": 99.656,
+          "width": 36.25,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2
         }
       ],
       "textRuns": [
@@ -1415,7 +1508,9 @@
             "width": 9.844,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "e",
@@ -1425,7 +1520,9 @@
             "width": 9.047,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "f",
@@ -1435,7 +1532,9 @@
             "width": 5.516,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "o",
@@ -1445,7 +1544,9 @@
             "width": 9.703,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "r",
@@ -1455,7 +1556,9 @@
             "width": 6.297,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": "e",
@@ -1465,7 +1568,9 @@
             "width": 9.047,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
         },
         {
           "value": " ",
@@ -1475,7 +1580,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 6
         },
         {
           "value": "\n",
@@ -1485,7 +1592,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "a",
@@ -1495,7 +1604,9 @@
             "width": 8.984,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "f",
@@ -1505,7 +1616,9 @@
             "width": 5.516,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "t",
@@ -1515,7 +1628,9 @@
             "width": 5.797,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "e",
@@ -1525,7 +1640,9 @@
             "width": 9.031,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         },
         {
           "value": "r",
@@ -1535,7 +1652,9 @@
             "width": 6.625,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 5
         },
         {
           "value": " ",
@@ -1545,17 +1664,29 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 6
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 14,
+          "length": 6,
           "x": 0,
-          "width": 94.219,
+          "width": 49.375,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
+          "length": 5,
+          "x": 58.328,
+          "width": 35.891,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -1754,7 +1885,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "*",
@@ -1764,7 +1897,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "b",
@@ -1774,7 +1909,9 @@
             "width": 9.859,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "o",
@@ -1784,7 +1921,9 @@
             "width": 9.688,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "l",
@@ -1794,7 +1933,9 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": "d",
@@ -1804,7 +1945,9 @@
             "width": 9.859,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
         },
         {
           "value": "*",
@@ -1814,7 +1957,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 6
         },
         {
           "value": "*",
@@ -1824,7 +1969,9 @@
             "width": 8.844,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 7
         },
         {
           "value": " ",
@@ -1834,7 +1981,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 8
         },
         {
           "value": " ",
@@ -1844,7 +1993,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "t",
@@ -1854,7 +2005,9 @@
             "width": 5.781,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "a",
@@ -1864,7 +2017,9 @@
             "width": 9,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "i",
@@ -1874,7 +2029,9 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "l",
@@ -1884,17 +2041,29 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 14,
+          "length": 8,
           "x": 0,
-          "width": 106.907,
+          "width": 68.766,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
+          "length": 4,
+          "x": 83.891,
+          "width": 23.016,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -2084,7 +2253,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "文",
@@ -2094,7 +2265,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": " ",
@@ -2104,7 +2277,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": " ",
@@ -2114,7 +2289,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "结",
@@ -2124,7 +2301,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "果",
@@ -2134,17 +2313,29 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 6,
+          "length": 2,
           "x": 0,
-          "width": 74.953,
+          "width": 32,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
+          "length": 2,
+          "x": 42.953,
+          "width": 32,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -2327,7 +2518,9 @@
             "width": 8.422,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "ر",
@@ -2337,7 +2530,9 @@
             "width": 6.344,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "ح",
@@ -2347,7 +2542,9 @@
             "width": 8.797,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "ب",
@@ -2357,7 +2554,9 @@
             "width": 5.516,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "ا",
@@ -2367,7 +2566,9 @@
             "width": 4.656,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": " ",
@@ -2377,7 +2578,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
         },
         {
           "value": " ",
@@ -2387,7 +2590,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "ש",
@@ -2397,7 +2602,9 @@
             "width": 11.703,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "ל",
@@ -2407,7 +2614,9 @@
             "width": 8.359,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "ו",
@@ -2417,7 +2626,9 @@
             "width": 4.672,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "ם",
@@ -2427,25 +2638,29 @@
             "width": 10.953,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 6,
+          "length": 5,
           "x": 0,
           "width": 33.672,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
         },
         {
-          "start": 6,
-          "length": 5,
+          "start": 0,
+          "length": 4,
           "x": 48.797,
           "width": 35.64,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -2628,7 +2843,9 @@
             "width": 10.406,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "o",
@@ -2638,7 +2855,9 @@
             "width": 9.703,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "l",
@@ -2648,7 +2867,9 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "d",
@@ -2658,7 +2879,9 @@
             "width": 9.859,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "t",
@@ -2668,7 +2891,9 @@
             "width": 5.781,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 3,
+          "textNodeOffset": 0
         },
         {
           "value": "a",
@@ -2678,7 +2903,9 @@
             "width": 9,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 3,
+          "textNodeOffset": 1
         },
         {
           "value": "i",
@@ -2688,7 +2915,9 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 3,
+          "textNodeOffset": 2
         },
         {
           "value": "l",
@@ -2698,17 +2927,29 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 3,
+          "textNodeOffset": 3
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 8,
+          "length": 4,
           "x": 0,
-          "width": 85.422,
+          "width": 34.062,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
+          "length": 4,
+          "x": 62.406,
+          "width": 23.016,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 3
         }
       ],
       "textRuns": [
@@ -2872,6 +3113,595 @@
       ]
     },
     {
+      "id": "html-block-whitespace",
+      "labelType": "string",
+      "label": "<b>Left middle</b> <i>Tail end</i> $$x$$ <strong>Done now</strong>",
+      "source": "flowchart LR\nA[\"<b>Left middle</b> <i>Tail end</i> $$x$$ <strong>Done now</strong>\"]",
+      "text": "Left middle Tail end x Done now",
+      "rootCtm": {
+        "scaleX": 1,
+        "scaleY": 1
+      },
+      "box": {
+        "width": 227.766,
+        "height": 24
+      },
+      "lines": [
+        {
+          "x": 0,
+          "y": 0,
+          "width": 227.766,
+          "height": 24
+        }
+      ],
+      "chars": [
+        {
+          "value": "L",
+          "rect": {
+            "x": 0,
+            "y": 1,
+            "width": 8.391,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
+        },
+        {
+          "value": "e",
+          "rect": {
+            "x": 8.375,
+            "y": 1,
+            "width": 9.047,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
+        },
+        {
+          "value": "f",
+          "rect": {
+            "x": 17.406,
+            "y": 1,
+            "width": 5.516,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
+        },
+        {
+          "value": "t",
+          "rect": {
+            "x": 22.906,
+            "y": 1,
+            "width": 5.797,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
+        },
+        {
+          "value": " ",
+          "rect": {
+            "x": 28.688,
+            "y": 1,
+            "width": 4.172,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
+        },
+        {
+          "value": "m",
+          "rect": {
+            "x": 32.844,
+            "y": 1,
+            "width": 14.969,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
+        },
+        {
+          "value": "i",
+          "rect": {
+            "x": 47.797,
+            "y": 1,
+            "width": 4.141,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 6
+        },
+        {
+          "value": "d",
+          "rect": {
+            "x": 51.922,
+            "y": 1,
+            "width": 9.859,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 7
+        },
+        {
+          "value": "d",
+          "rect": {
+            "x": 61.766,
+            "y": 1,
+            "width": 9.859,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 8
+        },
+        {
+          "value": "l",
+          "rect": {
+            "x": 71.609,
+            "y": 1,
+            "width": 4.141,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 9
+        },
+        {
+          "value": "e",
+          "rect": {
+            "x": 75.734,
+            "y": 1,
+            "width": 9.047,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 10
+        },
+        {
+          "value": "T",
+          "rect": {
+            "x": 84.781,
+            "y": 1,
+            "width": 7.625,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 0
+        },
+        {
+          "value": "a",
+          "rect": {
+            "x": 92.391,
+            "y": 1,
+            "width": 8.984,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 1
+        },
+        {
+          "value": "i",
+          "rect": {
+            "x": 101.359,
+            "y": 1,
+            "width": 4.156,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 2
+        },
+        {
+          "value": "l",
+          "rect": {
+            "x": 105.5,
+            "y": 1,
+            "width": 4.141,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 3
+        },
+        {
+          "value": " ",
+          "rect": {
+            "x": 109.625,
+            "y": 1,
+            "width": 4.172,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 4
+        },
+        {
+          "value": "e",
+          "rect": {
+            "x": 113.781,
+            "y": 1,
+            "width": 9.047,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 5
+        },
+        {
+          "value": "n",
+          "rect": {
+            "x": 122.813,
+            "y": 1,
+            "width": 9.891,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 6
+        },
+        {
+          "value": "d",
+          "rect": {
+            "x": 132.688,
+            "y": 1,
+            "width": 9.859,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2,
+          "textNodeOffset": 7
+        },
+        {
+          "value": "D",
+          "rect": {
+            "x": 151.5,
+            "y": 1,
+            "width": 11.688,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5,
+          "textNodeOffset": 0
+        },
+        {
+          "value": "o",
+          "rect": {
+            "x": 163.172,
+            "y": 1,
+            "width": 9.703,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5,
+          "textNodeOffset": 1
+        },
+        {
+          "value": "n",
+          "rect": {
+            "x": 172.859,
+            "y": 1,
+            "width": 9.891,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5,
+          "textNodeOffset": 2
+        },
+        {
+          "value": "e",
+          "rect": {
+            "x": 182.734,
+            "y": 1,
+            "width": 9.047,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5,
+          "textNodeOffset": 3
+        },
+        {
+          "value": " ",
+          "rect": {
+            "x": 191.766,
+            "y": 1,
+            "width": 4.172,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5,
+          "textNodeOffset": 4
+        },
+        {
+          "value": "n",
+          "rect": {
+            "x": 195.922,
+            "y": 1,
+            "width": 9.906,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5,
+          "textNodeOffset": 5
+        },
+        {
+          "value": "o",
+          "rect": {
+            "x": 205.813,
+            "y": 1,
+            "width": 9.375,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5,
+          "textNodeOffset": 6
+        },
+        {
+          "value": "w",
+          "rect": {
+            "x": 215.172,
+            "y": 1,
+            "width": 12.594,
+            "height": 22
+          },
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5,
+          "textNodeOffset": 7
+        }
+      ],
+      "visualRuns": [
+        {
+          "start": 0,
+          "length": 11,
+          "x": 0,
+          "width": 84.781,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
+          "length": 8,
+          "x": 84.781,
+          "width": 57.766,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 2
+        },
+        {
+          "start": 0,
+          "length": 8,
+          "x": 151.5,
+          "width": 76.266,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 5
+        }
+      ],
+      "textRuns": [
+        {
+          "text": "Left middle",
+          "x": 0,
+          "y": 1,
+          "width": 84.781,
+          "height": 22,
+          "screenWidth": 84.781,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "700",
+          "fontStretch": "100%",
+          "fontVariationSettings": "normal",
+          "fontKerning": "auto",
+          "letterSpacing": "normal",
+          "familyWidths": {
+            "Noto Sans": 84.768,
+            "Arial": 78.266,
+            "Trebuchet MS": 83.023,
+            "sans-serif": 75.086
+          },
+          "ancestors": [
+            {
+              "tag": "b",
+              "className": "",
+              "display": "block",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "div",
+              "className": "",
+              "display": "flex",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "span",
+              "className": "nodeLabel",
+              "display": "inline",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "div",
+              "className": "",
+              "display": "table",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            }
+          ]
+        },
+        {
+          "text": "Tail end",
+          "x": 84.781,
+          "y": 1,
+          "width": 57.766,
+          "height": 22,
+          "screenWidth": 57.766,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "fontStretch": "100%",
+          "fontVariationSettings": "normal",
+          "fontKerning": "auto",
+          "letterSpacing": "normal",
+          "familyWidths": {
+            "Noto Sans": 57.76,
+            "Arial": 55.148,
+            "Trebuchet MS": 56.188,
+            "sans-serif": 51.75
+          },
+          "ancestors": [
+            {
+              "tag": "i",
+              "className": "",
+              "display": "block",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "div",
+              "className": "",
+              "display": "flex",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "span",
+              "className": "nodeLabel",
+              "display": "inline",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "div",
+              "className": "",
+              "display": "table",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            }
+          ]
+        },
+        {
+          "text": "Done now",
+          "x": 151.5,
+          "y": 1,
+          "width": 76.266,
+          "height": 22,
+          "screenWidth": 76.266,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "700",
+          "fontStretch": "100%",
+          "fontVariationSettings": "normal",
+          "fontKerning": "auto",
+          "letterSpacing": "normal",
+          "familyWidths": {
+            "Noto Sans": 76.256,
+            "Arial": 72.047,
+            "Trebuchet MS": 69.922,
+            "sans-serif": 66.211
+          },
+          "ancestors": [
+            {
+              "tag": "strong",
+              "className": "",
+              "display": "block",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "div",
+              "className": "",
+              "display": "flex",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "span",
+              "className": "nodeLabel",
+              "display": "inline",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            },
+            {
+              "tag": "div",
+              "className": "",
+              "display": "table",
+              "transform": "none",
+              "zoom": "1",
+              "fontSize": "16px",
+              "lineHeight": "24px"
+            }
+          ]
+        }
+      ],
+      "math": [
+        {
+          "x": 142.547,
+          "y": 8,
+          "width": 8.953,
+          "height": 8,
+          "text": "x",
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "display": "block math",
+          "verticalAlign": "baseline",
+          "parentDisplay": "block",
+          "parentFontSize": "16px",
+          "parentLineHeight": "24px",
+          "elements": [
+            {
+              "tag": "mrow",
+              "x": 142.547,
+              "y": 8,
+              "width": 8.953,
+              "height": 8
+            },
+            {
+              "tag": "mi",
+              "x": 142.547,
+              "y": 8,
+              "width": 8.953,
+              "height": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "markdown-html-math",
       "labelType": "markdown",
       "label": "**Bold** CJK中文 $$x_i^2$$",
@@ -2902,7 +3732,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "*",
@@ -2912,7 +3744,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "B",
@@ -2922,7 +3756,9 @@
             "width": 10.422,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "o",
@@ -2932,7 +3768,9 @@
             "width": 9.688,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "l",
@@ -2942,7 +3780,9 @@
             "width": 4.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": "d",
@@ -2952,7 +3792,9 @@
             "width": 9.859,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
         },
         {
           "value": "*",
@@ -2962,7 +3804,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 6
         },
         {
           "value": "*",
@@ -2972,7 +3816,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 7
         },
         {
           "value": " ",
@@ -2982,7 +3828,9 @@
             "width": 4.188,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 8
         },
         {
           "value": "C",
@@ -2992,7 +3840,9 @@
             "width": 10.125,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 9
         },
         {
           "value": "J",
@@ -3002,7 +3852,9 @@
             "width": 4.375,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 10
         },
         {
           "value": "K",
@@ -3012,7 +3864,9 @@
             "width": 9.922,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 11
         },
         {
           "value": "中",
@@ -3022,7 +3876,9 @@
             "width": 16.016,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 12
         },
         {
           "value": "文",
@@ -3032,7 +3888,9 @@
             "width": 16.016,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 13
         },
         {
           "value": " ",
@@ -3042,17 +3900,20 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 14
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 15,
+          "length": 14,
           "x": 0,
           "width": 129.86,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
         }
       ],
       "textRuns": [
@@ -3192,7 +4053,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "文",
@@ -3202,7 +4065,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "结",
@@ -3212,7 +4077,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "果",
@@ -3222,7 +4089,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "日",
@@ -3232,7 +4101,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "本",
@@ -3242,7 +4113,9 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "語",
@@ -3252,17 +4125,29 @@
             "width": 16,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 7,
+          "length": 4,
           "x": 0,
-          "width": 122.953,
+          "width": 64,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
+          "length": 3,
+          "x": 74.953,
+          "width": 48,
+          "rightToLeft": false,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -3445,7 +4330,9 @@
             "width": 8.422,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "ر",
@@ -3455,7 +4342,9 @@
             "width": 6.344,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "ح",
@@ -3465,7 +4354,9 @@
             "width": 8.797,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "ب",
@@ -3475,7 +4366,9 @@
             "width": 5.516,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "ا",
@@ -3485,7 +4378,9 @@
             "width": 4.656,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": " ",
@@ -3495,7 +4390,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
         },
         {
           "value": " ",
@@ -3505,7 +4402,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "ب",
@@ -3515,7 +4414,9 @@
             "width": 4.313,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "ا",
@@ -3525,7 +4426,9 @@
             "width": 4.672,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "ل",
@@ -3535,7 +4438,9 @@
             "width": 4.172,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "ع",
@@ -3545,7 +4450,9 @@
             "width": 8.359,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         },
         {
           "value": "ا",
@@ -3555,7 +4462,9 @@
             "width": 4.672,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 5
         },
         {
           "value": "ل",
@@ -3565,7 +4474,9 @@
             "width": 4.172,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 6
         },
         {
           "value": "م",
@@ -3575,25 +4486,29 @@
             "width": 9,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 7
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 6,
+          "length": 5,
           "x": 0,
           "width": 33.672,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
         },
         {
-          "start": 6,
-          "length": 8,
+          "start": 0,
+          "length": 7,
           "x": 62.016,
           "width": 39.266,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -3769,7 +4684,9 @@
             "width": 11.703,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "ל",
@@ -3779,7 +4696,9 @@
             "width": 8.359,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "ו",
@@ -3789,7 +4708,9 @@
             "width": 4.672,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "ם",
@@ -3799,7 +4720,9 @@
             "width": 10.953,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": " ",
@@ -3809,7 +4732,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": " ",
@@ -3819,7 +4744,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "ע",
@@ -3829,7 +4756,9 @@
             "width": 9.5,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "ו",
@@ -3839,7 +4768,9 @@
             "width": 4.844,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "ל",
@@ -3849,7 +4780,9 @@
             "width": 8.359,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "ם",
@@ -3859,25 +4792,29 @@
             "width": 10.953,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 5,
+          "length": 4,
           "x": 0,
           "width": 35.641,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
         },
         {
-          "start": 5,
-          "length": 5,
+          "start": 0,
+          "length": 4,
           "x": 50.766,
           "width": 33.609,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -4060,7 +4997,9 @@
             "width": 10.234,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "B",
@@ -4070,7 +5009,9 @@
             "width": 10.406,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "C",
@@ -4080,7 +5021,9 @@
             "width": 10.141,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": " ",
@@ -4090,7 +5033,9 @@
             "width": 4.172,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "م",
@@ -4100,7 +5045,9 @@
             "width": 8.406,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": "ر",
@@ -4110,7 +5057,9 @@
             "width": 6.359,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
         },
         {
           "value": "ح",
@@ -4120,7 +5069,9 @@
             "width": 8.797,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 6
         },
         {
           "value": "ب",
@@ -4130,7 +5081,9 @@
             "width": 5.5,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 7
         },
         {
           "value": "ا",
@@ -4140,7 +5093,9 @@
             "width": 4.672,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 8
         },
         {
           "value": " ",
@@ -4150,7 +5105,9 @@
             "width": 4.172,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 9
         },
         {
           "value": "1",
@@ -4160,7 +5117,9 @@
             "width": 9.156,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 10
         },
         {
           "value": "2",
@@ -4170,7 +5129,9 @@
             "width": 9.172,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 11
         },
         {
           "value": "3",
@@ -4180,7 +5141,9 @@
             "width": 9.172,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 12
         },
         {
           "value": " ",
@@ -4190,7 +5153,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 13
         },
         {
           "value": " ",
@@ -4200,7 +5165,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "ש",
@@ -4210,7 +5177,9 @@
             "width": 11.703,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "ל",
@@ -4220,7 +5189,9 @@
             "width": 8.359,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "ו",
@@ -4230,7 +5201,9 @@
             "width": 4.672,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "ם",
@@ -4240,41 +5213,47 @@
             "width": 10.953,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 5,
+          "length": 3,
           "x": 0,
-          "width": 100.203,
+          "width": 34.906,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
         },
         {
-          "start": 5,
-          "length": 6,
+          "start": 10,
+          "length": 3,
           "x": 34.906,
-          "width": 56.906,
-          "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
-        },
-        {
-          "start": 11,
-          "length": 4,
-          "x": 44.047,
-          "width": 127.281,
+          "width": 27.469,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
         },
         {
-          "start": 15,
+          "start": 4,
+          "length": 5,
+          "x": 62.375,
+          "width": 37.828,
+          "rightToLeft": true,
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
+        },
+        {
+          "start": 0,
           "length": 4,
           "x": 135.703,
           "width": 35.641,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -4457,7 +5436,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 0
         },
         {
           "value": "*",
@@ -4467,7 +5448,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 1
         },
         {
           "value": "中",
@@ -4477,7 +5460,9 @@
             "width": 16.016,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 2
         },
         {
           "value": "文",
@@ -4487,7 +5472,9 @@
             "width": 16.016,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 3
         },
         {
           "value": "*",
@@ -4497,7 +5484,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 4
         },
         {
           "value": "*",
@@ -4507,7 +5496,9 @@
             "width": 8.828,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 5
         },
         {
           "value": " ",
@@ -4517,7 +5508,9 @@
             "width": 4.188,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 6
         },
         {
           "value": "م",
@@ -4527,7 +5520,9 @@
             "width": 8.422,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 7
         },
         {
           "value": "ر",
@@ -4537,7 +5532,9 @@
             "width": 6.344,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 8
         },
         {
           "value": "ح",
@@ -4547,7 +5544,9 @@
             "width": 8.797,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 9
         },
         {
           "value": "ب",
@@ -4557,7 +5556,9 @@
             "width": 5.516,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 10
         },
         {
           "value": "ا",
@@ -4567,7 +5568,9 @@
             "width": 4.656,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 11
         },
         {
           "value": " ",
@@ -4577,7 +5580,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0,
+          "textNodeOffset": 12
         },
         {
           "value": " ",
@@ -4587,7 +5592,9 @@
             "width": 0,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 0
         },
         {
           "value": "ש",
@@ -4597,7 +5604,9 @@
             "width": 11.703,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 1
         },
         {
           "value": "ל",
@@ -4607,7 +5616,9 @@
             "width": 8.359,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 2
         },
         {
           "value": "ו",
@@ -4617,7 +5628,9 @@
             "width": 4.672,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 3
         },
         {
           "value": "ם",
@@ -4627,33 +5640,38 @@
             "width": 10.953,
             "height": 22
           },
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1,
+          "textNodeOffset": 4
         }
       ],
       "visualRuns": [
         {
           "start": 0,
-          "length": 8,
+          "length": 6,
           "x": 0,
-          "width": 105.11,
+          "width": 71.438,
           "rightToLeft": false,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
         },
         {
-          "start": 8,
+          "start": 7,
           "length": 5,
           "x": 71.438,
-          "width": 25.265,
+          "width": 33.672,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 0
         },
         {
-          "start": 13,
-          "length": 5,
+          "start": 0,
+          "length": 4,
           "x": 116.063,
           "width": 35.64,
           "rightToLeft": true,
-          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif"
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "textNodeIndex": 1
         }
       ],
       "textRuns": [
@@ -4806,5 +5824,5 @@
       ]
     }
   ],
-  "fixtureSha256": "48539a8b121ec1f7c4825737349de655077a927ee58fe0f45e4114f08d4cf85f"
+  "fixtureSha256": "427d54b1c9f4754a978323b8bc3d4e0ffa79c2e706c1404ae14ac46e527274aa"
 }

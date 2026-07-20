@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -34,6 +35,7 @@ namespace {
 struct Marker {
   QString token;
   QTextCharFormat format;
+  bool block = false;
 };
 
 struct MathMlInlineMetrics {
@@ -238,26 +240,108 @@ ShapedTextMetrics shapeTextRange(const FlowLabelDocument& label, qsizetype start
       inkLeft = std::min(inkLeft, runInkLeft);
       inkRight = std::max(inkRight, runInkRight);
     }
-    const QRectF visualBox = run.boundingRect();
-    const bool useVisualBox = run.isRightToLeft() && !visualBox.isEmpty();
-    const qreal visualLeft = useVisualBox ? visualBox.left() : runLeft;
-    const qreal visualRight = useVisualBox ? visualBox.right() : runRight;
-    left = std::min(left, visualLeft);
-    right = std::max(right, visualRight);
-    const qsizetype minimum = *std::min_element(indexes.cbegin(), indexes.cend());
-    const qsizetype maximum = *std::max_element(indexes.cbegin(), indexes.cend());
-    FlowLabelVisualRun visual;
-    visual.start = start + minimum;
-    visual.length = maximum - minimum + 1;
-    visual.x = visualLeft;
-    visual.width = std::max<qreal>(0.0, visualRight - visualLeft);
-    visual.rightToLeft = run.isRightToLeft();
-    visual.fontFamily = run.rawFont().familyName();
-    result.runs.push_back(std::move(visual));
+    left = std::min(left, runLeft);
+    right = std::max(right, runRight);
+
+    QVector<qsizetype> visualOrder(positions.size());
+    for (qsizetype index = 0; index < visualOrder.size(); ++index)
+      visualOrder[index] = index;
+    std::sort(visualOrder.begin(), visualOrder.end(),
+              [&](qsizetype a, qsizetype b) {
+                if (!qFuzzyCompare(positions.at(a).x(), positions.at(b).x()))
+                  return positions.at(a).x() < positions.at(b).x();
+                return indexes.at(a) < indexes.at(b);
+              });
+    for (qsizetype groupStart = 0; groupStart < visualOrder.size();) {
+      qsizetype groupEnd = groupStart + 1;
+      int logicalStep = 0;
+      while (groupEnd < visualOrder.size()) {
+        const qsizetype previous = indexes.at(visualOrder.at(groupEnd - 1));
+        const qsizetype current = indexes.at(visualOrder.at(groupEnd));
+        const qsizetype delta = current - previous;
+        if (std::abs(delta) > 1) break;
+        const int nextStep = delta == 0 ? logicalStep : (delta > 0 ? 1 : -1);
+        if (logicalStep != 0 && nextStep != 0 && nextStep != logicalStep)
+          break;
+        if (nextStep != 0) logicalStep = nextStep;
+        ++groupEnd;
+      }
+      qreal groupLeft = std::numeric_limits<qreal>::max();
+      qreal groupRight = std::numeric_limits<qreal>::lowest();
+      qreal groupQtAdvance = 0.0;
+      qreal groupTableAdvance = 0.0;
+      qsizetype logicalMinimum = std::numeric_limits<qsizetype>::max();
+      qsizetype logicalMaximum = std::numeric_limits<qsizetype>::lowest();
+      for (qsizetype item = groupStart; item < groupEnd; ++item) {
+        const qsizetype glyphIndex = visualOrder.at(item);
+        const qreal fallbackAdvance = glyphIndex < advances.size()
+            ? advances.at(glyphIndex).x() : 0.0;
+        const qreal advance = fontMetrics.advance(
+            glyphs.at(glyphIndex), fallbackAdvance);
+        groupQtAdvance += fallbackAdvance;
+        groupTableAdvance += advance;
+        groupLeft = std::min(groupLeft, positions.at(glyphIndex).x());
+        groupRight = std::max(groupRight,
+                              positions.at(glyphIndex).x() + fallbackAdvance);
+        logicalMinimum = std::min(logicalMinimum, indexes.at(glyphIndex));
+        logicalMaximum = std::max(logicalMaximum, indexes.at(glyphIndex));
+      }
+      if (!run.isRightToLeft())
+        groupRight += groupTableAdvance - groupQtAdvance;
+      FlowLabelVisualRun visual;
+      visual.start = start + logicalMinimum;
+      visual.length = logicalMaximum - logicalMinimum + 1;
+      visual.x = groupLeft;
+      visual.width = std::max<qreal>(0.0, groupRight - groupLeft);
+      visual.rightToLeft = logicalStep < 0 ||
+          (logicalStep == 0 && run.isRightToLeft());
+      visual.fontFamily = run.rawFont().familyName();
+      result.runs.push_back(std::move(visual));
+      groupStart = groupEnd;
+    }
   }
   if (left != std::numeric_limits<qreal>::max()) {
     result.width = std::max<qreal>(0.0, right - left);
     for (auto& run : result.runs) run.x -= left;
+
+    // QGlyphRun::stringIndexes() may be local to a fallback-font subrun on
+    // DirectWrite. Reconstruct source ranges from QTextLine cursor geometry so
+    // visual runs retain document-relative logical indexes across fallback
+    // fonts and bidi reordering.
+    QVector<qsizetype> logicalMinimum(
+        result.runs.size(), std::numeric_limits<qsizetype>::max());
+    QVector<qsizetype> logicalMaximum(
+        result.runs.size(), std::numeric_limits<qsizetype>::lowest());
+    for (qsizetype character = 0; character < text.size(); ++character) {
+      const qreal leading = line.cursorToX(character) - left;
+      const qreal trailing = line.cursorToX(character + 1) - left;
+      const qreal center = (leading + trailing) / 2.0;
+      qsizetype closest = -1;
+      qreal closestDistance = std::numeric_limits<qreal>::max();
+      for (qsizetype runIndex = 0; runIndex < result.runs.size(); ++runIndex) {
+        const auto& visual = result.runs.at(runIndex);
+        const qreal runLeft = visual.x;
+        const qreal runRight = visual.x + visual.width;
+        const qreal distance = center < runLeft ? runLeft - center
+            : center > runRight ? center - runRight : 0.0;
+        if (distance < closestDistance) {
+          closest = runIndex;
+          closestDistance = distance;
+        }
+      }
+      if (closest >= 0) {
+        logicalMinimum[closest] = std::min(logicalMinimum[closest], character);
+        logicalMaximum[closest] = std::max(logicalMaximum[closest], character);
+      }
+    }
+    for (qsizetype runIndex = 0; runIndex < result.runs.size(); ++runIndex) {
+      if (logicalMinimum.at(runIndex) ==
+          std::numeric_limits<qsizetype>::max())
+        continue;
+      result.runs[runIndex].start = start + logicalMinimum.at(runIndex);
+      result.runs[runIndex].length =
+          logicalMaximum.at(runIndex) - logicalMinimum.at(runIndex) + 1;
+    }
   }
   if (inkLeft != std::numeric_limits<qreal>::max())
     result.inkWidth = std::max<qreal>(0.0, inkRight - inkLeft);
@@ -287,12 +371,22 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
   FlowLabelDocument result;
   source = normalizeBreaks(std::move(source));
   QVector<Marker> stack;
+  std::optional<qsizetype> blockItemStart;
   QString plain;
+  auto appendItem = [&](qsizetype start, qsizetype length,
+                        FlowLabelDomItemKind kind) {
+    if (length <= 0) return;
+    result.domItems.push_back({start, length, kind});
+  };
   auto flush = [&]() {
     if (plain.isEmpty()) return;
+    const qsizetype start = result.text.size();
     QTextCharFormat combined;
     for (const Marker& marker : stack) combined.merge(marker.format);
     appendFormatted(result, plain, combined);
+    if (!blockItemStart)
+      appendItem(start, result.text.size() - start,
+                 FlowLabelDomItemKind::AnonymousText);
     plain.clear();
   };
 
@@ -300,6 +394,7 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
     QString token;
     QTextCharFormat format;
     qsizetype consumed = 0;
+    bool blockToken = false;
     const QStringView rest(source.constData() + i, source.size() - i);
     auto htmlToken = [&](QStringView name, bool closing) {
       const QString candidate = closing ? QStringLiteral("</%1>").arg(name)
@@ -322,6 +417,8 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
         math.source = source.mid(i + 2, close - i - 2);
         result.text += QChar::ObjectReplacementCharacter;
         result.math.push_back(std::move(math));
+        if (!blockItemStart)
+          appendItem(result.text.size() - 1, 1, FlowLabelDomItemKind::Math);
         i = close + 2;
         continue;
       }
@@ -333,16 +430,19 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
     } else if (markdown && rest.startsWith(QLatin1Char('`'))) {
       token = QStringLiteral("`"); consumed = 1; format.setFontFamilies({QStringLiteral("monospace")});
     } else if (htmlToken(QStringLiteral("strong"), false) || htmlToken(QStringLiteral("b"), false)) {
-      format.setFontWeight(QFont::Bold);
+      format.setFontWeight(QFont::Bold); blockToken = true;
     } else if ((closing = htmlToken(QStringLiteral("strong"), true)) ||
                (closing = htmlToken(QStringLiteral("b"), true))) {
+      blockToken = true;
     } else if (htmlToken(QStringLiteral("em"), false) || htmlToken(QStringLiteral("i"), false)) {
-      format.setFontItalic(true);
+      format.setFontItalic(true); blockToken = true;
     } else if ((closing = htmlToken(QStringLiteral("em"), true)) ||
                (closing = htmlToken(QStringLiteral("i"), true))) {
+      blockToken = true;
     } else if (htmlToken(QStringLiteral("code"), false)) {
-      format.setFontFamilies({QStringLiteral("monospace")});
+      format.setFontFamilies({QStringLiteral("monospace")}); blockToken = true;
     } else if ((closing = htmlToken(QStringLiteral("code"), true))) {
+      blockToken = true;
     }
 
     if (consumed == 0) {
@@ -360,6 +460,8 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
     }
 
     flush();
+    if (!closing && blockToken && !blockItemStart)
+      blockItemStart = result.text.size();
     if (!stack.isEmpty() && stack.last().token == token) {
       stack.removeLast();
     } else if (closing) {
@@ -371,11 +473,21 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
         }
       }
     } else {
-      stack.push_back({token, format});
+      stack.push_back({token, format, blockToken});
+    }
+    if (closing && blockItemStart &&
+        std::none_of(stack.cbegin(), stack.cend(),
+                     [](const Marker& marker) { return marker.block; })) {
+      appendItem(*blockItemStart, result.text.size() - *blockItemStart,
+                 FlowLabelDomItemKind::BlockText);
+      blockItemStart.reset();
     }
     i += consumed;
   }
   flush();
+  if (blockItemStart)
+    appendItem(*blockItemStart, result.text.size() - *blockItemStart,
+               FlowLabelDomItemKind::BlockText);
   return result;
 }
 
@@ -469,17 +581,56 @@ struct FlowTextRange {
   qsizetype length = 0;
 };
 
-FlowTextRange mathAdjacentTextRange(const FlowLabelDocument& label,
-                                    qsizetype start, qsizetype length) {
-  if (label.sequenceMathMlModel) return {start, length};
-  // Mermaid puts flowchart MathML in block flex items. HTML whitespace at the
-  // adjacent inline text boundaries collapses and contributes no DOM width.
-  while (length > 0 && label.text.at(start).isSpace()) {
-    ++start;
-    --length;
+QVector<FlowTextRange> visibleDomTextRanges(const FlowLabelDocument& label,
+                                           qsizetype start,
+                                           qsizetype length) {
+  QVector<FlowTextRange> ranges;
+  if (length <= 0) return ranges;
+  if (label.domItems.isEmpty()) {
+    ranges.push_back({start, length});
+    return ranges;
   }
-  while (length > 0 && label.text.at(start + length - 1).isSpace()) --length;
-  return {start, length};
+  const qsizetype end = start + length;
+  const auto collapsibleWhitespace = [](QChar character) {
+    const ushort code = character.unicode();
+    return code == 0x0009 || code == 0x000a || code == 0x000c ||
+           code == 0x000d || code == 0x0020;
+  };
+  for (const FlowLabelDomItem& item : label.domItems) {
+    if (item.kind == FlowLabelDomItemKind::Math) continue;
+    qsizetype visibleStart = item.start;
+    qsizetype visibleEnd = item.start + item.length;
+    while (visibleStart < visibleEnd &&
+           collapsibleWhitespace(label.text.at(visibleStart)))
+      ++visibleStart;
+    while (visibleEnd > visibleStart &&
+           collapsibleWhitespace(label.text.at(visibleEnd - 1)))
+      --visibleEnd;
+    const qsizetype itemStart = std::max(start, visibleStart);
+    const qsizetype itemEnd = std::min(end, visibleEnd);
+    if (itemEnd <= itemStart) continue;
+    ranges.push_back({itemStart, itemEnd - itemStart});
+  }
+  return ranges;
+}
+
+ShapedTextMetrics shapeDomTextRange(const FlowLabelDocument& label,
+                                    qsizetype start, qsizetype length,
+                                    const QFont& font) {
+  ShapedTextMetrics result;
+  for (const FlowTextRange& range :
+       visibleDomTextRanges(label, start, length)) {
+    const qreal itemOrigin = result.width;
+    ShapedTextMetrics item = shapeTextRange(
+        label, range.start, range.length, font);
+    for (auto run : item.runs) {
+      run.x += itemOrigin;
+      result.runs.push_back(std::move(run));
+    }
+    result.width += item.width;
+    result.inkWidth = std::max(result.inkWidth, itemOrigin + item.inkWidth);
+  }
+  return result;
 }
 
 QVector<QTextLayout::FormatRange> localFormats(const FlowLabelDocument& label,
@@ -529,11 +680,30 @@ QSizeF measureFlowLabel(const FlowLabelDocument& label, const QString& fontFamil
 qreal measureFlowTextInkWidth(const FlowLabelDocument& label,
                               const QString& fontFamily,
                               qreal fontPixelSize) {
+  return measureFlowTextInkWidth(label, 0, label.text.size(), fontFamily,
+                                 fontPixelSize);
+}
+
+qreal measureFlowTextInkWidth(const FlowLabelDocument& label,
+                              qsizetype start, qsizetype length,
+                              const QString& fontFamily,
+                              qreal fontPixelSize) {
   QFont font(fontFamily);
   MermaidFontRegistry::configureFont(font, fontFamily);
   font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
   font.setHintingPreference(QFont::PreferNoHinting);
-  return shapeTextRange(label, 0, label.text.size(), font).inkWidth;
+  return shapeTextRange(label, start, length, font).inkWidth;
+}
+
+qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
+                                  qsizetype start, qsizetype length,
+                                  const QString& fontFamily,
+                                  qreal fontPixelSize) {
+  QFont font(fontFamily);
+  MermaidFontRegistry::configureFont(font, fontFamily);
+  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
+  font.setHintingPreference(QFont::PreferNoHinting);
+  return shapeTextRange(label, start, length, font).width;
 }
 
 FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
@@ -578,42 +748,18 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
       qreal actualLineHeight = mathOnlyLine ? 0.0 : lineHeight;
       qsizetype cursor = offset;
       muffin::math::MathRenderer renderer;
-      const bool literalMarkdownMarkers = label.text.contains(QLatin1Char('`')) ||
-                                          label.text.contains(QStringLiteral("**"));
-      auto normalizedMathTextRange = [&](qsizetype start, qsizetype length) {
-        if (label.sequenceMathMlModel && !literalMarkdownMarkers) {
-          while (length > 0 && label.text.at(start).isSpace()) {
-            ++start;
-            --length;
-          }
-          while (length > 0 && label.text.at(start + length - 1).isSpace())
-            --length;
-        }
-        if (!label.sequenceMathMlModel) {
-          const FlowTextRange range = mathAdjacentTextRange(label, start, length);
-          start = range.start;
-          length = range.length;
-        }
-        return FlowTextRange{start, length};
-      };
-      auto mathTextWidth = [&](qsizetype start, qsizetype length) {
-        const FlowTextRange range = normalizedMathTextRange(start, length);
-        return shapeTextRange(label, range.start, range.length, font).width;
+      auto shapeMathTextRange = [&](qsizetype start, qsizetype length) {
+        return shapeDomTextRange(label, start, length, font);
       };
       qreal visualRight = 0.0;
       for (const FlowLabelMathSpan& math : mathSpans) {
-        const FlowTextRange textRange = normalizedMathTextRange(
+        const auto shapedText = shapeMathTextRange(
             cursor, math.start - cursor);
-        const qreal textWidth = mathTextWidth(cursor, math.start - cursor);
-        if (textRange.length > 0) {
-          const auto shaped = shapeTextRange(label, textRange.start,
-                                             textRange.length, font);
-          for (auto run : shaped.runs) {
-            run.x += lineWidth;
-            measured.runs.push_back(std::move(run));
-          }
+        for (auto run : shapedText.runs) {
+          run.x += lineWidth;
+          measured.runs.push_back(std::move(run));
         }
-        lineWidth += textWidth;
+        lineWidth += shapedText.width;
         if (math.prepared &&
             qFuzzyCompare(math.prepared->fontPixelSize, fontPixelSize)) {
           const MathMlInlineMetrics mathMetrics = label.sequenceMathMlModel
@@ -670,18 +816,13 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
         }
         cursor = math.start + math.length;
       }
-      const FlowTextRange tailRange = normalizedMathTextRange(
+      const auto shapedTail = shapeMathTextRange(
           cursor, offset + line.size() - cursor);
-      const qreal tailWidth = mathTextWidth(cursor, offset + line.size() - cursor);
-      if (tailRange.length > 0) {
-        const auto shaped = shapeTextRange(label, tailRange.start,
-                                           tailRange.length, font);
-        for (auto run : shaped.runs) {
-          run.x += lineWidth;
-          measured.runs.push_back(std::move(run));
-        }
+      for (auto run : shapedTail.runs) {
+        run.x += lineWidth;
+        measured.runs.push_back(std::move(run));
       }
-      lineWidth += tailWidth;
+      lineWidth += shapedTail.width;
       if (label.sequenceMathMlModel &&
           cursor >= offset + line.size() && !measured.runs.isEmpty() &&
           measured.runs.back().math &&

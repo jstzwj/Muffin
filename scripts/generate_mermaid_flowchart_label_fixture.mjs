@@ -38,6 +38,8 @@ const cases = [
   { id: "cjk", labelType: "markdown", label: "\u4e2d\u6587 $$\\frac{x}{2}$$ \u7ed3\u679c" },
   { id: "rtl", labelType: "markdown", label: "\u0645\u0631\u062d\u0628\u0627 $$x^2$$ \u05e9\u05dc\u05d5\u05dd" },
   { id: "html-math", labelType: "string", label: "<b>Bold</b> $$\\sqrt{x}$$ <i>tail</i>" },
+  { id: "html-block-whitespace", labelType: "string",
+    label: "<b>Left middle</b> <i>Tail end</i> $$x$$ <strong>Done now</strong>" },
   { id: "markdown-html-math", labelType: "markdown", label: "**Bold** CJK\u4e2d\u6587 $$x_i^2$$" },
   { id: "cjk-no-space", labelType: "markdown", label: "\u4e2d\u6587\u7ed3\u679c$$\\frac{x}{2}$$\u65e5\u672c\u8a9e" },
   { id: "arabic-only", labelType: "markdown", label: "\u0645\u0631\u062d\u0628\u0627 $$\\sqrt{x}$$ \u0628\u0627\u0644\u0639\u0627\u0644\u0645" },
@@ -126,6 +128,7 @@ try {
       const chars = [];
       const textRuns = [];
       let node;
+      let textNodeIndex = 0;
       while ((node = walker.nextNode())) {
         if (node.parentElement.closest("math")) continue;
         const nodeRange = document.createRange();
@@ -165,28 +168,48 @@ try {
           const rect = range.getBoundingClientRect();
           if (rect.width === 0 && rect.height === 0) continue;
           chars.push({ value: node.data[offset], rect: relativeRect(rect),
-            fontFamily: nodeStyle.fontFamily });
+            fontFamily: nodeStyle.fontFamily, textNodeIndex,
+            textNodeOffset: offset });
         }
+        ++textNodeIndex;
       }
       const visualRuns = [];
-      for (let offset = 0; offset < chars.length;) {
-        let end = offset + 1;
-        let direction = 0;
-        while (end < chars.length && chars[end].fontFamily === chars[offset].fontFamily) {
-          const delta = chars[end].rect.x - chars[end - 1].rect.x;
-          const nextDirection = Math.abs(delta) < 0.01 ? direction : Math.sign(delta);
-          if (direction !== 0 && nextDirection !== 0 && nextDirection !== direction) break;
-          if (nextDirection !== 0) direction = nextDirection;
-          ++end;
+      const nodeIndexes = [...new Set(chars.map((item) => item.textNodeIndex))];
+      for (const nodeIndex of nodeIndexes) {
+        const nodeChars = chars.filter((item) => item.textNodeIndex === nodeIndex);
+        const nodeTrimStart = Math.min(...nodeChars
+          .filter((item) => !/^[\t\n\f\r ]$/u.test(item.value))
+          .map((item) => item.textNodeOffset));
+        const visualChars = chars
+          .filter((item) => item.textNodeIndex === nodeIndex && item.rect.width > 0.01)
+          .sort((left, right) => left.rect.x - right.rect.x ||
+            left.textNodeOffset - right.textNodeOffset);
+        for (let offset = 0; offset < visualChars.length;) {
+          let end = offset + 1;
+          let logicalStep = 0;
+          while (end < visualChars.length) {
+            const step = visualChars[end].textNodeOffset -
+              visualChars[end - 1].textNodeOffset;
+            if (Math.abs(step) !== 1 ||
+                (logicalStep !== 0 && step !== logicalStep)) break;
+            logicalStep = step;
+            ++end;
+          }
+          const slice = visualChars.slice(offset, end);
+          const logicalChars = slice.filter((item) => !/^[\t\n\f\r ]$/u.test(item.value));
+          const logicalStart = Math.min(...logicalChars.map((item) => item.textNodeOffset));
+          const logicalEnd = Math.max(...logicalChars.map((item) => item.textNodeOffset)) + 1;
+          const left = Math.min(...slice.map((item) => item.rect.x));
+          const right = Math.max(...slice.map((item) => item.rect.x + item.rect.width));
+          visualRuns.push({ start: logicalStart - nodeTrimStart,
+            length: logicalEnd - logicalStart,
+            x: round(left), width: round(right - left), rightToLeft: logicalStep < 0,
+            fontFamily: slice[0].fontFamily, textNodeIndex: nodeIndex });
+          offset = end;
         }
-        const slice = chars.slice(offset, end);
-        const left = Math.min(...slice.map((item) => item.rect.x));
-        const right = Math.max(...slice.map((item) => item.rect.x + item.rect.width));
-        visualRuns.push({ start: offset, length: end - offset,
-          x: round(left), width: round(right - left), rightToLeft: direction < 0,
-          fontFamily: chars[offset].fontFamily });
-        offset = end;
       }
+      visualRuns.sort((left, right) => left.x - right.x ||
+        left.textNodeIndex - right.textNodeIndex);
       const math = mathElements.map((element) => {
         const rect = relativeRect(element.getBoundingClientRect());
         const style = getComputedStyle(element);

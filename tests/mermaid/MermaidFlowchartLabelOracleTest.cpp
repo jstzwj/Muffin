@@ -30,6 +30,78 @@ void near(qreal actual, qreal expected, qreal tolerance,
           QStringLiteral("%1: native=%2 browser=%3 tolerance=%4")
               .arg(context).arg(actual).arg(expected).arg(tolerance));
 }
+
+struct TextRun {
+  qsizetype start = 0;
+  qsizetype length = 0;
+  qreal x = 0.0;
+  qreal width = 0.0;
+  bool rtl = false;
+  qsizetype item = -1;
+  qsizetype textNode = -1;
+};
+
+QVector<TextRun> normalizedTextRuns(
+    const flowchart::FlowLabelDocument& document,
+    const flowchart::FlowLabelLayoutMetrics& layout) {
+  QVector<TextRun> result;
+  for (const auto& line : layout.lines) {
+    for (const auto& source : line.runs) {
+      if (source.math) continue;
+      qsizetype itemIndex = -1;
+      qsizetype textNode = 0;
+      for (qsizetype index = 0; index < document.domItems.size(); ++index) {
+        const auto& item = document.domItems.at(index);
+        if (source.start >= item.start &&
+            source.start < item.start + item.length) {
+          itemIndex = index;
+          break;
+        }
+        if (item.kind != flowchart::FlowLabelDomItemKind::Math)
+          ++textNode;
+      }
+      TextRun run{source.start, source.length, source.x, source.width,
+                  source.rightToLeft, itemIndex, textNode};
+      const qsizetype previousEnd = result.isEmpty()
+          ? 0 : result.last().start + result.last().length;
+      const qsizetype runEnd = run.start + run.length;
+      if (!result.isEmpty() && result.last().item == run.item &&
+          result.last().rtl == run.rtl &&
+          previousEnd >= run.start && runEnd >= result.last().start) {
+        const qreal left = std::min(result.last().x, run.x);
+        const qreal right = std::max(result.last().x + result.last().width,
+                                     run.x + run.width);
+        const qsizetype logicalStart = std::min(result.last().start, run.start);
+        const qsizetype logicalEnd = std::max(
+            result.last().start + result.last().length,
+            run.start + run.length);
+        result.last().start = logicalStart;
+        result.last().length = logicalEnd - logicalStart;
+        result.last().x = left;
+        result.last().width = right - left;
+      } else {
+        result.push_back(run);
+      }
+    }
+  }
+  for (auto& run : result) {
+    const auto& item = document.domItems.at(run.item);
+    qsizetype itemVisibleStart = item.start;
+    const qsizetype itemEnd = item.start + item.length;
+    while (itemVisibleStart < itemEnd &&
+           document.text.at(itemVisibleStart).isSpace())
+      ++itemVisibleStart;
+    qsizetype logicalStart = run.start;
+    qsizetype logicalEnd = run.start + run.length;
+    while (logicalStart < logicalEnd && document.text.at(logicalStart).isSpace())
+      ++logicalStart;
+    while (logicalEnd > logicalStart && document.text.at(logicalEnd - 1).isSpace())
+      --logicalEnd;
+    run.start = logicalStart - itemVisibleStart;
+    run.length = logicalEnd - logicalStart;
+  }
+  return result;
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -44,9 +116,12 @@ int main(int argc, char** argv) {
               root.value(QStringLiteral("fontMode")).toString() ==
                   QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Flowchart label oracle version/font drifted"));
+  require(root.value(QStringLiteral("fixtureSha256")).toString() ==
+              QLatin1String("427d54b1c9f4754a978323b8bc3d4e0ffa79c2e706c1404ae14ac46e527274aa"),
+          QStringLiteral("Flowchart label fixture changed; audit DOM/run geometry and update digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 20,
+  require(cases.size() == 21,
           QStringLiteral("Flowchart label oracle case count regressed"));
   const QString fontFamily = MermaidFontRegistry::cssFamilyStack();
   int mathSpanCount = 0;
@@ -86,6 +161,43 @@ int main(int argc, char** argv) {
         });
     require(browserHasRtl == nativeHasRtl,
             QStringLiteral("%1 visual bidi direction drifted").arg(id));
+    const QVector<TextRun> nativeTextRuns = normalizedTextRuns(document, native);
+    QStringList nativeRunSummary;
+    for (const auto& run : nativeTextRuns)
+      nativeRunSummary << QStringLiteral("%1:%2")
+                              .arg(run.rtl ? QStringLiteral("rtl")
+                                           : QStringLiteral("ltr"))
+                              .arg(QStringLiteral("%1+%2@%3/%4")
+                                       .arg(run.start).arg(run.length)
+                                       .arg(run.x).arg(run.width));
+    require(nativeTextRuns.size() == expectedVisualRuns.size(),
+            QStringLiteral("%1 text visual run count: native=%2 [%3] browser=%4")
+                .arg(id).arg(nativeTextRuns.size()).arg(nativeRunSummary.join(", "))
+                .arg(expectedVisualRuns.size()));
+    for (qsizetype runIndex = 0; runIndex < nativeTextRuns.size(); ++runIndex) {
+      const auto& actual = nativeTextRuns.at(runIndex);
+      const QJsonObject expected = expectedVisualRuns.at(runIndex).toObject();
+      const QString context = QStringLiteral("%1 text run %2")
+                                  .arg(id).arg(runIndex);
+      require(actual.rtl == expected.value(QStringLiteral("rightToLeft")).toBool(),
+              context + QStringLiteral(" direction mismatch"));
+      require(actual.textNode ==
+                  expected.value(QStringLiteral("textNodeIndex")).toInteger() &&
+              actual.start == expected.value(QStringLiteral("start")).toInteger() &&
+              actual.length == expected.value(QStringLiteral("length")).toInteger(),
+              context + QStringLiteral(
+                  " logical text-node range mismatch: native=%1:%2+%3 browser=%4:%5+%6")
+                  .arg(actual.textNode).arg(actual.start).arg(actual.length)
+                  .arg(expected.value(QStringLiteral("textNodeIndex")).toInteger())
+                  .arg(expected.value(QStringLiteral("start")).toInteger())
+                  .arg(expected.value(QStringLiteral("length")).toInteger()) +
+                  QStringLiteral(" all native=[%1]")
+                      .arg(nativeRunSummary.join(", ")));
+      near(actual.x, expected.value(QStringLiteral("x")).toDouble(), 0.25,
+           context + QStringLiteral(" x"));
+      near(actual.width, expected.value(QStringLiteral("width")).toDouble(),
+           0.25, context + QStringLiteral(" width"));
+    }
     characterBoxes += expectedCharacters.size();
     visualBidiRuns += expectedVisualRuns.size();
     rtlCases += browserHasRtl;

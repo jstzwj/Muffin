@@ -22,8 +22,9 @@ SequenceLabelDocument parseSequenceLabel(const QString& source, SequenceLabelKin
     text = QLatin1Char('[') + text + QLatin1Char(']');
   if (mathEnabled) {
     auto richText = flowchart::parseFlowLabel(text, QStringLiteral("string"), true);
-    // Sequence emits the surrounding text as an unscaled foreignObject range;
-    // Markdown markers remain literal even when the Math span is MathML.
+    // Sequence emits the surrounding text and MathML as direct children of a
+    // nowrap flex row. Markdown markers remain literal; DOM item boundaries
+    // determine whitespace collapse and shaping independently of their text.
     richText.literalMarkdownMathFallback = true;
     richText.sequenceMathMlModel = true;
     richText.direction = Qt::LeftToRight;
@@ -128,24 +129,6 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
         line.descent = 5.0;
       }
     }
-    const bool literalMarkdownMarkers = label.richText.text.contains(QLatin1Char('`')) ||
-                                        label.richText.text.contains(QStringLiteral("**"));
-    if (label.richText.literalMarkdownMathFallback && literalMarkdownMarkers) {
-      // Mermaid's sequence Markdown+Math fallback applies a CSS transform to
-      // the surrounding literal text. Keep that container transform separate
-      // from the glyph-run width model.
-      constexpr qreal kSequenceMathTextScale = 86.281 / 90.359375;
-      qreal cursor = 0.0;
-      for (auto& run : line.runs) {
-        run.x = cursor;
-        if (!run.math && run.length > 1)
-          run.width *= kSequenceMathTextScale;
-        else if (!run.math && run.length == 1)
-          run.width *= 4.5 / 4.484375;
-        cursor += run.width;
-      }
-      line.width = cursor;
-    }
     const bool allRtl = !line.runs.isEmpty() &&
         std::all_of(line.runs.cbegin(), line.runs.cend(), [](const auto& run) {
           return run.rightToLeft;
@@ -160,11 +143,8 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
     }
     maximumWidth = std::max(maximumWidth, line.width);
   }
-  const bool literalMarkdownMarkers = label.richText.text.contains(QLatin1Char('`')) ||
-                                      label.richText.text.contains(QStringLiteral("**"));
-  result.size.setWidth(label.richText.literalMarkdownMathFallback && !literalMarkdownMarkers
-                           ? containerWidth
-                           : literalMarkdownMarkers ? std::round(maximumWidth) : maximumWidth);
+  result.size.setWidth(label.richText.math.isEmpty() ? maximumWidth
+                                                     : containerWidth);
   if (!label.richText.math.isEmpty())
     result.size.setHeight(std::round(result.size.height()));
   return result;

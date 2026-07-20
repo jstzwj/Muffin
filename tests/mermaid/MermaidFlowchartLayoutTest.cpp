@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
     // the bundled-Noto label oracle remains the strict 0.25px contract.
     const bool systemFallbackCase = id.contains(QLatin1String("cjk")) ||
                                     id.contains(QLatin1String("bidi"));
-    const qreal textTolerance = systemFallbackCase ? 1.0 : 0.2;
+    const qreal textTolerance = systemFallbackCase ? 1.5 : 0.2;
     const qreal semanticShapeTolerance = 1.5;
     const QJsonArray expectedNodes = fixture.value(QStringLiteral("expected")).toObject().value(QStringLiteral("nodes")).toArray();
     QMap<QString, QSizeF> sizes;

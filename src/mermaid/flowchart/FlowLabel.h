@@ -22,10 +22,27 @@ struct FlowLabelMathSpan {
   std::shared_ptr<const FlowLabelPreparedMath> prepared;
 };
 
+enum class FlowLabelDomItemKind {
+  AnonymousText,
+  BlockText,
+  Math
+};
+
+// A direct child of Mermaid's label flex container. Browser whitespace
+// collapsing happens at this boundary: an anonymous item containing only
+// collapsible whitespace is discarded, while whitespace inside a non-empty
+// text item still contributes its normal glyph advance.
+struct FlowLabelDomItem {
+  qsizetype start = 0;
+  qsizetype length = 0;
+  FlowLabelDomItemKind kind = FlowLabelDomItemKind::AnonymousText;
+};
+
 struct FlowLabelDocument {
   QString text;
   QVector<QTextLayout::FormatRange> formats;
   QVector<FlowLabelMathSpan> math;
+  QVector<FlowLabelDomItem> domItems;
   bool literalMarkdownMathFallback = false;
   bool sequenceMathMlModel = false;
   Qt::LayoutDirection direction = Qt::LayoutDirectionAuto;
@@ -99,6 +116,17 @@ QSizeF measureFlowLabel(const FlowLabelDocument& label,
 qreal measureFlowTextInkWidth(const FlowLabelDocument& label,
                               const QString& fontFamily,
                               qreal fontPixelSize);
+qreal measureFlowTextInkWidth(const FlowLabelDocument& label,
+                              qsizetype start, qsizetype length,
+                              const QString& fontFamily,
+                              qreal fontPixelSize);
+
+// CSS inline advance for a document range, using the same OpenType tables and
+// visual glyph runs as label layout.
+qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
+                                  qsizetype start, qsizetype length,
+                                  const QString& fontFamily,
+                                  qreal fontPixelSize);
 
 void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     const QRectF& rect, const QString& fontFamily,

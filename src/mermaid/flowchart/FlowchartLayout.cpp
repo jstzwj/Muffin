@@ -232,14 +232,20 @@ QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge, const FlowTextOptions& op
       QTextLine line = layout.createLine();
       if (!line.isValid()) break;
       line.setLineWidth(196.0);
-      width = std::max(width, line.naturalTextWidth());
+      qsizetype textStart = line.textStart();
+      qsizetype textLength = line.textLength();
+      while (textLength > 0 &&
+             document.text.at(textStart + textLength - 1).isSpace())
+        --textLength;
+      // SVGTextElement.getBBox() uses the shaped typographic extent for this
+      // centered <tspan>; the trailing wrap separator is not part of the line.
+      width = std::max(width, measureFlowTextAdvanceWidth(
+          document, textStart, textLength, options.fontFamily,
+          options.fontPixelSize));
       ++lineCount;
     }
     layout.endLayout();
-    // Chromium's foreignObject inline formatting context retains the fractional
-    // DirectWrite advances that QTextLine rounds at wrap boundaries.
-    constexpr qreal kWrappedInlineAdvanceScale = 171.921875 / 170.640625;
-    size = QSizeF(width * kWrappedInlineAdvanceScale, lineCount * 19.3);
+    size = QSizeF(width, lineCount * 19.3);
   }
   size.rwidth() += 4.0;
   size.setWidth(std::max<qreal>(30.0, size.width()));

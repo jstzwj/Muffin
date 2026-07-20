@@ -401,17 +401,32 @@ int main(int argc, char** argv) {
       const qreal widthDrift = qreal(std::abs(nativeInk.width() - browserInk.width())) /
                                browserInk.width();
       const qreal coverage = alignedAlphaCoverage(nativeCrop, browserCrop, dpr);
-      require(widthDrift <= 0.15 &&
+      qDebug().noquote() << id << "flow-label-crop" << nativeCrop.size()
+                         << nativeInk << browserInk << "coverage" << coverage;
+      const QString cropKind =
+          fixture.value(QStringLiteral("labelCropKind")).toString();
+      static const QHash<QString, qreal> minimumCoverage = {
+          {QStringLiteral("html-math"), 0.94},
+          {QStringLiteral("markdown-math"), 0.97},
+          {QStringLiteral("cjk-math"), 0.96},
+          {QStringLiteral("rtl-math"), 0.80},
+          {QStringLiteral("cjk-fraction"), 0.96},
+          {QStringLiteral("rtl-radical"), 0.85},
+      };
+      require(minimumCoverage.contains(cropKind),
+              QStringLiteral("Case %1: unknown label crop kind %2")
+                  .arg(id, cropKind));
+      const bool rtlCrop = cropKind.startsWith(QLatin1String("rtl-"));
+      require(widthDrift <= 0.04 &&
                   std::abs(nativeInk.height() - browserInk.height()) <=
-                      std::ceil(5.0 * dpr),
+                      std::ceil((rtlCrop ? 4.0 : 3.0) * dpr),
               QStringLiteral("Case %1: label crop ink bounds drifted: %2x%3 vs %4x%5")
                   .arg(id).arg(nativeInk.width()).arg(nativeInk.height())
                   .arg(browserInk.width()).arg(browserInk.height()));
-      require(coverage >= 0.62,
-              QStringLiteral("Case %1: label crop coverage too low: %2")
-                  .arg(id).arg(coverage));
-      labelCropKinds.insert(
-          fixture.value(QStringLiteral("labelCropKind")).toString());
+      require(coverage >= minimumCoverage.value(cropKind),
+              QStringLiteral("Case %1: label crop coverage too low: %2 < %3")
+                  .arg(id).arg(coverage).arg(minimumCoverage.value(cropKind)));
+      labelCropKinds.insert(cropKind);
     }
     if (look == flowchart::FlowLook::HandDrawn) {
       const QImage first = flowscene::renderFlowSceneToImage(scene, dpr, 8.0, renderFamily);

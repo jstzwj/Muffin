@@ -267,6 +267,19 @@ try {
         return { left: Math.min(...xs), top: Math.min(...ys), right: Math.max(...xs), bottom: Math.max(...ys) };
       };
       const chars = [];
+      const computedBox = (target) => {
+        const style = getComputedStyle(target);
+        const rect = clientRectToRoot(target.getBoundingClientRect());
+        return { tag: target.localName, className: target.className,
+          display: style.display, position: style.position,
+          whiteSpace: style.whiteSpace, fontFamily: style.fontFamily,
+          fontSize: style.fontSize, fontWeight: style.fontWeight,
+          lineHeight: style.lineHeight, letterSpacing: style.letterSpacing,
+          transform: style.transform, transformOrigin: style.transformOrigin,
+          zoom: style.zoom, width: round(rect.right - rect.left),
+          height: round(rect.bottom - rect.top) };
+      };
+      let dom = null;
       let measuredBox;
       if (element instanceof SVGTextContentElement) {
         const matrix = element.getScreenCTM();
@@ -287,6 +300,25 @@ try {
         const bbox = element.getBBox();
         measuredBox = { width: round(bbox.width), height: round(bbox.height) };
       } else {
+        const content = element.querySelector("div") ?? element;
+        const textNodes = [];
+        const styleWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        let styleNode;
+        while ((styleNode = styleWalker.nextNode())) {
+          if (styleNode.parentElement.closest("math")) continue;
+          const range = document.createRange();
+          range.selectNodeContents(styleNode);
+          const rect = clientRectToRoot(range.getBoundingClientRect());
+          const ancestors = [];
+          for (let ancestor = styleNode.parentElement;
+               ancestor && ancestor !== element; ancestor = ancestor.parentElement)
+            ancestors.push(computedBox(ancestor));
+          textNodes.push({ text: styleNode.data,
+            width: round(rect.right - rect.left),
+            height: round(rect.bottom - rect.top), ancestors });
+        }
+        dom = { element: computedBox(element), content: computedBox(content),
+          textNodes };
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
@@ -463,6 +495,7 @@ try {
         text: renderedText,
         elementCount: selected.length,
         box: measuredBox,
+        dom,
         lines,
       };
     }, { fixture: cases[index], index, mermaidModule, fontFaces, fontStack, mathFontFace });

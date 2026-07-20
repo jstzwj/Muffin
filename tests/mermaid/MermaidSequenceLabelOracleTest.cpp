@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
                   QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence label oracle version/font drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("8e32a6ad57c96131bbf3ce048c80d4ec71d4c43e8fe37d5ef290a061454c1b34"),
+              QLatin1String("83b39e0d61de6330129cd5bfd98a2c23aad4bdc391403936b5569b71e20f65d8"),
           QStringLiteral("Sequence label fixture changed; audit browser geometry and update digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
