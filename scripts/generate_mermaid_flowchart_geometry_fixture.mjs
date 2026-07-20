@@ -11,6 +11,9 @@ const output = path.resolve(
 const chrome = process.argv[4] ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const packageJson = JSON.parse(fs.readFileSync(path.join(mermaidRoot, "package.json"), "utf8"));
 if (packageJson.version !== "11.16.0") throw new Error(`Expected mermaid 11.16.0, found ${packageJson.version}`);
+const mathFontPath = path.resolve("third_party", "stix", "fonts", "STIXTwoMath-Regular.otf");
+if (!fs.existsSync(mathFontPath)) throw new Error(`Missing bundled STIX Math font: ${mathFontPath}`);
+const mathFontFace = `@font-face{font-family:"STIX Two Math";src:url("${pathToFileURL(mathFontPath).href}");font-weight:400;font-style:normal;}`;
 const { default: puppeteer } = await import(
   pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js")),
 );
@@ -384,7 +387,12 @@ try {
   await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
   const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
   const snapshots = await page.evaluate(
-    async ({ cases, mermaidModule }) => {
+    async ({ cases, mermaidModule, mathFontFace }) => {
+      const style = document.createElement("style");
+      style.textContent = `${mathFontFace}\nmath{font-family:"STIX Two Math" !important}`;
+      document.head.appendChild(style);
+      await document.fonts.load('16px "STIX Two Math"', "x+∑√");
+      await document.fonts.ready;
       const { default: mermaid } = await import(mermaidModule);
       const number = (value) => Math.round(value * 1000) / 1000;
       const attributes = (element, names) => {
@@ -831,9 +839,13 @@ try {
       }
       return results;
     },
-    { cases, mermaidModule },
+    { cases, mermaidModule, mathFontFace },
   );
-  const fixture = { upstream: { package: "mermaid", version: packageJson.version }, cases: snapshots };
+  const fixture = {
+    upstream: { package: "mermaid", version: packageJson.version },
+    font: { mathFamily: "STIX Two Math", mathSource: "third_party/stix" },
+    cases: snapshots,
+  };
   fs.mkdirSync(path.dirname(output), { recursive: true });
   fs.writeFileSync(output, `${JSON.stringify(fixture, null, 2)}\n`);
   console.log(`Wrote ${output}`);

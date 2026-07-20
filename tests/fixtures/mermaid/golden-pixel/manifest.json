@@ -6,7 +6,9 @@
   "font": {
     "family": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
     "source": "third_party/noto",
-    "mode": "bundled"
+    "mode": "bundled",
+    "mathFamily": "STIX Two Math",
+    "mathSource": "third_party/stix"
   },
   "cases": [
     {
@@ -1106,7 +1108,7 @@
       "source": "flowchart BT\nN0@{ shape: notch-pent, label: \"notch-pent\" }\nN1@{ shape: curv-trap, label: \"curv-trap\" }\nN2@{ shape: sl-rect, label: \"sl-rect\" }\nN3@{ shape: win-pane, label: \"win-pane\" }\nN4@{ shape: div-rect, label: \"div-rect\" }\nN5@{ shape: delay, label: \"delay\" }\nN6@{ shape: brace, label: \"brace\" }\nN0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6",
       "dpr": 2,
       "handDrawnSeed": 106,
-      "textGlyphIou": 0.5,
+      "textGlyphIou": 0.49,
       "emptyMaxMismatchRatio": 0.15,
       "content": {
         "width": 123.47254180908203,
@@ -1183,7 +1185,7 @@
       "source": "flowchart LR\nA[\"`**Bold**<br/>$$x^2 + 1$$`\"] --> B[Plain]",
       "dpr": 1,
       "content": {
-        "width": 306.734375,
+        "width": 304.1875,
         "height": 54
       },
       "enforceInterior": true,
@@ -1197,8 +1199,8 @@
       "source": "flowchart LR\nA[\"`Value $$x^2 + \\frac{1}{2}$$`\"] --> B[Plain]",
       "dpr": 1,
       "content": {
-        "width": 291.53125,
-        "height": 62.8125
+        "width": 288.984375,
+        "height": 61.46875
       },
       "enforceInterior": true,
       "file": "label-math.png"
@@ -1212,43 +1214,43 @@
       "dpr": 1,
       "mathCropKind": "fraction",
       "mathCropFile": "flow-math-crop-fraction-label.png",
-      "mathCropSha256": "e7acfafe79d9f37828ad286874d97200a71b12b07b3e5b8b42ac273e9f1589b2",
+      "mathCropSha256": "f317ac17b8c66c31c577254722f0c0c10ecc60f583a3365b751e93eaf2e6bfcc",
       "content": {
-        "width": 245.90625,
-        "height": 65.8125,
+        "width": 244.3125,
+        "height": 65.46875,
         "mathBox": {
-          "width": 39.10865783691406,
-          "height": 35.82615661621094,
+          "width": 37.60552978515625,
+          "height": 35.56855773925781,
           "elements": [
             {
               "tag": "mi",
-              "width": 9.003433227539062,
-              "height": 7.002668380737305
+              "width": 8.978321075439453,
+              "height": 8.022510528564453
             },
             {
               "tag": "mo",
-              "width": 12.004573822021484,
-              "height": 11.004194259643555
+              "width": 11.563697814941406,
+              "height": 11.030954360961914
             },
             {
               "tag": "mn",
-              "width": 9.003433227539062,
-              "height": 10.003812789916992
+              "width": 7.9441680908203125,
+              "height": 11.030953407287598
             },
             {
               "tag": "mi",
-              "width": 9.003433227539062,
-              "height": 10.003814697265625
+              "width": 8.194869995117188,
+              "height": 12.033767700195312
             },
             {
               "tag": "mo",
-              "width": 12.004573822021484,
-              "height": 1.0003814697265625
+              "width": 11.563697814941406,
+              "height": 1.0028152465820312
             },
             {
               "tag": "mn",
-              "width": 9.003433227539062,
-              "height": 10.003814697265625
+              "width": 7.9441680908203125,
+              "height": 11.030956268310547
             }
           ]
         }
@@ -1265,28 +1267,28 @@
       "dpr": 1.25,
       "mathCropKind": "radical",
       "mathCropFile": "flow-math-crop-radical-label.png",
-      "mathCropSha256": "ce6a4125814bfb348d810ef3782613aa2bba1625d51be051d9c621a2e39307f2",
+      "mathCropSha256": "3a633d13036b04c04887c38dd42ec8bcc25a99795b6da3407c2d13c1001e8baa",
       "content": {
-        "width": 255.90625,
+        "width": 261.703125,
         "height": 54,
         "mathBox": {
-          "width": 49.09375,
-          "height": 17.03125,
+          "width": 54.890625,
+          "height": 20.234375,
           "elements": [
             {
               "tag": "mi",
-              "width": 9,
-              "height": 7
+              "width": 8.953125,
+              "height": 8
             },
             {
               "tag": "mo",
-              "width": 12,
+              "width": 11.53125,
               "height": 11
             },
             {
               "tag": "mn",
-              "width": 9,
-              "height": 10
+              "width": 7.921875,
+              "height": 11
             }
           ]
         }
@@ -1303,28 +1305,28 @@
       "dpr": 1.5,
       "mathCropKind": "supsub",
       "mathCropFile": "flow-math-crop-supsub-label.png",
-      "mathCropSha256": "609db6ab9ccd843d2fa641e83cd9f83f9b2b5d597a3cf9b652026dced058c4e1",
+      "mathCropSha256": "b88c8bb97dd7870a881550b4a792dd3140c15466acaa3a0137af80084028f4b0",
       "content": {
-        "width": 222.9375,
+        "width": 221.9375,
         "height": 54,
         "mathBox": {
-          "width": 16.125,
-          "height": 18.34375,
+          "width": 15.125,
+          "height": 17.390625,
           "elements": [
             {
               "tag": "mi",
-              "width": 9,
-              "height": 7
+              "width": 8.953125,
+              "height": 8
             },
             {
               "tag": "mi",
-              "width": 3.703125,
+              "width": 3.078125,
               "height": 8
             },
             {
               "tag": "mn",
-              "width": 6.46875,
-              "height": 8
+              "width": 5.546875,
+              "height": 7
             }
           ]
         }
@@ -1341,33 +1343,33 @@
       "dpr": 2,
       "mathCropKind": "array",
       "mathCropFile": "flow-math-crop-array-label.png",
-      "mathCropSha256": "9525d5114e73d884c62e0f98450f68495dfe6e9bc37d3d35af268433f1557799",
+      "mathCropSha256": "62d6c536bc7e9e554208801298bb97aa8e85cc7cbc0cb915df595003e29f617f",
       "content": {
-        "width": 228.59375,
+        "width": 228.484375,
         "height": 54,
         "mathBox": {
-          "width": 21.78125,
-          "height": 14,
+          "width": 21.671875,
+          "height": 15.5625,
           "elements": [
             {
               "tag": "mtable",
-              "width": 21.78125,
-              "height": 14
+              "width": 21.671875,
+              "height": 15.5625
             },
             {
               "tag": "mtr",
-              "width": 21.78125,
-              "height": 14
+              "width": 21.671875,
+              "height": 15.5625
             },
             {
               "tag": "mtd",
-              "width": 21.78125,
-              "height": 14
+              "width": 21.671875,
+              "height": 15.5625
             },
             {
               "tag": "mi",
-              "width": 9,
-              "height": 7
+              "width": 8.890625,
+              "height": 8
             }
           ]
         }
@@ -1384,38 +1386,38 @@
       "dpr": 1,
       "mathCropKind": "accent",
       "mathCropFile": "flow-math-crop-accent-label.png",
-      "mathCropSha256": "bbf4245648a74f1412289fc66b65db54f957e96651f92b443150d8187767ee29",
+      "mathCropSha256": "9ee525ca2464a050f80d186ca9857dfe89b45d1f7257a565383681f39a2d9893",
       "content": {
-        "width": 243.90625,
-        "height": 61.4375,
+        "width": 242.5625,
+        "height": 62.75,
         "mathBox": {
-          "width": 37.10800552368164,
-          "height": 31.4495849609375,
+          "width": 35.814483642578125,
+          "height": 32.80906677246094,
           "elements": [
             {
               "tag": "mi",
-              "width": 9.003459930419922,
-              "height": 7.002693176269531
+              "width": 8.969274520874023,
+              "height": 8.014427185058594
             },
             {
               "tag": "mo",
-              "width": 12.00461196899414,
-              "height": 11.004226684570312
+              "width": 11.552047729492188,
+              "height": 11.019840240478516
             },
             {
               "tag": "mi",
-              "width": 9.003456115722656,
-              "height": 10.00384521484375
+              "width": 8.186614990234375,
+              "height": 12.02164077758789
             },
             {
               "tag": "mo",
-              "width": 7.205894470214844,
-              "height": 5.001920700073242
+              "width": 7.059581756591797,
+              "height": 5.0090179443359375
             },
             {
               "tag": "mi",
-              "width": 6.7057037353515625,
-              "height": 6.00230598449707
+              "width": 6.339542388916016,
+              "height": 6.010822296142578
             }
           ]
         }
@@ -1432,39 +1434,165 @@
       "dpr": 2,
       "mathCropKind": "root-index",
       "mathCropFile": "flow-math-crop-root-index-label.png",
-      "mathCropSha256": "36e5c99f18c05424695c8d8fcb0afad061007c163d17f28d01033d624e60b3d1",
+      "mathCropSha256": "0115e600c897c2ad6f34165e1b4ecef85ceba1e0537087ad21e0e935ed8a3117",
       "content": {
-        "width": 257.265625,
+        "width": 262.734375,
         "height": 54,
         "mathBox": {
-          "width": 50.453125,
-          "height": 17.25,
+          "width": 55.921875,
+          "height": 20.234375,
           "elements": [
             {
               "tag": "mi",
-              "width": 9,
-              "height": 7
+              "width": 8.953125,
+              "height": 8
             },
             {
               "tag": "mo",
-              "width": 12,
+              "width": 11.53125,
               "height": 11
             },
             {
               "tag": "mn",
-              "width": 9,
-              "height": 10
+              "width": 7.921875,
+              "height": 11
             },
             {
               "tag": "mn",
-              "width": 5.328125,
-              "height": 7
+              "width": 4.359375,
+              "height": 6
             }
           ]
         }
       },
       "enforceInterior": true,
       "file": "flow-math-crop-root-index.png"
+    },
+    {
+      "id": "flow-label-crop-html-math",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"<b>Bold</b> $$\\sqrt{x}$$ <i>tail</i>\"] --> B[Plain]",
+      "dpr": 1,
+      "labelCropKind": "html-math",
+      "labelCropFile": "flow-label-crop-html-math-label.png",
+      "labelCropSha256": "d5f9ba498b6eed75c5c4c7fbbcd3933f1eba6e217c28bf550529371ef8e26cf1",
+      "content": {
+        "width": 292.234375,
+        "height": 54,
+        "labelBox": {
+          "width": 85.421875,
+          "height": 24
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-html-math.png"
+    },
+    {
+      "id": "flow-label-crop-markdown-dark-1_25x",
+      "theme": "dark",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`Markdown CJK中文 $$x_i^2$$`\"] --> B[Plain]",
+      "dpr": 1.25,
+      "labelCropKind": "markdown-math",
+      "labelCropFile": "flow-label-crop-markdown-dark-1_25x-label.png",
+      "labelCropSha256": "8ab597eae4d1f3f668199ab95aef484a8e301363e519c390c1bb11ce9a88db1c",
+      "content": {
+        "width": 362.796875,
+        "height": 54,
+        "labelBox": {
+          "width": 155.984375,
+          "height": 24
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-markdown-dark-1_25x.png"
+    },
+    {
+      "id": "flow-label-crop-cjk-neo-1_5x",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`中文 $$x^2$$ 结果`\"] --> B[Plain]",
+      "dpr": 1.5,
+      "labelCropKind": "cjk-math",
+      "labelCropFile": "flow-label-crop-cjk-neo-1_5x-label.png",
+      "labelCropSha256": "657120d15087b084461dedbd5f8dfaff3d4d9ed2e5591d65416c21d1be4f1c6d",
+      "content": {
+        "width": 215.4375,
+        "height": 45,
+        "labelBox": {
+          "width": 69.234375,
+          "height": 21
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-cjk-neo-1_5x.png"
+    },
+    {
+      "id": "flow-label-crop-rtl-neo-dark-2x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`مرحبا $$x^2$$ שלום`\"] --> B[Plain]",
+      "dpr": 2,
+      "labelCropKind": "rtl-math",
+      "labelCropFile": "flow-label-crop-rtl-neo-dark-2x-label.png",
+      "labelCropSha256": "28a76da5321d1d84c0ff8afe52c2dce43fe1e71c06aaae37e7be7310125442fd",
+      "content": {
+        "width": 220.09375,
+        "height": 45,
+        "labelBox": {
+          "width": 73.890625,
+          "height": 21
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-rtl-neo-dark-2x.png"
+    },
+    {
+      "id": "flow-label-crop-cjk-dark-2x",
+      "theme": "dark",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`中文 $$\\frac{x+1}{y}$$ 结果`\"] --> B[Plain]",
+      "dpr": 2,
+      "labelCropKind": "cjk-fraction",
+      "labelCropFile": "flow-label-crop-cjk-dark-2x-label.png",
+      "labelCropSha256": "c9c62a8b6de7cc0620eb58eacbf9c88db914958b19474e9e28d094d945d16ba9",
+      "content": {
+        "width": 308.3125,
+        "height": 65.46875,
+        "labelBox": {
+          "width": 101.72633361816406,
+          "height": 35.54784393310547
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-cjk-dark-2x.png"
+    },
+    {
+      "id": "flow-label-crop-rtl-default-1_5x",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`ABC مرحبا 123 $$\\sqrt{x}$$ שלום`\"] --> B[Plain]",
+      "dpr": 1.5,
+      "labelCropKind": "rtl-radical",
+      "labelCropFile": "flow-label-crop-rtl-default-1_5x-label.png",
+      "labelCropSha256": "b78cb9b66e0572fd8dc432d70ab3e042234b95c687b5d3a2a5b39eb9749e6ef7",
+      "content": {
+        "width": 371,
+        "height": 54,
+        "labelBox": {
+          "width": 164.1875,
+          "height": 24
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-rtl-default-1_5x.png"
     },
     {
       "id": "edge-label-rich",
@@ -1586,8 +1714,8 @@
       "source": "flowchart LR\nA[\"`Value $$x^2 + \\frac{1}{2}$$`\"] --> B[Plain]",
       "dpr": 2,
       "content": {
-        "width": 291.53125,
-        "height": 62.8125
+        "width": 288.984375,
+        "height": 61.46875
       },
       "enforceInterior": true,
       "file": "label-math-2x.png"

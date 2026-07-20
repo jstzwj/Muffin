@@ -35,6 +35,9 @@ const fixedFontStack = '"Noto Sans", "Noto Sans CJK SC", "Noto Sans Arabic", "No
 const fontFaces = fontFiles.map(([family, file, range]) =>
   `@font-face{font-family:"${family}";src:url("${pathToFileURL(path.join(notoDir, file)).href}");font-weight:400;font-style:normal;unicode-range:${range};}`
 ).join("\n");
+const mathFontPath = path.resolve("third_party", "stix", "fonts", "STIXTwoMath-Regular.otf");
+if (!fs.existsSync(mathFontPath)) throw new Error(`Missing bundled STIX Math font: ${mathFontPath}`);
+const mathFontFace = `@font-face{font-family:"STIX Two Math";src:url("${pathToFileURL(mathFontPath).href}");font-weight:400;font-style:normal;}`;
 if (packageJson.version !== "11.16.0") {
   throw new Error(`Expected mermaid 11.16.0, found ${packageJson.version}`);
 }
@@ -57,19 +60,20 @@ try {
     const dpr = fixture.dpr ?? 1;
     await page.setViewport({ width: 1600, height: 1200, deviceScaleFactor: dpr });
     await page.goto(harnessUrl);
-    const content = await page.evaluate(async ({ fixture, index, mermaidModule, fontFaces, fixedFontStack }) => {
+    const content = await page.evaluate(async ({ fixture, index, mermaidModule, fontFaces, fixedFontStack, mathFontFace }) => {
+      const style = document.createElement("style");
+      style.textContent = `${fixture.fontMode === "noto" ? fontFaces : ""}\n${mathFontFace}\nmath{font-family:"STIX Two Math" !important}`;
+      document.head.appendChild(style);
       if (fixture.fontMode === "noto") {
-        const style = document.createElement("style");
-        style.textContent = fontFaces;
-        document.head.appendChild(style);
         await Promise.all([
           document.fonts.load('16px "Noto Sans"', "Fixed Noto"),
           document.fonts.load('16px "Noto Sans CJK SC"', "中文日本語"),
           document.fonts.load('16px "Noto Sans Arabic"', "مرحبا بالعالم"),
           document.fonts.load('16px "Noto Sans Hebrew"', "שלום עולם"),
         ]);
-        await document.fonts.ready;
       }
+      await document.fonts.load('16px "STIX Two Math"', "x+∑√");
+      await document.fonts.ready;
       const { default: mermaid } = await import(mermaidModule);
       mermaid.initialize({
         startOnLoad: false,
@@ -131,6 +135,12 @@ try {
           });
         return { width: box.width, height: box.height, elements };
       })() : undefined;
+      const labelBox = fixture.labelCrop ? (() => {
+        const label = root.querySelector("g.node foreignObject");
+        if (!label) throw new Error(`Case ${fixture.id}: label crop target is missing`);
+        const box = label.getBoundingClientRect();
+        return { width: box.width, height: box.height };
+      })() : undefined;
       const computedStyles = fixture.id.startsWith("look-redux") ? (() => {
         const nodePath = root.querySelector("g.node path, g.node rect, g.node polygon");
         const clusterRect = root.querySelector("g.cluster rect");
@@ -152,8 +162,9 @@ try {
       return { width: bb.width, height: bb.height,
                ...(nodeBoxes ? { nodeBoxes } : {}),
                ...(mathBox ? { mathBox } : {}),
+               ...(labelBox ? { labelBox } : {}),
                ...(computedStyles ? { computedStyles } : {}) };
-    }, { fixture, index, mermaidModule, fontFaces, fixedFontStack });
+    }, { fixture, index, mermaidModule, fontFaces, fixedFontStack, mathFontFace });
     const element = await page.$("#container svg");
     if (!element) throw new Error(`Case ${fixture.id}: rendered SVG is missing`);
     const screenshot = await element.screenshot({ omitBackground: true });
@@ -162,36 +173,39 @@ try {
       inputColorType: 6,
       bitDepth: 8,
     });
-    let mathCropPng;
-    if (fixture.mathCrop) {
-      const mathClip = await page.$eval("g.node math", (node) => {
+    const captureIsolatedCrop = async (selector) => {
+      const clip = await page.$eval(selector, (node) => {
         const rect = node.getBoundingClientRect();
         const guard = 2;
         return { x: rect.left - guard, y: rect.top - guard,
                  width: Math.max(1, rect.width + 2 * guard),
                  height: Math.max(1, rect.height + 2 * guard) };
       });
-      await page.evaluate(() => {
+      await page.evaluate((selector) => {
         const root = document.querySelector("svg");
         for (const node of root.querySelectorAll("*"))
           node.style.visibility = "hidden";
-        const selected = root.querySelector("g.node math");
+        const selected = root.querySelector(selector);
         for (let node = selected; node && node !== root; node = node.parentElement)
           node.style.visibility = "visible";
         for (const child of selected.querySelectorAll("*"))
           child.style.visibility = "visible";
-      });
+      }, selector);
       const cropScreenshot = await page.screenshot({
         omitBackground: true,
-        clip: mathClip,
+        clip,
       });
-      mathCropPng = PNG.sync.write(PNG.sync.read(cropScreenshot), {
+      return PNG.sync.write(PNG.sync.read(cropScreenshot), {
         colorType: 6,
         inputColorType: 6,
         bitDepth: 8,
       });
-    }
-    results.push({ ...fixture, dpr, content, png, mathCropPng });
+    };
+    const mathCropPng = fixture.mathCrop
+      ? await captureIsolatedCrop("g.node math") : undefined;
+    const labelCropPng = fixture.labelCrop
+      ? await captureIsolatedCrop("g.node foreignObject") : undefined;
+    results.push({ ...fixture, dpr, content, png, mathCropPng, labelCropPng });
   }
 
   fs.mkdirSync(outDir, { recursive: true });
@@ -202,6 +216,9 @@ try {
     const mathCropFile = r.mathCropPng ? `${r.id}-label.png` : undefined;
     if (mathCropFile)
       fs.writeFileSync(path.join(outDir, mathCropFile), r.mathCropPng);
+    const labelCropFile = r.labelCropPng ? `${r.id}-label.png` : undefined;
+    if (labelCropFile)
+      fs.writeFileSync(path.join(outDir, labelCropFile), r.labelCropPng);
     const enforceInterior = r.enforceInterior ?? true;
     manifestCases.push({ id: r.id, theme: r.theme, look: r.look ?? "classic",
                          fontMode: r.fontMode ?? "system",
@@ -217,11 +234,17 @@ try {
                                mathCropSha256: createHash("sha256")
                                  .update(r.mathCropPng).digest("hex") }
                            : {}),
+                         ...(labelCropFile
+                           ? { labelCropKind: r.labelCropKind, labelCropFile,
+                               labelCropSha256: createHash("sha256")
+                                 .update(r.labelCropPng).digest("hex") }
+                           : {}),
                          content: r.content, enforceInterior, file });
   }
   const manifest = {
     upstream: { package: "mermaid", version: packageJson.version },
-    font: { family: fixedFontStack, source: "third_party/noto", mode: "bundled" },
+    font: { family: fixedFontStack, source: "third_party/noto", mode: "bundled",
+            mathFamily: "STIX Two Math", mathSource: "third_party/stix" },
     cases: manifestCases,
   };
   fs.writeFileSync(path.join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);

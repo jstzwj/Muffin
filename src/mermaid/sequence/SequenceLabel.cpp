@@ -1,14 +1,12 @@
 #include "mermaid/sequence/SequenceLabel.h"
 
-#include "mermaid/MermaidFontRegistry.h"
 #include "math/OpenTypeMathFont.h"
 
-#include <QFont>
-#include <QFontMetricsF>
 #include <QPainter>
 #include <QRegularExpression>
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 namespace muffin::mermaid::sequence {
@@ -44,13 +42,12 @@ SequenceLabelDocument wrapSequenceLabel(SequenceLabelDocument label,
   if (maximumWidth <= 0.0 || !label.richText.math.isEmpty() ||
       label.richText.text.contains(QLatin1Char('\n')))
     return label;
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(qRound(fontPixelSize));
-  font.setHintingPreference(QFont::PreferNoHinting);
-  const QFontMetricsF metrics(font);
   const auto width = [&](const QString& text) {
-    return std::round(metrics.horizontalAdvance(text));
+    flowchart::FlowLabelDocument candidate;
+    candidate.text = text;
+    candidate.direction = Qt::LeftToRight;
+    return std::round(flowchart::measureFlowTextInkWidth(
+        candidate, fontFamily, fontPixelSize));
   };
   QStringList completed;
   QString nextLine;
@@ -68,11 +65,10 @@ SequenceLabelDocument wrapSequenceLabel(SequenceLabelDocument label,
       }
       nextLine = std::move(current);
     } else {
-      // SVG getBBox accumulates spaced words slightly more tightly than Qt's
-      // per-string advances; character splitting below intentionally stays raw.
-      constexpr qreal kSvgWordMeasureScale = 0.9;
+      // Mermaid wrapLabel measures the existing line and the next word (with
+      // its trailing space) independently before comparing their sum.
       const qreal candidateWidth =
-          (width(nextLine) + width(word + QLatin1Char(' '))) * kSvgWordMeasureScale;
+          width(nextLine) + width(word + QLatin1Char(' '));
       if (!nextLine.isEmpty() && candidateWidth >= maximumWidth) {
         completed.append(std::exchange(nextLine, {}));
         nextLine = word;
@@ -135,6 +131,9 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
     const bool literalMarkdownMarkers = label.richText.text.contains(QLatin1Char('`')) ||
                                         label.richText.text.contains(QStringLiteral("**"));
     if (label.richText.literalMarkdownMathFallback && literalMarkdownMarkers) {
+      // Mermaid's sequence Markdown+Math fallback applies a CSS transform to
+      // the surrounding literal text. Keep that container transform separate
+      // from the glyph-run width model.
       constexpr qreal kSequenceMathTextScale = 86.281 / 90.359375;
       qreal cursor = 0.0;
       for (auto& run : line.runs) {
@@ -151,54 +150,6 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
         std::all_of(line.runs.cbegin(), line.runs.cend(), [](const auto& run) {
           return run.rightToLeft;
         });
-    const bool hasRtl = std::any_of(line.runs.cbegin(), line.runs.cend(),
-                                    [](const auto& run) { return run.rightToLeft; });
-    const bool hasLtr = std::any_of(line.runs.cbegin(), line.runs.cend(),
-                                    [](const auto& run) { return !run.rightToLeft; });
-    const QString lineText = label.richText.text.mid(line.start, line.length);
-    const bool containsHebrew = std::any_of(lineText.cbegin(), lineText.cend(), [](QChar ch) {
-      return ch.unicode() >= 0x0590 && ch.unicode() <= 0x05ff;
-    });
-    const bool containsArabic = std::any_of(lineText.cbegin(), lineText.cend(), [](QChar ch) {
-      return ch.unicode() >= 0x0600 && ch.unicode() <= 0x08ff;
-    });
-    const bool containsLatin = std::any_of(lineText.cbegin(), lineText.cend(), [](QChar ch) {
-      const ushort code = ch.unicode();
-      return (code >= 0x0041 && code <= 0x005a) || (code >= 0x0061 && code <= 0x007a);
-    });
-    if (allRtl && containsHebrew) {
-      constexpr qreal kSequenceMixedRtlAdvanceScale = 73.469 / 71.75;
-      constexpr qreal kSequenceHebrewAdvanceScale = 73.406 / 71.96875;
-      const qreal scale = containsArabic ? kSequenceMixedRtlAdvanceScale
-                                         : kSequenceHebrewAdvanceScale;
-      line.width *= scale;
-      for (auto& run : line.runs) {
-        run.x *= scale;
-        run.width *= scale;
-      }
-    } else if (allRtl && containsArabic && label.kind == SequenceLabelKind::Message) {
-      constexpr qreal kSequenceArabicMessageScale = 77.094 / 78.625;
-      line.width *= kSequenceArabicMessageScale;
-      for (auto& run : line.runs) {
-        run.x *= kSequenceArabicMessageScale;
-        run.width *= kSequenceArabicMessageScale;
-      }
-    } else if (hasRtl && hasLtr && label.kind == SequenceLabelKind::Message) {
-      constexpr qreal kSequenceMixedDirectionScale = 145.328 / 145.125;
-      line.width *= kSequenceMixedDirectionScale;
-      for (auto& run : line.runs) {
-        run.x *= kSequenceMixedDirectionScale;
-        run.width *= kSequenceMixedDirectionScale;
-      }
-    } else if (hasLtr && !hasRtl && containsLatin &&
-               !label.richText.literalMarkdownMathFallback) {
-      constexpr qreal kSequenceLatinSvgAdvanceScale = 183.375 / 183.1875;
-      line.width *= kSequenceLatinSvgAdvanceScale;
-      for (auto& run : line.runs) {
-        run.x *= kSequenceLatinSvgAdvanceScale;
-        run.width *= kSequenceLatinSvgAdvanceScale;
-      }
-    }
     if (allRtl) {
       auto visual = line.runs.first();
       visual.start = line.start;

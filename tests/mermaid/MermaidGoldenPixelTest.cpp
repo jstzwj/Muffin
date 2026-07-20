@@ -166,6 +166,12 @@ int main(int argc, char** argv) {
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), QStringLiteral("Could not open golden-pixel manifest"));
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
+  const QJsonObject fontContract = root.value(QStringLiteral("font")).toObject();
+  require(fontContract.value(QStringLiteral("mathFamily")).toString() ==
+                  QLatin1String("STIX Two Math") &&
+              fontContract.value(QStringLiteral("mathSource")).toString() ==
+                  QLatin1String("third_party/stix"),
+          QStringLiteral("Golden-pixel Math font contract drifted"));
   require(root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() ==
               QLatin1String("11.16.0"),
           QStringLiteral("Golden-pixel manifest version drifted"));
@@ -196,6 +202,7 @@ int main(int argc, char** argv) {
   QSet<qreal> handDrawnDprs;
   bool sawHandDrawnComposite = false;
   QSet<QString> mathCropKinds;
+  QSet<QString> labelCropKinds;
   QSet<QString> caseIds;
   QSet<QString> coveredThemes;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
@@ -369,6 +376,43 @@ int main(int argc, char** argv) {
       mathCropKinds.insert(
           fixture.value(QStringLiteral("mathCropKind")).toString());
     }
+    if (fixture.contains(QStringLiteral("labelCropFile"))) {
+      const auto node = std::find_if(
+          scene.nodes.cbegin(), scene.nodes.cend(), [](const auto& candidate) {
+            return !candidate.label.richText.math.isEmpty();
+          });
+      require(node != scene.nodes.cend(),
+              QStringLiteral("Case %1: native label crop target is missing").arg(id));
+      const QString cropPath = dir.filePath(
+          fixture.value(QStringLiteral("labelCropFile")).toString());
+      require(fileSha256(cropPath) ==
+                  fixture.value(QStringLiteral("labelCropSha256"))
+                      .toString().toLatin1(),
+              QStringLiteral("Case %1: label crop hash drifted").arg(id));
+      const QImage browserCrop(cropPath);
+      require(!browserCrop.isNull(),
+              QStringLiteral("Case %1: label crop is missing").arg(id));
+      const QImage nativeCrop = renderFlowMathLabelCrop(
+          node->label, browserCrop.size(), renderFamily, dpr);
+      const QRect nativeInk = alphaBounds(nativeCrop);
+      const QRect browserInk = alphaBounds(browserCrop);
+      require(!nativeInk.isEmpty() && !browserInk.isEmpty(),
+              QStringLiteral("Case %1: label crop rendered blank").arg(id));
+      const qreal widthDrift = qreal(std::abs(nativeInk.width() - browserInk.width())) /
+                               browserInk.width();
+      const qreal coverage = alignedAlphaCoverage(nativeCrop, browserCrop, dpr);
+      require(widthDrift <= 0.15 &&
+                  std::abs(nativeInk.height() - browserInk.height()) <=
+                      std::ceil(5.0 * dpr),
+              QStringLiteral("Case %1: label crop ink bounds drifted: %2x%3 vs %4x%5")
+                  .arg(id).arg(nativeInk.width()).arg(nativeInk.height())
+                  .arg(browserInk.width()).arg(browserInk.height()));
+      require(coverage >= 0.62,
+              QStringLiteral("Case %1: label crop coverage too low: %2")
+                  .arg(id).arg(coverage));
+      labelCropKinds.insert(
+          fixture.value(QStringLiteral("labelCropKind")).toString());
+    }
     if (look == flowchart::FlowLook::HandDrawn) {
       const QImage first = flowscene::renderFlowSceneToImage(scene, dpr, 8.0, renderFamily);
       const QImage repeat = flowscene::renderFlowSceneToImage(scene, dpr, 8.0, renderFamily);
@@ -480,6 +524,9 @@ int main(int argc, char** argv) {
   require(mathCropKinds.size() == 6,
           QStringLiteral("Flowchart Math crop coverage regressed: %1/6")
               .arg(mathCropKinds.size()));
+  require(labelCropKinds.size() == 6,
+          QStringLiteral("Flowchart label crop coverage regressed: %1/6")
+              .arg(labelCropKinds.size()));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;
 }

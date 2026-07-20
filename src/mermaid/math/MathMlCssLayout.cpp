@@ -20,10 +20,6 @@ constexpr qreal kMathTableDescenderExpansionEm = 0.25;
 constexpr qreal kMathTableTextDescenderExpansionEm = 3.0 / 16.0;
 constexpr qreal kMathTableExtraColumnCorrectionPx = 1.8;
 constexpr qreal kMathTableCellVerticalPaddingEm = 0.47265625;
-// Chromium collapses MathML rowspacing for a one-row mtable and resolves the
-// remaining table-cell leading to 3/8 em. Multi-row tables distribute a larger
-// leading while resolving rowspacing and therefore use the value above.
-constexpr qreal kMathTableSingleRowCellLeadingEm = 0.375;
 constexpr qreal kMathTableCellHorizontalPaddingEm = 0.8;
 constexpr qreal kMathMlThickSpaceEm = 5.0 / 18.0;
 constexpr qreal kMathMlMiddleSpaceEm = 0.05;
@@ -407,6 +403,17 @@ bool hasMathMlOperatorOverflow(const MathRenderNode* node) {
   return false;
 }
 
+bool hasMathNumberToken(const MathRenderNode* node) {
+  if (!node) return false;
+  if (node->kind == MathRenderKind::Symbol && !node->text.isEmpty() &&
+      std::all_of(node->text.cbegin(), node->text.cend(),
+                  [](QChar character) { return character.isNumber(); }))
+    return true;
+  for (const auto& child : node->children)
+    if (hasMathNumberToken(child.get())) return true;
+  return false;
+}
+
 bool hasOperatorKind(const MathRenderNode* node, MathOperatorKind kind) {
   if (!node) return false;
   if (node->operatorKind == kind) return true;
@@ -484,7 +491,10 @@ QVector<qreal> arrayCssRowHeights(const MathRenderNode* array,
       scriptOverflow = scriptOverflow ||
           hasNestedSemantic(cell, MathSemanticKind::SupSub);
     }
-    if (fixedLineRows) {
+    const bool singleRowTableLine = array->rows == 1 &&
+                                    array->columns > 1 &&
+                                    !structuredCell;
+    if (fixedLineRows || singleRowTableLine) {
       const MathFontConstants& constants =
           OpenTypeMathFont::instance().constants();
       qreal rowHeight = cssFontSize * kMathTableRowHeightEm;
@@ -496,9 +506,7 @@ QVector<qreal> arrayCssRowHeights(const MathRenderNode* array,
     } else {
       heights[row] = contentHeight +
           cssFontSize *
-              ((array->rows == 1 && !structuredCell
-                    ? kMathTableSingleRowCellLeadingEm
-                    : kMathTableCellVerticalPaddingEm) +
+              (kMathTableCellVerticalPaddingEm +
                ((plainDescender || underAccentOverflow)
                     ? kMathTableDescenderExpansionEm
                     : textModeDescender && array->columns > 1
@@ -1463,7 +1471,8 @@ std::optional<FractionMetrics> fractionMetrics(const MathRenderNode* fraction,
         return;
       }
     }
-    if (includeOperatorLeading && hasMathMlOperatorOverflow(child))
+    if (includeOperatorLeading && hasMathMlOperatorOverflow(child) &&
+        !hasMathNumberToken(child))
       ink->top += std::floor(constants.fractionRuleThickness * styleScale);
     if (firstKind(child, MathRenderKind::LeftRight))
       ink->top += std::floor(2.0 * constants.fractionRuleThickness * styleScale);
@@ -1683,6 +1692,16 @@ qreal siblingSemanticHeight(const MathRenderNode* node,
         height, siblingSemanticHeight(child.get(), primary, scale,
                                       cssFontSize));
   return height;
+}
+
+bool hasSiblingAtomClass(const MathRenderNode* node,
+                         const MathRenderNode* primary,
+                         QLatin1StringView atomClass) {
+  if (!node || node == primary) return false;
+  if (node->atomClass == atomClass) return true;
+  for (const auto& child : node->children)
+    if (hasSiblingAtomClass(child.get(), primary, atomClass)) return true;
+  return false;
 }
 
 qreal heightOutsideAccent(const MathRenderNode* node,
@@ -1915,10 +1934,10 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
                         : 0.0)
           : root.width;
       if (heightVariant) {
-        qreal extra = semantic->radicalIndex ||
+        qreal extra = (!primarySemanticNode(body) &&
+                       !middleDelimiterMarker(body)) ||
+                              semantic->radicalIndex ||
                               heightVariant->extent > 30.0 ||
-                              (singleSymbol(body) &&
-                               !middleDelimiterMarker(body)) ||
                               containsTextModeRun(body)
             ? constants.radicalExtraAscender
             : constants.radicalRuleThickness / 2.0;
@@ -2165,7 +2184,9 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
             ? layout.root->height + layout.root->depth
             : layout.root->children.front()->height + layout.root->children.front()->depth) * scale;
         root.height = std::ceil(root.height);
-        if (hasAtomClass(layout.root.get(), QLatin1StringView("mbin"))) root.height += 1.0;
+        if (hasAtomClass(layout.root.get(), QLatin1StringView("mbin")) &&
+            !hasMathNumberToken(layout.root.get()))
+          root.height += 1.0;
         root.height = std::max(root.height,
                                std::ceil(maxLargeOperatorExtent(layout.root.get())));
         if (const MathRenderNode* accent = firstKind(layout.root.get(), MathRenderKind::Accent);
@@ -2306,21 +2327,29 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
     root.width = cssNodeWidth(layout.root.get(), scale);
     const bool accentOwner =
         firstKind(semantic, MathRenderKind::Accent) != nullptr;
-    if (root.semanticKind == MathSemanticKind::SupSub && !accentOwner &&
+    if (root.semanticKind == MathSemanticKind::SupSub &&
+        hasAtomClass(semantic, QLatin1StringView("mop")) &&
         semantic->operatorKind != MathOperatorKind::Limits &&
-        (!hasAtomClass(semantic, QLatin1StringView("mop")) ||
-         cssNodeOffset(layout.root.get(), semantic, scale).value_or(0.0) <=
-             0.001) &&
+        cssNodeOffset(layout.root.get(), semantic, scale).value_or(0.0) <=
+            0.001 &&
         !enclosingKind(layout.root.get(), semantic,
-                       MathRenderKind::LeftRight)) {
-      root.width -=
-          OpenTypeMathFont::instance().constants().spaceAfterScript;
-    }
+                       MathRenderKind::LeftRight))
+      root.width -= OpenTypeMathFont::instance().constants().spaceAfterScript;
     root.advance = root.width;
-    root.height = std::max(
-        root.height,
-        siblingSemanticHeight(layout.root.get(), semantic, scale,
-                              cssRootFontPixelSize));
+    const qreal siblingHeight = siblingSemanticHeight(
+        layout.root.get(), semantic, scale, cssRootFontPixelSize);
+    const bool primaryOwnsHeight = root.height >= siblingHeight;
+    root.height = std::max(root.height, siblingHeight);
+    if (root.semanticKind == MathSemanticKind::SupSub &&
+        !accentOwner &&
+        semantic->operatorKind != MathOperatorKind::Limits &&
+        !hasAtomClass(semantic, QLatin1StringView("mop")) &&
+        primaryOwnsHeight &&
+        hasSiblingAtomClass(layout.root.get(), semantic,
+                            QLatin1StringView("mbin")))
+      root.height += std::ceil(
+          OpenTypeMathFont::instance().constants().fractionRuleThickness /
+          2.0);
     const MathRenderNode* rowAccent = accentOwner
         ? firstKind(semantic, MathRenderKind::Accent) : nullptr;
     if (rowAccent && rowAccent->accentKind == MathAccentKind::OverBrace) {
@@ -2333,7 +2362,9 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
   root.height = std::max(root.height, rootLeftRightFenceExtent(
       layout.root.get(), semantic, root.height));
   if (root.semanticKind == MathSemanticKind::Fraction &&
-      !middleDelimiterMarker(semantic)) {
+      !middleDelimiterMarker(semantic) &&
+      (!semantic->leftDelimiter.isEmpty() ||
+       !semantic->rightDelimiter.isEmpty())) {
     const qreal fractionHeight = fractionMathMlHeight(
         semantic, cssRootFontPixelSize, scale);
     qreal delimiterTarget = fractionHeight > 0.0 ? fractionHeight : root.height;

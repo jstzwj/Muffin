@@ -3,6 +3,10 @@
     "package": "mermaid",
     "version": "11.16.0"
   },
+  "font": {
+    "mathFamily": "STIX Two Math",
+    "mathSource": "third_party/stix"
+  },
   "cases": [
     {
       "id": "lr-chain",
@@ -8657,8 +8661,8 @@
           "width": "100%",
           "xmlns": "http://www.w3.org/2000/svg",
           "class": "flowchart",
-          "style": "max-width: 322.734375px;",
-          "viewBox": "0 0 322.734375 70",
+          "style": "max-width: 320.1875px;",
+          "viewBox": "0 0 320.1875 70",
           "role": "graphics-document document",
           "aria-roledescription": "flowchart-v2"
         },
@@ -9013,9 +9017,9 @@
         "nodes": [
           {
             "id": "A",
-            "width": 161.156,
+            "width": 158.609,
             "height": 54,
-            "labelWidth": 101.156,
+            "labelWidth": 98.609,
             "labelHeight": 24,
             "group": {
               "class": "node default"
@@ -9024,7 +9028,7 @@
               "tag": "g",
               "attributes": {
                 "class": "label",
-                "transform": "translate(-50.578125, -12)",
+                "transform": "translate(-49.3046875, -12)",
                 "style": ""
               },
               "computed": {
@@ -9037,7 +9041,7 @@
               "lines": [
                 {
                   "text": "**Bold**\n￼",
-                  "width": 101.156,
+                  "width": 98.609,
                   "height": 17,
                   "baseline": null,
                   "ascent": null,
@@ -9056,7 +9060,7 @@
                       "start": 9,
                       "length": 1,
                       "x": 56.938,
-                      "width": 44.219,
+                      "width": 41.672,
                       "rtl": false,
                       "math": true,
                       "fontFamily": "Arial"
@@ -9068,9 +9072,9 @@
             "shape": {
               "tag": "rect",
               "attributes": {
-                "x": "-80.578125",
+                "x": "-79.3046875",
                 "y": "-27",
-                "width": "161.15625",
+                "width": "158.609375",
                 "height": "54",
                 "class": "basic label-container",
                 "style": ""
@@ -9147,23 +9151,23 @@
                 "stroke-dasharray": "none"
               }
             },
-            "dx": 178.367,
+            "dx": 177.093,
             "dy": 0
           }
         ],
         "edges": [
           {
             "id": "L_A_B_0",
-            "d": "M80.578,0L84.745,0C88.912,0,97.245,0,104.912,0C112.578,0,119.578,0,123.078,0L126.578,0",
+            "d": "M79.304,0L83.471,0C87.638,0,95.971,0,103.638,0C111.304,0,118.304,0,121.804,0L125.304,0",
             "attributes": {
-              "d": "M169.156,35L173.323,35C177.49,35,185.823,35,193.49,35C201.156,35,208.156,35,211.656,35L215.156,35",
+              "d": "M166.609,35L170.776,35C174.943,35,183.276,35,190.943,35C198.609,35,205.609,35,209.109,35L212.609,35",
               "id": "flow-geometry-13-L_A_B_0",
               "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
               "style": ";",
               "data-edge": "true",
               "data-et": "edge",
               "data-id": "L_A_B_0",
-              "data-points": "W3sieCI6MTY5LjE1NjI1LCJ5IjozNX0seyJ4IjoxOTQuMTU2MjUsInkiOjM1fSx7IngiOjIxOS4xNTYyNSwieSI6MzV9XQ==",
+              "data-points": "W3sieCI6MTY2LjYwOTM3NSwieSI6MzV9LHsieCI6MTkxLjYwOTM3NSwieSI6MzV9LHsieCI6MjE2LjYwOTM3NSwieSI6MzV9XQ==",
               "data-look": "classic",
               "marker-end": "pointEnd"
             },
@@ -9196,7 +9200,7 @@
                   "runs": []
                 }
               ],
-              "dx": -88.578,
+              "dx": -87.305,
               "dy": -35
             }
           }
@@ -9213,8 +9217,8 @@
           "width": "100%",
           "xmlns": "http://www.w3.org/2000/svg",
           "class": "flowchart",
-          "style": "max-width: 267.796875px;",
-          "viewBox": "0 0 267.796875 78.8125",
+          "style": "max-width: 265.25px;",
+          "viewBox": "0 0 265.25 77.46875",
           "role": "graphics-document document",
           "aria-roledescription": "flowchart-v2"
         },
@@ -9569,10 +9573,10 @@
         "nodes": [
           {
             "id": "A",
-            "width": 106.219,
-            "height": 62.813,
-            "labelWidth": 46.219,
-            "labelHeight": 32.813,
+            "width": 103.672,
+            "height": 61.469,
+            "labelWidth": 43.672,
+            "labelHeight": 31.469,
             "group": {
               "class": "node default"
             },
@@ -9580,7 +9584,7 @@
               "tag": "g",
               "attributes": {
                 "class": "label",
-                "transform": "translate(-23.109375, -16.40625)",
+                "transform": "translate(-21.8359375, -15.734375)",
                 "style": ""
               },
               "computed": {
@@ -9593,8 +9597,8 @@
               "lines": [
                 {
                   "text": "￼",
-                  "width": 46.219,
-                  "height": 32.813,
+                  "width": 43.672,
+                  "height": 31.469,
                   "baseline": null,
                   "ascent": null,
                   "descent": null,
@@ -9603,7 +9607,7 @@
                       "start": 0,
                       "length": 1,
                       "x": 0,
-                      "width": 46.219,
+                      "width": 43.672,
                       "rtl": false,
                       "math": true,
                       "fontFamily": "Arial"
@@ -9615,10 +9619,10 @@
             "shape": {
               "tag": "rect",
               "attributes": {
-                "x": "-53.109375",
-                "y": "-31.40625",
-                "width": "106.21875",
-                "height": "62.8125",
+                "x": "-51.8359375",
+                "y": "-30.734375",
+                "width": "103.671875",
+                "height": "61.46875",
                 "class": "basic label-container",
                 "style": ""
               },
@@ -9694,23 +9698,23 @@
                 "stroke-dasharray": "none"
               }
             },
-            "dx": 150.899,
+            "dx": 149.625,
             "dy": 0
           }
         ],
         "edges": [
           {
             "id": "L_A_B_0",
-            "d": "M53.11,0L57.276,0C61.443,0,69.776,0,77.443,0C85.11,0,92.11,0,95.61,0L99.11,0",
+            "d": "M51.836,0L56.003,0C60.169,0,68.503,0,76.169,0C83.836,0,90.836,0,94.336,0L97.836,0",
             "attributes": {
-              "d": "M114.219,39.406L118.385,39.406C122.552,39.406,130.885,39.406,138.552,39.406C146.219,39.406,153.219,39.406,156.719,39.406L160.219,39.406",
+              "d": "M111.672,38.734L115.839,38.734C120.005,38.734,128.339,38.734,136.005,38.734C143.672,38.734,150.672,38.734,154.172,38.734L157.672,38.734",
               "id": "flow-geometry-14-L_A_B_0",
               "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
               "style": ";",
               "data-edge": "true",
               "data-et": "edge",
               "data-id": "L_A_B_0",
-              "data-points": "W3sieCI6MTE0LjIxODc1LCJ5IjozOS40MDYyNX0seyJ4IjoxMzkuMjE4NzUsInkiOjM5LjQwNjI1fSx7IngiOjE2NC4yMTg3NSwieSI6MzkuNDA2MjV9XQ==",
+              "data-points": "W3sieCI6MTExLjY3MTg3NSwieSI6MzguNzM0Mzc1fSx7IngiOjEzNi42NzE4NzUsInkiOjM4LjczNDM3NX0seyJ4IjoxNjEuNjcxODc1LCJ5IjozOC43MzQzNzV9XQ==",
               "data-look": "classic",
               "marker-end": "pointEnd"
             },
@@ -9743,8 +9747,8 @@
                   "runs": []
                 }
               ],
-              "dx": -61.109,
-              "dy": -39.406
+              "dx": -59.836,
+              "dy": -38.734
             }
           }
         ],
@@ -9760,8 +9764,8 @@
           "width": "100%",
           "xmlns": "http://www.w3.org/2000/svg",
           "class": "flowchart",
-          "style": "max-width: 307.53125px;",
-          "viewBox": "0 0 307.53125 78.8125",
+          "style": "max-width: 304.984375px;",
+          "viewBox": "0 0 304.984375 77.46875",
           "role": "graphics-document document",
           "aria-roledescription": "flowchart-v2"
         },
@@ -10116,10 +10120,10 @@
         "nodes": [
           {
             "id": "A",
-            "width": 145.953,
-            "height": 62.813,
-            "labelWidth": 85.953,
-            "labelHeight": 32.813,
+            "width": 143.406,
+            "height": 61.469,
+            "labelWidth": 83.406,
+            "labelHeight": 31.469,
             "group": {
               "class": "node default"
             },
@@ -10127,7 +10131,7 @@
               "tag": "g",
               "attributes": {
                 "class": "label",
-                "transform": "translate(-42.9765625, -16.40625)",
+                "transform": "translate(-41.703125, -15.734375)",
                 "style": ""
               },
               "computed": {
@@ -10140,8 +10144,8 @@
               "lines": [
                 {
                   "text": "Value ￼",
-                  "width": 85.953,
-                  "height": 32.813,
+                  "width": 83.406,
+                  "height": 31.469,
                   "baseline": null,
                   "ascent": null,
                   "descent": null,
@@ -10159,7 +10163,7 @@
                       "start": 6,
                       "length": 1,
                       "x": 39.734,
-                      "width": 46.219,
+                      "width": 43.672,
                       "rtl": false,
                       "math": true,
                       "fontFamily": "Arial"
@@ -10171,10 +10175,10 @@
             "shape": {
               "tag": "rect",
               "attributes": {
-                "x": "-72.9765625",
-                "y": "-31.40625",
-                "width": "145.953125",
-                "height": "62.8125",
+                "x": "-71.703125",
+                "y": "-30.734375",
+                "width": "143.40625",
+                "height": "61.46875",
                 "class": "basic label-container",
                 "style": ""
               },
@@ -10250,23 +10254,23 @@
                 "stroke-dasharray": "none"
               }
             },
-            "dx": 170.765,
+            "dx": 169.492,
             "dy": 0
           }
         ],
         "edges": [
           {
             "id": "L_A_B_0",
-            "d": "M72.976,0L77.143,0C81.309,0,89.643,0,97.309,0C104.976,0,111.976,0,115.476,0L118.976,0",
+            "d": "M71.703,0L75.87,0C80.037,0,88.37,0,96.037,0C103.703,0,110.703,0,114.203,0L117.703,0",
             "attributes": {
-              "d": "M153.953,39.406L158.12,39.406C162.286,39.406,170.62,39.406,178.286,39.406C185.953,39.406,192.953,39.406,196.453,39.406L199.953,39.406",
+              "d": "M151.406,38.734L155.573,38.734C159.74,38.734,168.073,38.734,175.74,38.734C183.406,38.734,190.406,38.734,193.906,38.734L197.406,38.734",
               "id": "flow-geometry-15-L_A_B_0",
               "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
               "style": ";",
               "data-edge": "true",
               "data-et": "edge",
               "data-id": "L_A_B_0",
-              "data-points": "W3sieCI6MTUzLjk1MzEyNSwieSI6MzkuNDA2MjV9LHsieCI6MTc4Ljk1MzEyNSwieSI6MzkuNDA2MjV9LHsieCI6MjAzLjk1MzEyNSwieSI6MzkuNDA2MjV9XQ==",
+              "data-points": "W3sieCI6MTUxLjQwNjI1LCJ5IjozOC43MzQzNzV9LHsieCI6MTc2LjQwNjI1LCJ5IjozOC43MzQzNzV9LHsieCI6MjAxLjQwNjI1LCJ5IjozOC43MzQzNzV9XQ==",
               "data-look": "classic",
               "marker-end": "pointEnd"
             },
@@ -10299,8 +10303,8 @@
                   "runs": []
                 }
               ],
-              "dx": -80.977,
-              "dy": -39.406
+              "dx": -79.703,
+              "dy": -38.734
             }
           }
         ],
@@ -15758,8 +15762,8 @@
           "width": "100%",
           "xmlns": "http://www.w3.org/2000/svg",
           "class": "flowchart",
-          "style": "max-width: 324.6875px;",
-          "viewBox": "0 0 324.6875 78.8125",
+          "style": "max-width: 322.140625px;",
+          "viewBox": "0 0 322.140625 77.46875",
           "role": "graphics-document document",
           "aria-roledescription": "flowchart-v2"
         },
@@ -16114,10 +16118,10 @@
         "nodes": [
           {
             "id": "A",
-            "width": 170.219,
-            "height": 62.813,
-            "labelWidth": 110.219,
-            "labelHeight": 32.813,
+            "width": 167.672,
+            "height": 61.469,
+            "labelWidth": 107.672,
+            "labelHeight": 31.469,
             "group": {
               "class": "node default"
             },
@@ -16125,7 +16129,7 @@
               "tag": "g",
               "attributes": {
                 "class": "label",
-                "transform": "translate(-55.109375, -16.40625)",
+                "transform": "translate(-53.8359375, -15.734375)",
                 "style": ""
               },
               "computed": {
@@ -16138,8 +16142,8 @@
               "lines": [
                 {
                   "text": "值 ￼ 日本語",
-                  "width": 110.219,
-                  "height": 32.813,
+                  "width": 107.672,
+                  "height": 31.469,
                   "baseline": null,
                   "ascent": null,
                   "descent": null,
@@ -16157,7 +16161,7 @@
                       "start": 2,
                       "length": 1,
                       "x": 16,
-                      "width": 46.219,
+                      "width": 43.672,
                       "rtl": false,
                       "math": true,
                       "fontFamily": "Arial"
@@ -16165,7 +16169,7 @@
                     {
                       "start": 3,
                       "length": 4,
-                      "x": 62.219,
+                      "x": 59.672,
                       "width": 48,
                       "rtl": false,
                       "math": false,
@@ -16178,10 +16182,10 @@
             "shape": {
               "tag": "rect",
               "attributes": {
-                "x": "-85.109375",
-                "y": "-31.40625",
-                "width": "170.21875",
-                "height": "62.8125",
+                "x": "-83.8359375",
+                "y": "-30.734375",
+                "width": "167.671875",
+                "height": "61.46875",
                 "class": "basic label-container",
                 "style": ""
               },
@@ -16257,23 +16261,23 @@
                 "stroke-dasharray": "none"
               }
             },
-            "dx": 179.344,
+            "dx": 178.07,
             "dy": 0
           }
         ],
         "edges": [
           {
             "id": "L_A_B_0",
-            "d": "M85.11,0L89.276,0C93.443,0,101.776,0,109.443,0C117.11,0,124.11,0,127.61,0L131.11,0",
+            "d": "M83.836,0L88.003,0C92.169,0,100.503,0,108.169,0C115.836,0,122.836,0,126.336,0L129.836,0",
             "attributes": {
-              "d": "M178.219,39.406L182.385,39.406C186.552,39.406,194.885,39.406,202.552,39.406C210.219,39.406,217.219,39.406,220.719,39.406L224.219,39.406",
+              "d": "M175.672,38.734L179.839,38.734C184.005,38.734,192.339,38.734,200.005,38.734C207.672,38.734,214.672,38.734,218.172,38.734L221.672,38.734",
               "id": "flow-geometry-26-L_A_B_0",
               "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
               "style": ";",
               "data-edge": "true",
               "data-et": "edge",
               "data-id": "L_A_B_0",
-              "data-points": "W3sieCI6MTc4LjIxODc1LCJ5IjozOS40MDYyNX0seyJ4IjoyMDMuMjE4NzUsInkiOjM5LjQwNjI1fSx7IngiOjIyOC4yMTg3NSwieSI6MzkuNDA2MjV9XQ==",
+              "data-points": "W3sieCI6MTc1LjY3MTg3NSwieSI6MzguNzM0Mzc1fSx7IngiOjIwMC42NzE4NzUsInkiOjM4LjczNDM3NX0seyJ4IjoyMjUuNjcxODc1LCJ5IjozOC43MzQzNzV9XQ==",
               "data-look": "classic",
               "marker-end": "pointEnd"
             },
@@ -16306,8 +16310,8 @@
                   "runs": []
                 }
               ],
-              "dx": -93.109,
-              "dy": -39.406
+              "dx": -91.836,
+              "dy": -38.734
             }
           }
         ],

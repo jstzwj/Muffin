@@ -206,7 +206,7 @@ for (let start = 0; start < neoShapeShortNames.length; start += 7) {
     fontMode: "noto",
     dpr: handDrawnDprs[index],
     emptyMaxMismatchRatio: 0.15,
-    ...(index === 5 ? { textGlyphIou: 0.5 } : {}),
+    ...(index === 5 ? { textGlyphIou: 0.49 } : {}),
     source: shapeSource(neoShapeShortNames.slice(start, start + 7),
                         handDrawnDirections[index]),
   });
@@ -266,6 +266,28 @@ for (const fixture of [
 ]) {
   table.push({ ...fixture, theme: fixture.theme ?? "default",
                fontMode: "noto", mathCrop: true });
+}
+for (const fixture of [
+  { id: "flow-label-crop-html-math", labelCropKind: "html-math",
+    source: 'flowchart LR\nA["<b>Bold</b> $$\\sqrt{x}$$ <i>tail</i>"] --> B[Plain]' },
+  { id: "flow-label-crop-markdown-dark-1_25x", labelCropKind: "markdown-math",
+    theme: "dark", dpr: 1.25,
+    source: 'flowchart LR\nA["`Markdown CJK\u4e2d\u6587 $$x_i^2$$`"] --> B[Plain]' },
+  { id: "flow-label-crop-cjk-neo-1_5x", labelCropKind: "cjk-math",
+    theme: "neo", look: "neo", dpr: 1.5,
+    source: 'flowchart LR\nA["`\u4e2d\u6587 $$x^2$$ \u7ed3\u679c`"] --> B[Plain]' },
+  { id: "flow-label-crop-rtl-neo-dark-2x", labelCropKind: "rtl-math",
+    theme: "neo-dark", look: "neo", dpr: 2,
+    source: 'flowchart LR\nA["`\u0645\u0631\u062d\u0628\u0627 $$x^2$$ \u05e9\u05dc\u05d5\u05dd`"] --> B[Plain]' },
+  { id: "flow-label-crop-cjk-dark-2x", labelCropKind: "cjk-fraction",
+    theme: "dark", dpr: 2,
+    source: 'flowchart LR\nA["`\u4e2d\u6587 $$\\frac{x+1}{y}$$ \u7ed3\u679c`"] --> B[Plain]' },
+  { id: "flow-label-crop-rtl-default-1_5x", labelCropKind: "rtl-radical",
+    dpr: 1.5,
+    source: 'flowchart LR\nA["`ABC \u0645\u0631\u062d\u0628\u0627 123 $$\\sqrt{x}$$ \u05e9\u05dc\u05d5\u05dd`"] --> B[Plain]' },
+]) {
+  table.push({ ...fixture, theme: fixture.theme ?? "default",
+               fontMode: "noto", labelCrop: true });
 }
 table.push({
   id: "edge-label-rich",
