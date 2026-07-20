@@ -272,14 +272,34 @@ try {
         const rect = clientRectToRoot(target.getBoundingClientRect());
         return { tag: target.localName, className: target.className,
           display: style.display, position: style.position,
+          alignItems: style.alignItems, alignSelf: style.alignSelf,
+          justifyContent: style.justifyContent,
           whiteSpace: style.whiteSpace, fontFamily: style.fontFamily,
           fontSize: style.fontSize, fontWeight: style.fontWeight,
           lineHeight: style.lineHeight, letterSpacing: style.letterSpacing,
+          dominantBaseline: style.dominantBaseline,
+          alignmentBaseline: style.alignmentBaseline,
           transform: style.transform, transformOrigin: style.transformOrigin,
           zoom: style.zoom, width: round(rect.right - rect.left),
           height: round(rect.bottom - rect.top) };
       };
+      const canvasFontMetrics = (style, sample = "Hg") => {
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d");
+        context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+        const metrics = context.measureText(sample);
+        return {
+          fontBoundingBoxAscent: round(metrics.fontBoundingBoxAscent),
+          fontBoundingBoxDescent: round(metrics.fontBoundingBoxDescent),
+          actualBoundingBoxAscent: round(metrics.actualBoundingBoxAscent),
+          actualBoundingBoxDescent: round(metrics.actualBoundingBoxDescent),
+          emHeightAscent: round(metrics.emHeightAscent),
+          emHeightDescent: round(metrics.emHeightDescent),
+          alphabeticBaseline: round(metrics.alphabeticBaseline),
+        };
+      };
       let dom = null;
+      let vertical = null;
       let measuredBox;
       if (element instanceof SVGTextContentElement) {
         const matrix = element.getScreenCTM();
@@ -299,8 +319,15 @@ try {
         }
         const bbox = element.getBBox();
         measuredBox = { width: round(bbox.width), height: round(bbox.height) };
+        const style = getComputedStyle(element);
+        vertical = { context: "svg-text", style: computedBox(element),
+          fontMetrics: canvasFontMetrics(style, element.textContent || "Hg"),
+          bbox: { x: round(bbox.x), y: round(bbox.y),
+            width: round(bbox.width), height: round(bbox.height) },
+          y: element.getAttribute("y"), dy: element.getAttribute("dy") };
       } else {
         const content = element.querySelector("div") ?? element;
+        const hostRect = clientRectToRoot(element.getBoundingClientRect());
         const textNodes = [];
         const styleWalker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
         let styleNode;
@@ -314,11 +341,21 @@ try {
                ancestor && ancestor !== element; ancestor = ancestor.parentElement)
             ancestors.push(computedBox(ancestor));
           textNodes.push({ text: styleNode.data,
+            x: round(rect.left - hostRect.left),
+            y: round(rect.top - hostRect.top),
             width: round(rect.right - rect.left),
             height: round(rect.bottom - rect.top), ancestors });
         }
         dom = { element: computedBox(element), content: computedBox(content),
-          textNodes };
+          textNodes,
+          mathItems: [...element.querySelectorAll("math")].map((math) => {
+            const rect = clientRectToRoot(math.getBoundingClientRect());
+            return { x: round(rect.left - hostRect.left),
+              y: round(rect.top - hostRect.top),
+              width: round(rect.right - rect.left),
+              height: round(rect.bottom - rect.top),
+              box: computedBox(math) };
+          }) };
         const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
@@ -353,6 +390,13 @@ try {
         }
         const rect = clientRectToRoot(element.getBoundingClientRect());
         measuredBox = { width: round(rect.right - rect.left), height: round(rect.bottom - rect.top) };
+        const contentRect = clientRectToRoot(content.getBoundingClientRect());
+        vertical = { context: "foreign-object-flex",
+          fontMetrics: canvasFontMetrics(containerStyle, content.textContent || "Hg"),
+          element: { top: round(rect.top), bottom: round(rect.bottom),
+            height: round(rect.bottom - rect.top) },
+          content: { top: round(contentRect.top), bottom: round(contentRect.bottom),
+            height: round(contentRect.bottom - contentRect.top) } };
       }
       let renderedText = element.textContent;
       for (const extra of selected.slice(1)) {
@@ -496,6 +540,7 @@ try {
         elementCount: selected.length,
         box: measuredBox,
         dom,
+        vertical,
         lines,
       };
     }, { fixture: cases[index], index, mermaidModule, fontFaces, fontStack, mathFontFace });

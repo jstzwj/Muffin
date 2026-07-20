@@ -49,6 +49,14 @@ int main(int argc, char** argv) {
       QStringLiteral("33.672 / 34.421875"),
       QStringLiteral("86.281 / 90.359375"),
       QStringLiteral("171.921875 / 170.640625"),
+      QStringLiteral("literalMarkdownMathFallback"),
+      QStringLiteral("sequenceMathMlModel"),
+      QStringLiteral("12.719 / 22.0"),
+      QStringLiteral("actualLineHeight, 34.0"),
+      QStringLiteral("lineWidth - 1.0"),
+      QStringLiteral("containerHeight / 2.0 + 6.0"),
+      QStringLiteral("0x2e80"),
+      QStringLiteral("0x0600"),
   };
   for (const QString& token : forbidden)
     require(!combined.contains(token),
@@ -65,6 +73,8 @@ int main(int argc, char** argv) {
               !layout.contains(QStringLiteral("AdvanceScale")),
           QStringLiteral("Flowchart edge wrapping bypassed unified glyph advances"));
   require(flow.contains(QStringLiteral("OpenTypeHorizontalMetrics")) &&
+              flow.contains(QStringLiteral("openTypeFontBoundingMetrics")) &&
+              flow.contains(QStringLiteral("mathMlInlineInkRight")) &&
               flow.contains(QStringLiteral("visibleDomTextRanges")) &&
               flow.contains(QStringLiteral("boundingRect(glyphs.at(i))")),
           QStringLiteral("Chromium text box model lost font-table, DOM, or glyph-bound inputs"));

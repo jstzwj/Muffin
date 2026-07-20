@@ -66,13 +66,16 @@ int main(int argc, char** argv) {
                   QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence label oracle version/font drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("83b39e0d61de6330129cd5bfd98a2c23aad4bdc391403936b5569b71e20f65d8"),
+              QLatin1String("97a5df110fe49851d3ea0ba4f2751562ec9d224635f5c71f6fe7492f5759b1d9"),
           QStringLiteral("Sequence label fixture changed; audit browser geometry and update digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
   require(cases.size() == 24, QStringLiteral("Sequence label case count regressed"));
   int lineCount = 0, runCount = 0, rtlRuns = 0, mathRuns = 0;
+  int svgVerticalCases = 0, foreignObjectVerticalCases = 0;
   const QString fontFamily = MermaidFontRegistry::cssFamilyStack();
+  const flowchart::FlowLabelFontMetrics nativeFontMetrics =
+      flowchart::flowLabelFontBoundingMetrics(fontFamily, 16.0);
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
@@ -93,6 +96,21 @@ int main(int argc, char** argv) {
                   .arg(id, document.richText.text,
                        fixture.value(QStringLiteral("text")).toString()));
     const QJsonObject expectedBox = fixture.value(QStringLiteral("box")).toObject();
+    const QJsonObject vertical =
+        fixture.value(QStringLiteral("vertical")).toObject();
+    const QJsonObject browserFontMetrics =
+        vertical.value(QStringLiteral("fontMetrics")).toObject();
+    near(nativeFontMetrics.ascent,
+         browserFontMetrics.value(QStringLiteral("fontBoundingBoxAscent")).toDouble(),
+         0.01, id + QStringLiteral(" OpenType hhea ascent"));
+    near(nativeFontMetrics.descent,
+         browserFontMetrics.value(QStringLiteral("fontBoundingBoxDescent")).toDouble(),
+         0.01, id + QStringLiteral(" OpenType hhea descent"));
+    const bool svgText =
+        vertical.value(QStringLiteral("context")).toString() ==
+        QLatin1String("svg-text");
+    svgVerticalCases += svgText;
+    foreignObjectVerticalCases += !svgText;
     near(native.size.width(), expectedBox.value(QStringLiteral("width")).toDouble(),
          complexMath ? 0.2 : 2.0,
          id + QStringLiteral(" box width"));
@@ -122,6 +140,20 @@ int main(int argc, char** argv) {
       near(line.descent, expected.value(QStringLiteral("descent")).toDouble(),
            0.25,
            context + QStringLiteral(" descent"));
+      if (svgText) {
+        const QString baseline =
+            vertical.value(QStringLiteral("style")).toObject()
+                .value(QStringLiteral("dominantBaseline")).toString();
+        if (baseline == QLatin1String("middle"))
+          near(line.baseline, nativeFontMetrics.middleBaseline(), 0.02,
+               context + QStringLiteral(" SVG middle baseline"));
+        else if (baseline == QLatin1String("central"))
+          near(line.baseline, line.height / 2.0, 0.01,
+               context + QStringLiteral(" SVG central baseline"));
+        else if (baseline == QLatin1String("auto"))
+          near(line.baseline, nativeFontMetrics.ascent, 0.01,
+               context + QStringLiteral(" SVG alphabetic baseline"));
+      }
 
       const QVector<VisualRun> runs = normalizedRuns(line);
       const QJsonArray expectedRuns = expected.value(QStringLiteral("runs")).toArray();
@@ -149,6 +181,8 @@ int main(int argc, char** argv) {
   }
   require(lineCount >= 38 && runCount >= 58 && rtlRuns >= 8 && mathRuns >= 9,
           QStringLiteral("Sequence label line/run coverage regressed"));
+  require(svgVerticalCases >= 17 && foreignObjectVerticalCases >= 7,
+          QStringLiteral("Sequence vertical formatting-context coverage regressed"));
   qDebug() << "MermaidSequenceLabelOracleTest:" << cases.size() << "cases," << lineCount
            << "lines and" << runCount << "browser runs passed";
   return 0;

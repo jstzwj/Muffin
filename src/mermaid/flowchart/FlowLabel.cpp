@@ -41,12 +41,29 @@ struct Marker {
 struct MathMlInlineMetrics {
   qreal visualWidth = 0.0;
   qreal advance = 0.0;
+  qreal inlineInkRight = 0.0;
   qreal height = 22.0;
   FlowLabelMathStructure structure = FlowLabelMathStructure::None;
   qreal baseline = 0.0;
   qreal inkTop = 0.0;
   qreal inkBottom = 0.0;
 };
+
+qreal mathMlInlineInkRight(
+    const muffin::math::MathCssPaintOperation& operation,
+    qreal borderBoxWidth, qreal inlineAdvance) {
+  const auto* fraction = std::get_if<muffin::math::MathCssFractionPaint>(
+      &operation.payload);
+  if (!fraction) return inlineAdvance;
+  qreal right = 0.0;
+  for (const QRectF& box : {fraction->box.numerator,
+                            fraction->box.denominator,
+                            fraction->box.rule,
+                            fraction->box.leftDelimiter,
+                            fraction->box.rightDelimiter})
+    if (!box.isEmpty()) right = std::max(right, box.right());
+  return right > 0.0 ? std::min(borderBoxWidth, right) : borderBoxWidth;
+}
 
 FlowLabelMathStructure flowMathStructure(muffin::math::MathSemanticKind kind) {
   switch (kind) {
@@ -63,14 +80,22 @@ MathMlInlineMetrics sequenceMathMlMetrics(const muffin::math::MathLayoutResult& 
                                            qreal renderFontPixelSize) {
   const muffin::math::MathCssBox box = muffin::math::layoutMathMlCssBox(
       layout, renderFontPixelSize, 16.0);
-  return {box.width, box.advance, box.height, flowMathStructure(box.semanticKind),
+  const auto operation = muffin::math::buildMathMlPaintOperations(
+      layout, renderFontPixelSize, 16.0);
+  const qreal inkRight = operation.operation
+      ? mathMlInlineInkRight(*operation.operation, box.width, box.advance)
+      : box.advance;
+  return {box.width, box.advance, inkRight, box.height,
+          flowMathStructure(box.semanticKind),
           box.baseline, box.inkTop, box.inkBottom};
 }
 
 MathMlInlineMetrics sequenceMathMlMetrics(
     const FlowLabelPreparedMath& prepared) {
   const auto& box = prepared.box;
-  return {box.width, box.advance, box.height,
+  return {box.width, box.advance,
+          mathMlInlineInkRight(prepared.operation, box.width, box.advance),
+          box.height,
           flowMathStructure(box.semanticKind), box.baseline, box.inkTop,
           box.inkBottom};
 }
@@ -82,7 +107,7 @@ MathMlInlineMetrics flowchartMathMlMetrics(
   // MathML root as display=block. Unlike sequence labels, its horizontal
   // contribution is the complete border box rather than MathML's inline
   // advance (notably for mtable trailing space).
-  return {box.width, box.width, box.height,
+  return {box.width, box.width, box.width, box.height,
           flowMathStructure(box.semanticKind), box.baseline, box.inkTop,
           box.inkBottom};
 }
@@ -133,6 +158,28 @@ quint16 readBigEndianU16(const QByteArray& bytes, qsizetype offset) {
   if (offset < 0 || offset + 2 > bytes.size()) return 0;
   return (quint16(quint8(bytes.at(offset))) << 8) |
          quint16(quint8(bytes.at(offset + 1)));
+}
+
+qint16 readBigEndianI16(const QByteArray& bytes, qsizetype offset) {
+  return static_cast<qint16>(readBigEndianU16(bytes, offset));
+}
+
+FlowLabelFontMetrics openTypeFontBoundingMetrics(const QRawFont& raw,
+                                                 qreal fontPixelSize) {
+  if (!raw.isValid() || raw.unitsPerEm() <= 0.0) return {};
+  const QByteArray hhea = raw.fontTable("hhea");
+  if (hhea.size() < 8) return {};
+  const qreal scale = fontPixelSize / raw.unitsPerEm();
+  qreal xHeight = 0.0;
+  const QByteArray os2 = raw.fontTable("OS/2");
+  if (readBigEndianU16(os2, 0) >= 2 && os2.size() >= 88) {
+    const qreal scaledXHeight =
+        std::max<qreal>(0.0, readBigEndianI16(os2, 86) * scale);
+    // DirectWrite exposes SVG baseline coordinates on its 1/64 px grid.
+    xHeight = std::floor(scaledXHeight * 64.0) / 64.0;
+  }
+  return {std::round(readBigEndianI16(hhea, 4) * scale),
+          std::round(-readBigEndianI16(hhea, 6) * scale), xHeight};
 }
 
 class OpenTypeHorizontalMetrics {
@@ -296,6 +343,10 @@ ShapedTextMetrics shapeTextRange(const FlowLabelDocument& label, qsizetype start
       visual.rightToLeft = logicalStep < 0 ||
           (logicalStep == 0 && run.isRightToLeft());
       visual.fontFamily = run.rawFont().familyName();
+      const FlowLabelFontMetrics vertical = openTypeFontBoundingMetrics(
+          run.rawFont(), font.pixelSize());
+      visual.fontAscent = vertical.ascent;
+      visual.fontDescent = vertical.descent;
       result.runs.push_back(std::move(visual));
       groupStart = groupEnd;
     }
@@ -503,16 +554,25 @@ FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType
       QString collapsed = normalizeBreaks(source);
       collapsed.remove(QLatin1Char('\n'));
       FlowLabelDocument result = parseMarkup(std::move(collapsed), false, true);
-      result.literalMarkdownMathFallback = source.contains(
-          QRegularExpression(QStringLiteral("<br\\s*/?>"),
-                             QRegularExpression::CaseInsensitiveOption));
+      result.formattingContext =
+          FlowLabelFormattingContext::FlowForeignObjectFlex;
+      if (source.contains(
+              QRegularExpression(QStringLiteral("<br\\s*/?>"),
+                                 QRegularExpression::CaseInsensitiveOption)))
+        result.breakBehavior =
+            FlowLabelBreakBehavior::CollapseIntoMathFlexLine;
       return result;
     }
     return parseMarkup(source, true, mathEnabled);
   }
   if (source.contains(QLatin1Char('<')) ||
-      (mathEnabled && source.contains(QStringLiteral("$$"))))
-    return parseMarkup(source, false, mathEnabled);
+      (mathEnabled && source.contains(QStringLiteral("$$")))) {
+    FlowLabelDocument result = parseMarkup(source, false, mathEnabled);
+    if (!result.math.isEmpty())
+      result.formattingContext =
+          FlowLabelFormattingContext::FlowForeignObjectFlex;
+    return result;
+  }
   return {.text = normalizeBreaks(source)};
 }
 
@@ -555,7 +615,10 @@ qreal measureTextRange(const FlowLabelDocument& label, qsizetype start, qsizetyp
   // Chromium lays out foreignObject text next to block MathML with raster
   // advances. Sequence SVG text and ordinary flowchart labels retain design
   // metrics, matching their SVG textLength path.
-  option.setUseDesignMetrics(label.sequenceMathMlModel || label.math.isEmpty());
+  const bool useDesignMetrics =
+      label.formattingContext !=
+      FlowLabelFormattingContext::FlowForeignObjectFlex;
+  option.setUseDesignMetrics(useDesignMetrics);
   option.setTextDirection(label.direction);
   layout.setTextOption(option);
   QVector<QTextLayout::FormatRange> ranges;
@@ -655,7 +718,10 @@ void drawTextRange(QPainter& painter, const FlowLabelDocument& label,
   if (length <= 0) return;
   QTextLayout layout(label.text.mid(start, length), font);
   QTextOption option;
-  option.setUseDesignMetrics(label.sequenceMathMlModel || label.math.isEmpty());
+  const bool useDesignMetrics =
+      label.formattingContext !=
+      FlowLabelFormattingContext::FlowForeignObjectFlex;
+  option.setUseDesignMetrics(useDesignMetrics);
   option.setTextDirection(label.direction);
   layout.setTextOption(option);
   layout.setFormats(localFormats(label, start, length));
@@ -706,6 +772,21 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
   return shapeTextRange(label, start, length, font).width;
 }
 
+FlowLabelFontMetrics flowLabelFontBoundingMetrics(
+    const QString& fontFamily, qreal fontPixelSize) {
+  QFont font(fontFamily);
+  MermaidFontRegistry::configureFont(font, fontFamily);
+  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
+  font.setHintingPreference(QFont::PreferNoHinting);
+  const QRawFont raw = QRawFont::fromFont(font);
+  const FlowLabelFontMetrics metrics =
+      openTypeFontBoundingMetrics(raw, fontPixelSize);
+  if (metrics.height() > 0.0) return metrics;
+  const QFontMetricsF fallback(font);
+  return {std::round(fallback.ascent()), std::round(fallback.descent()),
+          fallback.xHeight()};
+}
+
 FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        const QString& fontFamily,
                                        qreal fontPixelSize, qreal lineHeight) {
@@ -720,7 +801,15 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
   // outward and bottom inward to reproduce actualBoundingBoxAscent/Descent.
   const qreal cssAscent = std::ceil(std::max<qreal>(0.0, -inkMetrics.top()));
   const qreal cssDescent = std::floor(std::max<qreal>(0.0, inkMetrics.bottom()));
+  const FlowLabelFontMetrics fontBoundingMetrics =
+      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize);
   FlowLabelLayoutMetrics result;
+  const bool sequenceMathMl =
+      label.formattingContext ==
+      FlowLabelFormattingContext::SequenceForeignObjectFlex;
+  const bool collapsedMathFlexLine =
+      label.breakBehavior ==
+      FlowLabelBreakBehavior::CollapseIntoMathFlexLine;
   const QStringList lines = label.text.split(QLatin1Char('\n'));
   qsizetype offset = 0;
   for (const QString& line : lines) {
@@ -742,8 +831,8 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
             return character.isSpace() ||
                    character == QChar::ObjectReplacementCharacter;
           });
-      const bool mathOnlyLine = !label.sequenceMathMlModel &&
-          !label.literalMarkdownMathFallback && allMathPrepared &&
+      const bool mathOnlyLine = !sequenceMathMl &&
+          !collapsedMathFlexLine && allMathPrepared &&
           onlyMathPlaceholders;
       qreal actualLineHeight = mathOnlyLine ? 0.0 : lineHeight;
       qsizetype cursor = offset;
@@ -751,7 +840,8 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
       auto shapeMathTextRange = [&](qsizetype start, qsizetype length) {
         return shapeDomTextRange(label, start, length, font);
       };
-      qreal visualRight = 0.0;
+      qreal inlineInkRight = 0.0;
+      qreal borderRight = 0.0;
       for (const FlowLabelMathSpan& math : mathSpans) {
         const auto shapedText = shapeMathTextRange(
             cursor, math.start - cursor);
@@ -760,9 +850,11 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
           measured.runs.push_back(std::move(run));
         }
         lineWidth += shapedText.width;
+        if (shapedText.width > 0.0)
+          inlineInkRight = std::max(inlineInkRight, lineWidth);
         if (math.prepared &&
             qFuzzyCompare(math.prepared->fontPixelSize, fontPixelSize)) {
-          const MathMlInlineMetrics mathMetrics = label.sequenceMathMlModel
+          const MathMlInlineMetrics mathMetrics = sequenceMathMl
               ? sequenceMathMlMetrics(*math.prepared)
               : flowchartMathMlMetrics(*math.prepared);
           measured.runs.push_back(
@@ -774,8 +866,10 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
           mathRun.mathBaseline = mathMetrics.baseline;
           mathRun.mathInkTop = mathMetrics.inkTop;
           mathRun.mathInkBottom = mathMetrics.inkBottom;
-          visualRight = std::max(
-              visualRight, lineWidth + mathMetrics.visualWidth);
+          inlineInkRight = std::max(
+              inlineInkRight, lineWidth + mathMetrics.inlineInkRight);
+          borderRight = std::max(
+              borderRight, lineWidth + mathMetrics.visualWidth);
           lineWidth += mathMetrics.advance;
           actualLineHeight = std::max(actualLineHeight, mathMetrics.height);
           cursor = math.start + math.length;
@@ -784,21 +878,21 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
         const muffin::math::MathLayoutResult layout = renderer.render(
             math.source, fontPixelSize * 1.21, Qt::black, true);
         if (layout.valid()) {
-          if (label.sequenceMathMlModel) {
+          if (sequenceMathMl) {
             auto paintBuild = muffin::math::buildMathMlPaintOperations(
                 layout, fontPixelSize * 1.21, 16.0);
             if (!paintBuild.succeeded())
               throw muffin::math::MathMlPaintError(
                   std::move(*paintBuild.failure));
           }
-          const MathMlInlineMetrics mathMetrics = label.sequenceMathMlModel
+          const MathMlInlineMetrics mathMetrics = sequenceMathMl
               ? sequenceMathMlMetrics(layout, fontPixelSize * 1.21)
               : [&] {
                   const muffin::math::MathCssBox box =
                       muffin::math::layoutMathMlCssBox(
                           layout, fontPixelSize * 1.21, 16.0);
                   return MathMlInlineMetrics{
-                      box.width, box.width, box.height,
+                      box.width, box.width, box.width, box.height,
                       flowMathStructure(box.semanticKind), box.baseline,
                       box.inkTop, box.inkBottom};
                 }();
@@ -810,7 +904,10 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
           mathRun.mathBaseline = mathMetrics.baseline;
           mathRun.mathInkTop = mathMetrics.inkTop;
           mathRun.mathInkBottom = mathMetrics.inkBottom;
-          visualRight = std::max(visualRight, lineWidth + mathMetrics.visualWidth);
+          inlineInkRight = std::max(
+              inlineInkRight, lineWidth + mathMetrics.inlineInkRight);
+          borderRight = std::max(
+              borderRight, lineWidth + mathMetrics.visualWidth);
           lineWidth += mathMetrics.advance;
           actualLineHeight = std::max(actualLineHeight, mathMetrics.height);
         }
@@ -823,28 +920,25 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
         measured.runs.push_back(std::move(run));
       }
       lineWidth += shapedTail.width;
-      if (label.sequenceMathMlModel &&
-          cursor >= offset + line.size() && !measured.runs.isEmpty() &&
-          measured.runs.back().math &&
-          measured.runs.back().mathStructure == FlowLabelMathStructure::Fraction)
-        lineWidth = std::max<qreal>(0.0, lineWidth - 1.0);
-      visualRight = std::max(visualRight, lineWidth);
-      if (label.sequenceMathMlModel && actualLineHeight > lineHeight) {
-        const bool mixedFallback = std::any_of(line.cbegin(), line.cend(), [](QChar ch) {
-          return (ch.unicode() >= 0x2e80 && ch.unicode() <= 0x9fff) ||
-                 (ch.unicode() >= 0x0600 && ch.unicode() <= 0x08ff);
-        });
-        if (mixedFallback) actualLineHeight = std::max(actualLineHeight, 34.0);
-      }
-      measured.width = lineWidth;
-      measured.height = label.literalMarkdownMathFallback
-          ? 17.0 : actualLineHeight;
+      if (shapedTail.width > 0.0)
+        inlineInkRight = std::max(inlineInkRight, lineWidth);
+      borderRight = std::max(borderRight, lineWidth);
+      if (sequenceMathMl)
+        for (const FlowLabelVisualRun& run : measured.runs)
+          if (!run.math)
+            actualLineHeight = std::max(
+                actualLineHeight, run.fontAscent + run.fontDescent);
+      measured.width = sequenceMathMl ? inlineInkRight : lineWidth;
+      measured.height = collapsedMathFlexLine
+          ? (sequenceMathMl ? fontBoundingMetrics.ascent
+                            : fontBoundingMetrics.height())
+          : actualLineHeight;
       measured.blockHeight = actualLineHeight;
       measured.ascent = cssAscent;
       measured.descent = cssDescent;
       measured.baseline = (actualLineHeight - cssAscent - cssDescent) / 2.0 + cssAscent;
-      result.size.setWidth(std::max(result.size.width(), label.sequenceMathMlModel
-          ? std::round(visualRight) : lineWidth));
+      result.size.setWidth(std::max(result.size.width(), sequenceMathMl
+          ? std::round(borderRight) : lineWidth));
       result.size.setHeight(result.size.height() + actualLineHeight);
       result.lines.push_back(std::move(measured));
       offset += line.size() + 1;
@@ -968,7 +1062,8 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                           fontPixelSize)) {
           const auto& prepared = *mathSpan.prepared;
           painter.save();
-          if (paintedLabel.sequenceMathMlModel) {
+          if (paintedLabel.formattingContext ==
+              FlowLabelFormattingContext::SequenceForeignObjectFlex) {
             painter.translate(
                 mathX, lineTop + measuredLine.baseline - prepared.box.baseline);
           } else {

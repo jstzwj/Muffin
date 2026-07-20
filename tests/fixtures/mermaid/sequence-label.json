@@ -17,6 +17,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "central",
+          "alignmentBaseline": "central",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 105.297,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 0,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 22.352,
+          "y": 13.5,
+          "width": 105.297,
+          "height": 22
+        },
+        "y": "32.5",
+        "dy": null
+      },
       "lines": [
         {
           "start": 0,
@@ -71,6 +113,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 125.797,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 14,
+          "actualBoundingBoxDescent": 1,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 111.102,
+          "y": 83.281,
+          "width": 125.797,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -130,12 +214,17 @@
           "className": {},
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "0px 0px",
           "zoom": "1",
@@ -147,12 +236,17 @@
           "className": "",
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "52.9531px 11px",
           "zoom": "1",
@@ -162,6 +256,8 @@
         "textNodes": [
           {
             "text": "`**Speed** ",
+            "x": 0,
+            "y": 0,
             "width": 86.281,
             "height": 22,
             "ancestors": [
@@ -170,12 +266,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "52.9531px 11px",
                 "zoom": "1",
@@ -187,12 +288,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "52.9531px 11px",
                 "zoom": "1",
@@ -203,6 +309,8 @@
           },
           {
             "text": "`",
+            "x": 101.406,
+            "y": 0,
             "width": 4.5,
             "height": 22,
             "ancestors": [
@@ -211,12 +319,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "52.9531px 11px",
                 "zoom": "1",
@@ -228,12 +341,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "52.9531px 11px",
                 "zoom": "1",
@@ -242,7 +360,59 @@
               }
             ]
           }
+        ],
+        "mathItems": [
+          {
+            "x": 86.281,
+            "y": 4.625,
+            "width": 15.125,
+            "height": 12.75,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "7.5625px 6.375px",
+              "zoom": "1",
+              "width": 15.125,
+              "height": 12.75
+            }
+          }
         ]
+      },
+      "vertical": {
+        "context": "foreign-object-flex",
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 13,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "element": {
+          "top": 139,
+          "bottom": 161,
+          "height": 22
+        },
+        "content": {
+          "top": 139,
+          "bottom": 161,
+          "height": 22
+        }
       },
       "lines": [
         {
@@ -296,6 +466,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 125.891,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 3,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 137.055,
+          "y": 76,
+          "width": 125.891,
+          "height": 22
+        },
+        "y": "93",
+        "dy": null
+      },
       "lines": [
         {
           "start": 0,
@@ -358,6 +570,48 @@
         "height": 22
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "central",
+          "alignmentBaseline": "central",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 155.032,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 13,
+          "actualBoundingBoxDescent": 2,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 102.734,
+          "y": 5,
+          "width": 155.032,
+          "height": 22
+        },
+        "y": "16",
+        "dy": null
+      },
       "lines": [
         {
           "start": 0,
@@ -397,6 +651,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 183.375,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 82.313,
+          "y": 83.281,
+          "width": 183.375,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -454,6 +750,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 141.469,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 27.266,
+          "y": 83.281,
+          "width": 141.469,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -512,6 +850,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 141.469,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 53.266,
+          "y": 83.281,
+          "width": 141.469,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -570,6 +950,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 305.266,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 121.367,
+          "y": 83.281,
+          "width": 305.266,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -626,6 +1048,48 @@
         "height": 66
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "central",
+          "alignmentBaseline": "central",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 79.594,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 20.203,
+          "y": 6,
+          "width": 79.594,
+          "height": 22
+        },
+        "y": "33",
+        "dy": null
+      },
       "lines": [
         {
           "start": 0,
@@ -701,6 +1165,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 183.375,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 33.313,
+          "y": 137.281,
+          "width": 183.375,
+          "height": 22
+        },
+        "y": "134",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -759,6 +1265,48 @@
         "height": 44
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 79.594,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 79.203,
+          "y": 83.281,
+          "width": 79.594,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -813,6 +1361,48 @@
         "height": 24
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 78.094,
+          "height": 24
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 11,
+          "actualBoundingBoxDescent": 7,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 134.453,
+          "y": 83.281,
+          "width": 78.094,
+          "height": 24
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -849,6 +1439,48 @@
         "height": 22
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 73.406,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 1,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 137.297,
+          "y": 83.281,
+          "width": 73.406,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -885,6 +1517,48 @@
         "height": 22
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 145.328,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 108.336,
+          "y": 83.281,
+          "width": 145.328,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -953,6 +1627,48 @@
         "height": 22
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 127.327,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 110.445,
+          "y": 83.281,
+          "width": 127.327,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -1005,6 +1721,48 @@
         "height": 22
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 210,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 14,
+          "actualBoundingBoxDescent": 2,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 109,
+          "y": 83.281,
+          "width": 210,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -1045,6 +1803,48 @@
         "height": 66
       },
       "dom": null,
+      "vertical": {
+        "context": "svg-text",
+        "style": {
+          "tag": "text",
+          "className": {},
+          "display": "block",
+          "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
+          "whiteSpace": "nowrap",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "letterSpacing": "normal",
+          "dominantBaseline": "middle",
+          "alignmentBaseline": "middle",
+          "transform": "none",
+          "transformOrigin": "0px 0px",
+          "zoom": "1",
+          "width": 151.156,
+          "height": 22
+        },
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "bbox": {
+          "x": 22.422,
+          "y": 83.281,
+          "width": 151.156,
+          "height": 22
+        },
+        "y": "80",
+        "dy": "1em"
+      },
       "lines": [
         {
           "start": 0,
@@ -1122,12 +1922,17 @@
           "className": {},
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "0px 0px",
           "zoom": "1",
@@ -1139,12 +1944,17 @@
           "className": "",
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "34.4062px 14.5156px",
           "zoom": "1",
@@ -1154,6 +1964,8 @@
         "textNodes": [
           {
             "text": "fraction ",
+            "x": 0,
+            "y": 3.516,
             "width": 57.922,
             "height": 22,
             "ancestors": [
@@ -1162,12 +1974,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "34.4062px 14.5156px",
                 "zoom": "1",
@@ -1179,12 +1996,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "34.4062px 14.5156px",
                 "zoom": "1",
@@ -1193,7 +2015,59 @@
               }
             ]
           }
+        ],
+        "mathItems": [
+          {
+            "x": 57.922,
+            "y": 0,
+            "width": 10.891,
+            "height": 29.031,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "5.44531px 14.5156px",
+              "zoom": "1",
+              "width": 10.891,
+              "height": 29.031
+            }
+          }
         ]
+      },
+      "vertical": {
+        "context": "foreign-object-flex",
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 0,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "element": {
+          "top": 139,
+          "bottom": 168,
+          "height": 29
+        },
+        "content": {
+          "top": 139,
+          "bottom": 168.031,
+          "height": 29.031
+        }
       },
       "lines": [
         {
@@ -1244,12 +2118,17 @@
           "className": {},
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "0px 0px",
           "zoom": "1",
@@ -1261,12 +2140,17 @@
           "className": "",
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "49.4609px 15.1172px",
           "zoom": "1",
@@ -1276,6 +2160,8 @@
         "textNodes": [
           {
             "text": "root ",
+            "x": 0,
+            "y": 4.109,
             "width": 31.438,
             "height": 22,
             "ancestors": [
@@ -1284,12 +2170,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "49.4609px 15.1172px",
                 "zoom": "1",
@@ -1301,12 +2192,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "49.4609px 15.1172px",
                 "zoom": "1",
@@ -1315,7 +2211,59 @@
               }
             ]
           }
+        ],
+        "mathItems": [
+          {
+            "x": 31.438,
+            "y": 0,
+            "width": 67.484,
+            "height": 30.234,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "33.7422px 15.1172px",
+              "zoom": "1",
+              "width": 67.484,
+              "height": 30.234
+            }
+          }
         ]
+      },
+      "vertical": {
+        "context": "foreign-object-flex",
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "element": {
+          "top": 139,
+          "bottom": 169,
+          "height": 30
+        },
+        "content": {
+          "top": 139,
+          "bottom": 169.234,
+          "height": 30.234
+        }
       },
       "lines": [
         {
@@ -1366,12 +2314,17 @@
           "className": {},
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "0px 0px",
           "zoom": "1",
@@ -1383,12 +2336,17 @@
           "className": "",
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "46.1406px 19.5625px",
           "zoom": "1",
@@ -1398,6 +2356,8 @@
         "textNodes": [
           {
             "text": "matrix ",
+            "x": 0,
+            "y": 8.563,
             "width": 48.922,
             "height": 22,
             "ancestors": [
@@ -1406,12 +2366,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "46.1406px 19.5625px",
                 "zoom": "1",
@@ -1423,12 +2388,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "46.1406px 19.5625px",
                 "zoom": "1",
@@ -1437,7 +2407,59 @@
               }
             ]
           }
+        ],
+        "mathItems": [
+          {
+            "x": 48.922,
+            "y": 0,
+            "width": 43.359,
+            "height": 39.125,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "21.6797px 19.5625px",
+              "zoom": "1",
+              "width": 43.359,
+              "height": 39.125
+            }
+          }
         ]
+      },
+      "vertical": {
+        "context": "foreign-object-flex",
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 0,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "element": {
+          "top": 139,
+          "bottom": 178,
+          "height": 39
+        },
+        "content": {
+          "top": 139,
+          "bottom": 178.125,
+          "height": 39.125
+        }
       },
       "lines": [
         {
@@ -1488,12 +2510,17 @@
           "className": {},
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "0px 0px",
           "zoom": "1",
@@ -1505,12 +2532,17 @@
           "className": "",
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "67.9531px 11px",
           "zoom": "1",
@@ -1520,6 +2552,8 @@
         "textNodes": [
           {
             "text": "left ",
+            "x": 0,
+            "y": 0,
             "width": 24.438,
             "height": 22,
             "ancestors": [
@@ -1528,12 +2562,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "67.9531px 11px",
                 "zoom": "1",
@@ -1545,12 +2584,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "67.9531px 11px",
                 "zoom": "1",
@@ -1561,6 +2605,8 @@
           },
           {
             "text": " middle ",
+            "x": 33.391,
+            "y": 0,
             "width": 51.922,
             "height": 22,
             "ancestors": [
@@ -1569,12 +2615,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "67.9531px 11px",
                 "zoom": "1",
@@ -1586,12 +2637,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "67.9531px 11px",
                 "zoom": "1",
@@ -1602,6 +2658,8 @@
           },
           {
             "text": " right",
+            "x": 99.656,
+            "y": 0,
             "width": 36.25,
             "height": 22,
             "ancestors": [
@@ -1610,12 +2668,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "67.9531px 11px",
                 "zoom": "1",
@@ -1627,12 +2690,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "67.9531px 11px",
                 "zoom": "1",
@@ -1641,7 +2709,87 @@
               }
             ]
           }
+        ],
+        "mathItems": [
+          {
+            "x": 24.438,
+            "y": 7,
+            "width": 8.953,
+            "height": 8,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "4.47656px 4px",
+              "zoom": "1",
+              "width": 8.953,
+              "height": 8
+            }
+          },
+          {
+            "x": 85.313,
+            "y": 2.625,
+            "width": 14.344,
+            "height": 16.75,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "7.17188px 8.375px",
+              "zoom": "1",
+              "width": 14.344,
+              "height": 16.75
+            }
+          }
         ]
+      },
+      "vertical": {
+        "context": "foreign-object-flex",
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "element": {
+          "top": 139,
+          "bottom": 161,
+          "height": 22
+        },
+        "content": {
+          "top": 139,
+          "bottom": 161,
+          "height": 22
+        }
       },
       "lines": [
         {
@@ -1716,12 +2864,17 @@
           "className": {},
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "0px 0px",
           "zoom": "1",
@@ -1733,12 +2886,17 @@
           "className": "",
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "29.1641px 22px",
           "zoom": "1",
@@ -1748,6 +2906,8 @@
         "textNodes": [
           {
             "text": "before ",
+            "x": 0,
+            "y": 0,
             "width": 49.375,
             "height": 22,
             "ancestors": [
@@ -1756,12 +2916,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "29.1641px 11px",
                 "zoom": "1",
@@ -1773,12 +2938,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "29.1641px 22px",
                 "zoom": "1",
@@ -1789,6 +2959,8 @@
           },
           {
             "text": "after ",
+            "x": 7.125,
+            "y": 22,
             "width": 35.891,
             "height": 22,
             "ancestors": [
@@ -1797,12 +2969,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "29.1641px 11px",
                 "zoom": "1",
@@ -1814,12 +2991,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "29.1641px 22px",
                 "zoom": "1",
@@ -1828,7 +3010,87 @@
               }
             ]
           }
+        ],
+        "mathItems": [
+          {
+            "x": 49.375,
+            "y": 7,
+            "width": 8.953,
+            "height": 8,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "4.47656px 4px",
+              "zoom": "1",
+              "width": 8.953,
+              "height": 8
+            }
+          },
+          {
+            "x": 43.016,
+            "y": 27,
+            "width": 8.172,
+            "height": 12,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "4.08594px 6px",
+              "zoom": "1",
+              "width": 8.172,
+              "height": 12
+            }
+          }
         ]
+      },
+      "vertical": {
+        "context": "foreign-object-flex",
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 12,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "element": {
+          "top": 139,
+          "bottom": 183,
+          "height": 44
+        },
+        "content": {
+          "top": 139,
+          "bottom": 183,
+          "height": 44
+        }
       },
       "lines": [
         {
@@ -1905,12 +3167,17 @@
           "className": {},
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "0px 0px",
           "zoom": "1",
@@ -1922,12 +3189,17 @@
           "className": "",
           "display": "block",
           "position": "static",
+          "alignItems": "normal",
+          "alignSelf": "auto",
+          "justifyContent": "normal",
           "whiteSpace": "normal",
           "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
           "fontSize": "16px",
           "fontWeight": "400",
           "lineHeight": "normal",
           "letterSpacing": "normal",
+          "dominantBaseline": "auto",
+          "alignmentBaseline": "auto",
           "transform": "none",
           "transformOrigin": "38.3125px 17px",
           "zoom": "1",
@@ -1937,6 +3209,8 @@
         "textNodes": [
           {
             "text": "中文 ",
+            "x": 0,
+            "y": 7,
             "width": 32,
             "height": 22,
             "ancestors": [
@@ -1945,12 +3219,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "38.3125px 17px",
                 "zoom": "1",
@@ -1962,12 +3241,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "38.3125px 17px",
                 "zoom": "1",
@@ -1978,6 +3262,8 @@
           },
           {
             "text": " مرحبا",
+            "x": 42.953,
+            "y": 5,
             "width": 33.672,
             "height": 22,
             "ancestors": [
@@ -1986,12 +3272,17 @@
                 "className": "",
                 "display": "flex",
                 "position": "static",
+                "alignItems": "center",
+                "alignSelf": "auto",
+                "justifyContent": "center",
                 "whiteSpace": "nowrap",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "38.3125px 17px",
                 "zoom": "1",
@@ -2003,12 +3294,17 @@
                 "className": "",
                 "display": "block",
                 "position": "static",
+                "alignItems": "normal",
+                "alignSelf": "auto",
+                "justifyContent": "normal",
                 "whiteSpace": "normal",
                 "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
                 "fontSize": "16px",
                 "fontWeight": "400",
                 "lineHeight": "normal",
                 "letterSpacing": "normal",
+                "dominantBaseline": "auto",
+                "alignmentBaseline": "auto",
                 "transform": "none",
                 "transformOrigin": "38.3125px 17px",
                 "zoom": "1",
@@ -2017,7 +3313,59 @@
               }
             ]
           }
+        ],
+        "mathItems": [
+          {
+            "x": 32,
+            "y": 2.766,
+            "width": 10.953,
+            "height": 28.469,
+            "box": {
+              "tag": "math",
+              "className": "",
+              "display": "block math",
+              "position": "static",
+              "alignItems": "normal",
+              "alignSelf": "auto",
+              "justifyContent": "normal",
+              "whiteSpace": "nowrap",
+              "fontFamily": "\"STIX Two Math\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "lineHeight": "normal",
+              "letterSpacing": "normal",
+              "dominantBaseline": "auto",
+              "alignmentBaseline": "auto",
+              "transform": "none",
+              "transformOrigin": "5.47656px 14.2344px",
+              "zoom": "1",
+              "width": 10.953,
+              "height": 28.469
+            }
+          }
         ]
+      },
+      "vertical": {
+        "context": "foreign-object-flex",
+        "fontMetrics": {
+          "fontBoundingBoxAscent": 17,
+          "fontBoundingBoxDescent": 5,
+          "actualBoundingBoxAscent": 14,
+          "actualBoundingBoxDescent": 4,
+          "emHeightAscent": null,
+          "emHeightDescent": null,
+          "alphabeticBaseline": 0
+        },
+        "element": {
+          "top": 139,
+          "bottom": 173,
+          "height": 34
+        },
+        "content": {
+          "top": 139,
+          "bottom": 173,
+          "height": 34
+        }
       },
       "lines": [
         {
@@ -2057,5 +3405,5 @@
       ]
     }
   ],
-  "fixtureSha256": "83b39e0d61de6330129cd5bfd98a2c23aad4bdc391403936b5569b71e20f65d8"
+  "fixtureSha256": "97a5df110fe49851d3ea0ba4f2751562ec9d224635f5c71f6fe7492f5759b1d9"
 }

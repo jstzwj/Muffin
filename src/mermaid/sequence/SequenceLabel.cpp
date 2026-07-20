@@ -25,13 +25,17 @@ SequenceLabelDocument parseSequenceLabel(const QString& source, SequenceLabelKin
     // Sequence emits the surrounding text and MathML as direct children of a
     // nowrap flex row. Markdown markers remain literal; DOM item boundaries
     // determine whitespace collapse and shaping independently of their text.
-    richText.literalMarkdownMathFallback = true;
-    richText.sequenceMathMlModel = true;
+    richText.formattingContext =
+        flowchart::FlowLabelFormattingContext::SequenceForeignObjectFlex;
+    richText.breakBehavior =
+        flowchart::FlowLabelBreakBehavior::CollapseIntoMathFlexLine;
     richText.direction = Qt::LeftToRight;
     return {std::move(richText), false, kind};
   }
   flowchart::FlowLabelDocument plain;
   plain.text = std::move(text);
+  plain.formattingContext =
+      flowchart::FlowLabelFormattingContext::SequenceSvgText;
   plain.direction = Qt::LeftToRight;
   return {std::move(plain), false, kind};
 }
@@ -97,6 +101,8 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
                                                qreal lineHeight) {
   SequenceLabelLayoutMetrics result =
       flowchart::layoutFlowLabel(label.richText, fontFamily, fontPixelSize, lineHeight);
+  const flowchart::FlowLabelFontMetrics cssFontMetrics =
+      flowchart::flowLabelFontBoundingMetrics(fontFamily, fontPixelSize);
   const qreal containerWidth = result.size.width();
   qreal maximumWidth = 0.0;
   for (auto& line : result.lines) {
@@ -106,10 +112,10 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
       line.baseline = line.ascent = line.height / 2.0;
       line.descent = line.height - line.baseline;
     } else if (label.kind == SequenceLabelKind::Message) {
-      line.baseline = line.ascent = line.height * (12.719 / 22.0);
+      line.baseline = line.ascent = cssFontMetrics.middleBaseline();
       line.descent = line.height - line.baseline;
     } else if (label.kind == SequenceLabelKind::Note && label.richText.math.isEmpty()) {
-      line.baseline = line.ascent = line.height * (12.719 / 22.0);
+      line.baseline = line.ascent = cssFontMetrics.middleBaseline();
       line.descent = line.height - line.baseline;
     } else if (label.kind == SequenceLabelKind::Note ||
                label.kind == SequenceLabelKind::Fragment) {
@@ -117,7 +123,9 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
         const qreal containerHeight = line.height;
         const qreal mathTop = (containerHeight - primaryMath->mathBoxHeight) / 2.0;
         const qreal textTop = (containerHeight - lineHeight) / 2.0;
-        const qreal containerBaseline = containerHeight / 2.0 + 6.0;
+        const qreal containerBaseline =
+            (containerHeight - cssFontMetrics.height()) / 2.0 +
+            cssFontMetrics.ascent;
         const qreal inkTop = std::min(
             textTop, mathTop + primaryMath->mathInkTop);
         const qreal inkBottom = std::max(textTop + lineHeight,
@@ -125,8 +133,8 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
         line.baseline = line.ascent = containerBaseline - inkTop;
         line.descent = inkBottom - containerBaseline;
       } else {
-        line.baseline = line.ascent = 17.0;
-        line.descent = 5.0;
+        line.baseline = line.ascent = cssFontMetrics.ascent;
+        line.descent = cssFontMetrics.descent;
       }
     }
     const bool allRtl = !line.runs.isEmpty() &&

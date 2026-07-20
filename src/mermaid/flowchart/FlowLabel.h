@@ -38,13 +38,26 @@ struct FlowLabelDomItem {
   FlowLabelDomItemKind kind = FlowLabelDomItemKind::AnonymousText;
 };
 
+enum class FlowLabelFormattingContext {
+  FlowSvgText,
+  FlowForeignObjectFlex,
+  SequenceSvgText,
+  SequenceForeignObjectFlex
+};
+
+enum class FlowLabelBreakBehavior {
+  PreserveLines,
+  CollapseIntoMathFlexLine
+};
+
 struct FlowLabelDocument {
   QString text;
   QVector<QTextLayout::FormatRange> formats;
   QVector<FlowLabelMathSpan> math;
   QVector<FlowLabelDomItem> domItems;
-  bool literalMarkdownMathFallback = false;
-  bool sequenceMathMlModel = false;
+  FlowLabelFormattingContext formattingContext =
+      FlowLabelFormattingContext::FlowSvgText;
+  FlowLabelBreakBehavior breakBehavior = FlowLabelBreakBehavior::PreserveLines;
   Qt::LayoutDirection direction = Qt::LayoutDirectionAuto;
 };
 
@@ -70,6 +83,8 @@ struct FlowLabelVisualRun {
   qreal mathBaseline = 0.0;
   qreal mathInkTop = 0.0;
   qreal mathInkBottom = 0.0;
+  qreal fontAscent = 0.0;
+  qreal fontDescent = 0.0;
 };
 
 struct FlowLabelLineMetrics {
@@ -87,6 +102,15 @@ struct FlowLabelLineMetrics {
 struct FlowLabelLayoutMetrics {
   QSizeF size{0.0, 0.0};
   QVector<FlowLabelLineMetrics> lines;
+};
+
+struct FlowLabelFontMetrics {
+  qreal ascent = 0.0;
+  qreal descent = 0.0;
+  qreal xHeight = 0.0;
+
+  qreal height() const { return ascent + descent; }
+  qreal middleBaseline() const { return ascent - xHeight / 2.0; }
 };
 
 // Converts Mermaid's text/string/markdown label variants into a safe, native
@@ -127,6 +151,11 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
                                   qsizetype start, qsizetype length,
                                   const QString& fontFamily,
                                   qreal fontPixelSize);
+
+// Chromium Canvas fontBoundingBox metrics are the pixel-rounded OpenType
+// hhea ascent/descent used to position text inside a CSS normal line box.
+FlowLabelFontMetrics flowLabelFontBoundingMetrics(
+    const QString& fontFamily, qreal fontPixelSize);
 
 void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     const QRectF& rect, const QString& fontFamily,
