@@ -20,6 +20,8 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <initializer_list>
+#include <iterator>
 
 using namespace muffin::mermaid;
 
@@ -176,6 +178,32 @@ const muffin::math::MathCssVerticalGlyphOperation* findLargeOperatorGlyph(
   for (const auto& child : operation.children)
     if (const auto* glyph = findLargeOperatorGlyph(child)) return glyph;
   return nullptr;
+}
+const muffin::math::MathCssAccentOperation* findAccentOperation(
+    const muffin::math::MathCssPaintOperation& operation) {
+  if (const auto* accent = std::get_if<muffin::math::MathCssAccentOperation>(
+          &operation.payload))
+    return accent;
+  for (const auto& child : operation.children)
+    if (const auto* accent = findAccentOperation(child)) return accent;
+  return nullptr;
+}
+bool hasPaintKindPath(
+    const muffin::math::MathCssPaintOperation& operation,
+    std::initializer_list<muffin::math::MathCssPaintKind> path) {
+  if (path.size() == 0 || operation.kind() != *path.begin()) return false;
+  const muffin::math::MathCssPaintOperation* current = &operation;
+  for (auto expected = std::next(path.begin()); expected != path.end();
+       ++expected) {
+    const auto child = std::find_if(
+        current->children.cbegin(), current->children.cend(),
+        [&](const muffin::math::MathCssPaintOperation& candidate) {
+          return candidate.kind() == *expected;
+        });
+    if (child == current->children.cend()) return false;
+    current = &*child;
+  }
+  return true;
 }
 struct LargeOperatorRaster {
   QImage image;
@@ -382,12 +410,12 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("288e79bb04dc478ee131e322282b9b213082733a934c785b52054ed5149bf71c"),
+              QLatin1String("a4003ef9fea2e73e327f7f1753255acc8b380b73a50d16b0d2489b88263c3dfd"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==117,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==121,QStringLiteral("Sequence pixel matrix regressed"));
   QSet<QString> ids;
   QSet<QString> verticalDelimiters;
   for(const QJsonValue& value:cases) {
@@ -400,6 +428,38 @@ int main(int argc,char** argv) {
     const auto entry=cache.getSync(cache.makeKey(fixture.value(QStringLiteral("source")).toString()),fixture.value(QStringLiteral("source")).toString());
     require(entry.status==editor::MermaidRenderStatus::Ready&&entry.sequenceScene,
             QStringLiteral("%1 native scene failed: %2").arg(id,entry.errorMessage));
+    if(id.startsWith(QLatin1String("label-math-root-index-"))) {
+      require(!entry.sequenceScene->noteLabels.isEmpty()&&
+                  !entry.sequenceScene->noteLabels.first().richText.math.isEmpty()&&
+                  entry.sequenceScene->noteLabels.first()
+                      .richText.math.first().prepared,
+              QStringLiteral("%1 must use a prepared MathML operation").arg(id));
+      const auto& label=entry.sequenceScene->noteLabels.first();
+      muffin::math::MathRenderer renderer;
+      const qreal renderFontPixelSize=entry.sequenceScene->style.fontSize*1.21;
+      const auto layout=renderer.render(label.richText.math.first().source,
+                                        renderFontPixelSize,Qt::white,true);
+      const auto build=muffin::math::buildMathMlPaintOperations(
+          layout,renderFontPixelSize,16.0);
+      require(build.operation.has_value()&&
+                  build.operation->kind()==muffin::math::MathCssPaintKind::Radical,
+              QStringLiteral("%1 root radical operation is missing").arg(id));
+      if(id.endsWith(QLatin1String("fraction")))
+        require(hasPaintKindPath(*build.operation,
+                    {muffin::math::MathCssPaintKind::Radical,
+                     muffin::math::MathCssPaintKind::Fraction}),
+                QStringLiteral("%1 fraction degree operation is missing").arg(id));
+      if(id.endsWith(QLatin1String("radical")))
+        require(hasPaintKindPath(*build.operation,
+                    {muffin::math::MathCssPaintKind::Radical,
+                     muffin::math::MathCssPaintKind::Radical}),
+                QStringLiteral("%1 radical degree operation is missing").arg(id));
+      if(id.endsWith(QLatin1String("supsub")))
+        require(hasPaintKindPath(*build.operation,
+                    {muffin::math::MathCssPaintKind::Radical,
+                     muffin::math::MathCssPaintKind::SupSub}),
+                QStringLiteral("%1 supsub degree operation is missing").arg(id));
+    }
     const qreal dpr=fixture.value(QStringLiteral("dpr")).toDouble(1.0);
     const QImage native=sequence::renderSequenceSceneToImage(*entry.sequenceScene,dpr,0.0);
     const QImage golden(dir.filePath(fixture.value(QStringLiteral("file")).toString()));
@@ -844,6 +904,33 @@ int main(int argc,char** argv) {
         const sequence::SequenceLabelDocument& componentLabel=
             entry.sequenceScene->noteLabels.front();
         const QColor componentColor(entry.sequenceScene->style.noteTextColor);
+        muffin::math::MathRenderer componentRenderer;
+        const qreal componentFontSize=entry.sequenceScene->style.fontSize*1.21;
+        const auto componentLayout=componentRenderer.render(
+            componentLabel.richText.math.front().source,componentFontSize,
+            componentColor,true);
+        const auto componentBuild=muffin::math::buildMathMlPaintOperations(
+            componentLayout,componentFontSize,16.0);
+        require(componentBuild.operation.has_value(),
+                QStringLiteral("%1 accent operation is missing").arg(id));
+        const auto* accentOperation=findAccentOperation(*componentBuild.operation);
+        require(accentOperation&&
+                    accentOperation->glyph.character==fixture.value(
+                        QStringLiteral("mathAccentText")).toString(),
+                QStringLiteral("%1 accent character drifted").arg(id));
+        if(accentOperation->glyph.kind==
+            muffin::math::MathCssHorizontalGlyphKind::Assembly) {
+          qreal previousOffset=-1.0;
+          for(const auto& part:accentOperation->glyph.parts) {
+            require(part.glyphIndex!=0&&!part.inkBounds.isEmpty()&&
+                        part.offset>previousOffset&&part.fullAdvance>0.0&&
+                        part.connectorOverlap>=0.0,
+                    QStringLiteral("%1 horizontal assembly part drifted").arg(id));
+            previousOffset=part.offset;
+          }
+          require(accentOperation->glyph.parts.size()>=2,
+                  QStringLiteral("%1 horizontal assembly lost its parts").arg(id));
+        }
         const QImage nativeBody=renderMathLayer(
             componentLabel,entry.sequenceScene->style.fontSize,dpr,
             muffin::math::MathMlPaintLayer::Body,componentColor);
@@ -865,6 +952,12 @@ int main(int argc,char** argv) {
             {QStringLiteral("label-math-arrow-double-dpr-150/accent"), QSize(1,0)},
             {QStringLiteral("label-math-arrow-under-dpr-200/body"), QSize(0,0)},
             {QStringLiteral("label-math-arrow-under-dpr-200/accent"), QSize(0,1)},
+            {QStringLiteral("label-math-underbrace/accent"), QSize(0,0)},
+            {QStringLiteral("label-math-under-arrow/accent"), QSize(1,0)},
+            {QStringLiteral("label-math-overbrace/accent"), QSize(0,2)},
+            {QStringLiteral("label-math-accent-double-right-arrow/accent"), QSize(0,0)},
+            {QStringLiteral("label-math-accent-overgroup/accent"), QSize(0,1)},
+            {QStringLiteral("label-math-accent-overlinesegment-upstream-text/accent"), QSize(0,0)},
         };
         const QHash<QString,qreal> componentCoverageMinimums{
             {QStringLiteral("label-math-fallback-over-arrow/body"), 1.0},
@@ -879,6 +972,12 @@ int main(int argc,char** argv) {
             {QStringLiteral("label-math-arrow-double-dpr-150/accent"), 1.0},
             {QStringLiteral("label-math-arrow-under-dpr-200/body"), 1.0},
             {QStringLiteral("label-math-arrow-under-dpr-200/accent"), 1.0},
+            {QStringLiteral("label-math-underbrace/accent"), 0.775},
+            {QStringLiteral("label-math-under-arrow/accent"), 0.999},
+            {QStringLiteral("label-math-overbrace/accent"), 0.78},
+            {QStringLiteral("label-math-accent-double-right-arrow/accent"), 0.999},
+            {QStringLiteral("label-math-accent-overgroup/accent"), 0.879},
+            {QStringLiteral("label-math-accent-overlinesegment-upstream-text/accent"), 0.999},
         };
         const auto compareComponent=[&](const QImage& nativeComponent,
                                         const QImage& browserComponent,
@@ -889,6 +988,13 @@ int main(int argc,char** argv) {
           const QSize bounds=componentBounds.value(key);
           const qreal componentCoverage=
               tolerantGlyphCoverage(nativeComponent,browserComponent);
+          qDebug().noquote()<<key<<"component"<<nativeComponent.size()
+                            <<browserComponent.size()<<"coverage"
+                            <<componentCoverage<<"IoU"
+                            <<alphaIou(nativeComponent,browserComponent)
+                            <<"alignment"
+                            <<bestRawAlphaAlignment(nativeComponent,
+                                                     browserComponent).offset;
           require(qAbs(nativeComponent.width()-browserComponent.width())<=bounds.width()&&
                       qAbs(nativeComponent.height()-browserComponent.height())<=bounds.height(),
                   QStringLiteral("%1 %2 component bounds drifted: %3x%4 vs %5x%6")
@@ -900,7 +1006,16 @@ int main(int argc,char** argv) {
                   QStringLiteral("%1 %2 component coverage drifted: %3 < %4")
                       .arg(id,name).arg(componentCoverage).arg(minimumCoverage));
         };
-        compareComponent(nativeBody,browserBody,QStringLiteral("body"));
+        const QSet<QString> accentOnlyCases{
+            QStringLiteral("label-math-underbrace"),
+            QStringLiteral("label-math-under-arrow"),
+            QStringLiteral("label-math-overbrace"),
+            QStringLiteral("label-math-accent-double-right-arrow"),
+            QStringLiteral("label-math-accent-overgroup"),
+            QStringLiteral("label-math-accent-overlinesegment-upstream-text"),
+        };
+        if(!accentOnlyCases.contains(id))
+          compareComponent(nativeBody,browserBody,QStringLiteral("body"));
         compareComponent(nativeAccent,browserAccent,QStringLiteral("accent"));
       }
       const QSet<QString> recursiveLayerCases{

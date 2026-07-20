@@ -2907,6 +2907,668 @@
             ]
           }
         ]
+      },
+      "radicalGlyphInk": {
+        "x": 1.997,
+        "y": 2.023,
+        "width": 11.983,
+        "height": 18.211
+      },
+      "radicalRuleInk": {
+        "x": 13.981,
+        "y": 2.023,
+        "width": 34.951,
+        "height": 1.012
+      }
+    },
+    {
+      "id": "root-index-fraction",
+      "tex": "\\sqrt[\\frac{a}{b}]{x+1}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$\\sqrt[\\frac{a}{b}]{x+1}$$ Hg",
+      "foreignObject": {
+        "x": 125,
+        "y": 139,
+        "width": 99,
+        "height": 27
+      },
+      "math": {
+        "x": 146.703,
+        "y": 139,
+        "width": 56.031,
+        "height": 26.563
+      },
+      "text": {
+        "x": 125,
+        "y": 141.281,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 158.5,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 56.031,
+        "height": 26.563,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 56.031,
+            "height": 26.563,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/mroot:0",
+                "tag": "mroot",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 56.031,
+                "height": 26.563,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/mroot:0/mrow:0",
+                    "tag": "mrow",
+                    "x": 13.844,
+                    "y": 8.469,
+                    "parentX": 13.844,
+                    "parentY": 8.469,
+                    "width": 35.5,
+                    "height": 12,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/mroot:0/mrow:0/mi:0",
+                        "tag": "mi",
+                        "x": 13.844,
+                        "y": 11.469,
+                        "parentX": 0,
+                        "parentY": 3,
+                        "width": 8.953,
+                        "height": 8,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "x",
+                        "textRect": {
+                          "x": 13.844,
+                          "y": 7.469,
+                          "width": 8.953,
+                          "height": 16
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/mroot:0/mrow:0/mo:0",
+                        "tag": "mo",
+                        "x": 26.344,
+                        "y": 9.469,
+                        "parentX": 12.5,
+                        "parentY": 1,
+                        "width": 11.531,
+                        "height": 11,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "+",
+                        "textRect": {
+                          "x": 26.344,
+                          "y": 7.469,
+                          "width": 11.531,
+                          "height": 16
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/mroot:0/mrow:0/mn:0",
+                        "tag": "mn",
+                        "x": 41.422,
+                        "y": 8.469,
+                        "parentX": 27.578,
+                        "parentY": 0,
+                        "width": 7.922,
+                        "height": 11,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "1",
+                        "textRect": {
+                          "x": 41.422,
+                          "y": 7.469,
+                          "width": 7.922,
+                          "height": 16
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "math:0/mrow:0/mroot:0/mfrac:0",
+                    "tag": "mfrac",
+                    "x": 1.031,
+                    "y": 2.891,
+                    "parentX": 1.031,
+                    "parentY": 2.891,
+                    "width": 5.469,
+                    "height": 13.281,
+                    "display": "block math",
+                    "fontSize": "8.8px",
+                    "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/mroot:0/mfrac:0/mi:0",
+                        "tag": "mi",
+                        "x": 2.031,
+                        "y": 2.891,
+                        "parentX": 1,
+                        "parentY": 0,
+                        "width": 3.469,
+                        "height": 3,
+                        "display": "block math",
+                        "fontSize": "6.248px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "a",
+                        "textRect": {
+                          "x": 2.031,
+                          "y": 0.891,
+                          "width": 3.469,
+                          "height": 6
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/mroot:0/mfrac:0/mi:1",
+                        "tag": "mi",
+                        "x": 2.141,
+                        "y": 11.172,
+                        "parentX": 1.11,
+                        "parentY": 8.281,
+                        "width": 3.234,
+                        "height": 5,
+                        "display": "block math",
+                        "fontSize": "6.248px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "b",
+                        "textRect": {
+                          "x": 2.141,
+                          "y": 11.172,
+                          "width": 3.234,
+                          "height": 6
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "radicalGlyphInk": {
+        "x": 2.001,
+        "y": 5.903,
+        "width": 12.007,
+        "height": 17.709
+      },
+      "radicalRuleInk": {
+        "x": 14.008,
+        "y": 5.903,
+        "width": 35.019,
+        "height": 0.984
+      }
+    },
+    {
+      "id": "root-index-radical",
+      "tex": "\\sqrt[\\sqrt{n}]{x+1}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$\\sqrt[\\sqrt{n}]{x+1}$$ Hg",
+      "foreignObject": {
+        "x": 120,
+        "y": 139,
+        "width": 110,
+        "height": 23
+      },
+      "math": {
+        "x": 141.703,
+        "y": 139,
+        "width": 66.203,
+        "height": 23.344
+      },
+      "text": {
+        "x": 120,
+        "y": 139.672,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 156.5,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 66.203,
+        "height": 23.344,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 66.203,
+            "height": 23.344,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/mroot:0",
+                "tag": "mroot",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 66.203,
+                "height": 23.344,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/mroot:0/mrow:0",
+                    "tag": "mrow",
+                    "x": 24.016,
+                    "y": 6.859,
+                    "parentX": 24.016,
+                    "parentY": 6.859,
+                    "width": 35.5,
+                    "height": 12,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/mroot:0/mrow:0/mi:0",
+                        "tag": "mi",
+                        "x": 24.016,
+                        "y": 9.859,
+                        "parentX": 0,
+                        "parentY": 3,
+                        "width": 8.953,
+                        "height": 8,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "x",
+                        "textRect": {
+                          "x": 24.016,
+                          "y": 5.859,
+                          "width": 8.953,
+                          "height": 16
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/mroot:0/mrow:0/mo:0",
+                        "tag": "mo",
+                        "x": 36.516,
+                        "y": 7.859,
+                        "parentX": 12.5,
+                        "parentY": 1,
+                        "width": 11.531,
+                        "height": 11,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "+",
+                        "textRect": {
+                          "x": 36.516,
+                          "y": 5.859,
+                          "width": 11.531,
+                          "height": 16
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/mroot:0/mrow:0/mn:0",
+                        "tag": "mn",
+                        "x": 51.594,
+                        "y": 6.859,
+                        "parentX": 27.578,
+                        "parentY": 0,
+                        "width": 7.922,
+                        "height": 11,
+                        "display": "block math",
+                        "fontSize": "16px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "1",
+                        "textRect": {
+                          "x": 51.594,
+                          "y": 5.859,
+                          "width": 7.922,
+                          "height": 16
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "path": "math:0/mrow:0/mroot:0/msqrt:0",
+                    "tag": "msqrt",
+                    "x": 1.031,
+                    "y": 1.281,
+                    "parentX": 1.031,
+                    "parentY": 1.281,
+                    "width": 15.641,
+                    "height": 11.672,
+                    "display": "block math",
+                    "fontSize": "8.8px",
+                    "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/mroot:0/msqrt:0/mi:0",
+                        "tag": "mi",
+                        "x": 8.016,
+                        "y": 3.281,
+                        "parentX": 6.985,
+                        "parentY": 2,
+                        "width": 4.984,
+                        "height": 5,
+                        "display": "block math",
+                        "fontSize": "8.8px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "n",
+                        "textRect": {
+                          "x": 8.016,
+                          "y": 1.281,
+                          "width": 4.984,
+                          "height": 9
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "radicalGlyphInk": {
+        "x": 12.037,
+        "y": 4.06,
+        "width": 12.037,
+        "height": 18.269
+      },
+      "radicalRuleInk": {
+        "x": 24.074,
+        "y": 4.06,
+        "width": 35.108,
+        "height": 1.015
+      }
+    },
+    {
+      "id": "root-index-supsub",
+      "tex": "\\sqrt[x_i^2]{y}",
+      "fontSize": 16,
+      "dpr": 1,
+      "source": "sequenceDiagram\nA->>B:start\nNote over A,B:Hg $$\\sqrt[x_i^2]{y}$$ Hg",
+      "foreignObject": {
+        "x": 138,
+        "y": 139,
+        "width": 75,
+        "height": 22
+      },
+      "math": {
+        "x": 159.703,
+        "y": 139.875,
+        "width": 31.594,
+        "height": 20.234
+      },
+      "text": {
+        "x": 138,
+        "y": 139,
+        "width": 21.703,
+        "height": 22
+      },
+      "textBaseline": 156,
+      "tree": {
+        "path": "math:0",
+        "tag": "math",
+        "x": 0,
+        "y": 0,
+        "parentX": 0,
+        "parentY": 0,
+        "width": 31.594,
+        "height": 20.234,
+        "display": "block math",
+        "fontSize": "16px",
+        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+        "lineHeight": "normal",
+        "verticalAlign": "baseline",
+        "attributes": {
+          "xmlns": "http://www.w3.org/1998/Math/MathML",
+          "display": "block"
+        },
+        "children": [
+          {
+            "path": "math:0/mrow:0",
+            "tag": "mrow",
+            "x": 0,
+            "y": 0,
+            "parentX": 0,
+            "parentY": 0,
+            "width": 31.594,
+            "height": 20.234,
+            "display": "block math",
+            "fontSize": "16px",
+            "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "lineHeight": "normal",
+            "verticalAlign": "baseline",
+            "children": [
+              {
+                "path": "math:0/mrow:0/mroot:0",
+                "tag": "mroot",
+                "x": 0,
+                "y": 0,
+                "parentX": 0,
+                "parentY": 0,
+                "width": 31.594,
+                "height": 20.234,
+                "display": "block math",
+                "fontSize": "16px",
+                "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                "lineHeight": "normal",
+                "verticalAlign": "baseline",
+                "children": [
+                  {
+                    "path": "math:0/mrow:0/mroot:0/mi:0",
+                    "tag": "mi",
+                    "x": 16.735,
+                    "y": 5.031,
+                    "parentX": 16.735,
+                    "parentY": 5.031,
+                    "width": 8.172,
+                    "height": 12,
+                    "display": "block math",
+                    "fontSize": "16px",
+                    "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "text": "y",
+                    "textRect": {
+                      "x": 16.734,
+                      "y": 1.031,
+                      "width": 8.172,
+                      "height": 16
+                    }
+                  },
+                  {
+                    "path": "math:0/mrow:0/mroot:0/msubsup:0",
+                    "tag": "msubsup",
+                    "x": 1.031,
+                    "y": 0.531,
+                    "parentX": 1.031,
+                    "parentY": 0.531,
+                    "width": 8.359,
+                    "height": 9.313,
+                    "display": "block math",
+                    "fontSize": "8.8px",
+                    "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                    "lineHeight": "normal",
+                    "verticalAlign": "baseline",
+                    "children": [
+                      {
+                        "path": "math:0/mrow:0/mroot:0/msubsup:0/mi:0",
+                        "tag": "mi",
+                        "x": 1.031,
+                        "y": 2.875,
+                        "parentX": 0,
+                        "parentY": 2.344,
+                        "width": 4.922,
+                        "height": 5,
+                        "display": "block math",
+                        "fontSize": "8.8px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "x",
+                        "textRect": {
+                          "x": 1.031,
+                          "y": 0.875,
+                          "width": 4.922,
+                          "height": 9
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/mroot:0/msubsup:0/mi:1",
+                        "tag": "mi",
+                        "x": 5.953,
+                        "y": 5.844,
+                        "parentX": 4.922,
+                        "parentY": 5.313,
+                        "width": 1.719,
+                        "height": 4,
+                        "display": "block math",
+                        "fontSize": "6.248px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "i",
+                        "textRect": {
+                          "x": 5.953,
+                          "y": 4.844,
+                          "width": 1.719,
+                          "height": 6
+                        }
+                      },
+                      {
+                        "path": "math:0/mrow:0/mroot:0/msubsup:0/mn:0",
+                        "tag": "mn",
+                        "x": 5.953,
+                        "y": 0.531,
+                        "parentX": 4.922,
+                        "parentY": 0,
+                        "width": 3.094,
+                        "height": 4,
+                        "display": "block math",
+                        "fontSize": "6.248px",
+                        "fontFamily": "\"STIX Two Math\", \"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+                        "lineHeight": "normal",
+                        "verticalAlign": "baseline",
+                        "text": "2",
+                        "textRect": {
+                          "x": 5.953,
+                          "y": -0.469,
+                          "width": 3.094,
+                          "height": 6
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "radicalGlyphInk": {
+        "x": 5.096,
+        "y": 2.023,
+        "width": 12.23,
+        "height": 18.211
+      },
+      "radicalRuleInk": {
+        "x": 17.326,
+        "y": 2.023,
+        "width": 8.153,
+        "height": 1.012
       }
     },
     {
@@ -39499,5 +40161,5 @@
       }
     }
   ],
-  "fixtureSha256": "c9e93817163c86d4415c6065f714f616b151574bb274e7ec765ddac6d696ed62"
+  "fixtureSha256": "3152a3125c65dabacf789a4d11c0d6727b5d6a0bcf218b65f38bedce49c986e3"
 }

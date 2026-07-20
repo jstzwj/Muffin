@@ -158,16 +158,31 @@ struct MathCssScriptOperation {
   std::optional<MathCssFencePair> fences;
 };
 
+struct MathCssGlyphPathOperation {
+  QString character;
+  quint32 glyphIndex = 0;
+  QRectF target;
+  QRectF inkBounds;
+  QRectF clip;
+  qreal fontScale = 1.0;
+};
+
+struct MathCssSolidRuleOperation {
+  QRectF target;
+};
+
 struct MathCssRadicalOperation {
   qreal lineAscent = 0.0;
   qreal lineDescent = 0.0;
   QRectF container;
-  QRectF glyph;
-  QRectF rule;
   QRectF body;
+  QRectF degree;
   const MathRenderNode* bodyNode = nullptr;
-  MathCssGlyphRunOperation glyphRun;
+  const MathRenderNode* degreeNode = nullptr;
+  MathCssGlyphPathOperation radicalGlyph;
+  MathCssSolidRuleOperation radicalRule;
   QVector<MathCssGlyphRunOperation> bodyGlyphRuns;
+  QVector<MathCssGlyphRunOperation> degreeGlyphRuns;
   std::optional<MathCssFencePair> fences;
 };
 
@@ -249,11 +264,13 @@ enum class MathCssHorizontalGlyphKind {
 
 enum class MathCssHorizontalScalePolicy {
   StretchToTarget,
-  PreserveVariantScale
+  PreserveVariantScale,
+  StretchInkToPlacementExtent
 };
 
 struct MathCssHorizontalGlyphPart {
   quint32 glyphIndex = 0;
+  QRectF inkBounds;
   qreal offset = 0.0;
   qreal fullAdvance = 0.0;
   qreal connectorOverlap = 0.0;
@@ -265,6 +282,7 @@ struct MathCssHorizontalGlyphOperation {
   MathCssHorizontalScalePolicy scalePolicy =
       MathCssHorizontalScalePolicy::StretchToTarget;
   QRectF target;
+  QString character;
   qreal selectionTarget = 0.0;
   qreal placementExtent = 0.0;
   qreal fontScale = 1.0;

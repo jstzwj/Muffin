@@ -327,6 +327,21 @@ QJsonObject labelJson(const FlowSceneLabel& l) {
   return o;
 }
 
+qreal labelFontPixelSize(const FlowSceneLabel& label) {
+  bool ok = false;
+  const qreal size = label.fontSize.endsWith(QLatin1String("px"))
+      ? label.fontSize.chopped(2).toDouble(&ok)
+      : 16.0;
+  return ok ? size : 16.0;
+}
+
+void prepareSceneLabel(FlowSceneLabel& label) {
+  label.richText = flowchart::parseFlowLabel(
+      label.text, label.labelType, label.mathEnabled);
+  flowchart::prepareFlowLabelMath(label.richText,
+                                  labelFontPixelSize(label));
+}
+
 }  // namespace
 
 FlowScene buildFlowScene(const flowchart::FlowchartData& data,
@@ -375,6 +390,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       sc.label.fontFamily = theme.fontFamily;
       sc.label.fontSize = theme.fontSize;
     }
+    prepareSceneLabel(sc.label);
     scene.clusters.append(sc);
   }
 
@@ -416,6 +432,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       se.stroke = theme.lineColor;
       se.strokeWidth = QString::number(theme.strokeWidth) + QStringLiteral("px");
     }
+    prepareSceneLabel(se.label);
     scene.edges.append(se);
   }
 
@@ -472,6 +489,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       sn.label.fontFamily = rs.fontFamily;
       sn.label.fontSize = rs.fontSize;
       sn.label.fontWeight = rs.fontWeight;
+      prepareSceneLabel(sn.label);
       flowchart::FlowTextOptions labelOptions;
       labelOptions.fontFamily = rs.fontFamily;
       bool fontSizeOk = false;

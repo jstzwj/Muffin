@@ -51,8 +51,17 @@ QVector<QRectF> collectLabelRectsScene(const FlowScene& scene, const QString& fo
   QVector<QRectF> rects;
   auto add = [&](const FlowSceneLabel& label, const QPointF& center) {
     if (label.text.isEmpty()) return;
-    const QFontMetrics fm(labelFont(label, fontFamily));
-    const QRectF tight = fm.tightBoundingRect(label.text);
+    const QFont font = labelFont(label, fontFamily);
+    QRectF tight;
+    if (!label.richText.math.isEmpty()) {
+      const qreal size = font.pixelSize() > 0 ? font.pixelSize() : 16.0;
+      const QSizeF measured = flowchart::layoutFlowLabel(
+          label.richText, font.family(), size, size * 1.5).size;
+      tight = QRectF(-measured.width() / 2.0, -measured.height() / 2.0,
+                     measured.width(), measured.height());
+    } else {
+      tight = QFontMetrics(font).tightBoundingRect(label.text);
+    }
     // Inflate generously (+3px): the AA-on colour render's glyph coverage extends
     // beyond QFontMetrics::tightBoundingRect, and those fringe glyph pixels must
     // be excluded from the INTERIOR check (otherwise text-over-fill reads as a

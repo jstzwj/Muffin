@@ -205,14 +205,12 @@ void drawLabel(QPainter& painter, const FlowSceneLabel& label, const QRectF& rec
                const QString& fontFamily, bool center, PaintMode mode) {
   if (label.text.isEmpty()) return;
   const QFont font = labelFont(label, fontFamily);
-  const flowchart::FlowLabelDocument document = flowchart::parseFlowLabel(
-      label.text, label.labelType, label.mathEnabled);
   const qreal lineHeight = (font.pixelSize() > 0 ? font.pixelSize() : 16.0) * 1.5;
   const QColor color = mode == PaintMode::CategoryMask
                            ? QColor(kCatText)
                            : qcolor(label.color.isEmpty() ? QStringLiteral("#333333")
                                                           : label.color);
-  flowchart::paintFlowLabel(painter, document, rect, font.family(), font.pixelSize(),
+  flowchart::paintFlowLabel(painter, label.richText, rect, font.family(), font.pixelSize(),
                             lineHeight, color, center);
 }
 

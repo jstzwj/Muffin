@@ -13,6 +13,7 @@
 #include "mermaid/theme/FlowTheme.h"
 
 #include <QDebug>
+#include <QCryptographicHash>
 #include <QColor>
 #include <QDir>
 #include <QFile>
@@ -24,8 +25,10 @@
 #include <QJsonObject>
 #include <QRegularExpression>
 #include <QSet>
+#include <QPainter>
 
 #include <cstdlib>
+#include <algorithm>
 #include <cmath>
 
 using namespace muffin::mermaid;
@@ -65,6 +68,96 @@ QColor cssRgb(const QString& value) {
   return QColor(match.captured(1).toInt(), match.captured(2).toInt(),
                 match.captured(3).toInt());
 }
+
+QByteArray fileSha256(const QString& path) {
+  QFile file(path);
+  if (!file.open(QIODevice::ReadOnly)) return {};
+  return QCryptographicHash::hash(file.readAll(),
+                                  QCryptographicHash::Sha256).toHex();
+}
+
+QRect alphaBounds(const QImage& image, int threshold = 32) {
+  int left = image.width(), top = image.height(), right = -1, bottom = -1;
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      if (qAlpha(image.pixel(x, y)) < threshold) continue;
+      left = std::min(left, x); top = std::min(top, y);
+      right = std::max(right, x); bottom = std::max(bottom, y);
+    }
+  }
+  return right < left ? QRect() : QRect(left, top, right - left + 1,
+                                        bottom - top + 1);
+}
+
+qreal alignedAlphaCoverage(const QImage& native, const QImage& browser,
+                           qreal dpr) {
+  constexpr int inkAlpha = 64;
+  const int radius = static_cast<int>(std::ceil(4.0 * dpr));
+  const int tolerance = std::max(1, static_cast<int>(std::ceil(dpr)));
+  auto inkNear = [&](const QImage& image, int x, int y) {
+    for (int oy = -tolerance; oy <= tolerance; ++oy)
+      for (int ox = -tolerance; ox <= tolerance; ++ox) {
+        const int sx = x + ox, sy = y + oy;
+        if (sx >= 0 && sx < image.width() && sy >= 0 && sy < image.height() &&
+            qAlpha(image.pixel(sx, sy)) >= inkAlpha)
+          return true;
+      }
+    return false;
+  };
+  qreal best = 0.0;
+  for (int dy = -radius; dy <= radius; ++dy) {
+    for (int dx = -radius; dx <= radius; ++dx) {
+      qint64 nativeInk = 0, browserInk = 0;
+      qint64 nativeMatched = 0, browserMatched = 0;
+      for (int y = 0; y < native.height(); ++y) {
+        for (int x = 0; x < native.width(); ++x) {
+          const bool a = qAlpha(native.pixel(x, y)) >= inkAlpha;
+          if (a) {
+            ++nativeInk;
+            if (inkNear(browser, x + dx, y + dy)) ++nativeMatched;
+          }
+        }
+      }
+      for (int y = 0; y < browser.height(); ++y) {
+        for (int x = 0; x < browser.width(); ++x) {
+          const bool b = qAlpha(browser.pixel(x, y)) >= inkAlpha;
+          if (b) {
+            ++browserInk;
+            if (inkNear(native, x - dx, y - dy)) ++browserMatched;
+          }
+        }
+      }
+      if (nativeInk > 0 && browserInk > 0)
+        best = std::max(best, std::min(qreal(nativeMatched) / nativeInk,
+                                      qreal(browserMatched) / browserInk));
+    }
+  }
+  return best;
+}
+
+QImage renderFlowMathLabelCrop(const flowscene::FlowSceneLabel& label,
+                               const QSize& physicalSize,
+                               const QString& fallbackFamily, qreal dpr) {
+  QImage image(physicalSize, QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  const QString family = label.fontFamily.isEmpty() ? fallbackFamily
+                                                     : label.fontFamily;
+  QFont font(family);
+  MermaidFontRegistry::configureFont(font, family);
+  font.setPixelSize(static_cast<int>(std::round(fontPixelSize(label.fontSize))));
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setRenderHint(QPainter::TextAntialiasing);
+  painter.scale(dpr, dpr);
+  flowchart::paintFlowLabel(
+      painter, label.richText,
+      QRectF(0.0, 0.0, physicalSize.width() / dpr,
+             physicalSize.height() / dpr),
+      font.family(), font.pixelSize(), font.pixelSize() * 1.5,
+      Qt::black, true);
+  painter.end();
+  return image;
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -102,6 +195,7 @@ int main(int argc, char** argv) {
   QSet<QString> handDrawnDirections;
   QSet<qreal> handDrawnDprs;
   bool sawHandDrawnComposite = false;
+  QSet<QString> mathCropKinds;
   QSet<QString> caseIds;
   QSet<QString> coveredThemes;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
@@ -201,6 +295,80 @@ int main(int argc, char** argv) {
     const flowscene::FlowScene scene = flowscene::buildFlowScene(
         chart.data(), layout, theme, look,
         static_cast<quint32>(fixture.value(QStringLiteral("handDrawnSeed")).toInt()));
+    if (fixture.contains(QStringLiteral("mathCropFile"))) {
+      const auto node = std::find_if(
+          scene.nodes.cbegin(), scene.nodes.cend(), [](const auto& candidate) {
+            return !candidate.label.richText.math.isEmpty();
+          });
+      require(node != scene.nodes.cend(),
+              QStringLiteral("Case %1: native Math label is missing").arg(id));
+      require(std::all_of(
+                  node->label.richText.math.cbegin(),
+                  node->label.richText.math.cend(), [](const auto& span) {
+                    return static_cast<bool>(span.prepared);
+                  }),
+              QStringLiteral("Case %1: flowchart Math was not prepared in the scene")
+                  .arg(id));
+      const QString cropPath = dir.filePath(
+          fixture.value(QStringLiteral("mathCropFile")).toString());
+      require(fileSha256(cropPath) ==
+                  fixture.value(QStringLiteral("mathCropSha256"))
+                      .toString().toLatin1(),
+              QStringLiteral("Case %1: Math crop hash drifted").arg(id));
+      const QImage browserCrop(cropPath);
+      require(!browserCrop.isNull(),
+              QStringLiteral("Case %1: Math crop is missing").arg(id));
+      const QImage nativeCrop = renderFlowMathLabelCrop(
+          node->label, browserCrop.size(), renderFamily, dpr);
+      const auto nativeLabelLayout = flowchart::layoutFlowLabel(
+          node->label.richText, renderFamily, textOptions.fontPixelSize,
+          textOptions.lineHeight);
+      const QJsonObject browserMathBox =
+          fixture.value(QStringLiteral("content")).toObject()
+              .value(QStringLiteral("mathBox")).toObject();
+      require(!browserMathBox.isEmpty(),
+              QStringLiteral("Case %1: browser Math box is missing").arg(id));
+      const qreal browserMathWidth =
+          browserMathBox.value(QStringLiteral("width")).toDouble();
+      const qreal browserLineHeight = std::max(
+          textOptions.lineHeight,
+          browserMathBox.value(QStringLiteral("height")).toDouble());
+      require(browserMathWidth > 0.0 && browserLineHeight > 0.0,
+              QStringLiteral("Case %1: browser Math box is empty").arg(id));
+      if (fixture.value(QStringLiteral("mathCropKind")).toString() ==
+          QLatin1String("array")) {
+        const qreal browserArrayHeight =
+            browserMathBox.value(QStringLiteral("height")).toDouble();
+        require(std::abs(nativeLabelLayout.size.width() - browserMathWidth) <= 0.25 &&
+                    std::abs(nativeLabelLayout.size.height() - browserArrayHeight) <= 0.25,
+                QStringLiteral("Case %1: Array DOM box drifted: %2x%3 vs %4x%5")
+                    .arg(id)
+                    .arg(nativeLabelLayout.size.width(), 0, 'f', 3)
+                    .arg(nativeLabelLayout.size.height(), 0, 'f', 3)
+                    .arg(browserMathWidth, 0, 'f', 3)
+                    .arg(browserArrayHeight, 0, 'f', 3));
+      }
+      const QRect nativeInk = alphaBounds(nativeCrop);
+      const QRect browserInk = alphaBounds(browserCrop);
+      require(!nativeInk.isEmpty() && !browserInk.isEmpty(),
+              QStringLiteral("Case %1: Math crop rendered blank").arg(id));
+      const qreal widthDrift = qreal(std::abs(nativeInk.width() - browserInk.width())) /
+                               browserInk.width();
+      const qreal coverage = alignedAlphaCoverage(nativeCrop, browserCrop, dpr);
+      qDebug().noquote() << id << "flow-math-crop" << nativeCrop.size()
+                         << nativeInk << browserInk << "coverage" << coverage;
+      require(widthDrift <= 0.15 &&
+                  std::abs(nativeInk.height() - browserInk.height()) <=
+                      std::ceil(4.0 * dpr),
+              QStringLiteral("Case %1: Math crop ink bounds drifted: %2x%3 vs %4x%5")
+                  .arg(id).arg(nativeInk.width()).arg(nativeInk.height())
+                  .arg(browserInk.width()).arg(browserInk.height()));
+      require(coverage >= 0.78,
+              QStringLiteral("Case %1: Math crop coverage too low: %2")
+                  .arg(id).arg(coverage));
+      mathCropKinds.insert(
+          fixture.value(QStringLiteral("mathCropKind")).toString());
+    }
     if (look == flowchart::FlowLook::HandDrawn) {
       const QImage first = flowscene::renderFlowSceneToImage(scene, dpr, 8.0, renderFamily);
       const QImage repeat = flowscene::renderFlowSceneToImage(scene, dpr, 8.0, renderFamily);
@@ -309,6 +477,9 @@ int main(int argc, char** argv) {
                          "%3/4 directions, %4/3 DPRs")
               .arg(handDrawnCases).arg(handDrawnShapes.size())
               .arg(handDrawnDirections.size()).arg(handDrawnDprs.size()));
+  require(mathCropKinds.size() == 6,
+          QStringLiteral("Flowchart Math crop coverage regressed: %1/6")
+              .arg(mathCropKinds.size()));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;
 }

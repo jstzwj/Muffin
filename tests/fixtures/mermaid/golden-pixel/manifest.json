@@ -1204,6 +1204,269 @@
       "file": "label-math.png"
     },
     {
+      "id": "flow-math-crop-fraction",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`$$\\frac{x+1}{y-1}$$`\"] --> B[Plain]",
+      "dpr": 1,
+      "mathCropKind": "fraction",
+      "mathCropFile": "flow-math-crop-fraction-label.png",
+      "mathCropSha256": "e7acfafe79d9f37828ad286874d97200a71b12b07b3e5b8b42ac273e9f1589b2",
+      "content": {
+        "width": 245.90625,
+        "height": 65.8125,
+        "mathBox": {
+          "width": 39.10865783691406,
+          "height": 35.82615661621094,
+          "elements": [
+            {
+              "tag": "mi",
+              "width": 9.003433227539062,
+              "height": 7.002668380737305
+            },
+            {
+              "tag": "mo",
+              "width": 12.004573822021484,
+              "height": 11.004194259643555
+            },
+            {
+              "tag": "mn",
+              "width": 9.003433227539062,
+              "height": 10.003812789916992
+            },
+            {
+              "tag": "mi",
+              "width": 9.003433227539062,
+              "height": 10.003814697265625
+            },
+            {
+              "tag": "mo",
+              "width": 12.004573822021484,
+              "height": 1.0003814697265625
+            },
+            {
+              "tag": "mn",
+              "width": 9.003433227539062,
+              "height": 10.003814697265625
+            }
+          ]
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-math-crop-fraction.png"
+    },
+    {
+      "id": "flow-math-crop-radical",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`$$\\sqrt{x+1}$$`\"] --> B[Plain]",
+      "dpr": 1.25,
+      "mathCropKind": "radical",
+      "mathCropFile": "flow-math-crop-radical-label.png",
+      "mathCropSha256": "ce6a4125814bfb348d810ef3782613aa2bba1625d51be051d9c621a2e39307f2",
+      "content": {
+        "width": 255.90625,
+        "height": 54,
+        "mathBox": {
+          "width": 49.09375,
+          "height": 17.03125,
+          "elements": [
+            {
+              "tag": "mi",
+              "width": 9,
+              "height": 7
+            },
+            {
+              "tag": "mo",
+              "width": 12,
+              "height": 11
+            },
+            {
+              "tag": "mn",
+              "width": 9,
+              "height": 10
+            }
+          ]
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-math-crop-radical.png"
+    },
+    {
+      "id": "flow-math-crop-supsub",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`$$x_i^2$$`\"] --> B[Plain]",
+      "dpr": 1.5,
+      "mathCropKind": "supsub",
+      "mathCropFile": "flow-math-crop-supsub-label.png",
+      "mathCropSha256": "609db6ab9ccd843d2fa641e83cd9f83f9b2b5d597a3cf9b652026dced058c4e1",
+      "content": {
+        "width": 222.9375,
+        "height": 54,
+        "mathBox": {
+          "width": 16.125,
+          "height": 18.34375,
+          "elements": [
+            {
+              "tag": "mi",
+              "width": 9,
+              "height": 7
+            },
+            {
+              "tag": "mi",
+              "width": 3.703125,
+              "height": 8
+            },
+            {
+              "tag": "mn",
+              "width": 6.46875,
+              "height": 8
+            }
+          ]
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-math-crop-supsub.png"
+    },
+    {
+      "id": "flow-math-crop-array",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`$$\\begin{matrix}a\\end{matrix}$$`\"] --> B[Plain]",
+      "dpr": 2,
+      "mathCropKind": "array",
+      "mathCropFile": "flow-math-crop-array-label.png",
+      "mathCropSha256": "9525d5114e73d884c62e0f98450f68495dfe6e9bc37d3d35af268433f1557799",
+      "content": {
+        "width": 228.59375,
+        "height": 54,
+        "mathBox": {
+          "width": 21.78125,
+          "height": 14,
+          "elements": [
+            {
+              "tag": "mtable",
+              "width": 21.78125,
+              "height": 14
+            },
+            {
+              "tag": "mtr",
+              "width": 21.78125,
+              "height": 14
+            },
+            {
+              "tag": "mtd",
+              "width": 21.78125,
+              "height": 14
+            },
+            {
+              "tag": "mi",
+              "width": 9,
+              "height": 7
+            }
+          ]
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-math-crop-array.png"
+    },
+    {
+      "id": "flow-math-crop-accent",
+      "theme": "dark",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`$$\\overbrace{x+y}^{n}$$`\"] --> B[Plain]",
+      "dpr": 1,
+      "mathCropKind": "accent",
+      "mathCropFile": "flow-math-crop-accent-label.png",
+      "mathCropSha256": "bbf4245648a74f1412289fc66b65db54f957e96651f92b443150d8187767ee29",
+      "content": {
+        "width": 243.90625,
+        "height": 61.4375,
+        "mathBox": {
+          "width": 37.10800552368164,
+          "height": 31.4495849609375,
+          "elements": [
+            {
+              "tag": "mi",
+              "width": 9.003459930419922,
+              "height": 7.002693176269531
+            },
+            {
+              "tag": "mo",
+              "width": 12.00461196899414,
+              "height": 11.004226684570312
+            },
+            {
+              "tag": "mi",
+              "width": 9.003456115722656,
+              "height": 10.00384521484375
+            },
+            {
+              "tag": "mo",
+              "width": 7.205894470214844,
+              "height": 5.001920700073242
+            },
+            {
+              "tag": "mi",
+              "width": 6.7057037353515625,
+              "height": 6.00230598449707
+            }
+          ]
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-math-crop-accent.png"
+    },
+    {
+      "id": "flow-math-crop-root-index",
+      "theme": "dark",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`$$\\sqrt[3]{x+1}$$`\"] --> B[Plain]",
+      "dpr": 2,
+      "mathCropKind": "root-index",
+      "mathCropFile": "flow-math-crop-root-index-label.png",
+      "mathCropSha256": "36e5c99f18c05424695c8d8fcb0afad061007c163d17f28d01033d624e60b3d1",
+      "content": {
+        "width": 257.265625,
+        "height": 54,
+        "mathBox": {
+          "width": 50.453125,
+          "height": 17.25,
+          "elements": [
+            {
+              "tag": "mi",
+              "width": 9,
+              "height": 7
+            },
+            {
+              "tag": "mo",
+              "width": 12,
+              "height": 11
+            },
+            {
+              "tag": "mn",
+              "width": 9,
+              "height": 10
+            },
+            {
+              "tag": "mn",
+              "width": 5.328125,
+              "height": 7
+            }
+          ]
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-math-crop-root-index.png"
+    },
+    {
       "id": "edge-label-rich",
       "theme": "default",
       "look": "classic",

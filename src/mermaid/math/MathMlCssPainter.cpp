@@ -167,11 +167,20 @@ QVector<MathMlPaintPrimitive> collectMathMlPaintPrimitives(
       appendRuns(radical->bodyGlyphRuns,
                  MathMlPaintPrimitiveRole::RadicalBody,
                  path + QStringLiteral("/body"));
+      appendRuns(radical->degreeGlyphRuns,
+                 MathMlPaintPrimitiveRole::RadicalDegree,
+                 path + QStringLiteral("/degree"));
       visitChildren();
-      if (body)
-        result.push_back({MathMlPaintPrimitiveKind::Radical,
+      if (body) {
+        result.push_back({MathMlPaintPrimitiveKind::GlyphPath,
                           MathMlPaintPrimitiveRole::Row,
-                          path + QStringLiteral("/radical"), radical});
+                          path + QStringLiteral("/radical/glyph"),
+                          &radical->radicalGlyph});
+        result.push_back({MathMlPaintPrimitiveKind::SolidRule,
+                          MathMlPaintPrimitiveRole::Row,
+                          path + QStringLiteral("/radical/rule"),
+                          &radical->radicalRule});
+      }
       appendFences(radical->fences, path + QStringLiteral("/fence"));
       return;
     }
@@ -336,28 +345,25 @@ void paintMathMlPrimitives(
     if (fraction.hasRule) paintSolidRect(fraction.rule);
   };
 
-  const auto paintRadical = [&](const MathCssRadicalOperation& radical) {
-    if (radical.glyphRun.glyphIndexes.isEmpty() ||
-        radical.glyphRun.clip.isEmpty())
+  const auto paintGlyphPath = [&](const MathCssGlyphPathOperation& glyph) {
+    if (glyph.glyphIndex == 0 || glyph.clip.isEmpty())
       return;
     const OpenTypeMathFont& font = OpenTypeMathFont::instance();
-    const QPainterPath path = font.glyphPath(
-        radical.glyphRun.glyphIndexes.front());
+    const QPainterPath path = font.glyphPath(glyph.glyphIndex);
     const QRectF bounds = path.boundingRect();
     if (!bounds.isEmpty()) {
-      const qreal scale = radical.glyphRun.fontScale;
+      const qreal scale = glyph.fontScale;
       QTransform placement;
-      placement.translate(radical.glyph.left() - bounds.left() * scale,
-                          radical.glyph.top() - bounds.top() * scale);
+      placement.translate(glyph.target.left() - bounds.left() * scale,
+                          glyph.target.top() - bounds.top() * scale);
       placement.scale(scale, scale);
       painter.save();
-      painter.setClipRect(radical.glyphRun.clip, Qt::IntersectClip);
+      painter.setClipRect(glyph.clip, Qt::IntersectClip);
       painter.setPen(Qt::NoPen);
       painter.setBrush(color);
       painter.drawPath(placement.map(path));
       painter.restore();
     }
-    paintSolidRect(radical.rule);
   };
 
   const auto paintGlyphRuns = [&](const QVector<MathCssGlyphRunOperation>& runs,
@@ -414,7 +420,12 @@ void paintMathMlPrimitives(
             glyph.scalePolicy ==
                     MathCssHorizontalScalePolicy::PreserveVariantScale
                 ? glyph.fontScale
-                : glyph.target.width() / glyph.realizedExtent;
+                : glyph.scalePolicy ==
+                          MathCssHorizontalScalePolicy::
+                              StretchInkToPlacementExtent
+                      ? glyph.fontScale * glyph.placementExtent /
+                            glyph.inkBounds.width()
+                      : glyph.target.width() / glyph.realizedExtent;
         QTransform placement;
         placement.translate(glyph.target.center().x() + glyph.paintOffset.x(),
                             glyph.target.center().y() + glyph.paintOffset.y());
@@ -437,21 +448,17 @@ void paintMathMlPrimitives(
       const qreal assemblyBaseline = glyph.target.center().y() -
                                      glyph.inkBounds.center().y() +
                                      glyph.paintOffset.y();
-      QVector<quint32> glyphIndexes;
-      QVector<QPointF> glyphPositions;
-      glyphIndexes.reserve(glyph.parts.size());
-      glyphPositions.reserve(glyph.parts.size());
       for (const MathCssHorizontalGlyphPart& part : glyph.parts) {
-        glyphIndexes.push_back(part.glyphIndex);
-        glyphPositions.push_back(QPointF(part.offset, 0.0));
+        const QPointF baseline(assemblyLeft + glyph.paintOffset.x(),
+                               assemblyBaseline);
+        const QPointF position(part.offset, 0.0);
+        QGlyphRun run;
+        run.setRawFont(font.rasterFont(glyph.fontScale));
+        run.setGlyphIndexes({part.glyphIndex});
+        run.setPositions({position});
+        painter.setPen(color);
+        painter.drawGlyphRun(baseline, run);
       }
-      QGlyphRun run;
-      run.setRawFont(font.rasterFont(glyph.fontScale));
-      run.setGlyphIndexes(glyphIndexes);
-      run.setPositions(glyphPositions);
-      painter.setPen(color);
-      painter.drawGlyphRun(
-          QPointF(assemblyLeft + glyph.paintOffset.x(), assemblyBaseline), run);
     }
     painter.restore();
   };
@@ -472,9 +479,13 @@ void paintMathMlPrimitives(
       case MathMlPaintPrimitiveKind::FractionRule:
         paintRule(*std::get<const MathCssFractionBox*>(primitive.payload));
         break;
-      case MathMlPaintPrimitiveKind::Radical:
-        paintRadical(*std::get<const MathCssRadicalOperation*>(
+      case MathMlPaintPrimitiveKind::GlyphPath:
+        paintGlyphPath(*std::get<const MathCssGlyphPathOperation*>(
             primitive.payload));
+        break;
+      case MathMlPaintPrimitiveKind::SolidRule:
+        paintSolidRect(std::get<const MathCssSolidRuleOperation*>(
+                           primitive.payload)->target);
         break;
       case MathMlPaintPrimitiveKind::Accent:
         paintAccent(*std::get<const MathCssAccentOperation*>(

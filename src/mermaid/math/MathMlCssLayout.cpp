@@ -20,6 +20,10 @@ constexpr qreal kMathTableDescenderExpansionEm = 0.25;
 constexpr qreal kMathTableTextDescenderExpansionEm = 3.0 / 16.0;
 constexpr qreal kMathTableExtraColumnCorrectionPx = 1.8;
 constexpr qreal kMathTableCellVerticalPaddingEm = 0.47265625;
+// Chromium collapses MathML rowspacing for a one-row mtable and resolves the
+// remaining table-cell leading to 3/8 em. Multi-row tables distribute a larger
+// leading while resolving rowspacing and therefore use the value above.
+constexpr qreal kMathTableSingleRowCellLeadingEm = 0.375;
 constexpr qreal kMathTableCellHorizontalPaddingEm = 0.8;
 constexpr qreal kMathMlThickSpaceEm = 5.0 / 18.0;
 constexpr qreal kMathMlMiddleSpaceEm = 0.05;
@@ -123,6 +127,9 @@ QString basicAccentCharacter(const MathRenderNode* accent);
 qreal rootLeftRightFenceExtent(const MathRenderNode* node,
                                const MathRenderNode* rootSemantic,
                                qreal minimumExtent);
+bool containsNode(const MathRenderNode* root, const MathRenderNode* target);
+const MathRenderNode* indexedRadicalDegree(
+    const MathRenderNode* root, const MathRenderNode* radicalBox);
 
 struct HorizontalAccentSelection {
   std::optional<MathGlyphVariant> fixed;
@@ -165,10 +172,6 @@ HorizontalAccentSelection selectHorizontalAccent(
   if (fixed && (fixedReachesTarget || !assembly)) result.fixed = fixed;
   else result.assembly = assembly;
   return result;
-}
-
-bool chromiumCapsHorizontalAssembly(const QString& character) {
-  return character == QString(QChar(0x2190));
 }
 
 QString mathDelimiterCharacter(const QString& delimiter) {
@@ -231,6 +234,22 @@ const MathRenderNode* middleDelimiterMarker(const MathRenderNode* node,
             middleDelimiterMarker(child.get(), false))
       return marker;
   return nullptr;
+}
+
+const MathRenderNode* indexedRadicalBox(const MathRenderNode* node) {
+  if (!node) return nullptr;
+  const MathRenderNode* best = nullptr;
+  for (const auto& child : node->children) {
+    if (!child) continue;
+    const MathRenderNode* candidate = child->semanticKind ==
+            MathSemanticKind::Radical
+        ? child.get()
+        : indexedRadicalBox(child.get());
+    if (candidate &&
+        (!best || mathStyleScale(candidate) > mathStyleScale(best)))
+      best = candidate;
+  }
+  return best;
 }
 
 bool findNodePath(const MathRenderNode* current,
@@ -432,8 +451,11 @@ QVector<qreal> arrayCssRowHeights(const MathRenderNode* array,
     bool operatorOverflow = false;
     bool scriptOverflow = false;
     bool underAccentOverflow = false;
+    bool structuredCell = false;
     for (int column = 0; column < array->columns; ++column) {
       const MathRenderNode* cell = arrayCellNode(array, table, row, column);
+      structuredCell = structuredCell || primarySemanticNode(cell) ||
+                       firstKind(cell, MathRenderKind::Accent);
       qreal currentHeight = cssNodeHeight(cell, scale);
       if (const MathRenderNode* semantic = primarySemanticNode(cell);
           semantic && semantic->semanticKind == MathSemanticKind::Fraction &&
@@ -474,7 +496,9 @@ QVector<qreal> arrayCssRowHeights(const MathRenderNode* array,
     } else {
       heights[row] = contentHeight +
           cssFontSize *
-              (kMathTableCellVerticalPaddingEm +
+              ((array->rows == 1 && !structuredCell
+                    ? kMathTableSingleRowCellLeadingEm
+                    : kMathTableCellVerticalPaddingEm) +
                ((plainDescender || underAccentOverflow)
                     ? kMathTableDescenderExpansionEm
                     : textModeDescender && array->columns > 1
@@ -504,6 +528,78 @@ qreal fractionCssWidth(const MathRenderNode* fraction, qreal scale) {
   return width;
 }
 
+qreal radicalDegreePaintWidth(const MathRenderNode* degree, qreal scale) {
+  const MathRenderNode* semantic = primarySemanticNode(degree);
+  if (!semantic)
+    return cssNodeWidth(degree, scale);
+  const MathFontConstants& constants =
+      OpenTypeMathFont::instance().constants();
+  if (semantic->semanticKind == MathSemanticKind::Fraction) {
+    const qreal fractionWidth = fractionCssWidth(semantic, scale);
+    return 2.0 + std::max<qreal>(0.0, fractionWidth - 2.0) *
+                     constants.scriptPercentScaleDown;
+  }
+  if (semantic->semanticKind == MathSemanticKind::SupSub &&
+      semantic->children.size() == 2) {
+    const qreal base = cssNodeWidth(semantic->children.front().get(), scale);
+    const qreal scripts = cssNodeWidth(semantic->children.back().get(), scale) *
+                          constants.scriptPercentScaleDown;
+    return snapEighth(base + scripts +
+                      constants.spaceAfterScript * mathStyleScale(semantic));
+  }
+  return cssNodeWidth(degree, scale);
+}
+
+qreal radicalDegreeAdvanceWidth(const MathRenderNode* degree, qreal scale) {
+  const MathRenderNode* semantic = primarySemanticNode(degree);
+  const qreal width = cssNodeWidth(degree, scale);
+  if (!semantic) return width;
+  const MathFontConstants& constants =
+      OpenTypeMathFont::instance().constants();
+  if (semantic->semanticKind == MathSemanticKind::Fraction)
+    return width * constants.scriptScriptPercentScaleDown;
+  if (semantic->semanticKind == MathSemanticKind::SupSub &&
+      semantic->children.size() == 2) {
+    return std::max<qreal>(
+        0.0, radicalDegreePaintWidth(degree, scale) -
+                 constants.radicalKernBeforeDegree);
+  }
+  if (semantic->semanticKind == MathSemanticKind::Radical)
+    return std::max<qreal>(
+        0.0, width - constants.spaceAfterScript -
+                 constants.radicalRuleThickness / 2.0 *
+                     mathStyleScale(semantic));
+  return width;
+}
+
+qreal radicalDegreePaintHeight(const MathRenderNode* degree, qreal scale) {
+  qreal height = cssNodeHeight(degree, scale);
+  const MathRenderNode* semantic = primarySemanticNode(degree);
+  if (semantic && semantic->semanticKind == MathSemanticKind::Fraction) {
+    const qreal ruleLeading = OpenTypeMathFont::instance()
+                                  .constants()
+                                  .fractionRuleThickness *
+                              semantic->fractionSizeMultiplier / 4.0;
+    height -= ruleLeading;
+  } else if (semantic &&
+             semantic->semanticKind == MathSemanticKind::Radical) {
+    height += OpenTypeMathFont::instance()
+                  .constants()
+                  .radicalVerticalGap / 2.0 * mathStyleScale(semantic);
+  } else if (semantic &&
+             semantic->semanticKind == MathSemanticKind::SupSub) {
+    const QRectF intrinsicRect(
+        0.0, 0.0, radicalDegreePaintWidth(degree, scale), 0.0);
+    if (const auto operation = buildScriptOperation(
+            semantic, nullptr, intrinsicRect, scale))
+      height = operation->container.height() *
+               OpenTypeMathFont::instance()
+                   .constants()
+                   .scriptScriptPercentScaleDown;
+  }
+  return snapLayoutUnit(height);
+}
+
 qreal fractionDelimiterExtent(const MathRenderNode* fraction, qreal minimumExtent) {
   if (!fraction) return {};
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
@@ -521,7 +617,9 @@ qreal radicalCssWidth(const MathRenderNode* radical, qreal scale) {
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
   const MathFontConstants& constants = font.constants();
   const MathRenderNode* radicalBox = radical->radicalIndex
-      ? nestedSemanticNode(radical, MathSemanticKind::Radical) : radical;
+      ? indexedRadicalBox(radical) : radical;
+  const MathRenderNode* degree = radical->radicalIndex
+      ? indexedRadicalDegree(radical, radicalBox) : nullptr;
   const auto widthVariant = font.verticalVariant(
       QString(QChar(0x221A)), font.pixelSize() * 1.875);
   const qreal styleScale = mathStyleScale(radical);
@@ -529,8 +627,16 @@ qreal radicalCssWidth(const MathRenderNode* radical, qreal scale) {
       ? (widthVariant->advance + constants.radicalRuleThickness / 2.0) *
             styleScale
       : font.pixelSize() * styleScale;
-  return radicalWidth + cssNodeWidth(radicalBody(radicalBox), scale) +
-         (radical->radicalIndex ? constants.radicalKernBeforeDegree : 0.0);
+  const qreal degreeAdvance = degree
+      ? std::max<qreal>(0.0, constants.radicalKernBeforeDegree +
+                                radicalDegreeAdvanceWidth(degree, scale) +
+                                constants.radicalKernAfterDegree)
+      : 0.0;
+  const qreal degreeWidthContribution = degree
+      ? constants.radicalKernBeforeDegree + degreeAdvance
+      : 0.0;
+  return degreeWidthContribution + radicalWidth +
+         cssNodeWidth(radicalBody(radicalBox), scale);
 }
 
 int symbolCount(const MathRenderNode* node) {
@@ -599,6 +705,29 @@ bool containsNode(const MathRenderNode* root, const MathRenderNode* target) {
   for (const auto& child : root->children)
     if (containsNode(child.get(), target)) return true;
   return false;
+}
+
+const MathRenderNode* indexedRadicalDegree(
+    const MathRenderNode* root, const MathRenderNode* radicalBox) {
+  if (!root || !radicalBox || root == radicalBox ||
+      !containsNode(root, radicalBox))
+    return nullptr;
+  const MathRenderNode* sibling = nullptr;
+  const MathRenderNode* pathChild = nullptr;
+  for (const auto& child : root->children) {
+    if (!child) continue;
+    if (containsNode(child.get(), radicalBox)) {
+      pathChild = child.get();
+    } else if (!sibling &&
+               (primarySemanticNode(child.get()) ||
+                singleSymbol(child.get()))) {
+      sibling = child.get();
+    }
+  }
+  if (const MathRenderNode* nested =
+          indexedRadicalDegree(pathChild, radicalBox))
+    return nested;
+  return sibling;
 }
 
 const MathRenderNode* enclosingKind(const MathRenderNode* node,
@@ -832,7 +961,7 @@ GlyphInkExtents glyphInkExtents(const MathRenderNode* node, qreal fontScale) {
     const OpenTypeMathFont& font = OpenTypeMathFont::instance();
     const MathFontConstants& constants = font.constants();
     const MathRenderNode* radicalBox = node->radicalIndex
-        ? nestedSemanticNode(node, MathSemanticKind::Radical) : node;
+        ? indexedRadicalBox(node) : node;
     const MathRenderNode* body = radicalBody(radicalBox);
     if (!body) return result;
     const qreal styleScale = mathStyleScale(node);
@@ -1177,7 +1306,7 @@ qreal cssNodeHeight(const MathRenderNode* node, qreal scale) {
     const MathFontConstants& constants = font.constants();
     const qreal styleScale = mathStyleScale(node);
     const MathRenderNode* body = radicalBody(node->radicalIndex
-        ? nestedSemanticNode(node, MathSemanticKind::Radical) : node);
+        ? indexedRadicalBox(node) : node);
     const qreal required = cssNodeHeight(body, scale) -
                            embeddedBraceStyleReduction(body) +
                            (constants.radicalVerticalGap +
@@ -1754,7 +1883,14 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
       const OpenTypeMathFont& mathFont = OpenTypeMathFont::instance();
       const MathFontConstants& constants = mathFont.constants();
       const MathRenderNode* radicalBox = semantic->radicalIndex
-          ? nestedSemanticNode(semantic, MathSemanticKind::Radical) : semantic;
+          ? indexedRadicalBox(semantic) : semantic;
+      const MathRenderNode* degree = semantic->radicalIndex
+          ? indexedRadicalDegree(semantic, radicalBox) : nullptr;
+      const qreal degreeAdvance = degree
+          ? std::max<qreal>(0.0, constants.radicalKernBeforeDegree +
+                                    radicalDegreeAdvanceWidth(degree, scale) +
+                                    constants.radicalKernAfterDegree)
+          : 0.0;
       const MathRenderNode* body = radicalBody(radicalBox);
       const GlyphInkExtents bodyInk = glyphInkExtents(body, 1.0);
       const qreal radicalPadding = constants.radicalVerticalGap +
@@ -1775,7 +1911,8 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
       root.width = radicalCssWidth(semantic, scale);
       root.advance = heightVariant
           ? cssNodeWidth(body, scale) + heightVariant->advance - constants.spaceAfterScript +
-                (semantic->radicalIndex ? constants.radicalKernBeforeDegree : 0.0)
+                (degree ? constants.radicalKernBeforeDegree + degreeAdvance
+                        : 0.0)
           : root.width;
       if (heightVariant) {
         qreal extra = semantic->radicalIndex ||
@@ -1791,6 +1928,21 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
         root.height = std::max(root.height, heightVariant->extent + extra);
       }
       if (root.height == 0.0) root.height = std::ceil(scaledHeight);
+      if (degree && heightVariant) {
+        const qreal degreeScale = constants.scriptScriptPercentScaleDown;
+        qreal degreeHeight = radicalDegreePaintHeight(degree, scale);
+        if (!primarySemanticNode(degree))
+          degreeHeight = std::round(degreeHeight * degreeScale);
+        const qreal degreeBottom = root.height -
+            constants.radicalDegreeBottomRaisePercent *
+                heightVariant->extent;
+        const qreal topOverhang = std::max<qreal>(
+            0.0, degreeHeight - degreeBottom);
+        root.height = snapLayoutUnit(
+            root.height + std::max<qreal>(
+                0.0, 2.0 * topOverhang -
+                         constants.radicalRuleThickness / 2.0));
+      }
       if (enclosingKind(layout.root.get(), semantic,
                         MathRenderKind::LeftRight)) {
         root.width = cssNodeWidth(layout.root.get(), scale);
@@ -3192,7 +3344,7 @@ std::optional<MathCssRadicalOperation> buildRadicalOperation(
   if (!radical || radical->semanticKind != MathSemanticKind::Radical)
     return std::nullopt;
   const MathRenderNode* radicalBox = radical->radicalIndex
-      ? nestedSemanticNode(radical, MathSemanticKind::Radical) : radical;
+      ? indexedRadicalBox(radical) : radical;
   const MathRenderNode* body = radicalBody(radicalBox);
   if (!body) return std::nullopt;
 
@@ -3219,7 +3371,7 @@ std::optional<MathCssRadicalOperation> buildRadicalOperation(
   const MathRenderNode* enclosingLeftRight = topLevel
       ? enclosingKind(containingNode, radical, MathRenderKind::LeftRight)
       : nullptr;
-  if (topLevel && !enclosingLeftRight)
+  if (topLevel && !enclosingLeftRight && !radical->radicalIndex)
     target = std::max(
         target, containingRect.height() - radicalExtra);
   const auto variant = font.verticalVariant(
@@ -3239,28 +3391,83 @@ std::optional<MathCssRadicalOperation> buildRadicalOperation(
   if (enclosingLeftRight)
     left = containingRect.left() + arrayDelimiterWidth(
         enclosingLeftRight->leftDelimiter, containingRect.height());
+  const qreal degreeBaseLeft = left;
+  const MathRenderNode* degreeNode = radical->radicalIndex
+      ? indexedRadicalDegree(radical, radicalBox) : nullptr;
+  const qreal degreeAdvance = degreeNode
+      ? std::max<qreal>(0.0, constants.radicalKernBeforeDegree +
+                                radicalDegreeAdvanceWidth(degreeNode,
+                                                          renderScale) +
+                                constants.radicalKernAfterDegree)
+      : 0.0;
+  left += degreeNode
+      ? constants.radicalKernBeforeDegree + degreeAdvance
+      : 0.0;
   const bool fillsContainingRow = primarySemanticNode(containingNode) == radical;
   const qreal top = fillsContainingRow
       ? containingRect.top()
       : containingRect.top() + (containingRect.height() - height) / 2.0;
+  const qreal intrinsicRadicalHeight =
+      variant->extent * styleScale + radicalExtra;
+  const qreal indexedExpansion = radical->radicalIndex && fillsContainingRow
+      ? std::max<qreal>(0.0,
+                        containingRect.height() - intrinsicRadicalHeight)
+      : 0.0;
+  const qreal decorationShift = indexedExpansion > 0.0
+      ? indexedExpansion / 2.0 + radicalRule / 2.0 : 0.0;
+  const qreal indexedBodyTop = top + radicalExtra + radicalRule +
+      2.0 * radicalGap +
+      (indexedExpansion > 0.0
+           ? indexedExpansion / 2.0 + radicalRule / 4.0 : 0.0);
 
   MathCssRadicalOperation result;
   result.lineAscent = lineAscent;
   result.lineDescent = lineDescent;
   result.container = fillsContainingRow
-      ? QRectF(left, containingRect.top(), radicalCssWidth(radical, renderScale),
+      ? QRectF(degreeBaseLeft, containingRect.top(),
+               radicalCssWidth(radical, renderScale),
                containingRect.height())
-      : QRectF(left, top, radicalCssWidth(radical, renderScale), height);
+      : QRectF(degreeBaseLeft, top, radicalCssWidth(radical, renderScale),
+               height);
   result.body = QRectF(left + variant->advance * styleScale,
-                       top + lineAscent - bodyAscent,
+                       radical->radicalIndex && fillsContainingRow
+                           ? indexedBodyTop
+                           : top + lineAscent - bodyAscent,
                        bodyWidth, bodyHeight);
-  result.rule = QRectF(result.body.left(),
-                       top + radicalExtra,
-                       bodyWidth, radicalRule);
-  result.glyph = QRectF(left, top + radicalExtra,
-                        variant->advance * styleScale,
-                        variant->extent * styleScale);
+  result.radicalRule.target = QRectF(result.body.left(),
+                                     top + radicalExtra + decorationShift,
+                                     bodyWidth, radicalRule);
+  result.radicalGlyph.character = QString(QChar(0x221A));
+  result.radicalGlyph.glyphIndex = variant->glyphIndex;
+  result.radicalGlyph.target = QRectF(left,
+                                      top + radicalExtra + decorationShift,
+                                      variant->advance * styleScale,
+                                      variant->extent * styleScale);
   result.bodyNode = body;
+  result.degreeNode = degreeNode;
+  if (result.degreeNode) {
+      const qreal degreeScale = constants.scriptScriptPercentScaleDown;
+      const qreal degreeWidth = primarySemanticNode(result.degreeNode)
+          ? radicalDegreePaintWidth(result.degreeNode, renderScale)
+          : cssNodeWidth(result.degreeNode, renderScale);
+      const MathRenderNode* degreeSymbol =
+          primarySemanticNode(result.degreeNode)
+          ? nullptr : singleSymbol(result.degreeNode);
+      const auto degreeGlyphBox = nativeGlyphBox(degreeSymbol);
+      const qreal degreeHeight = degreeGlyphBox
+          ? std::round(degreeGlyphBox->height * degreeScale)
+          : radicalDegreePaintHeight(result.degreeNode, renderScale);
+      const qreal degreeBottom = result.radicalGlyph.target.bottom() -
+          constants.radicalDegreeBottomRaisePercent *
+              result.radicalGlyph.target.height() +
+          (fillsContainingRow
+               ? std::max<qreal>(0.0, containingRect.height() - height) -
+                     decorationShift
+               : 0.0);
+      result.degree = QRectF(
+          degreeBaseLeft + constants.radicalKernBeforeDegree,
+          degreeBottom - degreeHeight, degreeWidth, degreeHeight);
+  }
   if (enclosingLeftRight) {
     MathCssFencePair fences;
     const qreal leftWidth = arrayDelimiterWidth(
@@ -3285,17 +3492,16 @@ std::optional<MathCssRadicalOperation> buildRadicalOperation(
   }
   result.container = snapVerticalLayoutRect(result.container);
   result.body = snapVerticalLayoutRect(result.body);
-  result.rule = snapVerticalLayoutRect(result.rule);
-  result.glyph = snapVerticalLayoutRect(result.glyph);
-  result.glyphRun.text = QString(QChar(0x221A));
-  result.glyphRun.glyphIndexes = {variant->glyphIndex};
-  result.glyphRun.positions = {QPointF()};
-  result.glyphRun.fontScale = styleScale;
-  result.glyphRun.inkBounds = font.rasterGlyphBounds(
+  result.degree = snapVerticalLayoutRect(result.degree);
+  result.radicalRule.target = snapVerticalLayoutRect(
+      result.radicalRule.target);
+  result.radicalGlyph.target = snapVerticalLayoutRect(
+      result.radicalGlyph.target);
+  result.radicalGlyph.fontScale = styleScale;
+  result.radicalGlyph.inkBounds = font.rasterGlyphBounds(
       variant->glyphIndex, styleScale);
-  result.glyphRun.baselineOrigin = result.glyph.topLeft() -
-                                   result.glyphRun.inkBounds.topLeft();
-  result.glyphRun.clip = result.glyph.intersected(result.container);
+  result.radicalGlyph.clip = result.radicalGlyph.target.intersected(
+      result.container);
   return result;
 }
 
@@ -3669,33 +3875,39 @@ std::optional<MathCssPaintOperation> buildAccentOperation(
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
   MathCssHorizontalGlyphOperation& glyph = result.glyph;
   glyph.target = result.box.accent;
+  glyph.character = result.box.character;
   const bool basicAccent = !basicAccentCharacter(accent).isEmpty();
   const bool cappedAssembly =
-      chromiumCapsHorizontalAssembly(result.box.character);
-  const bool operatorAssembly = cappedAssembly ||
       result.box.character == QString(QChar(0x21D2));
+  const bool operatorAssembly =
+      result.box.character == QString(QChar(0x2190)) ||
+      cappedAssembly;
   glyph.selectionTarget = accent->accentUsesNaturalWidth || basicAccent
       ? result.box.accent.width()
       : result.box.body.width();
-  // Chromium keeps placement tied to the annotated body, but caps the
-  // OpenType stretch request for these arrows at three intrinsic operator
-  // widths. Quantize that request at the CSS pixel boundary.
-  const qreal stretchTarget = cappedAssembly
-      ? std::floor(3.0 * result.box.accent.width())
-      : glyph.selectionTarget;
-  glyph.placementExtent =
-      result.box.character == QString(QChar(0x21D2))
-      ? stretchTarget : glyph.selectionTarget;
   glyph.fontScale = result.box.fontScale * style.fontScale();
+  const MathRenderNode* bodySemantic = primarySemanticNode(body);
+  const bool scaleVariantSelection =
+      accent->accentKind == MathAccentKind::UnderBrace && !bodySemantic;
+  qreal stretchTarget = glyph.selectionTarget *
+      (scaleVariantSelection ? glyph.fontScale : 1.0);
+  if (cappedAssembly)
+    stretchTarget = std::min(
+        stretchTarget, std::floor(3.0 * result.box.accent.width()));
+  glyph.placementExtent = cappedAssembly
+      ? stretchTarget : glyph.selectionTarget;
   if (rootRowChild && accent->accentKind == MathAccentKind::Under) {
     glyph.paintOffset.setY(std::round(
         2.0 * font.constants().underbarRuleThickness));
   }
-  const MathRenderNode* bodySemantic = primarySemanticNode(body);
   glyph.scalePolicy = accent->accentUsesNaturalWidth ||
           !result.bodyGlyphRuns.isEmpty() || bodySemantic
       ? MathCssHorizontalScalePolicy::PreserveVariantScale
       : MathCssHorizontalScalePolicy::StretchToTarget;
+  if (result.box.character == QString(QChar(0x23E0)) ||
+      result.box.character == QString(QChar(0x23E1)))
+    glyph.scalePolicy =
+        MathCssHorizontalScalePolicy::StretchInkToPlacementExtent;
   const auto natural = accent->accentUsesNaturalWidth || basicAccent
       ? font.glyph(result.box.character)
       : std::optional<MathGlyphMetrics>{};
@@ -3729,13 +3941,14 @@ std::optional<MathCssPaintOperation> buildAccentOperation(
         selection.assembly->italicCorrection * glyph.fontScale;
     glyph.parts.reserve(selection.assembly->parts.size());
     for (const MathGlyphAssemblyPart& part : selection.assembly->parts) {
+      QRectF partInk = font.rasterGlyphBounds(part.glyphIndex,
+                                              glyph.fontScale);
       glyph.parts.push_back({part.glyphIndex,
+                             partInk,
                              part.offset * glyph.fontScale,
                              part.fullAdvance * glyph.fontScale,
                              part.connectorOverlap * glyph.fontScale,
                              part.extender});
-      QRectF partInk = font.rasterGlyphBounds(part.glyphIndex,
-                                              glyph.fontScale);
       partInk.translate(part.offset * glyph.fontScale, 0.0);
       glyph.inkBounds = glyph.inkBounds.isNull()
           ? partInk : glyph.inkBounds.united(partInk);
@@ -4085,8 +4298,8 @@ std::optional<MathCssPaintOperation> buildFractionOperation(
                   node, row, intrinsicRow, renderScale)) {
             height = std::max({height,
                                child->lineAscent + child->lineDescent,
-                               child->glyph.bottom(),
-                               child->rule.bottom(),
+                               child->radicalGlyph.target.bottom(),
+                               child->radicalRule.target.bottom(),
                                child->body.bottom()});
           }
           break;
@@ -4286,7 +4499,7 @@ std::optional<MathCssPaintOperation> buildPaintOperation(
     }
   };
   if (auto* radical = std::get_if<MathCssRadicalOperation>(&result.payload);
-      radical && topLevel) {
+      radical && topLevel && !operationNode->radicalIndex) {
     QVector<const MathRenderNode*> bodyOperations;
     collectImmediatePaintNodes(radical->bodyNode, &bodyOperations);
     qreal bodyBaseline = middleDelimiterMarker(radical->bodyNode)
@@ -4329,6 +4542,16 @@ std::optional<MathCssPaintOperation> buildPaintOperation(
     if (auto runs = buildGlyphRunOperations(
             radical->bodyNode, radical->body, style.fontScale(), true))
       radical->bodyGlyphRuns = std::move(*runs);
+    const MathRenderNode* degreeSymbol = singleSymbol(radical->degreeNode);
+    const MathRenderNode* degreePaintNode =
+        primarySemanticNode(radical->degreeNode)
+        ? nullptr : degreeSymbol ? degreeSymbol : radical->degreeNode;
+    if (auto runs = buildGlyphRunOperations(
+            degreePaintNode, radical->degree,
+            OpenTypeMathFont::instance().constants()
+                .scriptScriptPercentScaleDown,
+            true))
+      radical->degreeGlyphRuns = std::move(*runs);
   }
   if (auto* script = std::get_if<MathCssScriptOperation>(&result.payload)) {
     const std::optional<qreal> cssPositionScale =
@@ -4357,6 +4580,8 @@ std::optional<MathCssPaintOperation> buildPaintOperation(
   } else if (const auto* radical =
                  std::get_if<MathCssRadicalOperation>(&result.payload)) {
     appendRegion(radical->bodyNode, radical->body, style);
+    appendRegion(radical->degreeNode, radical->degree,
+                 MathMlStyleContext{2});
   }
   return result;
 }
@@ -4655,12 +4880,25 @@ QJsonObject MathCssPaintOperation::toJson() const {
   } else if (const auto* radical =
                  std::get_if<MathCssRadicalOperation>(&payload)) {
     result.insert(QStringLiteral("body"), rectJson(radical->body));
-    result.insert(QStringLiteral("glyph"), rectJson(radical->glyph));
-    result.insert(QStringLiteral("rule"), rectJson(radical->rule));
-    result.insert(QStringLiteral("glyphRun"),
-                  glyphRunsJson({radical->glyphRun}).at(0));
+    result.insert(QStringLiteral("degree"), rectJson(radical->degree));
+    result.insert(QStringLiteral("glyph"),
+                  rectJson(radical->radicalGlyph.target));
+    result.insert(QStringLiteral("rule"),
+                  rectJson(radical->radicalRule.target));
+    result.insert(QStringLiteral("radicalGlyph"), QJsonObject{
+        {QStringLiteral("character"), radical->radicalGlyph.character},
+        {QStringLiteral("glyphIndex"),
+         static_cast<qint64>(radical->radicalGlyph.glyphIndex)},
+        {QStringLiteral("target"), rectJson(radical->radicalGlyph.target)},
+        {QStringLiteral("inkBounds"),
+         rectJson(radical->radicalGlyph.inkBounds)},
+        {QStringLiteral("clip"), rectJson(radical->radicalGlyph.clip)},
+        {QStringLiteral("fontScale"),
+         jsonNumber(radical->radicalGlyph.fontScale)}});
     result.insert(QStringLiteral("bodyGlyphRuns"),
                   glyphRunsJson(radical->bodyGlyphRuns));
+    result.insert(QStringLiteral("degreeGlyphRuns"),
+                  glyphRunsJson(radical->degreeGlyphRuns));
     if (radical->fences)
       result.insert(QStringLiteral("fences"),
                     fencePairJson(*radical->fences));
@@ -4719,8 +4957,12 @@ QJsonObject MathCssPaintOperation::toJson() const {
          glyph.scalePolicy ==
                  MathCssHorizontalScalePolicy::PreserveVariantScale
              ? QStringLiteral("preserve-variant")
-             : QStringLiteral("stretch-to-target")},
+             : glyph.scalePolicy ==
+                       MathCssHorizontalScalePolicy::StretchInkToPlacementExtent
+                   ? QStringLiteral("stretch-ink-to-placement")
+                   : QStringLiteral("stretch-to-target")},
         {QStringLiteral("target"), rectJson(glyph.target)},
+        {QStringLiteral("character"), glyph.character},
         {QStringLiteral("selectionTarget"),
          jsonNumber(glyph.selectionTarget)},
         {QStringLiteral("fontScale"), jsonNumber(glyph.fontScale)},
@@ -4748,6 +4990,7 @@ QJsonObject MathCssPaintOperation::toJson() const {
       parts.push_back(QJsonObject{
           {QStringLiteral("glyphIndex"),
            static_cast<qint64>(part.glyphIndex)},
+          {QStringLiteral("inkBounds"), rectJson(part.inkBounds)},
           {QStringLiteral("offset"), jsonNumber(part.offset)},
           {QStringLiteral("fullAdvance"), jsonNumber(part.fullAdvance)},
           {QStringLiteral("connectorOverlap"),

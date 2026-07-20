@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { PNG } from "pngjs";
 import { cases } from "./mermaid_golden_cases.mjs";
@@ -118,6 +119,18 @@ try {
             return { width: box.width, height: box.height };
           })
         : undefined;
+      const mathBox = fixture.mathCrop ? (() => {
+        const math = root.querySelector("g.node math");
+        if (!math) throw new Error(`Case ${fixture.id}: Math label is missing`);
+        const box = math.getBoundingClientRect();
+        const elements = [...math.querySelectorAll("mtable,mtr,mtd,mi,mo,mn")]
+          .map((element) => {
+            const rect = element.getBoundingClientRect();
+            return { tag: element.localName, width: rect.width,
+                     height: rect.height };
+          });
+        return { width: box.width, height: box.height, elements };
+      })() : undefined;
       const computedStyles = fixture.id.startsWith("look-redux") ? (() => {
         const nodePath = root.querySelector("g.node path, g.node rect, g.node polygon");
         const clusterRect = root.querySelector("g.cluster rect");
@@ -138,6 +151,7 @@ try {
       })() : undefined;
       return { width: bb.width, height: bb.height,
                ...(nodeBoxes ? { nodeBoxes } : {}),
+               ...(mathBox ? { mathBox } : {}),
                ...(computedStyles ? { computedStyles } : {}) };
     }, { fixture, index, mermaidModule, fontFaces, fixedFontStack });
     const element = await page.$("#container svg");
@@ -148,7 +162,36 @@ try {
       inputColorType: 6,
       bitDepth: 8,
     });
-    results.push({ ...fixture, dpr, content, png });
+    let mathCropPng;
+    if (fixture.mathCrop) {
+      const mathClip = await page.$eval("g.node math", (node) => {
+        const rect = node.getBoundingClientRect();
+        const guard = 2;
+        return { x: rect.left - guard, y: rect.top - guard,
+                 width: Math.max(1, rect.width + 2 * guard),
+                 height: Math.max(1, rect.height + 2 * guard) };
+      });
+      await page.evaluate(() => {
+        const root = document.querySelector("svg");
+        for (const node of root.querySelectorAll("*"))
+          node.style.visibility = "hidden";
+        const selected = root.querySelector("g.node math");
+        for (let node = selected; node && node !== root; node = node.parentElement)
+          node.style.visibility = "visible";
+        for (const child of selected.querySelectorAll("*"))
+          child.style.visibility = "visible";
+      });
+      const cropScreenshot = await page.screenshot({
+        omitBackground: true,
+        clip: mathClip,
+      });
+      mathCropPng = PNG.sync.write(PNG.sync.read(cropScreenshot), {
+        colorType: 6,
+        inputColorType: 6,
+        bitDepth: 8,
+      });
+    }
+    results.push({ ...fixture, dpr, content, png, mathCropPng });
   }
 
   fs.mkdirSync(outDir, { recursive: true });
@@ -156,6 +199,9 @@ try {
   for (const r of results) {
     const file = `${r.id}.png`;
     fs.writeFileSync(path.join(outDir, file), r.png);
+    const mathCropFile = r.mathCropPng ? `${r.id}-label.png` : undefined;
+    if (mathCropFile)
+      fs.writeFileSync(path.join(outDir, mathCropFile), r.mathCropPng);
     const enforceInterior = r.enforceInterior ?? true;
     manifestCases.push({ id: r.id, theme: r.theme, look: r.look ?? "classic",
                          fontMode: r.fontMode ?? "system",
@@ -166,6 +212,11 @@ try {
                          ...(r.textGlyphIou !== undefined ? { textGlyphIou: r.textGlyphIou } : {}),
                          ...(r.emptyMaxMismatchRatio !== undefined
                            ? { emptyMaxMismatchRatio: r.emptyMaxMismatchRatio } : {}),
+                         ...(mathCropFile
+                           ? { mathCropKind: r.mathCropKind, mathCropFile,
+                               mathCropSha256: createHash("sha256")
+                                 .update(r.mathCropPng).digest("hex") }
+                           : {}),
                          content: r.content, enforceInterior, file });
   }
   const manifest = {

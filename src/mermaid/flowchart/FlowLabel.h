@@ -83,7 +83,7 @@ struct FlowLabelLayoutMetrics {
 FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType,
                                  bool mathEnabled = true);
 
-// Compiles sequence MathML into immutable, color-independent paint operations.
+// Compiles MathML into immutable, color-independent paint operations.
 // The resulting document is safe to copy into an immutable scene and reuse for
 // every layout/paint pass.
 qsizetype prepareFlowLabelMath(FlowLabelDocument& label,

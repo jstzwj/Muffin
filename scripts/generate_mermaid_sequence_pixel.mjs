@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import { PNG } from "pngjs";
 
 const mermaidRoot = path.resolve(process.argv[2] ?? path.join("..", "mermaid-cli", "node_modules", "mermaid"));
 const outDir = path.resolve(process.argv[3] ?? path.join("tests", "fixtures", "mermaid", "sequence-pixel"));
@@ -77,25 +78,33 @@ const cases = [
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt{x^{\\frac{a}{b}}}$$\nB-->>A:done" },
   { id: "label-math-fraction-cross-recursive-ops", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\frac{\\sqrt{x_i^2}}{y^{\\frac{a}{b}}}$$\nB-->>A:done" },
-  { id: "label-math-underbrace", dpr: 1.5, theme: "dark",
+  { id: "label-math-root-index-plain", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt[3]{x+1}$$\nB-->>A:done" },
+  { id: "label-math-root-index-fraction", dpr: 1.25, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt[\\frac{a}{b}]{x+1}$$\nB-->>A:done" },
+  { id: "label-math-root-index-radical", dpr: 1.5, theme: "dark", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt[\\sqrt{n}]{x+1}$$\nB-->>A:done' },
+  { id: "label-math-root-index-supsub", dpr: 2, cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+    source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\sqrt[x_i^2]{y}$$\nB-->>A:done" },
+  { id: "label-math-underbrace", dpr: 1.5, theme: "dark", mathAccent: "under",
     cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underbrace{x+y}_{n}$$' },
-  { id: "label-math-under-arrow", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-under-arrow", mathAccent: "under", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\underleftrightarrow{x+y}$$" },
-  { id: "label-math-overbrace", dpr: 2, theme: "dark",
+  { id: "label-math-overbrace", dpr: 2, theme: "dark", mathAccent: "over",
     cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{x+y}^{n}$$' },
   { id: "label-math-accent-text-shaping", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\widehat{\\text{office}}$$" },
-  { id: "label-math-accent-double-right-arrow", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-accent-double-right-arrow", mathAccent: "over", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\Overrightarrow{x+y}$$" },
   { id: "label-math-accent-left-harpoon", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overleftharpoon{x+y}$$" },
   { id: "label-math-accent-right-harpoon", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overrightharpoon{x+y}$$" },
-  { id: "label-math-accent-overgroup", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-accent-overgroup", mathAccent: "over", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overgroup{x+y}$$" },
-  { id: "label-math-accent-overlinesegment-upstream-text", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
+  { id: "label-math-accent-overlinesegment-upstream-text", mathAccent: "over", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overlinesegment{x+y}$$" },
   { id: "label-math-accent-mixed-fraction-body", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$\\overbrace{x+\\frac{a}{b}+y}^{n}$$" },
@@ -265,9 +274,11 @@ const cases = [
     source: '%%{init: {"theme": "dark"}}%%\nsequenceDiagram\nA->>B:start\nNote over A,B:$$\\underline{x+y}$$' },
   { id: "label-math-relation-overlay", cropSelector: '[data-et="note"] foreignObject', cropKind: "note",
     source: "sequenceDiagram\nA->>B:start\nNote over A,B:$$x\\le y\\ne z$$" },
-];
+].filter(fixture => !process.env.MERMAID_FIXTURE_FILTER ||
+  fixture.id.includes(process.env.MERMAID_FIXTURE_FILTER));
 const { default: puppeteer } = await import(pathToFileURL(path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "puppeteer", "puppeteer.js")));
-const browser = await puppeteer.launch({headless:true, executablePath:chrome, args:["--allow-file-access-from-files"]});
+const browser = await puppeteer.launch({headless:true, executablePath:chrome,
+  protocolTimeout:300000,args:["--allow-file-access-from-files"]});
 fs.mkdirSync(outDir, {recursive:true});
 try {
   const page = await browser.newPage();
@@ -355,36 +366,72 @@ try {
     const file=`${cases[i].id}.png`;
     const svg = await page.$("svg");
     await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
-    let mathBodyFile,mathAccentFile,mathGlyphFile,mathGlyphBox;
+    let mathBodyFile,mathAccentFile,mathAccentText,mathGlyphFile,mathGlyphBox;
     let mathDelimiters;
     let mathTokens,mathTokenGroups,mathRasterPhases;
-    const captureMathComponent=async(selector,suffix)=>{
-      const clip=await page.$eval(selector,(node)=>{
-        const rect=node.closest("math").getBoundingClientRect();
-        return {x:rect.left,y:rect.top,width:Math.max(1,rect.width),
-          height:Math.max(1,rect.height)};
-      });
-      await page.evaluate((selector)=>{
-        const root=document.querySelector("svg");
-        for(const node of root.querySelectorAll("*")) node.style.visibility="hidden";
-        const selected=root.querySelector(selector);
-        for(let node=selected;node&&node!==root;node=node.parentElement)
-          node.style.visibility="visible";
-        for(const node of selected.querySelectorAll("*")) node.style.visibility="visible";
-      },selector);
-      const componentFile=`${cases[i].id}-${suffix}.png`;
-      await page.screenshot({path:path.join(outDir,componentFile),
-        omitBackground:true,clip});
-      await page.evaluate(()=>{
-        const root=document.querySelector("svg");
-        for(const node of root.querySelectorAll("*"))
-          node.style.removeProperty("visibility");
-      });
-      return componentFile;
-    };
+    const accentSelector="math mover > mo:last-child, math munder > mo:last-child";
     if(cases[i].mathAccent) {
-      mathBodyFile=await captureMathComponent("math mtext","math-body");
-      mathAccentFile=await captureMathComponent("math mo","math-accent");
+      const componentPage=await browser.newPage();
+      await componentPage.setViewport({width:2200,height:1600,
+        deviceScaleFactor:cases[i].dpr ?? 1});
+      const svgMarkup=await page.$eval("svg",root=>root.outerHTML);
+      const componentCss=`${faces}\n${mathFace}\n`+
+        `math{font-family:"STIX Two Math",${stack} !important}`+
+        `math mover>:first-child,math munder>:first-child{color:rgb(0,255,0)!important}`+
+        `${accentSelector}{color:rgb(255,0,255)!important}`;
+      await componentPage.goto(harness);
+      await componentPage.evaluate(({componentCss,svgMarkup})=>{
+        const style=document.createElement("style");
+        style.textContent=componentCss;
+        document.head.appendChild(style);
+        document.getElementById("container").innerHTML=svgMarkup;
+      },{componentCss,svgMarkup});
+      const tagged=await componentPage.evaluate(async ({accentSelector})=>{
+        await Promise.all([
+          document.fonts.load('16px "Noto Sans"','Latin'),
+          document.fonts.load('16px "Noto Sans CJK SC"','ä¸­æ–‡'),
+          document.fonts.load('16px "Noto Sans Arabic"','Ø³Ù„Ø§Ù…'),
+          document.fonts.load('16px "Noto Sans Hebrew"','×©×œ×•×'),
+          document.fonts.load('16px "STIX Two Math"','x+√←→↔⇒⏞⏟')]);
+        await document.fonts.ready;
+        await new Promise(resolve=>requestAnimationFrame(() =>
+          requestAnimationFrame(resolve)));
+        const root=document.querySelector("svg");
+        const accent=root.querySelector(accentSelector);
+        const math=accent?.closest("math");
+        if(!math) throw new Error("Math accent component is missing");
+        for(const node of root.querySelectorAll("*")) {
+          if(node===math||node.contains(math)||math.contains(node)) continue;
+          node.style.setProperty("opacity","0","important");
+        }
+        document.body.style.margin="0";
+        document.documentElement.style.margin="0";
+        const rect=math.getBoundingClientRect();
+        return {clip:{x:rect.left,y:rect.top,width:Math.max(1,rect.width),
+          height:Math.max(1,rect.height)},text:accent.textContent ?? ""};
+      },{accentSelector});
+      const taggedPng=PNG.sync.read(await componentPage.screenshot({
+        omitBackground:true,clip:tagged.clip}));
+      const writeTaggedComponent=(suffix,matches)=>{
+        const component=new PNG({width:taggedPng.width,height:taggedPng.height});
+        for(let offset=0;offset<taggedPng.data.length;offset+=4) {
+          if(!matches(taggedPng.data[offset],taggedPng.data[offset+1],
+                      taggedPng.data[offset+2])) continue;
+          component.data[offset]=taggedPng.data[offset];
+          component.data[offset+1]=taggedPng.data[offset+1];
+          component.data[offset+2]=taggedPng.data[offset+2];
+          component.data[offset+3]=taggedPng.data[offset+3];
+        }
+        const componentFile=`${cases[i].id}-${suffix}.png`;
+        fs.writeFileSync(path.join(outDir,componentFile),PNG.sync.write(component));
+        return componentFile;
+      };
+      mathBodyFile=writeTaggedComponent("math-body",
+        (red,green,blue)=>green>200&&red<80&&blue<80);
+      mathAccentFile=writeTaggedComponent("math-accent",
+        (red,green,blue)=>red>200&&green<80&&blue>200);
+      mathAccentText=tagged.text;
+      await componentPage.close();
     }
     if(cases[i].mathGlyph) {
       mathGlyphBox=await page.$$eval("math mi,math mo",(nodes,text)=>{
@@ -669,6 +716,7 @@ try {
       ? createHash("sha256").update(fs.readFileSync(path.join(outDir,mathGlyphFile))).digest("hex") : undefined;
     manifestCases.push({...cases[i],file,sha256,cropFile,cropSha256,
       mathBodyFile,mathBodySha256,mathAccentFile,mathAccentSha256,
+      mathAccentText,
       mathGlyphFile,mathGlyphSha256,mathGlyphBox,mathTokens,mathTokenGroups,
       mathRasterPhases,mathDelimiters,...dimensions});
   }

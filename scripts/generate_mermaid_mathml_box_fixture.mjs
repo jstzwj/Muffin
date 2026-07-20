@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import {createHash} from "node:crypto";
 import {pathToFileURL} from "node:url";
+import {PNG} from "pngjs";
 
 const mermaidRoot = path.resolve(process.argv[2] ??
   path.join("..", "mermaid-cli", "node_modules", "mermaid"));
@@ -53,6 +54,9 @@ const formulas = [
   ["sqrt", "\\sqrt{x_i^2+y^2}"],
   ["sqrt-plain", "\\sqrt{x}"],
   ["root-index", "\\sqrt[3]{x+1}"],
+  ["root-index-fraction", "\\sqrt[\\frac{a}{b}]{x+1}"],
+  ["root-index-radical", "\\sqrt[\\sqrt{n}]{x+1}"],
+  ["root-index-supsub", "\\sqrt[x_i^2]{y}"],
   ["matrix-2x2", "\\begin{matrix}a&b\\\\c&d\\end{matrix}"],
   ["matrix-3x3", "\\begin{matrix}a&b&c\\\\d&e&f\\\\g&h&i\\end{matrix}"],
   ["fraction-sup", "\\frac{x_i^2}{y_j^3}"],
@@ -194,6 +198,19 @@ const browser = await puppeteer.launch({
 });
 
 const snapshots = [];
+const pixelBounds = (png, predicate) => {
+  let left = png.width, top = png.height, right = -1, bottom = -1;
+  for (let y = 0; y < png.height; ++y) {
+    for (let x = 0; x < png.width; ++x) {
+      const offset = 4 * (y * png.width + x);
+      if (!predicate(png.data[offset], png.data[offset + 1],
+                     png.data[offset + 2], png.data[offset + 3], x, y)) continue;
+      left = Math.min(left, x); top = Math.min(top, y);
+      right = Math.max(right, x); bottom = Math.max(bottom, y);
+    }
+  }
+  return right < left ? null : {left, top, right, bottom};
+};
 try {
   const page = await browser.newPage();
   const harness = pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href;
@@ -204,7 +221,12 @@ try {
     await page.goto(harness);
     const snapshot = await page.evaluate(async ({fixture, index, mermaidModule, fontFaces, fontStack, mathFontFace}) => {
       const style = document.createElement("style");
-      style.textContent = `${fontFaces}\n${mathFontFace}\nmath{font-family:"STIX Two Math",${fontStack} !important}`;
+      const rootIndexOracle = fixture.id.startsWith("root-index");
+      style.textContent = `${fontFaces}\n${mathFontFace}\nmath{font-family:"STIX Two Math",${fontStack} !important}` +
+        (rootIndexOracle
+          ? `\nmath mroot{color:rgb(255,0,255)!important}` +
+            `\nmath mroot>*{color:transparent!important}`
+          : "");
       document.head.appendChild(style);
       await Promise.all([
         document.fonts.load('16px "Noto Sans"', "Latin"),
@@ -321,8 +343,44 @@ try {
         text: textRect,
         textBaseline,
         tree: serialize(math),
+        screenMath: rootIndexOracle ? (() => {
+          const rect = math.getBoundingClientRect();
+          return {x: rect.x, y: rect.y, width: rect.width, height: rect.height};
+        })() : undefined,
       };
     }, {fixture, index, mermaidModule, fontFaces, fontStack, mathFontFace});
+    if (snapshot.screenMath) {
+      const clip = snapshot.screenMath;
+      const png = PNG.sync.read(await page.screenshot({
+        omitBackground: true,
+        clip: {x: clip.x, y: clip.y, width: clip.width, height: clip.height},
+      }));
+      const mroot = snapshot.tree.children?.[0]?.children?.find(
+        child => child.tag === "mroot");
+      if (!mroot || !mroot.children?.length)
+        throw new Error(`${fixture.id}: serialized mroot not found`);
+      const bodyBoundary = mroot.children[0].x / snapshot.math.width * png.width;
+      const isDecoration = (red, green, blue, alpha) =>
+        alpha > 0 && red - green > 12 && blue - green > 12 &&
+        Math.abs(red - blue) < 20;
+      const glyph = pixelBounds(png, (r, g, b, a, x) =>
+        x < bodyBoundary && isDecoration(r, g, b, a));
+      const rule = pixelBounds(png, (r, g, b, a, x) =>
+        x >= bodyBoundary && isDecoration(r, g, b, a));
+      const toMathRect = bounds => bounds ? {
+        x: Math.round(bounds.left / png.width * snapshot.math.width * 1000) / 1000,
+        y: Math.round(bounds.top / png.height * snapshot.math.height * 1000) / 1000,
+        width: Math.round((bounds.right - bounds.left + 1) / png.width *
+                          snapshot.math.width * 1000) / 1000,
+        height: Math.round((bounds.bottom - bounds.top + 1) / png.height *
+                           snapshot.math.height * 1000) / 1000,
+      } : null;
+      snapshot.radicalGlyphInk = toMathRect(glyph);
+      snapshot.radicalRuleInk = toMathRect(rule);
+      if (!snapshot.radicalGlyphInk || !snapshot.radicalRuleInk)
+        throw new Error(`${fixture.id}: radical decoration pixels not found`);
+      delete snapshot.screenMath;
+    }
     snapshots.push(snapshot);
   }
 } finally {

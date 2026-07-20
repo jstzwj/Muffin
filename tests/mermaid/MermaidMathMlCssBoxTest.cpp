@@ -10,7 +10,9 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QHash>
+#include <QImage>
 #include <QRegularExpression>
+#include <QPainter>
 #include <QSet>
 #include <QSizeF>
 
@@ -53,6 +55,33 @@ void collectTags(const QJsonObject& node, QSet<QString>* tags) {
   tags->insert(node.value(QStringLiteral("tag")).toString());
   for (const QJsonValue& child : node.value(QStringLiteral("children")).toArray())
     collectTags(child.toObject(), tags);
+}
+
+QRectF primitiveInkBounds(
+    const QVector<math::MathMlPaintPrimitive>& primitives,
+    QSizeF canvasSize) {
+  constexpr int padding = 4;
+  QImage image(qCeil(canvasSize.width()) + 2 * padding,
+               qCeil(canvasSize.height()) + 2 * padding,
+               QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing);
+  painter.setRenderHint(QPainter::TextAntialiasing);
+  painter.translate(padding, padding);
+  math::paintMathMlPrimitives(painter, primitives, Qt::white);
+  painter.end();
+  int left = image.width(), top = image.height(), right = -1, bottom = -1;
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      if (qAlpha(image.pixel(x, y)) == 0) continue;
+      left = std::min(left, x); top = std::min(top, y);
+      right = std::max(right, x); bottom = std::max(bottom, y);
+    }
+  }
+  return right < left ? QRectF{} : QRectF(left - padding, top - padding,
+                                          right - left + 1,
+                                          bottom - top + 1);
 }
 
 void collectNodes(const QJsonObject& node, QStringView tag,
@@ -325,7 +354,7 @@ int main(int argc, char** argv) {
                 QLatin1String("bundled-noto-stix-two-math-2.13b171"),
             QStringLiteral("MathML CSS box must use the fixed STIX oracle"));
     require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-                QLatin1String("c9e93817163c86d4415c6065f714f616b151574bb274e7ec765ddac6d696ed62"),
+                QLatin1String("3152a3125c65dabacf789a4d11c0d6727b5d6a0bcf218b65f38bedce49c986e3"),
             QStringLiteral("MathML CSS box fixture changed; regenerate and audit"));
 
     const math::OpenTypeMathFont& mathFont = math::OpenTypeMathFont::instance();
@@ -354,7 +383,7 @@ int main(int argc, char** argv) {
     near(radicalVariant->extent, 37.936, 0.001,
          QStringLiteral("MATH radical variant extent"));
     const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-    require(cases.size() == 164, QStringLiteral("MathML CSS box case count regressed"));
+    require(cases.size() == 167, QStringLiteral("MathML CSS box case count regressed"));
     math::MathRenderer renderer;
     QSet<QString> tags;
     QHash<QString, QSizeF> invariantBoxes;
@@ -1190,13 +1219,104 @@ int main(int argc, char** argv) {
           };
           compare(actual->container, browser, u"radical container");
           compare(actual->body, children.at(0).toObject(), u"radical body");
-          require(actual->glyphRun.glyphIndexes.size() == 1 &&
-                      actual->glyphRun.glyphIndexes.front() != 0 &&
-                      !actual->glyphRun.inkBounds.isEmpty() &&
-                      !actual->glyphRun.clip.isEmpty() &&
-                      !actual->glyph.isEmpty() && !actual->rule.isEmpty(),
+          require(actual->radicalGlyph.glyphIndex != 0 &&
+                      !actual->radicalGlyph.inkBounds.isEmpty() &&
+                      !actual->radicalGlyph.clip.isEmpty() &&
+                      !actual->radicalGlyph.target.isEmpty() &&
+                      !actual->radicalRule.target.isEmpty(),
                   id + QStringLiteral(" radical paint operations are incomplete"));
         }
+      }
+      if (id.startsWith(QLatin1String("root-index"))) {
+        QVector<QJsonObject> roots;
+        collectNodes(tree, u"mroot", &roots);
+        const auto operation = math::checkedMathMlPaintOperations(
+            layout, kKatexRootFontSize);
+        const auto* radical = operation
+            ? std::get_if<math::MathCssRadicalOperation>(&operation->payload)
+            : nullptr;
+        require(roots.size() == 1 && radical && radical->degreeNode,
+                id + QStringLiteral(" degree operation is missing"));
+        const QJsonArray children = roots.front().value(
+            QStringLiteral("children")).toArray();
+        require(children.size() == 2,
+                id + QStringLiteral(" degree glyph ownership drifted"));
+        if (id == QLatin1String("root-index")) {
+          require(radical->degreeGlyphRuns.size() == 1 &&
+                      radical->degreeGlyphRuns.front().text == QLatin1String("3") &&
+                      qFuzzyCompare(radical->degreeGlyphRuns.front().fontScale,
+                                    mathFont.constants()
+                                        .scriptScriptPercentScaleDown),
+                  id + QStringLiteral(" degree glyph ownership drifted"));
+        } else {
+          const math::MathCssPaintKind expectedKind =
+              id.endsWith(QLatin1String("fraction"))
+              ? math::MathCssPaintKind::Fraction
+              : id.endsWith(QLatin1String("radical"))
+                  ? math::MathCssPaintKind::Radical
+                  : math::MathCssPaintKind::SupSub;
+          require(radical->degreeGlyphRuns.isEmpty() &&
+                      hasPaintKindPath(*operation,
+                          {math::MathCssPaintKind::Radical, expectedKind}),
+                  id + QStringLiteral(" recursive degree ownership drifted"));
+        }
+        const QJsonObject expectedDegree = children.at(1).toObject();
+        const auto compareRect = [&](QRectF actual, const QJsonObject& expected,
+                                     qreal tolerance, QStringView component) {
+          near(actual.x(), expected.value(QStringLiteral("x")).toDouble(),
+               tolerance, id + QLatin1Char(' ') + component + u" x");
+          near(actual.y(), expected.value(QStringLiteral("y")).toDouble(),
+               tolerance, id + QLatin1Char(' ') + component + u" y");
+          near(actual.width(),
+               expected.value(QStringLiteral("width")).toDouble(), tolerance,
+               id + QLatin1Char(' ') + component + u" width");
+          near(actual.height(),
+               expected.value(QStringLiteral("height")).toDouble(), tolerance,
+               id + QLatin1Char(' ') + component + u" height");
+        };
+        compareRect(radical->body, children.at(0).toObject(), 0.22,
+                    u"radical body");
+        near(radical->degree.x(),
+             expectedDegree.value(QStringLiteral("x")).toDouble(), 0.22,
+             id + QStringLiteral(" degree x"));
+        near(radical->degree.y(),
+             expectedDegree.value(QStringLiteral("y")).toDouble(), 0.22,
+             id + QStringLiteral(" degree y"));
+        near(radical->degree.width(),
+             expectedDegree.value(QStringLiteral("width")).toDouble(), 0.22,
+             id + QStringLiteral(" degree width"));
+        near(radical->degree.height(),
+             expectedDegree.value(QStringLiteral("height")).toDouble(), 0.22,
+             id + QStringLiteral(" degree height"));
+        const auto primitives = math::collectMathMlPaintPrimitives(*operation);
+        QVector<math::MathMlPaintPrimitive> glyphPrimitives;
+        QVector<math::MathMlPaintPrimitive> rulePrimitives;
+        for (const auto& primitive : primitives) {
+          if (primitive.operationPath == QLatin1String("root/radical/glyph"))
+            glyphPrimitives.push_back(primitive);
+          if (primitive.operationPath == QLatin1String("root/radical/rule"))
+            rulePrimitives.push_back(primitive);
+        }
+        require(glyphPrimitives.size() == 1 && rulePrimitives.size() == 1,
+                id + QStringLiteral(" radical primitive ownership drifted"));
+        const QRectF nativeGlyphInk = primitiveInkBounds(
+            glyphPrimitives, QSizeF(box.width, box.height));
+        const QRectF nativeRuleInk = primitiveInkBounds(
+            rulePrimitives, QSizeF(box.width, box.height));
+        compareRect(nativeGlyphInk,
+                    fixture.value(QStringLiteral("radicalGlyphInk")).toObject(),
+                    1.35, u"radical glyph ink");
+        compareRect(nativeRuleInk,
+                    fixture.value(QStringLiteral("radicalRuleInk")).toObject(),
+                    1.35, u"radical rule ink");
+        require((id == QLatin1String("root-index")) ==
+                    (std::count_if(
+                    primitives.cbegin(), primitives.cend(),
+                    [](const math::MathMlPaintPrimitive& primitive) {
+                      return primitive.role ==
+                          math::MathMlPaintPrimitiveRole::RadicalDegree;
+                    }) == 1),
+                id + QStringLiteral(" degree primitive coverage drifted"));
       }
       if (id == QLatin1String("sqrt-fraction")) {
         QVector<QJsonObject> fractions;
@@ -2321,7 +2441,7 @@ int main(int argc, char** argv) {
         paintFailureGolden.append(failure);
       }
     }
-    require(paintOperationGolden.size() == 164,
+    require(paintOperationGolden.size() == 167,
             QStringLiteral("MathML paint operation coverage regressed: %1")
                 .arg(paintOperationGolden.size()));
     const QJsonArray expectedPaintFailures;
@@ -2368,7 +2488,7 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     require(paintOperationHash ==
-                QLatin1String("cdeb13e4923619307856cdc3a094c9936798b4240262e39709eaa805e002701e"),
+                QLatin1String("3b6cbfd6cf7866c05eb03154ce753c6261e5062b6111b70102833a33dd1301eb"),
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),

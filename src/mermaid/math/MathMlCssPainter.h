@@ -15,7 +15,8 @@ enum class MathMlPaintPrimitiveKind {
   GlyphRun,
   VerticalGlyph,
   FractionRule,
-  Radical,
+  GlyphPath,
+  SolidRule,
   Accent
 };
 
@@ -36,6 +37,7 @@ enum class MathMlPaintPrimitiveRole {
   LargeOperator,
   Fence,
   RadicalBody,
+  RadicalDegree,
   Middle
 };
 
@@ -45,7 +47,8 @@ using MathMlPaintPrimitivePayload = std::variant<
     const MathCssGlyphRunOperation*,
     const MathCssVerticalGlyphOperation*,
     const MathCssFractionBox*,
-    const MathCssRadicalOperation*,
+    const MathCssGlyphPathOperation*,
+    const MathCssSolidRuleOperation*,
     const MathCssAccentOperation*>;
 
 struct MathMlPaintPrimitive {

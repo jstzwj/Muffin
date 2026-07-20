@@ -11,9 +11,10 @@
 // (verified via the rendered SVG: g.clusters, g.edgePaths, g.edgeLabels, g.nodes).
 // Markers ride on edges (marker-end/marker-start); node labels are foreignObject
 // in mermaid 11.16 even with htmlLabels:false, but the scene captures only the
-// label TEXT + position + font (the rendering mechanism is an F3 concern).
+// label text, parsed rich-text data, prepared Math operations, position and font.
 
 #include "mermaid/flowchart/Flowchart.h"
+#include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/theme/FlowTheme.h"
 
@@ -35,6 +36,7 @@ struct FlowSceneLabel {
   QString fontWeight;
   QString background;     // edge-label bg (edgeLabelBackground); empty for nodes
   bool mathEnabled = false;  // Mermaid enables MathML only for node labels.
+  flowchart::FlowLabelDocument richText;  // parsed and Math-prepared scene data
 };
 
 struct FlowSceneShapePath {

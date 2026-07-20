@@ -249,6 +249,24 @@ table.push({
   theme: "default",
   source: mathSource,
 });
+for (const fixture of [
+  { id: "flow-math-crop-fraction", mathCropKind: "fraction",
+    source: 'flowchart LR\nA["`$$\\frac{x+1}{y-1}$$`"] --> B[Plain]' },
+  { id: "flow-math-crop-radical", mathCropKind: "radical", dpr: 1.25,
+    source: 'flowchart LR\nA["`$$\\sqrt{x+1}$$`"] --> B[Plain]' },
+  { id: "flow-math-crop-supsub", mathCropKind: "supsub", dpr: 1.5,
+    source: 'flowchart LR\nA["`$$x_i^2$$`"] --> B[Plain]' },
+  { id: "flow-math-crop-array", mathCropKind: "array", dpr: 2,
+    source: 'flowchart LR\nA["`$$\\begin{matrix}a\\end{matrix}$$`"] --> B[Plain]' },
+  { id: "flow-math-crop-accent", mathCropKind: "accent", theme: "dark",
+    source: 'flowchart LR\nA["`$$\\overbrace{x+y}^{n}$$`"] --> B[Plain]' },
+  { id: "flow-math-crop-root-index", mathCropKind: "root-index", dpr: 2,
+    theme: "dark",
+    source: 'flowchart LR\nA["`$$\\sqrt[3]{x+1}$$`"] --> B[Plain]' },
+]) {
+  table.push({ ...fixture, theme: fixture.theme ?? "default",
+               fontMode: "noto", mathCrop: true });
+}
 table.push({
   id: "edge-label-rich",
   theme: "default",

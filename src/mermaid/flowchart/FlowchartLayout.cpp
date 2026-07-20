@@ -204,7 +204,9 @@ QSizeF measureLabel(const QString& text, const FlowTextOptions& options) {
 
 QSizeF measureLabel(const QString& text, const QString& labelType,
                     const FlowTextOptions& options) {
-  return measureFlowLabel(parseFlowLabel(text, labelType), options.fontFamily,
+  FlowLabelDocument document = parseFlowLabel(text, labelType);
+  prepareFlowLabelMath(document, options.fontPixelSize);
+  return measureFlowLabel(document, options.fontFamily,
                           options.fontPixelSize, options.lineHeight);
 }
 
