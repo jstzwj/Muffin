@@ -43,6 +43,10 @@ flowtheme::FlowThemeId themeId(const QString& name) {
       {QStringLiteral("dark"), flowtheme::FlowThemeId::Dark},
       {QStringLiteral("neo"), flowtheme::FlowThemeId::Neo},
       {QStringLiteral("neo-dark"), flowtheme::FlowThemeId::NeoDark},
+      {QStringLiteral("redux"), flowtheme::FlowThemeId::Redux},
+      {QStringLiteral("redux-dark"), flowtheme::FlowThemeId::ReduxDark},
+      {QStringLiteral("redux-color"), flowtheme::FlowThemeId::ReduxColor},
+      {QStringLiteral("redux-dark-color"), flowtheme::FlowThemeId::ReduxDarkColor},
   };
   const auto found = themes.constFind(name);
   require(found != themes.cend(), QStringLiteral("Unsupported structural theme: %1").arg(name));
@@ -69,6 +73,13 @@ QString markerReference(const QString& value) {
   const auto match = type.match(value);
   return match.hasMatch() ? match.captured(1) + match.captured(2) : QString();
 }
+
+QString browserLook(flowchart::FlowLook look) {
+  if (look == flowchart::FlowLook::Neo) return QStringLiteral("neo");
+  if (look == flowchart::FlowLook::HandDrawn)
+    return QStringLiteral("handDrawn");
+  return QStringLiteral("classic");
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -91,12 +102,14 @@ int main(int argc, char** argv) {
   int ariaCases = 0;
   int orderedEntries = 0;
   QSet<QString> markerTypes;
+  QSet<QString> structuralKinds;
 
   for (const QJsonValue& value : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = value.toObject();
     if (!fixture.contains(QStringLiteral("svgStructural"))) continue;
     ++structuralCases;
     const QString id = fixture.value(QStringLiteral("id")).toString();
+    structuralKinds.insert(fixture.value(QStringLiteral("svgStructural")).toString());
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const QJsonObject structure = fixture.value(QStringLiteral("content")).toObject()
                                       .value(QStringLiteral("svgStructure")).toObject();
@@ -186,22 +199,43 @@ int main(int argc, char** argv) {
     const flowscene::FlowScene scene = flowscene::buildFlowScene(
         data, layout, theme, look);
 
+    const QJsonArray edgeLabels = structure.value(QStringLiteral("edgeLabels")).toArray();
+    int edgeLabelForeignObjects = 0;
+    for (const QJsonValue& label : edgeLabels)
+      edgeLabelForeignObjects += label.toObject()
+          .value(QStringLiteral("foreignObjectCount")).toInt();
+    const QJsonArray browserNodes = structure.value(QStringLiteral("nodes")).toArray();
+    int nodeForeignObjects = 0;
+    for (const QJsonValue& node : browserNodes)
+      nodeForeignObjects += node.toObject()
+          .value(QStringLiteral("foreignObjectCount")).toInt();
+    const QJsonArray clusters = structure.value(QStringLiteral("clusters")).toArray();
+    int clusterForeignObjects = 0;
+    for (const QJsonValue& cluster : clusters)
+      clusterForeignObjects += cluster.toObject()
+          .value(QStringLiteral("foreignObjectCount")).toInt();
     const QJsonObject counts = structure.value(QStringLiteral("counts")).toObject();
+    const int expectedForeignObjects = nodeForeignObjects +
+        edgeLabelForeignObjects + clusterForeignObjects +
+        counts.value(QStringLiteral("detachedEdgeLabelForeignObjects")).toInt();
     require(counts.value(QStringLiteral("defs")).toInt() >= 2 &&
                 counts.value(QStringLiteral("nodes")).toInt() == scene.nodes.size() &&
                 counts.value(QStringLiteral("edgePaths")).toInt() == scene.edges.size() &&
                 counts.value(QStringLiteral("clusters")).toInt() == scene.clusters.size() &&
-                counts.value(QStringLiteral("foreignObject")).toInt() == scene.nodes.size(),
+                counts.value(QStringLiteral("foreignObject")).toInt() ==
+                    expectedForeignObjects,
             QStringLiteral("%1 browser/native structural counts differ").arg(id));
 
-    const QJsonArray browserNodes = structure.value(QStringLiteral("nodes")).toArray();
     require(browserNodes.size() == scene.nodes.size(),
             QStringLiteral("%1 node attribute array size drifted").arg(id));
     for (qsizetype index = 0; index < browserNodes.size(); ++index) {
       const QJsonObject node = browserNodes.at(index).toObject();
       const QJsonObject attributes = node.value(QStringLiteral("attributes")).toObject();
-      require(attributes.value(QStringLiteral("class")).toString()
-                      .split(QLatin1Char(' ')).contains(QStringLiteral("node")) &&
+      const bool nodeClassMatches = look == flowchart::FlowLook::HandDrawn
+          ? !attributes.value(QStringLiteral("class")).toString().isEmpty()
+          : attributes.value(QStringLiteral("class")).toString()
+                .split(QLatin1Char(' ')).contains(QStringLiteral("node"));
+      require(nodeClassMatches &&
                   attributes.value(QStringLiteral("id")).toString()
                       .contains(QLatin1Char('-') + scene.nodes.at(index).id +
                                 QLatin1Char('-')) &&
@@ -229,14 +263,25 @@ int main(int argc, char** argv) {
                       .contains(QLatin1String("flowchart-link")) &&
                   attributes.value(QStringLiteral("data-id")).toString() == edge.id &&
                   attributes.value(QStringLiteral("data-look")).toString() ==
-                      (look == flowchart::FlowLook::Neo ? QLatin1String("neo")
-                                                       : QLatin1String("classic")) &&
+                      browserLook(look) &&
                   !attributes.value(QStringLiteral("d")).toString().isEmpty() &&
                   markerReference(attributes.value(QStringLiteral("marker-start")).toString()) ==
                       edge.markerStart &&
                   markerReference(attributes.value(QStringLiteral("marker-end")).toString()) ==
                       edge.markerEnd,
               QStringLiteral("%1 edge %2 structural attributes differ").arg(id, edge.id));
+      if (fixture.value(QStringLiteral("svgStructural")).toString() ==
+          QLatin1String("animated")) {
+        const QJsonObject computed = browserEdges.at(index).toObject()
+                                         .value(QStringLiteral("computed")).toObject();
+        require(edge.animated &&
+                    computed.value(QStringLiteral("animationName")).toString() !=
+                        QLatin1String("none") &&
+                    computed.value(QStringLiteral("animationDuration")).toString() !=
+                        QLatin1String("0s") &&
+                    !computed.value(QStringLiteral("animationTimingFunction")).toString().isEmpty(),
+                QStringLiteral("%1 animated edge structure drifted").arg(id));
+      }
     }
 
     const QJsonArray markers = structure.value(QStringLiteral("markers")).toArray();
@@ -272,7 +317,6 @@ int main(int argc, char** argv) {
               QStringLiteral("%1 marker %2 geometry drifted").arg(id, type));
     }
 
-    const QJsonArray edgeLabels = structure.value(QStringLiteral("edgeLabels")).toArray();
     if (!edgeLabels.isEmpty()) ++edgeLabelCases;
     require(edgeLabels.size() == scene.edges.size(),
             QStringLiteral("%1 edge label count drifted").arg(id));
@@ -294,11 +338,14 @@ int main(int argc, char** argv) {
               QStringLiteral("%1 edge label visibility/transform drifted").arg(id));
     }
 
-    const QJsonArray clusters = structure.value(QStringLiteral("clusters")).toArray();
     if (!clusters.isEmpty()) ++clusterLabelCases;
     for (const QJsonValue& clusterValue : clusters) {
       const QJsonObject cluster = clusterValue.toObject();
-      require(cluster.value(QStringLiteral("shapeTag")).toString() == QLatin1String("rect") &&
+      const QString clusterShape = cluster.value(QStringLiteral("shapeTag")).toString();
+      const bool clusterShapeMatches = look == flowchart::FlowLook::HandDrawn
+          ? (clusterShape == QLatin1String("g") || clusterShape == QLatin1String("path"))
+          : clusterShape == QLatin1String("rect");
+      require(clusterShapeMatches &&
                   cluster.value(QStringLiteral("attributes")).toObject()
                       .value(QStringLiteral("class")).toString().contains(QLatin1String("cluster")) &&
                   cluster.value(QStringLiteral("labelTag")).toString() == QLatin1String("g") &&
@@ -313,8 +360,13 @@ int main(int argc, char** argv) {
     }
   }
 
-  require(structuralCases >= 9 && markerCases >= 4 && edgeLabelCases >= 5 &&
-              clusterLabelCases >= 3 && ariaCases >= 1 && orderedEntries >= 120 &&
+  require(structuralCases >= 17 && markerCases >= 12 && edgeLabelCases >= 10 &&
+              clusterLabelCases >= 10 && ariaCases >= 1 && orderedEntries >= 250 &&
+              structuralKinds.contains(QStringLiteral("compound-self-parallel")) &&
+              structuralKinds.contains(QStringLiteral("cluster-direction")) &&
+              structuralKinds.contains(QStringLiteral("animated")) &&
+              structuralKinds.contains(QStringLiteral("redux")) &&
+              structuralKinds.contains(QStringLiteral("hand-drawn")) &&
               markerTypes.contains(QStringLiteral("pointEnd")) &&
               markerTypes.contains(QStringLiteral("circleStart")) &&
               markerTypes.contains(QStringLiteral("circleEnd")) &&

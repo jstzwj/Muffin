@@ -189,6 +189,7 @@ for (const theme of ["redux", "redux-dark", "redux-color", "redux-dark-color"]) 
     id: `look-${theme}-structure`,
     theme,
     look: "neo",
+    svgStructural: "redux",
     fontMode: "noto",
     source: reduxStructureSource,
   });
@@ -233,6 +234,7 @@ table.push({
   fontMode: "noto",
   dpr: 2,
   emptyMaxMismatchRatio: 0.15,
+  svgStructural: "hand-drawn",
   source: [
     "flowchart TB",
     'subgraph Outer["\u4e2d\u6587 cluster"]',
@@ -475,6 +477,7 @@ table.push({
 table.push({
   id: "compound-self-parallel",
   theme: "default",
+  svgStructural: "compound-self-parallel",
   source: [
     "flowchart TB",
     "subgraph Outer[Outer]",
@@ -493,6 +496,7 @@ table.push({
 table.push({
   id: "cluster-cross-layer-explicit-direction",
   theme: "default",
+  svgStructural: "cluster-direction",
   source: [
     "flowchart TB",
     "subgraph Left[Left]",
@@ -511,6 +515,7 @@ table.push({
   id: "animated-edge-static-initial",
   theme: "default",
   animationState: "initial",
+  svgStructural: "animated",
   source: [
     "flowchart LR",
     "A[Alpha] edgeFast@--> B[Beta]",

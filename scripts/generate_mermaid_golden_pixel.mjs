@@ -234,6 +234,8 @@ try {
         const identity = (element) =>
           `${element.localName}:${element.getAttribute("class") ?? ""}`;
         const rootGroup = root.querySelector("g.root") ?? root;
+        const nodeElements = [...root.querySelectorAll(
+          `g[id^="${CSS.escape(diagramId)}-flowchart-"]`)];
         const markerType = (marker) => {
           const match = marker.id.match(/(?:flowchart-v2-)?(point|circle|cross)(Start|End)$/);
           return match ? `${match[1]}${match[2]}` : "";
@@ -249,13 +251,15 @@ try {
             .map(identity),
           counts: {
             defs: root.querySelectorAll("defs").length,
-            nodes: root.querySelectorAll("g.node").length,
+            nodes: nodeElements.length,
             edgePaths: root.querySelectorAll(".edgePaths path[data-edge=true]").length,
             edgeLabels: root.querySelectorAll(".edgeLabels .edgeLabel").length,
             clusters: root.querySelectorAll("g.cluster").length,
             text: root.querySelectorAll("text").length,
             tspan: root.querySelectorAll("tspan").length,
             foreignObject: root.querySelectorAll("foreignObject").length,
+            detachedEdgeLabelForeignObjects:
+              root.querySelectorAll("g.label.edgeLabel foreignObject").length,
           },
           markers: [...root.querySelectorAll("marker")].map((marker) => ({
             type: markerType(marker),
@@ -264,8 +268,19 @@ try {
             childAttributes: attributes(marker.firstElementChild),
           })),
           edges: [...root.querySelectorAll(".edgePaths path[data-edge=true]")]
-            .map((edge) => ({ attributes: attributes(edge) })),
-          nodes: [...root.querySelectorAll("g.node")].map((node) => {
+            .map((edge) => {
+              const style = getComputedStyle(edge);
+              return {
+                attributes: attributes(edge),
+                computed: {
+                  animationName: style.animationName,
+                  animationDuration: style.animationDuration,
+                  animationTimingFunction: style.animationTimingFunction,
+                  strokeDasharray: style.strokeDasharray,
+                },
+              };
+            }),
+          nodes: nodeElements.map((node) => {
             const shape = node.querySelector(":scope > .label-container");
             const label = node.querySelector("foreignObject");
             return {
@@ -275,6 +290,7 @@ try {
               labelTag: label?.localName ?? "",
               labelAttributes: attributes(label),
               labelText: label?.textContent ?? "",
+              foreignObjectCount: node.querySelectorAll("foreignObject").length,
             };
           }),
           edgeLabels: [...root.querySelectorAll(".edgeLabels .edgeLabel")]
@@ -289,18 +305,21 @@ try {
                 backgroundAttributes: attributes(background),
                 text: content?.textContent ?? "",
                 tspanCount: content?.querySelectorAll("tspan").length ?? 0,
+                foreignObjectCount: content?.querySelectorAll("foreignObject").length ?? 0,
               };
             }),
           clusters: [...root.querySelectorAll("g.cluster")].map((cluster) => {
             const label = cluster.querySelector(":scope > .cluster-label");
+            const shape = [...cluster.children].find((child) => child !== label);
             return {
               attributes: attributes(cluster),
-              shapeTag: cluster.querySelector(":scope > rect")?.localName ?? "",
-              shapeAttributes: attributes(cluster.querySelector(":scope > rect")),
+              shapeTag: shape?.localName ?? "",
+              shapeAttributes: attributes(shape),
               labelTag: label?.localName ?? "",
               labelAttributes: attributes(label),
               labelContentTag: label?.querySelector("text,foreignObject")?.localName ?? "",
               labelText: label?.textContent ?? "",
+              foreignObjectCount: cluster.querySelectorAll("foreignObject").length,
             };
           }),
         };
