@@ -9,6 +9,13 @@ const grammarByVersion = {
   },
 };
 
+const sequenceGrammarByVersion = {
+  "11.16.0": {
+    url: "https://raw.githubusercontent.com/mermaid-js/mermaid/mermaid%4011.16.0/packages/mermaid/src/diagrams/sequence/parser/sequenceDiagram.jison",
+    sha256: "8771148ef56c2b98b021597a53585e45acc088cb321a3d457d265eca352fb40f",
+  },
+};
+
 function download(url, redirects = 4) {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { "user-agent": "Muffin grammar fixture generator" } }, (response) => {
@@ -19,7 +26,7 @@ function download(url, redirects = 4) {
       }
       if (response.statusCode !== 200) {
         response.resume();
-        reject(new Error(`Could not download flow.jison: HTTP ${response.statusCode}`));
+        reject(new Error(`Could not download Mermaid grammar: HTTP ${response.statusCode}`));
         return;
       }
       response.setEncoding("utf8");
@@ -30,9 +37,8 @@ function download(url, redirects = 4) {
   });
 }
 
-async function readGrammar(version, sourcePath) {
-  const descriptor = grammarByVersion[version];
-  if (!descriptor) throw new Error(`No flow.jison source registered for Mermaid ${version}`);
+async function readLockedGrammar(descriptor, version, label, sourcePath) {
+  if (!descriptor) throw new Error(`No ${label} source registered for Mermaid ${version}`);
   let source;
   if (sourcePath) {
     source = fs.readFileSync(sourcePath, "utf8");
@@ -50,7 +56,7 @@ async function readGrammar(version, sourcePath) {
   }
   const sha256 = crypto.createHash("sha256").update(source).digest("hex");
   if (sha256 !== descriptor.sha256) {
-    throw new Error(`flow.jison hash mismatch for Mermaid ${version}: ${sha256}`);
+    throw new Error(`${label} hash mismatch for Mermaid ${version}: ${sha256}`);
   }
   return { source, url: descriptor.url, sha256 };
 }
@@ -208,10 +214,23 @@ function enrichProductions(productions) {
 }
 
 export async function loadFlowchartGrammar(version, sourcePath) {
-  const { source, url, sha256 } = await readGrammar(version, sourcePath);
+  const { source, url, sha256 } = await readLockedGrammar(
+    grammarByVersion[version], version, "flow.jison", sourcePath,
+  );
   const productions = enrichProductions(parseRules(source));
   if (productions.length !== 189) {
     throw new Error(`Expected 189 flowchart productions, parsed ${productions.length}`);
+  }
+  return { source: { url, sha256 }, productions };
+}
+
+export async function loadSequenceGrammar(version, sourcePath) {
+  const { source, url, sha256 } = await readLockedGrammar(
+    sequenceGrammarByVersion[version], version, "sequenceDiagram.jison", sourcePath,
+  );
+  const productions = enrichProductions(parseRules(source));
+  if (productions.length !== 105) {
+    throw new Error(`Expected 105 sequence productions, parsed ${productions.length}`);
   }
   return { source: { url, sha256 }, productions };
 }

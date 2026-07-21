@@ -805,7 +805,9 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       bounds.insert(bottom.bounds.left(), bottom.bounds.top(), bottom.bounds.right(), bottom.bounds.bottom());
   }
   if (!data.boxes.isEmpty()) {
-    const qreal boxBottom = bounds.all.bottom() + options.boxMargin + 1.5;
+    const qreal boxBottom = std::max(
+        bounds.all.bottom() + options.boxMargin + 1.5,
+        bounds.vertical + participantHeight + 4.0 * options.boxMargin);
     for (qsizetype index = 0; index < data.boxes.size(); ++index) {
       if (!boxStarted[index]) continue;
       const SequenceBox& source = data.boxes[index];
@@ -815,10 +817,11 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       box.boxIndex = static_cast<int>(index);
       box.label = source.name;
       box.fill = source.fill;
+      const qreal boxTop = -options.boxMargin / 2.0;
       box.rect = QRectF(boxStart[index] - 2.0 * options.boxMargin,
-                        -options.boxTextMargin,
+                        boxTop,
                         boxWidth[index] + 4.0 * options.boxMargin,
-                        boxBottom + options.boxTextMargin);
+                        boxBottom - boxTop);
       box.labelRect = QRectF(box.rect.x(), options.boxTextMargin,
                              box.rect.width(), labelSize.height());
       // Mermaid lowers every newly drawn box, reversing source order in the

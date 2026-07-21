@@ -1,9 +1,13 @@
 {
   "upstream": {
     "package": "mermaid",
-    "version": "11.16.0"
+    "version": "11.16.0",
+    "grammar": {
+      "url": "https://raw.githubusercontent.com/mermaid-js/mermaid/mermaid%4011.16.0/packages/mermaid/src/diagrams/sequence/parser/sequenceDiagram.jison",
+      "sha256": "8771148ef56c2b98b021597a53585e45acc088cb321a3d457d265eca352fb40f"
+    }
   },
-  "fixtureDigest": "b84a517e40ec88a0b3beaf150bd4cdedc7c0f96d63bc63a306b1be5600e53a01",
+  "fixtureDigest": "9e65383a80edb37658236ba3ac083c82447c1b84f904359ceacd26b63f19cbdb",
   "cases": [
     {
       "id": "participants-and-arrows",
@@ -1948,7 +1952,22 @@
     {
       "id": 1,
       "lhs": "start",
+      "alternative": 1,
+      "rhs": [
+        "SPACE",
+        "start"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null,
       "native": "parseStart",
       "status": "unreachable",
       "fixtures": [],
@@ -1957,7 +1976,22 @@
     {
       "id": 2,
       "lhs": "start",
+      "alternative": 2,
+      "rhs": [
+        "NEWLINE",
+        "start"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStart",
       "status": "unreachable",
       "fixtures": [],
@@ -1966,7 +2000,23 @@
     {
       "id": 3,
       "lhs": "start",
+      "alternative": 3,
+      "rhs": [
+        "SD",
+        "document"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "SD"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        1,
+        2
+      ],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStart",
       "status": "covered",
       "fixtures": [
@@ -1991,7 +2041,17 @@
     {
       "id": 4,
       "lhs": "document",
+      "alternative": 1,
+      "rhs": [],
       "rhsLength": 0,
+      "terminals": [],
+      "nullable": true,
+      "nullableBoundaries": [
+        0
+      ],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseDocument",
       "status": "covered",
       "fixtures": [
@@ -2016,7 +2076,21 @@
     {
       "id": 5,
       "lhs": "document",
+      "alternative": 2,
+      "rhs": [
+        "document",
+        "line"
+      ],
       "rhsLength": 2,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [
+        0,
+        1
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseDocument",
       "status": "covered",
       "fixtures": [
@@ -2041,7 +2115,22 @@
     {
       "id": 6,
       "lhs": "line",
+      "alternative": 1,
+      "rhs": [
+        "SPACE",
+        "statement"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null,
       "native": "parseLine",
       "status": "unreachable",
       "fixtures": [],
@@ -2050,7 +2139,17 @@
     {
       "id": 7,
       "lhs": "line",
+      "alternative": 2,
+      "rhs": [
+        "statement"
+      ],
       "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseLine",
       "status": "covered",
       "fixtures": [
@@ -2075,7 +2174,21 @@
     {
       "id": 8,
       "lhs": "line",
+      "alternative": 3,
+      "rhs": [
+        "NEWLINE"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseLine",
       "status": "covered",
       "fixtures": [
@@ -2100,7 +2213,19 @@
     {
       "id": 9,
       "lhs": "line",
+      "alternative": 4,
+      "rhs": [
+        "INVALID"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "INVALID"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseLine",
       "status": "negative-only",
       "fixtures": [],
@@ -2109,7 +2234,17 @@
     {
       "id": 10,
       "lhs": "box_section",
+      "alternative": 1,
+      "rhs": [],
       "rhsLength": 0,
+      "terminals": [],
+      "nullable": true,
+      "nullableBoundaries": [
+        0
+      ],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseBoxSection",
       "status": "covered",
       "fixtures": [
@@ -2121,7 +2256,21 @@
     {
       "id": 11,
       "lhs": "box_section",
+      "alternative": 2,
+      "rhs": [
+        "box_section",
+        "box_line"
+      ],
       "rhsLength": 2,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [
+        0,
+        1
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseBoxSection",
       "status": "covered",
       "fixtures": [
@@ -2133,7 +2282,22 @@
     {
       "id": 12,
       "lhs": "box_line",
+      "alternative": 1,
+      "rhs": [
+        "SPACE",
+        "participant_statement"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null,
       "native": "parseBoxLine",
       "status": "unreachable",
       "fixtures": [],
@@ -2142,7 +2306,17 @@
     {
       "id": 13,
       "lhs": "box_line",
+      "alternative": 2,
+      "rhs": [
+        "participant_statement"
+      ],
       "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseBoxLine",
       "status": "covered",
       "fixtures": [
@@ -2154,7 +2328,21 @@
     {
       "id": 14,
       "lhs": "box_line",
+      "alternative": 3,
+      "rhs": [
+        "NEWLINE"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseBoxLine",
       "status": "covered",
       "fixtures": [
@@ -2166,7 +2354,17 @@
     {
       "id": 15,
       "lhs": "statement",
+      "alternative": 1,
+      "rhs": [
+        "participant_statement"
+      ],
       "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2180,7 +2378,20 @@
     {
       "id": 16,
       "lhs": "statement",
+      "alternative": 2,
+      "rhs": [
+        "create",
+        "participant_statement"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "create"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2190,7 +2401,27 @@
     {
       "id": 17,
       "lhs": "statement",
+      "alternative": 3,
+      "rhs": [
+        "box",
+        "restOfLine",
+        "box_section",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "box",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2202,7 +2433,22 @@
     {
       "id": 18,
       "lhs": "statement",
+      "alternative": 4,
+      "rhs": [
+        "signal",
+        "NEWLINE"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2226,7 +2472,27 @@
     {
       "id": 19,
       "lhs": "statement",
+      "alternative": 5,
+      "rhs": [
+        "autonumber",
+        "NUM",
+        "NUM",
+        "NEWLINE"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "autonumber",
+        "NUM",
+        "NUM",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2236,7 +2502,25 @@
     {
       "id": 20,
       "lhs": "statement",
+      "alternative": 6,
+      "rhs": [
+        "autonumber",
+        "NUM",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "autonumber",
+        "NUM",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2246,7 +2530,25 @@
     {
       "id": 21,
       "lhs": "statement",
+      "alternative": 7,
+      "rhs": [
+        "autonumber",
+        "off",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "autonumber",
+        "off",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2256,7 +2558,23 @@
     {
       "id": 22,
       "lhs": "statement",
+      "alternative": 8,
+      "rhs": [
+        "autonumber",
+        "NEWLINE"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "autonumber",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2266,7 +2584,24 @@
     {
       "id": 23,
       "lhs": "statement",
+      "alternative": 9,
+      "rhs": [
+        "activate",
+        "actor",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "activate",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2276,7 +2611,24 @@
     {
       "id": 24,
       "lhs": "statement",
+      "alternative": 10,
+      "rhs": [
+        "deactivate",
+        "actor",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "deactivate",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2286,7 +2638,22 @@
     {
       "id": 25,
       "lhs": "statement",
+      "alternative": 11,
+      "rhs": [
+        "note_statement",
+        "NEWLINE"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2297,7 +2664,22 @@
     {
       "id": 26,
       "lhs": "statement",
+      "alternative": 12,
+      "rhs": [
+        "links_statement",
+        "NEWLINE"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2308,7 +2690,22 @@
     {
       "id": 27,
       "lhs": "statement",
+      "alternative": 13,
+      "rhs": [
+        "link_statement",
+        "NEWLINE"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2318,7 +2715,22 @@
     {
       "id": 28,
       "lhs": "statement",
+      "alternative": 14,
+      "rhs": [
+        "properties_statement",
+        "NEWLINE"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2328,7 +2740,22 @@
     {
       "id": 29,
       "lhs": "statement",
+      "alternative": 15,
+      "rhs": [
+        "details_statement",
+        "NEWLINE"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2338,7 +2765,19 @@
     {
       "id": 30,
       "lhs": "statement",
+      "alternative": 16,
+      "rhs": [
+        "title"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "title"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2348,7 +2787,19 @@
     {
       "id": 31,
       "lhs": "statement",
+      "alternative": 17,
+      "rhs": [
+        "legacy_title"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "legacy_title"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2358,7 +2809,21 @@
     {
       "id": 32,
       "lhs": "statement",
+      "alternative": 18,
+      "rhs": [
+        "acc_title",
+        "acc_title_value"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "acc_title",
+        "acc_title_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2368,7 +2833,21 @@
     {
       "id": 33,
       "lhs": "statement",
+      "alternative": 19,
+      "rhs": [
+        "acc_descr",
+        "acc_descr_value"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "acc_descr",
+        "acc_descr_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2378,7 +2857,19 @@
     {
       "id": 34,
       "lhs": "statement",
+      "alternative": 20,
+      "rhs": [
+        "acc_descr_multiline_value"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "acc_descr_multiline_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2388,7 +2879,27 @@
     {
       "id": 35,
       "lhs": "statement",
+      "alternative": 21,
+      "rhs": [
+        "loop",
+        "restOfLine",
+        "document",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "loop",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2398,7 +2909,27 @@
     {
       "id": 36,
       "lhs": "statement",
+      "alternative": 22,
+      "rhs": [
+        "rect",
+        "restOfLine",
+        "document",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "rect",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2408,7 +2939,27 @@
     {
       "id": 37,
       "lhs": "statement",
+      "alternative": 23,
+      "rhs": [
+        "opt",
+        "restOfLine",
+        "document",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "opt",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2418,7 +2969,27 @@
     {
       "id": 38,
       "lhs": "statement",
+      "alternative": 24,
+      "rhs": [
+        "alt",
+        "restOfLine",
+        "else_sections",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "alt",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2428,7 +2999,27 @@
     {
       "id": 39,
       "lhs": "statement",
+      "alternative": 25,
+      "rhs": [
+        "par",
+        "restOfLine",
+        "par_sections",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "par",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2438,7 +3029,27 @@
     {
       "id": 40,
       "lhs": "statement",
+      "alternative": 26,
+      "rhs": [
+        "par_over",
+        "restOfLine",
+        "par_sections",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "par_over",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2448,7 +3059,27 @@
     {
       "id": 41,
       "lhs": "statement",
+      "alternative": 27,
+      "rhs": [
+        "critical",
+        "restOfLine",
+        "option_sections",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "critical",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2458,7 +3089,27 @@
     {
       "id": 42,
       "lhs": "statement",
+      "alternative": 28,
+      "rhs": [
+        "break",
+        "restOfLine",
+        "document",
+        "end"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "break",
+        "restOfLine",
+        "end"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        2,
+        3
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseStatement",
       "status": "covered",
       "fixtures": [
@@ -2468,7 +3119,20 @@
     {
       "id": 43,
       "lhs": "option_sections",
+      "alternative": 1,
+      "rhs": [
+        "document"
+      ],
       "rhsLength": 1,
+      "terminals": [],
+      "nullable": true,
+      "nullableBoundaries": [
+        0,
+        1
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseOptionSections",
       "status": "covered",
       "fixtures": [
@@ -2478,7 +3142,28 @@
     {
       "id": 44,
       "lhs": "option_sections",
+      "alternative": 2,
+      "rhs": [
+        "document",
+        "option",
+        "restOfLine",
+        "option_sections"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "option",
+        "restOfLine"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        0,
+        1,
+        3,
+        4
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseOptionSections",
       "status": "covered",
       "fixtures": [
@@ -2488,7 +3173,20 @@
     {
       "id": 45,
       "lhs": "par_sections",
+      "alternative": 1,
+      "rhs": [
+        "document"
+      ],
       "rhsLength": 1,
+      "terminals": [],
+      "nullable": true,
+      "nullableBoundaries": [
+        0,
+        1
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseParSections",
       "status": "covered",
       "fixtures": [
@@ -2499,7 +3197,28 @@
     {
       "id": 46,
       "lhs": "par_sections",
+      "alternative": 2,
+      "rhs": [
+        "document",
+        "and",
+        "restOfLine",
+        "par_sections"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "and",
+        "restOfLine"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        0,
+        1,
+        3,
+        4
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseParSections",
       "status": "covered",
       "fixtures": [
@@ -2509,7 +3228,20 @@
     {
       "id": 47,
       "lhs": "else_sections",
+      "alternative": 1,
+      "rhs": [
+        "document"
+      ],
       "rhsLength": 1,
+      "terminals": [],
+      "nullable": true,
+      "nullableBoundaries": [
+        0,
+        1
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseElseSections",
       "status": "covered",
       "fixtures": [
@@ -2519,7 +3251,28 @@
     {
       "id": 48,
       "lhs": "else_sections",
+      "alternative": 2,
+      "rhs": [
+        "document",
+        "else",
+        "restOfLine",
+        "else_sections"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "else",
+        "restOfLine"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        0,
+        1,
+        3,
+        4
+      ],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseElseSections",
       "status": "covered",
       "fixtures": [
@@ -2529,7 +3282,28 @@
     {
       "id": 49,
       "lhs": "participant_statement",
+      "alternative": 1,
+      "rhs": [
+        "participant",
+        "actor",
+        "AS",
+        "restOfLine",
+        "NEWLINE"
+      ],
       "rhsLength": 5,
+      "terminals": [
+        "participant",
+        "AS",
+        "restOfLine",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2541,7 +3315,24 @@
     {
       "id": 50,
       "lhs": "participant_statement",
+      "alternative": 2,
+      "rhs": [
+        "participant",
+        "actor",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "participant",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2552,7 +3343,28 @@
     {
       "id": 51,
       "lhs": "participant_statement",
+      "alternative": 3,
+      "rhs": [
+        "participant_actor",
+        "actor",
+        "AS",
+        "restOfLine",
+        "NEWLINE"
+      ],
       "rhsLength": 5,
+      "terminals": [
+        "participant_actor",
+        "AS",
+        "restOfLine",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2562,7 +3374,24 @@
     {
       "id": 52,
       "lhs": "participant_statement",
+      "alternative": 4,
+      "rhs": [
+        "participant_actor",
+        "actor",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "participant_actor",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2573,7 +3402,24 @@
     {
       "id": 53,
       "lhs": "participant_statement",
+      "alternative": 5,
+      "rhs": [
+        "destroy",
+        "actor",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "destroy",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2583,7 +3429,28 @@
     {
       "id": 54,
       "lhs": "participant_statement",
+      "alternative": 6,
+      "rhs": [
+        "participant",
+        "actor_with_config",
+        "AS",
+        "restOfLine",
+        "NEWLINE"
+      ],
       "rhsLength": 5,
+      "terminals": [
+        "participant",
+        "AS",
+        "restOfLine",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2593,7 +3460,24 @@
     {
       "id": 55,
       "lhs": "participant_statement",
+      "alternative": 7,
+      "rhs": [
+        "participant",
+        "actor_with_config",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "participant",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2603,7 +3487,28 @@
     {
       "id": 56,
       "lhs": "participant_statement",
+      "alternative": 8,
+      "rhs": [
+        "participant_actor",
+        "actor_with_config",
+        "AS",
+        "restOfLine",
+        "NEWLINE"
+      ],
       "rhsLength": 5,
+      "terminals": [
+        "participant_actor",
+        "AS",
+        "restOfLine",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2613,7 +3518,24 @@
     {
       "id": 57,
       "lhs": "participant_statement",
+      "alternative": 9,
+      "rhs": [
+        "participant_actor",
+        "actor_with_config",
+        "NEWLINE"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "participant_actor",
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
       "native": "parseParticipantStatement",
       "status": "covered",
       "fixtures": [
@@ -2623,7 +3545,22 @@
     {
       "id": 58,
       "lhs": "note_statement",
+      "alternative": 1,
+      "rhs": [
+        "note",
+        "placement",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "note"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseNoteStatement",
       "status": "covered",
       "fixtures": [
@@ -2633,7 +3570,23 @@
     {
       "id": 59,
       "lhs": "note_statement",
+      "alternative": 2,
+      "rhs": [
+        "note",
+        "over",
+        "actor_pair",
+        "text2"
+      ],
       "rhsLength": 4,
+      "terminals": [
+        "note",
+        "over"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseNoteStatement",
       "status": "covered",
       "fixtures": [
@@ -2644,7 +3597,21 @@
     {
       "id": 60,
       "lhs": "links_statement",
+      "alternative": 1,
+      "rhs": [
+        "links",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "links"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseLinksStatement",
       "status": "covered",
       "fixtures": [
@@ -2655,7 +3622,21 @@
     {
       "id": 61,
       "lhs": "link_statement",
+      "alternative": 1,
+      "rhs": [
+        "link",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "link"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseLinkStatement",
       "status": "covered",
       "fixtures": [
@@ -2665,7 +3646,21 @@
     {
       "id": 62,
       "lhs": "properties_statement",
+      "alternative": 1,
+      "rhs": [
+        "properties",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "properties"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parsePropertiesStatement",
       "status": "covered",
       "fixtures": [
@@ -2675,7 +3670,21 @@
     {
       "id": 63,
       "lhs": "details_statement",
+      "alternative": 1,
+      "rhs": [
+        "details",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "details"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseDetailsStatement",
       "status": "covered",
       "fixtures": [
@@ -2685,7 +3694,22 @@
     {
       "id": 64,
       "lhs": "spaceList",
+      "alternative": 1,
+      "rhs": [
+        "SPACE",
+        "spaceList"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null,
       "native": "parseSpaceList",
       "status": "unreachable",
       "fixtures": [],
@@ -2694,7 +3718,21 @@
     {
       "id": 65,
       "lhs": "spaceList",
+      "alternative": 2,
+      "rhs": [
+        "SPACE"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null,
       "native": "parseSpaceList",
       "status": "unreachable",
       "fixtures": [],
@@ -2703,7 +3741,21 @@
     {
       "id": 66,
       "lhs": "actor_pair",
+      "alternative": 1,
+      "rhs": [
+        "actor",
+        ",",
+        "actor"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        ","
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseActorPair",
       "status": "covered",
       "fixtures": [
@@ -2713,7 +3765,17 @@
     {
       "id": 67,
       "lhs": "actor_pair",
+      "alternative": 2,
+      "rhs": [
+        "actor"
+      ],
       "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseActorPair",
       "status": "covered",
       "fixtures": [
@@ -2723,7 +3785,19 @@
     {
       "id": 68,
       "lhs": "placement",
+      "alternative": 1,
+      "rhs": [
+        "left_of"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "left_of"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parsePlacement",
       "status": "covered",
       "fixtures": [
@@ -2733,7 +3807,19 @@
     {
       "id": 69,
       "lhs": "placement",
+      "alternative": 2,
+      "rhs": [
+        "right_of"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "right_of"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parsePlacement",
       "status": "covered",
       "fixtures": [
@@ -2743,7 +3829,23 @@
     {
       "id": 70,
       "lhs": "signal",
+      "alternative": 1,
+      "rhs": [
+        "actor",
+        "signaltype",
+        "+",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 5,
+      "terminals": [
+        "+"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignal",
       "status": "covered",
       "fixtures": [
@@ -2753,7 +3855,23 @@
     {
       "id": 71,
       "lhs": "signal",
+      "alternative": 2,
+      "rhs": [
+        "actor",
+        "signaltype",
+        "-",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 5,
+      "terminals": [
+        "-"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignal",
       "status": "covered",
       "fixtures": [
@@ -2763,7 +3881,23 @@
     {
       "id": 72,
       "lhs": "signal",
+      "alternative": 3,
+      "rhs": [
+        "actor",
+        "signaltype",
+        "()",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 5,
+      "terminals": [
+        "()"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignal",
       "status": "covered",
       "fixtures": [
@@ -2773,7 +3907,23 @@
     {
       "id": 73,
       "lhs": "signal",
+      "alternative": 4,
+      "rhs": [
+        "actor",
+        "()",
+        "signaltype",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 5,
+      "terminals": [
+        "()"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignal",
       "status": "covered",
       "fixtures": [
@@ -2783,7 +3933,25 @@
     {
       "id": 74,
       "lhs": "signal",
+      "alternative": 5,
+      "rhs": [
+        "actor",
+        "()",
+        "signaltype",
+        "()",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 6,
+      "terminals": [
+        "()",
+        "()"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignal",
       "status": "covered",
       "fixtures": [
@@ -2793,7 +3961,20 @@
     {
       "id": 75,
       "lhs": "signal",
+      "alternative": 6,
+      "rhs": [
+        "actor",
+        "signaltype",
+        "actor",
+        "text2"
+      ],
       "rhsLength": 4,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignal",
       "status": "covered",
       "fixtures": [
@@ -2815,7 +3996,20 @@
     {
       "id": 76,
       "lhs": "actor_with_config",
+      "alternative": 1,
+      "rhs": [
+        "ACTOR",
+        "config_object"
+      ],
       "rhsLength": 2,
+      "terminals": [
+        "ACTOR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseActorWithConfig",
       "status": "covered",
       "fixtures": [
@@ -2826,7 +4020,23 @@
     {
       "id": 77,
       "lhs": "config_object",
+      "alternative": 1,
+      "rhs": [
+        "CONFIG_START",
+        "CONFIG_CONTENT",
+        "CONFIG_END"
+      ],
       "rhsLength": 3,
+      "terminals": [
+        "CONFIG_START",
+        "CONFIG_CONTENT",
+        "CONFIG_END"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseConfigObject",
       "status": "covered",
       "fixtures": [
@@ -2837,7 +4047,19 @@
     {
       "id": 78,
       "lhs": "actor",
+      "alternative": 1,
+      "rhs": [
+        "ACTOR"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "ACTOR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseActor",
       "status": "covered",
       "fixtures": [
@@ -2862,7 +4084,19 @@
     {
       "id": 79,
       "lhs": "signaltype",
+      "alternative": 1,
+      "rhs": [
+        "SOLID_OPEN_ARROW"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_OPEN_ARROW"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2872,7 +4106,19 @@
     {
       "id": 80,
       "lhs": "signaltype",
+      "alternative": 2,
+      "rhs": [
+        "DOTTED_OPEN_ARROW"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "DOTTED_OPEN_ARROW"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2882,7 +4128,19 @@
     {
       "id": 81,
       "lhs": "signaltype",
+      "alternative": 3,
+      "rhs": [
+        "SOLID_ARROW"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2905,7 +4163,19 @@
     {
       "id": 82,
       "lhs": "signaltype",
+      "alternative": 4,
+      "rhs": [
+        "SOLID_ARROW_TOP"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW_TOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2915,7 +4185,19 @@
     {
       "id": 83,
       "lhs": "signaltype",
+      "alternative": 5,
+      "rhs": [
+        "SOLID_ARROW_BOTTOM"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW_BOTTOM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2925,7 +4207,19 @@
     {
       "id": 84,
       "lhs": "signaltype",
+      "alternative": 6,
+      "rhs": [
+        "STICK_ARROW_TOP"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "STICK_ARROW_TOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2935,7 +4229,19 @@
     {
       "id": 85,
       "lhs": "signaltype",
+      "alternative": 7,
+      "rhs": [
+        "STICK_ARROW_BOTTOM"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "STICK_ARROW_BOTTOM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2945,7 +4251,19 @@
     {
       "id": 86,
       "lhs": "signaltype",
+      "alternative": 8,
+      "rhs": [
+        "SOLID_ARROW_TOP_DOTTED"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW_TOP_DOTTED"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2955,7 +4273,19 @@
     {
       "id": 87,
       "lhs": "signaltype",
+      "alternative": 9,
+      "rhs": [
+        "SOLID_ARROW_BOTTOM_DOTTED"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW_BOTTOM_DOTTED"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2965,7 +4295,19 @@
     {
       "id": 88,
       "lhs": "signaltype",
+      "alternative": 10,
+      "rhs": [
+        "STICK_ARROW_TOP_DOTTED"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "STICK_ARROW_TOP_DOTTED"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2975,7 +4317,19 @@
     {
       "id": 89,
       "lhs": "signaltype",
+      "alternative": 11,
+      "rhs": [
+        "STICK_ARROW_BOTTOM_DOTTED"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "STICK_ARROW_BOTTOM_DOTTED"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2985,7 +4339,19 @@
     {
       "id": 90,
       "lhs": "signaltype",
+      "alternative": 12,
+      "rhs": [
+        "SOLID_ARROW_TOP_REVERSE"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW_TOP_REVERSE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -2995,7 +4361,19 @@
     {
       "id": 91,
       "lhs": "signaltype",
+      "alternative": 13,
+      "rhs": [
+        "SOLID_ARROW_BOTTOM_REVERSE"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW_BOTTOM_REVERSE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3005,7 +4383,19 @@
     {
       "id": 92,
       "lhs": "signaltype",
+      "alternative": 14,
+      "rhs": [
+        "STICK_ARROW_TOP_REVERSE"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "STICK_ARROW_TOP_REVERSE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3015,7 +4405,19 @@
     {
       "id": 93,
       "lhs": "signaltype",
+      "alternative": 15,
+      "rhs": [
+        "STICK_ARROW_BOTTOM_REVERSE"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "STICK_ARROW_BOTTOM_REVERSE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3025,7 +4427,19 @@
     {
       "id": 94,
       "lhs": "signaltype",
+      "alternative": 16,
+      "rhs": [
+        "SOLID_ARROW_TOP_REVERSE_DOTTED"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW_TOP_REVERSE_DOTTED"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3035,7 +4449,19 @@
     {
       "id": 95,
       "lhs": "signaltype",
+      "alternative": 17,
+      "rhs": [
+        "SOLID_ARROW_BOTTOM_REVERSE_DOTTED"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_ARROW_BOTTOM_REVERSE_DOTTED"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3045,7 +4471,19 @@
     {
       "id": 96,
       "lhs": "signaltype",
+      "alternative": 18,
+      "rhs": [
+        "STICK_ARROW_TOP_REVERSE_DOTTED"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "STICK_ARROW_TOP_REVERSE_DOTTED"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3055,7 +4493,19 @@
     {
       "id": 97,
       "lhs": "signaltype",
+      "alternative": 19,
+      "rhs": [
+        "STICK_ARROW_BOTTOM_REVERSE_DOTTED"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "STICK_ARROW_BOTTOM_REVERSE_DOTTED"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3065,7 +4515,19 @@
     {
       "id": 98,
       "lhs": "signaltype",
+      "alternative": 20,
+      "rhs": [
+        "BIDIRECTIONAL_SOLID_ARROW"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "BIDIRECTIONAL_SOLID_ARROW"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3075,7 +4537,19 @@
     {
       "id": 99,
       "lhs": "signaltype",
+      "alternative": 21,
+      "rhs": [
+        "DOTTED_ARROW"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "DOTTED_ARROW"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3090,7 +4564,19 @@
     {
       "id": 100,
       "lhs": "signaltype",
+      "alternative": 22,
+      "rhs": [
+        "BIDIRECTIONAL_DOTTED_ARROW"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "BIDIRECTIONAL_DOTTED_ARROW"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3100,7 +4586,19 @@
     {
       "id": 101,
       "lhs": "signaltype",
+      "alternative": 23,
+      "rhs": [
+        "SOLID_CROSS"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_CROSS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3110,7 +4608,19 @@
     {
       "id": 102,
       "lhs": "signaltype",
+      "alternative": 24,
+      "rhs": [
+        "DOTTED_CROSS"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "DOTTED_CROSS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3120,7 +4630,19 @@
     {
       "id": 103,
       "lhs": "signaltype",
+      "alternative": 25,
+      "rhs": [
+        "SOLID_POINT"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "SOLID_POINT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3130,7 +4652,19 @@
     {
       "id": 104,
       "lhs": "signaltype",
+      "alternative": 26,
+      "rhs": [
+        "DOTTED_POINT"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "DOTTED_POINT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseSignaltype",
       "status": "covered",
       "fixtures": [
@@ -3140,7 +4674,19 @@
     {
       "id": 105,
       "lhs": "text2",
+      "alternative": 1,
+      "rhs": [
+        "TXT"
+      ],
       "rhsLength": 1,
+      "terminals": [
+        "TXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
       "native": "parseText2",
       "status": "covered",
       "fixtures": [

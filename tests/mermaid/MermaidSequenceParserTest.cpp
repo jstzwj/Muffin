@@ -37,8 +37,15 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() ==
               QLatin1String("11.16.0"),
           QStringLiteral("Sequence fixture version drifted"));
+  const QJsonObject grammar=root.value(QStringLiteral("upstream")).toObject()
+                                .value(QStringLiteral("grammar")).toObject();
+  require(grammar.value(QStringLiteral("url")).toString().endsWith(
+              QLatin1String("/sequence/parser/sequenceDiagram.jison"))&&
+              grammar.value(QStringLiteral("sha256")).toString()==
+                  QLatin1String("8771148ef56c2b98b021597a53585e45acc088cb321a3d457d265eca352fb40f"),
+          QStringLiteral("Sequence upstream grammar contract drifted"));
   require(root.value(QStringLiteral("fixtureDigest")).toString() ==
-              QLatin1String("b84a517e40ec88a0b3beaf150bd4cdedc7c0f96d63bc63a306b1be5600e53a01"),
+              QLatin1String("9e65383a80edb37658236ba3ac083c82447c1b84f904359ceacd26b63f19cbdb"),
           QStringLiteral("Sequence fixture changed; audit DB/production diagnostics and update its digest"));
 
   const QJsonArray productions = root.value(QStringLiteral("productions")).toArray();
@@ -51,6 +58,12 @@ int main(int argc, char** argv) {
     const QJsonObject production = productions[i].toObject();
     require(production.value(QStringLiteral("id")).toInt() == i + 1 &&
                 !production.value(QStringLiteral("lhs")).toString().isEmpty() &&
+                production.value(QStringLiteral("alternative")).toInt()>0&&
+                production.value(QStringLiteral("rhs")).toArray().size()==
+                    production.value(QStringLiteral("rhsLength")).toInt()&&
+                production.value(QStringLiteral("terminals")).isArray()&&
+                production.value(QStringLiteral("nullableBoundaries")).isArray()&&
+                production.value(QStringLiteral("separatorTerminals")).isArray()&&
                 !production.value(QStringLiteral("native")).toString().isEmpty(),
             QStringLiteral("Sequence production table is incomplete at %1").arg(i + 1));
     if (production.value(QStringLiteral("status")).toString() == QLatin1String("covered")) {

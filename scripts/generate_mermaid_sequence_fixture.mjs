@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import { loadSequenceGrammar } from "./mermaid_jison_grammar.mjs";
 
 const mermaidRoot = path.resolve(
   process.argv[2] ?? path.join("..", "mermaid-cli", "node_modules", "mermaid"),
@@ -10,10 +11,12 @@ const output = path.resolve(
   process.argv[3] ?? path.join("tests", "fixtures", "mermaid", "sequence-db.json"),
 );
 const chrome = process.argv[4] ?? "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const grammarPath = process.argv[5];
 const packageJson = JSON.parse(fs.readFileSync(path.join(mermaidRoot, "package.json"), "utf8"));
 if (packageJson.version !== "11.16.0") {
   throw new Error(`Expected Mermaid 11.16.0, found ${packageJson.version}`);
 }
+const grammar = await loadSequenceGrammar(packageJson.version, grammarPath);
 
 const cases = [
   {
@@ -366,9 +369,20 @@ try {
     return { cases: results, invalidCases: invalid, coverageOnly, productions };
   }, { cases, invalidCases, mermaidModule });
 
+  snapshot.productions = snapshot.productions.map((production, index) => {
+    const grammarProduction = grammar.productions[index];
+    if (production.id !== grammarProduction.id ||
+        production.lhs !== grammarProduction.lhs ||
+        production.rhsLength !== grammarProduction.rhsLength) {
+      throw new Error(`Generated LR production ${production.id} does not match sequenceDiagram.jison`);
+    }
+    return { ...grammarProduction, native: production.native,
+      status: production.status, fixtures: production.fixtures,
+      ...(production.reason ? { reason: production.reason } : {}) };
+  });
   const fixtureDigest = createHash("sha256").update(JSON.stringify(snapshot)).digest("hex");
   fs.writeFileSync(output, `${JSON.stringify({
-    upstream: { package: "mermaid", version: packageJson.version },
+    upstream: { package: "mermaid", version: packageJson.version, grammar: grammar.source },
     fixtureDigest,
     ...snapshot,
   }, null, 2)}\n`);

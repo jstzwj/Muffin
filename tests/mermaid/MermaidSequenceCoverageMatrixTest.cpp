@@ -78,7 +78,12 @@ int main(int argc,char** argv) {
   for(const QJsonValue& value:dbCases)
     for(const QJsonValue& reduction:value.toObject().value(QStringLiteral("reductions")).toArray())
       productions.insert(reduction.toInt());
-  require(dbCases.size()>=13&&productions.size()>=98,
+  QSet<int> declaredCoveredProductions;
+  for(const QJsonValue& value:db.value(QStringLiteral("productions")).toArray())
+    if(value.toObject().value(QStringLiteral("status")).toString()==QLatin1String("covered"))
+      declaredCoveredProductions.insert(value.toObject().value(QStringLiteral("id")).toInt());
+  require(dbCases.size()>=13&&productions.size()==98&&
+              productions==declaredCoveredProductions,
           QStringLiteral("sequence grammar production coverage regressed"));
 
   QSet<QString> operators,codes,stages;

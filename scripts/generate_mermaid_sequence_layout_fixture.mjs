@@ -265,6 +265,50 @@ const cases = [
       "A->>+C:unclosed",
     ].join("\n"),
   },
+  {
+    id: "custom-activation-width",
+    axes: ["sequence-config", "activation-stack", "activation-lifecycle"],
+    sequence: { activationWidth: 14 },
+    source: [
+      "sequenceDiagram",
+      "A->>+B:start",
+      "B->>+B:nested",
+      "B-->>-B:close nested",
+      "B-->>-A:done",
+    ].join("\n"),
+  },
+  {
+    id: "custom-layout-and-viewport-config",
+    axes: ["sequence-config", "viewport-config", "participant-size", "participant-lifecycle",
+      "message-spacing", "note-geometry"],
+    sequence: {
+      actorMargin: 73,
+      width: 184,
+      height: 78,
+      boxMargin: 17,
+      boxTextMargin: 9,
+      messageMargin: 61,
+      noteMargin: 19,
+      activationWidth: 14,
+      diagramMarginX: 31,
+      diagramMarginY: 23,
+      wrapPadding: 16,
+      labelBoxWidth: 67,
+      labelBoxHeight: 28,
+      bottomMarginAdj: 7,
+      wrap: true,
+    },
+    source: [
+      "sequenceDiagram",
+      "box Configured box",
+      "participant A as Config A",
+      "participant B as Configured peer",
+      "end",
+      "A->>B:configured",
+      "Note over A,B:configured note",
+      "B-->>A:done",
+    ].join("\n"),
+  },
 ];
 
 const { default: puppeteer } = await import(
@@ -330,12 +374,24 @@ try {
       };
       const number = (element, name) => round(Number(element.getAttribute(name) ?? 0));
       const text = (element) => ({ text: element?.textContent ?? "", ...(element ? box(element) : {}) });
+      const textBlock = (elements) => {
+        const present = [...elements].filter(Boolean);
+        if (!present.length) return { text: "" };
+        const boxes = present.map(box);
+        const left = Math.min(...boxes.map((item) => item.x));
+        const top = Math.min(...boxes.map((item) => item.y));
+        const right = Math.max(...boxes.map((item) => item.x + item.width));
+        const bottom = Math.max(...boxes.map((item) => item.y + item.height));
+        return { text: present.map((element) => element.textContent ?? "").join("\n"),
+          x: round(left), y: round(top), width: round(right - left), height: round(bottom - top) };
+      };
       const participants = [...root.querySelectorAll('[data-et="participant"]')]
         .filter((element) => !element.closest("g.actor-man") || element.matches("g.actor-man"))
         .map((element, position) => {
           const shape = element.querySelector("rect, circle, path, line, polygon") ?? element;
           return { position, id: element.getAttribute("data-id") ?? "", box: box(element),
-            paintedBox: paintedBox(element), shape: box(shape), label: text(element.querySelector("text")) };
+            paintedBox: paintedBox(element), shape: box(shape),
+            label: textBlock(element.querySelectorAll("text")) };
         });
       const lifelines = [...root.querySelectorAll('[data-et="life-line"]')].map((element) => ({
         id: element.getAttribute("data-id") ?? "",
@@ -351,12 +407,15 @@ try {
         position, shape: { x: number(element, "x"), y: number(element, "y"),
           width: number(element, "width"), height: number(element, "height"),
           fill: element.getAttribute("fill") ?? "", stroke: element.getAttribute("stroke") ?? "" },
-        label: text(element.parentElement?.querySelector("text.text")),
+        label: textBlock(element.parentElement?.querySelectorAll("text.text") ?? []),
       }));
-      const messageLabels = [...root.querySelectorAll(".messageText")];
       const messages = [...root.querySelectorAll('[data-et="message"]')].map((element, position) => {
         const line = element.tagName.toLowerCase() === "line" ? element : element.querySelector("line");
         const path = element.tagName.toLowerCase() === "path" ? element : element.querySelector("path");
+        const labels = [];
+        for (let sibling = element.previousElementSibling;
+             sibling?.classList.contains("messageText"); sibling = sibling.previousElementSibling)
+          labels.unshift(sibling);
         return {
           position,
           id: element.getAttribute("data-id") ?? "",
@@ -374,7 +433,7 @@ try {
             markerStart: element.getAttribute("marker-start") ?? "",
             markerEnd: element.getAttribute("marker-end") ?? "",
           },
-          label: text(messageLabels[position]),
+          label: textBlock(labels),
         };
       });
       const centralConnections = [...root.querySelectorAll('circle[r="5"]')]
@@ -397,7 +456,7 @@ try {
           return shape ? { x: number(shape, "x"), y: number(shape, "y"),
             width: number(shape, "width"), height: number(shape, "height") } : box(element);
         })(),
-        label: text(element.querySelector("text")),
+        label: textBlock(element.querySelectorAll("text")),
       }));
       const fragments = [...root.querySelectorAll('[data-et="control-structure"]')].map((element, position) => {
         const lines = [...element.querySelectorAll(".loopLine")];
@@ -442,7 +501,7 @@ try {
             "actorMargin", "width", "height", "boxMargin", "boxTextMargin", "messageMargin",
             "noteMargin", "activationWidth", "diagramMarginX", "diagramMarginY", "mirrorActors",
             "hideUnusedParticipants", "wrapPadding", "labelBoxWidth", "labelBoxHeight",
-            "bottomMarginAdj", "rightAngles",
+            "bottomMarginAdj", "rightAngles", "wrap",
           ].map((key) => [key, resolved[key]])),
         },
         root: { viewBox: root.getAttribute("viewBox"), ...box(root) },
@@ -453,7 +512,18 @@ try {
     }, { fixture: cases[index], index, mermaidModule, fontFaces, fontStack });
     snapshots.push(snapshot);
   }
-  const payload = { mermaidVersion: packageJson.version, fontMode: "bundled-noto", cases: snapshots };
+  const payload = {
+    mermaidVersion: packageJson.version,
+    fontMode: "bundled-noto",
+    configContract: {
+      layout: ["actorMargin", "width", "height", "boxMargin", "boxTextMargin", "noteMargin",
+        "activationWidth", "wrapPadding", "labelBoxWidth", "labelBoxHeight", "rightAngles", "wrap",
+        "mirrorActors", "hideUnusedParticipants"],
+      viewport: ["diagramMarginX", "diagramMarginY", "bottomMarginAdj"],
+      upstreamInert: ["messageMargin"],
+    },
+    cases: snapshots,
+  };
   const canonical = JSON.stringify(payload);
   payload.fixtureSha256 = createHash("sha256").update(canonical).digest("hex");
   fs.mkdirSync(path.dirname(output), { recursive: true });

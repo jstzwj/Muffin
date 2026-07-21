@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { loadFlowchartGrammar } from "./mermaid_flowchart_grammar.mjs";
+import { loadFlowchartGrammar } from "./mermaid_jison_grammar.mjs";
 
 const mermaidRoot = path.resolve(
   process.argv[2] ?? path.join("..", "mermaid-cli", "node_modules", "mermaid"),

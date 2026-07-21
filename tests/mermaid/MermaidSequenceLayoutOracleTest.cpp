@@ -77,11 +77,18 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence layout must use the fixed Noto oracle"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("765bb2adde98bea003fd0ca879722169c39aa81f8c534c32c64d7e0004371843"),
+              QLatin1String("8fdacba7faaaec08200d18b42b392aa9612c4f9dd3a045a0b8f9a77de79428a3"),
           QStringLiteral("Sequence layout fixture changed; audit geometry and update its digest"));
 
+  const QJsonObject configContract = root.value(QStringLiteral("configContract")).toObject();
+  require(configContract.value(QStringLiteral("layout")).toArray().size() == 14 &&
+              configContract.value(QStringLiteral("viewport")).toArray().size() == 3 &&
+              configContract.value(QStringLiteral("upstreamInert")).toArray() ==
+                  QJsonArray{QStringLiteral("messageMargin")},
+          QStringLiteral("Sequence configuration ownership contract drifted"));
+
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 14, QStringLiteral("Sequence layout case count drifted"));
+  require(cases.size() == 16, QStringLiteral("Sequence layout case count drifted"));
   QSet<QString> ids, coveredAxes;
   int participantCount = 0, lifelineCount = 0, messageCount = 0;
   int activationCount = 0, noteCount = 0, fragmentCount = 0;
@@ -93,11 +100,41 @@ int main(int argc, char** argv) {
     for (const QJsonValue& axis : fixture.value(QStringLiteral("axes")).toArray()) coveredAxes.insert(axis.toString());
 
     const QJsonObject config = fixture.value(QStringLiteral("config")).toObject();
-    require(config.value(QStringLiteral("fontFamily")).toString().contains(QLatin1String("Noto Sans")) &&
-                config.value(QStringLiteral("actorMargin")).toInt() == 50 &&
-                config.value(QStringLiteral("messageMargin")).toInt() == 35 &&
-                config.value(QStringLiteral("activationWidth")).toInt() == 10,
-            QStringLiteral("%1 sequence layout config drifted").arg(id));
+    require(config.value(QStringLiteral("fontFamily")).toString().contains(QLatin1String("Noto Sans")),
+            QStringLiteral("%1 sequence layout font config drifted").arg(id));
+    if (id == QLatin1String("custom-layout-and-viewport-config")) {
+      require(config.value(QStringLiteral("actorMargin")).toInt() == 73 &&
+                  config.value(QStringLiteral("messageMargin")).toInt() == 61 &&
+                  config.value(QStringLiteral("activationWidth")).toInt() == 14 &&
+                  config.value(QStringLiteral("diagramMarginX")).toInt() == 31 &&
+                  config.value(QStringLiteral("diagramMarginY")).toInt() == 23 &&
+                  config.value(QStringLiteral("bottomMarginAdj")).toInt() == 7 &&
+                  config.value(QStringLiteral("wrap")).toBool(),
+              QStringLiteral("%1 custom sequence config was not transferred").arg(id));
+    } else if (id == QLatin1String("custom-activation-width")) {
+      require(config.value(QStringLiteral("activationWidth")).toInt() == 14,
+              QStringLiteral("%1 activation width config was not transferred").arg(id));
+    } else {
+      require(config.value(QStringLiteral("actorMargin")).toInt() == 50 &&
+                  config.value(QStringLiteral("messageMargin")).toInt() == 35 &&
+                  config.value(QStringLiteral("activationWidth")).toInt() == 10,
+              QStringLiteral("%1 default sequence config drifted").arg(id));
+    }
+
+    const QStringList viewBoxParts = fixture.value(QStringLiteral("root")).toObject()
+                                         .value(QStringLiteral("viewBox")).toString()
+                                         .split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    require(viewBoxParts.size() == 4,
+            QStringLiteral("%1 sequence viewBox is malformed").arg(id));
+    const qreal viewX = viewBoxParts.at(0).toDouble();
+    const qreal viewY = viewBoxParts.at(1).toDouble();
+    const qreal viewWidth = viewBoxParts.at(2).toDouble();
+    const qreal viewHeight = viewBoxParts.at(3).toDouble();
+    requireNear(viewY, -config.value(QStringLiteral("diagramMarginY")).toDouble(),
+                QStringLiteral("%1 viewport y margin").arg(id));
+    require(viewWidth > 2.0 * config.value(QStringLiteral("diagramMarginX")).toDouble() &&
+                viewHeight > 2.0 * config.value(QStringLiteral("diagramMarginY")).toDouble(),
+            QStringLiteral("%1 viewport has no positive logical canvas").arg(id));
 
     const SequenceDiagram diagram = SequenceDiagram::parse(fixture.value(QStringLiteral("source")).toString());
     const SequenceData& data = diagram.data();
@@ -116,6 +153,9 @@ int main(int argc, char** argv) {
       const QJsonObject object = participant.toObject();
       measurements.participants.insert(object.value(QStringLiteral("id")).toString(),
                                        sizeOf(object.value(QStringLiteral("label")).toObject()));
+      measurements.participantDisplayById.insert(
+          object.value(QStringLiteral("id")).toString(),
+          object.value(QStringLiteral("label")).toObject().value(QStringLiteral("text")).toString());
     }
     for (const QJsonValue& box : participantBoxes)
       measurements.boxes.append(sizeOf(box.toObject().value(QStringLiteral("label")).toObject()));
@@ -124,12 +164,18 @@ int main(int argc, char** argv) {
       const QSizeF measured = sizeOf(object.value(QStringLiteral("label")).toObject());
       measurements.messages.append(measured);
       measurements.messagesByIndex.insert(messageIndex(object.value(QStringLiteral("id")).toString()), measured);
+      measurements.messageDisplayByIndex.insert(
+          messageIndex(object.value(QStringLiteral("id")).toString()),
+          object.value(QStringLiteral("label")).toObject().value(QStringLiteral("text")).toString());
     }
     for (const QJsonValue& note : notes) {
       const QJsonObject object = note.toObject();
       const QSizeF measured = sizeOf(object.value(QStringLiteral("label")).toObject());
       measurements.notes.append(measured);
       measurements.notesByIndex.insert(messageIndex(object.value(QStringLiteral("id")).toString()), measured);
+      measurements.noteDisplayByIndex.insert(
+          messageIndex(object.value(QStringLiteral("id")).toString()),
+          object.value(QStringLiteral("label")).toObject().value(QStringLiteral("text")).toString());
     }
     for (const QJsonValue& fragment : fragments) {
       const QJsonArray labels = fragment.toObject().value(QStringLiteral("labels")).toArray();
@@ -148,10 +194,17 @@ int main(int argc, char** argv) {
     options.labelBoxWidth = config.value(QStringLiteral("labelBoxWidth")).toDouble();
     options.labelBoxHeight = config.value(QStringLiteral("labelBoxHeight")).toDouble();
     options.rightAngles = config.value(QStringLiteral("rightAngles")).toBool();
+    options.wrap = config.value(QStringLiteral("wrap")).toBool();
     options.mirrorActors = config.value(QStringLiteral("mirrorActors")).toBool(true);
     options.hideUnusedParticipants = config.value(QStringLiteral("hideUnusedParticipants")).toBool();
     const SequenceLayoutResult layout = layoutSequence(data, measurements, options);
     const SequenceScene scene = buildSequenceScene(layout);
+    const qreal logicalCanvasStartX =
+        viewX + config.value(QStringLiteral("diagramMarginX")).toDouble();
+    const qreal logicalCanvasWidth =
+        viewWidth - 2.0 * config.value(QStringLiteral("diagramMarginX")).toDouble();
+    require(std::isfinite(logicalCanvasStartX) && logicalCanvasWidth > 0.0,
+            QStringLiteral("%1 logical viewport model is invalid").arg(id));
 
     require(layout.participants.size() == participants.size() && lifelines.size() == participants.size(),
             QStringLiteral("%1 participant/lifeline input count mismatch").arg(id));
@@ -300,7 +353,8 @@ int main(int argc, char** argv) {
             QStringLiteral("%1 activation lifecycle count mismatch").arg(id));
     for (const QJsonValue& activationValue : activations) {
       const QJsonObject activation = activationValue.toObject();
-      require(std::abs(activation.value(QStringLiteral("width")).toDouble() - 10.0) <= 0.001 &&
+      require(std::abs(activation.value(QStringLiteral("width")).toDouble() -
+                       options.activationWidth) <= 0.001 &&
                   activation.value(QStringLiteral("height")).toDouble() > 0.0,
               QStringLiteral("%1 activation geometry drifted").arg(id));
       const qsizetype position = activation.value(QStringLiteral("position")).toInteger();
@@ -394,6 +448,9 @@ int main(int argc, char** argv) {
                               QStringLiteral("message-spacing"), QStringLiteral("activation-stack"),
                               QStringLiteral("note-geometry"), QStringLiteral("fragment-geometry")})
     require(coveredAxes.contains(axis), QStringLiteral("Sequence layout axis is uncovered: %1").arg(axis));
+  require(coveredAxes.contains(QStringLiteral("sequence-config")) &&
+              coveredAxes.contains(QStringLiteral("viewport-config")),
+          QStringLiteral("Sequence config differential axes are uncovered"));
   require(participantCount >= 27 && lifelineCount == participantCount && messageCount >= 46 &&
               activationCount >= 3 && noteCount >= 5 && fragmentCount >= 6,
           QStringLiteral("Sequence layout geometry coverage regressed"));
