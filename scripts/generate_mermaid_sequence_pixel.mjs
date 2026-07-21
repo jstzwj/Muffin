@@ -3,6 +3,11 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { PNG } from "pngjs";
+import {
+  collectPngReferences,
+  keepSequenceLabelCrop,
+  sequenceScenePixelCaseIds,
+} from "./mermaid_sequence_pixel_policy.mjs";
 
 const mermaidRoot = path.resolve(process.argv[2] ?? path.join("..", "mermaid-cli", "node_modules", "mermaid"));
 const outDir = path.resolve(process.argv[3] ?? path.join("tests", "fixtures", "mermaid", "sequence-pixel"));
@@ -363,9 +368,10 @@ try {
       };
       return {width:Math.ceil(b.width),height:Math.ceil(b.height),structure};
     }, {fixture:cases[i],i,module,faces,stack,mathFace});
-    const file=`${cases[i].id}.png`;
+    const file=sequenceScenePixelCaseIds.has(cases[i].id)
+      ? `${cases[i].id}.png` : undefined;
     const svg = await page.$("svg");
-    await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
+    if(file) await svg.screenshot({path:path.join(outDir,file),omitBackground:true});
     let mathBodyFile,mathAccentFile,mathAccentText,mathGlyphFile,mathGlyphBox;
     let mathDelimiters;
     let mathTokens,mathTokenGroups,mathRasterPhases;
@@ -679,7 +685,7 @@ try {
       });
     }
     let cropFile;
-    if (cases[i].cropSelector) {
+    if (cases[i].cropSelector && keepSequenceLabelCrop(cases[i])) {
       cropFile=`${cases[i].id}-label.png`;
       const clip=await page.$$eval(cases[i].cropSelector,(elements,cropCount)=>{
         if(!elements.length) return null;
@@ -705,7 +711,9 @@ try {
         requestAnimationFrame(()=>requestAnimationFrame(resolve))));
       await page.screenshot({path:path.join(outDir,cropFile),omitBackground:true,clip});
     }
-    const sha256=createHash("sha256").update(fs.readFileSync(path.join(outDir,file))).digest("hex");
+    const sha256=file
+      ? createHash("sha256").update(fs.readFileSync(path.join(outDir,file))).digest("hex")
+      : undefined;
     const cropSha256=cropFile
       ? createHash("sha256").update(fs.readFileSync(path.join(outDir,cropFile))).digest("hex") : undefined;
     const mathBodySha256=mathBodyFile
@@ -723,6 +731,9 @@ try {
   const payload={mermaidVersion:pkg.version,fontMode:"bundled-noto-stix-two-math-2.13b171",cases:manifestCases};
   payload.fixtureSha256=createHash("sha256").update(JSON.stringify(payload)).digest("hex");
   fs.writeFileSync(path.join(outDir,"manifest.json"),`${JSON.stringify(payload,null,2)}\n`);
-  console.log(`Wrote ${cases.length} sequence pixel goldens to ${outDir}`);
+  const references=collectPngReferences(payload);
+  for(const name of fs.readdirSync(outDir).filter((name)=>name.endsWith(".png")))
+    if(!references.has(name)) fs.rmSync(path.join(outDir,name));
+  console.log(`Wrote ${cases.length} sequence cases and ${references.size} PNG oracles to ${outDir}`);
   console.log(`fixtureSha256=${payload.fixtureSha256}`);
 } finally { await browser.close(); }

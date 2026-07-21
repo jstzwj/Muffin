@@ -323,6 +323,26 @@ state into `tests/fixtures/mermaid/flowchart-db.json`. Chrome and Puppeteer are
 fixture-generation tools only; neither is linked, packaged, or invoked by
 Muffin or its native test suite.
 
+Sequence pixel fixtures deliberately separate structural coverage from raster
+coverage. All sequence cases retain their Mermaid 11.16.0 DOM, marker, MathML,
+layout, and operation metadata, while full-canvas PNGs are committed only for
+the representative integration matrix. Label crops cover the text modes,
+themes, and DPRs; dedicated delimiter, large-operator, token-group, and
+subpixel-phase crops remain independent raster oracles.
+
+Regenerate these browser oracles explicitly, outside the normal C++ build:
+
+```powershell
+node scripts/generate_mermaid_sequence_pixel.mjs `
+  ..\mermaid-cli\node_modules\mermaid `
+  tests\fixtures\mermaid\sequence-pixel
+node scripts/compact_mermaid_sequence_pixel_fixture.mjs
+```
+
+The generator and compactor share `mermaid_sequence_pixel_policy.mjs`, remove
+unreferenced PNGs, and update the manifest digest. Normal Release tests consume
+the committed fixture and therefore require neither Node nor Chromium.
+
 `scripts/generate_mermaid_flowchart_geometry_fixture.mjs` renders fixed-font,
 fixed-theme flowcharts with upstream `dagre-wrapper` and records node bounds,
 relative centers, and edge paths in

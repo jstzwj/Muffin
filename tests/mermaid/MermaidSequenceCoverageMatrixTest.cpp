@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
@@ -29,6 +30,16 @@ void collectMathMlTags(const QJsonObject& node,QSet<QString>* tags) {
   for(const QJsonValue& child:node.value(QStringLiteral("children")).toArray())
     collectMathMlTags(child.toObject(),tags);
 }
+void collectPngReferences(const QJsonValue& value,QSet<QString>* files) {
+  if(value.isString()) {
+    const QString name=value.toString();
+    if(name.endsWith(QLatin1String(".png"))) files->insert(name);
+  } else if(value.isArray()) {
+    for(const QJsonValue& child:value.toArray()) collectPngReferences(child,files);
+  } else if(value.isObject()) {
+    for(const QJsonValue& child:value.toObject()) collectPngReferences(child,files);
+  }
+}
 }  // namespace
 
 int main(int argc,char** argv) {
@@ -54,6 +65,14 @@ int main(int argc,char** argv) {
   const QSet<QString> labelIds=uniqueIds(labelCases,QStringLiteral("sequence-label"));
   const QSet<QString> pixelIds=uniqueIds(pixelCases,QStringLiteral("sequence-pixel"));
   const QSet<QString> mathmlIds=uniqueIds(mathmlCases,QStringLiteral("mathml-css-box"));
+  QSet<QString> referencedPngs;
+  collectPngReferences(pixel,&referencedPngs);
+  const QStringList diskPngList=QDir(dir+QStringLiteral("/sequence-pixel"))
+      .entryList({QStringLiteral("*.png")},QDir::Files,QDir::Name);
+  const QSet<QString> diskPngs(diskPngList.cbegin(),diskPngList.cend());
+  require(referencedPngs==diskPngs&&referencedPngs.size()==309,
+          QStringLiteral("Sequence PNG fixture references/orphans regressed: manifest=%1 disk=%2")
+              .arg(referencedPngs.size()).arg(diskPngs.size()));
 
   QSet<int> productions;
   for(const QJsonValue& value:dbCases)
@@ -172,7 +191,8 @@ int main(int argc,char** argv) {
             QStringLiteral("sequence recursive Math paint axis missing: %1").arg(id));
 
   QSet<QString> themes; QSet<QString> dprs;
-  int mathCases=0,bidiCases=0,cjkCases=0,cropCases=0,markerCases=0,ariaCases=0;
+  int mathCases=0,bidiCases=0,cjkCases=0,cropCases=0,scenePixelCases=0,
+      markerCases=0,ariaCases=0;
   for(const QJsonValue& value:pixelCases) {
     const QJsonObject item=value.toObject();
     themes.insert(item.value(QStringLiteral("theme")).toString(QStringLiteral("default")));
@@ -182,12 +202,14 @@ int main(int argc,char** argv) {
     bidiCases+=source.contains(QChar(0x0645))||source.contains(QChar(0x05e9));
     cjkCases+=source.contains(QChar(0x4e2d))||source.contains(QChar(0x5ba2));
     cropCases+=!item.value(QStringLiteral("cropFile")).toString().isEmpty();
+    scenePixelCases+=!item.value(QStringLiteral("file")).toString().isEmpty();
     const QJsonObject structure=item.value(QStringLiteral("structure")).toObject();
     markerCases+=structure.value(QStringLiteral("markers")).toArray().size()>=8;
     ariaCases+=!structure.value(QStringLiteral("ariaLabelledBy")).toString().isEmpty();
   }
   require(themes==QSet<QString>{QStringLiteral("default"),QStringLiteral("dark")}&&dprs.size()>=4&&
-              mathCases>=3&&bidiCases>=4&&cjkCases>=5&&cropCases>=11&&
+              mathCases>=3&&bidiCases>=4&&cjkCases>=5&&scenePixelCases>=24&&
+              cropCases>=68&&
               markerCases==pixelCases.size()&&ariaCases>=1,
           QStringLiteral("sequence theme/DPR/label/SVG coverage regressed"));
 

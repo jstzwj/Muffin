@@ -410,7 +410,7 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("a4003ef9fea2e73e327f7f1753255acc8b380b73a50d16b0d2489b88263c3dfd"),
+              QLatin1String("8ec403ca2a0a7b97f27a88386703ffd5ccc1d061ef6a0f1068cf9b5df25b7aaa"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
@@ -418,6 +418,8 @@ int main(int argc,char** argv) {
   require(cases.size()==121,QStringLiteral("Sequence pixel matrix regressed"));
   QSet<QString> ids;
   QSet<QString> verticalDelimiters;
+  int scenePixelCases=0;
+  int labelPixelCases=0;
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject(); const QString id=fixture.value(QStringLiteral("id")).toString();
     require(!id.isEmpty()&&!ids.contains(id),QStringLiteral("Duplicate sequence pixel case: %1").arg(id));
@@ -461,32 +463,37 @@ int main(int argc,char** argv) {
                 QStringLiteral("%1 supsub degree operation is missing").arg(id));
     }
     const qreal dpr=fixture.value(QStringLiteral("dpr")).toDouble(1.0);
-    const QImage native=sequence::renderSequenceSceneToImage(*entry.sequenceScene,dpr,0.0);
-    const QImage golden(dir.filePath(fixture.value(QStringLiteral("file")).toString()));
-    require(fileSha256(dir.filePath(fixture.value(QStringLiteral("file")).toString()))==
-                fixture.value(QStringLiteral("sha256")).toString().toLatin1(),
-            QStringLiteral("%1 full pixel golden hash drifted").arg(id));
-    require(!native.isNull()&&!golden.isNull(),QStringLiteral("%1 pixel image missing").arg(id));
-    const qreal nativeRatio=qreal(native.width())/native.height(), goldenRatio=qreal(golden.width())/golden.height();
-    const qreal ratioDrift=qAbs(nativeRatio-goldenRatio)/goldenRatio;
-    const qreal iou=alphaIou(native,golden);
-    qDebug().noquote() << id << "native" << native.size() << alphaBounds(native)
-                       << "golden" << golden.size() << alphaBounds(golden)
-                       << "scene" << entry.sequenceScene->bounds
-                       << "ratio-drift" << ratioDrift << "alpha-IoU" << iou;
-    require(ratioDrift<=0.05,
-            QStringLiteral("%1 canvas ratio mismatch: %2 vs %3").arg(id).arg(nativeRatio).arg(goldenRatio));
-    const qreal minimumSceneIou=id==QLatin1String("structural-combined-order") ? 0.25 : 0.80;
-    require(iou>=minimumSceneIou,QStringLiteral("%1 alpha IoU too low: %2").arg(id).arg(iou));
-    const Stats ns=stats(native), gs=stats(golden);
-    require(ns.opaque>100&&gs.opaque>100,QStringLiteral("%1 rendered blank").arg(id));
-    const auto average=[](qint64 sum,int count){return count?qreal(sum)/count:0.0;};
-    const qreal colorDistance=qAbs(average(ns.red,ns.opaque)-average(gs.red,gs.opaque))+
-        qAbs(average(ns.green,ns.opaque)-average(gs.green,gs.opaque))+
-        qAbs(average(ns.blue,ns.opaque)-average(gs.blue,gs.opaque));
-    require(colorDistance<260.0,QStringLiteral("%1 mean color drift: %2").arg(id).arg(colorDistance));
+    const QString sceneFile=fixture.value(QStringLiteral("file")).toString();
+    if(!sceneFile.isEmpty()) {
+      ++scenePixelCases;
+      const QImage native=sequence::renderSequenceSceneToImage(*entry.sequenceScene,dpr,0.0);
+      const QImage golden(dir.filePath(sceneFile));
+      require(fileSha256(dir.filePath(sceneFile))==
+                  fixture.value(QStringLiteral("sha256")).toString().toLatin1(),
+              QStringLiteral("%1 full pixel golden hash drifted").arg(id));
+      require(!native.isNull()&&!golden.isNull(),QStringLiteral("%1 pixel image missing").arg(id));
+      const qreal nativeRatio=qreal(native.width())/native.height(), goldenRatio=qreal(golden.width())/golden.height();
+      const qreal ratioDrift=qAbs(nativeRatio-goldenRatio)/goldenRatio;
+      const qreal iou=alphaIou(native,golden);
+      qDebug().noquote() << id << "native" << native.size() << alphaBounds(native)
+                         << "golden" << golden.size() << alphaBounds(golden)
+                         << "scene" << entry.sequenceScene->bounds
+                         << "ratio-drift" << ratioDrift << "alpha-IoU" << iou;
+      require(ratioDrift<=0.05,
+              QStringLiteral("%1 canvas ratio mismatch: %2 vs %3").arg(id).arg(nativeRatio).arg(goldenRatio));
+      const qreal minimumSceneIou=id==QLatin1String("structural-combined-order") ? 0.25 : 0.80;
+      require(iou>=minimumSceneIou,QStringLiteral("%1 alpha IoU too low: %2").arg(id).arg(iou));
+      const Stats ns=stats(native), gs=stats(golden);
+      require(ns.opaque>100&&gs.opaque>100,QStringLiteral("%1 rendered blank").arg(id));
+      const auto average=[](qint64 sum,int count){return count?qreal(sum)/count:0.0;};
+      const qreal colorDistance=qAbs(average(ns.red,ns.opaque)-average(gs.red,gs.opaque))+
+          qAbs(average(ns.green,ns.opaque)-average(gs.green,gs.opaque))+
+          qAbs(average(ns.blue,ns.opaque)-average(gs.blue,gs.opaque));
+      require(colorDistance<260.0,QStringLiteral("%1 mean color drift: %2").arg(id).arg(colorDistance));
+    }
     const QString cropFile=fixture.value(QStringLiteral("cropFile")).toString();
     if(!cropFile.isEmpty()) {
+      ++labelPixelCases;
       const QImage nativeLabel=renderLabel(*entry.sequenceScene,
           fixture.value(QStringLiteral("cropKind")).toString(),dpr);
       const QImage browserLabel=alphaTrimmed(QImage(dir.filePath(cropFile)));
@@ -1314,6 +1321,8 @@ int main(int argc,char** argv) {
                             QStringLiteral("middle-script"),
                             QStringLiteral("middle-array")},
           QStringLiteral("Sequence vertical delimiter pixel axis regressed"));
+  require(scenePixelCases>=24&&labelPixelCases>=55,
+          QStringLiteral("Sequence curated scene/label pixel matrix regressed"));
   for(const QString& id:{QStringLiteral("label-participant-html-cjk"),
                          QStringLiteral("label-message-wrap-bidi"),
                          QStringLiteral("label-note-markdown-math"),
@@ -1373,6 +1382,7 @@ int main(int argc,char** argv) {
                          QStringLiteral("label-math-fallback-bracket-assembly"),
                          QStringLiteral("label-math-fallback-angle-assembly")})
     require(ids.contains(id),QStringLiteral("Sequence structural Math crop is uncovered: %1").arg(id));
-  qDebug()<<"MermaidSequencePixelTest:" << cases.size() << "Chrome/native pixel goldens passed";
+  qDebug()<<"MermaidSequencePixelTest:" << cases.size() << "structural cases,"
+          <<scenePixelCases<<"scene and"<<labelPixelCases<<"label pixel goldens passed";
   return 0;
 }
