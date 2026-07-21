@@ -64,6 +64,7 @@ int main(int argc, char** argv) {
       QStringLiteral("drawTextRange"),
       QStringLiteral("localFormats"),
       QStringLiteral("paintedLabel.text[separator]"),
+      QStringLiteral("setHeight(21.0)"),
   };
   for (const QString& token : forbidden)
     require(!combined.contains(token),
@@ -88,6 +89,7 @@ int main(int argc, char** argv) {
               flow.contains(QStringLiteral("openTypeFontBoundingMetrics")) &&
               flow.contains(QStringLiteral("mathMlInlineInkRight")) &&
               flow.contains(QStringLiteral("flowSvgFormattedTextLineStep")) &&
+              flow.contains(QStringLiteral("FlowSvgFormattedText")) &&
               flow.contains(QStringLiteral("visibleDomTextRanges")) &&
               flow.contains(QStringLiteral("preparedGlyphs")) &&
               flow.contains(QStringLiteral("boundingRect(glyphs.at(i))")),

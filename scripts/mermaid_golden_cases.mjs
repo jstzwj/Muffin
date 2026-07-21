@@ -55,7 +55,8 @@ const complexClusterSource = [
 ].join("\n");
 // Axis 1 — the legacy-compatible themes on the style-matrix integration diagram.
 for (const theme of pixelThemes) {
-  table.push({ id: `theme-${theme}`, theme, source: integrationSource });
+  table.push({ id: `theme-${theme}`, theme, source: integrationSource,
+               ...(theme === "default" ? { svgStructural: "combined" } : {}) });
 }
 // Axis 2 — the four rank directions (isolated chain so direction is the only variable).
 for (const dir of ["TB", "BT", "LR", "RL"]) {
@@ -69,6 +70,7 @@ for (const dir of ["TB", "BT", "LR", "RL"]) {
 table.push({
   id: "edge-marker-matrix",
   theme: "default",
+  svgStructural: "markers",
   source: [
     "flowchart LR",
     "A[Start] --> B[Point]",
@@ -79,6 +81,17 @@ table.push({
     "F ==> G[Thick]",
     "A o--o H[CircleBoth]",
     "H x--x I[CrossBoth]",
+  ].join("\n"),
+});
+table.push({
+  id: "flow-svg-structural-aria",
+  theme: "default",
+  svgStructural: "aria",
+  source: [
+    "flowchart LR",
+    "accTitle: Checkout flow",
+    "accDescr: Accessible request lifecycle",
+    "A[Client] -->|request| B[Service]",
   ].join("\n"),
 });
 table.push({
@@ -130,6 +143,7 @@ table.push({
   id: "look-neo-edge-markers",
   theme: "neo",
   look: "neo",
+  svgStructural: "neo-markers",
   source: [
     "flowchart LR",
     "A[Start] --> B[Point]",
@@ -306,6 +320,55 @@ for (const fixture of [
 ]) {
   table.push({ ...fixture, theme: fixture.theme ?? "default",
                fontMode: "noto", labelCrop: true });
+}
+for (const fixture of [
+  {
+    id: "flow-edge-label-crop-single-bidi",
+    labelCropKind: "edge-single-bidi",
+    labelCropTarget: "edge",
+    labelCropSelector: ".edgeLabels .edgeLabel .label text",
+    expectedLineCount: 1,
+    source: 'flowchart LR\nA[Start] -->|"Latin \u4e2d\u6587 \u0645\u0631\u062d\u0628\u0627 \u05e9\u05dc\u05d5\u05dd"| B[Finish]',
+  },
+  {
+    id: "flow-edge-label-crop-wrap-three-lines",
+    labelCropKind: "edge-wrap-three",
+    labelCropTarget: "edge",
+    labelCropSelector: ".edgeLabels .edgeLabel .label text",
+    expectedLineCount: 3,
+    dpr: 1.25,
+    source: 'flowchart LR\nA[Start] -->|"A deliberately long edge label that wraps at the upstream limit"| B[Finish]',
+  },
+  {
+    id: "flow-edge-label-crop-html-br-dark-1_5x",
+    labelCropKind: "edge-html-br",
+    labelCropTarget: "edge",
+    labelCropSelector: ".edgeLabels .edgeLabel .label text",
+    expectedLineCount: 2,
+    theme: "dark", dpr: 1.5,
+    source: 'flowchart LR\nA[Start] -->|"<b>Bold \u4e2d\u6587</b><br><i>\u0645\u0631\u062d\u0628\u0627 \u05e9\u05dc\u05d5\u05dd</i>"| B[Finish]',
+  },
+  {
+    id: "flow-cluster-label-crop-html-bidi",
+    labelCropKind: "cluster-html-bidi",
+    labelCropTarget: "cluster",
+    labelCropSelector: "g.cluster .cluster-label text",
+    expectedLineCount: 1,
+    source: 'flowchart TB\nsubgraph S["<b>Group \u4e2d\u6587</b> \u0645\u0631\u062d\u0628\u0627 \u05e9\u05dc\u05d5\u05dd"]\nA[Inside]\nend',
+  },
+  {
+    id: "flow-cluster-label-crop-markdown-neo-dark-2x",
+    labelCropKind: "cluster-markdown-bidi",
+    labelCropTarget: "cluster",
+    labelCropSelector: "g.cluster .cluster-label text",
+    expectedLineCount: 1,
+    theme: "neo-dark", look: "neo", dpr: 2,
+    source: 'flowchart TB\nsubgraph Outer["`**Outer \u4e2d\u6587** \u05e9\u05dc\u05d5\u05dd \u0645\u0631\u062d\u0628\u0627`"]\nsubgraph Inner[Inner]\nA[Inside]\nend\nend',
+  },
+]) {
+  table.push({ ...fixture, theme: fixture.theme ?? "default",
+               fontMode: "noto", labelCrop: true,
+               svgStructural: fixture.labelCropTarget });
 }
 table.push({
   id: "edge-label-rich",

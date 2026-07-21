@@ -416,6 +416,11 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         layoutOptions.preparedEdgeLabels.insert(edge.id, prepared);
       }
     }
+    for (const flowchart::FlowSubgraph& subgraph : chart.data().subgraphs)
+      if (!subgraph.title.isEmpty())
+        layoutOptions.measuredClusterLabels.insert(
+            subgraph.id,
+            flowchart::measureFlowchartClusterLabel(subgraph, textOptions));
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, layoutOptions);
     const quint32 handDrawnSeed = static_cast<quint32>(
         std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));

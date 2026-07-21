@@ -486,7 +486,8 @@ void appendFormatted(FlowLabelDocument& result, const QString& text,
   result.formats.push_back(range);
 }
 
-FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
+FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled,
+                              bool htmlFormatting = true) {
   FlowLabelDocument result;
   source = normalizeBreaks(std::move(source));
   QVector<Marker> stack;
@@ -548,19 +549,26 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled) {
       token = QStringLiteral("*"); consumed = 1; format.setFontItalic(true);
     } else if (markdown && rest.startsWith(QLatin1Char('`'))) {
       token = QStringLiteral("`"); consumed = 1; format.setFontFamilies({QStringLiteral("monospace")});
-    } else if (htmlToken(QStringLiteral("strong"), false) || htmlToken(QStringLiteral("b"), false)) {
+    } else if (htmlFormatting &&
+               (htmlToken(QStringLiteral("strong"), false) ||
+                htmlToken(QStringLiteral("b"), false))) {
       format.setFontWeight(QFont::Bold); blockToken = true;
-    } else if ((closing = htmlToken(QStringLiteral("strong"), true)) ||
-               (closing = htmlToken(QStringLiteral("b"), true))) {
+    } else if (htmlFormatting &&
+               ((closing = htmlToken(QStringLiteral("strong"), true)) ||
+                (closing = htmlToken(QStringLiteral("b"), true)))) {
       blockToken = true;
-    } else if (htmlToken(QStringLiteral("em"), false) || htmlToken(QStringLiteral("i"), false)) {
+    } else if (htmlFormatting &&
+               (htmlToken(QStringLiteral("em"), false) ||
+                htmlToken(QStringLiteral("i"), false))) {
       format.setFontItalic(true); blockToken = true;
-    } else if ((closing = htmlToken(QStringLiteral("em"), true)) ||
-               (closing = htmlToken(QStringLiteral("i"), true))) {
+    } else if (htmlFormatting &&
+               ((closing = htmlToken(QStringLiteral("em"), true)) ||
+                (closing = htmlToken(QStringLiteral("i"), true)))) {
       blockToken = true;
-    } else if (htmlToken(QStringLiteral("code"), false)) {
+    } else if (htmlFormatting && htmlToken(QStringLiteral("code"), false)) {
       format.setFontFamilies({QStringLiteral("monospace")}); blockToken = true;
-    } else if ((closing = htmlToken(QStringLiteral("code"), true))) {
+    } else if (htmlFormatting &&
+               (closing = htmlToken(QStringLiteral("code"), true))) {
       blockToken = true;
     }
 
@@ -642,6 +650,27 @@ FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType
     return result;
   }
   return {.text = normalizeBreaks(source)};
+}
+
+FlowLabelDocument parseFlowSvgLabel(const QString& source,
+                                    const QString& labelType) {
+  QString formatted = normalizeBreaks(source);
+  static const QRegularExpression openingTag(
+      QStringLiteral(R"((<(?:strong|b|em|i|code)>))"),
+      QRegularExpression::CaseInsensitiveOption);
+  static const QRegularExpression closingTag(
+      QStringLiteral(R"((</(?:strong|b|em|i|code)>))"),
+      QRegularExpression::CaseInsensitiveOption);
+  formatted.replace(openingTag, QStringLiteral("\\1 "));
+  formatted.replace(closingTag, QStringLiteral(" \\1"));
+  formatted.replace(QRegularExpression(QStringLiteral("[ \\t]+")),
+                    QStringLiteral(" "));
+  const bool markdown = labelType == QLatin1String("markdown");
+  FlowLabelDocument result =
+      parseMarkup(std::move(formatted), markdown, false, false);
+  result.formattingContext =
+      FlowLabelFormattingContext::FlowSvgFormattedText;
+  return result;
 }
 
 qsizetype prepareFlowLabelMath(FlowLabelDocument& label,
@@ -1088,16 +1117,21 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
     result.size.setHeight(result.size.height() + lineHeight);
     result.lines.push_back(std::move(measured));
   }
-  if (label.visualLineAdvance > 0.0 && result.lines.size() > 1) {
+  qreal visualLineAdvance = label.visualLineAdvance;
+  if (label.formattingContext ==
+          FlowLabelFormattingContext::FlowSvgFormattedText &&
+      result.lines.size() > 1)
+    visualLineAdvance = flowSvgFormattedTextLineStep(fontPixelSize);
+  if (visualLineAdvance > 0.0 && result.lines.size() > 1) {
     for (FlowLabelLineMetrics& line : result.lines) {
-      line.blockHeight = label.visualLineAdvance;
+      line.blockHeight = visualLineAdvance;
       line.baseline = fontBoundingMetrics.ascent;
       line.ascent = fontBoundingMetrics.ascent;
       line.descent = fontBoundingMetrics.descent;
     }
     result.size.setHeight(fontBoundingMetrics.height() +
                           (result.lines.size() - 1) *
-                              label.visualLineAdvance);
+                              visualLineAdvance);
   }
   return result;
 }

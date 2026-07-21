@@ -337,8 +337,9 @@ qreal labelFontPixelSize(const FlowSceneLabel& label) {
 
 void prepareSceneLabel(FlowSceneLabel& label) {
   if (label.richText.text.isNull())
-    label.richText = flowchart::parseFlowLabel(
-        label.text, label.labelType, label.mathEnabled);
+    label.richText = label.mathEnabled
+        ? flowchart::parseFlowLabel(label.text, label.labelType, true)
+        : flowchart::parseFlowSvgLabel(label.text, label.labelType);
   flowchart::prepareFlowLabelMath(label.richText,
                                   labelFontPixelSize(label));
 }

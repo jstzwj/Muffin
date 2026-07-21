@@ -30,6 +30,6 @@ struct MarkerGeometry {
   QString pathData;    // for "path"
   qreal cx = 0, cy = 0, r = 0;  // for "circle"
 };
-MarkerGeometry markerGeometry(const QString& type, bool useMargin = false);
+MarkerGeometry markerGeometry(const QString& type);
 
 }  // namespace muffin::mermaid::flowscene

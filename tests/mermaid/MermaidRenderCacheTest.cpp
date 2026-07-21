@@ -290,6 +290,7 @@ int main(int argc, char** argv) {
   // --- structured labels: markers/tags affect formatting, not visible text ---
   {
     using muffin::mermaid::flowchart::parseFlowLabel;
+    using muffin::mermaid::flowchart::parseFlowSvgLabel;
     const auto markdown = parseFlowLabel(QStringLiteral("**Bold** and `code`<br/>next"),
                                          QStringLiteral("markdown"));
     require(markdown.text == QLatin1String("Bold and code\nnext"),
@@ -318,6 +319,39 @@ int main(int argc, char** argv) {
                         htmlMetrics.lines.at(1).runs.cend(), [](const auto& run) {
               return run.fontItalic;
             }), QStringLiteral("italic labels must retain the synthetic style face"));
+    const auto svgHtml = parseFlowSvgLabel(
+        QStringLiteral("<b>Bold</b><br><i>italic</i>"),
+        QStringLiteral("string"));
+    require(svgHtml.text == QLatin1String("<b> Bold </b>\n<i> italic </i>") &&
+                svgHtml.formats.isEmpty() &&
+                svgHtml.formattingContext ==
+                    muffin::mermaid::flowchart::FlowLabelFormattingContext::
+                        FlowSvgFormattedText,
+            QStringLiteral("SVG formatted text must retain visible HTML tags"));
+    const auto svgMarkdown = parseFlowSvgLabel(
+        QStringLiteral("**Bold** next"), QStringLiteral("markdown"));
+    require(svgMarkdown.text == QLatin1String("Bold next") &&
+                svgMarkdown.formats.size() == 1 &&
+                svgMarkdown.formats.first().format.fontWeight() == QFont::Bold,
+            QStringLiteral("SVG formatted text must still parse Markdown markers"));
+  }
+
+  // --- cluster titles constrain the compound layout width ---
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "flowchart TB\nsubgraph S[\"<b>Group \u4e2d\u6587</b> "
+        "\u0645\u0631\u062d\u0628\u0627 \u05e9\u05dc\u05d5\u05dd\"]\nA[Inside]\nend");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    require(entry.status == kReady && entry.scene &&
+                entry.scene->clusters.size() == 1,
+            QStringLiteral("wide cluster title must render"));
+    const auto& cluster = entry.scene->clusters.first();
+    const auto titleLayout = muffin::mermaid::flowchart::layoutFlowLabel(
+        cluster.label.richText, cluster.label.fontFamily, 16.0, 17.0);
+    require(cluster.width + 0.001 >= titleLayout.size.width() + 8.0,
+            QStringLiteral("cluster width must include the SVG title inset"));
   }
 
   // --- wrapped edge labels are immutable layout products ---

@@ -206,7 +206,7 @@ QSizeF measureLabel(const QString& text, const QString& labelType,
 FlowEdgeLabelLayout layoutFlowchartEdgeLabel(
     const FlowEdge& edge, const FlowTextOptions& options) {
   FlowEdgeLabelLayout result;
-  result.document = parseFlowLabel(edge.text, edge.labelType, false);
+  result.document = parseFlowSvgLabel(edge.text, edge.labelType);
   QSizeF content = measureFlowLabel(result.document, options.fontFamily,
                                    options.fontPixelSize, options.lineHeight);
   if (!result.document.text.contains(QLatin1Char('\n')) &&
@@ -217,14 +217,21 @@ FlowEdgeLabelLayout layoutFlowchartEdgeLabel(
         flowSvgFormattedTextLineStep(options.fontPixelSize);
     content = measureFlowLabel(result.document, options.fontFamily,
                                options.fontPixelSize, options.lineHeight);
-    content.setHeight(flowSvgFormattedTextBlockHeight(
-        options.fontFamily, options.fontPixelSize,
-        result.document.visualLines.size()));
   }
   result.size = content;
   result.size.rwidth() += 4.0;
   result.size.setWidth(std::max<qreal>(30.0, result.size.width()));
-  if (result.size.height() <= options.lineHeight) result.size.setHeight(21.0);
+  const qsizetype lineCount = !result.document.visualLines.isEmpty()
+      ? result.document.visualLines.size()
+      : result.document.text.count(QLatin1Char('\n')) + 1;
+  if (lineCount > 1) {
+    result.size.setHeight(flowSvgFormattedTextBlockHeight(
+        options.fontFamily, options.fontPixelSize, lineCount));
+  } else {
+    result.size.setHeight(flowLabelFontBoundingMetrics(
+                              options.fontFamily,
+                              options.fontPixelSize).height() + 4.0);
+  }
   return result;
 }
 
@@ -237,7 +244,7 @@ QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph,
                                     const FlowTextOptions& options) {
   FlowTextOptions clusterOptions = options;
   clusterOptions.lineHeight = 17.0;
-  return measureFlowLabel(parseFlowLabel(subgraph.title, subgraph.labelType, false),
+  return measureFlowLabel(parseFlowSvgLabel(subgraph.title, subgraph.labelType),
                           clusterOptions.fontFamily, clusterOptions.fontPixelSize,
                           clusterOptions.lineHeight);
 }
@@ -927,6 +934,9 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     c.y = n->y.value_or(0.0) - origin.y();
     c.width = n->width;
     c.height = n->height;
+    const QSizeF titleSize = options.measuredClusterLabels.value(it->id);
+    if (titleSize.isValid() && !titleSize.isEmpty())
+      c.width = std::max(c.width, titleSize.width() + 8.0);
     result.clusters.push_back(c);
   }
 

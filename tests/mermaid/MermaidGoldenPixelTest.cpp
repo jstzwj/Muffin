@@ -302,6 +302,11 @@ int main(int argc, char** argv) {
         options.preparedEdgeLabels.insert(e.id, prepared);
       }
     }
+    for (const flowchart::FlowSubgraph& subgraph : chart.data().subgraphs)
+      if (!subgraph.title.isEmpty())
+        options.measuredClusterLabels.insert(
+            subgraph.id,
+            flowchart::measureFlowchartClusterLabel(subgraph, textOptions));
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, options);
     const flowscene::FlowScene scene = flowscene::buildFlowScene(
         chart.data(), layout, theme, look,
@@ -382,8 +387,29 @@ int main(int argc, char** argv) {
           fixture.value(QStringLiteral("mathCropKind")).toString());
     }
     if (fixture.contains(QStringLiteral("labelCropFile"))) {
-      const auto node = scene.nodes.cbegin();
-      require(node != scene.nodes.cend(),
+      const QString cropTarget =
+          fixture.value(QStringLiteral("labelCropTarget")).toString(
+              QStringLiteral("node"));
+      const flowscene::FlowSceneLabel* cropLabel = nullptr;
+      if (cropTarget == QLatin1String("edge")) {
+        const auto edge = std::find_if(
+            scene.edges.cbegin(), scene.edges.cend(), [](const auto& candidate) {
+              return !candidate.label.text.isEmpty();
+            });
+        if (edge != scene.edges.cend()) cropLabel = &edge->label;
+      } else if (cropTarget == QLatin1String("cluster")) {
+        const auto cluster = std::find_if(
+            scene.clusters.cbegin(), scene.clusters.cend(), [](const auto& candidate) {
+              return !candidate.label.text.isEmpty();
+            });
+        if (cluster != scene.clusters.cend()) cropLabel = &cluster->label;
+      } else {
+        require(cropTarget == QLatin1String("node"),
+                QStringLiteral("Case %1: unknown label crop target %2")
+                    .arg(id, cropTarget));
+        if (!scene.nodes.isEmpty()) cropLabel = &scene.nodes.first().label;
+      }
+      require(cropLabel != nullptr,
               QStringLiteral("Case %1: native label crop target is missing").arg(id));
       const QString cropPath = dir.filePath(
           fixture.value(QStringLiteral("labelCropFile")).toString());
@@ -395,9 +421,9 @@ int main(int argc, char** argv) {
       require(!browserCrop.isNull(),
               QStringLiteral("Case %1: label crop is missing").arg(id));
       const QImage nativeCrop = renderFlowMathLabelCrop(
-          node->label, browserCrop.size(), renderFamily, dpr);
+          *cropLabel, browserCrop.size(), renderFamily, dpr);
       const auto nativeLabelLayout = flowchart::layoutFlowLabel(
-          node->label.richText, renderFamily, textOptions.fontPixelSize,
+          cropLabel->richText, renderFamily, textOptions.fontPixelSize,
           textOptions.lineHeight);
       const QJsonObject browserLabelBox =
           fixture.value(QStringLiteral("content")).toObject()
@@ -413,7 +439,7 @@ int main(int argc, char** argv) {
                          << nativeInk << browserInk << "coverage" << coverage
                          << "layout" << nativeLabelLayout.size
                          << "font" << textOptions.fontPixelSize
-                         << node->label.fontSize
+                         << cropLabel->fontSize
                          << "browser-box"
                          << browserLabelBox.value(QStringLiteral("width")).toDouble()
                          << browserLabelBox.value(QStringLiteral("height")).toDouble();
@@ -430,6 +456,11 @@ int main(int argc, char** argv) {
           {QStringLiteral("markdown-style-bidi"), 0.85},
           {QStringLiteral("html-style-math-bidi"), 0.80},
           {QStringLiteral("html-style-math-bidi-dark"), 0.80},
+          {QStringLiteral("edge-single-bidi"), 0.78},
+          {QStringLiteral("edge-wrap-three"), 0.90},
+          {QStringLiteral("edge-html-br"), 0.78},
+          {QStringLiteral("cluster-html-bidi"), 0.78},
+          {QStringLiteral("cluster-markdown-bidi"), 0.78},
       };
       require(minimumCoverage.contains(cropKind),
               QStringLiteral("Case %1: unknown label crop kind %2")
@@ -451,6 +482,76 @@ int main(int argc, char** argv) {
       require(coverage >= minimumCoverage.value(cropKind),
               QStringLiteral("Case %1: label crop coverage too low: %2 < %3")
                   .arg(id).arg(coverage).arg(minimumCoverage.value(cropKind)));
+      const QJsonArray browserLines = browserLabelBox
+          .value(QStringLiteral("lines")).toArray();
+      if (cropTarget != QLatin1String("node")) {
+        const int expectedLineCount =
+            fixture.value(QStringLiteral("expectedLineCount")).toInt();
+        require(expectedLineCount > 0 &&
+                    browserLines.size() == expectedLineCount &&
+                    nativeLabelLayout.lines.size() == expectedLineCount,
+                QStringLiteral("Case %1: label line count drifted: native=%2 browser=%3 expected=%4")
+                    .arg(id).arg(nativeLabelLayout.lines.size())
+                    .arg(browserLines.size()).arg(expectedLineCount));
+        for (qsizetype lineIndex = 0;
+             lineIndex < nativeLabelLayout.lines.size(); ++lineIndex) {
+          const auto& nativeLine = nativeLabelLayout.lines.at(lineIndex);
+          const QJsonObject browserLine = browserLines.at(lineIndex).toObject();
+          require(std::abs(nativeLine.width -
+                           browserLine.value(QStringLiteral("width")).toDouble()) <= 0.35,
+                  QStringLiteral("Case %1: line %2 width drifted: native=%3 browser=%4")
+                      .arg(id).arg(lineIndex).arg(nativeLine.width)
+                      .arg(browserLine.value(QStringLiteral("width")).toDouble()));
+          const QJsonArray browserRuns =
+              browserLine.value(QStringLiteral("runs")).toArray();
+          struct DirectionalRun {
+            qreal x = 0.0;
+            qreal width = 0.0;
+            bool rightToLeft = false;
+          };
+          QVector<const flowchart::FlowLabelVisualRun*> sortedNativeRuns;
+          sortedNativeRuns.reserve(nativeLine.runs.size());
+          for (const auto& run : nativeLine.runs)
+            if (!run.math) sortedNativeRuns.push_back(&run);
+          std::sort(sortedNativeRuns.begin(), sortedNativeRuns.end(),
+                    [](const auto* left, const auto* right) {
+                      return left->x < right->x;
+                    });
+          QVector<DirectionalRun> nativeBidiRuns;
+          for (const auto* run : sortedNativeRuns) {
+            if (!nativeBidiRuns.isEmpty() &&
+                nativeBidiRuns.last().rightToLeft == run->rightToLeft &&
+                run->x <= nativeBidiRuns.last().x +
+                              nativeBidiRuns.last().width + 0.35) {
+              const qreal right = std::max(
+                  nativeBidiRuns.last().x + nativeBidiRuns.last().width,
+                  run->x + run->width);
+              nativeBidiRuns.last().width =
+                  right - nativeBidiRuns.last().x;
+            } else {
+              nativeBidiRuns.push_back(
+                  {run->x, run->width, run->rightToLeft});
+            }
+          }
+          require(nativeBidiRuns.size() == browserRuns.size(),
+                  QStringLiteral("Case %1: line %2 visual run count drifted: native=%3 browser=%4")
+                      .arg(id).arg(lineIndex).arg(nativeBidiRuns.size())
+                      .arg(browserRuns.size()));
+          for (qsizetype runIndex = 0;
+               runIndex < nativeBidiRuns.size(); ++runIndex) {
+            const auto& nativeRun = nativeBidiRuns.at(runIndex);
+            const QJsonObject browserRun = browserRuns.at(runIndex).toObject();
+            require(nativeRun.rightToLeft ==
+                        browserRun.value(QStringLiteral("rtl")).toBool() &&
+                        std::abs(nativeRun.x -
+                                 browserRun.value(QStringLiteral("x")).toDouble()) <= 0.35 &&
+                        std::abs(nativeRun.width -
+                                 browserRun.value(QStringLiteral("width")).toDouble()) <= 0.35,
+                    QStringLiteral("Case %1: line %2 run %3 geometry/direction drifted")
+                        .arg(id).arg(lineIndex).arg(runIndex));
+          }
+        }
+      }
       labelCropKinds.insert(cropKind);
     }
     if (look == flowchart::FlowLook::HandDrawn) {
@@ -564,8 +665,8 @@ int main(int argc, char** argv) {
   require(mathCropKinds.size() == 6,
           QStringLiteral("Flowchart Math crop coverage regressed: %1/6")
               .arg(mathCropKinds.size()));
-  require(labelCropKinds.size() == 10,
-          QStringLiteral("Flowchart label crop coverage regressed: %1/10")
+  require(labelCropKinds.size() == 15,
+          QStringLiteral("Flowchart label crop coverage regressed: %1/15")
               .arg(labelCropKinds.size()));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;

@@ -135,6 +135,54 @@ try {
           });
         return { width: box.width, height: box.height, elements };
       })() : undefined;
+      const svgTextLines = (label) => {
+        const text = label.matches("text") ? label : label.querySelector("text");
+        if (!text) return [];
+        const lineElements = [...text.querySelectorAll("tspan.text-outer-tspan")];
+        return lineElements.map((line) => {
+          const box = line.getBBox();
+          const count = line.getNumberOfChars();
+          const baselineY = count > 0
+            ? line.getStartPositionOfChar(0).y : box.y;
+          const chars = [];
+          for (let index = 0; index < count; ++index) {
+            const start = line.getStartPositionOfChar(index);
+            const end = line.getEndPositionOfChar(index);
+            chars.push({ index, left: Math.min(start.x, end.x),
+                         right: Math.max(start.x, end.x),
+                         rtl: end.x < start.x });
+          }
+          const runs = [];
+          for (const char of chars) {
+            const current = runs.at(-1);
+            if (!current || current.rtl !== char.rtl ||
+                current.start + current.length !== char.index) {
+              runs.push({ start: char.index, length: 1,
+                          left: char.left, right: char.right,
+                          rtl: char.rtl });
+            } else {
+              current.length += 1;
+              current.left = Math.min(current.left, char.left);
+              current.right = Math.max(current.right, char.right);
+            }
+          }
+          const visualLeft = chars.length > 0
+            ? Math.min(...chars.map((char) => char.left)) : box.x;
+          return {
+            text: line.textContent ?? "",
+            width: line.getComputedTextLength(),
+            height: box.height,
+            baseline: baselineY - box.y,
+            ascent: baselineY - box.y,
+            descent: box.y + box.height - baselineY,
+            runs: runs.map((run) => ({
+              start: run.start, length: run.length,
+              x: run.left - visualLeft, width: run.right - run.left,
+              rtl: run.rtl,
+            })).sort((a, b) => a.x - b.x),
+          };
+        });
+      };
       const labelBox = fixture.labelCrop ? (() => {
         const label = root.querySelector(
           fixture.labelCropSelector ?? "g.node foreignObject");
@@ -152,7 +200,7 @@ try {
           });
         return { width: box.width, height: box.height,
                  fontSize: style.fontSize, lineHeight: style.lineHeight,
-                 items,
+                 items, lines: svgTextLines(label),
                  ...(mathRect ? { mathWidth: mathRect.width,
                                   mathHeight: mathRect.height } : {}) };
       })() : undefined;
@@ -174,11 +222,95 @@ try {
           clusterFilter: clusterStyle?.filter ?? "",
         };
       })() : undefined;
+      const svgStructure = fixture.svgStructural ? (() => {
+        const diagramId = root.getAttribute("id") ?? `gp-${index}`;
+        const normalize = (value) => (value ?? "")
+          .replaceAll(diagramId, "diagram")
+          .replace(/chart-(title|desc)-[^\s)"']+/g, "chart-$1-diagram");
+        const attributes = (element) => element
+          ? Object.fromEntries([...element.attributes]
+              .map((attribute) => [attribute.name, normalize(attribute.value)]))
+          : {};
+        const identity = (element) =>
+          `${element.localName}:${element.getAttribute("class") ?? ""}`;
+        const rootGroup = root.querySelector("g.root") ?? root;
+        const markerType = (marker) => {
+          const match = marker.id.match(/(?:flowchart-v2-)?(point|circle|cross)(Start|End)$/);
+          return match ? `${match[1]}${match[2]}` : "";
+        };
+        return {
+          root: attributes(root),
+          ariaTitle: root.querySelector(":scope > title")?.textContent ?? "",
+          ariaDescription: root.querySelector(":scope > desc")?.textContent ?? "",
+          layerOrder: [...rootGroup.children]
+            .filter((element) => element.localName === "g").map(identity),
+          domOrder: [...root.querySelectorAll(
+            "g.cluster,g.edgePath,g.edgeLabel,g.node,.cluster-label,.labelBkg,text,foreignObject")]
+            .map(identity),
+          counts: {
+            defs: root.querySelectorAll("defs").length,
+            nodes: root.querySelectorAll("g.node").length,
+            edgePaths: root.querySelectorAll(".edgePaths path[data-edge=true]").length,
+            edgeLabels: root.querySelectorAll(".edgeLabels .edgeLabel").length,
+            clusters: root.querySelectorAll("g.cluster").length,
+            text: root.querySelectorAll("text").length,
+            tspan: root.querySelectorAll("tspan").length,
+            foreignObject: root.querySelectorAll("foreignObject").length,
+          },
+          markers: [...root.querySelectorAll("marker")].map((marker) => ({
+            type: markerType(marker),
+            attributes: attributes(marker),
+            childTag: marker.firstElementChild?.localName ?? "",
+            childAttributes: attributes(marker.firstElementChild),
+          })),
+          edges: [...root.querySelectorAll(".edgePaths path[data-edge=true]")]
+            .map((edge) => ({ attributes: attributes(edge) })),
+          nodes: [...root.querySelectorAll("g.node")].map((node) => {
+            const shape = node.querySelector(":scope > .label-container");
+            const label = node.querySelector("foreignObject");
+            return {
+              attributes: attributes(node),
+              shapeTag: shape?.localName ?? "",
+              shapeAttributes: attributes(shape),
+              labelTag: label?.localName ?? "",
+              labelAttributes: attributes(label),
+              labelText: label?.textContent ?? "",
+            };
+          }),
+          edgeLabels: [...root.querySelectorAll(".edgeLabels .edgeLabel")]
+            .map((label) => {
+              const content = label.querySelector(".label");
+              const background = label.querySelector(".labelBkg");
+              return {
+                attributes: attributes(label),
+                contentTag: content?.localName ?? "",
+                contentAttributes: attributes(content),
+                backgroundTag: background?.localName ?? "",
+                backgroundAttributes: attributes(background),
+                text: content?.textContent ?? "",
+                tspanCount: content?.querySelectorAll("tspan").length ?? 0,
+              };
+            }),
+          clusters: [...root.querySelectorAll("g.cluster")].map((cluster) => {
+            const label = cluster.querySelector(":scope > .cluster-label");
+            return {
+              attributes: attributes(cluster),
+              shapeTag: cluster.querySelector(":scope > rect")?.localName ?? "",
+              shapeAttributes: attributes(cluster.querySelector(":scope > rect")),
+              labelTag: label?.localName ?? "",
+              labelAttributes: attributes(label),
+              labelContentTag: label?.querySelector("text,foreignObject")?.localName ?? "",
+              labelText: label?.textContent ?? "",
+            };
+          }),
+        };
+      })() : undefined;
       return { width: bb.width, height: bb.height,
                ...(nodeBoxes ? { nodeBoxes } : {}),
                ...(mathBox ? { mathBox } : {}),
                ...(labelBox ? { labelBox } : {}),
-               ...(computedStyles ? { computedStyles } : {}) };
+               ...(computedStyles ? { computedStyles } : {}),
+               ...(svgStructure ? { svgStructure } : {}) };
     }, { fixture, index, mermaidModule, fontFaces, fixedFontStack, mathFontFace });
     const element = await page.$("#container svg");
     if (!element) throw new Error(`Case ${fixture.id}: rendered SVG is missing`);
@@ -242,6 +374,7 @@ try {
                          ...(r.handDrawnSeed !== undefined
                            ? { handDrawnSeed: r.handDrawnSeed } : {}),
                          ...(r.animationState ? { animationState: r.animationState } : {}),
+                         ...(r.svgStructural ? { svgStructural: r.svgStructural } : {}),
                          ...(r.textGlyphIou !== undefined ? { textGlyphIou: r.textGlyphIou } : {}),
                          ...(r.emptyMaxMismatchRatio !== undefined
                            ? { emptyMaxMismatchRatio: r.emptyMaxMismatchRatio } : {}),
@@ -251,7 +384,11 @@ try {
                                  .update(r.mathCropPng).digest("hex") }
                            : {}),
                          ...(labelCropFile
-                           ? { labelCropKind: r.labelCropKind, labelCropFile,
+                           ? { labelCropKind: r.labelCropKind,
+                               labelCropTarget: r.labelCropTarget ?? "node",
+                               ...(r.expectedLineCount !== undefined
+                                 ? { expectedLineCount: r.expectedLineCount } : {}),
+                               labelCropFile,
                                labelCropSha256: createHash("sha256")
                                  .update(r.labelCropPng).digest("hex") }
                            : {}),

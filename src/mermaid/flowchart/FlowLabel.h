@@ -46,6 +46,7 @@ struct FlowLabelLineRange {
 
 enum class FlowLabelFormattingContext {
   FlowSvgText,
+  FlowSvgFormattedText,
   FlowForeignObjectFlex,
   SequenceSvgText,
   SequenceForeignObjectFlex
@@ -137,6 +138,11 @@ struct FlowLabelFontMetrics {
 // QPainter as literal text and no HTML engine is involved.
 FlowLabelDocument parseFlowLabel(const QString& source, const QString& labelType,
                                  bool mathEnabled = true);
+
+// Mermaid's htmlLabels:false path uses createFormattedText(): Markdown markers
+// are formatting, <br> creates a line, and other HTML tags remain visible.
+FlowLabelDocument parseFlowSvgLabel(const QString& source,
+                                    const QString& labelType);
 
 // Compiles MathML into immutable, color-independent paint operations.
 // The resulting document is safe to copy into an immutable scene and reuse for

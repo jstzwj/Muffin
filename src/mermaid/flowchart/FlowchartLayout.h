@@ -80,6 +80,7 @@ struct FlowLayoutOptions {
   FlowLook look = FlowLook::Classic;
   QMap<QString, QSizeF> measuredEdgeLabels;
   QMap<QString, FlowEdgeLabelLayout> preparedEdgeLabels;
+  QMap<QString, QSizeF> measuredClusterLabels;
   // Edge curve: "basis" (default, d3 curveBasis), "linear" (curveLinear),
   // "step" (curveStep). Mirrors mermaid's flowchart.curve config.
   QString curve = QStringLiteral("basis");

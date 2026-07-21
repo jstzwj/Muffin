@@ -159,9 +159,9 @@ ParsedPath parsePath(const QString& d) {
 }
 
 void drawMarker(QPainter& painter, const QString& type, const QPointF& at,
-                const QPointF& tangent, const QColor& color, bool useMargin) {
+                const QPointF& tangent, const QColor& color) {
   if (type.isEmpty() || tangent.isNull()) return;
-  const MarkerGeometry g = markerGeometry(type, useMargin);
+  const MarkerGeometry g = markerGeometry(type);
   if (g.tag.isEmpty()) return;
   const qreal angle = std::atan2(tangent.y(), tangent.x()) * 180.0 / M_PI;
   painter.save();
@@ -182,7 +182,8 @@ void drawMarker(QPainter& painter, const QString& type, const QPointF& at,
   } else if (g.tag == QLatin1String("path")) {
     // cross: stroke the X
     painter.setBrush(Qt::NoBrush); painter.setPen(pen);
-    QPainterPath mp; mp.moveTo(1, 1); mp.lineTo(14, 14); mp.moveTo(1, 14); mp.lineTo(14, 1);
+    QPainterPath mp; mp.moveTo(1, 1); mp.lineTo(10, 10);
+    mp.moveTo(10, 1); mp.lineTo(1, 10);
     painter.drawPath(mp);
   }
   painter.restore();
@@ -390,7 +391,6 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
   // Edges (drawn second).
   for (const FlowSceneEdge& e : scene.edges) {
     const ParsedPath pp = parsePath(e.path);
-    const bool useMargin = scene.look == flowchart::FlowLook::Neo && !e.animated;
     QPen pen(paletteColor(e.stroke, kCatEdge)); pen.setWidthF(pxSize(e.strokeWidth));
     if (!e.strokeDasharray.isEmpty()) {
       QStringList parts = e.strokeDasharray.split(QRegularExpression(QStringLiteral("[\\s,]+")), Qt::SkipEmptyParts);
@@ -417,10 +417,10 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
     }
     // Markers.
     const QColor mc = paletteColor(e.stroke, kCatEdge);
-    if (!e.markerEnd.isEmpty()) drawMarker(painter, e.markerEnd, pp.endPoint, pp.endTangent, mc, useMargin);
+    if (!e.markerEnd.isEmpty()) drawMarker(painter, e.markerEnd, pp.endPoint, pp.endTangent, mc);
     if (!e.markerStart.isEmpty()) {
       QPointF t = pp.startTangent;
-      drawMarker(painter, e.markerStart, pp.startPoint, QPointF(-t.x(), -t.y()), mc, useMargin);  // start marker points backward
+      drawMarker(painter, e.markerStart, pp.startPoint, QPointF(-t.x(), -t.y()), mc);  // start marker points backward
     }
     // Edge label.
     if (!e.label.text.isEmpty()) {

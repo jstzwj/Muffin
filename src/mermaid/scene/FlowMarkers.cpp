@@ -26,38 +26,36 @@ QString markerStartType(const QString& edgeType) {
 }
 
 // Marker <def> geometry (chunk-4F4KDU6L.mjs L887-948, captured via the rendered
-// SVG). The classic (non-margin) variants; neo's margin variants are an F3 look
-// concern (look=neo, deferred).
-MarkerGeometry markerGeometry(const QString& type, bool useMargin) {
+// SVG). Mermaid 11.16 uses the same definitions for every look.
+MarkerGeometry markerGeometry(const QString& type) {
   MarkerGeometry g;
   if (type == QLatin1String("pointEnd")) {
-    g.viewBox = useMargin ? QStringLiteral("0 0 11.5 14") : QStringLiteral("0 0 10 10");
-    g.refX = useMargin ? 11.5 : 9; g.refY = useMargin ? 7 : 5;
-    g.markerWidth = useMargin ? 10.5 : 8; g.markerHeight = useMargin ? 14 : 8;
+    g.viewBox = QStringLiteral("0 0 10 10");
+    g.refX = 5; g.refY = 5;
+    g.markerWidth = 8; g.markerHeight = 8;
     g.tag = QStringLiteral("path");
-    g.pathData = useMargin ? QStringLiteral("M 0 0 L 11.5 7 L 0 14 z")
-                           : QStringLiteral("M 0 0 L 10 5 L 0 10 z");
+    g.pathData = QStringLiteral("M 0 0 L 10 5 L 0 10 z");
   } else if (type == QLatin1String("pointStart")) {
-    g.viewBox = useMargin ? QStringLiteral("0 0 11.5 14") : QStringLiteral("0 0 10 10");
-    g.refX = 1; g.refY = useMargin ? 7 : 5;
-    g.markerWidth = useMargin ? 11.5 : 8; g.markerHeight = useMargin ? 14 : 8;
+    g.viewBox = QStringLiteral("0 0 10 10");
+    g.refX = 4.5; g.refY = 5;
+    g.markerWidth = 8; g.markerHeight = 8;
     g.tag = QStringLiteral("path");
-    g.pathData = useMargin ? QStringLiteral("M 0 7 L 11.5 14 L 11.5 0 z")
-                           : QStringLiteral("M 0 5 L 10 10 L 10 0 z");
+    g.pathData = QStringLiteral("M 0 5 L 10 10 L 10 0 z");
   } else if (type == QLatin1String("circleEnd") || type == QLatin1String("circleStart")) {
     g.viewBox = QStringLiteral("0 0 10 10");
-    g.refX = type == QLatin1String("circleEnd") ? (useMargin ? 12.25 : 11)
-                                                  : (useMargin ? -2 : -1);
+    g.refX = type == QLatin1String("circleEnd") ? 11 : -1;
     g.refY = 5;
-    g.markerWidth = useMargin ? 14 : 11; g.markerHeight = useMargin ? 14 : 11;
+    g.markerWidth = 11; g.markerHeight = 11;
     g.tag = QStringLiteral("circle");
     g.cx = 5; g.cy = 5; g.r = 5;
   } else if (type == QLatin1String("crossEnd") || type == QLatin1String("crossStart")) {
-    g.viewBox = QStringLiteral("0 0 15 15");
-    g.refX = type == QLatin1String("crossEnd") ? (useMargin ? 17.7 : 12)
-                                                 : (useMargin ? -3.5 : -3);
-    g.markerWidth = 12; g.markerHeight = 12; g.tag = QStringLiteral("path");
-    g.pathData = QStringLiteral("M 1,1 L 14,14 M 1,14 L 14,1");
+    g.viewBox = QStringLiteral("0 0 11 11");
+    g.refX = type == QLatin1String("crossEnd") ? 12 : -1;
+    g.refY = 5.2;
+    g.markerWidth = 11;
+    g.markerHeight = 11;
+    g.tag = QStringLiteral("path");
+    g.pathData = QStringLiteral("M 1,1 l 9,9 M 10,1 l -9,9");
   }
   return g;
 }
