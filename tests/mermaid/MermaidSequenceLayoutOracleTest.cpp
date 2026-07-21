@@ -1,10 +1,13 @@
 #include "mermaid/sequence/SequenceDiagram.h"
 #include "mermaid/sequence/SequenceLayout.h"
+#include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScene.h"
+#include "mermaid/sequence/SequenceScenePainter.h"
+#include "mermaid/MermaidFontRegistry.h"
 
-#include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
+#include <QGuiApplication>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -38,6 +41,11 @@ int messageIndex(const QString& id) {
   return ok ? result : -1;
 }
 
+bool isSignalType(int type) {
+  return (type >= 0 && type <= 6 && type != 2) || type == 24 || type == 25 ||
+         type == 33 || type == 34 || (type >= 41 && type <= 58);
+}
+
 void requireNear(qreal actual, qreal expected, const QString& context) {
   require(std::abs(actual - expected) <= 0.001,
           QStringLiteral("%1: native=%2 upstream=%3").arg(context).arg(actual).arg(expected));
@@ -67,7 +75,7 @@ void requireRectNear(const QRectF& actual, const QJsonObject& expected, qreal to
 }  // namespace
 
 int main(int argc, char** argv) {
-  QCoreApplication app(argc, argv);
+  QGuiApplication app(argc, argv);
   require(argc == 2, QStringLiteral("Expected sequence layout fixture path"));
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), QStringLiteral("Could not open sequence layout fixture"));
@@ -77,7 +85,7 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("fontMode")).toString() == QLatin1String("bundled-noto"),
           QStringLiteral("Sequence layout must use the fixed Noto oracle"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("8fdacba7faaaec08200d18b42b392aa9612c4f9dd3a045a0b8f9a77de79428a3"),
+              QLatin1String("74e40fd0226142a7c572aa607619fdb7668718c2d415ac2e5f4dae301e660c53"),
           QStringLiteral("Sequence layout fixture changed; audit geometry and update its digest"));
 
   const QJsonObject configContract = root.value(QStringLiteral("configContract")).toObject();
@@ -88,7 +96,7 @@ int main(int argc, char** argv) {
           QStringLiteral("Sequence configuration ownership contract drifted"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 16, QStringLiteral("Sequence layout case count drifted"));
+  require(cases.size() == 17, QStringLiteral("Sequence layout case count drifted"));
   QSet<QString> ids, coveredAxes;
   int participantCount = 0, lifelineCount = 0, messageCount = 0;
   int activationCount = 0, noteCount = 0, fragmentCount = 0;
@@ -181,6 +189,29 @@ int main(int argc, char** argv) {
       const QJsonArray labels = fragment.toObject().value(QStringLiteral("labels")).toArray();
       measurements.fragments.append(labels.isEmpty() ? QSizeF{} : sizeOf(labels.first().toObject()));
     }
+    const bool globalWrap = config.value(QStringLiteral("wrap")).toBool();
+    const qreal marginWrapWidth = std::max(
+        1.0, config.value(QStringLiteral("width")).toDouble() -
+                 2.0 * config.value(QStringLiteral("wrapPadding")).toDouble());
+    for (qsizetype index = 0; index < data.messages.size(); ++index) {
+      const SequenceMessage& message = data.messages.at(index);
+      if (!(message.wrap || globalWrap) ||
+          (message.type != 2 && !isSignalType(message.type)))
+        continue;
+      auto marginLabel = parseSequenceLabel(
+          message.message.toString(), message.type == 2 ? SequenceLabelKind::Note
+                                                       : SequenceLabelKind::Message);
+      marginLabel = wrapSequenceLabel(std::move(marginLabel),
+          muffin::mermaid::MermaidFontRegistry::cssFamilyStack(), 16.0, marginWrapWidth);
+      marginLabel = prepareSequenceLabel(std::move(marginLabel), 16.0);
+      const QSizeF marginSize = layoutSequenceLabel(
+          marginLabel, muffin::mermaid::MermaidFontRegistry::cssFamilyStack(),
+          16.0, 22.0).size;
+      if (message.type == 2)
+        measurements.marginNotesByIndex.insert(static_cast<int>(index), marginSize);
+      else
+        measurements.marginMessagesByIndex.insert(static_cast<int>(index), marginSize);
+    }
     const SequenceLayoutInput input = buildSequenceLayoutInput(data, measurements);
     SequenceLayoutOptions options;
     options.actorMargin = config.value(QStringLiteral("actorMargin")).toDouble();
@@ -205,6 +236,20 @@ int main(int argc, char** argv) {
         viewWidth - 2.0 * config.value(QStringLiteral("diagramMarginX")).toDouble();
     require(std::isfinite(logicalCanvasStartX) && logicalCanvasWidth > 0.0,
             QStringLiteral("%1 logical viewport model is invalid").arg(id));
+    requireRectNear(layout.logicalBounds,
+                    fixture.value(QStringLiteral("viewport")).toObject(), 0.001,
+                    QStringLiteral("%1 logical viewport").arg(id));
+    SequenceViewportOptions viewportOptions;
+    viewportOptions.diagramMarginX = config.value(QStringLiteral("diagramMarginX")).toDouble();
+    viewportOptions.diagramMarginY = config.value(QStringLiteral("diagramMarginY")).toDouble();
+    viewportOptions.boxMargin = options.boxMargin;
+    viewportOptions.bottomMarginAdj = config.value(QStringLiteral("bottomMarginAdj")).toDouble();
+    viewportOptions.mirrorActors = options.mirrorActors;
+    const QRectF nativeViewport = sequenceViewportRect(scene, viewportOptions);
+    requireNear(nativeViewport.x(), viewX, QStringLiteral("%1 viewBox x").arg(id));
+    requireNear(nativeViewport.y(), viewY, QStringLiteral("%1 viewBox y").arg(id));
+    requireNear(nativeViewport.width(), viewWidth, QStringLiteral("%1 viewBox width").arg(id));
+    requireNear(nativeViewport.height(), viewHeight, QStringLiteral("%1 viewBox height").arg(id));
 
     require(layout.participants.size() == participants.size() && lifelines.size() == participants.size(),
             QStringLiteral("%1 participant/lifeline input count mismatch").arg(id));
@@ -451,6 +496,9 @@ int main(int argc, char** argv) {
   require(coveredAxes.contains(QStringLiteral("sequence-config")) &&
               coveredAxes.contains(QStringLiteral("viewport-config")),
           QStringLiteral("Sequence config differential axes are uncovered"));
+  require(coveredAxes.contains(QStringLiteral("wrap-margin-stage")) &&
+              coveredAxes.contains(QStringLiteral("wrap-final-stage")),
+          QStringLiteral("Sequence two-stage wrap axes are uncovered"));
   require(participantCount >= 27 && lifelineCount == participantCount && messageCount >= 46 &&
               activationCount >= 3 && noteCount >= 5 && fragmentCount >= 6,
           QStringLiteral("Sequence layout geometry coverage regressed"));

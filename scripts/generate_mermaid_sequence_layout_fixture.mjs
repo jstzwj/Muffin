@@ -278,6 +278,18 @@ const cases = [
     ].join("\n"),
   },
   {
+    id: "two-stage-message-wrap",
+    axes: ["wrap-margin-stage", "wrap-final-stage", "participant-size", "message-spacing"],
+    sequence: { width: 100, actorMargin: 50, wrapPadding: 10, wrap: true },
+    source: [
+      "sequenceDiagram",
+      "participant A as Alpha",
+      "participant B as Beta",
+      "A->>B:alpha beta gamma delta epsilon zeta eta theta",
+      "B-->>A:short return",
+    ].join("\n"),
+  },
+  {
     id: "custom-layout-and-viewport-config",
     axes: ["sequence-config", "viewport-config", "participant-size", "participant-lifecycle",
       "message-spacing", "note-geometry"],
@@ -490,6 +502,9 @@ try {
           childTags: element ? [...element.querySelectorAll(":scope > *")].map((child) => child.tagName.toLowerCase()) : [],
         };
       }
+      const viewBox = (root.getAttribute("viewBox") ?? "").trim().split(/\s+/).map(Number);
+      const logicalHeight = viewBox[3] - 2 * resolved.diagramMarginY +
+        (resolved.mirrorActors ? resolved.boxMargin - resolved.bottomMarginAdj : 0);
       return {
         id: fixture.id,
         axes: fixture.axes,
@@ -505,6 +520,12 @@ try {
           ].map((key) => [key, resolved[key]])),
         },
         root: { viewBox: root.getAttribute("viewBox"), ...box(root) },
+        viewport: {
+          x: round(viewBox[0] + resolved.diagramMarginX),
+          y: round(viewBox[1] + resolved.diagramMarginY),
+          width: round(viewBox[2] - 2 * resolved.diagramMarginX),
+          height: round(logicalHeight),
+        },
         participants, footers, participantBoxes, lifelines, messages, centralConnections, sequenceNumbers,
         activations, notes, fragments,
         svgStructure: { markers: markerStructure },

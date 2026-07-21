@@ -97,8 +97,23 @@ int main(int argc,char** argv) {
   require(negativeCases.size()>=15&&operators.size()>=6&&codes.size()>=8&&stages.size()>=3,
           QStringLiteral("sequence diagnostic mutation coverage regressed"));
 
-  require(layoutCases.size()>=14&&labelCases.size()>=24&&pixelCases.size()>=20,
+  require(layoutCases.size()>=17&&labelCases.size()>=24&&pixelCases.size()>=20,
           QStringLiteral("sequence layout/label/pixel case coverage regressed"));
+  QSet<QString> layoutAxes;
+  for(const QJsonValue& value:layoutCases)
+    for(const QJsonValue& axis:value.toObject().value(QStringLiteral("axes")).toArray())
+      layoutAxes.insert(axis.toString());
+  for(const QString& axis:{QStringLiteral("sequence-config"),QStringLiteral("viewport-config"),
+                           QStringLiteral("wrap-margin-stage"),QStringLiteral("wrap-final-stage"),
+                           QStringLiteral("participant-lifecycle"),QStringLiteral("activation-lifecycle")})
+    require(layoutAxes.contains(axis),
+            QStringLiteral("sequence final layout axis missing: %1").arg(axis));
+  const QJsonObject configContract=layout.value(QStringLiteral("configContract")).toObject();
+  require(configContract.value(QStringLiteral("layout")).toArray().size()==14&&
+              configContract.value(QStringLiteral("viewport")).toArray().size()==3&&
+              configContract.value(QStringLiteral("upstreamInert")).toArray()==
+                  QJsonArray{QStringLiteral("messageMargin")},
+          QStringLiteral("sequence final config ownership matrix regressed"));
   for(const QString& id:{QStringLiteral("participant-types"),QStringLiteral("create-destroy-markers"),
                          QStringLiteral("activation-note"),QStringLiteral("nested-fragment"),
                          QStringLiteral("label-box-markdown-math"),QStringLiteral("central-autonumber"),

@@ -204,7 +204,9 @@ int main(int argc, char** argv) {
     MermaidRenderCache cache;
     const QString configured = QStringLiteral(
         "%%{init: {\"sequence\": {\"mirrorActors\": false, "
-        "\"hideUnusedParticipants\": true, \"width\": 180, \"boxMargin\": 14}}}%%\n"
+        "\"hideUnusedParticipants\": true, \"width\": 180, \"boxMargin\": 14, "
+        "\"diagramMarginX\": 31, \"diagramMarginY\": 23, "
+        "\"bottomMarginAdj\": 7}}}%%\n"
         "sequenceDiagram\n"
         "participant UNUSED as Hidden\n"
         "box rgb(238, 246, 255) Services\n"
@@ -224,6 +226,18 @@ int main(int argc, char** argv) {
     require(e.sequenceScene->boxes.first().label == QLatin1String("Services") &&
                 e.sequenceScene->boxes.first().labelRect.height() > 0.0,
             QStringLiteral("sequence box title must be measured and retained"));
+    const QRectF viewport = muffin::mermaid::sequence::sequenceViewportRect(
+        *e.sequenceScene, e.sequenceViewport);
+    const QImage viewportImage = muffin::mermaid::sequence::renderSequenceSceneToImage(
+        *e.sequenceScene, 1.0, e.sequenceViewport);
+    require(e.sequenceViewport.diagramMarginX == 31.0 &&
+                e.sequenceViewport.diagramMarginY == 23.0 &&
+                e.sequenceViewport.boxMargin == 14.0 &&
+                e.sequenceViewport.bottomMarginAdj == 7.0 &&
+                !e.sequenceViewport.mirrorActors &&
+                e.naturalSize == QSize(qCeil(viewport.width()), qCeil(viewport.height())) &&
+                viewportImage.size() == e.naturalSize,
+            QStringLiteral("sequence viewport config must determine cache/image dimensions"));
   }
 
   // --- async request: Loading → renderReady → Ready ---

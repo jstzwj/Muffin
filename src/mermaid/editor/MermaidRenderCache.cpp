@@ -97,6 +97,11 @@ qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback
   return value.isDouble() && value.toDouble() >= 0.0 ? value.toDouble() : fallback;
 }
 
+bool isSequenceFragment(int type) {
+  return type == 10 || type == 12 || type == 15 || type == 19 ||
+         type == 22 || type == 27 || type == 30 || type == 32;
+}
+
 sequence::SequenceSceneStyle sequenceStyleFromConfig(
     const QJsonObject& config) {
   sequence::SequenceSceneStyle style;
@@ -242,7 +247,8 @@ QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(const QString& sourc
   if (entry.status != MermaidRenderStatus::Ready || (!entry.scene && !entry.sequenceScene)) return {};
   const QImage image = entry.scene
       ? flowscene::renderFlowSceneToImage(*entry.scene, dpr, 8.0, MermaidFontRegistry::primaryFamily())
-      : sequence::renderSequenceSceneToImage(*entry.sequenceScene, dpr, 8.0);
+      : sequence::renderSequenceSceneToImage(
+            *entry.sequenceScene, dpr, entry.sequenceViewport);
   QByteArray png;
   QBuffer buffer(&png);
   if (!buffer.open(QIODevice::WriteOnly)) return {};
@@ -315,22 +321,29 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       for (qsizetype index = 0; index < diagram.data().messages.size(); ++index) {
         const auto& message = diagram.data().messages[index];
         const bool note = message.type == 2;
-        const bool fragment = message.type == 10 || message.type == 12 || message.type == 15 ||
-                              message.type == 19 || message.type == 22 || message.type == 27 ||
-                              message.type == 30 || message.type == 32;
+        const bool fragment = isSequenceFragment(message.type);
         const auto kind = note ? sequence::SequenceLabelKind::Note
             : fragment ? sequence::SequenceLabelKind::Fragment
                        : sequence::SequenceLabelKind::Message;
         auto document = labelDocument(message.message.toString(), kind);
-        if (!fragment && (message.wrap || globalWrap)) {
-          qreal maximumWidth = actorWidth + actorMargin;
-          if (note) {
-            maximumWidth = message.placement == 2 && message.from != message.to
-                ? 2.0 * actorWidth - 2.0 * wrapPadding
-                : actorWidth - 2.0 * wrapPadding;
-          }
-          document = sequence::wrapSequenceLabel(std::move(document),
-              style.fontFamily, style.fontSize, maximumWidth);
+        const bool wrapped = !fragment && (message.wrap || globalWrap);
+        if (wrapped) {
+          auto marginDocument = sequence::wrapSequenceLabel(
+              document, style.fontFamily, style.fontSize,
+              std::max(1.0, actorWidth - 2.0 * wrapPadding));
+          marginDocument = prepare(std::move(marginDocument));
+          if (note)
+            measurements.marginNotesByIndex.insert(
+                static_cast<int>(index), measure(marginDocument));
+          else
+            measurements.marginMessagesByIndex.insert(
+                static_cast<int>(index), measure(marginDocument));
+          // buildNoteModel() performs its second wrap against conf.width.
+          // Signal widths depend on activation endpoints and are resolved
+          // after the provisional horizontal layout below.
+          if (note)
+            document = sequence::wrapSequenceLabel(
+                std::move(document), style.fontFamily, style.fontSize, actorWidth);
         }
         document = prepare(std::move(document));
         const QSizeF size = measure(document);
@@ -370,6 +383,25 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       layoutOptions.mirrorActors = sequenceConfig.value(QStringLiteral("mirrorActors")).toBool(true);
       layoutOptions.hideUnusedParticipants =
           sequenceConfig.value(QStringLiteral("hideUnusedParticipants")).toBool(false);
+      const sequence::SequenceLayoutResult provisionalLayout =
+          sequence::layoutSequence(diagram.data(), measurements, layoutOptions);
+      for (qsizetype index = 0; index < diagram.data().messages.size(); ++index) {
+        const auto& message = diagram.data().messages.at(index);
+        const bool fragment = isSequenceFragment(message.type);
+        if (message.type == 2 || fragment || !(message.wrap || globalWrap)) continue;
+        const qreal maximumWidth = provisionalLayout.messageWrapWidthsByIndex.value(
+            static_cast<int>(index), actorWidth);
+        auto document = sequence::wrapSequenceLabel(
+            labelDocument(message.message.toString(), sequence::SequenceLabelKind::Message),
+            style.fontFamily, style.fontSize, maximumWidth);
+        document = prepare(std::move(document));
+        measurements.messagesByIndex.insert(static_cast<int>(index), measure(document));
+        if (document.richText.math.isEmpty())
+          measurements.messageDisplayByIndex.insert(
+              static_cast<int>(index), document.richText.text);
+        preparedLabels.messagesByIndex.insert(
+            static_cast<int>(index), std::move(document));
+      }
       const sequence::SequenceLayoutResult layout =
           sequence::layoutSequence(diagram.data(), measurements, layoutOptions);
       for (const auto& fragment : layout.fragments) {
@@ -379,9 +411,20 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       }
       sequence::SequenceScene scene = sequence::buildSequenceScene(
           layout, std::move(style), preparedLabels, true);
+      sequence::SequenceViewportOptions viewportOptions;
+      viewportOptions.diagramMarginX = configNumber(
+          sequenceConfig, QStringLiteral("diagramMarginX"), 50.0);
+      viewportOptions.diagramMarginY = configNumber(
+          sequenceConfig, QStringLiteral("diagramMarginY"), 10.0);
+      viewportOptions.boxMargin = layoutOptions.boxMargin;
+      viewportOptions.bottomMarginAdj = configNumber(
+          sequenceConfig, QStringLiteral("bottomMarginAdj"), 1.0);
+      viewportOptions.mirrorActors = layoutOptions.mirrorActors;
+      const QRectF viewport = sequence::sequenceViewportRect(scene, viewportOptions);
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
-      entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+      entry.naturalSize = QSize(qCeil(viewport.width()), qCeil(viewport.height()));
+      entry.sequenceViewport = viewportOptions;
       entry.sequenceScene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
       return entry;
     }

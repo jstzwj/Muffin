@@ -179,4 +179,31 @@ QImage renderSequenceSceneToImage(const SequenceScene& scene, qreal dpr, qreal p
   return image;
 }
 
+QRectF sequenceViewportRect(const SequenceScene& scene,
+                            SequenceViewportOptions options) {
+  const QRectF logical = scene.logicalBounds.isNull() ? scene.bounds
+                                                       : scene.logicalBounds;
+  const qreal mirrorAdjustment = options.mirrorActors
+      ? options.boxMargin - options.bottomMarginAdj : 0.0;
+  return QRectF(logical.left() - options.diagramMarginX,
+                logical.top() - options.diagramMarginY,
+                logical.width() + 2.0 * options.diagramMarginX,
+                logical.height() + 2.0 * options.diagramMarginY -
+                    mirrorAdjustment);
+}
+
+QImage renderSequenceSceneToImage(const SequenceScene& scene, qreal dpr,
+                                  SequenceViewportOptions options) {
+  const QRectF viewport = sequenceViewportRect(scene, options);
+  QImage image(qCeil(viewport.width() * dpr),
+               qCeil(viewport.height() * dpr),
+               QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.scale(dpr, dpr);
+  painter.translate(-viewport.left(), -viewport.top());
+  paintSequenceScene(scene, painter);
+  return image;
+}
+
 }  // namespace muffin::mermaid::sequence

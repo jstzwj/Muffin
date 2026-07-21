@@ -17,8 +17,10 @@ struct SequenceLayoutMeasurements {
   QVector<QSizeF> notes;
   QVector<QSizeF> fragments;
   QMap<int, QSizeF> messagesByIndex;
+  QMap<int, QSizeF> marginMessagesByIndex;
   QMap<int, QString> messageDisplayByIndex;
   QMap<int, QSizeF> notesByIndex;
+  QMap<int, QSizeF> marginNotesByIndex;
   QMap<int, QString> noteDisplayByIndex;
   QMap<int, QSizeF> fragmentsByIndex;
 };
@@ -183,6 +185,13 @@ struct SequenceLayoutResult {
   QVector<SequenceLayoutNote> notes;
   QVector<SequenceLayoutFragment> fragments;
   QVector<SequenceLayoutNumber> sequenceNumbers;
+  // Width passed to Mermaid's second wrapLabel() call after actor and
+  // activation endpoints are known. Keyed by parser message index.
+  QMap<int, qreal> messageWrapWidthsByIndex;
+  // Mermaid's renderer keeps its sizing bounds separate from painted SVG
+  // overflow (notably participant-box padding). This is the box used to
+  // derive the sequence viewBox before diagram margins are applied.
+  QRectF logicalBounds;
   QRectF bounds;
 };
 

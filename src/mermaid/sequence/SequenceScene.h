@@ -43,6 +43,7 @@ struct SequencePreparedLabels {
 // the parser DB and never performs placement.
 struct SequenceScene {
   QRectF bounds;
+  QRectF logicalBounds;
   QVector<SequenceLayoutBox> boxes;
   QVector<SequenceLabelDocument> boxLabels;
   QVector<SequenceLayoutParticipant> participants;

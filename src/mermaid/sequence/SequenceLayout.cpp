@@ -289,6 +289,23 @@ ParticipantPaintGeometry participantGeometry(const SequenceLayoutParticipant& ac
   return result;
 }
 
+qreal participantModelHeight(const SequenceLayoutParticipant& actor,
+                             const ParticipantPaintGeometry& geometry,
+                             const SequenceLayoutOptions& options) {
+  QRectF pathBounds;
+  for (const QPainterPath& path : geometry.paths)
+    pathBounds = pathBounds.isNull() ? path.boundingRect()
+                                     : pathBounds.united(path.boundingRect());
+  if (actor.type == QLatin1String("control"))
+    return 44.0 + 2.0 * options.labelBoxHeight;
+  if (actor.type == QLatin1String("entity") ||
+      actor.type == QLatin1String("database") ||
+      actor.type == QLatin1String("boundary"))
+    return pathBounds.height() + options.labelBoxHeight;
+  if (actor.type == QLatin1String("actor")) return pathBounds.height();
+  return actor.logicalRect.height();
+}
+
 QString markerEndForType(int type) {
   switch (type) {
     case 0: case 1: case 33: case 34: return QStringLiteral("arrowhead");
@@ -366,9 +383,16 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     if (!actorIndex.contains(message.from) || !actorIndex.contains(message.to)) continue;
     const SequenceActor& actor = data.actors[actorIndex.value(message.to)];
     const bool note = message.placement >= 0;
-    if (message.wrap || options.wrap) continue;
-    const QSizeF measured = note ? measuredNotes.value(static_cast<int>(messageIndex))
-                                 : measuredMessages.value(static_cast<int>(messageIndex));
+    const bool wrapped = message.wrap || options.wrap;
+    const QSizeF measured = note
+        ? (wrapped ? measurements.marginNotesByIndex.value(
+                         static_cast<int>(messageIndex),
+                         measuredNotes.value(static_cast<int>(messageIndex)))
+                   : measuredNotes.value(static_cast<int>(messageIndex)))
+        : (wrapped ? measurements.marginMessagesByIndex.value(
+                         static_cast<int>(messageIndex),
+                         measuredMessages.value(static_cast<int>(messageIndex)))
+                   : measuredMessages.value(static_cast<int>(messageIndex)));
     const qreal width = measured.width() + 2.0 * options.wrapPadding;
     auto update = [&](const QString& id, qreal candidate) {
       maximumMessageWidth[id] = std::max(maximumMessageWidth.value(id), candidate);
@@ -618,6 +642,12 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       if (!isStickOrOpenArrow(message.type)) stopX += direction * 3.0;
       if (adjustsStartForMarker(message.type)) startX -= direction * 3.0;
     }
+    if (message.wrap || options.wrap) {
+      result.messageWrapWidthsByIndex.insert(
+          static_cast<int>(messageIndex),
+          std::max(std::abs(startX - stopX) + 2.0 * options.wrapPadding,
+                   options.width));
+    }
     const QSizeF measured = measuredMessages.value(static_cast<int>(messageIndex));
     const qreal startY = bounds.vertical;
     bounds.vertical += 10.0;
@@ -779,6 +809,9 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
 
   std::sort(result.activations.begin(), result.activations.end(),
             [](const auto& left, const auto& right) { return left.messageIndex < right.messageIndex; });
+  qreal logicalBottom = bounds.hasBounds ? bounds.all.bottom() : bounds.vertical;
+  if (!options.mirrorActors)
+    logicalBottom = std::max(logicalBottom, bounds.vertical);
   const qreal lifelineStop = bounds.vertical + 2.0 * options.boxMargin;
   for (SequenceLayoutParticipant& participant : result.participants) {
     if (!participant.destroyed) {
@@ -803,6 +836,23 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     bounds.insert(top.bounds.left(), top.bounds.top(), top.bounds.right(), top.bounds.bottom());
     if (participant.drawBottom)
       bounds.insert(bottom.bounds.left(), bottom.bounds.top(), bottom.bounds.right(), bottom.bounds.bottom());
+    if (participant.drawBottom) {
+      const qreal participantBottom = participant.bottomY +
+          participantModelHeight(participant, top, options) + options.boxMargin;
+      logicalBottom = std::max(logicalBottom, participantBottom);
+    }
+  }
+  qreal logicalLeft = bounds.hasBounds ? bounds.all.left() : 0.0;
+  qreal logicalRight = bounds.hasBounds ? bounds.all.right() : 0.0;
+  for (const SequenceLayoutParticipant& participant : result.participants) {
+    logicalLeft = std::min(logicalLeft, participant.logicalRect.left());
+    logicalRight = std::max(logicalRight, participant.logicalRect.right());
+  }
+  for (qsizetype index = 0; index < boxStarted.size(); ++index) {
+    if (!boxStarted.at(index)) continue;
+    logicalLeft = std::min(logicalLeft, boxStart.at(index));
+    logicalRight = std::max(logicalRight,
+                            boxStart.at(index) + boxWidth.at(index));
   }
   if (!data.boxes.isEmpty()) {
     const qreal boxBottom = std::max(
@@ -828,11 +878,15 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       // final scene while actor membership keeps its source box index.
       result.boxes.prepend(box);
       bounds.insert(box.rect.left(), box.rect.top(), box.rect.right(), box.rect.bottom());
+      logicalBottom = std::max(logicalBottom, box.rect.bottom());
     }
   }
   for (const SequenceLayoutParticipant& participant : result.participants)
     bounds.insert(participant.anchorX, participant.lifelineStartY,
                   participant.anchorX, participant.lifelineStopY);
+  result.logicalBounds = QRectF(logicalLeft, 0.0,
+                               logicalRight - logicalLeft,
+                               logicalBottom);
   result.bounds = bounds.hasBounds ? bounds.all : QRectF{};
   return result;
 }

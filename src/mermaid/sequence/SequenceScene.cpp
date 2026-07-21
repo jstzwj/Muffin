@@ -10,6 +10,7 @@ SequenceScene buildSequenceScene(const SequenceLayoutResult& layout,
                                  bool requirePrepared) {
   SequenceScene scene;
   scene.bounds = layout.bounds;
+  scene.logicalBounds = layout.logicalBounds;
   scene.boxes = layout.boxes;
   scene.participants = layout.participants;
   scene.messages = layout.messages;
