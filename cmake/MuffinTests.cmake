@@ -38,6 +38,7 @@ muffin_add_test(NAME MuffinMermaidFlowchartSceneTest SOURCE tests/mermaid/Mermai
 muffin_add_test(NAME MuffinMermaidGoldenPixelTest SOURCE tests/mermaid/MermaidGoldenPixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/golden-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidFlowchartSvgStructuralTest SOURCE tests/mermaid/MermaidFlowchartSvgStructuralTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/golden-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidFlowchartLabelOracleTest SOURCE tests/mermaid/MermaidFlowchartLabelOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/flowchart-label.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidFlowchartCoverageMatrixTest SOURCE tests/mermaid/MermaidFlowchartCoverageMatrixTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-db.json)
 muffin_add_test(NAME MuffinMermaidTextLayoutAuditTest SOURCE tests/mermaid/MermaidTextLayoutAuditTest.cpp LINK MuffinCore FIXTURE src/mermaid/flowchart/FlowLabel.cpp)
 muffin_add_test(NAME MuffinMermaidRoughOpsTest SOURCE tests/mermaid/MermaidRoughOpsTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/rough-ops.json)
 muffin_add_test(NAME MuffinMermaidSequenceParserTest SOURCE tests/mermaid/MermaidSequenceParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/sequence-db.json)
