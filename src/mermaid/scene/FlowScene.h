@@ -77,6 +77,7 @@ struct FlowSceneEdge {
   QString markerEnd;      // marker type ("pointEnd"/...) or empty
   QString markerStart;
   FlowSceneLabel label;   // text empty if the edge has no label
+  QSizeF labelSize;
   // Painter-only: path endpoints + tangent directions for marker orientation
   // (from FlowLayoutEdge.points; NOT serialized by toJson).
   QPointF startPoint, endPoint, startTangent, endTangent;

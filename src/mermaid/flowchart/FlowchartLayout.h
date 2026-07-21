@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mermaid/flowchart/Flowchart.h"
+#include "mermaid/flowchart/FlowLabel.h"
 
 #include <QMap>
 #include <QPointF>
@@ -46,6 +47,13 @@ struct FlowLayoutEdge {
   bool hasLabelPosition = false;
   qreal labelX = 0.0;
   qreal labelY = 0.0;
+  QSizeF labelSize;
+  FlowLabelDocument labelDocument;
+};
+
+struct FlowEdgeLabelLayout {
+  QSizeF size;
+  FlowLabelDocument document;
 };
 
 struct FlowLayoutCluster {
@@ -71,6 +79,7 @@ struct FlowLayoutOptions {
   qreal clusterVerticalPadding = 25.0;
   FlowLook look = FlowLook::Classic;
   QMap<QString, QSizeF> measuredEdgeLabels;
+  QMap<QString, FlowEdgeLabelLayout> preparedEdgeLabels;
   // Edge curve: "basis" (default, d3 curveBasis), "linear" (curveLinear),
   // "step" (curveStep). Mirrors mermaid's flowchart.curve config.
   QString curve = QStringLiteral("basis");
@@ -93,6 +102,8 @@ QSizeF measureLabel(const QString& text, const QString& labelType,
                     const FlowTextOptions& options = {});
 QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge,
                                  const FlowTextOptions& options = {});
+FlowEdgeLabelLayout layoutFlowchartEdgeLabel(
+    const FlowEdge& edge, const FlowTextOptions& options = {});
 QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph,
                                     const FlowTextOptions& options = {});
 

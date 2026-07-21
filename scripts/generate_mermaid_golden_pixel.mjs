@@ -136,10 +136,25 @@ try {
         return { width: box.width, height: box.height, elements };
       })() : undefined;
       const labelBox = fixture.labelCrop ? (() => {
-        const label = root.querySelector("g.node foreignObject");
+        const label = root.querySelector(
+          fixture.labelCropSelector ?? "g.node foreignObject");
         if (!label) throw new Error(`Case ${fixture.id}: label crop target is missing`);
         const box = label.getBoundingClientRect();
-        return { width: box.width, height: box.height };
+        const style = getComputedStyle(label);
+        const math = label.querySelector("math");
+        const mathRect = math?.getBoundingClientRect();
+        const items = [...label.querySelectorAll("strong,b,em,i,code,math")]
+          .filter((item) => !item.parentElement?.closest("strong,b,em,i,code,math"))
+          .map((item) => {
+            const rect = item.getBoundingClientRect();
+            return { tag: item.localName, text: item.textContent,
+                     width: rect.width, height: rect.height };
+          });
+        return { width: box.width, height: box.height,
+                 fontSize: style.fontSize, lineHeight: style.lineHeight,
+                 items,
+                 ...(mathRect ? { mathWidth: mathRect.width,
+                                  mathHeight: mathRect.height } : {}) };
       })() : undefined;
       const computedStyles = fixture.id.startsWith("look-redux") ? (() => {
         const nodePath = root.querySelector("g.node path, g.node rect, g.node polygon");
@@ -204,7 +219,8 @@ try {
     const mathCropPng = fixture.mathCrop
       ? await captureIsolatedCrop("g.node math") : undefined;
     const labelCropPng = fixture.labelCrop
-      ? await captureIsolatedCrop("g.node foreignObject") : undefined;
+      ? await captureIsolatedCrop(
+          fixture.labelCropSelector ?? "g.node foreignObject") : undefined;
     results.push({ ...fixture, dpr, content, png, mathCropPng, labelCropPng });
   }
 

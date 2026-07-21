@@ -424,15 +424,7 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
     }
     // Edge label.
     if (!e.label.text.isEmpty()) {
-      const QFont font = labelFont(e.label, fontFamily);
-      flowchart::FlowEdge semanticLabel;
-      semanticLabel.text = e.label.text;
-      semanticLabel.labelType = e.label.labelType;
-      flowchart::FlowTextOptions textOptions;
-      textOptions.fontFamily = font.family();
-      textOptions.fontPixelSize = font.pixelSize() > 0 ? font.pixelSize() : 16.0;
-      textOptions.lineHeight = textOptions.fontPixelSize * 1.5;
-      const QSizeF measured = flowchart::measureFlowchartEdgeLabel(semanticLabel, textOptions);
+      const QSizeF measured = e.labelSize;
       const QRectF lr(e.label.x - measured.width() / 2.0,
                       e.label.y - measured.height() / 2.0,
                       measured.width(), measured.height());

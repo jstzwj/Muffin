@@ -296,10 +296,56 @@ int main(int argc, char** argv) {
             QStringLiteral("markdown markers and br must be consumed by the label model"));
     require(markdown.formats.size() == 2 && markdown.formats.first().format.fontWeight() == QFont::Bold,
             QStringLiteral("markdown bold/code formatting must be represented structurally"));
+    const auto markdownMetrics = muffin::mermaid::flowchart::layoutFlowLabel(
+        markdown, QStringLiteral("Noto Sans"), 16.0, 22.0);
+    const auto& formattedRuns = markdownMetrics.lines.first().runs;
+    require(!formattedRuns.isEmpty() &&
+                std::all_of(formattedRuns.cbegin(), formattedRuns.cend(), [](const auto& run) {
+                  return !run.preparedGlyphs.isEmpty();
+                }) &&
+                std::any_of(formattedRuns.cbegin(), formattedRuns.cend(), [](const auto& run) {
+                  return run.fontWeight >= QFont::Bold;
+                }),
+            QStringLiteral("formatted labels must retain styled prepared glyph runs"));
     const auto html = parseFlowLabel(QStringLiteral("<b>Bold</b><br><i>italic</i>"),
                                      QStringLiteral("string"));
-    require(html.text == QLatin1String("Bold\nitalic") && html.formats.size() == 2,
+    require(html.text == QLatin1String("Bold\nitalic") && html.formats.size() == 2 &&
+                html.direction == Qt::LeftToRight,
             QStringLiteral("safe inline HTML must use the same native label model"));
+    const auto htmlMetrics = muffin::mermaid::flowchart::layoutFlowLabel(
+        html, QStringLiteral("Noto Sans"), 16.0, 22.0);
+    require(std::any_of(htmlMetrics.lines.at(1).runs.cbegin(),
+                        htmlMetrics.lines.at(1).runs.cend(), [](const auto& run) {
+              return run.fontItalic;
+            }), QStringLiteral("italic labels must retain the synthetic style face"));
+  }
+
+  // --- wrapped edge labels are immutable layout products ---
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "flowchart LR\nA[Start] -->|\"A deliberately long edge label that "
+        "wraps at the upstream limit\"| B[Finish]");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    require(entry.status == kReady && entry.scene &&
+                entry.scene->edges.size() == 1,
+            QStringLiteral("wrapped edge label must render"));
+    const auto& edge = entry.scene->edges.first();
+    require(edge.label.richText.visualLines.size() == 3 &&
+                edge.label.richText.visualLineAdvance > 0.0 &&
+                edge.labelSize.width() > 0.0 &&
+                edge.labelSize.height() > 0.0,
+            QStringLiteral("edge wrapping must reach the immutable scene"));
+    const auto metrics = muffin::mermaid::flowchart::layoutFlowLabel(
+        edge.label.richText, edge.label.fontFamily, 16.0, 24.0);
+    const auto fontMetrics =
+        muffin::mermaid::flowchart::flowLabelFontBoundingMetrics(
+            edge.label.fontFamily, 16.0);
+    require(metrics.lines.size() == 3 &&
+                qAbs(metrics.lines.first().baseline -
+                     fontMetrics.ascent) < 0.001,
+            QStringLiteral("wrapped SVG lines must use the font-table baseline"));
   }
 
   // --- sequence labels share structured HTML/Markdown/Math/bidi metrics ---
@@ -319,6 +365,25 @@ int main(int argc, char** argv) {
               return line.baseline > 0.0 && line.ascent > 0.0 && line.descent >= 0.0 &&
                      !line.runs.isEmpty();
             }), QStringLiteral("sequence labels must expose baseline/ascent/descent/bidi runs"));
+    const auto literalBidi = parseSequenceLabel(
+        QStringLiteral("<b>\u4e2d\u6587</b> \u0645\u0631\u062d\u0628\u0627"));
+    const auto literalBidiMetrics = layoutSequenceLabel(
+        literalBidi, QStringLiteral("Noto Sans"), 16.0, 22.0);
+    require(!literalBidi.richText.text.contains(QLatin1Char('\n')) &&
+                literalBidiMetrics.lines.size() == 1,
+            QStringLiteral("sequence SVG labels must not be paint-time auto-wrapped"));
+    const auto& literalRuns = literalBidiMetrics.lines.first().runs;
+    require(!literalRuns.isEmpty() &&
+                std::any_of(literalRuns.cbegin(), literalRuns.cend(), [](const auto& run) {
+                  return run.rightToLeft;
+                }) &&
+                std::all_of(literalRuns.cbegin(), literalRuns.cend(), [](const auto& run) {
+                  return !run.preparedGlyphs.isEmpty() &&
+                         run.preparedGlyphs.glyphIndexes().size() ==
+                             run.preparedGlyphs.positions().size() &&
+                         run.preparedGlyphWidth > 0.0;
+                }),
+            QStringLiteral("sequence bidi runs must retain complete full-line glyph shaping"));
     const auto markdownMath = parseSequenceLabel(
         QStringLiteral("`**\u901f\u5ea6** $$x^2$$`"),
         muffin::mermaid::sequence::SequenceLabelKind::Note);

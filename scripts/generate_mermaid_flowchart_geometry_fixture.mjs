@@ -239,6 +239,10 @@ const cases = [
     source: 'flowchart LR\nA[Start] o--o|"A deliberately long edge label 中文 שלום"| B[Finish]\nB x--x C[Both ends]',
   },
   {
+    id: "edge-three-line-label",
+    source: 'flowchart LR\nA[Start] -->|"one deliberately extended segment two deliberately extended segment three deliberately extended segment"| B[Finish]',
+  },
+  {
     id: "recursive-cluster-cross-boundary",
     source: [
       "flowchart TB", "subgraph Outer[Outer]", "subgraph Middle[Middle]",

@@ -409,8 +409,12 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     const QString curve = flowConfig.value(QStringLiteral("curve")).toString();
     if (!curve.isEmpty()) layoutOptions.curve = curve;
     for (const flowchart::FlowEdge& edge : chart.data().edges) {
-      if (!edge.text.isEmpty())
-        layoutOptions.measuredEdgeLabels.insert(edge.id, flowchart::measureLabel(edge.text, edge.labelType, textOptions));
+      if (!edge.text.isEmpty()) {
+        const flowchart::FlowEdgeLabelLayout prepared =
+            flowchart::layoutFlowchartEdgeLabel(edge, textOptions);
+        layoutOptions.measuredEdgeLabels.insert(edge.id, prepared.size);
+        layoutOptions.preparedEdgeLabels.insert(edge.id, prepared);
+      }
     }
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, layoutOptions);
     const quint32 handDrawnSeed = static_cast<quint32>(

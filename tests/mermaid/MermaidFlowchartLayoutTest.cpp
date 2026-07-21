@@ -171,6 +171,7 @@ int main(int argc, char** argv) {
               fontContract.value(QStringLiteral("mathSource")).toString() ==
                   QLatin1String("third_party/stix"),
           QStringLiteral("Flowchart geometry Math font contract drifted"));
+  bool sawFormattedTextBlock = false;
   for (const QJsonValue& value : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
@@ -430,6 +431,18 @@ int main(int argc, char** argv) {
                   .arg(id, chart.data().edges.at(i).id).arg(label.width()).arg(label.height())
                   .arg(expectedLabel.value(QStringLiteral("width")).toDouble())
                   .arg(expectedLabel.value(QStringLiteral("height")).toDouble()));
+      if (id == QLatin1String("edge-three-line-label")) {
+        const qsizetype lineCount = expectedLabel.value(QStringLiteral("lines"))
+                                        .toArray().size();
+        require(lineCount == 5,
+                QStringLiteral("Flowchart formatted SVG text fixture line count drifted"));
+        require(std::abs(flowSvgFormattedTextBlockHeight(
+                             QStringLiteral("Arial"), 16.0, lineCount) -
+                         expectedLabel.value(QStringLiteral("height")).toDouble()) <=
+                    0.005,
+                QStringLiteral("Flowchart formatted SVG text block model drifted"));
+        sawFormattedTextBlock = true;
+      }
     }
     for (const FlowSubgraph& subgraph : chart.data().subgraphs) {
       const auto expected = std::find_if(expectedClusters.cbegin(), expectedClusters.cend(),
@@ -560,5 +573,7 @@ int main(int argc, char** argv) {
       }
     }
   }
+  require(sawFormattedTextBlock,
+          QStringLiteral("Flowchart formatted SVG text block fixture missing"));
   return 0;
 }

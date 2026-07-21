@@ -289,6 +289,24 @@ for (const fixture of [
   table.push({ ...fixture, theme: fixture.theme ?? "default",
                fontMode: "noto", labelCrop: true });
 }
+for (const fixture of [
+  { id: "flow-label-crop-html-style-bidi", labelCropKind: "html-style-bidi",
+    labelCropSelector: "g.node .label",
+    source: 'flowchart LR\nA["<b>Bold \u4e2d\u6587</b> <i>\u0645\u0631\u062d\u0628\u0627</i> <code>RTL</code> \u05e9\u05dc\u05d5\u05dd"] --> B[Plain]' },
+  { id: "flow-label-crop-markdown-style-bidi-dark-1_25x",
+    labelCropKind: "markdown-style-bidi", labelCropSelector: "g.node .label",
+    theme: "dark", dpr: 1.25,
+    source: 'flowchart LR\nA["`**Bold \u4e2d\u6587** *\u0645\u0631\u062d\u0628\u0627* \u05e9\u05dc\u05d5\u05dd`"] --> B[Plain]' },
+  { id: "flow-label-crop-html-style-math-bidi-neo-1_5x",
+    labelCropKind: "html-style-math-bidi", theme: "neo", look: "neo", dpr: 1.5,
+    source: 'flowchart LR\nA["<b>\u4e2d\u6587</b> $$x_i^2$$ <i>\u0645\u0631\u062d\u0628\u0627</i> \u05e9\u05dc\u05d5\u05dd"] --> B[Plain]' },
+  { id: "flow-label-crop-html-style-math-bidi-neo-dark-2x",
+    labelCropKind: "html-style-math-bidi-dark", theme: "neo-dark", look: "neo", dpr: 2,
+    source: 'flowchart LR\nA["<strong>RTL \u05e9\u05dc\u05d5\u05dd</strong> $$x+1$$ <em>\u0645\u0631\u062d\u0628\u0627 \u4e2d\u6587</em>"] --> B[Plain]' },
+]) {
+  table.push({ ...fixture, theme: fixture.theme ?? "default",
+               fontMode: "noto", labelCrop: true });
+}
 table.push({
   id: "edge-label-rich",
   theme: "default",

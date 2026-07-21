@@ -336,8 +336,9 @@ qreal labelFontPixelSize(const FlowSceneLabel& label) {
 }
 
 void prepareSceneLabel(FlowSceneLabel& label) {
-  label.richText = flowchart::parseFlowLabel(
-      label.text, label.labelType, label.mathEnabled);
+  if (label.richText.text.isNull())
+    label.richText = flowchart::parseFlowLabel(
+        label.text, label.labelType, label.mathEnabled);
   flowchart::prepareFlowLabelMath(label.richText,
                                   labelFontPixelSize(label));
 }
@@ -427,6 +428,8 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
         se.label.color = theme.textColor;
         se.label.fontFamily = theme.fontFamily;
         se.label.fontSize = theme.fontSize;
+        se.label.richText = e.labelDocument;
+        se.labelSize = e.labelSize;
       }
     } else {
       se.stroke = theme.lineColor;

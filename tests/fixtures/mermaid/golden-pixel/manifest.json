@@ -1483,7 +1483,31 @@
         "height": 54,
         "labelBox": {
           "width": 85.421875,
-          "height": 24
+          "height": 24,
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "b",
+              "text": "Bold",
+              "width": 34.0625,
+              "height": 24
+            },
+            {
+              "tag": "math",
+              "text": "x",
+              "width": 28.34375,
+              "height": 20.234375
+            },
+            {
+              "tag": "i",
+              "text": "tail",
+              "width": 23.015625,
+              "height": 24
+            }
+          ],
+          "mathWidth": 28.34375,
+          "mathHeight": 20.234375
         }
       },
       "enforceInterior": true,
@@ -1504,7 +1528,19 @@
         "height": 54,
         "labelBox": {
           "width": 155.984375,
-          "height": 24
+          "height": 24,
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "math",
+              "text": "xi2",
+              "width": 15.125,
+              "height": 17.390625
+            }
+          ],
+          "mathWidth": 15.125,
+          "mathHeight": 17.390625
         }
       },
       "enforceInterior": true,
@@ -1525,7 +1561,19 @@
         "height": 45,
         "labelBox": {
           "width": 69.234375,
-          "height": 21
+          "height": 21,
+          "fontSize": "14px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "math",
+              "text": "x2",
+              "width": 13.234375,
+              "height": 12.03125
+            }
+          ],
+          "mathWidth": 13.234375,
+          "mathHeight": 12.03125
         }
       },
       "enforceInterior": true,
@@ -1546,7 +1594,19 @@
         "height": 45,
         "labelBox": {
           "width": 73.890625,
-          "height": 21
+          "height": 21,
+          "fontSize": "14px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "math",
+              "text": "x2",
+              "width": 13.234375,
+              "height": 12.03125
+            }
+          ],
+          "mathWidth": 13.234375,
+          "mathHeight": 12.03125
         }
       },
       "enforceInterior": true,
@@ -1567,7 +1627,19 @@
         "height": 65.46875,
         "labelBox": {
           "width": 101.72633361816406,
-          "height": 35.54784393310547
+          "height": 35.54784393310547,
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "math",
+              "text": "x+1y",
+              "width": 37.5836181640625,
+              "height": 35.54784393310547
+            }
+          ],
+          "mathWidth": 37.5836181640625,
+          "mathHeight": 35.54784393310547
         }
       },
       "enforceInterior": true,
@@ -1588,11 +1660,193 @@
         "height": 54,
         "labelBox": {
           "width": 164.1875,
-          "height": 24
+          "height": 24,
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "math",
+              "text": "x",
+              "width": 28.34375,
+              "height": 20.234375
+            }
+          ],
+          "mathWidth": 28.34375,
+          "mathHeight": 20.234375
         }
       },
       "enforceInterior": true,
       "file": "flow-label-crop-rtl-default-1_5x.png"
+    },
+    {
+      "id": "flow-label-crop-html-style-bidi",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"<b>Bold 中文</b> <i>مرحبا</i> <code>RTL</code> שלום\"] --> B[Plain]",
+      "dpr": 1,
+      "labelCropKind": "html-style-bidi",
+      "labelCropFile": "flow-label-crop-html-style-bidi-label.png",
+      "labelCropSha256": "93901fd2bc47ca2713ef41b134819c9820c2411895d400b376ee0c606557fbc9",
+      "content": {
+        "width": 385.25,
+        "height": 55,
+        "labelBox": {
+          "width": 178.4375,
+          "height": 25,
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "b",
+              "text": "Bold 中文",
+              "width": 70.21875,
+              "height": 22
+            },
+            {
+              "tag": "i",
+              "text": "مرحبا",
+              "width": 33.671875,
+              "height": 22
+            },
+            {
+              "tag": "code",
+              "text": "RTL",
+              "width": 26.390625,
+              "height": 19
+            }
+          ]
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-html-style-bidi.png"
+    },
+    {
+      "id": "flow-label-crop-markdown-style-bidi-dark-1_25x",
+      "theme": "dark",
+      "look": "classic",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"`**Bold 中文** *مرحبا* שלום`\"] --> B[Plain]",
+      "dpr": 1.25,
+      "labelCropKind": "markdown-style-bidi",
+      "labelCropFile": "flow-label-crop-markdown-style-bidi-dark-1_25x-label.png",
+      "labelCropSha256": "5efcb260d59f655a8f55ca79aa20cbece2df2d11bfb7579ab3f34dfb6f596104",
+      "content": {
+        "width": 354.671875,
+        "height": 54,
+        "labelBox": {
+          "width": 147.859375,
+          "height": 24,
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "strong",
+              "text": "Bold 中文",
+              "width": 70.21875,
+              "height": 22
+            },
+            {
+              "tag": "em",
+              "text": "مرحبا",
+              "width": 33.671875,
+              "height": 22
+            }
+          ]
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-markdown-style-bidi-dark-1_25x.png"
+    },
+    {
+      "id": "flow-label-crop-html-style-math-bidi-neo-1_5x",
+      "theme": "neo",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"<b>中文</b> $$x_i^2$$ <i>مرحبا</i> שלום\"] --> B[Plain]",
+      "dpr": 1.5,
+      "labelCropKind": "html-style-math-bidi",
+      "labelCropFile": "flow-label-crop-html-style-math-bidi-neo-1_5x-label.png",
+      "labelCropSha256": "d940a2e5cb4ee6ed3d209f71aa3343daf452177ccf7ed16026005f0127a79a1e",
+      "content": {
+        "width": 248.09375,
+        "height": 45,
+        "labelBox": {
+          "width": 101.890625,
+          "height": 21,
+          "fontSize": "14px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "b",
+              "text": "中文",
+              "width": 28,
+              "height": 21
+            },
+            {
+              "tag": "math",
+              "text": "xi2",
+              "width": 13.234375,
+              "height": 16.09375
+            },
+            {
+              "tag": "i",
+              "text": "مرحبا",
+              "width": 29.46875,
+              "height": 21
+            }
+          ],
+          "mathWidth": 13.234375,
+          "mathHeight": 16.09375
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-html-style-math-bidi-neo-1_5x.png"
+    },
+    {
+      "id": "flow-label-crop-html-style-math-bidi-neo-dark-2x",
+      "theme": "neo-dark",
+      "look": "neo",
+      "fontMode": "noto",
+      "source": "flowchart LR\nA[\"<strong>RTL שלום</strong> $$x+1$$ <em>مرحبا 中文</em>\"] --> B[Plain]",
+      "dpr": 2,
+      "labelCropKind": "html-style-math-bidi-dark",
+      "labelCropFile": "flow-label-crop-html-style-math-bidi-neo-dark-2x-label.png",
+      "labelCropSha256": "d14c3dcfd7d6c316f147dc64d1f94102636a8770c48fb963e373f61cb7d82b85",
+      "content": {
+        "width": 297.046875,
+        "height": 45,
+        "labelBox": {
+          "width": 150.84375,
+          "height": 21,
+          "fontSize": "14px",
+          "lineHeight": "normal",
+          "items": [
+            {
+              "tag": "strong",
+              "text": "RTL שלום",
+              "width": 58.65625,
+              "height": 21
+            },
+            {
+              "tag": "math",
+              "text": "x+1",
+              "width": 31.078125,
+              "height": 10
+            },
+            {
+              "tag": "em",
+              "text": "مرحبا 中文",
+              "width": 61.109375,
+              "height": 21
+            }
+          ],
+          "mathWidth": 31.078125,
+          "mathHeight": 10
+        }
+      },
+      "enforceInterior": true,
+      "file": "flow-label-crop-html-style-math-bidi-neo-dark-2x.png"
     },
     {
       "id": "edge-label-rich",

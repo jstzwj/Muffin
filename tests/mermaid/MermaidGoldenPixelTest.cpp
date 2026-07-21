@@ -154,7 +154,7 @@ QImage renderFlowMathLabelCrop(const flowscene::FlowSceneLabel& label,
       QRectF(0.0, 0.0, physicalSize.width() / dpr,
              physicalSize.height() / dpr),
       font.family(), font.pixelSize(), font.pixelSize() * 1.5,
-      Qt::black, true);
+      Qt::white, true);
   painter.end();
   return image;
 }
@@ -294,10 +294,14 @@ int main(int argc, char** argv) {
 
     flowchart::FlowLayoutOptions options;
     options.look = look;
-    for (const flowchart::FlowEdge& e : chart.data().edges)
-      if (!e.text.isEmpty())
-        options.measuredEdgeLabels.insert(e.id,
-                                          flowchart::measureFlowchartEdgeLabel(e, textOptions));
+    for (const flowchart::FlowEdge& e : chart.data().edges) {
+      if (!e.text.isEmpty()) {
+        const flowchart::FlowEdgeLabelLayout prepared =
+            flowchart::layoutFlowchartEdgeLabel(e, textOptions);
+        options.measuredEdgeLabels.insert(e.id, prepared.size);
+        options.preparedEdgeLabels.insert(e.id, prepared);
+      }
+    }
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, options);
     const flowscene::FlowScene scene = flowscene::buildFlowScene(
         chart.data(), layout, theme, look,
@@ -305,7 +309,8 @@ int main(int argc, char** argv) {
     if (fixture.contains(QStringLiteral("mathCropFile"))) {
       const auto node = std::find_if(
           scene.nodes.cbegin(), scene.nodes.cend(), [](const auto& candidate) {
-            return !candidate.label.richText.math.isEmpty();
+            return !candidate.label.richText.formats.isEmpty() ||
+                   !candidate.label.richText.math.isEmpty();
           });
       require(node != scene.nodes.cend(),
               QStringLiteral("Case %1: native Math label is missing").arg(id));
@@ -377,10 +382,7 @@ int main(int argc, char** argv) {
           fixture.value(QStringLiteral("mathCropKind")).toString());
     }
     if (fixture.contains(QStringLiteral("labelCropFile"))) {
-      const auto node = std::find_if(
-          scene.nodes.cbegin(), scene.nodes.cend(), [](const auto& candidate) {
-            return !candidate.label.richText.math.isEmpty();
-          });
+      const auto node = scene.nodes.cbegin();
       require(node != scene.nodes.cend(),
               QStringLiteral("Case %1: native label crop target is missing").arg(id));
       const QString cropPath = dir.filePath(
@@ -394,6 +396,12 @@ int main(int argc, char** argv) {
               QStringLiteral("Case %1: label crop is missing").arg(id));
       const QImage nativeCrop = renderFlowMathLabelCrop(
           node->label, browserCrop.size(), renderFamily, dpr);
+      const auto nativeLabelLayout = flowchart::layoutFlowLabel(
+          node->label.richText, renderFamily, textOptions.fontPixelSize,
+          textOptions.lineHeight);
+      const QJsonObject browserLabelBox =
+          fixture.value(QStringLiteral("content")).toObject()
+              .value(QStringLiteral("labelBox")).toObject();
       const QRect nativeInk = alphaBounds(nativeCrop);
       const QRect browserInk = alphaBounds(browserCrop);
       require(!nativeInk.isEmpty() && !browserInk.isEmpty(),
@@ -402,7 +410,13 @@ int main(int argc, char** argv) {
                                browserInk.width();
       const qreal coverage = alignedAlphaCoverage(nativeCrop, browserCrop, dpr);
       qDebug().noquote() << id << "flow-label-crop" << nativeCrop.size()
-                         << nativeInk << browserInk << "coverage" << coverage;
+                         << nativeInk << browserInk << "coverage" << coverage
+                         << "layout" << nativeLabelLayout.size
+                         << "font" << textOptions.fontPixelSize
+                         << node->label.fontSize
+                         << "browser-box"
+                         << browserLabelBox.value(QStringLiteral("width")).toDouble()
+                         << browserLabelBox.value(QStringLiteral("height")).toDouble();
       const QString cropKind =
           fixture.value(QStringLiteral("labelCropKind")).toString();
       static const QHash<QString, qreal> minimumCoverage = {
@@ -412,11 +426,22 @@ int main(int argc, char** argv) {
           {QStringLiteral("rtl-math"), 0.80},
           {QStringLiteral("cjk-fraction"), 0.96},
           {QStringLiteral("rtl-radical"), 0.85},
+          {QStringLiteral("html-style-bidi"), 0.85},
+          {QStringLiteral("markdown-style-bidi"), 0.85},
+          {QStringLiteral("html-style-math-bidi"), 0.80},
+          {QStringLiteral("html-style-math-bidi-dark"), 0.80},
       };
       require(minimumCoverage.contains(cropKind),
               QStringLiteral("Case %1: unknown label crop kind %2")
                   .arg(id, cropKind));
       const bool rtlCrop = cropKind.startsWith(QLatin1String("rtl-"));
+      if (coverage < minimumCoverage.value(cropKind)) {
+        QDir().mkpath(failDir);
+        nativeCrop.save(failDir + QLatin1Char('/') + id +
+                        QStringLiteral("-label-native.png"));
+        browserCrop.save(failDir + QLatin1Char('/') + id +
+                         QStringLiteral("-label-browser.png"));
+      }
       require(widthDrift <= 0.04 &&
                   std::abs(nativeInk.height() - browserInk.height()) <=
                       std::ceil((rtlCrop ? 4.0 : 3.0) * dpr),
@@ -539,8 +564,8 @@ int main(int argc, char** argv) {
   require(mathCropKinds.size() == 6,
           QStringLiteral("Flowchart Math crop coverage regressed: %1/6")
               .arg(mathCropKinds.size()));
-  require(labelCropKinds.size() == 6,
-          QStringLiteral("Flowchart label crop coverage regressed: %1/6")
+  require(labelCropKinds.size() == 10,
+          QStringLiteral("Flowchart label crop coverage regressed: %1/10")
               .arg(labelCropKinds.size()));
   qDebug().noquote() << "MermaidGoldenPixelTest:" << cases.size() << "cases pass Level-3 (interior exact + boundary RGBA + text IoU + empty)";
   return 0;

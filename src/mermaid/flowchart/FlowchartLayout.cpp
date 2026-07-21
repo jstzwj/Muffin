@@ -1,7 +1,4 @@
 #include "mermaid/flowchart/FlowchartLayout.h"
-#include "mermaid/MermaidFontRegistry.h"
-
-#include "mermaid/flowchart/FlowLabel.h"
 
 #include "mermaid/flowchart/D3Curves.h"
 #include "mermaid/flowchart/FlowchartShapeRegistry.h"
@@ -10,13 +7,9 @@
 #include "mermaid/dagre/DagreUtil.h"
 #include "mermaid/dagre/Layout.h"
 
-#include <QFont>
-#include <QFontMetricsF>
 #include <QQueue>
 #include <QRegularExpression>
 #include <QSet>
-#include <QTextLayout>
-#include <QTextOption>
 
 #include <algorithm>
 #include <cmath>
@@ -210,47 +203,34 @@ QSizeF measureLabel(const QString& text, const QString& labelType,
                           options.fontPixelSize, options.lineHeight);
 }
 
-QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge, const FlowTextOptions& options) {
-  const FlowLabelDocument document = parseFlowLabel(edge.text, edge.labelType, false);
-  QSizeF size = measureFlowLabel(document, options.fontFamily, options.fontPixelSize,
-                                options.lineHeight);
-  if (!document.text.contains(QLatin1Char('\n')) && size.width() > 196.0) {
-    QFont font(options.fontFamily);
-    MermaidFontRegistry::configureFont(font, options.fontFamily);
-    font.setPixelSize(static_cast<int>(std::round(options.fontPixelSize)));
-    font.setHintingPreference(QFont::PreferNoHinting);
-    QTextLayout layout(document.text, font);
-    QTextOption textOption;
-    textOption.setUseDesignMetrics(true);
-    textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-    layout.setTextOption(textOption);
-    layout.setFormats(document.formats);
-    qreal width = 0.0;
-    int lineCount = 0;
-    layout.beginLayout();
-    while (true) {
-      QTextLine line = layout.createLine();
-      if (!line.isValid()) break;
-      line.setLineWidth(196.0);
-      qsizetype textStart = line.textStart();
-      qsizetype textLength = line.textLength();
-      while (textLength > 0 &&
-             document.text.at(textStart + textLength - 1).isSpace())
-        --textLength;
-      // SVGTextElement.getBBox() uses the shaped typographic extent for this
-      // centered <tspan>; the trailing wrap separator is not part of the line.
-      width = std::max(width, measureFlowTextAdvanceWidth(
-          document, textStart, textLength, options.fontFamily,
-          options.fontPixelSize));
-      ++lineCount;
-    }
-    layout.endLayout();
-    size = QSizeF(width, lineCount * 19.3);
+FlowEdgeLabelLayout layoutFlowchartEdgeLabel(
+    const FlowEdge& edge, const FlowTextOptions& options) {
+  FlowEdgeLabelLayout result;
+  result.document = parseFlowLabel(edge.text, edge.labelType, false);
+  QSizeF content = measureFlowLabel(result.document, options.fontFamily,
+                                   options.fontPixelSize, options.lineHeight);
+  if (!result.document.text.contains(QLatin1Char('\n')) &&
+      content.width() > 196.0) {
+    result.document = wrapFlowLabel(result.document, options.fontFamily,
+                                    options.fontPixelSize, 196.0);
+    result.document.visualLineAdvance =
+        flowSvgFormattedTextLineStep(options.fontPixelSize);
+    content = measureFlowLabel(result.document, options.fontFamily,
+                               options.fontPixelSize, options.lineHeight);
+    content.setHeight(flowSvgFormattedTextBlockHeight(
+        options.fontFamily, options.fontPixelSize,
+        result.document.visualLines.size()));
   }
-  size.rwidth() += 4.0;
-  size.setWidth(std::max<qreal>(30.0, size.width()));
-  if (size.height() <= options.lineHeight) size.setHeight(21.0);
-  return size;
+  result.size = content;
+  result.size.rwidth() += 4.0;
+  result.size.setWidth(std::max<qreal>(30.0, result.size.width()));
+  if (result.size.height() <= options.lineHeight) result.size.setHeight(21.0);
+  return result;
+}
+
+QSizeF measureFlowchartEdgeLabel(const FlowEdge& edge,
+                                 const FlowTextOptions& options) {
+  return layoutFlowchartEdgeLabel(edge, options).size;
 }
 
 QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph,
@@ -693,6 +673,14 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     if (!parent.isEmpty() && g.hasNode(parent)) g.setParent(item.id, parent);
   }
 
+  auto preparedEdgeLabel = [&](const FlowEdge& edge) {
+    FlowEdgeLabelLayout prepared = options.preparedEdgeLabels.value(edge.id);
+    if (prepared.document.text.isNull())
+      prepared = layoutFlowchartEdgeLabel(edge);
+    const QSizeF measured = options.measuredEdgeLabels.value(edge.id);
+    if (measured.isValid() && !measured.isEmpty()) prepared.size = measured;
+    return prepared;
+  };
   auto edgeLabel = [&](const FlowEdge& edge) {
     d::DagreEdgeLabel label;
     label.minlen = 1;
@@ -700,10 +688,9 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     label.labelpos = QStringLiteral("c");
     label.labeloffset = 10;
     if (!edge.text.isEmpty()) {
-      QSizeF measured = options.measuredEdgeLabels.value(edge.id);
-      if (!measured.isValid() || measured.isEmpty()) measured = measureFlowchartEdgeLabel(edge);
-      label.width = measured.width();
-      label.height = measured.height();
+      const FlowEdgeLabelLayout prepared = preparedEdgeLabel(edge);
+      label.width = prepared.size.width();
+      label.height = prepared.size.height();
     }
     return label;
   };
@@ -778,6 +765,11 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     if (start == end && (start != fe.start || end != fe.end)) continue;
     FlowLayoutEdge out;
     out.id = fe.id;
+    if (!fe.text.isEmpty()) {
+      const FlowEdgeLabelLayout prepared = preparedEdgeLabel(fe);
+      out.labelSize = prepared.size;
+      out.labelDocument = prepared.document;
+    }
     if (fe.start == fe.end) {
       const d::DagreNodeLabel* node = g.node(start);
       const d::DagreNodeLabel* dummy1 = g.node(start + QStringLiteral("---") + start +

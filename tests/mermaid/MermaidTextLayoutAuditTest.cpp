@@ -34,7 +34,9 @@ int main(int argc, char** argv) {
       QStringLiteral("src/mermaid/sequence/SequenceLabel.cpp")));
   const QString layout = readSource(sourceRoot.filePath(
       QStringLiteral("src/mermaid/flowchart/FlowchartLayout.cpp")));
-  const QString combined = flow + sequence + layout;
+  const QString painter = readSource(sourceRoot.filePath(
+      QStringLiteral("src/mermaid/scene/FlowScenePainter.cpp")));
+  const QString combined = flow + sequence + layout + painter;
 
   const QStringList forbidden = {
       QStringLiteral("chromiumFallbackWidth"),
@@ -57,6 +59,11 @@ int main(int argc, char** argv) {
       QStringLiteral("containerHeight / 2.0 + 6.0"),
       QStringLiteral("0x2e80"),
       QStringLiteral("0x0600"),
+      QStringLiteral("lineCount * 19.3"),
+      QStringLiteral("autoWrapped ? 19.3"),
+      QStringLiteral("drawTextRange"),
+      QStringLiteral("localFormats"),
+      QStringLiteral("paintedLabel.text[separator]"),
   };
   for (const QString& token : forbidden)
     require(!combined.contains(token),
@@ -69,13 +76,20 @@ int main(int argc, char** argv) {
               !sequence.contains(QStringLiteral("QFontMetrics")) &&
               !sequence.contains(QStringLiteral("QGlyphRun")),
           QStringLiteral("Sequence label measurement bypassed the shared shaping path"));
-  require(layout.contains(QStringLiteral("measureFlowTextAdvanceWidth")) &&
+  require(layout.contains(QStringLiteral("layoutFlowchartEdgeLabel")) &&
+              layout.contains(QStringLiteral("wrapFlowLabel")) &&
+              !layout.contains(QStringLiteral("QTextLayout")) &&
               !layout.contains(QStringLiteral("AdvanceScale")),
-          QStringLiteral("Flowchart edge wrapping bypassed unified glyph advances"));
+          QStringLiteral("Flowchart edge wrapping bypassed the prepared label path"));
+  require(painter.contains(QStringLiteral("e.labelSize")) &&
+              !painter.contains(QStringLiteral("measureFlowchartEdgeLabel")),
+          QStringLiteral("Flowchart painter started remeasuring edge labels"));
   require(flow.contains(QStringLiteral("OpenTypeHorizontalMetrics")) &&
               flow.contains(QStringLiteral("openTypeFontBoundingMetrics")) &&
               flow.contains(QStringLiteral("mathMlInlineInkRight")) &&
+              flow.contains(QStringLiteral("flowSvgFormattedTextLineStep")) &&
               flow.contains(QStringLiteral("visibleDomTextRanges")) &&
+              flow.contains(QStringLiteral("preparedGlyphs")) &&
               flow.contains(QStringLiteral("boundingRect(glyphs.at(i))")),
           QStringLiteral("Chromium text box model lost font-table, DOM, or glyph-bound inputs"));
 

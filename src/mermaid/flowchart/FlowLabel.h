@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QGlyphRun>
 #include <QSizeF>
 #include <QString>
 #include <QTextLayout>
@@ -38,6 +39,11 @@ struct FlowLabelDomItem {
   FlowLabelDomItemKind kind = FlowLabelDomItemKind::AnonymousText;
 };
 
+struct FlowLabelLineRange {
+  qsizetype start = 0;
+  qsizetype length = 0;
+};
+
 enum class FlowLabelFormattingContext {
   FlowSvgText,
   FlowForeignObjectFlex,
@@ -55,10 +61,16 @@ struct FlowLabelDocument {
   QVector<QTextLayout::FormatRange> formats;
   QVector<FlowLabelMathSpan> math;
   QVector<FlowLabelDomItem> domItems;
+  // Optional visual lines produced by the layout/wrap stage. They reference
+  // the original text so format, Math and bidi-run offsets remain immutable.
+  QVector<FlowLabelLineRange> visualLines;
+  qreal visualLineAdvance = 0.0;
   FlowLabelFormattingContext formattingContext =
       FlowLabelFormattingContext::FlowSvgText;
   FlowLabelBreakBehavior breakBehavior = FlowLabelBreakBehavior::PreserveLines;
-  Qt::LayoutDirection direction = Qt::LayoutDirectionAuto;
+  // SVG text and foreignObject content inherit CSS direction:ltr unless the
+  // diagram explicitly supplies another direction.
+  Qt::LayoutDirection direction = Qt::LeftToRight;
 };
 
 enum class FlowLabelMathStructure {
@@ -85,6 +97,13 @@ struct FlowLabelVisualRun {
   qreal mathInkBottom = 0.0;
   qreal fontAscent = 0.0;
   qreal fontDescent = 0.0;
+  // Full-line shaping payload, including the synthetic style face selected by
+  // QTextLayout. Positions are local to x and retain the shaped baseline, so
+  // painters must not reshape the source slice.
+  QGlyphRun preparedGlyphs;
+  qreal preparedGlyphWidth = 0.0;
+  int fontWeight = QFont::Normal;
+  bool fontItalic = false;
 };
 
 struct FlowLabelLineMetrics {
@@ -130,6 +149,11 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        qreal fontPixelSize,
                                        qreal lineHeight);
 
+FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
+                                const QString& fontFamily,
+                                qreal fontPixelSize,
+                                qreal maximumLineWidth);
+
 QSizeF measureFlowLabel(const FlowLabelDocument& label,
                         const QString& fontFamily,
                         qreal fontPixelSize,
@@ -156,6 +180,14 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
 // hhea ascent/descent used to position text inside a CSS normal line box.
 FlowLabelFontMetrics flowLabelFontBoundingMetrics(
     const QString& fontFamily, qreal fontPixelSize);
+
+// Mermaid createFormattedText() advances SVG tspans by 1.1em. Its background
+// rect is the union of the font cell boxes plus two CSS pixels per side.
+qreal flowSvgFormattedTextLineStep(qreal fontPixelSize);
+qreal flowSvgFormattedTextBlockHeight(const QString& fontFamily,
+                                      qreal fontPixelSize,
+                                      qsizetype lineCount,
+                                      qreal padding = 2.0);
 
 void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     const QRectF& rect, const QString& fontFamily,
