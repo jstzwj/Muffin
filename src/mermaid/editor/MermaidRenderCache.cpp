@@ -17,6 +17,10 @@
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScene.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
+#include "mermaid/state/StateDiagram.h"
+#include "mermaid/state/StateLayout.h"
+#include "mermaid/state/StateScene.h"
+#include "mermaid/state/StateScenePainter.h"
 #include "mermaid/theme/FlowTheme.h"
 #include "mermaid/theme/MermaidColor.h"
 
@@ -32,6 +36,142 @@
 
 namespace muffin::mermaid::editor {
 namespace {
+
+QPair<int, int> lineColumnForOffset(const QString& source, qsizetype offset) {
+  offset = qBound<qsizetype>(0, offset, source.size());
+  int line = 1;
+  int column = 1;
+  for (qsizetype index = 0; index < offset; ++index) {
+    const QChar ch = source.at(index);
+    if (ch == QLatin1Char('\r')) {
+      if (index + 1 < offset && source.at(index + 1) == QLatin1Char('\n')) ++index;
+      ++line;
+      column = 1;
+    } else if (ch == QLatin1Char('\n')) {
+      ++line;
+      column = 1;
+    } else {
+      ++column;
+    }
+  }
+  return {line, column};
+}
+
+qsizetype offsetForLineColumn(const QString& source, int targetLine, int targetColumn) {
+  if (targetLine < 1 || targetColumn < 1) return -1;
+  int line = 1;
+  int column = 1;
+  for (qsizetype index = 0; index <= source.size(); ++index) {
+    if (line == targetLine && column == targetColumn) return index;
+    if (index == source.size()) break;
+    const QChar ch = source.at(index);
+    if (ch == QLatin1Char('\r')) {
+      if (index + 1 < source.size() && source.at(index + 1) == QLatin1Char('\n')) ++index;
+      ++line;
+      column = 1;
+    } else if (ch == QLatin1Char('\n')) {
+      ++line;
+      column = 1;
+    } else {
+      ++column;
+    }
+  }
+  return -1;
+}
+
+qsizetype originalOffsetForCodeOffset(
+    const MermaidPreprocessResult& pre, qsizetype codeOffset,
+    qsizetype sourceSize) {
+  if (codeOffset < 0) return -1;
+  if (codeOffset < pre.codeSourceOffsets.size()) {
+    return qBound<qsizetype>(0, pre.codeSourceOffsets.at(codeOffset), sourceSize);
+  }
+  if (codeOffset >= pre.code.size()) {
+    return qBound<qsizetype>(0, pre.codeSourceEndOffset, sourceSize);
+  }
+  return qBound<qsizetype>(0, codeOffset, sourceSize);
+}
+
+MermaidSourceSpan mappedSourceSpan(
+    const QString& source, const MermaidPreprocessResult& pre,
+    qsizetype codeOffset, qsizetype codeLength, int fallbackLine,
+    int fallbackColumn) {
+  MermaidSourceSpan span;
+  span.offset = originalOffsetForCodeOffset(pre, codeOffset, source.size());
+  if (span.offset < 0 && fallbackLine > 0 && fallbackColumn > 0) {
+    span.offset = offsetForLineColumn(source, fallbackLine, fallbackColumn);
+  }
+  if (span.offset < 0) return span;
+
+  if (codeLength > 0 && codeOffset >= 0 && !pre.code.isEmpty()) {
+    const qsizetype lastCodeOffset = qBound<qsizetype>(
+        0, codeOffset + codeLength - 1, pre.code.size() - 1);
+    const qsizetype lastSourceOffset = originalOffsetForCodeOffset(
+        pre, lastCodeOffset, source.size());
+    if (lastSourceOffset >= span.offset) {
+      span.length = qMax<qsizetype>(1, lastSourceOffset - span.offset + 1);
+    }
+  }
+  const auto [line, column] = lineColumnForOffset(source, span.offset);
+  span.line = line;
+  span.column = column;
+  return span;
+}
+
+MermaidDiagnostic parserDiagnostic(
+    const QString& source, const MermaidPreprocessResult& pre,
+    QString diagramType, QString stage, QString code, QString message,
+    qsizetype offset, qsizetype length, int line, int column,
+    QString production, QString actual, QStringList expected) {
+  MermaidDiagnostic diagnostic;
+  diagnostic.diagramType = std::move(diagramType);
+  diagnostic.stage = std::move(stage);
+  diagnostic.code = std::move(code);
+  diagnostic.span = mappedSourceSpan(
+      source, pre, offset, length, line, column);
+  diagnostic.message = std::move(message);
+  diagnostic.production = std::move(production);
+  diagnostic.actual = std::move(actual);
+  diagnostic.expected = std::move(expected);
+  return diagnostic;
+}
+
+MermaidRenderEntry errorEntry(
+    MermaidDiagnostic diagnostic,
+    MermaidRenderStatus status = MermaidRenderStatus::Error) {
+  MermaidRenderEntry entry;
+  entry.status = status;
+  entry.diagnostic = std::move(diagnostic);
+  entry.errorMessage = formatMermaidDiagnostic(entry.diagnostic);
+  entry.errorDiagnostic = mermaidDiagnosticToJson(entry.diagnostic);
+  return entry;
+}
+
+MermaidDiagnostic preprocessingDiagnostic(
+    const QString& source, const QString& message) {
+  MermaidDiagnostic diagnostic;
+  diagnostic.stage = QStringLiteral("preprocess");
+  diagnostic.code = QStringLiteral("invalid-configuration");
+  diagnostic.message = message;
+  static const QRegularExpression yamlPosition(
+      QStringLiteral(R"(line\s+(\d+)\s*,\s*column\s+(\d+))"),
+      QRegularExpression::CaseInsensitiveOption);
+  const QRegularExpressionMatch match = yamlPosition.match(message);
+  if (match.hasMatch()) {
+    // yaml-cpp reports a 1-based position inside the YAML body. Mermaid front
+    // matter starts after the opening --- line, hence the extra source line.
+    const int line = match.captured(1).toInt() + 1;
+    const int column = match.captured(2).toInt();
+    const qsizetype offset = offsetForLineColumn(source, line, column);
+    if (offset >= 0) {
+      diagnostic.span.offset = offset;
+      diagnostic.span.length = offset < source.size() ? 1 : 0;
+      diagnostic.span.line = line;
+      diagnostic.span.column = column;
+    }
+  }
+  return diagnostic;
+}
 
 flowtheme::FlowThemeId themeIdFromName(const QString& name) {
   static const QHash<QString, flowtheme::FlowThemeId> map = {
@@ -164,7 +304,21 @@ sequence::SequenceSceneStyle sequenceStyleFromConfig(
 
 }  // namespace
 
-MermaidRenderCache::MermaidRenderCache(QObject* parent, int capacity) : QObject(parent), capacity_(capacity) {}
+MermaidRenderCache::MermaidRenderCache(QObject* parent, int capacity)
+    : QObject(parent), capacity_(capacity) {
+  debounceTimer_.setSingleShot(true);
+  connect(&debounceTimer_, &QTimer::timeout, this, [this]() {
+    if (!debouncePending_) return;
+    const MermaidRenderKey key = debouncedKey_;
+    const QString source = debouncedSource_;
+    debouncePending_ = false;
+    debouncedSource_.clear();
+    const auto it = entries_.constFind(key);
+    if (it == entries_.cend() || it.value().status != MermaidRenderStatus::Loading)
+      return;
+    launchWorker(key, source);
+  });
+}
 
 MermaidRenderKey MermaidRenderCache::makeKey(const QString& source) {
   QString theme = QStringLiteral("default");
@@ -201,9 +355,46 @@ void MermaidRenderCache::commit(const MermaidRenderKey& key, const MermaidRender
   touch(key);
 }
 
-MermaidRenderEntry MermaidRenderCache::request(const MermaidRenderKey& key, const QString& source) {
+void MermaidRenderCache::launchWorker(
+    const MermaidRenderKey& key, const QString& source) {
+  auto* watcher = new QFutureWatcher<MermaidRenderEntry>(this);
+  watchers_.insert(watcher, key);
+  const QString theme = key.theme;
+  connect(watcher, &QFutureWatcher<MermaidRenderEntry>::finished, this,
+          [this, watcher, key]() {
+    watchers_.remove(watcher);
+    const MermaidRenderEntry result = watcher->result();
+    watcher->deleteLater();
+    commit(key, result);
+    emit renderReady(key);
+  });
+  watcher->setFuture(QtConcurrent::run(
+      [source, theme]() { return renderSource(source, theme); }));
+}
+
+void MermaidRenderCache::cancelDebouncedRequest(bool removeLoadingEntry) {
+  if (!debouncePending_) return;
+  debounceTimer_.stop();
+  if (removeLoadingEntry) {
+    const auto it = entries_.constFind(debouncedKey_);
+    if (it != entries_.cend() &&
+        it.value().status == MermaidRenderStatus::Loading) {
+      entries_.remove(debouncedKey_);
+      lru_.removeAll(debouncedKey_);
+    }
+  }
+  debouncePending_ = false;
+  debouncedSource_.clear();
+}
+
+MermaidRenderEntry MermaidRenderCache::request(
+    const MermaidRenderKey& key, const QString& source) {
   auto it = entries_.find(key);
   if (it != entries_.end()) {
+    if (debouncePending_ && debouncedKey_ == key) {
+      cancelDebouncedRequest(false);
+      launchWorker(key, source);
+    }
     touch(key);
     return it.value();
   }
@@ -213,18 +404,29 @@ MermaidRenderEntry MermaidRenderCache::request(const MermaidRenderKey& key, cons
   entries_.insert(key, loading);
   touch(key);
   evict();
+  launchWorker(key, source);
+  return loading;
+}
 
-  auto* watcher = new QFutureWatcher<MermaidRenderEntry>(this);
-  watchers_.insert(watcher, key);
-  const QString theme = key.theme;
-  connect(watcher, &QFutureWatcher<MermaidRenderEntry>::finished, this, [this, watcher, key]() {
-    watchers_.remove(watcher);
-    const MermaidRenderEntry result = watcher->result();
-    watcher->deleteLater();
-    commit(key, result);
-    emit renderReady(key);
-  });
-  watcher->setFuture(QtConcurrent::run([source, theme]() { return renderSource(source, theme); }));
+MermaidRenderEntry MermaidRenderCache::requestDebounced(
+    const MermaidRenderKey& key, const QString& source, int delayMs) {
+  auto it = entries_.find(key);
+  if (it != entries_.end()) {
+    touch(key);
+    return it.value();
+  }
+
+  cancelDebouncedRequest(true);
+  MermaidRenderEntry loading;
+  loading.status = MermaidRenderStatus::Loading;
+  entries_.insert(key, loading);
+  touch(key);
+  evict();
+
+  debouncedKey_ = key;
+  debouncedSource_ = source;
+  debouncePending_ = true;
+  debounceTimer_.start(qMax(0, delayMs));
   return loading;
 }
 
@@ -234,6 +436,8 @@ MermaidRenderEntry MermaidRenderCache::getSync(const MermaidRenderKey& key, cons
     touch(key);
     return it.value();
   }
+  if (debouncePending_ && debouncedKey_ == key)
+    cancelDebouncedRequest(false);
   MermaidRenderEntry result = renderSource(source, key.theme);
   entries_.insert(key, result);
   touch(key);
@@ -242,6 +446,7 @@ MermaidRenderEntry MermaidRenderCache::getSync(const MermaidRenderKey& key, cons
 }
 
 void MermaidRenderCache::clear() {
+  cancelDebouncedRequest(false);
   entries_.clear();
   lru_.clear();
 }
@@ -250,7 +455,7 @@ QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(const QString& sourc
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
   if (entry.status != MermaidRenderStatus::Ready ||
-      (!entry.scene && !entry.sequenceScene && !entry.classScene)) return {};
+      (!entry.scene && !entry.sequenceScene && !entry.classScene && !entry.stateScene)) return {};
   QImage image;
   if (entry.scene)
     image = flowscene::renderFlowSceneToImage(
@@ -258,8 +463,9 @@ QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(const QString& sourc
   else if (entry.sequenceScene)
     image = sequence::renderSequenceSceneToImage(
         *entry.sequenceScene, dpr, entry.sequenceViewport);
-  else
+  else if (entry.classScene)
     image = classdiagram::renderClassSceneToImage(*entry.classScene, dpr);
+  else image = state::renderStateSceneToImage(*entry.stateScene, dpr);
   QByteArray png;
   QBuffer buffer(&png);
   if (!buffer.open(QIODevice::WriteOnly)) return {};
@@ -273,23 +479,79 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   try {
     pre = preprocessDiagram(source);
   } catch (const std::exception& error) {
-    MermaidRenderEntry entry;
-    entry.status = MermaidRenderStatus::Error;
-    entry.errorMessage = QString::fromUtf8(error.what());
-    return entry;
+    return errorEntry(preprocessingDiagnostic(
+        source, QString::fromUtf8(error.what())));
   }
 
-  const QString type = detectDiagramType(pre.code, pre.config);
+  QString type;
+  try {
+    type = detectDiagramType(pre.code, pre.config);
+  } catch (const UnknownDiagramError&) {
+    MermaidDiagnostic diagnostic;
+    diagnostic.stage = QStringLiteral("detector");
+    diagnostic.code = QStringLiteral("missing-diagram-header");
+    diagnostic.message = QStringLiteral(
+        "No supported Mermaid diagram header was found.");
+    diagnostic.expected = {
+        QStringLiteral("flowchart"), QStringLiteral("sequenceDiagram"),
+        QStringLiteral("classDiagram"), QStringLiteral("stateDiagram-v2")};
+    diagnostic.span = mappedSourceSpan(
+        source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
+    return errorEntry(std::move(diagnostic));
+  }
   if (type != QLatin1String("flowchart") && type != QLatin1String("flowchart-v2") &&
       type != QLatin1String("sequence") && type != QLatin1String("class") &&
-      type != QLatin1String("classDiagram")) {
-    MermaidRenderEntry entry;
-    entry.status = MermaidRenderStatus::Unsupported;
-    entry.errorMessage = QStringLiteral("Diagram type '%1' is not natively supported").arg(type);
-    return entry;
+      type != QLatin1String("classDiagram") && type != QLatin1String("state") &&
+      type != QLatin1String("stateDiagram")) {
+    MermaidDiagnostic diagnostic;
+    diagnostic.diagramType = type;
+    diagnostic.stage = QStringLiteral("unsupported");
+    diagnostic.code = QStringLiteral("unsupported-diagram");
+    diagnostic.message = QStringLiteral(
+        "Diagram type '%1' is not natively supported.").arg(type);
+    return errorEntry(std::move(diagnostic), MermaidRenderStatus::Unsupported);
   }
 
   try {
+    if (type == QLatin1String("state") || type == QLatin1String("stateDiagram")) {
+      const state::StateDiagram diagram = state::StateDiagram::parse(pre.code);
+      const QString configuredTheme = themeFromConfig(pre.config);
+      const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
+          themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme),
+          themeOverrides(pre.config));
+      const QString look = pre.config.value(QStringLiteral("look"))
+          .toString(QStringLiteral("classic"));
+      const state::StateLayoutInput input =
+          state::buildStateLayoutInput(diagram.data(), look);
+      state::StateSceneStyle style;
+      style.stateFill = themeVars.mainBkg;
+      style.stateStroke = themeVars.border1;
+      style.textColor = themeVars.primaryTextColor;
+      style.transitionColor = themeVars.lineColor;
+      style.edgeLabelFill = themeVars.mainBkg;
+      style.compositeFill = themeVars.clusterBkg;
+      style.compositeStroke = themeVars.clusterBorder;
+      style.fontFamily = MermaidFontRegistry::cssFamilyStack();
+      style.fontSize = pixelValue(themeVars.fontSize, 16.0);
+      style.lineHeight = style.fontSize * 1.5;
+      style.strokeWidth = themeVars.strokeWidth;
+      if (configuredTheme.compare(QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
+        style.noteFill = QStringLiteral("#474949");
+        style.noteStroke = QStringLiteral("#2f2f2f");
+        style.noteTextColor = QStringLiteral("#ffffff");
+      }
+      const state::StateLayoutMeasurements measurements = state::measureStateLayoutInput(
+          input, style.fontFamily, style.fontSize);
+      const state::StatePlacementResult placement =
+          state::layoutStateDiagramDagre(input, measurements);
+      state::StateScene scene = state::buildStateScene(
+          input, placement, std::move(style));
+      MermaidRenderEntry entry;
+      entry.status = MermaidRenderStatus::Ready;
+      entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+      entry.stateScene = std::make_shared<const state::StateScene>(std::move(scene));
+      return entry;
+    }
     if (type == QLatin1String("class") || type == QLatin1String("classDiagram")) {
       const classdiagram::ClassDiagram diagram =
           classdiagram::ClassDiagram::parse(pre.code);
@@ -544,25 +806,66 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     entry.scene = std::make_shared<const flowscene::FlowScene>(std::move(scene));
     return entry;
   } catch (const math::MathMlPaintError& error) {
-    MermaidRenderEntry entry;
-    entry.status = MermaidRenderStatus::Error;
-    entry.errorMessage = QString::fromUtf8(error.what());
-    entry.errorDiagnostic = error.failure().toJson();
-    entry.errorDiagnostic.insert(QStringLiteral("stage"),
-                                 QStringLiteral("native-render"));
+    MermaidDiagnostic diagnostic;
+    diagnostic.diagramType = type;
+    diagnostic.stage = QStringLiteral("render");
+    diagnostic.code = QStringLiteral("sequence-label-mathml");
+    diagnostic.message = QString::fromUtf8(error.what());
+    MermaidRenderEntry entry = errorEntry(std::move(diagnostic));
+    entry.errorDiagnostic.insert(QStringLiteral("renderFailure"),
+                                 error.failure().toJson());
     entry.errorDiagnostic.insert(QStringLiteral("component"),
                                  QStringLiteral("sequence-label-mathml"));
     return entry;
   } catch (const flowchart::FlowchartParseError& error) {
-    MermaidRenderEntry entry;
-    entry.status = MermaidRenderStatus::Error;
-    entry.errorMessage = QString::fromUtf8(error.what());
-    return entry;
+    const flowchart::FlowchartDiagnostic& value = error.diagnostic();
+    return errorEntry(parserDiagnostic(
+        source, pre, type,
+        flowchart::flowchartErrorStageName(value.stage),
+        flowchart::flowchartErrorCodeName(value.code),
+        QString::fromUtf8(error.what()), value.span.offset,
+        value.span.length, value.span.line, value.span.column,
+        value.production, value.actual, value.expected));
+  } catch (const sequence::SequenceParseError& error) {
+    const sequence::SequenceDiagnostic& value = error.diagnostic();
+    return errorEntry(parserDiagnostic(
+        source, pre, type,
+        sequence::sequenceErrorStageName(value.stage),
+        sequence::sequenceErrorCodeName(value.code), value.detail,
+        value.span.offset, value.span.length, value.span.line,
+        value.span.column + 1, value.production, value.actual,
+        value.expected));
+  } catch (const classdiagram::ClassParseError& error) {
+    const classdiagram::ClassDiagnostic& value = error.diagnostic();
+    const qsizetype length = value.span.length > 0
+        ? value.span.length
+        : qMax<qsizetype>(1, value.actual.size());
+    return errorEntry(parserDiagnostic(
+        source, pre, type,
+        classdiagram::classErrorStageName(value.stage),
+        classdiagram::classErrorCodeName(value.code), value.detail,
+        value.span.offset, length, value.span.line,
+        value.span.column + 1, value.production, value.actual,
+        value.expected));
+  } catch (const state::StateParseError& error) {
+    const state::StateDiagnostic& value = error.diagnostic();
+    const qsizetype length = value.span.length > 0
+        ? value.span.length
+        : qMax<qsizetype>(1, value.actual.size());
+    return errorEntry(parserDiagnostic(
+        source, pre, type,
+        state::stateErrorStageName(value.stage),
+        state::stateErrorCodeName(value.code), value.detail,
+        value.span.offset, length, value.span.line,
+        value.span.column + 1, value.production, value.actual,
+        value.expected));
   } catch (const std::exception& error) {
-    MermaidRenderEntry entry;
-    entry.status = MermaidRenderStatus::Error;
-    entry.errorMessage = QString::fromUtf8(error.what());
-    return entry;
+    MermaidDiagnostic diagnostic;
+    diagnostic.diagramType = type;
+    diagnostic.stage = QStringLiteral("render");
+    diagnostic.code = QStringLiteral("native-render-failed");
+    diagnostic.message = QString::fromUtf8(error.what());
+    return errorEntry(std::move(diagnostic));
   }
 }
 

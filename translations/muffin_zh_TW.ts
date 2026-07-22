@@ -997,12 +997,12 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation type="vanished">一款以 C++ 和 Qt 6 Widgets 建置的快速原生 Markdown 編輯器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="94"/>
+        <location filename="../src/main.cpp" line="93"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>一款使用 C++ 和 Qt 6 建置的快速、輕量級原生 Markdown 編輯器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="101"/>
+        <location filename="../src/main.cpp" line="100"/>
         <source>Markdown or text file to open.</source>
         <translation>要開啟的 Markdown 或文字檔。</translation>
     </message>
@@ -1010,7 +1010,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
 <context>
     <name>muffin::BlockLayoutBuilder</name>
     <message>
-        <location filename="../src/render/BlockLayoutBuilder.cpp" line="540"/>
+        <location filename="../src/render/BlockLayoutBuilder.cpp" line="552"/>
         <source>Start writing...</source>
         <translation>開始撰寫...</translation>
     </message>
@@ -1027,13 +1027,13 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="62"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1166"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1170"/>
         <source>(no spelling suggestions)</source>
         <translation>(無拼寫建議)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="76"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1178"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1182"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>忽略「%1」</translation>
     </message>
@@ -3344,102 +3344,107 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::PrefsEditorPage</name>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="180"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="183"/>
         <source>Default Indent</source>
         <translation>預設縮排</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="181"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="184"/>
         <source>Only effective for references and lists generated via menu bar or shortcuts</source>
         <translation>僅對透過選單列或快捷鍵產生的參照和清單生效</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="183"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="186"/>
         <source>Align Indent</source>
         <translation>對齊縮排</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="185"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="188"/>
         <source>Use Paired Symbols</source>
         <translation>使用成對符號</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="186"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="189"/>
         <source>Match brackets and quotes</source>
         <translation>配對括號和引號</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="187"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="190"/>
         <source>Match Markdown characters</source>
         <translation>配對 Markdown 字元</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="189"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="192"/>
         <source>Autocomplete</source>
         <translation>自動完成</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="190"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="193"/>
         <source>Enable Emoji autocomplete</source>
         <translation>啟用 Emoji 自動完成</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="192"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="195"/>
         <source>Live Rendering</source>
         <translation>即時渲染</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="196"/>
         <source>Show Markdown source of the current block element</source>
         <translation>顯示目前區塊元素的 Markdown 原始碼</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="195"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="197"/>
+        <source>Show Mermaid diagrams as source code instead of rendering</source>
+        <translation>不轉譯 Mermaid 圖表，而是顯示原始碼</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="199"/>
         <source>Default Copy Behavior</source>
         <translation>預設複製行為</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="196"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="200"/>
         <source>Copy Markdown source when copying plain text</source>
         <translation>複製純文字時複製 Markdown 原始碼</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="197"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="201"/>
         <source>Copy or cut the entire line when no text is selected</source>
         <translation>未選取文字時複製或剪下整行</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="199"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="203"/>
         <source>Default Line Break</source>
         <translation>預設換行符號</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="200"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="204"/>
         <source>Default line break for new files</source>
         <translation>新檔案的預設換行符號</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="201"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="205"/>
         <source>LF (Unix Style)</source>
         <translation>LF (Unix 風格)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="206"/>
         <source>CRLF (Windows Style)</source>
         <translation>CRLF (Windows 風格)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="204"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="208"/>
         <source>Spell Check</source>
         <translation>拼字檢查</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="205"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="209"/>
         <source>Enable spell checking</source>
         <translation>啟用拼寫檢查</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="206"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="210"/>
         <source>Language</source>
         <translation>語言</translation>
     </message>
@@ -3452,17 +3457,17 @@ Would you like to open the download page?</source>
         <translation type="vanished">簡體中文</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="208"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="212"/>
         <source>Typewriter Mode</source>
         <translation>打字機模式</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="209"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="213"/>
         <source>Always keep the cursor in the middle of the screen</source>
         <translation>永遠將游標保持在螢幕中央</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsEditorPage.cpp" line="210"/>
+        <location filename="../src/app/PrefsEditorPage.cpp" line="214"/>
         <source>Disable Typewriter / Focus Mode</source>
         <translation>停用打字機 / 專注模式</translation>
     </message>
@@ -3928,12 +3933,12 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::PrefsMarkdownPage</name>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="256"/>
         <source>Markdown Syntax Preferences</source>
         <translation>Markdown 語法偏好</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="263"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="257"/>
         <source>Strict Mode</source>
         <translation>嚴格模式</translation>
     </message>
@@ -3942,153 +3947,157 @@ Would you like to open the download page?</source>
         <translation type="vanished">嚴格模式會關閉表格、刪除線、工作清單、自動連結和公式，以輸出純 CommonMark 文件。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="264"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>
         <source>Strict Mode turns off tables, strikethrough and task lists for plain CommonMark structure. Inline extensions (formulas, auto links, sub/superscript, etc.) always follow their own switches and are not affected by Strict Mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
         <source>Break on Single Newline</source>
         <translation>單一換行符換行</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="269"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="263"/>
         <source>Render a single line break as a new line. Turn off for strict CommonMark, which joins soft-wrapped lines into one paragraph.</source>
         <translation>將單一換行符轉譯為換行。關閉後採用嚴格 CommonMark 規則，會將軟換行的多行合併為單一段落。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="272"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="266"/>
         <source>Heading Style</source>
         <translation>標題樣式</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="274"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="268"/>
         <source>Unordered List</source>
         <translation>項目符號清單</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="276"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="270"/>
         <source>Ordered List</source>
         <translation>編號清單</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
         <source>1. ... 2. ... 3. ...</source>
         <translation>1. ... 2. ... 3. ...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="271"/>
         <source>1. ... 1. ... 1. ...</source>
         <translation>1. ... 1. ... 1. ...</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="274"/>
         <source>Markdown Extended Syntax</source>
         <translation>Markdown 延伸語法</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="275"/>
         <source>Auto Recognize Links</source>
         <translation>自動辨識連結</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="282"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="276"/>
         <source>Inline Formula</source>
         <translation>行內公式</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="283"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="277"/>
         <source>Allow Spaces Inside Formula Delimiters</source>
         <translation>允許公式定界符內側有空格</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="284"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="278"/>
         <source>Accept spaces or tabs next to inline formula delimiters. Turn this off for Pandoc-style parsing that avoids ambiguous currency text.</source>
         <translation>接受緊鄰行內公式定界符的空格或 Tab 字元。關閉此選項可使用 Pandoc 風格的解析，以避免有歧義的貨幣文字。</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="287"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="281"/>
         <source>Subscript</source>
         <translation>下標</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="288"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="282"/>
         <source>Superscript</source>
         <translation>上標</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="283"/>
         <source>Highlight</source>
         <translation>醒目提示</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="290"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="284"/>
         <source>Render Emoji Shortcodes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="291"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="285"/>
         <source>Convert GitHub-style shortcodes like :smile: and :heart: into emoji glyphs when rendering. Turn off to keep the literal :shortcode: text (e.g. for technical documentation).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="294"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="288"/>
         <source>Github Style Alert Box</source>
         <translation>GitHub 風格提示區塊</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="295"/>
-        <source>Diagrams (Sequence, Flowchart, Mermaid)</source>
-        <translation>圖表 (時序圖、流程圖、Mermaid)</translation>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="289"/>
+        <source>Mermaid Diagrams</source>
+        <translation>Mermaid 圖表</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="296"/>
+        <source>Diagrams (Sequence, Flowchart, Mermaid)</source>
+        <translation type="vanished">圖表 (時序圖、流程圖、Mermaid)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="290"/>
         <source>Diagram Options</source>
         <translation>圖表選項</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="299"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="293"/>
         <source>Smart Punctuation</source>
         <translation>智慧標點</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="300"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="294"/>
         <source>Convert on Input</source>
         <translation>輸入時轉換</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="301"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="295"/>
         <source>No conversion</source>
         <translation>不轉換</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="301"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="295"/>
         <source>When typing</source>
         <translation>輸入時</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="301"/>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="318"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="295"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="312"/>
         <source>Always</source>
         <translation>永遠</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="302"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="296"/>
         <source>Smart Quotes</source>
         <translation>智慧引號</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="305"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="299"/>
         <source>Smart Dashes</source>
         <translation>智慧破折號</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="306"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="300"/>
         <source>Convert on Rendering</source>
         <translation>渲染時轉換</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="307"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="301"/>
         <source>Remap Unicode Punctuation on Parse</source>
         <translation>解析時重新對應 Unicode 標點</translation>
     </message>
@@ -4097,17 +4106,17 @@ Would you like to open the download page?</source>
         <translation type="vanished">解析 Markdown 時允許並轉換 Unicode 標點符號</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="310"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="304"/>
         <source>Code Blocks</source>
         <translation>程式碼區塊</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="311"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="305"/>
         <source>Show Line Numbers</source>
         <translation>顯示行號</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="312"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="306"/>
         <source>Code Blocks Auto Wrap</source>
         <translation>程式碼區塊自動換行</translation>
     </message>
@@ -4116,32 +4125,32 @@ Would you like to open the download page?</source>
         <translation type="vanished">使用 Shift+Tab 自動調整選取程式碼的縮排</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="313"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="307"/>
         <source>Code Indent</source>
         <translation>程式碼縮排</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="315"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="309"/>
         <source>Default Code Block Language</source>
         <translation>預設程式碼區塊語言</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="316"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="310"/>
         <source>(empty)</source>
         <translation>(空白)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="317"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="311"/>
         <source>Automatically add code block language</source>
         <translation>自動新增程式碼區塊語言</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="318"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="312"/>
         <source>When inserting code blocks via Markdown code</source>
         <translation>透過 Markdown 程式碼插入程式碼區塊時</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsMarkdownPage.cpp" line="318"/>
+        <location filename="../src/app/PrefsMarkdownPage.cpp" line="312"/>
         <source>Never</source>
         <translation>從不</translation>
     </message>
@@ -4275,32 +4284,32 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1187"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1191"/>
         <source>Undo</source>
         <translation>復原</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1188"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1192"/>
         <source>Redo</source>
         <translation>重做</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1192"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1196"/>
         <source>Cut</source>
         <translation>剪下</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1198"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1202"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1201"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1205"/>
         <source>Paste</source>
         <translation>貼上</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1213"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1217"/>
         <source>Select All</source>
         <translation>全部選取</translation>
     </message>

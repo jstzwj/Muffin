@@ -460,6 +460,7 @@ void BlockLayoutBuilder::refreshRenderSettings() {
   codeBlockWrap_ = s.value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
   showLineNumbers_ = s.value(QStringLiteral("markdown/showLineNumbers"), false).toBool();
   renderEmoji_ = s.value(QStringLiteral("markdown/renderEmoji"), true).toBool();
+  renderDiagrams_ = s.value(QStringLiteral("markdown/diagrams"), true).toBool();
   showMermaidAsSource_ = s.value(QStringLiteral("editor/showMermaidAsSource"), false).toBool();
   // The estimate caches are keyed by elementKey|headingLevel only (no theme dimension), so a theme
   // switch would otherwise keep serving the previous theme's lineHeight/avgCharWidth. Clearing here
@@ -989,30 +990,40 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
       layout->setMathLayout(std::move(mathLayout));
     }
   }
-  // Mermaid diagram (milestone I): render the ```mermaid fence as the native
-  // diagram when the caret is OUT of the fence and "show as source" is off.
-  // Editing/unsupported/error/loading fall through to the code-fence source paint.
+  // Mermaid diagram (milestone I): always validate while diagrams are enabled.
+  // A focused fence uses the debounced async path and keeps painting its source;
+  // a Ready scene replaces the source only after focus leaves and show-as-source
+  // is off. Error/Unsupported retain the source and add a diagnostic panel.
   if (node.type() == BlockType::CodeFence && node.codeLanguage() == QLatin1String("mermaid") &&
-      !showMermaidAsSource_ && !selectionFocusesNode(selection_, node.id()) && mermaidCache_ != nullptr) {
+      renderDiagrams_ && mermaidCache_ != nullptr) {
+    const bool editingMermaid = selectionFocusesNode(selection_, node.id());
+    const bool keepSource = editingMermaid || showMermaidAsSource_;
     const QString source = layout->literal();
     const MermaidRenderKey key = mermaidCache_->makeKey(source);
-    const MermaidRenderEntry entry = mermaidSyncMode_ ? mermaidCache_->getSync(key, source) : mermaidCache_->request(key, source);
+    const MermaidRenderEntry entry = mermaidSyncMode_
+        ? mermaidCache_->getSync(key, source)
+        : editingMermaid ? mermaidCache_->requestDebounced(key, source)
+                         : mermaidCache_->request(key, source);
     layout->setMermaidState(static_cast<BlockLayout::MermaidState>(
         static_cast<int>(entry.status)));  // MermaidRenderStatus ↔ BlockLayout::MermaidState are ordered identically
-    if (entry.status == MermaidRenderStatus::Ready &&
-        (entry.scene || entry.sequenceScene || entry.classScene)) {
+    if (!keepSource && entry.status == MermaidRenderStatus::Ready &&
+        (entry.scene || entry.sequenceScene || entry.classScene || entry.stateScene)) {
       if (entry.scene) layout->setMermaidScene(entry.scene, entry.naturalSize);
       else if (entry.sequenceScene)
         layout->setMermaidSequenceScene(entry.sequenceScene, entry.naturalSize);
-      else layout->setMermaidClassScene(entry.classScene, entry.naturalSize);
+      else if (entry.classScene)
+        layout->setMermaidClassScene(entry.classScene, entry.naturalSize);
+      else
+        layout->setMermaidStateScene(entry.stateScene, entry.naturalSize);
       const int contentWidth = static_cast<int>(qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right()));
       const qreal natW = entry.naturalSize.width();
       const qreal scale = natW > 0.0 ? qMin<qreal>(1.0, contentWidth / natW) : 1.0;
       height = std::ceil(entry.naturalSize.height() * scale + theme.codePadding().top() + theme.codePadding().bottom());
-    } else if (entry.status == MermaidRenderStatus::Error) {
-      layout->setMermaidErrorMessage(entry.errorMessage);
-      // Reserve a strip for the error annotation painted below the source.
-      height += theme.codeLineHeight();
+    } else if (entry.status == MermaidRenderStatus::Error ||
+               entry.status == MermaidRenderStatus::Unsupported) {
+      layout->setMermaidDiagnostic(entry.diagnostic);
+      height += BlockLayout::mermaidDiagnosticFootprint(
+          entry.diagnostic, theme, width);
     }
   }
   if (node.type() == BlockType::HtmlBlock && editingLiteral) {

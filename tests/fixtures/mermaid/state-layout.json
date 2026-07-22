@@ -1,0 +1,929 @@
+{
+  "upstream": {
+    "version": "11.16.0"
+  },
+  "fontMode": "bundled-noto-2.13b171",
+  "cases": [
+    {
+      "id": "transitions-start-end",
+      "source": "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "shape": "stateStart"
+          },
+          {
+            "id": "Idle",
+            "center": {
+              "x": 0,
+              "y": 77
+            },
+            "bbox": {
+              "x": -22.211,
+              "y": -20,
+              "width": 44.422,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Active",
+            "center": {
+              "x": 0,
+              "y": 191
+            },
+            "bbox": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "root_end",
+            "center": {
+              "x": 0,
+              "y": 268
+            },
+            "bbox": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "shape": "stateEnd"
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M38.484,22L38.484,26.167C38.484,30.333,38.484,38.667,38.484,47C38.484,55.333,38.484,63.667,38.484,67.833L38.484,72",
+            "start": {
+              "x": 0,
+              "y": 7
+            },
+            "end": {
+              "x": 0,
+              "y": 57
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge1",
+            "path": "M38.484,112L38.484,118.167C38.484,124.333,38.484,136.667,38.484,149C38.484,161.333,38.484,173.667,38.484,179.833L38.484,186",
+            "start": {
+              "x": 0,
+              "y": 97
+            },
+            "end": {
+              "x": 0,
+              "y": 171
+            },
+            "labelCenter": {
+              "x": 0,
+              "y": 134
+            }
+          },
+          {
+            "id": "edge2",
+            "path": "M38.484,226L38.484,230.167C38.484,234.333,38.484,242.667,38.484,250.999C38.484,259.331,38.484,267.662,38.484,271.828L38.484,275.993",
+            "start": {
+              "x": 0,
+              "y": 211
+            },
+            "end": {
+              "x": 0,
+              "y": 260.993
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "0 0 76.96875 298"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "0 0 76.96875 298"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "root_start",
+            "classes": "node default",
+            "childTags": [
+              "circle"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0
+          },
+          {
+            "id": "Idle",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "Active",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "root_end",
+            "classes": "node default",
+            "childTags": [
+              "g"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          },
+          {
+            "id": "edge1",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          },
+          {
+            "id": "edge2",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "aliases-descriptions",
+      "source": "stateDiagram-v2\nstate \"Long state name\" as long_id\nlong_id : first description\nlong_id : second description",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "long_id",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -75.102,
+              "y": -44.5,
+              "width": 150.203,
+              "height": 89
+            },
+            "shape": "rectWithTitle"
+          }
+        ],
+        "clusters": [],
+        "edges": [],
+        "viewBox": "0 0 166.203125 105"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "0 0 166.203125 105"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "long_id",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "g",
+              "g"
+            ],
+            "foreignObjectCount": 2,
+            "textCount": 0
+          }
+        ],
+        "clusters": [],
+        "edges": []
+      }
+    },
+    {
+      "id": "composite-direction-concurrency",
+      "source": "stateDiagram-v2\nstate Running {\n  direction LR\n  [*] --> Warmup\n  Warmup --> Ready\n  --\n  Waiting --> Done\n}",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "divider-id-1_start",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
+            "shape": "stateStart"
+          },
+          {
+            "id": "Warmup",
+            "center": {
+              "x": 147.422,
+              "y": 0
+            },
+            "bbox": {
+              "x": -40.422,
+              "y": -20,
+              "width": 80.844,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Ready",
+            "center": {
+              "x": 318.82,
+              "y": 0
+            },
+            "bbox": {
+              "x": -30.977,
+              "y": -20,
+              "width": 61.953,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Waiting",
+            "center": {
+              "x": 521.445,
+              "y": -70
+            },
+            "bbox": {
+              "x": -36.648,
+              "y": -20,
+              "width": 73.297,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Done",
+            "center": {
+              "x": 521.445,
+              "y": 70
+            },
+            "bbox": {
+              "x": -28.141,
+              "y": -20,
+              "width": 56.281,
+              "height": 40
+            },
+            "shape": "rect"
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Running",
+            "center": {
+              "x": 268.047,
+              "y": 0
+            },
+            "bbox": {
+              "x": 8,
+              "y": 8,
+              "width": 720.094,
+              "height": 355
+            },
+            "shape": "roundedWithTitle"
+          },
+          {
+            "id": "divider-id-1",
+            "center": {
+              "x": 171.398,
+              "y": 0
+            },
+            "bbox": {
+              "x": 8,
+              "y": 8,
+              "width": 456.797,
+              "height": 110
+            },
+            "shape": "divider"
+          },
+          {
+            "id": "$generated-1",
+            "center": {
+              "x": 521.445,
+              "y": 0
+            },
+            "bbox": {
+              "x": 8,
+              "y": 8,
+              "width": 143.297,
+              "height": 280
+            },
+            "shape": "divider"
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M72,63L80.333,63C88.667,63,105.333,63,122,63C138.667,63,155.333,63,163.667,63L172,63",
+            "start": {
+              "x": 7,
+              "y": 0
+            },
+            "end": {
+              "x": 107,
+              "y": 0
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge1",
+            "path": "M252.844,63L261.177,63C269.51,63,286.177,63,302.844,63C319.51,63,336.177,63,344.51,63L352.844,63",
+            "start": {
+              "x": 187.844,
+              "y": 0
+            },
+            "end": {
+              "x": 287.844,
+              "y": 0
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge2",
+            "path": "M79.648,98L79.648,106.333C79.648,114.667,79.648,131.333,79.648,148C79.648,164.667,79.648,181.333,79.648,189.667L79.648,198",
+            "start": {
+              "x": 521.445,
+              "y": -50
+            },
+            "end": {
+              "x": 521.445,
+              "y": 50
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "0 0 736.09375 371"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "0 0 736.09375 371"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "divider-id-1_start",
+            "classes": "node default",
+            "childTags": [
+              "circle"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0
+          },
+          {
+            "id": "Warmup",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "Ready",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "Waiting",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "Done",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Running",
+            "classes": "statediagram-state statediagram-cluster",
+            "childTags": [
+              "g",
+              "g",
+              "rect"
+            ]
+          },
+          {
+            "id": "divider-id-1",
+            "classes": "statediagram-state statediagram-cluster statediagram-cluster-alt",
+            "childTags": [
+              "g"
+            ]
+          },
+          {
+            "id": "$generated-1",
+            "classes": "statediagram-state statediagram-cluster statediagram-cluster-alt",
+            "childTags": [
+              "g"
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          },
+          {
+            "id": "edge1",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          },
+          {
+            "id": "edge2",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pseudostates",
+      "source": "stateDiagram-v2\nstate fork_state <<fork>>\nstate join_state <<join>>\nstate choice_state <<choice>>\nA --> fork_state\nfork_state --> B\nB --> join_state\njoin_state --> choice_state",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "fork_state",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "shape": "fork"
+          },
+          {
+            "id": "join_state",
+            "center": {
+              "x": 0,
+              "y": 154
+            },
+            "bbox": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "shape": "join"
+          },
+          {
+            "id": "choice_state",
+            "center": {
+              "x": 0,
+              "y": 225
+            },
+            "bbox": {
+              "x": -14,
+              "y": -14,
+              "width": 28,
+              "height": 28
+            },
+            "shape": "choice"
+          },
+          {
+            "id": "A",
+            "center": {
+              "x": 0,
+              "y": -77
+            },
+            "bbox": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "B",
+            "center": {
+              "x": 0,
+              "y": 77
+            },
+            "bbox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "shape": "rect"
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M45,48L45,52.167C45,56.333,45,64.667,45,73C45,81.333,45,89.667,45,93.833L45,98",
+            "start": {
+              "x": 0,
+              "y": -57
+            },
+            "end": {
+              "x": 0,
+              "y": -7
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge1",
+            "path": "M45,112L45,116.167C45,120.333,45,128.667,45,137C45,145.333,45,153.667,45,157.833L45,162",
+            "start": {
+              "x": 0,
+              "y": 7
+            },
+            "end": {
+              "x": 0,
+              "y": 57
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge2",
+            "path": "M45,202L45,206.167C45,210.333,45,218.667,45,227C45,235.333,45,243.667,45,247.833L45,252",
+            "start": {
+              "x": 0,
+              "y": 97
+            },
+            "end": {
+              "x": 0,
+              "y": 147
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge3",
+            "path": "M45,266L45,270.167C45,274.333,45,282.667,45.083,291.083C45.167,299.5,45.333,308,45.417,312.25L45.5,316.5",
+            "start": {
+              "x": 0,
+              "y": 161
+            },
+            "end": {
+              "x": 0.5,
+              "y": 211.5
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "2 0 86 352"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "2 0 86 352"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "fork_state",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "g"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0
+          },
+          {
+            "id": "join_state",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "g"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0
+          },
+          {
+            "id": "choice_state",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "g"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0
+          },
+          {
+            "id": "A",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "B",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          },
+          {
+            "id": "edge1",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          },
+          {
+            "id": "edge2",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          },
+          {
+            "id": "edge3",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL"
+          }
+        ]
+      }
+    },
+    {
+      "id": "renderable-note",
+      "source": "stateDiagram-v2\nActive --> Done\nnote right of Active : Inline note",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "Active",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Done",
+            "center": {
+              "x": -76.824,
+              "y": 122
+            },
+            "bbox": {
+              "x": -28.141,
+              "y": -20,
+              "width": 56.281,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Active----note-1",
+            "center": {
+              "x": 76.824,
+              "y": 122
+            },
+            "bbox": {
+              "x": -55.508,
+              "y": -27,
+              "width": 111.016,
+              "height": 54
+            },
+            "shape": "note"
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Active----parent",
+            "center": {
+              "x": 76.824,
+              "y": 122
+            },
+            "bbox": {
+              "x": 99.281,
+              "y": 98,
+              "width": 181.016,
+              "height": 104
+            },
+            "shape": "noteGroup"
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M82.48,45.856L74.757,50.38C67.034,54.904,51.587,63.952,43.864,72.643C36.141,81.333,36.141,89.667,36.141,99.167C36.141,108.667,36.141,119.333,36.141,124.667L36.141,130",
+            "start": {
+              "x": -30.485,
+              "y": 17.856
+            },
+            "end": {
+              "x": -76.824,
+              "y": 102
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "Active-Active----note-1",
+            "path": "M143.449,45.856L151.173,50.38C158.896,54.904,174.342,63.952,182.066,72.643C189.789,81.333,189.789,89.667,189.789,98C189.789,106.333,189.789,114.667,189.789,118.833L189.789,123",
+            "start": {
+              "x": 30.484,
+              "y": 17.856
+            },
+            "end": {
+              "x": 76.824,
+              "y": 95
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "0 0 288.296875 210"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "0 0 288.296875 210"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "Active",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "Done",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "Active----note-1",
+            "classes": "node statediagram-note",
+            "childTags": [
+              "g",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Active----parent",
+            "classes": "note-cluster",
+            "childTags": [
+              "rect"
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCCL"
+          },
+          {
+            "id": "Active-Active----note-1",
+            "classes": "edge-thickness-normal edge-pattern-solid transition note-edge",
+            "markerEnd": "",
+            "pathCommands": "MLCCCL"
+          }
+        ]
+      }
+    }
+  ],
+  "fixtureSha256": "406a561cb5a124331b36978ff1a02502d74befc02785466329da9e83e15b63a9"
+}

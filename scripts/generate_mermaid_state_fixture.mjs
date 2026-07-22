@@ -64,6 +64,9 @@ const cases = [
   { id: "unicode-comments", source: [
     "stateDiagram-v2", "%% ignored", "待机 --> 运行 : تشغيل", "运行 --> שלום",
   ].join("\n") },
+  { id: "truncated-alias-quirk", source: [
+    "stateDiagram-v2", 'state "Name" as',
+  ].join("\n") },
 ];
 
 const { default: puppeteer } = await import(pathToFileURL(
@@ -102,6 +105,7 @@ try {
       mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
       const diagram = await mermaid.mermaidAPI.getDiagramFromText(fixture.source);
       const db = diagram.db;
+      const graph = db.getData();
       const expected = {
         root: db.rootDoc,
         direction: db.getDirection(),
@@ -117,7 +121,25 @@ try {
         })),
         links: [...db.getLinks()].map(([id, value]) => ({ id, ...value })),
       };
-      result.push({ ...fixture, expected: normalizeGeneratedIds(expected) });
+      const layoutInput = {
+        direction: graph.direction,
+        nodes: graph.nodes.map((node) => ({
+          id: node.id, shape: node.shape, label: clean(node.label),
+          parentId: clean(node.parentId), dir: clean(node.dir),
+          explicitDir: node.explicitDir ?? false, isGroup: node.isGroup ?? false,
+          cssClasses: node.cssClasses, cssStyles: node.cssStyles,
+          position: clean(node.position), description: clean(node.description),
+        })),
+        edges: graph.edges.map((edge) => ({
+          id: edge.id, start: edge.start, end: edge.end,
+          label: clean(edge.label), arrowhead: edge.arrowhead,
+          arrowTypeEnd: edge.arrowTypeEnd, style: edge.style,
+          labelStyle: edge.labelStyle, thickness: edge.thickness,
+          classes: edge.classes,
+        })),
+      };
+      result.push({ ...fixture, expected: normalizeGeneratedIds(expected),
+        layoutInput: normalizeGeneratedIds(layoutInput) });
     }
     return result;
   }, { cases, mermaidModule });

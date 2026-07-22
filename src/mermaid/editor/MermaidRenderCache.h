@@ -1,24 +1,23 @@
 #pragma once
 
-// Cached, async mermaid→FlowScene renderer for the editor + export (milestone I).
+// Cached, async Mermaid scene renderer for the editor + export (milestone I).
 //
-// The editor renders a ```mermaid code fence as the native diagram. Producing a
-// FlowScene (parse + measure + dagre layout + theme + buildFlowScene) is too
+// The editor renders a ```mermaid code fence as a native diagram. Producing a
+// scene (parse + measure + layout + theme + immutable scene construction) is too
 // expensive to do in the paint event, so it is run OFF the UI thread and cached.
-// The cache stores the immutable FlowScene (pure data — geometry + resolved
-// colours + label text; NO QFont/QPainter state), so producing it on a worker
-// thread is safe (only QFontMetrics is touched, which is thread-safe). The actual
-// pixel painting stays on the GUI thread (FlowScenePainter in BlockLayout).
+// The cache stores immutable scene data (geometry + resolved colours + label
+// text; NO QPainter state), so producing it on a worker thread is safe. Actual
+// pixel painting stays on the GUI thread in BlockLayout.
 //
-// Key = (sha256(source), mermaidTheme, contentWidth, dpr, fontSize) — everything
-// the render depends on (docs/mermaid-flowchart-remaining-plan.md §12.2). Theme
-// switch / zoom / resize / font change → new key → automatic invalidation; old
-// entries age out via LRU. Mirrors DocumentSession's async pattern (QtConcurrent +
-// QFutureWatcher + generation-guarded commit).
+// Key = (sha256(source), mermaidTheme). Width and DPR affect only the final paint
+// transform. Old entries age out via LRU. Mirrors DocumentSession's async
+// QtConcurrent + QFutureWatcher pattern.
 
-#include "mermaid/scene/FlowScene.h"
 #include "mermaid/classdiagram/ClassScenePainter.h"
+#include "mermaid/MermaidDiagnostic.h"
+#include "mermaid/scene/FlowScene.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
+#include "mermaid/state/StateScenePainter.h"
 
 #include <QHash>
 #include <QJsonObject>
@@ -27,6 +26,7 @@
 #include <QSize>
 #include <QString>
 #include <QFutureWatcher>
+#include <QTimer>
 
 #include <memory>
 
@@ -48,9 +48,11 @@ struct MermaidRenderEntry {
   std::shared_ptr<const flowscene::FlowScene> scene;  // set when Ready
   std::shared_ptr<const sequence::SequenceScene> sequenceScene;
   std::shared_ptr<const classdiagram::ClassScene> classScene;
+  std::shared_ptr<const state::StateScene> stateScene;
   sequence::SequenceViewportOptions sequenceViewport;
   QSize naturalSize;                                   // scene.bounds size (logical px)
-  QString errorMessage;                                // set when Error
+  QString errorMessage;                                // set for Error/Unsupported
+  MermaidDiagnostic diagnostic;                        // family-neutral source diagnostic
   QJsonObject errorDiagnostic;                         // structured Error details when available
 };
 
@@ -60,15 +62,20 @@ public:
   explicit MermaidRenderCache(QObject* parent = nullptr, int capacity = 64);
 
   // Build a key from the source. Extracts the mermaid theme the source declares
-  // (%%{init:{theme}}%%, else "default"). The FlowScene is a vector model — it
-  // depends ONLY on source + theme (not on editor width/DPR/font: those affect
-  // only the paint transform, recomputed each paint), so the key is just those.
+  // (%%{init:{theme}}%%, else "default"). Native scenes depend only on source
+  // and theme; editor width/DPR affect the paint transform, recomputed per paint.
   static MermaidRenderKey makeKey(const QString& source);
 
-  // Async (editor): returns the current entry for the key (Absent on first call,
-  // which launches a worker). When the worker finishes, renderReady(key) fires on
+  // Async (editor): returns Loading on the first call and launches a worker.
+  // When the worker finishes, renderReady(key) fires on
   // the GUI thread; the next request() returns Ready/Error/Unsupported. Never blocks.
   MermaidRenderEntry request(const MermaidRenderKey& key, const QString& source);
+
+  // Async validation while the caret is inside a Mermaid fence. Only the latest
+  // source submitted during the debounce window is launched, preventing a full
+  // parse/layout task for every keystroke.
+  MermaidRenderEntry requestDebounced(
+      const MermaidRenderKey& key, const QString& source, int delayMs = 250);
 
   // Sync (export/print): render-or-fetch NOW (blocks the calling thread). Used by
   // one-shot export where blocking is acceptable and there is no event loop to
@@ -88,10 +95,13 @@ signals:
 
 private:
   // Pure render worker (no `this` state read — thread-safe). Runs the full
-  // pipeline: preprocess → detect → (flowchart only) parse+measure+layout+theme+
-  // buildFlowScene. Non-flowchart → Unsupported; FlowchartParseError → Error.
+  // pipeline: preprocess -> detect -> parse/measure/layout/theme/scene for the
+  // supported family. Unknown families become Unsupported; parser/layout
+  // exceptions become Error.
   static MermaidRenderEntry renderSource(const QString& source, const QString& theme);
 
+  void launchWorker(const MermaidRenderKey& key, const QString& source);
+  void cancelDebouncedRequest(bool removeLoadingEntry);
   void touch(const MermaidRenderKey& key);  // LRU: mark key most-recent
   void evict();
   void commit(const MermaidRenderKey& key, const MermaidRenderEntry& entry);
@@ -99,8 +109,11 @@ private:
   int capacity_;
   QHash<MermaidRenderKey, MermaidRenderEntry> entries_;
   QList<MermaidRenderKey> lru_;  // front = least-recently-used
-  int generation_ = 0;           // bumped per in-flight request to drop stale commits
   QHash<QFutureWatcher<MermaidRenderEntry>*, MermaidRenderKey> watchers_;
+  QTimer debounceTimer_;
+  bool debouncePending_ = false;
+  MermaidRenderKey debouncedKey_;
+  QString debouncedSource_;
 };
 
 }  // namespace muffin::mermaid::editor

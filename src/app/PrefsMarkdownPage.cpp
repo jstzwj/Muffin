@@ -245,13 +245,7 @@ muffin::PrefsMarkdownPage::PrefsMarkdownPage(QWidget* parent) : PreferencesPage(
   wireComboIndexSetting(defaultLangCombo_, QStringLiteral("markdown/defaultCodeLang"));
   wireComboIndexSetting(autoLangCombo_, QStringLiteral("markdown/autoCodeLang"));
 
-  // Diagrams need a rendering engine not yet present in Muffin, so the toggle stays disabled and
-  // labelled "coming soon" so users aren't misled into thinking it works.
-  for (QCheckBox* unbuilt : {diagramsCheck_}) {
-    if (unbuilt) {
-      unbuilt->setEnabled(false);
-    }
-  }
+  // Per-diagram options are not exposed yet; the main diagrams toggle is functional.
   if (diagramOptionsButton_) {
     diagramOptionsButton_->setEnabled(false);
   }
@@ -292,7 +286,7 @@ void muffin::PrefsMarkdownPage::retranslateUi() {
       "Convert GitHub-style shortcodes like :smile: and :heart: into emoji glyphs when rendering. "
       "Turn off to keep the literal :shortcode: text (e.g. for technical documentation)."));
   alertBoxCheck_->setText(tr("Github Style Alert Box"));
-  diagramsCheck_->setText(tr("Diagrams (Sequence, Flowchart, Mermaid)"));
+  diagramsCheck_->setText(tr("Mermaid Diagrams"));
   diagramOptionsButton_->setText(tr("Diagram Options"));
 
   // Card 3: Smart Punctuation

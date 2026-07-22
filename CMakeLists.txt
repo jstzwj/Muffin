@@ -457,6 +457,8 @@ set(MUFFIN_CORE_SOURCES
   src/math/MathSymbols.cpp
   src/mermaid/MermaidDiagramDetector.cpp
   src/mermaid/MermaidDiagramDetector.h
+  src/mermaid/MermaidDiagnostic.cpp
+  src/mermaid/MermaidDiagnostic.h
   src/mermaid/MermaidPreprocessor.cpp
   src/mermaid/MermaidPreprocessor.h
   src/mermaid/MermaidFontRegistry.cpp
@@ -534,6 +536,16 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/sequence/SequenceScenePainter.h
   src/mermaid/sequence/SequenceTokenizer.cpp
   src/mermaid/sequence/SequenceTokenizer.h
+  src/mermaid/state/StateDiagram.cpp
+  src/mermaid/state/StateDiagram.h
+  src/mermaid/state/StateLayout.cpp
+  src/mermaid/state/StateLayout.h
+  src/mermaid/state/StateScene.cpp
+  src/mermaid/state/StateScene.h
+  src/mermaid/state/StateScenePainter.cpp
+  src/mermaid/state/StateScenePainter.h
+  src/mermaid/state/StateTokenizer.cpp
+  src/mermaid/state/StateTokenizer.h
   src/mermaid/editor/MermaidRenderCache.cpp
   src/mermaid/editor/MermaidRenderCache.h
   src/document/DocumentSession.cpp

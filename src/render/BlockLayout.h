@@ -4,9 +4,11 @@
 #include "editor/CursorPosition.h"
 #include "html/HtmlLayoutResult.h"
 #include "math/MathRenderNode.h"
+#include "mermaid/MermaidDiagnostic.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/classdiagram/ClassScene.h"
 #include "mermaid/sequence/SequenceScene.h"
+#include "mermaid/state/StateScene.h"
 #include "render/CodeHighlight.h"
 #include "render/InlineLayout.h"
 #include "theme/RenderTheme.h"
@@ -151,19 +153,30 @@ public:
   void setHtmlLayout(std::shared_ptr<html::HtmlLayoutResult> layout);
   const html::HtmlLayoutResult* htmlLayout() const;
   // Mermaid diagram (milestone I). When state == Ready the block paints the
-  // cached FlowScene scaled to fit the content width instead of the source code.
+  // cached immutable scene scaled to fit the content width instead of the source code.
   enum class MermaidState { None, Loading, Ready, Error, Unsupported };
   void setMermaidScene(std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene, QSizeF naturalSize);
   void setMermaidSequenceScene(std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene,
                                QSizeF naturalSize);
   void setMermaidClassScene(std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> scene,
                             QSizeF naturalSize);
+  void setMermaidStateScene(std::shared_ptr<const muffin::mermaid::state::StateScene> scene,
+                            QSizeF naturalSize);
   const muffin::mermaid::flowscene::FlowScene* mermaidScene() const;
   QSizeF mermaidNaturalSize() const;
   void setMermaidState(MermaidState state);
   MermaidState mermaidState() const;
-  void setMermaidErrorMessage(const QString& message);
-  const QString& mermaidErrorMessage() const;
+  void setMermaidDiagnostic(muffin::mermaid::MermaidDiagnostic diagnostic);
+  const muffin::mermaid::MermaidDiagnostic& mermaidDiagnostic() const;
+  const QString& mermaidDiagnosticMessage() const;
+  // The diagnostic panel is part of this block's total rect but sits below the
+  // source code box. Exposed for hit/paint regression tests.
+  QRectF mermaidDiagnosticRect(const RenderTheme& theme) const;
+  static qreal mermaidDiagnosticFootprint(
+      const muffin::mermaid::MermaidDiagnostic& diagnostic,
+      const RenderTheme& theme, qreal width);
+  QVector<QRectF> mermaidDiagnosticSourceRects(
+      const RenderTheme& theme) const;
   bool isMermaidRendered() const;
   void setLiteralEditing(bool editing);
   bool literalEditing() const;
@@ -282,7 +295,9 @@ private:
   void paintBlockQuote(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const;
   void paintMathBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const;
   void paintMermaidDiagram(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
-  void paintMermaidError(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  void paintMermaidDiagnostic(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  QRectF mermaidCodeFenceRect(const RenderTheme& theme) const;
+  bool hasMermaidDiagnostic() const;
   // If a rendered mermaid diagram has a SAFE link on the node under documentPos, return it
   // (empty otherwise). Used by hitSelf so Ctrl+click on a mermaid node follows the link.
   QString mermaidLinkAt(QPointF documentPos, const RenderTheme& theme) const;
@@ -327,9 +342,11 @@ private:
   std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> mermaidScene_;
   std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> mermaidSequenceScene_;
   std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> mermaidClassScene_;
+  std::shared_ptr<const muffin::mermaid::state::StateScene> mermaidStateScene_;
   QSizeF mermaidNaturalSize_;
   MermaidState mermaidState_ = MermaidState::None;
-  QString mermaidErrorMessage_;
+  muffin::mermaid::MermaidDiagnostic mermaidDiagnostic_;
+  QString mermaidDiagnosticMessage_;
   bool literalEditing_ = false;
   qreal lineNumberGutterWidth_ = 0.0;
   qreal codeMaxLineWidth_ = 0.0;

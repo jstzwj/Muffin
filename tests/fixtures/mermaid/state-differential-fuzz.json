@@ -1,0 +1,251 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0"
+  },
+  "generator": {
+    "name": "production-aware-state-mutation-fuzzer",
+    "caseCount": 7,
+    "operatorCounts": {
+      "break-paired-delimiter": 1,
+      "delete-required-terminal": 2,
+      "duplicate-separator": 1,
+      "insert-nullable-boundary-token": 1,
+      "replace-terminal-class": 1,
+      "truncate-recursive-production": 1
+    },
+    "stageCounts": {
+      "detector": 1,
+      "lexer": 1,
+      "parser": 5
+    },
+    "positionRuleCounts": {
+      "detector-source-start": 1,
+      "duplicate-token-start": 1,
+      "inserted-token-start": 1,
+      "missing-terminal-insertion-point": 1,
+      "replacement-token-start": 1,
+      "truncated-input-end": 1,
+      "unclosed-delimiter-input-end": 1
+    },
+    "requiredNativeCodes": [
+      "missing-closing-brace",
+      "missing-end-note",
+      "missing-header",
+      "unexpected-token"
+    ]
+  },
+  "negativeCases": [
+    {
+      "id": "delete-header",
+      "operator": "delete-required-terminal",
+      "targetProduction": 1,
+      "targetSymbol": 3,
+      "targetRhsLength": 2,
+      "source": "A --> B",
+      "diagnosticPosition": {
+        "offset": 0,
+        "line": 1,
+        "column": 0
+      },
+      "expectedNativeCode": "missing-header",
+      "upstreamError": {
+        "stage": "detector",
+        "class": "detection",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "No diagram type detected matching given configuration for text: A --> B",
+        "normalized": {
+          "offset": 0,
+          "line": 1,
+          "column": 0
+        },
+        "positionRule": "detector-source-start"
+      }
+    },
+    {
+      "id": "delete-relation-target",
+      "operator": "delete-required-terminal",
+      "targetProduction": 14,
+      "targetSymbol": 9,
+      "targetRhsLength": 3,
+      "source": "stateDiagram-v2\nA -->",
+      "diagnosticPosition": {
+        "offset": 21,
+        "line": 2,
+        "column": 5
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "stage": "parser",
+        "class": "syntax",
+        "token": "NL",
+        "raw": {
+          "line": 2,
+          "column": 2
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 21,
+          "line": 2,
+          "column": 5
+        },
+        "positionRule": "missing-terminal-insertion-point"
+      }
+    },
+    {
+      "id": "duplicate-arrow",
+      "operator": "duplicate-separator",
+      "targetProduction": 14,
+      "targetSymbol": 9,
+      "targetRhsLength": 3,
+      "source": "stateDiagram-v2\nA --> --> B",
+      "diagnosticPosition": {
+        "offset": 22,
+        "line": 2,
+        "column": 6
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "stage": "parser",
+        "class": "syntax",
+        "token": "-->",
+        "raw": {
+          "line": 2,
+          "column": 2
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 22,
+          "line": 2,
+          "column": 6
+        },
+        "positionRule": "duplicate-token-start"
+      }
+    },
+    {
+      "id": "replace-alias-as",
+      "operator": "replace-terminal-class",
+      "targetProduction": 20,
+      "targetSymbol": 9,
+      "targetRhsLength": 3,
+      "source": "stateDiagram-v2\nstate \"Name\" wrong A",
+      "diagnosticPosition": {
+        "offset": 29,
+        "line": 2,
+        "column": 13
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "stage": "parser",
+        "class": "syntax",
+        "token": "COMPOSIT_STATE",
+        "raw": {
+          "line": 2,
+          "column": 7
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 29,
+          "line": 2,
+          "column": 13
+        },
+        "positionRule": "replacement-token-start"
+      }
+    },
+    {
+      "id": "truncate-composite",
+      "operator": "truncate-recursive-production",
+      "targetProduction": 19,
+      "targetSymbol": 9,
+      "targetRhsLength": 4,
+      "source": "stateDiagram-v2\nstate A {\nB",
+      "diagnosticPosition": {
+        "offset": 27,
+        "line": 3,
+        "column": 1
+      },
+      "expectedNativeCode": "missing-closing-brace",
+      "upstreamError": {
+        "stage": "parser",
+        "class": "syntax",
+        "token": 1,
+        "raw": {
+          "line": 3,
+          "column": 0
+        },
+        "summary": "Parse error on line 3:",
+        "normalized": {
+          "offset": 27,
+          "line": 3,
+          "column": 1
+        },
+        "positionRule": "truncated-input-end"
+      }
+    },
+    {
+      "id": "break-note-delimiter",
+      "operator": "break-paired-delimiter",
+      "targetProduction": 27,
+      "targetSymbol": 9,
+      "targetRhsLength": 4,
+      "source": "stateDiagram-v2\nnote left of A\ntext",
+      "diagnosticPosition": {
+        "offset": 35,
+        "line": 3,
+        "column": 4
+      },
+      "expectedNativeCode": "missing-end-note",
+      "upstreamError": {
+        "stage": "lexer",
+        "class": "syntax",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "Lexical error on line 2. Unrecognized text.",
+        "normalized": {
+          "offset": 35,
+          "line": 3,
+          "column": 4
+        },
+        "positionRule": "unclosed-delimiter-input-end"
+      }
+    },
+    {
+      "id": "insert-root-brace",
+      "operator": "insert-nullable-boundary-token",
+      "targetProduction": 4,
+      "targetSymbol": 7,
+      "targetRhsLength": 0,
+      "source": "stateDiagram-v2\n{",
+      "diagnosticPosition": {
+        "offset": 16,
+        "line": 2,
+        "column": 0
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "stage": "parser",
+        "class": "syntax",
+        "token": "STRUCT_START",
+        "raw": {
+          "line": 1,
+          "column": 0
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 16,
+          "line": 2,
+          "column": 0
+        },
+        "positionRule": "inserted-token-start"
+      }
+    }
+  ],
+  "fixtureDigest": "77e3c8f0bc0b6569be7c0620c40c81798c027a296ee51f395db260c2fb8d1491"
+}

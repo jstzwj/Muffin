@@ -1,3 +1,6 @@
+#include "mermaid/state/StateDiagram.h"
+#include "mermaid/state/StateLayout.h"
+
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QFile>
@@ -7,6 +10,8 @@
 #include <QSet>
 
 #include <cstdlib>
+
+using namespace muffin::mermaid::state;
 
 namespace {
 [[noreturn]] void fail(const QString& message) {
@@ -57,16 +62,46 @@ int main(int argc, char** argv) {
                 expected.contains(QStringLiteral("states")) &&
                 expected.contains(QStringLiteral("relations")),
             QStringLiteral("State fixture lacks parser/DB output: %1").arg(id));
+    QJsonObject actual;
+    try {
+      actual = StateDiagram::parse(
+          fixture.value(QStringLiteral("source")).toString()).toJson();
+    } catch (const StateParseError& parseError) {
+      fail(QStringLiteral("State native parser rejected %1: %2")
+               .arg(id, QString::fromUtf8(parseError.what())));
+    }
+    require(actual == expected,
+            QStringLiteral("State parser/DB mismatch for %1\nNative:\n%2\nUpstream:\n%3")
+                .arg(id,
+                     QString::fromUtf8(QJsonDocument(actual).toJson(QJsonDocument::Indented)),
+                     QString::fromUtf8(QJsonDocument(expected).toJson(QJsonDocument::Indented))));
+    const QJsonObject actualLayout = stateLayoutInputToJson(
+        buildStateLayoutInput(StateDiagram::parse(
+            fixture.value(QStringLiteral("source")).toString()).data()));
+    const QJsonObject expectedLayout = fixture.value(QStringLiteral("layoutInput")).toObject();
+    require(actualLayout == expectedLayout,
+            QStringLiteral("State Dagre input mismatch for %1\nNative:\n%2\nUpstream:\n%3")
+                .arg(id,
+                     QString::fromUtf8(QJsonDocument(actualLayout).toJson(QJsonDocument::Indented)),
+                     QString::fromUtf8(QJsonDocument(expectedLayout).toJson(QJsonDocument::Indented))));
     compositeCases += id.contains(QLatin1String("composite"));
     noteCases += id.contains(QLatin1String("note"));
     styleCases += !expected.value(QStringLiteral("classes")).toArray().isEmpty();
     linkCases += !expected.value(QStringLiteral("links")).toArray().isEmpty();
   }
-  require(cases.size() == 8 && compositeCases == 1 && noteCases == 1 &&
+  require(cases.size() == 9 && compositeCases == 1 && noteCases == 1 &&
               styleCases == 1 && linkCases == 1,
           QStringLiteral("State upstream semantic matrix regressed"));
+  const QVector<StateProductionMapping> mappings = stateProductionMappings();
+  require(mappings.size() == 49,
+          QStringLiteral("State native production mapping is incomplete"));
+  for (qsizetype index = 0; index < mappings.size(); ++index)
+    require(mappings.at(index).id == index + 1 &&
+                !mappings.at(index).parserFunction.isEmpty() &&
+                !mappings.at(index).oracleCase.isEmpty(),
+            QStringLiteral("State production mapping %1 is incomplete").arg(index + 1));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("a383cf8182f8b64568ec19c406d544c2f7b58d509fb256f74c258c970c2a5a9c"),
+              QLatin1String("aa122ed6ddefe4db72019ef2cc054e1f2a982b77c28e4e42e9b2a26c37900e60"),
           QStringLiteral("State upstream fixture changed; audit and update its digest"));
   qDebug() << "MermaidStateUpstreamContractTest:" << cases.size()
            << "cases and" << productionIds.size() << "productions passed";

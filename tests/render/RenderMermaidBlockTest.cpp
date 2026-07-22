@@ -1,7 +1,7 @@
 // Milestone I integration test: a ```mermaid code fence renders as the native
 // diagram through the real DocumentLayout → BlockLayoutBuilder → BlockLayout paint
-// pipeline (via MermaidRenderCache in sync mode), falls back to source on error,
-// and respects the "show as source" setting.
+// pipeline (via MermaidRenderCache in sync mode), keeps source plus a visible
+// diagnostic panel on error/unsupported input, and respects render settings.
 
 #include "document/DocumentSession.h"
 #include "document/MarkdownDocument.h"
@@ -33,9 +33,8 @@ NodeId firstCodeFenceId(const MarkdownDocument& document) {
   return {};
 }
 
-// Count non-transparent pixels in a rendered block (the diagram actually drew).
-qint64 opaquePixels(const BlockLayout* block, const RenderTheme& theme) {
-  if (!block) return -1;
+QImage renderBlockImage(const BlockLayout* block, const RenderTheme& theme) {
+  if (!block) return {};
   QImage img(static_cast<int>(block->rect().width()), static_cast<int>(block->rect().height()),
              QImage::Format_ARGB32_Premultiplied);
   img.fill(Qt::transparent);
@@ -44,11 +43,67 @@ qint64 opaquePixels(const BlockLayout* block, const RenderTheme& theme) {
   painter.translate(-block->rect().left(), -block->rect().top());
   block->paint(painter, theme, /*scrollY=*/0.0);
   painter.end();
+  return img;
+}
+
+// Count non-transparent pixels in a rendered block (the diagram actually drew).
+qint64 opaquePixels(const BlockLayout* block, const RenderTheme& theme) {
+  const QImage img = renderBlockImage(block, theme);
+  if (img.isNull()) return -1;
   qint64 count = 0;
   for (int y = 0; y < img.height(); ++y)
     for (int x = 0; x < img.width(); ++x)
       if (qAlpha(img.pixel(x, y)) > 16) ++count;
   return count;
+}
+
+qint64 opaquePixelsInRect(const BlockLayout* block, const RenderTheme& theme,
+                          QRectF documentRect) {
+  const QImage img = renderBlockImage(block, theme);
+  if (img.isNull()) return -1;
+  documentRect.translate(-block->rect().topLeft());
+  const QRect pixels = documentRect.toAlignedRect().intersected(img.rect());
+  qint64 count = 0;
+  for (int y = pixels.top(); y <= pixels.bottom(); ++y)
+    for (int x = pixels.left(); x <= pixels.right(); ++x)
+      if (qAlpha(img.pixel(x, y)) > 16) ++count;
+  return count;
+}
+
+QColor colorAt(const BlockLayout* block, const RenderTheme& theme,
+               QPointF documentPoint) {
+  const QImage img = renderBlockImage(block, theme);
+  const QPoint local = (documentPoint - block->rect().topLeft()).toPoint();
+  return img.rect().contains(local) ? img.pixelColor(local) : QColor();
+}
+
+qint64 pixelsNearColorInRect(
+    const BlockLayout* block, const RenderTheme& theme,
+    QRectF documentRect, const QColor& expected, int tolerance = 120) {
+  const QImage img = renderBlockImage(block, theme);
+  if (img.isNull()) return -1;
+  documentRect.translate(-block->rect().topLeft());
+  const QRect pixels = documentRect.toAlignedRect().intersected(img.rect());
+  qint64 count = 0;
+  for (int y = pixels.top(); y <= pixels.bottom(); ++y) {
+    for (int x = pixels.left(); x <= pixels.right(); ++x) {
+      const QColor actual = img.pixelColor(x, y);
+      const int distance = qAbs(actual.red() - expected.red()) +
+                           qAbs(actual.green() - expected.green()) +
+                           qAbs(actual.blue() - expected.blue());
+      if (actual.alpha() > 64 && distance <= tolerance) ++count;
+    }
+  }
+  return count;
+}
+
+SelectionRange focusedSelection(NodeId blockId, qsizetype offset = 0) {
+  SelectionRange selection;
+  selection.anchor.blockId = blockId;
+  selection.anchor.text.nodeId = blockId;
+  selection.anchor.text.textOffset = offset;
+  selection.focus = selection.anchor;
+  return selection;
 }
 }  // namespace
 
@@ -57,6 +112,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName(QStringLiteral("Muffin"));
   QCoreApplication::setApplicationName(QStringLiteral("Muffin-test"));
   QSettings().remove(QStringLiteral("editor/showMermaidAsSource"));  // start clean
+  QSettings().remove(QStringLiteral("markdown/diagrams"));
 
   const RenderTheme theme = RenderTheme::defaultTheme();
 
@@ -79,6 +135,40 @@ int main(int argc, char** argv) {
     require(opaquePixels(block, theme) > 50, QStringLiteral("the diagram must draw pixels"));
   }
 
+  // --- state diagrams use the same rendered block pipeline ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\nstateDiagram-v2\n[*] --> Idle\nIdle --> [*]\n```\n"), false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && block->isMermaidRendered(),
+            QStringLiteral("state diagram fence should render through BlockLayout"));
+    require(block->rect().height() > 10.0 && opaquePixels(block, theme) > 50,
+            QStringLiteral("state diagram block must have geometry and painted pixels"));
+  }
+
+  // --- the Markdown diagrams setting disables rendering ---
+  {
+    QSettings().setValue(QStringLiteral("markdown/diagrams"), false);
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral("```mermaid\nflowchart TB\nA --> B\n```\n"), false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && !block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::None,
+            QStringLiteral("disabled diagrams setting must keep Mermaid fences as source"));
+    QSettings().remove(QStringLiteral("markdown/diagrams"));
+  }
+
   // --- "show as source" disables rendering (source fallback) ---
   {
     QSettings().setValue(QStringLiteral("editor/showMermaidAsSource"), true);
@@ -91,12 +181,13 @@ int main(int argc, char** argv) {
     layout.rebuild(session.document(), theme, 800.0);
     const NodeId fenceId = firstCodeFenceId(session.document());
     const BlockLayout* block = layout.block(fenceId);
-    require(block != nullptr && !block->isMermaidRendered(),
+    require(block != nullptr && !block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Ready,
             QStringLiteral("show-as-source must keep the fence as source, not render"));
     QSettings().remove(QStringLiteral("editor/showMermaidAsSource"));
   }
 
-  // --- a malformed mermaid fence falls back to source (Error) ---
+  // --- a malformed Mermaid fence keeps source and paints a separate panel ---
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral("```mermaid\nflowchart TB\nA --> B\nlinkStyle 9 stroke:red\n```\n"), false);
@@ -112,12 +203,146 @@ int main(int argc, char** argv) {
             QStringLiteral("malformed mermaid must fall back to source, not render a broken diagram"));
     require(block->mermaidState() == BlockLayout::MermaidState::Error,
             QStringLiteral("malformed mermaid must be in Error state (got %1)").arg((int)block->mermaidState()));
-    require(!block->mermaidErrorMessage().isEmpty(),
-            QStringLiteral("Error state must carry a message for the annotation"));
-    // The error annotation reserves a strip → block is taller than the source alone.
-    require(opaquePixels(block, theme) >= 0, QStringLiteral("painting the error block must not crash"));
+    require(!block->mermaidDiagnosticMessage().isEmpty(),
+            QStringLiteral("Error state must carry a diagnostic message"));
+    const mermaid::MermaidDiagnostic& diagnostic = block->mermaidDiagnostic();
+    const qsizetype expectedOffset = block->literal().indexOf(QLatin1Char('9'));
+    require(diagnostic.stage == QLatin1String("semantic") &&
+                diagnostic.code == QLatin1String("link-style-bounds") &&
+                diagnostic.span.offset == expectedOffset &&
+                diagnostic.span.line == 3 && diagnostic.span.column == 11 &&
+                block->mermaidDiagnosticMessage().contains(
+                    QStringLiteral("Line 3, column 11")),
+            QStringLiteral("diagnostic panel must expose structured line/column details"));
+
+    const QRectF panel = block->mermaidDiagnosticRect(theme);
+    const QRectF sourceContent = block->literalContentRect(theme);
+    const qreal sourceBoxBottom = sourceContent.bottom() + theme.codePadding().bottom();
+    require(panel.isValid() && panel.top() > sourceBoxBottom,
+            QStringLiteral("diagnostic panel must be below and separate from the source box"));
+    require(panel.bottom() <= block->rect().bottom() + 0.01,
+            QStringLiteral("diagnostic panel must fit inside the block layout"));
+    require(opaquePixelsInRect(block, theme, panel) >
+                panel.width() * panel.height() * 0.75,
+            QStringLiteral("diagnostic panel background must be visibly painted"));
+    const QPointF gapPoint(panel.center().x(),
+                           (sourceBoxBottom + panel.top()) / 2.0);
+    require(colorAt(block, theme, gapPoint).alpha() < 16,
+            QStringLiteral("source box and diagnostic panel must have a visible gap"));
+    const QColor accentPixel = colorAt(
+        block, theme, QPointF(panel.left() + 2.5, panel.center().y()));
+    require(accentPixel.isValid() && accentPixel.alpha() > 200 &&
+                accentPixel != theme.codeBackgroundColor(),
+            QStringLiteral("diagnostic panel must paint an accent stripe"));
+
+    const QVector<QRectF> sourceMarks =
+        block->mermaidDiagnosticSourceRects(theme);
+    require(!sourceMarks.isEmpty(),
+            QStringLiteral("diagnostic must expose its marked source range"));
+    const QColor errorAccent = theme.alertAccent(AlertKind::Caution);
+    qint64 markedPixels = 0;
+    for (const QRectF& mark : sourceMarks) {
+      markedPixels += pixelsNearColorInRect(
+          block, theme, mark, errorAccent);
+    }
+    require(markedPixels > 0,
+            QStringLiteral("diagnostic source range must paint an error accent"));
+
+    const HitTestResult diagnosticHit =
+        block->hitTest(panel.center(), theme);
+    require(diagnosticHit.isValid() &&
+                diagnosticHit.zone == HitTestResult::Zone::Code &&
+                diagnosticHit.textOffset == expectedOffset,
+            QStringLiteral("clicking the diagnostic panel must target the source error offset"));
   }
 
-  qDebug().noquote() << "RenderMermaidBlockTest: mermaid fence renders via DocumentLayout + cache; show-as-source + error fall back to source";
+  // --- focused Mermaid source is validated without replacing the editor ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\nflowchart TB\nA --> B\nlinkStyle 9 stroke:red\n```\n"), false);
+    const NodeId fenceId = firstCodeFenceId(session.document());
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0,
+                   focusedSelection(fenceId, 4));
+    const BlockLayout* block = layout.block(fenceId);
+    require(block != nullptr && !block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Error &&
+                block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("focused invalid Mermaid must keep source and show its diagnostic"));
+  }
+
+  // --- a focused valid fence stays source; leaving focus renders it ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\nflowchart LR\nA --> B\n```\n"), false);
+    const NodeId fenceId = firstCodeFenceId(session.document());
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0,
+                   focusedSelection(fenceId, 4));
+    const BlockLayout* focused = layout.block(fenceId);
+    require(focused != nullptr && !focused->isMermaidRendered() &&
+                focused->mermaidState() == BlockLayout::MermaidState::Ready &&
+                !focused->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("focused valid Mermaid must remain editable source"));
+
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* unfocused = layout.block(fenceId);
+    require(unfocused != nullptr && unfocused->isMermaidRendered(),
+            QStringLiteral("valid Mermaid must render after focus leaves"));
+  }
+
+  // --- unsupported Mermaid families keep source and explain why ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\npie title Pets\n  \"Dogs\" : 42\n```\n"), false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && !block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Unsupported &&
+                !block->mermaidDiagnosticMessage().isEmpty() &&
+                block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("unsupported Mermaid family must show a diagnostic panel"));
+  }
+
+  // --- correcting invalid source removes the panel and restores rendering ---
+  {
+    DocumentSession session;
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\nflowchart TB\nA --> B\nlinkStyle 9 stroke:red\n```\n"), false);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* invalid = layout.block(firstCodeFenceId(session.document()));
+    require(invalid != nullptr && invalid->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("invalid source must start with a diagnostic"));
+
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\nflowchart TB\nA --> B\n```\n"), false);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* corrected = layout.block(firstCodeFenceId(session.document()));
+    require(corrected != nullptr && corrected->isMermaidRendered() &&
+                corrected->mermaidDiagnosticMessage().isEmpty() &&
+                !corrected->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("corrected Mermaid must clear the diagnostic and render"));
+  }
+
+  QSettings().remove(QStringLiteral("editor/showMermaidAsSource"));
+  QSettings().remove(QStringLiteral("markdown/diagrams"));
+  qDebug().noquote() << "RenderMermaidBlockTest: native diagrams render; focused/error/unsupported source uses a visible diagnostic panel";
   return 0;
 }

@@ -1,0 +1,74 @@
+{
+  "upstream": {
+    "version": "11.16.0"
+  },
+  "fontMode": "bundled-noto-2.13b171",
+  "cases": [
+    {
+      "id": "transitions",
+      "dpr": 1,
+      "theme": "default",
+      "source": "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]",
+      "file": "transitions.png",
+      "cssWidth": 76.96875,
+      "cssHeight": 298,
+      "viewBox": "0 0 76.96875 298",
+      "width": 77,
+      "height": 298,
+      "sha256": "2ede8e6a7de4afcc2dcd3145bea7c3659fb4eb23c49dd9f2b2db230b50696038"
+    },
+    {
+      "id": "descriptions",
+      "dpr": 1.25,
+      "theme": "default",
+      "source": "stateDiagram-v2\nstate \"Long state name\" as long_id\nlong_id : first description\nlong_id : second description",
+      "file": "descriptions.png",
+      "cssWidth": 166.203125,
+      "cssHeight": 105,
+      "viewBox": "0 0 166.203125 105",
+      "width": 208,
+      "height": 131,
+      "sha256": "7f1efc30352cc90d219d526af19c5800a9bbbdafa787cb3bd220be1f097e6678"
+    },
+    {
+      "id": "compound",
+      "dpr": 1.5,
+      "theme": "default",
+      "source": "stateDiagram-v2\nstate Running {\n  direction LR\n  [*] --> Warmup\n  Warmup --> Ready\n  --\n  Waiting --> Done\n}",
+      "file": "compound.png",
+      "cssWidth": 736.09375,
+      "cssHeight": 371,
+      "viewBox": "0 0 736.09375 371",
+      "width": 1104,
+      "height": 557,
+      "sha256": "ae48686075c4382e05f950eb4a5f7dc4ddee6893752e61c9e3017be80c4c70bc"
+    },
+    {
+      "id": "pseudostates-dark",
+      "dpr": 2,
+      "theme": "dark",
+      "source": "%%{init: {\"theme\":\"dark\"}}%%\nstateDiagram-v2\nstate fork_state <<fork>>\nstate join_state <<join>>\nstate choice_state <<choice>>\nfork_state --> A\nA --> choice_state\nchoice_state --> B\nB --> join_state",
+      "file": "pseudostates-dark.png",
+      "cssWidth": 86,
+      "cssHeight": 348,
+      "viewBox": "2 2 86 348",
+      "width": 172,
+      "height": 696,
+      "sha256": "076a83cb376ff60233cc2075f08b6788f2db6dcb6e52cdb1e0a32f76ca6f7602"
+    },
+    {
+      "id": "note",
+      "dpr": 1,
+      "theme": "default",
+      "source": "stateDiagram-v2\nActive --> Done\nnote right of Active : Inline note",
+      "file": "note.png",
+      "cssWidth": 288.296875,
+      "cssHeight": 210,
+      "viewBox": "0 0 288.296875 210",
+      "width": 288,
+      "height": 210,
+      "sha256": "3fbe77cf8e209db99535ad720c59c4e12137bec7347667ed0f5caf36f3128b49"
+    }
+  ],
+  "fixtureSha256": "3edaf534fa51b0963998342a62d365997600dc06ce243c4c7370f3a854ae3e18"
+}

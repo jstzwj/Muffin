@@ -56,9 +56,54 @@ QString replaceHtmlAttributeQuotes(const QString& source) {
   return result;
 }
 
-QString cleanupText(QString source) {
-  source.replace(QRegularExpression(QStringLiteral("\\r\\n?")), QStringLiteral("\n"));
-  return replaceHtmlAttributeQuotes(source);
+struct MappedText {
+  QString text;
+  QVector<qsizetype> sourceOffsets;
+};
+
+MappedText cleanupTextWithOffsets(const QString& source) {
+  MappedText result;
+  result.text.reserve(source.size());
+  result.sourceOffsets.reserve(source.size());
+  for (qsizetype index = 0; index < source.size(); ++index) {
+    if (source.at(index) == QLatin1Char('\r')) {
+      result.text += QLatin1Char('\n');
+      result.sourceOffsets.push_back(index);
+      if (index + 1 < source.size() && source.at(index + 1) == QLatin1Char('\n')) {
+        ++index;
+      }
+      continue;
+    }
+    result.text += source.at(index);
+    result.sourceOffsets.push_back(index);
+  }
+  // Mermaid normalises quotes inside HTML attributes, but the replacement is
+  // length-preserving, so the offset vector remains valid.
+  result.text = replaceHtmlAttributeQuotes(result.text);
+  return result;
+}
+
+void removeMatches(MappedText& mapped, const QRegularExpression& expression) {
+  QVector<QPair<qsizetype, qsizetype>> ranges;
+  auto matches = expression.globalMatch(mapped.text);
+  while (matches.hasNext()) {
+    const QRegularExpressionMatch match = matches.next();
+    if (match.capturedLength() > 0) {
+      ranges.push_back({match.capturedStart(), match.capturedLength()});
+    }
+  }
+  for (auto it = ranges.crbegin(); it != ranges.crend(); ++it) {
+    mapped.text.remove(it->first, it->second);
+    mapped.sourceOffsets.remove(it->first, it->second);
+  }
+}
+
+void removeLeadingWhitespace(MappedText& mapped) {
+  qsizetype first = 0;
+  while (first < mapped.text.size() && mapped.text.at(first).isSpace()) ++first;
+  if (first <= 0) return;
+  mapped.text.remove(0, first);
+  mapped.sourceOffsets.remove(0, first);
 }
 
 bool isJsonTruthy(const QJsonValue& value) {
@@ -378,13 +423,12 @@ bool hasWrapDirective(const QString& source) {
   return false;
 }
 
-QString cleanupComments(QString text) {
-  static const QRegularExpression comments(QStringLiteral(R"(^\s*%%(?!\{)[^\n]+\n?)"),
-                                             QRegularExpression::MultilineOption);
-  text.remove(comments);
-  qsizetype first = 0;
-  while (first < text.size() && text.at(first).isSpace()) ++first;
-  return text.mid(first);
+void cleanupComments(MappedText& mapped) {
+  static const QRegularExpression comments(
+      QStringLiteral(R"(^\s*%%(?!\{)[^\n]+\n?)"),
+      QRegularExpression::MultilineOption);
+  removeMatches(mapped, comments);
+  removeLeadingWhitespace(mapped);
 }
 
 }  // namespace
@@ -392,19 +436,28 @@ QString cleanupComments(QString text) {
 MermaidPreprocessResult preprocessDiagram(const QString& source) {
   if (source.size() > kMaxPreprocessSize)
     throw std::runtime_error("Maximum mermaid source size exceeded");
-  const QString cleaned = cleanupText(source);
-  FrontMatterResult frontMatter = extractFrontMatter(cleaned);
+  MappedText mapped = cleanupTextWithOffsets(source);
+  const QRegularExpressionMatch frontMatterMatch = frontMatterRegex().match(mapped.text);
+  FrontMatterResult frontMatter = extractFrontMatter(mapped.text);
+  if (frontMatterMatch.hasMatch()) {
+    const qsizetype length = frontMatterMatch.capturedLength();
+    mapped.text.remove(0, length);
+    mapped.sourceOffsets.remove(0, length);
+  }
   QJsonObject directive = detectInit(frontMatter.text);
   if (hasWrapDirective(frontMatter.text)) directive.insert(QStringLiteral("wrap"), true);
-  QString code = frontMatter.text;
-  code.remove(directiveRegex());
-  code = cleanupComments(code);
+  removeMatches(mapped, directiveRegex());
+  cleanupComments(mapped);
 
   MermaidPreprocessResult result;
-  result.code = code;
+  result.code = mapped.text;
   result.title = frontMatter.title;
   result.hasTitle = frontMatter.hasTitle;
   result.config = deepMerge(frontMatter.config, directive);
+  result.codeSourceOffsets = std::move(mapped.sourceOffsets);
+  result.codeSourceEndOffset = result.codeSourceOffsets.isEmpty()
+      ? source.size()
+      : qMin<qsizetype>(source.size(), result.codeSourceOffsets.back() + 1);
   return result;
 }
 

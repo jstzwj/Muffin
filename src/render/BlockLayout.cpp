@@ -8,6 +8,7 @@
 #include "mermaid/scene/FlowScenePainter.h"
 #include "mermaid/classdiagram/ClassScenePainter.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
+#include "mermaid/state/StateScenePainter.h"
 #include "render/DecorationPainter.h"
 
 #include <QFontMetricsF>
@@ -27,6 +28,77 @@ namespace {
 // blocks always wrap regardless of this setting.
 bool codeBlockWrapEnabled() {
   return QSettings().value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
+}
+
+qreal mermaidDiagnosticGap(const RenderTheme& theme) {
+  return qMax<qreal>(6.0, theme.codeLineHeight() * 0.3);
+}
+
+qreal mermaidDiagnosticPadding(const RenderTheme& theme) {
+  return qMax<qreal>(8.0, theme.codeLineHeight() * 0.4);
+}
+
+qreal mermaidDiagnosticIconSize(const RenderTheme& theme) {
+  return qMax<qreal>(16.0, theme.codeLineHeight() * 0.9);
+}
+
+struct MermaidDiagnosticTextMetrics {
+  QString header;
+  QString body;
+  qreal headerHeight = 0.0;
+  qreal bodyHeight = 0.0;
+  qreal gap = 0.0;
+
+  qreal height() const { return headerHeight + gap + bodyHeight; }
+};
+
+MermaidDiagnosticTextMetrics measureMermaidDiagnosticText(
+    const mermaid::MermaidDiagnostic& diagnostic, const RenderTheme& theme,
+    qreal width) {
+  MermaidDiagnosticTextMetrics result;
+  result.header = mermaid::formatMermaidDiagnosticHeader(diagnostic);
+  result.body = mermaid::formatMermaidDiagnosticBody(diagnostic);
+  const QFont bodyFont = theme.codeFont();
+  QFont headerFont = bodyFont;
+  headerFont.setBold(true);
+  const QFontMetricsF headerMetrics(headerFont);
+  const QFontMetricsF bodyMetrics(bodyFont);
+  const int flags = Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap;
+  if (!result.header.isEmpty()) {
+    const qreal measured = headerMetrics.boundingRect(
+        QRectF(0.0, 0.0, qMax<qreal>(1.0, width), 100000.0),
+        flags, result.header).height();
+    result.headerHeight = qBound<qreal>(
+        headerMetrics.lineSpacing(), qCeil(measured),
+        headerMetrics.lineSpacing() * 2.0);
+  }
+  if (!result.body.isEmpty()) {
+    const qreal measured = bodyMetrics.boundingRect(
+        QRectF(0.0, 0.0, qMax<qreal>(1.0, width), 100000.0),
+        flags, result.body).height();
+    result.bodyHeight = qBound<qreal>(
+        bodyMetrics.lineSpacing(), qCeil(measured),
+        bodyMetrics.lineSpacing() * 6.0);
+  }
+  if (result.headerHeight > 0.0 && result.bodyHeight > 0.0) {
+    result.gap = qMax<qreal>(2.0, bodyMetrics.lineSpacing() * 0.18);
+  }
+  return result;
+}
+
+QPair<qsizetype, qsizetype> mermaidHighlightRange(
+    const mermaid::MermaidDiagnostic& diagnostic, const QString& literal) {
+  if (!diagnostic.span.hasLocation() || literal.isEmpty()) return {-1, -1};
+  const qsizetype caret = qBound<qsizetype>(
+      0, diagnostic.span.offset, literal.size());
+  const qsizetype start = caret == literal.size()
+      ? literal.size() - 1
+      : caret;
+  const qsizetype requestedLength = qMax<qsizetype>(1, diagnostic.span.length);
+  const qsizetype end = qMax<qsizetype>(
+      start + 1,
+      qMin<qsizetype>(literal.size(), caret + requestedLength));
+  return {start, end};
 }
 
 struct LiteralVisualLine {
@@ -570,6 +642,13 @@ void BlockLayout::setMermaidClassScene(
   mermaidNaturalSize_ = naturalSize;
 }
 
+void BlockLayout::setMermaidStateScene(
+    std::shared_ptr<const muffin::mermaid::state::StateScene> scene,
+    QSizeF naturalSize) {
+  mermaidStateScene_ = std::move(scene);
+  mermaidNaturalSize_ = naturalSize;
+}
+
 const muffin::mermaid::flowscene::FlowScene* BlockLayout::mermaidScene() const {
   return mermaidScene_.get();
 }
@@ -586,18 +665,74 @@ BlockLayout::MermaidState BlockLayout::mermaidState() const {
   return mermaidState_;
 }
 
-void BlockLayout::setMermaidErrorMessage(const QString& message) {
-  mermaidErrorMessage_ = message;
+void BlockLayout::setMermaidDiagnostic(
+    mermaid::MermaidDiagnostic diagnostic) {
+  mermaidDiagnostic_ = std::move(diagnostic);
+  mermaidDiagnosticMessage_ =
+      mermaid::formatMermaidDiagnostic(mermaidDiagnostic_).trimmed();
 }
 
-const QString& BlockLayout::mermaidErrorMessage() const {
-  return mermaidErrorMessage_;
+const mermaid::MermaidDiagnostic& BlockLayout::mermaidDiagnostic() const {
+  return mermaidDiagnostic_;
+}
+
+const QString& BlockLayout::mermaidDiagnosticMessage() const {
+  return mermaidDiagnosticMessage_;
+}
+
+qreal BlockLayout::mermaidDiagnosticFootprint(
+    const mermaid::MermaidDiagnostic& diagnostic,
+    const RenderTheme& theme, qreal width) {
+  if (diagnostic.isEmpty()) return 0.0;
+  const qreal padding = mermaidDiagnosticPadding(theme);
+  const qreal iconSize = mermaidDiagnosticIconSize(theme);
+  const qreal textWidth = qMax<qreal>(
+      1.0, width - padding * 3.0 - iconSize);
+  const MermaidDiagnosticTextMetrics text =
+      measureMermaidDiagnosticText(diagnostic, theme, textWidth);
+  const qreal panelHeight =
+      qCeil(padding * 2.0 + qMax(iconSize, text.height()));
+  return qCeil(mermaidDiagnosticGap(theme) + panelHeight);
+}
+
+bool BlockLayout::hasMermaidDiagnostic() const {
+  return (mermaidState_ == MermaidState::Error ||
+          mermaidState_ == MermaidState::Unsupported) &&
+         !mermaidDiagnosticMessage_.isEmpty();
+}
+
+QRectF BlockLayout::mermaidCodeFenceRect(const RenderTheme& theme) const {
+  if (!hasMermaidDiagnostic()) return rect_;
+  QRectF sourceRect = rect_;
+  sourceRect.setHeight(qMax<qreal>(
+      1.0, rect_.height() - mermaidDiagnosticFootprint(
+                                mermaidDiagnostic_, theme, rect_.width())));
+  return sourceRect;
+}
+
+QRectF BlockLayout::mermaidDiagnosticRect(const RenderTheme& theme) const {
+  if (!hasMermaidDiagnostic()) return {};
+  const qreal footprint = mermaidDiagnosticFootprint(
+      mermaidDiagnostic_, theme, rect_.width());
+  const qreal panelHeight = qMax<qreal>(
+      1.0, footprint - mermaidDiagnosticGap(theme));
+  return QRectF(rect_.left(), rect_.bottom() - panelHeight,
+                rect_.width(), panelHeight);
+}
+
+QVector<QRectF> BlockLayout::mermaidDiagnosticSourceRects(
+    const RenderTheme& theme) const {
+  if (mermaidState_ != MermaidState::Error) return {};
+  const auto [start, end] = mermaidHighlightRange(
+      mermaidDiagnostic_, literal_);
+  if (start < 0 || end <= start) return {};
+  return literalSelectionRects(start, end, theme);
 }
 
 bool BlockLayout::isMermaidRendered() const {
   return mermaidState_ == MermaidState::Ready &&
          (mermaidScene_ != nullptr || mermaidSequenceScene_ != nullptr ||
-          mermaidClassScene_ != nullptr);
+          mermaidClassScene_ != nullptr || mermaidStateScene_ != nullptr);
 }
 
 void BlockLayout::setLiteralEditing(bool editing) {
@@ -632,7 +767,9 @@ QRectF BlockLayout::literalContentRect(const RenderTheme& theme) const {
   if (type_ == BlockType::MathBlock && literalEditing_) {
     return mathEditorSourceRect(theme);
   }
-  QRectF content = rect_.marginsRemoved(theme.codePadding());
+  const QRectF literalRect =
+      type_ == BlockType::CodeFence ? mermaidCodeFenceRect(theme) : rect_;
+  QRectF content = literalRect.marginsRemoved(theme.codePadding());
   // Reserve a left gutter for line numbers in code fences (set at build time); 0 for other blocks.
   if (type_ == BlockType::CodeFence && lineNumberGutterWidth_ > 0.0) {
     content.adjust(lineNumberGutterWidth_, 0, 0, 0);
@@ -1016,8 +1153,11 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       if (isMermaidRendered())
         paintMermaidDiagram(painter, theme, viewRect);
       else {
-        paintCodeFence(painter, theme, viewRect, scroll);
-        if (mermaidState_ == MermaidState::Error) paintMermaidError(painter, theme, viewRect);
+        const QRectF codeRect =
+            mermaidCodeFenceRect(theme).translated(0, -scrollY);
+        paintCodeFence(painter, theme, codeRect, scroll);
+        if (hasMermaidDiagnostic())
+          paintMermaidDiagnostic(painter, theme, viewRect);
       }
       break;
     case BlockType::MathBlock:
@@ -1283,7 +1423,8 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
 }
 
 void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
-  if (!mermaidScene_ && !mermaidSequenceScene_ && !mermaidClassScene_) return;
+  if (!mermaidScene_ && !mermaidSequenceScene_ && !mermaidClassScene_ &&
+      !mermaidStateScene_) return;
   painter.save();
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBackgroundColor());
@@ -1309,36 +1450,92 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
     painter.scale(scale, scale);
     const QRectF sceneBounds = mermaidScene_ ? mermaidScene_->bounds
         : mermaidSequenceScene_ ? mermaidSequenceScene_->bounds
-                                : mermaidClassScene_->bounds;
+        : mermaidClassScene_ ? mermaidClassScene_->bounds
+                             : mermaidStateScene_->bounds;
     painter.translate(-sceneBounds.left(), -sceneBounds.top());
     if (mermaidScene_)
       muffin::mermaid::flowscene::paintFlowScene(*mermaidScene_, painter, QStringLiteral("Arial"));
     else if (mermaidSequenceScene_)
       muffin::mermaid::sequence::paintSequenceScene(*mermaidSequenceScene_, painter);
-    else
+    else if (mermaidClassScene_)
       muffin::mermaid::classdiagram::paintClassScene(*mermaidClassScene_, painter);
+    else
+      muffin::mermaid::state::paintStateScene(*mermaidStateScene_, painter);
   }
   painter.restore();
 }
 
-void BlockLayout::paintMermaidError(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
-  if (mermaidErrorMessage_.isEmpty()) return;
+void BlockLayout::paintMermaidDiagnostic(
+    QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+  if (!hasMermaidDiagnostic()) return;
   painter.save();
+  const qreal viewOffsetY = viewRect.top() - rect_.top();
+  const QRectF panel =
+      mermaidDiagnosticRect(theme).translated(0.0, viewOffsetY);
+  const QColor accent = theme.alertAccent(
+      mermaidState_ == MermaidState::Error ? AlertKind::Caution
+                                           : AlertKind::Warning);
+  QColor tint = accent;
+  tint.setAlpha(24);
+
+  constexpr qreal radius = 4.0;
+  const QRectF borderRect = panel.adjusted(0.5, 0.5, -0.5, -0.5);
+  painter.setPen(QPen(accent, 1.0));
+  painter.setBrush(theme.codeBackgroundColor());
+  painter.drawRoundedRect(borderRect, radius, radius);
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(tint);
+  painter.drawRoundedRect(borderRect, radius, radius);
+
+  const qreal stripeWidth = 4.0;
+  painter.setBrush(accent);
+  painter.drawRoundedRect(
+      QRectF(panel.left() + 1.0, panel.top() + 1.0, stripeWidth,
+             qMax<qreal>(1.0, panel.height() - 2.0)),
+      2.0, 2.0);
+
   const QFont font = theme.codeFont();
   painter.setFont(font);
-  const QFontMetricsF fm(font);
-  const qreal lineH = fm.height();
-  const QRectF strip(viewRect.left() + theme.codePadding().left(),
-                     viewRect.bottom() - theme.codePadding().bottom() - lineH,
-                     viewRect.width() - theme.codePadding().left() - theme.codePadding().right(),
-                     lineH);
-  painter.setPen(theme.alertAccent(AlertKind::Caution));  // red — parse/limit error
-  const QString prefix = QStringLiteral("⚠ ");
-  QString msg = mermaidErrorMessage_;
-  msg.replace(QLatin1Char('\n'), QLatin1Char(' '));  // collapse to one line
-  const qreal avail = strip.width() - fm.horizontalAdvance(prefix);
-  if (avail > 0.0) msg = fm.elidedText(msg, Qt::ElideRight, avail);
-  painter.drawText(strip, Qt::AlignLeft | Qt::AlignVCenter, prefix + msg);
+  const qreal padding = mermaidDiagnosticPadding(theme);
+  const qreal iconSize = mermaidDiagnosticIconSize(theme);
+  const QRectF iconRect(panel.left() + padding,
+                        panel.center().y() - iconSize / 2.0,
+                        iconSize, iconSize);
+  painter.setPen(Qt::NoPen);
+  painter.setBrush(accent);
+  painter.drawEllipse(iconRect);
+  QFont iconFont = font;
+  iconFont.setBold(true);
+  painter.setFont(iconFont);
+  painter.setPen(Qt::white);
+  painter.drawText(iconRect, Qt::AlignCenter, QStringLiteral("!"));
+
+  const QRectF textRect(
+      iconRect.right() + padding, panel.top() + padding,
+      qMax<qreal>(1.0, panel.right() - padding - iconRect.right() - padding),
+      qMax<qreal>(1.0, panel.height() - padding * 2.0));
+  painter.setClipRect(textRect);
+  const MermaidDiagnosticTextMetrics text =
+      measureMermaidDiagnosticText(
+          mermaidDiagnostic_, theme, textRect.width());
+  const qreal textTop = textRect.top() +
+      qMax<qreal>(0.0, (textRect.height() - text.height()) / 2.0);
+  const int textFlags = Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap;
+  QFont headerFont = font;
+  headerFont.setBold(true);
+  painter.setFont(headerFont);
+  painter.setPen(accent);
+  painter.drawText(
+      QRectF(textRect.left(), textTop, textRect.width(), text.headerHeight),
+      textFlags, text.header);
+  if (text.bodyHeight > 0.0) {
+    painter.setFont(font);
+    painter.setPen(theme.textColor());
+    painter.drawText(
+        QRectF(textRect.left(), textTop + text.headerHeight + text.gap,
+               textRect.width(), text.bodyHeight),
+        textFlags, text.body);
+  }
   painter.restore();
 }
 
@@ -1667,6 +1864,10 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
   // caret/hover, so this matters on big blocks.
   qsizetype spanIdx = 0;
   const qreal codeLineHeight = theme.codeLineHeight();
+  const auto [diagnosticStart, diagnosticEnd] =
+      mermaidState_ == MermaidState::Error
+          ? mermaidHighlightRange(mermaidDiagnostic_, literal_)
+          : QPair<qsizetype, qsizetype>{-1, -1};
   for (const QString& sourceLine : lines) {
     const QString lineText = sourceLine.isEmpty() ? QStringLiteral(" ") : sourceLine;
     QTextLayout layout(lineText, theme.codeFont());
@@ -1701,6 +1902,22 @@ void BlockLayout::paintLiteralSource(QPainter& painter, const RenderTheme& theme
       QTextLayout::FormatRange range;
       range.start = static_cast<int>(start - lineStartOffset);
       range.length = static_cast<int>(end - start);
+      range.format = format;
+      formats.push_back(range);
+    }
+    const qsizetype errorStart = qMax(diagnosticStart, lineStartOffset);
+    const qsizetype errorEnd = qMin(diagnosticEnd, lineEndOffset);
+    if (diagnosticStart >= 0 && errorEnd > errorStart) {
+      QTextCharFormat format;
+      const QColor accent = theme.alertAccent(AlertKind::Caution);
+      QColor background = accent;
+      background.setAlpha(32);
+      format.setBackground(background);
+      format.setUnderlineColor(accent);
+      format.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+      QTextLayout::FormatRange range;
+      range.start = static_cast<int>(errorStart - lineStartOffset);
+      range.length = static_cast<int>(errorEnd - errorStart);
       range.format = format;
       formats.push_back(range);
     }
@@ -1822,6 +2039,19 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
       const bool wrap = codeBlockWrapEnabled();
       const bool scrollable = type_ == BlockType::CodeFence && !wrap && codeMaxLineWidth_ > contentRect.width() + 0.5;
       const qreal offset = (scroll != nullptr && scrollable) ? scroll->offsetFor(id_) : 0.0;
+      if (type_ == BlockType::CodeFence &&
+          mermaidState_ == MermaidState::Error &&
+          mermaidDiagnostic_.span.hasLocation() &&
+          mermaidDiagnosticRect(theme).contains(documentPos)) {
+        result.zone = HitTestResult::Zone::Code;
+        result.textOffset = qBound<qsizetype>(
+            0, mermaidDiagnostic_.span.offset, literal_.size());
+        result.cursorRect = literalCursorRectForOffset(
+            literal_, result.textOffset, theme.codeFont(),
+            contentRect.topLeft(), contentRect.width(),
+            theme.codeLineHeight(), wrap);
+        return result;
+      }
       // A click on the reserved bottom scrollbar strip drives the horizontal thumb instead of
       // placing the caret.
       if (scrollable) {

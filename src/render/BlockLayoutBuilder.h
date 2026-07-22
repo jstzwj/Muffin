@@ -210,6 +210,7 @@ private:
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
   mermaid::editor::MermaidRenderCache* mermaidCache_ = nullptr;
   bool mermaidSyncMode_ = false;
+  bool renderDiagrams_ = true;
   bool showMermaidAsSource_ = false;
   TreeSitterHighlighter codeHighlighter_;
   math::MathRenderer mathRenderer_;

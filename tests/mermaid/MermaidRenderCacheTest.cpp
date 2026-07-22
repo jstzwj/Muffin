@@ -25,6 +25,7 @@ void require(bool condition, const QString& message) { if (!condition) fail(mess
 constexpr auto kReady = MermaidRenderStatus::Ready;
 constexpr auto kLoading = MermaidRenderStatus::Loading;
 constexpr auto kError = MermaidRenderStatus::Error;
+constexpr auto kUnsupported = MermaidRenderStatus::Unsupported;
 
 // Spin the event loop until `cache` signals renderReady for `key`, or timeout.
 bool waitForReady(MermaidRenderCache& cache, const MermaidRenderKey& key, int timeoutMs = 5000) {
@@ -48,6 +49,10 @@ int main(int argc, char** argv) {
   const QString classDiagram = QStringLiteral(
       "classDiagram\nclass Service {\n  <<interface>>\n  +run() Result\n}\n"
       "class Client\nClient --> Service : uses");
+  const QString stateDiagram = QStringLiteral(
+      "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]");
+  const QString unsupported = QStringLiteral(
+      "pie title Pets\n  \"Dogs\" : 42\n  \"Cats\" : 58");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
@@ -60,6 +65,22 @@ int main(int argc, char** argv) {
     // Second getSync hits the cache (same entry, no re-render).
     const MermaidRenderEntry e2 = cache.getSync(key, flow);
     require(e2.status == kReady && e2.scene == e.scene, QStringLiteral("cache hit returns the same scene"));
+  }
+
+  // --- state diagrams use the immutable state scene pipeline ---
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(stateDiagram), stateDiagram);
+    require(entry.status == kReady && entry.stateScene != nullptr,
+            QStringLiteral("stateDiagram-v2 should be Ready"));
+    require(entry.stateScene->nodes.size() == 4 &&
+                entry.stateScene->edges.size() == 3 &&
+                entry.naturalSize.width() > 0 && entry.naturalSize.height() > 0,
+            QStringLiteral("state scene must contain state and transition geometry"));
+    require(!MermaidRenderCache::renderMermaidSourceToPngDataUrl(
+                 stateDiagram, 1.0).isEmpty(),
+            QStringLiteral("state scene PNG export must be available"));
   }
 
   // --- class diagrams use the immutable class scene pipeline ---
@@ -104,9 +125,102 @@ int main(int argc, char** argv) {
     const MermaidRenderEntry e = cache.getSync(key, malformed);
     require(e.status == kError, QStringLiteral("malformed flowchart should be Error (got %1)").arg((int)e.status));
     require(!e.errorMessage.isEmpty(), QStringLiteral("Error entry must carry a message"));
+    require(e.diagnostic.stage == QLatin1String("semantic") &&
+                e.diagnostic.code == QLatin1String("link-style-bounds"),
+            QStringLiteral("flowchart cache error must preserve stage/code"));
+    require(e.diagnostic.span.offset == malformed.indexOf(QLatin1Char('9')) &&
+                e.diagnostic.span.length == 1 &&
+                e.diagnostic.span.line == 3 &&
+                e.diagnostic.span.column == 11,
+            QStringLiteral("flowchart cache error must preserve its 1-based source position"));
+    require(e.errorMessage.contains(QStringLiteral("Line 3, column 11")) &&
+                e.errorMessage.contains(QStringLiteral("Semantic error")) &&
+                e.errorDiagnostic.value(QStringLiteral("offset")).toInt() ==
+                    malformed.indexOf(QLatin1Char('9')),
+            QStringLiteral("flowchart display/JSON diagnostics must expose the source position"));
   }
 
-  // --- getSync: non-flowchart → Unsupported ---
+  // Parser offsets refer to preprocessed code. Map them back around removed
+  // init directives and comments before exposing them to the editor.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\n"
+        "flowchart TB\n"
+        "A --> B\n"
+        "linkStyle 9 stroke:red");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.span.offset == decorated.indexOf(
+                    QStringLiteral("9 stroke")) &&
+                entry.diagnostic.span.line == 5 &&
+                entry.diagnostic.span.column == 11,
+            QStringLiteral("diagnostic mapping must restore original directive/comment lines"));
+  }
+
+  // Every native family is normalised into the same 1-based diagnostic model.
+  {
+    struct InvalidCase {
+      QString source;
+      QString type;
+      QString code;
+      int line;
+    };
+    const QVector<InvalidCase> cases = {
+        {QStringLiteral("sequenceDiagram\nloop open\nA->>B:x"),
+         QStringLiteral("sequence"), QStringLiteral("missing-end"), 2},
+        {QStringLiteral("classDiagram\nA -->"),
+         QStringLiteral("class"), QStringLiteral("missing-relation-target"), 2},
+        {QStringLiteral("stateDiagram-v2\nA -->"),
+         QStringLiteral("state"), QStringLiteral("unexpected-token"), 2},
+    };
+    for (const InvalidCase& invalid : cases) {
+      MermaidRenderCache cache;
+      const MermaidRenderEntry entry = cache.getSync(
+          MermaidRenderCache::makeKey(invalid.source), invalid.source);
+      require(entry.status == kError &&
+                  entry.diagnostic.diagramType.startsWith(invalid.type) &&
+                  entry.diagnostic.code == invalid.code &&
+                  entry.diagnostic.span.hasLocation() &&
+                  entry.diagnostic.span.line == invalid.line &&
+                  entry.diagnostic.span.column >= 1 &&
+                  entry.diagnostic.span.offset >= 0 &&
+                  entry.diagnostic.span.offset <= invalid.source.size(),
+              QStringLiteral("%1 diagnostic was not normalised: %2")
+                  .arg(invalid.type, entry.errorMessage));
+      require(entry.errorMessage.contains(QStringLiteral("Line %1, column ").arg(invalid.line)),
+              QStringLiteral("%1 diagnostic display omitted line/column").arg(invalid.type));
+    }
+  }
+
+  // Detection and preprocessing failures also use the common diagnostic shape.
+  {
+    MermaidRenderCache cache;
+    const QString noHeader = QStringLiteral("A --> B");
+    const MermaidRenderEntry detected = cache.getSync(
+        MermaidRenderCache::makeKey(noHeader), noHeader);
+    require(detected.status == kError &&
+                detected.diagnostic.stage == QLatin1String("detector") &&
+                detected.diagnostic.span.offset == 0 &&
+                detected.diagnostic.span.line == 1 &&
+                detected.diagnostic.span.column == 1,
+            QStringLiteral("missing diagram header must carry a source position"));
+
+    const QString invalidYaml = QStringLiteral(
+        "---\nconfig: [\n---\nflowchart TB\nA --> B");
+    const MermaidRenderEntry preprocessed = cache.getSync(
+        MermaidRenderCache::makeKey(invalidYaml), invalidYaml);
+    require(preprocessed.status == kError &&
+                preprocessed.diagnostic.stage == QLatin1String("preprocess") &&
+                preprocessed.diagnostic.span.hasLocation() &&
+                preprocessed.errorMessage.contains(QStringLiteral("Line ")) &&
+                preprocessed.errorMessage.contains(QStringLiteral("Preprocessing error")),
+            QStringLiteral("invalid Mermaid front matter must be classified as preprocessing"));
+  }
+
+  // --- getSync: sequence diagrams are supported ---
   {
     MermaidRenderCache cache;
     const MermaidRenderKey key = MermaidRenderCache::makeKey(sequence);
@@ -116,6 +230,15 @@ int main(int argc, char** argv) {
     require(e.sequenceScene->participants.size() == 2 && e.sequenceScene->messages.size() == 1 &&
                 e.naturalSize.width() > 0 && e.naturalSize.height() > 0,
             QStringLiteral("sequenceDiagram scene must contain participant/message geometry"));
+  }
+
+  // --- getSync: an unknown native family reports Unsupported with context ---
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(unsupported), unsupported);
+    require(entry.status == kUnsupported && !entry.errorMessage.isEmpty(),
+            QStringLiteral("unsupported family must carry an explanatory message"));
   }
 
   // --- sequence MathML is compiled into the immutable scene once ---
@@ -287,6 +410,35 @@ int main(int argc, char** argv) {
     require(waitForReady(cache, key), QStringLiteral("renderReady must fire for the key"));
     const MermaidRenderEntry second = cache.request(key, flow);
     require(second.status == kReady && second.scene != nullptr, QStringLiteral("after renderReady, request must be Ready"));
+  }
+
+  // --- edit debounce supersedes stale source and reports async errors ---
+  {
+    MermaidRenderCache cache;
+    const QString stale = QStringLiteral("flowchart TB\nOld --> Work");
+    const MermaidRenderKey staleKey = MermaidRenderCache::makeKey(stale);
+    const MermaidRenderKey latestKey = MermaidRenderCache::makeKey(malformed);
+    bool staleRendered = false;
+    QObject::connect(&cache, &MermaidRenderCache::renderReady, &app,
+                     [&](const MermaidRenderKey& key) {
+      if (key == staleKey) staleRendered = true;
+    });
+    require(cache.requestDebounced(staleKey, stale, 150).status == kLoading,
+            QStringLiteral("first debounced source must enter Loading"));
+    require(cache.requestDebounced(latestKey, malformed, 5).status == kLoading,
+            QStringLiteral("latest debounced source must enter Loading"));
+    require(waitForReady(cache, latestKey),
+            QStringLiteral("latest debounced source must emit renderReady"));
+    const MermaidRenderEntry result =
+        cache.requestDebounced(latestKey, malformed, 5);
+    require(result.status == kError && !result.errorMessage.isEmpty(),
+            QStringLiteral("debounced malformed source must resolve to Error"));
+
+    QEventLoop quietPeriod;
+    QTimer::singleShot(180, &quietPeriod, &QEventLoop::quit);
+    quietPeriod.exec();
+    require(!staleRendered && cache.size() == 1,
+            QStringLiteral("superseded debounce input must never render or remain cached"));
   }
 
   // --- LRU eviction ---
@@ -593,6 +745,6 @@ int main(int argc, char** argv) {
     require(e.scene != nullptr, QStringLiteral("Ready entry must carry a scene"));
   }
 
-  qDebug().noquote() << "MermaidRenderCacheTest: sync ready/error/unsupported + async loading→ready + LRU + key stability";
+  qDebug().noquote() << "MermaidRenderCacheTest: sync ready/error/unsupported + async/debounced rendering + LRU + key stability";
   return 0;
 }

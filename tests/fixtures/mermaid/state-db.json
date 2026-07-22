@@ -373,6 +373,101 @@
         ],
         "classes": [],
         "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "root_start",
+            "shape": "stateStart",
+            "label": "root_start",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Idle",
+            "shape": "rect",
+            "label": "Idle",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Active",
+            "shape": "rect",
+            "label": "Active",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "root_end",
+            "shape": "stateEnd",
+            "label": "root_end",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "root_start",
+            "end": "Idle",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge1",
+            "start": "Idle",
+            "end": "Active",
+            "label": "start",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge2",
+            "start": "Active",
+            "end": "root_end",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          }
+        ]
       }
     },
     {
@@ -421,6 +516,28 @@
         "relations": [],
         "classes": [],
         "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "long_id",
+            "shape": "rectWithTitle",
+            "label": "Long state name",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": [
+              "first description",
+              "second description"
+            ]
+          }
+        ],
+        "edges": []
       }
     },
     {
@@ -584,6 +701,153 @@
         "relations": [],
         "classes": [],
         "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "Running",
+            "shape": "roundedWithTitle",
+            "label": "Running",
+            "parentId": null,
+            "dir": "TB",
+            "explicitDir": false,
+            "isGroup": true,
+            "cssClasses": " statediagram-state statediagram-cluster ",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "divider-id-1",
+            "shape": "divider",
+            "label": "",
+            "parentId": "Running",
+            "dir": "LR",
+            "explicitDir": false,
+            "isGroup": true,
+            "cssClasses": " statediagram-state statediagram-cluster statediagram-cluster-alt",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "divider-id-1_start",
+            "shape": "stateStart",
+            "label": "divider-id-1_start",
+            "parentId": "divider-id-1",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Warmup",
+            "shape": "rect",
+            "label": "Warmup",
+            "parentId": "divider-id-1",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Ready",
+            "shape": "rect",
+            "label": "Ready",
+            "parentId": "divider-id-1",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "$generated-1",
+            "shape": "divider",
+            "label": "",
+            "parentId": "Running",
+            "dir": "TB",
+            "explicitDir": false,
+            "isGroup": true,
+            "cssClasses": " statediagram-state statediagram-cluster statediagram-cluster-alt",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Waiting",
+            "shape": "rect",
+            "label": "Waiting",
+            "parentId": "$generated-1",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Done",
+            "shape": "rect",
+            "label": "Done",
+            "parentId": "$generated-1",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "divider-id-1_start",
+            "end": "Warmup",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge1",
+            "start": "Warmup",
+            "end": "Ready",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge2",
+            "start": "Waiting",
+            "end": "Done",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          }
+        ]
       }
     },
     {
@@ -746,6 +1010,126 @@
         ],
         "classes": [],
         "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "fork_state",
+            "shape": "fork",
+            "label": "fork_state",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "join_state",
+            "shape": "join",
+            "label": "join_state",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "choice_state",
+            "shape": "choice",
+            "label": "choice_state",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "A",
+            "shape": "rect",
+            "label": "A",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "B",
+            "shape": "rect",
+            "label": "B",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "A",
+            "end": "fork_state",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge1",
+            "start": "fork_state",
+            "end": "B",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge2",
+            "start": "B",
+            "end": "join_state",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge3",
+            "start": "join_state",
+            "end": "choice_state",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          }
+        ]
       }
     },
     {
@@ -792,6 +1176,88 @@
         "relations": [],
         "classes": [],
         "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "Active----parent",
+            "shape": "noteGroup",
+            "label": "Multiline note",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": true,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": "left of",
+            "description": null
+          },
+          {
+            "id": "Active----note-0",
+            "shape": "note",
+            "label": "Inline note",
+            "parentId": "Active----parent",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": "statediagram-note",
+            "cssStyles": [],
+            "position": "right of",
+            "description": null
+          },
+          {
+            "id": "Active",
+            "label": "Active",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Active----note-1",
+            "shape": "note",
+            "label": "Multiline note",
+            "parentId": "Active----parent",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": "statediagram-note",
+            "cssStyles": [],
+            "position": "left of",
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "Active-Active----note-0",
+            "start": "Active",
+            "end": "Active----note-0",
+            "label": null,
+            "arrowhead": "none",
+            "arrowTypeEnd": "",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition note-edge"
+          },
+          {
+            "id": "Active----note-1-Active",
+            "start": "Active----note-1",
+            "end": "Active",
+            "label": null,
+            "arrowhead": "none",
+            "arrowTypeEnd": "",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition note-edge"
+          }
+        ]
       }
     },
     {
@@ -863,6 +1329,11 @@
           }
         ],
         "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [],
+        "edges": []
       }
     },
     {
@@ -903,6 +1374,11 @@
             "tooltip": "\"Open docs\""
           }
         ]
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [],
+        "edges": []
       }
     },
     {
@@ -991,8 +1467,117 @@
         ],
         "classes": [],
         "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "待机",
+            "shape": "rect",
+            "label": "待机",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "运行",
+            "shape": "rect",
+            "label": "运行",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "שלום",
+            "shape": "rect",
+            "label": "שלום",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "待机",
+            "end": "运行",
+            "label": "تشغيل",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge1",
+            "start": "运行",
+            "end": "שלום",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "truncated-alias-quirk",
+      "source": "stateDiagram-v2\nstate \"Name\" as",
+      "expected": {
+        "root": [
+          {
+            "stmt": "state",
+            "id": "",
+            "type": "default",
+            "description": "Name"
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "",
+            "type": "default",
+            "descriptions": [
+              "Name"
+            ],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [],
+        "classes": [],
+        "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [],
+        "edges": []
       }
     }
   ],
-  "fixtureSha256": "a383cf8182f8b64568ec19c406d544c2f7b58d509fb256f74c258c970c2a5a9c"
+  "fixtureSha256": "aa122ed6ddefe4db72019ef2cc054e1f2a982b77c28e4e42e9b2a26c37900e60"
 }
