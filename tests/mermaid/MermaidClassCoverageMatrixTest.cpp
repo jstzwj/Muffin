@@ -127,14 +127,29 @@ int main(int argc, char** argv) {
                                       QStringLiteral("parser")},
           QStringLiteral("Class diagnostic mutation coverage regressed"));
 
-  require(layoutCases.size() >= 14, QStringLiteral("Class layout corpus regressed"));
+  require(layoutCases.size() >= 17, QStringLiteral("Class layout corpus regressed"));
   for (const QString& id : {QStringLiteral("class-compartments"),
                             QStringLiteral("relation-marker-label-matrix"),
                             QStringLiteral("lollipop-and-note-edge"),
                             QStringLiteral("generic-member-compartments"),
                             QStringLiteral("note-label-matrix"),
-                            QStringLiteral("nested-namespace-label-matrix")})
+                            QStringLiteral("nested-namespace-label-matrix"),
+                            QStringLiteral("inert-spacing-rl"),
+                            QStringLiteral("inert-spacing-bt"),
+                            QStringLiteral("compound-self-parallel-relations")})
     require(layoutIds.contains(id), QStringLiteral("Class layout axis missing: %1").arg(id));
+  for (const QJsonValue& value : layoutCases) {
+    const QJsonObject item = value.toObject();
+    if (!item.value(QStringLiteral("id")).toString().startsWith(
+            QLatin1String("inert-spacing-")))
+      continue;
+    const QJsonObject expected = item.value(QStringLiteral("expected")).toObject();
+    require(item.value(QStringLiteral("nodeSpacing")).toDouble() != 50.0 &&
+                item.value(QStringLiteral("rankSpacing")).toDouble() != 50.0 &&
+                expected.value(QStringLiteral("nodeSpacing")).toDouble() == 50.0 &&
+                expected.value(QStringLiteral("rankSpacing")).toDouble() == 50.0,
+            QStringLiteral("Class spacing inertness oracle drifted"));
+  }
 
   QSet<QString> themes, dprs, cropTargets, cropKinds;
   int cropCases = 0, sceneCases = 0, mathCases = 0, bidiCases = 0, cjkCases = 0;

@@ -174,9 +174,13 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
     else if (edge.pattern == QLatin1String("dotted")) pen.setDashPattern({2.0, 2.0});
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
-    painter.drawPath(painterPath(edge.path));
-    drawMarker(painter, scene, edge.markerStart, true, edge.renderedPoints, mode);
-    drawMarker(painter, scene, edge.markerEnd, false, edge.renderedPoints, mode);
+    for (const QString& path : edge.paths) painter.drawPath(painterPath(path));
+    const QVector<QPointF>& startPoints = edge.renderedSegments.isEmpty()
+        ? edge.renderedPoints : edge.renderedSegments.first();
+    const QVector<QPointF>& endPoints = edge.renderedSegments.isEmpty()
+        ? edge.renderedPoints : edge.renderedSegments.last();
+    drawMarker(painter, scene, edge.markerStart, true, startPoints, mode);
+    drawMarker(painter, scene, edge.markerEnd, false, endPoints, mode);
   }
 
   for (const auto& edge : scene.edges) {

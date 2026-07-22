@@ -124,6 +124,9 @@ struct ClassDiagramData {
 struct ClassLimits {
   int maxClasses = 1000;
   int maxRelations = 5000;
+  int maxNamespaces = 1000;
+  int maxNotes = 1000;
+  int maxMembers = 10000;
   int maxNamespaceDepth = 64;
   int maxTextSize = 100000;
 };

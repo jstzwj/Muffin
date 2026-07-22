@@ -76,6 +76,27 @@ int main(int argc, char** argv) {
             QStringLiteral("classDiagram scene must contain class, relation, and marker geometry"));
   }
 
+  // Mermaid 11.16.0 accepts class.nodeSpacing/rankSpacing in configuration but
+  // does not forward them to the class renderer's Dagre graph.
+  {
+    MermaidRenderCache cache;
+    const QString configured = QStringLiteral(
+        "%%{init: {\"class\": {\"nodeSpacing\": 123, \"rankSpacing\": 234}}}%%\n") +
+        classDiagram;
+    const MermaidRenderEntry baseline = cache.getSync(
+        MermaidRenderCache::makeKey(classDiagram), classDiagram);
+    const MermaidRenderEntry inert = cache.getSync(
+        MermaidRenderCache::makeKey(configured), configured);
+    require(baseline.status == kReady && inert.status == kReady &&
+                baseline.classScene && inert.classScene &&
+                baseline.naturalSize == inert.naturalSize &&
+                baseline.classScene->nodes.size() == inert.classScene->nodes.size(),
+            QStringLiteral("class spacing config must remain upstream-inert"));
+    for (qsizetype i = 0; i < baseline.classScene->nodes.size(); ++i)
+      require(baseline.classScene->nodes.at(i).center == inert.classScene->nodes.at(i).center,
+              QStringLiteral("class spacing config changed node placement"));
+  }
+
   // --- getSync: malformed → Error ---
   {
     MermaidRenderCache cache;

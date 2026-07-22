@@ -42,6 +42,7 @@ struct FlowLayoutNode {
 struct FlowLayoutEdge {
   QString id;
   QVector<QPointF> points;
+  QVector<QVector<QPointF>> segments;
   QString path;
   bool reversedForLayout = false;
   bool hasLabelPosition = false;

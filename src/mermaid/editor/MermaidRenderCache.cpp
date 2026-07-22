@@ -300,8 +300,6 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       const QJsonObject classConfig = pre.config.value(QStringLiteral("class")).toObject();
       classdiagram::ClassLayoutOptions options;
       options.padding = configNumber(classConfig, QStringLiteral("padding"), 12.0);
-      options.nodeSpacing = configNumber(classConfig, QStringLiteral("nodeSpacing"), 50.0);
-      options.rankSpacing = configNumber(classConfig, QStringLiteral("rankSpacing"), 50.0);
       options.hierarchicalNamespaces =
           classConfig.value(QStringLiteral("hierarchicalNamespaces")).toBool(true);
       options.hideEmptyMembersBox =

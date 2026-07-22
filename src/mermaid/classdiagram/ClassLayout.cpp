@@ -386,7 +386,9 @@ ClassPlacementResult layoutClassDiagramDagre(
   constexpr qreal kDagreMarginX = 8.0;
   const bool compound = std::any_of(input.nodes.cbegin(), input.nodes.cend(),
       [](const ClassLayoutNodeInput& node) { return node.isGroup; });
-  if (compound) {
+  const bool hasSelfEdge = std::any_of(input.edges.cbegin(), input.edges.cend(),
+      [](const ClassLayoutEdgeInput& edge) { return edge.start == edge.end; });
+  if (compound || hasSelfEdge) {
     flowchart::FlowchartData projected;
     projected.direction = input.direction;
     for (const ClassLayoutNodeInput& node : input.nodes) {
@@ -430,6 +432,7 @@ ClassPlacementResult layoutClassDiagramDagre(
       ClassPlacementEdge projectedEdge;
       projectedEdge.id = edge.id;
       projectedEdge.points = edge.points;
+      projectedEdge.segments = edge.segments;
       if (edge.hasLabelPosition)
         projectedEdge.labelPosition = QPointF(edge.labelX, edge.labelY);
       result.edges.append(std::move(projectedEdge));
@@ -455,22 +458,27 @@ ClassPlacementResult layoutClassDiagramDagre(
     }
     for (ClassPlacementEdge& edge : result.edges) {
       for (QPointF& point : edge.points) point -= origin;
+      for (QVector<QPointF>& segment : edge.segments)
+        for (QPointF& point : segment) point -= origin;
       if (edge.labelPosition) *edge.labelPosition -= origin;
     }
 
     // recursiveRender() stores only getBBox().width on an extracted cluster,
     // while its child root starts at Dagre's marginx. positionNode() centers
-    // that width, leaving half the horizontal margin outside the logical atom.
-    // A single-child namespace wrapper is collapsed by clusterDb; only nested
-    // clusters that are siblings of another semantic node get this CTM shift.
+    // that width, leaving half the horizontal margin outside the logical atom
+    // on vertical layouts. A single-child namespace wrapper is collapsed by
+    // clusterDb; only nested clusters with a sibling get this CTM shift.
     QSet<QString> shiftedClusters;
-    for (const ClassLayoutNodeInput& group : input.nodes) {
-      if (!group.isGroup || group.parentId.isEmpty()) continue;
-      const bool hasSibling = std::any_of(input.nodes.cbegin(), input.nodes.cend(),
-          [&](const ClassLayoutNodeInput& candidate) {
-            return candidate.id != group.id && candidate.parentId == group.parentId;
-          });
-      if (hasSibling) shiftedClusters.insert(group.id);
+    const QString direction = input.direction.toUpper();
+    if (direction == QLatin1String("TB") || direction == QLatin1String("BT")) {
+      for (const ClassLayoutNodeInput& group : input.nodes) {
+        if (!group.isGroup || group.parentId.isEmpty()) continue;
+        const bool hasSibling = std::any_of(input.nodes.cbegin(), input.nodes.cend(),
+            [&](const ClassLayoutNodeInput& candidate) {
+              return candidate.id != group.id && candidate.parentId == group.parentId;
+            });
+        if (hasSibling) shiftedClusters.insert(group.id);
+      }
     }
     const auto horizontalShift = [&](QString id) {
       qreal shift = 0.0;
@@ -512,6 +520,8 @@ ClassPlacementResult layoutClassDiagramDagre(
       if (!qFuzzyCompare(startShift + 1.0, endShift + 1.0)) continue;
       const QPointF correction(startShift, 0.0);
       for (QPointF& point : edge.points) point += correction;
+      for (QVector<QPointF>& segment : edge.segments)
+        for (QPointF& point : segment) point += correction;
       if (edge.labelPosition) *edge.labelPosition += correction;
     }
     return result;

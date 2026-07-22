@@ -119,6 +119,7 @@ struct ClassPlacementNode {
 struct ClassPlacementEdge {
   QString id;
   QVector<QPointF> points;
+  QVector<QVector<QPointF>> segments;
   std::optional<QPointF> labelPosition;
 };
 

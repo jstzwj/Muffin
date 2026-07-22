@@ -163,15 +163,64 @@ int main(int argc, char** argv) {
                   QLatin1String("\\+find(id) : Optional&lt;T&gt;"),
           QStringLiteral("Class generic label/member normalization drifted"));
 
-  try {
+  const auto requireResourceLimit = [](const QString& source,
+                                       const ClassLimits& limits,
+                                       int line, int column,
+                                       const QString& detail) {
+    try {
+      ClassDiagram::parse(source, limits);
+      fail(QStringLiteral("Class resource limit was not enforced: %1").arg(detail));
+    } catch (const ClassParseError& error) {
+      require(error.diagnostic().code == ClassErrorCode::LimitExceeded &&
+                  error.diagnostic().stage == ClassErrorStage::Resource &&
+                  error.diagnostic().span.line == line &&
+                  error.diagnostic().span.column == column &&
+                  error.diagnostic().detail == detail,
+              QStringLiteral("Class resource diagnostic drifted for %1: %2:%3 %4")
+                  .arg(detail).arg(error.diagnostic().span.line)
+                  .arg(error.diagnostic().span.column)
+                  .arg(error.diagnostic().detail));
+    }
+  };
+  {
     ClassLimits limits;
     limits.maxClasses = 1;
-    ClassDiagram::parse(QStringLiteral("classDiagram\nA --> B"), limits);
-    fail(QStringLiteral("Class resource limit was not enforced"));
-  } catch (const ClassParseError& error) {
-    require(error.diagnostic().code == ClassErrorCode::LimitExceeded &&
-                error.diagnostic().stage == ClassErrorStage::Resource,
-            QStringLiteral("Class resource error classification drifted"));
+    requireResourceLimit(QStringLiteral("classDiagram\nA --> B"), limits, 2, 6,
+                         QStringLiteral("Maximum class count exceeded"));
+  }
+  {
+    ClassLimits limits;
+    limits.maxRelations = 0;
+    requireResourceLimit(QStringLiteral("classDiagram\nA --> B"), limits, 2, 0,
+                         QStringLiteral("Maximum relation count exceeded"));
+  }
+  {
+    ClassLimits limits;
+    limits.maxNamespaces = 1;
+    requireResourceLimit(QStringLiteral(
+        "classDiagram\nnamespace A {\n}\nnamespace B {\n}"),
+        limits, 4, 0, QStringLiteral("Maximum namespace count exceeded"));
+  }
+  {
+    ClassLimits limits;
+    limits.maxNamespaceDepth = 1;
+    requireResourceLimit(QStringLiteral(
+        "classDiagram\nnamespace A {\nnamespace B {\n}\n}"),
+        limits, 3, 0, QStringLiteral("Maximum namespace depth exceeded"));
+  }
+  {
+    ClassLimits limits;
+    limits.maxNotes = 1;
+    requireResourceLimit(QStringLiteral(
+        "classDiagram\nnote \"first\"\nnote \"second\""),
+        limits, 3, 0, QStringLiteral("Maximum class note count exceeded"));
+  }
+  {
+    ClassLimits limits;
+    limits.maxMembers = 1;
+    requireResourceLimit(QStringLiteral(
+        "classDiagram\nclass A {\n+a\n+b\n}"),
+        limits, 4, 0, QStringLiteral("Maximum class member count exceeded"));
   }
 
   qDebug() << "MermaidClassParserTest:" << cases.size() << "DB cases,"

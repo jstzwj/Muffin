@@ -186,6 +186,47 @@ const cases = [
       "}",
     ].join("\n"),
   },
+  {
+    id: "inert-spacing-rl",
+    nodeSpacing: 72,
+    rankSpacing: 96,
+    source: [
+      "classDiagram",
+      "direction RL",
+      "A --> B : first",
+      "A --> C : second",
+      "B --> D : third",
+    ].join("\n"),
+  },
+  {
+    id: "inert-spacing-bt",
+    nodeSpacing: 36,
+    rankSpacing: 84,
+    source: [
+      "classDiagram",
+      "direction BT",
+      "A --> B",
+      "B --> C",
+    ].join("\n"),
+  },
+  {
+    id: "compound-self-parallel-relations",
+    source: [
+      "classDiagram",
+      "direction LR",
+      "namespace Outer {",
+      "  class A",
+      "  namespace Inner {",
+      "    class B",
+      "  }",
+      "}",
+      "class C",
+      "A \"self\" --> \"one\" A : recursive",
+      "A --> B : first",
+      "A ..> B : second",
+      "B o-- C : cross",
+    ].join("\n"),
+  },
 ];
 
 const { default: puppeteer } = await import(
@@ -258,9 +299,12 @@ try {
         startOnLoad: false,
         securityLevel: "strict",
         look: "classic",
+        htmlLabels: fixture.htmlLabels ?? true,
         fontFamily: fontStack,
         class: {
           padding: 12,
+          nodeSpacing: fixture.nodeSpacing ?? 50,
+          rankSpacing: fixture.rankSpacing ?? 50,
           hierarchicalNamespaces: fixture.hierarchicalNamespaces ?? true,
           hideEmptyMembersBox: fixture.hideEmptyMembersBox ?? false,
         },
@@ -351,6 +395,23 @@ try {
         return { id: value.id, position, bbox: bbox(element), labels };
       });
       const origin = positionedNodes[0]?.position ?? { x: 0, y: 0 };
+      const allEdgeLabels = [...document.querySelectorAll("g.edgeLabel")];
+      let edgeLabelIndex = 0;
+      const semanticEdgeLabels = data.edges.map((edge) => {
+        const count = edge.start === edge.end ? 3 : 1;
+        const group = allEdgeLabels.slice(edgeLabelIndex, edgeLabelIndex + count);
+        edgeLabelIndex += count;
+        const element = group[Math.floor(count / 2)];
+        if (!element) throw new Error(`${fixture.id}: missing edge label group for ${edge.id}`);
+        const position = element.getAttribute("transform") ? rootPosition(element) : null;
+        return {
+          domId: element.id,
+          text: element.textContent ?? "",
+          bbox: bbox(element),
+          dx: position ? round(position.x - origin.x) : null,
+          dy: position ? round(position.y - origin.y) : null,
+        };
+      });
       const placement = {
         nodes: positionedNodes.map((value) => ({
           id: value.id,
@@ -364,16 +425,7 @@ try {
             dy: round(label.position.y - origin.y),
           })),
         })),
-        edgeLabels: [...document.querySelectorAll("g.edgeLabel")].map((element) => {
-          const position = element.getAttribute("transform") ? rootPosition(element) : null;
-          return {
-            domId: element.id,
-            text: element.textContent ?? "",
-            bbox: bbox(element),
-            dx: position ? round(position.x - origin.x) : null,
-            dy: position ? round(position.y - origin.y) : null,
-          };
-        }),
+        edgeLabels: semanticEdgeLabels,
         clusters: data.nodes.filter((value) => value.isGroup).map((value) => {
           const element = [...document.querySelectorAll("g.cluster")].find((candidate) =>
             candidate.id.endsWith(`-${value.id}`));
@@ -405,34 +457,53 @@ try {
         names.map((name) => [name, element?.getAttribute(name) ?? ""]),
       );
       const edgePaths = [...document.querySelectorAll("g.edgePaths path")];
-      if (edgePaths.length !== data.edges.length) {
-        throw new Error(`${fixture.id}: expected ${data.edges.length} edge paths, rendered ${edgePaths.length}`);
-      }
+      let edgePathIndex = 0;
+      const edgePathGroups = data.edges.map((edge) => {
+        const count = edge.start === edge.end ? 3 : 1;
+        const group = edgePaths.slice(edgePathIndex, edgePathIndex + count);
+        edgePathIndex += count;
+        return group;
+      });
+      if (edgePathIndex !== edgePaths.length || edgePathGroups.some((group) => group.length === 0))
+        throw new Error(`${fixture.id}: cannot map ${edgePaths.length} DOM paths to ` +
+          `${data.edges.length} semantic edges`);
       const terminalGroups = [...document.querySelectorAll("g.edgeTerminals")];
       let terminalIndex = 0;
       const structuralEdges = data.edges.map((value, index) => {
-        const pathElement = edgePaths[index];
-        const encodedPoints = pathElement.getAttribute("data-points") ?? "";
-        const rawPoints = encodedPoints
-          ? JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(encodedPoints), (char) => char.charCodeAt(0))))
-          : [];
-        const pathMatrix = pathElement.getCTM();
-        const pathTokens = (pathElement.getAttribute("d") ?? "")
-          .match(/[A-Za-z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g) ?? [];
-        const normalizedPath = [];
-        let pendingX = null;
-        for (const token of pathTokens) {
-          if (/^[A-Za-z]$/.test(token)) {
-            if (pendingX !== null) throw new Error(`${fixture.id}: incomplete path coordinate pair`);
-            normalizedPath.push(token);
-          } else if (pendingX === null) {
-            pendingX = Number(token);
-          } else {
-            const point = new DOMPoint(pendingX, Number(token)).matrixTransform(pathMatrix);
-            normalizedPath.push(round(point.x - origin.x), round(point.y - origin.y));
-            pendingX = null;
+        const pathSnapshots = edgePathGroups[index].map((pathElement) => {
+          const encodedPoints = pathElement.getAttribute("data-points") ?? "";
+          const rawPoints = encodedPoints
+            ? JSON.parse(new TextDecoder().decode(Uint8Array.from(
+                atob(encodedPoints), (char) => char.charCodeAt(0))))
+            : [];
+          const pathMatrix = pathElement.getCTM();
+          const pathTokens = (pathElement.getAttribute("d") ?? "")
+            .match(/[A-Za-z]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?/g) ?? [];
+          const normalizedPath = [];
+          let pendingX = null;
+          for (const token of pathTokens) {
+            if (/^[A-Za-z]$/.test(token)) {
+              if (pendingX !== null) throw new Error(`${fixture.id}: incomplete path coordinate pair`);
+              normalizedPath.push(token);
+            } else if (pendingX === null) {
+              pendingX = Number(token);
+            } else {
+              const point = new DOMPoint(pendingX, Number(token)).matrixTransform(pathMatrix);
+              normalizedPath.push(round(point.x - origin.x), round(point.y - origin.y));
+              pendingX = null;
+            }
           }
-        }
+          return {
+            path: attributeSnapshot(pathElement,
+              ["id", "class", "d", "style", "marker-start", "marker-end", "data-points"]),
+            normalizedPoints: rawPoints.map((point) => {
+              const transformed = new DOMPoint(point.x, point.y).matrixTransform(pathMatrix);
+              return { x: round(transformed.x - origin.x),
+                       y: round(transformed.y - origin.y) };
+            }),
+            normalizedPath,
+          };
+        });
         const terminals = {};
         for (const name of ["startLabelLeft", "startLabelRight", "endLabelLeft", "endLabelRight"]) {
           if (!value[name]) continue;
@@ -448,13 +519,10 @@ try {
         }
         return {
           id: value.id,
-          path: attributeSnapshot(pathElement,
-            ["id", "class", "d", "style", "marker-start", "marker-end", "data-points"]),
-          normalizedPoints: rawPoints.map((point) => {
-            const transformed = new DOMPoint(point.x, point.y).matrixTransform(pathMatrix);
-            return { x: round(transformed.x - origin.x), y: round(transformed.y - origin.y) };
-          }),
-          normalizedPath,
+          path: pathSnapshots[0].path,
+          normalizedPoints: pathSnapshots.length === 1 ? pathSnapshots[0].normalizedPoints : [],
+          normalizedPath: pathSnapshots.length === 1 ? pathSnapshots[0].normalizedPath : [],
+          segments: pathSnapshots.length > 1 ? pathSnapshots : [],
           terminals,
         };
       });
@@ -484,6 +552,8 @@ try {
           nodes: data.nodes.map(node),
           edges: data.edges.map(edge),
           direction: data.direction,
+          // Mermaid's class renderer does not forward these class config fields
+          // to Dagre. Keep the non-default inputs above as an explicit inertness oracle.
           nodeSpacing: 50,
           rankSpacing: 50,
           markers: ["aggregation", "extension", "composition", "dependency", "lollipop"],

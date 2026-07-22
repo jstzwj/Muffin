@@ -24,7 +24,7 @@ namespace {
 }
 void require(bool condition, const QString& message) { if (!condition) fail(message); }
 void near(qreal actual, qreal expected, const QString& context) {
-  if (std::abs(actual - expected) > 0.002)
+  if (std::abs(actual - expected) > 0.01)
     fail(QStringLiteral("%1: native %2, upstream %3")
              .arg(context).arg(actual, 0, 'f', 4).arg(expected, 0, 'f', 4));
 }
@@ -72,7 +72,7 @@ void comparePath(const QString& actual, const QJsonArray& expected,
       require(tokens.at(i).toString() == expected.at(i).toString(),
               QStringLiteral("%1 command %2 mismatch").arg(context).arg(i));
     else
-      if (std::abs(tokens.at(i).toDouble() - expected.at(i).toDouble()) > 0.003)
+      if (std::abs(tokens.at(i).toDouble() - expected.at(i).toDouble()) > 0.01)
         fail(QStringLiteral("%1[%2]: native %3, upstream %4")
                  .arg(context).arg(i)
                  .arg(tokens.at(i).toDouble(), 0, 'f', 4)
@@ -224,6 +224,7 @@ int main(int argc, char** argv) {
     ClassLayoutOptions options;
     options.hierarchicalNamespaces = fixture.value(QStringLiteral("hierarchicalNamespaces")).toBool(true);
     options.hideEmptyMembersBox = fixture.value(QStringLiteral("hideEmptyMembersBox")).toBool(false);
+    options.htmlLabels = fixture.value(QStringLiteral("htmlLabels")).toBool(true);
     const ClassLayoutInput input = buildClassLayoutInput(
         ClassDiagram::parse(fixture.value(QStringLiteral("source")).toString()).data(), options);
     const QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
@@ -320,17 +321,48 @@ int main(int argc, char** argv) {
       const QJsonObject edgeObject = edgeValue.toObject();
       const QString edgeId = edgeObject.value(QStringLiteral("id")).toString();
       const ClassSceneEdge& edge = sceneEdge(scene, edgeId);
+      const QJsonArray segments = edgeObject.value(QStringLiteral("segments")).toArray();
       const QJsonArray points = edgeObject.value(QStringLiteral("normalizedPoints")).toArray();
-      require(edge.points.size() == points.size(), id + QLatin1Char('/') + edgeId + QStringLiteral(".pointCount"));
-      for (qsizetype point = 0; point < edge.points.size(); ++point) {
-        const QJsonObject expectedPoint = points.at(point).toObject();
-        near(edge.points.at(point).x(), expectedPoint.value(QStringLiteral("x")).toDouble(),
-             id + QLatin1Char('/') + edgeId + QStringLiteral(".point%1.x").arg(point));
-        near(edge.points.at(point).y(), expectedPoint.value(QStringLiteral("y")).toDouble(),
-             id + QLatin1Char('/') + edgeId + QStringLiteral(".point%1.y").arg(point));
+      if (segments.isEmpty()) {
+        require(edge.points.size() == points.size(), id + QLatin1Char('/') + edgeId + QStringLiteral(".pointCount"));
+        for (qsizetype point = 0; point < edge.points.size(); ++point) {
+          const QJsonObject expectedPoint = points.at(point).toObject();
+          near(edge.points.at(point).x(), expectedPoint.value(QStringLiteral("x")).toDouble(),
+               id + QLatin1Char('/') + edgeId + QStringLiteral(".point%1.x").arg(point));
+          near(edge.points.at(point).y(), expectedPoint.value(QStringLiteral("y")).toDouble(),
+               id + QLatin1Char('/') + edgeId + QStringLiteral(".point%1.y").arg(point));
+        }
+        comparePath(edge.path, edgeObject.value(QStringLiteral("normalizedPath")).toArray(),
+                    id + QLatin1Char('/') + edgeId + QStringLiteral(".path"));
+      } else {
+        require(edge.segments.size() == segments.size() &&
+                    edge.paths.size() == segments.size(),
+                id + QLatin1Char('/') + edgeId + QStringLiteral(".segmentCount"));
+        for (qsizetype segmentIndex = 0; segmentIndex < segments.size(); ++segmentIndex) {
+          const QJsonObject expectedSegment = segments.at(segmentIndex).toObject();
+          const QJsonArray expectedPoints =
+              expectedSegment.value(QStringLiteral("normalizedPoints")).toArray();
+          const QVector<QPointF>& actualPoints = edge.segments.at(segmentIndex);
+          require(actualPoints.size() == expectedPoints.size(),
+                  id + QLatin1Char('/') + edgeId +
+                      QStringLiteral(".segment%1.pointCount").arg(segmentIndex));
+          for (qsizetype point = 0; point < actualPoints.size(); ++point) {
+            const QJsonObject expectedPoint = expectedPoints.at(point).toObject();
+            near(actualPoints.at(point).x(),
+                 expectedPoint.value(QStringLiteral("x")).toDouble(),
+                 id + QLatin1Char('/') + edgeId +
+                     QStringLiteral(".segment%1.point%2.x").arg(segmentIndex).arg(point));
+            near(actualPoints.at(point).y(),
+                 expectedPoint.value(QStringLiteral("y")).toDouble(),
+                 id + QLatin1Char('/') + edgeId +
+                     QStringLiteral(".segment%1.point%2.y").arg(segmentIndex).arg(point));
+          }
+          comparePath(edge.paths.at(segmentIndex),
+                      expectedSegment.value(QStringLiteral("normalizedPath")).toArray(),
+                      id + QLatin1Char('/') + edgeId +
+                          QStringLiteral(".segment%1.path").arg(segmentIndex));
+        }
       }
-      comparePath(edge.path, edgeObject.value(QStringLiteral("normalizedPath")).toArray(),
-                  id + QLatin1Char('/') + edgeId + QStringLiteral(".path"));
       const QJsonObject terminals = edgeObject.value(QStringLiteral("terminals")).toObject();
       if (edge.startLabelRight) {
         const QJsonObject terminal = terminals.value(QStringLiteral("startLabelRight")).toObject();

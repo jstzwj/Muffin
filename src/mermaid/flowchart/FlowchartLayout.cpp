@@ -784,6 +784,44 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
       const d::DagreNodeLabel* dummy2 = g.node(start + QStringLiteral("---") + start +
                                                QStringLiteral("---2"));
       if (node && dummy1 && dummy2) {
+        const auto segmentPoints = [&](const QString& tailId,
+                                       const QString& headId,
+                                       const QString& edgeName,
+                                       const QString& tailType,
+                                       const QString& headType) {
+          QVector<QPointF> points;
+          const d::DagreEdgeLabel* segment = g.edge(tailId, headId, edgeName);
+          if (!segment) return points;
+          points = segment->points;
+          const d::DagreNodeLabel* tail = g.node(tailId);
+          const d::DagreNodeLabel* head = g.node(headId);
+          if (points.size() >= 2) {
+            points.first() = tail
+                ? intersectNodeForShape(*tail, tailType, points.value(1), options.look)
+                : points.first();
+            points.last() = head
+                ? intersectNodeForShape(*head, headType,
+                                        points.value(points.size() - 2), options.look)
+                : points.last();
+          }
+          for (QPointF& point : points) point -= origin;
+          return points;
+        };
+        const QString dummy1Id = start + QStringLiteral("---") + start +
+                                 QStringLiteral("---1");
+        const QString dummy2Id = start + QStringLiteral("---") + start +
+                                 QStringLiteral("---2");
+        out.segments = {
+            segmentPoints(start, dummy1Id,
+                          start + QStringLiteral("-cyclic-special-0"),
+                          vertexType.value(start), QStringLiteral("rect")),
+            segmentPoints(dummy1Id, dummy2Id,
+                          start + QStringLiteral("-cyclic-special-1"),
+                          QStringLiteral("rect"), QStringLiteral("rect")),
+            segmentPoints(dummy2Id, start,
+                          start + QStringLiteral("-cyclic-special-2"),
+                          QStringLiteral("rect"), vertexType.value(start)),
+        };
         const QPointF center(node->x.value_or(0.0), node->y.value_or(0.0));
         const QPointF hint((dummy1->x.value_or(0.0) + dummy2->x.value_or(0.0)) / 2.0,
                            (dummy1->y.value_or(0.0) + dummy2->y.value_or(0.0)) / 2.0);
@@ -840,6 +878,12 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
         out.points.last() = intersectNodeForShape(*node, vertexType.value(start),
                                                   out.points.at(out.points.size() - 2), options.look);
         out.hasLabelPosition = !fe.text.isEmpty();
+        const d::DagreEdgeLabel* middle = g.edge(
+            dummy1Id, dummy2Id, start + QStringLiteral("-cyclic-special-1"));
+        if (out.hasLabelPosition && middle && middle->x && middle->y) {
+          out.labelX = *middle->x;
+          out.labelY = *middle->y;
+        }
         for (QPointF& point : out.points) point -= origin;
         if (out.hasLabelPosition) {
           out.labelX -= origin.x();
@@ -953,6 +997,8 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     }
     for (FlowLayoutEdge edge : item.layout.edges) {
       for (QPointF& point : edge.points) point += delta;
+      for (QVector<QPointF>& segment : edge.segments)
+        for (QPointF& point : segment) point += delta;
       if (edge.hasLabelPosition) {
         edge.labelX += delta.x();
         edge.labelY += delta.y();
@@ -1010,6 +1056,8 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     }
     for (FlowLayoutEdge& edge : ordered.edges) {
       for (QPointF& point : edge.points) point -= finalOrigin;
+      for (QVector<QPointF>& segment : edge.segments)
+        for (QPointF& point : segment) point -= finalOrigin;
       if (edge.hasLabelPosition) {
         edge.labelX -= finalOrigin.x();
         edge.labelY -= finalOrigin.y();

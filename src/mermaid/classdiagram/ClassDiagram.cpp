@@ -43,6 +43,7 @@ ClassSourceSpan spanForOffset(const QString& source, qsizetype offset, qsizetype
 struct ParsedName {
   QString id;
   QString type;
+  qsizetype offset = -1;
 };
 
 ClassMember parseMember(QString input) {
@@ -164,12 +165,13 @@ private:
   enum class ScopeKind { Class, Namespace };
   struct Scope { ScopeKind kind; QString id; };
 
-  ClassNode& addClass(const QString& id, const QString& type = {}) {
+  ClassNode& addClass(const QString& id, const QString& type,
+                      qsizetype offset) {
     auto found = std::find_if(data_.classes.begin(), data_.classes.end(),
                               [&](const ClassNode& value) { return value.id == id; });
     if (found != data_.classes.end()) return *found;
     if (data_.classes.size() >= limits_.maxClasses)
-      raise(source_, source_.size(), ClassErrorStage::Resource, ClassErrorCode::LimitExceeded,
+      raise(source_, offset, ClassErrorStage::Resource, ClassErrorCode::LimitExceeded,
             QStringLiteral("classIdentifier"), id, {}, QStringLiteral("Maximum class count exceeded"));
     ClassNode node;
     node.id = id;
@@ -194,7 +196,11 @@ private:
     return *found;
   }
 
-  void addNamespace(QString id, QString label) {
+  void addNamespace(QString id, QString label, qsizetype offset) {
+    if (namespaceStack_.size() >= limits_.maxNamespaceDepth)
+      raise(source_, offset, ClassErrorStage::Resource, ClassErrorCode::LimitExceeded,
+            QStringLiteral("namespaceStatement"), id, {},
+            QStringLiteral("Maximum namespace depth exceeded"));
     const QString qualified = namespaceStack_.isEmpty() ? id : namespaceStack_.back() + QLatin1Char('.') + id;
     const QStringList parts = qualified.split(QLatin1Char('.'));
     QString current;
@@ -204,6 +210,10 @@ private:
       auto found = std::find_if(data_.namespaces.begin(), data_.namespaces.end(),
                                 [&](const ClassNamespace& value) { return value.id == current; });
       if (found == data_.namespaces.end()) {
+        if (data_.namespaces.size() >= limits_.maxNamespaces)
+          raise(source_, offset, ClassErrorStage::Resource, ClassErrorCode::LimitExceeded,
+                QStringLiteral("namespaceStatement"), id, {},
+                QStringLiteral("Maximum namespace count exceeded"));
         ClassNamespace item;
         item.id = current;
         item.label = parts[index];
@@ -219,23 +229,43 @@ private:
     if (!label.isEmpty()) item.label = label;
     namespaceStack_.append(qualified);
     scopes_.append({ScopeKind::Namespace, qualified});
-    if (namespaceStack_.size() > limits_.maxNamespaceDepth)
-      raise(source_, source_.size(), ClassErrorStage::Resource, ClassErrorCode::LimitExceeded,
-            QStringLiteral("namespaceStatement"), id, {}, QStringLiteral("Maximum namespace depth exceeded"));
   }
 
-  void addMember(ClassNode& node, const QString& text) {
+  void addAnnotation(ClassNode& node, const QString& annotation,
+                     qsizetype offset) {
+    if (memberCount_ >= limits_.maxMembers)
+      raise(source_, offset, ClassErrorStage::Resource, ClassErrorCode::LimitExceeded,
+            QStringLiteral("annotationStatement"), annotation, {},
+            QStringLiteral("Maximum class member count exceeded"));
+    node.annotations.append(annotation);
+    ++memberCount_;
+  }
+
+  void addMember(ClassNode& node, const QString& text, qsizetype offset) {
     const QString trimmed = text.trimmed();
     if (trimmed.startsWith(QLatin1String("<<")) && trimmed.endsWith(QLatin1String(">>"))) {
-      node.annotations.append(trimmed.mid(2, trimmed.size() - 4));
+      addAnnotation(node, trimmed.mid(2, trimmed.size() - 4), offset);
       return;
     }
+    if (memberCount_ >= limits_.maxMembers)
+      raise(source_, offset, ClassErrorStage::Resource, ClassErrorCode::LimitExceeded,
+            QStringLiteral("memberStatement"), trimmed, {},
+            QStringLiteral("Maximum class member count exceeded"));
     const ClassMember member = parseMember(trimmed);
-    if (member.memberType == QLatin1String("method")) node.methods.append(member);
-    else if (!member.id.isEmpty()) node.members.append(member);
+    if (member.memberType == QLatin1String("method")) {
+      node.methods.append(member);
+      ++memberCount_;
+    } else if (!member.id.isEmpty()) {
+      node.members.append(member);
+      ++memberCount_;
+    }
   }
 
-  void addNote(QString text, QString className) {
+  void addNote(QString text, QString className, qsizetype offset) {
+    if (data_.notes.size() >= limits_.maxNotes)
+      raise(source_, offset, ClassErrorStage::Resource, ClassErrorCode::LimitExceeded,
+            QStringLiteral("noteStatement"), text, {},
+            QStringLiteral("Maximum class note count exceeded"));
     ClassNote note;
     note.index = data_.notes.size();
     note.id = QStringLiteral("note%1").arg(note.index);
@@ -255,6 +285,7 @@ private:
     ParsedName name;
     const ClassToken& token = cursor.consume();
     name.id = token.text;
+    name.offset = token.offset;
     if (!cursor.atEnd() && cursor.peek().kind == ClassTokenKind::Generic) {
       const ClassToken& generic = cursor.consume();
       name.type = generic.text;
@@ -291,7 +322,7 @@ private:
       return;
     }
     if (!scopes_.isEmpty() && scopes_.back().kind == ScopeKind::Class) {
-      addMember(*findClass(scopes_.back().id), line.raw(source_));
+      addMember(*findClass(scopes_.back().id), line.raw(source_), offset);
       return;
     }
     if (line.matchWord(u"namespace")) {
@@ -312,7 +343,7 @@ private:
       if (name.id.isEmpty() || !line.atEnd())
         unexpected(line, offset, QStringLiteral("annotationStatement"),
                    {QStringLiteral("className")});
-      addClass(name.id, name.type).annotations.append(annotation);
+      addAnnotation(addClass(name.id, name.type, name.offset), annotation, offset);
       return;
     }
     if (line.matchWord(u"note")) {
@@ -333,7 +364,8 @@ private:
     ClassTokenCursor memberProbe = line;
     const ParsedName memberName = parseName(memberProbe);
     if (!memberName.id.isEmpty() && memberProbe.match(ClassTokenKind::Colon)) {
-      addMember(addClass(memberName.id, memberName.type), memberProbe.raw(source_));
+      addMember(addClass(memberName.id, memberName.type, memberName.offset),
+                memberProbe.raw(source_), offset);
       return;
     }
     if (parseRelation(line, offset)) return;
@@ -364,7 +396,7 @@ private:
     if (!cursor.match(ClassTokenKind::LBrace))
       unexpected(cursor, offset, QStringLiteral("namespaceStatement"),
                  {QStringLiteral("STRUCT_START")});
-    addNamespace(namespaceName, label);
+    addNamespace(namespaceName, label, offset);
     if (!cursor.atEnd()) parseStatement(cursor, cursor.peek().offset);
   }
 
@@ -374,7 +406,7 @@ private:
       raise(source_, offset + 5, ClassErrorStage::Parser, ClassErrorCode::UnexpectedToken,
             QStringLiteral("classIdentifier"), QStringLiteral("NEWLINE"),
             {QStringLiteral("className")});
-    ClassNode& node = addClass(name.id, name.type);
+    ClassNode& node = addClass(name.id, name.type, name.offset);
     if (!cursor.atEnd() && cursor.peek().kind == ClassTokenKind::LBracket) {
       const ClassToken openingBracket = cursor.consume();
       if (cursor.atEnd() || (cursor.peek().kind != ClassTokenKind::String &&
@@ -415,7 +447,7 @@ private:
     if (cursor.match(ClassTokenKind::LBrace)) {
       if (cursor.match(ClassTokenKind::RBrace) && cursor.atEnd()) return;
       scopes_.append({ScopeKind::Class, node.id});
-      if (!cursor.atEnd()) addMember(node, cursor.raw(source_));
+      if (!cursor.atEnd()) addMember(node, cursor.raw(source_), offset);
       return;
     }
     if (!cursor.atEnd()) unexpected(cursor, offset, QStringLiteral("classStatement"));
@@ -498,18 +530,18 @@ private:
       const bool leftLollipop = relation.type1.isDouble() && relation.type1.toInt() == 4;
       const bool rightLollipop = relation.type2.isDouble() && relation.type2.toInt() == 4;
       if (leftLollipop && relation.type2.isString()) {
-        addClass(relation.id2);
+        addClass(relation.id2, targetName.type, targetName.offset);
         const QString interfaceId = QStringLiteral("interface%1").arg(interfaceCount_++);
         data_.interfaces.append({interfaceId, relation.id1, relation.id2});
         relation.id1 = interfaceId;
       } else if (rightLollipop && relation.type1.isString()) {
-        addClass(relation.id1);
+        addClass(relation.id1, sourceName.type, sourceName.offset);
         const QString interfaceId = QStringLiteral("interface%1").arg(interfaceCount_++);
         data_.interfaces.append({interfaceId, relation.id2, relation.id1});
         relation.id2 = interfaceId;
       } else {
-        addClass(relation.id1);
-        addClass(relation.id2);
+        addClass(relation.id1, sourceName.type, sourceName.offset);
+        addClass(relation.id2, targetName.type, targetName.offset);
       }
       data_.relations.append(std::move(relation));
       return true;
@@ -541,9 +573,9 @@ private:
         cursor.peek().kind == ClassTokenKind::Backtick) {
       const QString text = cursor.consume().text;
       if (!cursor.atEnd()) unexpected(cursor, offset, QStringLiteral("noteStatement"));
-      addNote(text, className);
+      addNote(text, className, offset);
     } else {
-      addNote(cursor.raw(source_), className);
+      addNote(cursor.raw(source_), className, offset);
     }
   }
 
@@ -636,6 +668,7 @@ private:
   QStringList namespaceStack_;
   QMap<QString, QStringList> styleClasses_;
   int interfaceCount_ = 0;
+  int memberCount_ = 0;
 };
 
 QJsonObject memberJson(const ClassMember& member) {

@@ -68,7 +68,10 @@ struct ClassSceneEdge {
   QString markerEnd;
   QVector<QPointF> points;
   QVector<QPointF> renderedPoints;
+  QVector<QVector<QPointF>> segments;
+  QVector<QVector<QPointF>> renderedSegments;
   QString path;
+  QStringList paths;
   QString label;
   std::optional<QPointF> labelPosition;
   std::optional<ClassSceneTerminalLabel> startLabelRight;

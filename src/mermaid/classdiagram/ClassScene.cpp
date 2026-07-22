@@ -345,15 +345,34 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     rendered.id = edge.id; rendered.pattern = edge.pattern;
     rendered.classes = edge.classes; rendered.markerStart = edge.arrowTypeStart;
     rendered.markerEnd = edge.arrowTypeEnd; rendered.points = found->points;
-    rendered.renderedPoints = applyMarkerOffsets(rendered.points, edge);
-    rendered.path = flowchart::d3curve::pathForCurve(rendered.renderedPoints,
-                                                     QStringLiteral("basis"));
+    rendered.segments = found->segments;
+    if (rendered.segments.isEmpty()) {
+      rendered.renderedPoints = applyMarkerOffsets(rendered.points, edge);
+      rendered.path = flowchart::d3curve::pathForCurve(rendered.renderedPoints,
+                                                       QStringLiteral("basis"));
+      rendered.paths.append(rendered.path);
+    } else {
+      for (qsizetype index = 0; index < rendered.segments.size(); ++index) {
+        ClassLayoutEdgeInput segmentEdge = edge;
+        if (index != 0) segmentEdge.arrowTypeStart = QStringLiteral("none");
+        if (index + 1 != rendered.segments.size())
+          segmentEdge.arrowTypeEnd = QStringLiteral("none");
+        QVector<QPointF> segment = applyMarkerOffsets(
+            rendered.segments.at(index), segmentEdge);
+        rendered.paths.append(flowchart::d3curve::pathForCurve(
+            segment, QStringLiteral("basis")));
+        rendered.renderedSegments.append(std::move(segment));
+      }
+      rendered.path = rendered.paths.join(QLatin1Char(' '));
+    }
     rendered.label = edge.label; rendered.labelPosition = found->labelPosition;
     rendered.style = edge.style; rendered.labelStyle = edge.labelStyle;
     if (!edge.startLabelRight.isEmpty()) {
       ClassSceneTerminalLabel terminal;
       terminal.text = edge.startLabelRight;
-      terminal.center = terminalPosition(rendered.points, true, true,
+      const QVector<QPointF>& terminalPoints = rendered.segments.isEmpty()
+          ? rendered.points : rendered.segments.first();
+      terminal.center = terminalPosition(terminalPoints, true, true,
                                          !edge.arrowTypeStart.isEmpty());
       terminal.document = prepareLabel(terminal.text, scene.style.fontSize);
       rendered.startLabelRight = std::move(terminal);
@@ -361,7 +380,9 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     if (!edge.endLabelLeft.isEmpty()) {
       ClassSceneTerminalLabel terminal;
       terminal.text = edge.endLabelLeft;
-      terminal.center = terminalPosition(rendered.points, false, false,
+      const QVector<QPointF>& terminalPoints = rendered.segments.isEmpty()
+          ? rendered.points : rendered.segments.last();
+      terminal.center = terminalPosition(terminalPoints, false, false,
                                          !edge.arrowTypeEnd.isEmpty());
       terminal.document = prepareLabel(terminal.text, scene.style.fontSize);
       rendered.endLabelLeft = std::move(terminal);
@@ -379,8 +400,12 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     unite(QRectF(node.center.x() - node.size.width() / 2.0,
                  node.center.y() - node.size.height() / 2.0,
                  node.size.width(), node.size.height()));
-  for (const auto& edge : scene.edges)
-    for (const QPointF& point : edge.renderedPoints) unite(QRectF(point, QSizeF(0, 0)));
+  for (const auto& edge : scene.edges) {
+    for (const QPointF& point : edge.renderedPoints)
+      unite(QRectF(point, QSizeF(0, 0)));
+    for (const QVector<QPointF>& segment : edge.renderedSegments)
+      for (const QPointF& point : segment) unite(QRectF(point, QSizeF(0, 0)));
+  }
   return scene;
 }
 
