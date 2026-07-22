@@ -107,7 +107,7 @@ The default CTest fixture is 1 MiB so the Release suite stays practical. The tes
 1. UTF-8 fixture generation, asynchronous `FileController` open, and parse completion;
 2. lazy `DocumentLayout` construction with no eager promotion, then first-viewport promotion;
 3. local edits near the top, middle, and 90% position, followed by undo-all and redo-all;
-4. a real save and asynchronous reopen into a second session;
+4. a real save, destruction of the editor/layout/first session, and asynchronous reopen;
 5. exact source SHA-256 and complete semantic/source-range AST fingerprint comparison.
 
 Timing and working-set samples are emitted as structured JSON but remain informational, so
@@ -123,15 +123,31 @@ $env:MUFFIN_BENCH_JSON = "large-document-roundtrip.json"
 ctest --preset conan-release -R "^MuffinLargeDocumentRoundTripTest$" --output-on-failure -V
 ```
 
-On the 20 MiB mixed fixture (20,972,406 UTF-8 bytes, 323,478 top-level blocks), the Release
-baseline measured:
+The edited tree is reduced to its digest, node counts, and SHA-256 fingerprint before reopening.
+This preserves the complete deterministic comparison without keeping two full ASTs alive. The
+Release baselines on the dense mixed fixture measured:
 
-- open and parse: 11.586 s; lazy layout index: 2.273 s; first viewport: 74.3 ms;
-- top/middle/near-end edits: 4.20 / 3.31 / 2.03 ms;
-- undo all: 6.83 ms; redo all: 134.1 ms; save: 97.8 ms; reopen: 12.428 s;
-- zero full-layout refreshes, 32 promoted slots, and 7 piece-table pieces;
-- 1.64 GiB peak working set while both the edited and reopened full documents were alive for
-  structural comparison.
+| Metric | 50 MiB | 100 MiB |
+| --- | ---: | ---: |
+| UTF-8 bytes | 52,429,529 | 104,858,485 |
+| Top-level / block / inline nodes | 800,583 / 2,134,884 / 2,294,998 | 1,592,763 / 4,247,364 / 4,565,914 |
+| Open and parse | 51.417 s | 200.590 s |
+| Parser-reported time | 47.652 s | 193.470 s |
+| Lazy layout index | 5.218 s | 9.426 s |
+| First viewport | 68.0 ms | 68.0 ms |
+| Top/middle/near-end edits | 3.91 / 5.35 / 6.32 ms | 4.33 / 3.71 / 6.17 ms |
+| Undo all / redo all | 18.7 / 195.6 ms | 11.8 / 382.2 ms |
+| Save | 234.1 ms | 373.9 ms |
+| Working set before release | 2,130.9 MiB | 4,216.3 MiB |
+| Release time / working set after release | 1.023 s / 43.2 MiB | 2.482 s / 51.0 MiB |
+| Reopen time / working set | 54.510 s / 2,002.3 MiB | 198.352 s / 3,924.4 MiB |
+
+Both sizes retained zero full-layout refreshes, 32 promoted slots, and 7 piece-table pieces.
+Memory scales approximately with node count and returns close to the process baseline before the
+second open, eliminating the previous double-AST peak. The 50-to-100 MiB parse time increased by
+about 4x while input and node counts increased by about 2x. The next profiling pass should split
+the full parser/annotation pipeline by phase; the edit and first-viewport paths are not the current
+scaling bottleneck.
 
 The first complete run exposed and now guards two source-range defects: cmark-gfm collected
 footnote definitions at the document tail instead of source order, which made local suffix shifts
@@ -143,6 +159,7 @@ front-matter and trailing-line semantics as a fresh cmark parse.
 
 At working sets close to physical-memory pressure, Windows paging, memory compression,
 font loading, or graphics-driver scheduling can still create occasional outliers that are
-outside the deterministic edit path. The remaining code-controlled synchronous phases are
-sub-millisecond in the measured 100 MB document; future latency work should start with a
-new end-to-end trace rather than adding another document-wide cache.
+outside the deterministic edit path. Ordinary prose remains much smaller than the deliberately
+node-dense mixed fixture, but the 100 MiB result now demonstrates a parser-side superlinear trend.
+Future work should use the existing per-phase parse diagnostics to identify that cost before
+adding another document-wide cache.
