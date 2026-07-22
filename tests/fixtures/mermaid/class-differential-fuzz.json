@@ -1,0 +1,418 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0"
+  },
+  "generator": {
+    "name": "production-aware-class-mutation-fuzzer",
+    "caseCount": 10,
+    "operatorCounts": {
+      "break-paired-delimiter": 1,
+      "delete-required-terminal": 3,
+      "duplicate-separator": 1,
+      "insert-nullable-boundary-token": 1,
+      "replace-terminal-class": 2,
+      "truncate-recursive-production": 2
+    },
+    "stageCounts": {
+      "detector": 1,
+      "lexer": 2,
+      "parser": 7
+    },
+    "matrixCounts": {
+      "4:4|delete-required-terminal|detector|missing-header": 1,
+      "55:2|delete-required-terminal|parser|unexpected-token": 1,
+      "47:1|replace-terminal-class|lexer|unexpected-token": 1,
+      "47:1|duplicate-separator|parser|unexpected-token": 1,
+      "47:1|truncate-recursive-production|parser|missing-closing-brace": 1,
+      "34:4|truncate-recursive-production|parser|missing-closing-brace": 1,
+      "8:3|break-paired-delimiter|parser|invalid-class-label": 1,
+      "5:1|insert-nullable-boundary-token|lexer|unexpected-token": 1,
+      "67:3|delete-required-terminal|parser|missing-relation-target": 1,
+      "89:1|replace-terminal-class|parser|unexpected-token": 1
+    },
+    "positionRuleCounts": {
+      "detector-source-start": 1,
+      "duplicate-token-start": 1,
+      "end-of-input": 2,
+      "invalid-character-start": 2,
+      "missing-terminal-insertion-point": 2,
+      "opening-delimiter-start": 1,
+      "replacement-token-start": 1
+    },
+    "rawLocationCounts": {
+      "lines": 7,
+      "columns": 4
+    },
+    "requiredNativeCodes": [
+      "invalid-class-label",
+      "missing-closing-brace",
+      "missing-header",
+      "missing-relation-target",
+      "unexpected-token"
+    ]
+  },
+  "negativeCases": [
+    {
+      "id": "delete-header",
+      "operator": "delete-required-terminal",
+      "targetProduction": 4,
+      "targetLhs": "graphConfig",
+      "targetRhsLength": 4,
+      "source": "class A",
+      "mutationPosition": {
+        "offset": 0,
+        "line": 1,
+        "column": 0
+      },
+      "diagnosticPosition": {
+        "offset": 0,
+        "line": 1,
+        "column": 0
+      },
+      "expectedNativeCode": "missing-header",
+      "upstreamError": {
+        "class": "detection",
+        "stage": "detector",
+        "code": "missing-header",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "No diagram type detected matching given configuration for text: class A",
+        "normalized": {
+          "offset": 0,
+          "line": 1,
+          "column": 0
+        },
+        "positionRule": "detector-source-start"
+      }
+    },
+    {
+      "id": "delete-class-name",
+      "operator": "delete-required-terminal",
+      "targetProduction": 55,
+      "targetLhs": "classIdentifier",
+      "targetRhsLength": 2,
+      "source": "classDiagram\nclass",
+      "mutationPosition": {
+        "offset": 18,
+        "line": 2,
+        "column": 5
+      },
+      "diagnosticPosition": {
+        "offset": 18,
+        "line": 2,
+        "column": 5
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "NEWLINE",
+        "raw": {
+          "line": 2,
+          "column": 0
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 18,
+          "line": 2,
+          "column": 5
+        },
+        "positionRule": "missing-terminal-insertion-point"
+      }
+    },
+    {
+      "id": "replace-token-with-invalid-character",
+      "operator": "replace-terminal-class",
+      "targetProduction": 47,
+      "targetLhs": "classStatement",
+      "targetRhsLength": 1,
+      "source": "classDiagram\nclass A @",
+      "mutationPosition": {
+        "offset": 21,
+        "line": 2,
+        "column": 8
+      },
+      "diagnosticPosition": {
+        "offset": 21,
+        "line": 2,
+        "column": 8
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "lexer",
+        "code": "lexical-error",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "Lexical error on line 2. Unrecognized text.",
+        "normalized": {
+          "offset": 21,
+          "line": 2,
+          "column": 8
+        },
+        "positionRule": "invalid-character-start"
+      }
+    },
+    {
+      "id": "duplicate-style-separator",
+      "operator": "duplicate-separator",
+      "targetProduction": 47,
+      "targetLhs": "classStatement",
+      "targetRhsLength": 1,
+      "source": "classDiagram\nclass A::::::hot",
+      "mutationPosition": {
+        "offset": 23,
+        "line": 2,
+        "column": 10
+      },
+      "diagnosticPosition": {
+        "offset": 23,
+        "line": 2,
+        "column": 10
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "STYLE_SEPARATOR",
+        "raw": {
+          "line": 2,
+          "column": 7
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 23,
+          "line": 2,
+          "column": 10
+        },
+        "positionRule": "duplicate-token-start"
+      }
+    },
+    {
+      "id": "truncate-class-body",
+      "operator": "truncate-recursive-production",
+      "targetProduction": 47,
+      "targetLhs": "classStatement",
+      "targetRhsLength": 1,
+      "source": "classDiagram\nclass A {\n+value",
+      "mutationPosition": {
+        "offset": 21,
+        "line": 2,
+        "column": 8
+      },
+      "diagnosticPosition": {
+        "offset": 29,
+        "line": 3,
+        "column": 6
+      },
+      "expectedNativeCode": "missing-closing-brace",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "EOF_IN_STRUCT",
+        "raw": {
+          "line": 3,
+          "column": 0
+        },
+        "summary": "Parse error on line 3:",
+        "normalized": {
+          "offset": 29,
+          "line": 3,
+          "column": 6
+        },
+        "positionRule": "end-of-input"
+      }
+    },
+    {
+      "id": "truncate-namespace",
+      "operator": "truncate-recursive-production",
+      "targetProduction": 34,
+      "targetLhs": "namespaceStatement",
+      "targetRhsLength": 4,
+      "source": "classDiagram\nnamespace N {\nclass A",
+      "mutationPosition": {
+        "offset": 25,
+        "line": 2,
+        "column": 12
+      },
+      "diagnosticPosition": {
+        "offset": 34,
+        "line": 3,
+        "column": 7
+      },
+      "expectedNativeCode": "missing-closing-brace",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "EOF_IN_STRUCT",
+        "raw": {
+          "line": 3,
+          "column": 7
+        },
+        "summary": "Parse error on line 4:",
+        "normalized": {
+          "offset": 34,
+          "line": 3,
+          "column": 7
+        },
+        "positionRule": "end-of-input"
+      }
+    },
+    {
+      "id": "break-class-label",
+      "operator": "break-paired-delimiter",
+      "targetProduction": 8,
+      "targetLhs": "classLabel",
+      "targetRhsLength": 3,
+      "source": "classDiagram\nclass A[open",
+      "mutationPosition": {
+        "offset": 20,
+        "line": 2,
+        "column": 7
+      },
+      "diagnosticPosition": {
+        "offset": 20,
+        "line": 2,
+        "column": 7
+      },
+      "expectedNativeCode": "invalid-class-label",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "ALPHA",
+        "raw": {
+          "line": 2,
+          "column": 7
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 20,
+          "line": 2,
+          "column": 7
+        },
+        "positionRule": "opening-delimiter-start"
+      }
+    },
+    {
+      "id": "insert-close-at-nullable-boundary",
+      "operator": "insert-nullable-boundary-token",
+      "targetProduction": 5,
+      "targetLhs": "statements",
+      "targetRhsLength": 1,
+      "source": "classDiagram\n}",
+      "mutationPosition": {
+        "offset": 13,
+        "line": 2,
+        "column": 0
+      },
+      "diagnosticPosition": {
+        "offset": 13,
+        "line": 2,
+        "column": 0
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "lexer",
+        "code": "lexical-error",
+        "token": "",
+        "raw": {
+          "line": 0,
+          "column": 0
+        },
+        "summary": "Lexical error on line 2. Unrecognized text.",
+        "normalized": {
+          "offset": 13,
+          "line": 2,
+          "column": 0
+        },
+        "positionRule": "invalid-character-start"
+      }
+    },
+    {
+      "id": "delete-relation-target",
+      "operator": "delete-required-terminal",
+      "targetProduction": 67,
+      "targetLhs": "relationStatement",
+      "targetRhsLength": 3,
+      "source": "classDiagram\nA -->",
+      "mutationPosition": {
+        "offset": 18,
+        "line": 2,
+        "column": 5
+      },
+      "diagnosticPosition": {
+        "offset": 18,
+        "line": 2,
+        "column": 5
+      },
+      "expectedNativeCode": "missing-relation-target",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "NEWLINE",
+        "raw": {
+          "line": 2,
+          "column": 4
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 18,
+          "line": 2,
+          "column": 5
+        },
+        "positionRule": "missing-terminal-insertion-point"
+      }
+    },
+    {
+      "id": "replace-line-type",
+      "operator": "replace-terminal-class",
+      "targetProduction": 89,
+      "targetLhs": "lineType",
+      "targetRhsLength": 1,
+      "source": "classDiagram\nA == B",
+      "mutationPosition": {
+        "offset": 15,
+        "line": 2,
+        "column": 2
+      },
+      "diagnosticPosition": {
+        "offset": 13,
+        "line": 2,
+        "column": 0
+      },
+      "expectedNativeCode": "unexpected-token",
+      "upstreamError": {
+        "class": "syntax",
+        "stage": "parser",
+        "code": "parse-error",
+        "token": "EQUALS",
+        "raw": {
+          "line": 2,
+          "column": 0
+        },
+        "summary": "Parse error on line 2:",
+        "normalized": {
+          "offset": 13,
+          "line": 2,
+          "column": 0
+        },
+        "positionRule": "replacement-token-start"
+      }
+    }
+  ],
+  "fixtureDigest": "941abfebb0ca4731c5c3c02bfc5cb24703c9d79f0f00dab3b52ec08ae7c76a24"
+}

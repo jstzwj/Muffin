@@ -1,0 +1,6402 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "grammar": {
+      "url": "https://raw.githubusercontent.com/mermaid-js/mermaid/mermaid%4011.16.0/packages/mermaid/src/diagrams/class/parser/classDiagram.jison",
+      "sha256": "c2ea20022e4adf501dbbcda909a1bdb74e05a2ac53ff5276d09d00fd54a3e21e"
+    }
+  },
+  "fixtureDigest": "72774594e4624e061cfb1124d95a718480a20fce8a7b2df9e603740fdf6276c3",
+  "cases": [
+    {
+      "id": "classes-members-relations",
+      "source": "classDiagram\ndirection LR\nclass Animal[\"Animal label\"] {\n  <<interface>>\n  +String name\n  +speak(sound) String*\n}\nclass Dog~T~\nAnimal \"1\" <|-- \"many\" Dog : inherits\nDog o.. Animal : observes",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        8,
+        13,
+        17,
+        20,
+        22,
+        30,
+        47,
+        49,
+        55,
+        56,
+        61,
+        62,
+        67,
+        70,
+        79,
+        82,
+        84,
+        85,
+        89,
+        90,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "LR",
+        "classes": [
+          {
+            "id": "Animal",
+            "type": "",
+            "label": "Animal label",
+            "text": "Animal label",
+            "cssClasses": "default",
+            "methods": [
+              {
+                "id": "speak",
+                "memberType": "method",
+                "visibility": "+",
+                "classifier": "*",
+                "parameters": "sound",
+                "returnType": "String",
+                "text": "\\+speak(sound) : String"
+              }
+            ],
+            "members": [
+              {
+                "id": "String name",
+                "memberType": "attribute",
+                "visibility": "+",
+                "classifier": "",
+                "parameters": "",
+                "returnType": "",
+                "text": "\\+String name"
+              }
+            ],
+            "annotations": [
+              "interface"
+            ],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "Dog",
+            "type": "T",
+            "label": "Dog",
+            "text": "Dog&lt;T&gt;",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [
+          {
+            "id1": "Animal",
+            "id2": "Dog",
+            "relationTitle1": "1",
+            "relationTitle2": "many",
+            "title": "inherits",
+            "relation": {
+              "type1": 1,
+              "type2": "none",
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "Dog",
+            "id2": "Animal",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "observes",
+            "relation": {
+              "type1": 0,
+              "type2": "none",
+              "lineType": 1
+            }
+          }
+        ],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "direct-members-annotations",
+      "source": "classDiagram-v2\nclass Service\nService : -String secret$\nService : +run(input) bool$\n<<service>> Service\nService -- Client\nClient ..> Service : uses\nPort ()-- Service",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        19,
+        20,
+        22,
+        23,
+        24,
+        47,
+        55,
+        60,
+        64,
+        67,
+        81,
+        82,
+        83,
+        87,
+        88,
+        89,
+        90,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "Service",
+            "type": "",
+            "label": "Service",
+            "text": "Service",
+            "cssClasses": "default",
+            "methods": [
+              {
+                "id": "run",
+                "memberType": "method",
+                "visibility": "+",
+                "classifier": "$",
+                "parameters": "input",
+                "returnType": "bool",
+                "text": "\\+run(input) : bool"
+              }
+            ],
+            "members": [
+              {
+                "id": "String secret",
+                "memberType": "attribute",
+                "visibility": "-",
+                "classifier": "$",
+                "parameters": "",
+                "returnType": "",
+                "text": "\\-String secret"
+              }
+            ],
+            "annotations": [
+              "service"
+            ],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "Client",
+            "type": "",
+            "label": "Client",
+            "text": "Client",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [
+          {
+            "id1": "Service",
+            "id2": "Client",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": "none",
+              "type2": "none",
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "Client",
+            "id2": "Service",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "uses",
+            "relation": {
+              "type1": "none",
+              "type2": 3,
+              "lineType": 1
+            }
+          },
+          {
+            "id1": "interface0",
+            "id2": "Service",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": 4,
+              "type2": "none",
+              "lineType": 0
+            }
+          }
+        ],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "namespace-nesting-notes",
+      "source": "classDiagram\nnamespace Company.Core[\"Core services\"] {\n  class Api {\n    +get() Result\n  }\n  note for Api \"API note\"\n  namespace Internal {\n    class Worker\n  }\n}\nnote \"Diagram note\"",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        11,
+        13,
+        21,
+        28,
+        35,
+        36,
+        37,
+        39,
+        40,
+        43,
+        45,
+        47,
+        49,
+        55,
+        61,
+        62,
+        71,
+        72,
+        135,
+        138
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "Api",
+            "type": "",
+            "label": "Api",
+            "text": "Api",
+            "cssClasses": "default",
+            "methods": [
+              {
+                "id": "get",
+                "memberType": "method",
+                "visibility": "+",
+                "classifier": "",
+                "parameters": "",
+                "returnType": "Result",
+                "text": "\\+get() : Result"
+              }
+            ],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "Company.Core",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "Worker",
+            "type": "",
+            "label": "Worker",
+            "text": "Worker",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "Company.Core.Internal",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [
+          {
+            "id": "note0",
+            "class": "Api",
+            "text": "API note",
+            "index": 0,
+            "parent": "Company.Core"
+          },
+          {
+            "id": "note1",
+            "class": null,
+            "text": "Diagram note",
+            "index": 1,
+            "parent": null
+          }
+        ],
+        "namespaces": [
+          {
+            "id": "Company",
+            "label": "Company",
+            "parent": null,
+            "explicit": false,
+            "classKeys": [],
+            "noteKeys": [],
+            "childKeys": [
+              "Company.Core"
+            ]
+          },
+          {
+            "id": "Company.Core",
+            "label": "Core services",
+            "parent": "Company",
+            "explicit": true,
+            "classKeys": [
+              "Api"
+            ],
+            "noteKeys": [
+              "note0"
+            ],
+            "childKeys": [
+              "Company.Core.Internal"
+            ]
+          },
+          {
+            "id": "Company.Core.Internal",
+            "label": "Internal",
+            "parent": "Company.Core",
+            "explicit": true,
+            "classKeys": [
+              "Worker"
+            ],
+            "noteKeys": [],
+            "childKeys": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "relation-marker-matrix",
+      "source": "classDiagram\nA <|-- B\nC *-- D\nE o-- F\nG --> H\nI ..> J\nK <.. L\nM --|> N\nO --() Port",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        19,
+        67,
+        81,
+        82,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "B",
+            "type": "",
+            "label": "B",
+            "text": "B",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "C",
+            "type": "",
+            "label": "C",
+            "text": "C",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "D",
+            "type": "",
+            "label": "D",
+            "text": "D",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "E",
+            "type": "",
+            "label": "E",
+            "text": "E",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "F",
+            "type": "",
+            "label": "F",
+            "text": "F",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "G",
+            "type": "",
+            "label": "G",
+            "text": "G",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "H",
+            "type": "",
+            "label": "H",
+            "text": "H",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "I",
+            "type": "",
+            "label": "I",
+            "text": "I",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "J",
+            "type": "",
+            "label": "J",
+            "text": "J",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "K",
+            "type": "",
+            "label": "K",
+            "text": "K",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "L",
+            "type": "",
+            "label": "L",
+            "text": "L",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "M",
+            "type": "",
+            "label": "M",
+            "text": "M",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "N",
+            "type": "",
+            "label": "N",
+            "text": "N",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "O",
+            "type": "",
+            "label": "O",
+            "text": "O",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [
+          {
+            "id1": "A",
+            "id2": "B",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": 1,
+              "type2": "none",
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "C",
+            "id2": "D",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": 2,
+              "type2": "none",
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "E",
+            "id2": "F",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": 0,
+              "type2": "none",
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "G",
+            "id2": "H",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": "none",
+              "type2": 3,
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "I",
+            "id2": "J",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": "none",
+              "type2": 3,
+              "lineType": 1
+            }
+          },
+          {
+            "id1": "K",
+            "id2": "L",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": 3,
+              "type2": "none",
+              "lineType": 1
+            }
+          },
+          {
+            "id1": "M",
+            "id2": "N",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": "none",
+              "type2": 1,
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "O",
+            "id2": "interface0",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": "none",
+              "type2": 4,
+              "lineType": 0
+            }
+          }
+        ],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "styles-and-classes",
+      "source": "classDiagram\nclass A\nclass B:::hot\ncssClass \"A\" hot\nstyle A fill:#f00,stroke-width:2px,color:#fff\nclassDef hot fill:#0f0,stroke:#333,color:#111",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        26,
+        27,
+        29,
+        47,
+        48,
+        55,
+        73,
+        74,
+        105,
+        106,
+        107,
+        109,
+        110,
+        111,
+        119,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default hot",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              "fill:#f00",
+              "stroke-width:2px",
+              "color:#fff",
+              "fill:#0f0",
+              "stroke:#333",
+              "color:#111"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "B",
+            "type": "",
+            "label": "B",
+            "text": "B",
+            "cssClasses": "default hot",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              "fill:#0f0",
+              "stroke:#333",
+              "color:#111"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "nested-style-functions",
+      "source": "classDiagram\nclass A\nstyle A fill:rgb(1,2,3),stroke:hsl(4,5%,6%),color:#fff",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        26,
+        47,
+        55,
+        105,
+        107,
+        109,
+        110,
+        111,
+        119,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              "fill:rgb(1",
+              "2",
+              "3)",
+              "stroke:hsl(4",
+              "5%",
+              "6%)",
+              "color:#fff"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "links-clicks-tooltips",
+      "source": "classDiagram\nclass A\nclass B\nlink A \"https://example.com/a\" \"A docs\" _self\nclick B href \"https://example.com/b\" \"B docs\" _blank\ncallback A \"legacyFn\" \"Legacy tip\"\nclick B call handler(\"x\", 2) \"Callback tip\"",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        25,
+        47,
+        55,
+        92,
+        96,
+        100,
+        104,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default clickable clickable",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": "https://example.com/a",
+            "linkTarget": "_self",
+            "haveCallback": true,
+            "tooltip": "Legacy tip"
+          },
+          {
+            "id": "B",
+            "type": "",
+            "label": "B",
+            "text": "B",
+            "cssClasses": "default clickable clickable",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": "https://example.com/b",
+            "linkTarget": "_blank",
+            "haveCallback": true,
+            "tooltip": "Callback tip"
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "quoted-unicode-generic",
+      "source": "classDiagram\nclass `订单 服务`~列表~[\"显示 名称\"] {\n  +编号\n  +处理(输入) 输出\n}\n`订单 服务` --> مستخدم : معالجة",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        8,
+        13,
+        15,
+        16,
+        18,
+        20,
+        22,
+        49,
+        56,
+        61,
+        62,
+        67,
+        81,
+        87,
+        89,
+        133,
+        137
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "订单 服务",
+            "type": "列表",
+            "label": "显示 名称",
+            "text": "显示 名称<列表>",
+            "cssClasses": "default",
+            "methods": [
+              {
+                "id": "处理",
+                "memberType": "method",
+                "visibility": "+",
+                "classifier": "",
+                "parameters": "输入",
+                "returnType": "输出",
+                "text": "\\+处理(输入) : 输出"
+              }
+            ],
+            "members": [
+              {
+                "id": "编号",
+                "memberType": "attribute",
+                "visibility": "+",
+                "classifier": "",
+                "parameters": "",
+                "returnType": "",
+                "text": "\\+编号"
+              }
+            ],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "مستخدم",
+            "type": "",
+            "label": "مستخدم",
+            "text": "مستخدم",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [
+          {
+            "id1": "订单 服务",
+            "id2": "مستخدم",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "معالجة",
+            "relation": {
+              "type1": "none",
+              "type2": 3,
+              "lineType": 0
+            }
+          }
+        ],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "accessibility-comments",
+      "source": "classDiagram\ntitle Class model\naccTitle: Accessible classes\naccDescr {\n  First line\n  Second line\n}\n%% ignored comment\nclass Root",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        16,
+        22,
+        23,
+        31,
+        33,
+        47,
+        55,
+        63,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "Accessible classes",
+        "accDescription": "First line\nSecond line",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "Root",
+            "type": "",
+            "label": "Root",
+            "text": "Root",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "class-statement-forms",
+      "source": "classDiagram\nclass Empty {}\nclass Styled:::hot {\n  +value\n}\nclass Annotated<<entity>>\nclass Detailed<<service>> {\n  +run() Result\n}\nclass AnnotatedEmpty<<boundary>> {}",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        61,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "Empty",
+            "type": "",
+            "label": "Empty",
+            "text": "Empty",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "Styled",
+            "type": "",
+            "label": "Styled",
+            "text": "Styled",
+            "cssClasses": "default hot",
+            "methods": [],
+            "members": [
+              {
+                "id": "value",
+                "memberType": "attribute",
+                "visibility": "+",
+                "classifier": "",
+                "parameters": "",
+                "returnType": "",
+                "text": "\\+value"
+              }
+            ],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "Annotated",
+            "type": "",
+            "label": "Annotated",
+            "text": "Annotated",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [
+              "entity"
+            ],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "Detailed",
+            "type": "",
+            "label": "Detailed",
+            "text": "Detailed",
+            "cssClasses": "default",
+            "methods": [
+              {
+                "id": "run",
+                "memberType": "method",
+                "visibility": "+",
+                "classifier": "",
+                "parameters": "",
+                "returnType": "Result",
+                "text": "\\+run() : Result"
+              }
+            ],
+            "members": [],
+            "annotations": [
+              "service"
+            ],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "AnnotatedEmpty",
+            "type": "",
+            "label": "AnnotatedEmpty",
+            "text": "AnnotatedEmpty",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [
+              "boundary"
+            ],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "relation-orthogonal-forms",
+      "source": "classDiagram\nA \"source\" *..> \"target\" B : observes\nC \"left\" -- D\nE .. \"right\" F\nG <|--* H\nI o..|> J",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        19,
+        20,
+        67,
+        68,
+        69,
+        70,
+        80,
+        83,
+        84,
+        85,
+        86,
+        87,
+        89,
+        90,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "B",
+            "type": "",
+            "label": "B",
+            "text": "B",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "C",
+            "type": "",
+            "label": "C",
+            "text": "C",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "D",
+            "type": "",
+            "label": "D",
+            "text": "D",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "E",
+            "type": "",
+            "label": "E",
+            "text": "E",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "F",
+            "type": "",
+            "label": "F",
+            "text": "F",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "G",
+            "type": "",
+            "label": "G",
+            "text": "G",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "H",
+            "type": "",
+            "label": "H",
+            "text": "H",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "I",
+            "type": "",
+            "label": "I",
+            "text": "I",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "J",
+            "type": "",
+            "label": "J",
+            "text": "J",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [
+          {
+            "id1": "A",
+            "id2": "B",
+            "relationTitle1": "source",
+            "relationTitle2": "target",
+            "title": "observes",
+            "relation": {
+              "type1": 2,
+              "type2": 3,
+              "lineType": 1
+            }
+          },
+          {
+            "id1": "C",
+            "id2": "D",
+            "relationTitle1": "left",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": "none",
+              "type2": "none",
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "E",
+            "id2": "F",
+            "relationTitle1": "none",
+            "relationTitle2": "right",
+            "title": "",
+            "relation": {
+              "type1": "none",
+              "type2": "none",
+              "lineType": 1
+            }
+          },
+          {
+            "id1": "G",
+            "id2": "H",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": 1,
+              "type2": 2,
+              "lineType": 0
+            }
+          },
+          {
+            "id1": "I",
+            "id2": "J",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": 0,
+              "type2": 1,
+              "lineType": 1
+            }
+          }
+        ],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "interaction-production-matrix",
+      "source": "classDiagram\nclass A\nclass B\ncallback A \"legacy\"\nlink A \"https://example.com/one\"\nlink A \"https://example.com/two\" _self\nlink B \"https://example.com/three\" \"tip\"\nclick A call handler()\nclick A call handler() \"callback tip\"\nclick B call handler(\"x\", 2)\nclick A href \"https://example.com/four\"\nclick A href \"https://example.com/five\" _parent\nclick B href \"https://example.com/six\" \"href tip\"",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        25,
+        47,
+        55,
+        91,
+        93,
+        94,
+        95,
+        97,
+        98,
+        99,
+        101,
+        102,
+        103,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default clickable clickable clickable clickable clickable clickable clickable",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": "https://example.com/five",
+            "linkTarget": "_parent",
+            "haveCallback": true,
+            "tooltip": "callback tip"
+          },
+          {
+            "id": "B",
+            "type": "",
+            "label": "B",
+            "text": "B",
+            "cssClasses": "default clickable clickable clickable",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": "https://example.com/six",
+            "linkTarget": "_blank",
+            "haveCallback": true,
+            "tooltip": "href tip"
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "directives-and-identifiers",
+      "source": "classDiagram\ndirection TB\ndirection BT\ndirection RL\naccDescr: One-line description\nnamespace `Quoted Space` {\n  class Number1\n}\nclass A\nclass B\nclassDef hot,cold fill:#123,stroke-width:3px,color:rgb(1,2,3)\ncssClass \"A,B\" hot",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        10,
+        13,
+        21,
+        22,
+        27,
+        29,
+        30,
+        32,
+        35,
+        36,
+        39,
+        47,
+        55,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        106,
+        107,
+        109,
+        110,
+        111,
+        119,
+        135,
+        137
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "One-line description",
+        "direction": "RL",
+        "classes": [
+          {
+            "id": "Number1",
+            "type": "",
+            "label": "Number1",
+            "text": "Number1",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "Quoted Space",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default hot",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "B",
+            "type": "",
+            "label": "B",
+            "text": "B",
+            "cssClasses": "default hot",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": [
+          {
+            "id": "Quoted Space",
+            "label": "Quoted Space",
+            "parent": null,
+            "explicit": true,
+            "classKeys": [
+              "Number1"
+            ],
+            "noteKeys": [],
+            "childKeys": []
+          }
+        ]
+      }
+    }
+  ],
+  "invalidCases": [
+    {
+      "id": "missing-header",
+      "source": "class A",
+      "rejected": true,
+      "error": {
+        "message": "No diagram type detected matching given configuration for text: class A",
+        "token": null,
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "id": "invalid-direction",
+      "source": "classDiagram\ndirection SIDEWAYS\nclass A",
+      "rejected": false
+    },
+    {
+      "id": "unclosed-class",
+      "source": "classDiagram\nclass A {\n+x",
+      "rejected": true,
+      "error": {
+        "message": "Parse error on line 3:\n...iagramclass A {+x\n--------------------^\nExpecting 'STRUCT_STOP', 'MEMBER', got 'EOF_IN_STRUCT'",
+        "token": "EOF_IN_STRUCT",
+        "line": 3,
+        "column": 0
+      }
+    },
+    {
+      "id": "unclosed-namespace",
+      "source": "classDiagram\nnamespace N {\nclass A",
+      "rejected": true,
+      "error": {
+        "message": "Parse error on line 4:\n...mespace N {class A\n---------------------^\nExpecting 'STRUCT_STOP', 'NAMESPACE', 'CLASS', 'NOTE_FOR', 'NOTE', got 'EOF_IN_STRUCT'",
+        "token": "EOF_IN_STRUCT",
+        "line": 3,
+        "column": 7
+      }
+    },
+    {
+      "id": "missing-relation-target",
+      "source": "classDiagram\nA -->",
+      "rejected": true,
+      "error": {
+        "message": "Parse error on line 2:\nclassDiagramA -->\n-----------------^\nExpecting 'STR', 'ALPHA', 'LINE', 'DOTTED_LINE', 'NUM', 'MINUS', 'UNICODE_TEXT', 'BQUOTE_STR', got 'NEWLINE'",
+        "token": "NEWLINE",
+        "line": 2,
+        "column": 4
+      }
+    },
+    {
+      "id": "malformed-class-label",
+      "source": "classDiagram\nclass A[open",
+      "rejected": true,
+      "error": {
+        "message": "Parse error on line 2:\n...lassDiagramclass A[open\n----------------------^\nExpecting 'STR', got 'ALPHA'",
+        "token": "ALPHA",
+        "line": 2,
+        "column": 7
+      }
+    }
+  ],
+  "coverageOnly": [
+    {
+      "id": "direct-statement",
+      "source": "class Direct",
+      "reductions": [
+        2,
+        5,
+        13,
+        22,
+        47,
+        55,
+        135
+      ],
+      "upstreamError": {
+        "message": "No diagram type detected matching given configuration for text: class Direct",
+        "token": null,
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "id": "concatenated-namespace",
+      "source": "classDiagram\nnamespace Foo Bar {\nclass A\n}",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        9,
+        12,
+        13,
+        21,
+        35,
+        36,
+        39,
+        47,
+        55,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "FooBar",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": [
+          {
+            "id": "FooBar",
+            "label": "FooBar",
+            "parent": null,
+            "explicit": true,
+            "classKeys": [
+              "A"
+            ],
+            "noteKeys": [],
+            "childKeys": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "dotted-class-name",
+      "source": "classDiagram\nA.B --> C",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        13,
+        14,
+        19,
+        67,
+        81,
+        87,
+        89,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A.B",
+            "type": "",
+            "label": "A.B",
+            "text": "A.B",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "C",
+            "type": "",
+            "label": "C",
+            "text": "C",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [
+          {
+            "id1": "A.B",
+            "id2": "C",
+            "relationTitle1": "none",
+            "relationTitle2": "none",
+            "title": "",
+            "relation": {
+              "type1": "none",
+              "type2": 3,
+              "lineType": 0
+            }
+          }
+        ],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "inline-namespace-body",
+      "source": "classDiagram\nnamespace N {class A\n}",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        9,
+        13,
+        21,
+        34,
+        36,
+        39,
+        47,
+        55,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "N",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": [
+          {
+            "id": "N",
+            "label": "N",
+            "parent": null,
+            "explicit": true,
+            "classKeys": [
+              "A"
+            ],
+            "noteKeys": [],
+            "childKeys": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "inline-class-close",
+      "source": "classDiagram\nnamespace N {\nclass A}",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        9,
+        13,
+        21,
+        35,
+        36,
+        38,
+        47,
+        55,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "N",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": [
+          {
+            "id": "N",
+            "label": "N",
+            "parent": null,
+            "explicit": true,
+            "classKeys": [
+              "A"
+            ],
+            "noteKeys": [],
+            "childKeys": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "inline-note-close",
+      "source": "classDiagram\nnamespace N {\nnote \"inside\"}",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        9,
+        21,
+        35,
+        36,
+        41,
+        72,
+        135,
+        138
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [],
+        "relations": [],
+        "notes": [
+          {
+            "id": "note0",
+            "class": null,
+            "text": "inside",
+            "index": 0,
+            "parent": "N"
+          }
+        ],
+        "namespaces": [
+          {
+            "id": "N",
+            "label": "N",
+            "parent": null,
+            "explicit": true,
+            "classKeys": [],
+            "noteKeys": [
+              "note0"
+            ],
+            "childKeys": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "namespace-note-newline",
+      "source": "classDiagram\nnamespace N {\nnote \"inside\"\n}",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        9,
+        21,
+        35,
+        36,
+        42,
+        72,
+        135,
+        138
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [],
+        "relations": [],
+        "notes": [
+          {
+            "id": "note0",
+            "class": null,
+            "text": "inside",
+            "index": 0,
+            "parent": "N"
+          }
+        ],
+        "namespaces": [
+          {
+            "id": "N",
+            "label": "N",
+            "parent": null,
+            "explicit": true,
+            "classKeys": [],
+            "noteKeys": [
+              "note0"
+            ],
+            "childKeys": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "nested-namespace-terminal",
+      "source": "classDiagram\nnamespace Outer {\nnamespace Inner {\nclass A\n}}",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        9,
+        13,
+        21,
+        35,
+        36,
+        39,
+        44,
+        47,
+        55,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "Outer.Inner",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": [
+          {
+            "id": "Outer",
+            "label": "Outer",
+            "parent": null,
+            "explicit": true,
+            "classKeys": [],
+            "noteKeys": [],
+            "childKeys": [
+              "Outer.Inner"
+            ]
+          },
+          {
+            "id": "Outer.Inner",
+            "label": "Inner",
+            "parent": "Outer",
+            "explicit": true,
+            "classKeys": [
+              "A"
+            ],
+            "noteKeys": [],
+            "childKeys": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "nested-namespace-recursive",
+      "source": "classDiagram\nnamespace Outer {\nnamespace Inner {\nclass A\n}\nclass B\n}",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        9,
+        13,
+        21,
+        35,
+        36,
+        39,
+        46,
+        47,
+        55,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "Outer.Inner",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          },
+          {
+            "id": "B",
+            "type": "",
+            "label": "B",
+            "text": "B",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": "Outer",
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": [
+          {
+            "id": "Outer",
+            "label": "Outer",
+            "parent": null,
+            "explicit": true,
+            "classKeys": [
+              "B"
+            ],
+            "noteKeys": [],
+            "childKeys": [
+              "Outer.Inner"
+            ]
+          },
+          {
+            "id": "Outer.Inner",
+            "label": "Inner",
+            "parent": "Outer",
+            "explicit": true,
+            "classKeys": [
+              "A"
+            ],
+            "noteKeys": [],
+            "childKeys": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "style-list-alpha",
+      "source": "classDiagram\nclass A\nstyle A red,blue",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        26,
+        47,
+        55,
+        105,
+        107,
+        108,
+        109,
+        111,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              "red",
+              "blue"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "style-number",
+      "source": "classDiagram\nclass A\nstyle A 123",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        26,
+        47,
+        55,
+        105,
+        107,
+        109,
+        111,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              "123"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "style-colon",
+      "source": "classDiagram\nclass A\nstyle A :",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        26,
+        47,
+        55,
+        105,
+        107,
+        109,
+        113,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              ":"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "style-bracket",
+      "source": "classDiagram\nclass A\nstyle A #",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        26,
+        47,
+        55,
+        105,
+        107,
+        109,
+        116,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              "#"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "style-keyword",
+      "source": "classDiagram\nclass A\nstyle A style",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        26,
+        47,
+        55,
+        105,
+        107,
+        109,
+        117,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              "style"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "style-percent",
+      "source": "classDiagram\nclass A\nstyle A %",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        7,
+        13,
+        22,
+        26,
+        47,
+        55,
+        105,
+        107,
+        109,
+        118,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "A",
+            "type": "",
+            "label": "A",
+            "text": "A",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [
+              "%"
+            ],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "numeric-class",
+      "source": "classDiagram\nclass 123",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        13,
+        22,
+        47,
+        55,
+        135
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "123",
+            "type": "",
+            "label": "123",
+            "text": "123",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "minus-class",
+      "source": "classDiagram\nclass -",
+      "reductions": [
+        1,
+        3,
+        4,
+        6,
+        13,
+        22,
+        47,
+        55,
+        136
+      ],
+      "expected": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "direction": "TB",
+        "classes": [
+          {
+            "id": "-",
+            "type": "",
+            "label": "-",
+            "text": "-",
+            "cssClasses": "default",
+            "methods": [],
+            "members": [],
+            "annotations": [],
+            "styles": [],
+            "parent": null,
+            "link": null,
+            "linkTarget": null,
+            "haveCallback": false,
+            "tooltip": null
+          }
+        ],
+        "relations": [],
+        "notes": [],
+        "namespaces": []
+      }
+    },
+    {
+      "id": "standalone-member",
+      "source": "classDiagram\n+value",
+      "reductions": [],
+      "upstreamError": {
+        "message": "Parse error on line 2:\nclassDiagram+value\n------------^\nExpecting 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'NAMESPACE', 'ANNOTATION_START', 'CLASS', 'MEMBER', 'SEPARATOR', 'NOTE_FOR', 'NOTE', 'CLASSDEF', 'ALPHA', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'CALLBACK', 'LINK', 'CLICK', 'STYLE', 'CSSCLASS', 'NUM', 'MINUS', 'UNICODE_TEXT', 'BQUOTE_STR', got 'PLUS'",
+        "token": "PLUS",
+        "line": 1,
+        "column": 12
+      }
+    }
+  ],
+  "productions": [
+    {
+      "id": 1,
+      "lhs": "start",
+      "alternative": 1,
+      "rhs": [
+        "mermaidDoc"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStart",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "relation-marker-matrix",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "quoted-unicode-generic",
+        "accessibility-comments",
+        "class-statement-forms",
+        "relation-orthogonal-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "concatenated-namespace",
+        "dotted-class-name",
+        "inline-namespace-body",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class",
+        "minus-class"
+      ]
+    },
+    {
+      "id": 2,
+      "lhs": "start",
+      "alternative": 2,
+      "rhs": [
+        "statements"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStart",
+      "status": "covered",
+      "fixtures": [
+        "direct-statement"
+      ]
+    },
+    {
+      "id": 3,
+      "lhs": "mermaidDoc",
+      "alternative": 1,
+      "rhs": [
+        "graphConfig"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseMermaidDoc",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "relation-marker-matrix",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "quoted-unicode-generic",
+        "accessibility-comments",
+        "class-statement-forms",
+        "relation-orthogonal-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "concatenated-namespace",
+        "dotted-class-name",
+        "inline-namespace-body",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class",
+        "minus-class"
+      ]
+    },
+    {
+      "id": 4,
+      "lhs": "graphConfig",
+      "alternative": 1,
+      "rhs": [
+        "CLASS_DIAGRAM",
+        "NEWLINE",
+        "statements",
+        "EOF"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "CLASS_DIAGRAM",
+        "NEWLINE",
+        "EOF"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE",
+        "EOF"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseGraphConfig",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "relation-marker-matrix",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "quoted-unicode-generic",
+        "accessibility-comments",
+        "class-statement-forms",
+        "relation-orthogonal-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "concatenated-namespace",
+        "dotted-class-name",
+        "inline-namespace-body",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class",
+        "minus-class"
+      ]
+    },
+    {
+      "id": 5,
+      "lhs": "statements",
+      "alternative": 1,
+      "rhs": [
+        "statement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatements",
+      "status": "covered",
+      "fixtures": [
+        "direct-statement"
+      ]
+    },
+    {
+      "id": 6,
+      "lhs": "statements",
+      "alternative": 2,
+      "rhs": [
+        "statement",
+        "NEWLINE"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatements",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "relation-marker-matrix",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "quoted-unicode-generic",
+        "accessibility-comments",
+        "class-statement-forms",
+        "relation-orthogonal-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "concatenated-namespace",
+        "dotted-class-name",
+        "inline-namespace-body",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class",
+        "minus-class"
+      ]
+    },
+    {
+      "id": 7,
+      "lhs": "statements",
+      "alternative": 3,
+      "rhs": [
+        "statement",
+        "NEWLINE",
+        "statements"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatements",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "relation-marker-matrix",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "quoted-unicode-generic",
+        "accessibility-comments",
+        "class-statement-forms",
+        "relation-orthogonal-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent"
+      ]
+    },
+    {
+      "id": 8,
+      "lhs": "classLabel",
+      "alternative": 1,
+      "rhs": [
+        "SQS",
+        "STR",
+        "SQE"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "SQS",
+        "STR",
+        "SQE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": {
+        "open": "SQS",
+        "close": "SQE"
+      },
+      "grammarReachable": true,
+      "native": "parseClassLabel",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "namespace-nesting-notes",
+        "quoted-unicode-generic"
+      ]
+    },
+    {
+      "id": 9,
+      "lhs": "namespaceName",
+      "alternative": 1,
+      "rhs": [
+        "alphaNumToken"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNamespaceName",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes",
+        "concatenated-namespace",
+        "inline-namespace-body",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive"
+      ]
+    },
+    {
+      "id": 10,
+      "lhs": "namespaceName",
+      "alternative": 2,
+      "rhs": [
+        "classLiteralName"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNamespaceName",
+      "status": "covered",
+      "fixtures": [
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 11,
+      "lhs": "namespaceName",
+      "alternative": 3,
+      "rhs": [
+        "alphaNumToken",
+        "DOT",
+        "namespaceName"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "DOT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNamespaceName",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes"
+      ]
+    },
+    {
+      "id": 12,
+      "lhs": "namespaceName",
+      "alternative": 4,
+      "rhs": [
+        "alphaNumToken",
+        "namespaceName"
+      ],
+      "rhsLength": 2,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNamespaceName",
+      "status": "covered",
+      "fixtures": [
+        "concatenated-namespace"
+      ]
+    },
+    {
+      "id": 13,
+      "lhs": "className",
+      "alternative": 1,
+      "rhs": [
+        "alphaNumToken"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassName",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "relation-marker-matrix",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "quoted-unicode-generic",
+        "accessibility-comments",
+        "class-statement-forms",
+        "relation-orthogonal-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "direct-statement",
+        "concatenated-namespace",
+        "dotted-class-name",
+        "inline-namespace-body",
+        "inline-class-close",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class",
+        "minus-class"
+      ]
+    },
+    {
+      "id": 14,
+      "lhs": "className",
+      "alternative": 2,
+      "rhs": [
+        "alphaNumToken",
+        "DOT",
+        "className"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "DOT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassName",
+      "status": "covered",
+      "fixtures": [
+        "dotted-class-name"
+      ]
+    },
+    {
+      "id": 15,
+      "lhs": "className",
+      "alternative": 3,
+      "rhs": [
+        "classLiteralName"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassName",
+      "status": "covered",
+      "fixtures": [
+        "quoted-unicode-generic"
+      ]
+    },
+    {
+      "id": 16,
+      "lhs": "className",
+      "alternative": 4,
+      "rhs": [
+        "alphaNumToken",
+        "className"
+      ],
+      "rhsLength": 2,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassName",
+      "status": "covered",
+      "fixtures": [
+        "quoted-unicode-generic",
+        "accessibility-comments"
+      ]
+    },
+    {
+      "id": 17,
+      "lhs": "className",
+      "alternative": 5,
+      "rhs": [
+        "alphaNumToken",
+        "GENERICTYPE"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "GENERICTYPE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassName",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations"
+      ]
+    },
+    {
+      "id": 18,
+      "lhs": "className",
+      "alternative": 6,
+      "rhs": [
+        "classLiteralName",
+        "GENERICTYPE"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "GENERICTYPE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassName",
+      "status": "covered",
+      "fixtures": [
+        "quoted-unicode-generic"
+      ]
+    },
+    {
+      "id": 19,
+      "lhs": "statement",
+      "alternative": 1,
+      "rhs": [
+        "relationStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations",
+        "relation-marker-matrix",
+        "relation-orthogonal-forms",
+        "dotted-class-name"
+      ]
+    },
+    {
+      "id": 20,
+      "lhs": "statement",
+      "alternative": 2,
+      "rhs": [
+        "relationStatement",
+        "LABEL"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "LABEL"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "quoted-unicode-generic",
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 21,
+      "lhs": "statement",
+      "alternative": 3,
+      "rhs": [
+        "namespaceStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes",
+        "directives-and-identifiers",
+        "concatenated-namespace",
+        "inline-namespace-body",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive"
+      ]
+    },
+    {
+      "id": 22,
+      "lhs": "statement",
+      "alternative": 4,
+      "rhs": [
+        "classStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "quoted-unicode-generic",
+        "accessibility-comments",
+        "class-statement-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "direct-statement",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class",
+        "minus-class"
+      ]
+    },
+    {
+      "id": 23,
+      "lhs": "statement",
+      "alternative": 5,
+      "rhs": [
+        "memberStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations",
+        "accessibility-comments"
+      ]
+    },
+    {
+      "id": 24,
+      "lhs": "statement",
+      "alternative": 6,
+      "rhs": [
+        "annotationStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations"
+      ]
+    },
+    {
+      "id": 25,
+      "lhs": "statement",
+      "alternative": 7,
+      "rhs": [
+        "clickStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "links-clicks-tooltips",
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 26,
+      "lhs": "statement",
+      "alternative": 8,
+      "rhs": [
+        "styleStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "nested-style-functions",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent"
+      ]
+    },
+    {
+      "id": 27,
+      "lhs": "statement",
+      "alternative": 9,
+      "rhs": [
+        "cssClassStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 28,
+      "lhs": "statement",
+      "alternative": 10,
+      "rhs": [
+        "noteStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes"
+      ]
+    },
+    {
+      "id": 29,
+      "lhs": "statement",
+      "alternative": 11,
+      "rhs": [
+        "classDefStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 30,
+      "lhs": "statement",
+      "alternative": 12,
+      "rhs": [
+        "direction"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 31,
+      "lhs": "statement",
+      "alternative": 13,
+      "rhs": [
+        "acc_title",
+        "acc_title_value"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "acc_title",
+        "acc_title_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "accessibility-comments"
+      ]
+    },
+    {
+      "id": 32,
+      "lhs": "statement",
+      "alternative": 14,
+      "rhs": [
+        "acc_descr",
+        "acc_descr_value"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "acc_descr",
+        "acc_descr_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 33,
+      "lhs": "statement",
+      "alternative": 15,
+      "rhs": [
+        "acc_descr_multiline_value"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "acc_descr_multiline_value"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStatement",
+      "status": "covered",
+      "fixtures": [
+        "accessibility-comments"
+      ]
+    },
+    {
+      "id": 34,
+      "lhs": "namespaceStatement",
+      "alternative": 1,
+      "rhs": [
+        "namespaceIdentifier",
+        "STRUCT_START",
+        "classStatements",
+        "STRUCT_STOP"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "STRUCT_START",
+        "STRUCT_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNamespaceStatement",
+      "status": "covered",
+      "fixtures": [
+        "inline-namespace-body"
+      ]
+    },
+    {
+      "id": 35,
+      "lhs": "namespaceStatement",
+      "alternative": 2,
+      "rhs": [
+        "namespaceIdentifier",
+        "STRUCT_START",
+        "NEWLINE",
+        "classStatements",
+        "STRUCT_STOP"
+      ],
+      "rhsLength": 5,
+      "terminals": [
+        "STRUCT_START",
+        "NEWLINE",
+        "STRUCT_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNamespaceStatement",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes",
+        "directives-and-identifiers",
+        "concatenated-namespace",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive"
+      ]
+    },
+    {
+      "id": 36,
+      "lhs": "namespaceIdentifier",
+      "alternative": 1,
+      "rhs": [
+        "NAMESPACE",
+        "namespaceName"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "NAMESPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNamespaceIdentifier",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes",
+        "directives-and-identifiers",
+        "concatenated-namespace",
+        "inline-namespace-body",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive"
+      ]
+    },
+    {
+      "id": 37,
+      "lhs": "namespaceIdentifier",
+      "alternative": 2,
+      "rhs": [
+        "NAMESPACE",
+        "namespaceName",
+        "classLabel"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "NAMESPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNamespaceIdentifier",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes"
+      ]
+    },
+    {
+      "id": 38,
+      "lhs": "classStatements",
+      "alternative": 1,
+      "rhs": [
+        "classStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "inline-class-close"
+      ]
+    },
+    {
+      "id": 39,
+      "lhs": "classStatements",
+      "alternative": 2,
+      "rhs": [
+        "classStatement",
+        "NEWLINE"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes",
+        "directives-and-identifiers",
+        "concatenated-namespace",
+        "inline-namespace-body",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive"
+      ]
+    },
+    {
+      "id": 40,
+      "lhs": "classStatements",
+      "alternative": 3,
+      "rhs": [
+        "classStatement",
+        "NEWLINE",
+        "classStatements"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes"
+      ]
+    },
+    {
+      "id": 41,
+      "lhs": "classStatements",
+      "alternative": 4,
+      "rhs": [
+        "noteStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "inline-note-close"
+      ]
+    },
+    {
+      "id": 42,
+      "lhs": "classStatements",
+      "alternative": 5,
+      "rhs": [
+        "noteStatement",
+        "NEWLINE"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "namespace-note-newline"
+      ]
+    },
+    {
+      "id": 43,
+      "lhs": "classStatements",
+      "alternative": 6,
+      "rhs": [
+        "noteStatement",
+        "NEWLINE",
+        "classStatements"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes"
+      ]
+    },
+    {
+      "id": 44,
+      "lhs": "classStatements",
+      "alternative": 7,
+      "rhs": [
+        "namespaceStatement"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "nested-namespace-terminal"
+      ]
+    },
+    {
+      "id": 45,
+      "lhs": "classStatements",
+      "alternative": 8,
+      "rhs": [
+        "namespaceStatement",
+        "NEWLINE"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes"
+      ]
+    },
+    {
+      "id": 46,
+      "lhs": "classStatements",
+      "alternative": 9,
+      "rhs": [
+        "namespaceStatement",
+        "NEWLINE",
+        "classStatements"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatements",
+      "status": "covered",
+      "fixtures": [
+        "nested-namespace-recursive"
+      ]
+    },
+    {
+      "id": 47,
+      "lhs": "classStatement",
+      "alternative": 1,
+      "rhs": [
+        "classIdentifier"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "accessibility-comments",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "direct-statement",
+        "concatenated-namespace",
+        "inline-namespace-body",
+        "inline-class-close",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class",
+        "minus-class"
+      ]
+    },
+    {
+      "id": 48,
+      "lhs": "classStatement",
+      "alternative": 2,
+      "rhs": [
+        "classIdentifier",
+        "STYLE_SEPARATOR",
+        "alphaNumToken"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "STYLE_SEPARATOR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes"
+      ]
+    },
+    {
+      "id": 49,
+      "lhs": "classStatement",
+      "alternative": 3,
+      "rhs": [
+        "classIdentifier",
+        "STRUCT_START",
+        "members",
+        "STRUCT_STOP"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "STRUCT_START",
+        "STRUCT_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "namespace-nesting-notes",
+        "quoted-unicode-generic"
+      ]
+    },
+    {
+      "id": 50,
+      "lhs": "classStatement",
+      "alternative": 4,
+      "rhs": [
+        "classIdentifier",
+        "STRUCT_START",
+        "STRUCT_STOP"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "STRUCT_START",
+        "STRUCT_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "class-statement-forms"
+      ]
+    },
+    {
+      "id": 51,
+      "lhs": "classStatement",
+      "alternative": 5,
+      "rhs": [
+        "classIdentifier",
+        "STYLE_SEPARATOR",
+        "alphaNumToken",
+        "STRUCT_START",
+        "members",
+        "STRUCT_STOP"
+      ],
+      "rhsLength": 6,
+      "terminals": [
+        "STYLE_SEPARATOR",
+        "STRUCT_START",
+        "STRUCT_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "class-statement-forms"
+      ]
+    },
+    {
+      "id": 52,
+      "lhs": "classStatement",
+      "alternative": 6,
+      "rhs": [
+        "classIdentifier",
+        "ANNOTATION_START",
+        "alphaNumToken",
+        "ANNOTATION_END"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "ANNOTATION_START",
+        "ANNOTATION_END"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "class-statement-forms"
+      ]
+    },
+    {
+      "id": 53,
+      "lhs": "classStatement",
+      "alternative": 7,
+      "rhs": [
+        "classIdentifier",
+        "ANNOTATION_START",
+        "alphaNumToken",
+        "ANNOTATION_END",
+        "STRUCT_START",
+        "members",
+        "STRUCT_STOP"
+      ],
+      "rhsLength": 7,
+      "terminals": [
+        "ANNOTATION_START",
+        "ANNOTATION_END",
+        "STRUCT_START",
+        "STRUCT_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "class-statement-forms"
+      ]
+    },
+    {
+      "id": 54,
+      "lhs": "classStatement",
+      "alternative": 8,
+      "rhs": [
+        "classIdentifier",
+        "ANNOTATION_START",
+        "alphaNumToken",
+        "ANNOTATION_END",
+        "STRUCT_START",
+        "STRUCT_STOP"
+      ],
+      "rhsLength": 6,
+      "terminals": [
+        "ANNOTATION_START",
+        "ANNOTATION_END",
+        "STRUCT_START",
+        "STRUCT_STOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "class-statement-forms"
+      ]
+    },
+    {
+      "id": 55,
+      "lhs": "classIdentifier",
+      "alternative": 1,
+      "rhs": [
+        "CLASS",
+        "className"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "CLASS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassIdentifier",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "accessibility-comments",
+        "class-statement-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "direct-statement",
+        "concatenated-namespace",
+        "inline-namespace-body",
+        "inline-class-close",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class",
+        "minus-class"
+      ]
+    },
+    {
+      "id": 56,
+      "lhs": "classIdentifier",
+      "alternative": 2,
+      "rhs": [
+        "CLASS",
+        "className",
+        "classLabel"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "CLASS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassIdentifier",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "quoted-unicode-generic"
+      ]
+    },
+    {
+      "id": 57,
+      "lhs": "emptyBody",
+      "alternative": 1,
+      "rhs": [],
+      "rhsLength": 0,
+      "terminals": [],
+      "nullable": true,
+      "nullableBoundaries": [
+        0
+      ],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseEmptyBody",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "emptyBody is not referenced by any production reachable from start"
+    },
+    {
+      "id": 58,
+      "lhs": "emptyBody",
+      "alternative": 2,
+      "rhs": [
+        "SPACE",
+        "emptyBody"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        1,
+        2
+      ],
+      "recursive": true,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseEmptyBody",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "emptyBody is not referenced by any production reachable from start"
+    },
+    {
+      "id": 59,
+      "lhs": "emptyBody",
+      "alternative": 3,
+      "rhs": [
+        "NEWLINE",
+        "emptyBody"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "NEWLINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [
+        1,
+        2
+      ],
+      "recursive": true,
+      "separatorTerminals": [
+        "NEWLINE"
+      ],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseEmptyBody",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "emptyBody is not referenced by any production reachable from start"
+    },
+    {
+      "id": 60,
+      "lhs": "annotationStatement",
+      "alternative": 1,
+      "rhs": [
+        "ANNOTATION_START",
+        "alphaNumToken",
+        "ANNOTATION_END",
+        "className"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "ANNOTATION_START",
+        "ANNOTATION_END"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseAnnotationStatement",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations"
+      ]
+    },
+    {
+      "id": 61,
+      "lhs": "members",
+      "alternative": 1,
+      "rhs": [
+        "MEMBER"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "MEMBER"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseMembers",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "namespace-nesting-notes",
+        "quoted-unicode-generic",
+        "class-statement-forms"
+      ]
+    },
+    {
+      "id": 62,
+      "lhs": "members",
+      "alternative": 2,
+      "rhs": [
+        "MEMBER",
+        "members"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "MEMBER"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseMembers",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "namespace-nesting-notes",
+        "quoted-unicode-generic"
+      ]
+    },
+    {
+      "id": 63,
+      "lhs": "memberStatement",
+      "alternative": 1,
+      "rhs": [
+        "className"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseMemberStatement",
+      "status": "covered",
+      "fixtures": [
+        "accessibility-comments"
+      ]
+    },
+    {
+      "id": 64,
+      "lhs": "memberStatement",
+      "alternative": 2,
+      "rhs": [
+        "className",
+        "LABEL"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "LABEL"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseMemberStatement",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations"
+      ]
+    },
+    {
+      "id": 65,
+      "lhs": "memberStatement",
+      "alternative": 3,
+      "rhs": [
+        "MEMBER"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "MEMBER"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseMemberStatement",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "MEMBER is emitted only in class-body state, where the parser reduces members rather than memberStatement"
+    },
+    {
+      "id": 66,
+      "lhs": "memberStatement",
+      "alternative": 4,
+      "rhs": [
+        "SEPARATOR"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "SEPARATOR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseMemberStatement",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "SEPARATOR has no lexer rule in classDiagram.jison"
+    },
+    {
+      "id": 67,
+      "lhs": "relationStatement",
+      "alternative": 1,
+      "rhs": [
+        "className",
+        "relation",
+        "className"
+      ],
+      "rhsLength": 3,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationStatement",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "relation-marker-matrix",
+        "quoted-unicode-generic",
+        "relation-orthogonal-forms",
+        "dotted-class-name"
+      ]
+    },
+    {
+      "id": 68,
+      "lhs": "relationStatement",
+      "alternative": 2,
+      "rhs": [
+        "className",
+        "STR",
+        "relation",
+        "className"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationStatement",
+      "status": "covered",
+      "fixtures": [
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 69,
+      "lhs": "relationStatement",
+      "alternative": 3,
+      "rhs": [
+        "className",
+        "relation",
+        "STR",
+        "className"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationStatement",
+      "status": "covered",
+      "fixtures": [
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 70,
+      "lhs": "relationStatement",
+      "alternative": 4,
+      "rhs": [
+        "className",
+        "STR",
+        "relation",
+        "STR",
+        "className"
+      ],
+      "rhsLength": 5,
+      "terminals": [
+        "STR",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationStatement",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 71,
+      "lhs": "noteStatement",
+      "alternative": 1,
+      "rhs": [
+        "NOTE_FOR",
+        "className",
+        "noteText"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "NOTE_FOR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNoteStatement",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes"
+      ]
+    },
+    {
+      "id": 72,
+      "lhs": "noteStatement",
+      "alternative": 2,
+      "rhs": [
+        "NOTE",
+        "noteText"
+      ],
+      "rhsLength": 2,
+      "terminals": [
+        "NOTE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNoteStatement",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes",
+        "inline-note-close",
+        "namespace-note-newline"
+      ]
+    },
+    {
+      "id": 73,
+      "lhs": "classDefStatement",
+      "alternative": 1,
+      "rhs": [
+        "CLASSDEF",
+        "classList",
+        "stylesOpt"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "CLASSDEF"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassDefStatement",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 74,
+      "lhs": "classList",
+      "alternative": 1,
+      "rhs": [
+        "ALPHA"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "ALPHA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassList",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 75,
+      "lhs": "classList",
+      "alternative": 2,
+      "rhs": [
+        "classList",
+        "COMMA",
+        "ALPHA"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "COMMA",
+        "ALPHA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "COMMA"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassList",
+      "status": "covered",
+      "fixtures": [
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 76,
+      "lhs": "direction",
+      "alternative": 1,
+      "rhs": [
+        "direction_tb"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "direction_tb"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseDirection",
+      "status": "covered",
+      "fixtures": [
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 77,
+      "lhs": "direction",
+      "alternative": 2,
+      "rhs": [
+        "direction_bt"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "direction_bt"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseDirection",
+      "status": "covered",
+      "fixtures": [
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 78,
+      "lhs": "direction",
+      "alternative": 3,
+      "rhs": [
+        "direction_rl"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "direction_rl"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseDirection",
+      "status": "covered",
+      "fixtures": [
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 79,
+      "lhs": "direction",
+      "alternative": 4,
+      "rhs": [
+        "direction_lr"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "direction_lr"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseDirection",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations"
+      ]
+    },
+    {
+      "id": 80,
+      "lhs": "relation",
+      "alternative": 1,
+      "rhs": [
+        "relationType",
+        "lineType",
+        "relationType"
+      ],
+      "rhsLength": 3,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelation",
+      "status": "covered",
+      "fixtures": [
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 81,
+      "lhs": "relation",
+      "alternative": 2,
+      "rhs": [
+        "lineType",
+        "relationType"
+      ],
+      "rhsLength": 2,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelation",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations",
+        "relation-marker-matrix",
+        "quoted-unicode-generic",
+        "dotted-class-name"
+      ]
+    },
+    {
+      "id": 82,
+      "lhs": "relation",
+      "alternative": 3,
+      "rhs": [
+        "relationType",
+        "lineType"
+      ],
+      "rhsLength": 2,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelation",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "relation-marker-matrix"
+      ]
+    },
+    {
+      "id": 83,
+      "lhs": "relation",
+      "alternative": 4,
+      "rhs": [
+        "lineType"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelation",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations",
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 84,
+      "lhs": "relationType",
+      "alternative": 1,
+      "rhs": [
+        "AGGREGATION"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "AGGREGATION"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationType",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "relation-marker-matrix",
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 85,
+      "lhs": "relationType",
+      "alternative": 2,
+      "rhs": [
+        "EXTENSION"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "EXTENSION"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationType",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "relation-marker-matrix",
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 86,
+      "lhs": "relationType",
+      "alternative": 3,
+      "rhs": [
+        "COMPOSITION"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "COMPOSITION"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationType",
+      "status": "covered",
+      "fixtures": [
+        "relation-marker-matrix",
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 87,
+      "lhs": "relationType",
+      "alternative": 4,
+      "rhs": [
+        "DEPENDENCY"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "DEPENDENCY"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationType",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations",
+        "relation-marker-matrix",
+        "quoted-unicode-generic",
+        "relation-orthogonal-forms",
+        "dotted-class-name"
+      ]
+    },
+    {
+      "id": 88,
+      "lhs": "relationType",
+      "alternative": 5,
+      "rhs": [
+        "LOLLIPOP"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "LOLLIPOP"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseRelationType",
+      "status": "covered",
+      "fixtures": [
+        "direct-members-annotations",
+        "relation-marker-matrix"
+      ]
+    },
+    {
+      "id": 89,
+      "lhs": "lineType",
+      "alternative": 1,
+      "rhs": [
+        "LINE"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "LINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseLineType",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "relation-marker-matrix",
+        "quoted-unicode-generic",
+        "relation-orthogonal-forms",
+        "dotted-class-name"
+      ]
+    },
+    {
+      "id": 90,
+      "lhs": "lineType",
+      "alternative": 2,
+      "rhs": [
+        "DOTTED_LINE"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "DOTTED_LINE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseLineType",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "relation-marker-matrix",
+        "relation-orthogonal-forms"
+      ]
+    },
+    {
+      "id": 91,
+      "lhs": "clickStatement",
+      "alternative": 1,
+      "rhs": [
+        "CALLBACK",
+        "className",
+        "STR"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "CALLBACK",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 92,
+      "lhs": "clickStatement",
+      "alternative": 2,
+      "rhs": [
+        "CALLBACK",
+        "className",
+        "STR",
+        "STR"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "CALLBACK",
+        "STR",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "links-clicks-tooltips"
+      ]
+    },
+    {
+      "id": 93,
+      "lhs": "clickStatement",
+      "alternative": 3,
+      "rhs": [
+        "LINK",
+        "className",
+        "STR"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "LINK",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 94,
+      "lhs": "clickStatement",
+      "alternative": 4,
+      "rhs": [
+        "LINK",
+        "className",
+        "STR",
+        "LINK_TARGET"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "LINK",
+        "STR",
+        "LINK_TARGET"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 95,
+      "lhs": "clickStatement",
+      "alternative": 5,
+      "rhs": [
+        "LINK",
+        "className",
+        "STR",
+        "STR"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "LINK",
+        "STR",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 96,
+      "lhs": "clickStatement",
+      "alternative": 6,
+      "rhs": [
+        "LINK",
+        "className",
+        "STR",
+        "STR",
+        "LINK_TARGET"
+      ],
+      "rhsLength": 5,
+      "terminals": [
+        "LINK",
+        "STR",
+        "STR",
+        "LINK_TARGET"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "links-clicks-tooltips"
+      ]
+    },
+    {
+      "id": 97,
+      "lhs": "clickStatement",
+      "alternative": 7,
+      "rhs": [
+        "CLICK",
+        "className",
+        "CALLBACK_NAME"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "CLICK",
+        "CALLBACK_NAME"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 98,
+      "lhs": "clickStatement",
+      "alternative": 8,
+      "rhs": [
+        "CLICK",
+        "className",
+        "CALLBACK_NAME",
+        "STR"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "CLICK",
+        "CALLBACK_NAME",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 99,
+      "lhs": "clickStatement",
+      "alternative": 9,
+      "rhs": [
+        "CLICK",
+        "className",
+        "CALLBACK_NAME",
+        "CALLBACK_ARGS"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "CLICK",
+        "CALLBACK_NAME",
+        "CALLBACK_ARGS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 100,
+      "lhs": "clickStatement",
+      "alternative": 10,
+      "rhs": [
+        "CLICK",
+        "className",
+        "CALLBACK_NAME",
+        "CALLBACK_ARGS",
+        "STR"
+      ],
+      "rhsLength": 5,
+      "terminals": [
+        "CLICK",
+        "CALLBACK_NAME",
+        "CALLBACK_ARGS",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "links-clicks-tooltips"
+      ]
+    },
+    {
+      "id": 101,
+      "lhs": "clickStatement",
+      "alternative": 11,
+      "rhs": [
+        "CLICK",
+        "className",
+        "HREF",
+        "STR"
+      ],
+      "rhsLength": 4,
+      "terminals": [
+        "CLICK",
+        "HREF",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 102,
+      "lhs": "clickStatement",
+      "alternative": 12,
+      "rhs": [
+        "CLICK",
+        "className",
+        "HREF",
+        "STR",
+        "LINK_TARGET"
+      ],
+      "rhsLength": 5,
+      "terminals": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "LINK_TARGET"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 103,
+      "lhs": "clickStatement",
+      "alternative": 13,
+      "rhs": [
+        "CLICK",
+        "className",
+        "HREF",
+        "STR",
+        "STR"
+      ],
+      "rhsLength": 5,
+      "terminals": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "interaction-production-matrix"
+      ]
+    },
+    {
+      "id": 104,
+      "lhs": "clickStatement",
+      "alternative": 14,
+      "rhs": [
+        "CLICK",
+        "className",
+        "HREF",
+        "STR",
+        "STR",
+        "LINK_TARGET"
+      ],
+      "rhsLength": 6,
+      "terminals": [
+        "CLICK",
+        "HREF",
+        "STR",
+        "STR",
+        "LINK_TARGET"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClickStatement",
+      "status": "covered",
+      "fixtures": [
+        "links-clicks-tooltips"
+      ]
+    },
+    {
+      "id": 105,
+      "lhs": "styleStatement",
+      "alternative": 1,
+      "rhs": [
+        "STYLE",
+        "ALPHA",
+        "stylesOpt"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "STYLE",
+        "ALPHA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleStatement",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "nested-style-functions",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent"
+      ]
+    },
+    {
+      "id": 106,
+      "lhs": "cssClassStatement",
+      "alternative": 1,
+      "rhs": [
+        "CSSCLASS",
+        "STR",
+        "ALPHA"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "CSSCLASS",
+        "STR",
+        "ALPHA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseCssClassStatement",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 107,
+      "lhs": "stylesOpt",
+      "alternative": 1,
+      "rhs": [
+        "style"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStylesOpt",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "nested-style-functions",
+        "directives-and-identifiers",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent"
+      ]
+    },
+    {
+      "id": 108,
+      "lhs": "stylesOpt",
+      "alternative": 2,
+      "rhs": [
+        "stylesOpt",
+        "COMMA",
+        "style"
+      ],
+      "rhsLength": 3,
+      "terminals": [
+        "COMMA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [
+        "COMMA"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStylesOpt",
+      "status": "covered",
+      "fixtures": [
+        "style-list-alpha"
+      ]
+    },
+    {
+      "id": 109,
+      "lhs": "style",
+      "alternative": 1,
+      "rhs": [
+        "styleComponent"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyle",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "nested-style-functions",
+        "directives-and-identifiers",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent"
+      ]
+    },
+    {
+      "id": 110,
+      "lhs": "style",
+      "alternative": 2,
+      "rhs": [
+        "style",
+        "styleComponent"
+      ],
+      "rhsLength": 2,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": true,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyle",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "nested-style-functions",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 111,
+      "lhs": "styleComponent",
+      "alternative": 1,
+      "rhs": [
+        "ALPHA"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "ALPHA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "nested-style-functions",
+        "directives-and-identifiers",
+        "style-list-alpha",
+        "style-number"
+      ]
+    },
+    {
+      "id": 112,
+      "lhs": "styleComponent",
+      "alternative": 2,
+      "rhs": [
+        "NUM"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "NUM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "NUM is shadowed by the earlier \\w+ ALPHA lexer rule"
+    },
+    {
+      "id": 113,
+      "lhs": "styleComponent",
+      "alternative": 3,
+      "rhs": [
+        "COLON"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "COLON"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "COLON"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "covered",
+      "fixtures": [
+        "style-colon"
+      ]
+    },
+    {
+      "id": 114,
+      "lhs": "styleComponent",
+      "alternative": 4,
+      "rhs": [
+        "UNIT"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "UNIT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "UNIT has no lexer rule in classDiagram.jison"
+    },
+    {
+      "id": 115,
+      "lhs": "styleComponent",
+      "alternative": 5,
+      "rhs": [
+        "SPACE"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "SPACE is shadowed by the earlier INITIAL whitespace skip rule"
+    },
+    {
+      "id": 116,
+      "lhs": "styleComponent",
+      "alternative": 6,
+      "rhs": [
+        "BRKT"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "BRKT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "covered",
+      "fixtures": [
+        "style-bracket"
+      ]
+    },
+    {
+      "id": 117,
+      "lhs": "styleComponent",
+      "alternative": 7,
+      "rhs": [
+        "STYLE"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "STYLE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "covered",
+      "fixtures": [
+        "style-keyword"
+      ]
+    },
+    {
+      "id": 118,
+      "lhs": "styleComponent",
+      "alternative": 8,
+      "rhs": [
+        "PCT"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "PCT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "covered",
+      "fixtures": [
+        "style-percent"
+      ]
+    },
+    {
+      "id": 119,
+      "lhs": "styleComponent",
+      "alternative": 9,
+      "rhs": [
+        "LABEL"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "LABEL"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseStyleComponent",
+      "status": "covered",
+      "fixtures": [
+        "styles-and-classes",
+        "nested-style-functions",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 120,
+      "lhs": "commentToken",
+      "alternative": 1,
+      "rhs": [
+        "textToken"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseCommentToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "commentToken is not referenced by any production reachable from start"
+    },
+    {
+      "id": 121,
+      "lhs": "commentToken",
+      "alternative": 2,
+      "rhs": [
+        "graphCodeTokens"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "graphCodeTokens"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseCommentToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "commentToken is not referenced by any production reachable from start"
+    },
+    {
+      "id": 122,
+      "lhs": "textToken",
+      "alternative": 1,
+      "rhs": [
+        "textNoTagsToken"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textToken is reachable only from disconnected commentToken"
+    },
+    {
+      "id": 123,
+      "lhs": "textToken",
+      "alternative": 2,
+      "rhs": [
+        "TAGSTART"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "TAGSTART"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textToken is reachable only from disconnected commentToken"
+    },
+    {
+      "id": 124,
+      "lhs": "textToken",
+      "alternative": 3,
+      "rhs": [
+        "TAGEND"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "TAGEND"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textToken is reachable only from disconnected commentToken"
+    },
+    {
+      "id": 125,
+      "lhs": "textToken",
+      "alternative": 4,
+      "rhs": [
+        "=="
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "=="
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textToken is reachable only from disconnected commentToken"
+    },
+    {
+      "id": 126,
+      "lhs": "textToken",
+      "alternative": 5,
+      "rhs": [
+        "--"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "--"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textToken is reachable only from disconnected commentToken"
+    },
+    {
+      "id": 127,
+      "lhs": "textToken",
+      "alternative": 6,
+      "rhs": [
+        "PCT"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "PCT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textToken is reachable only from disconnected commentToken"
+    },
+    {
+      "id": 128,
+      "lhs": "textToken",
+      "alternative": 7,
+      "rhs": [
+        "DEFAULT"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "DEFAULT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textToken is reachable only from disconnected commentToken"
+    },
+    {
+      "id": 129,
+      "lhs": "textNoTagsToken",
+      "alternative": 1,
+      "rhs": [
+        "alphaNumToken"
+      ],
+      "rhsLength": 1,
+      "terminals": [],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextNoTagsToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textNoTagsToken is reachable only from disconnected textToken"
+    },
+    {
+      "id": 130,
+      "lhs": "textNoTagsToken",
+      "alternative": 2,
+      "rhs": [
+        "SPACE"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "SPACE"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [
+        "SPACE"
+      ],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextNoTagsToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textNoTagsToken is reachable only from disconnected textToken"
+    },
+    {
+      "id": 131,
+      "lhs": "textNoTagsToken",
+      "alternative": 3,
+      "rhs": [
+        "MINUS"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "MINUS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextNoTagsToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textNoTagsToken is reachable only from disconnected textToken"
+    },
+    {
+      "id": 132,
+      "lhs": "textNoTagsToken",
+      "alternative": 4,
+      "rhs": [
+        "keywords"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "keywords"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": false,
+      "native": "parseTextNoTagsToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "textNoTagsToken is reachable only from disconnected textToken"
+    },
+    {
+      "id": 133,
+      "lhs": "alphaNumToken",
+      "alternative": 1,
+      "rhs": [
+        "UNICODE_TEXT"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "UNICODE_TEXT"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseAlphaNumToken",
+      "status": "covered",
+      "fixtures": [
+        "quoted-unicode-generic"
+      ]
+    },
+    {
+      "id": 134,
+      "lhs": "alphaNumToken",
+      "alternative": 2,
+      "rhs": [
+        "NUM"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "NUM"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseAlphaNumToken",
+      "status": "unreachable",
+      "fixtures": [],
+      "reason": "NUM is shadowed by the earlier \\w+ ALPHA lexer rule"
+    },
+    {
+      "id": 135,
+      "lhs": "alphaNumToken",
+      "alternative": 3,
+      "rhs": [
+        "ALPHA"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "ALPHA"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseAlphaNumToken",
+      "status": "covered",
+      "fixtures": [
+        "classes-members-relations",
+        "direct-members-annotations",
+        "namespace-nesting-notes",
+        "relation-marker-matrix",
+        "styles-and-classes",
+        "nested-style-functions",
+        "links-clicks-tooltips",
+        "accessibility-comments",
+        "class-statement-forms",
+        "relation-orthogonal-forms",
+        "interaction-production-matrix",
+        "directives-and-identifiers",
+        "direct-statement",
+        "concatenated-namespace",
+        "dotted-class-name",
+        "inline-namespace-body",
+        "inline-class-close",
+        "inline-note-close",
+        "namespace-note-newline",
+        "nested-namespace-terminal",
+        "nested-namespace-recursive",
+        "style-list-alpha",
+        "style-number",
+        "style-colon",
+        "style-bracket",
+        "style-keyword",
+        "style-percent",
+        "numeric-class"
+      ]
+    },
+    {
+      "id": 136,
+      "lhs": "alphaNumToken",
+      "alternative": 4,
+      "rhs": [
+        "MINUS"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "MINUS"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseAlphaNumToken",
+      "status": "covered",
+      "fixtures": [
+        "minus-class"
+      ]
+    },
+    {
+      "id": 137,
+      "lhs": "classLiteralName",
+      "alternative": 1,
+      "rhs": [
+        "BQUOTE_STR"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "BQUOTE_STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseClassLiteralName",
+      "status": "covered",
+      "fixtures": [
+        "quoted-unicode-generic",
+        "directives-and-identifiers"
+      ]
+    },
+    {
+      "id": 138,
+      "lhs": "noteText",
+      "alternative": 1,
+      "rhs": [
+        "STR"
+      ],
+      "rhsLength": 1,
+      "terminals": [
+        "STR"
+      ],
+      "nullable": false,
+      "nullableBoundaries": [],
+      "recursive": false,
+      "separatorTerminals": [],
+      "delimiter": null,
+      "grammarReachable": true,
+      "native": "parseNoteText",
+      "status": "covered",
+      "fixtures": [
+        "namespace-nesting-notes",
+        "inline-note-close",
+        "namespace-note-newline"
+      ]
+    }
+  ]
+}

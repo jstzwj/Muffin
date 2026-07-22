@@ -16,6 +16,13 @@ const sequenceGrammarByVersion = {
   },
 };
 
+const classGrammarByVersion = {
+  "11.16.0": {
+    url: "https://raw.githubusercontent.com/mermaid-js/mermaid/mermaid%4011.16.0/packages/mermaid/src/diagrams/class/parser/classDiagram.jison",
+    sha256: "c2ea20022e4adf501dbbcda909a1bdb74e05a2ac53ff5276d09d00fd54a3e21e",
+  },
+};
+
 function download(url, redirects = 4) {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { "user-agent": "Muffin grammar fixture generator" } }, (response) => {
@@ -143,7 +150,7 @@ function parseRules(source) {
     const alternatives = splitOutsideQuotes(rule.slice(colon + 1), "|");
     for (let alternative = 0; alternative < alternatives.length; ++alternative) {
       const rhs = alternatives[alternative].trim().length === 0 ? []
-        : alternatives[alternative].trim().split(/\s+/).map((symbol) => {
+        : alternatives[alternative].trim().split(/\s+/).filter((symbol) => symbol !== "=").map((symbol) => {
             const alias = symbol.indexOf("\\[");
             const withoutAlias = alias < 0 ? symbol : symbol.slice(0, alias);
             if ((withoutAlias.startsWith("'") && withoutAlias.endsWith("'")) ||
@@ -158,7 +165,7 @@ function parseRules(source) {
   return productions;
 }
 
-function enrichProductions(productions) {
+export function enrichProductions(productions) {
   const nonterminals = new Set(productions.map((production) => production.lhs));
   const nullable = new Set();
   let changed = true;
@@ -183,6 +190,19 @@ function enrichProductions(productions) {
       if (next === target || reaches(next, target, seen)) return true;
     return false;
   };
+  const reachableFromStart = new Set(["start"]);
+  const pending = ["start"];
+  while (pending.length) {
+    const lhs = pending.pop();
+    for (const production of productions.filter((candidate) => candidate.lhs === lhs)) {
+      for (const symbol of production.rhs) {
+        if (nonterminals.has(symbol) && !reachableFromStart.has(symbol)) {
+          reachableFromStart.add(symbol);
+          pending.push(symbol);
+        }
+      }
+    }
+  }
   const delimiterPairs = new Map([
     ["SQS", "SQE"], ["PS", "PE"], ["DOUBLECIRCLESTART", "DOUBLECIRCLEEND"],
     ["STADIUMSTART", "STADIUMEND"], ["SUBROUTINESTART", "SUBROUTINEEND"],
@@ -206,6 +226,7 @@ function enrichProductions(productions) {
             (index > 0 && nullable.has(production.rhs[index - 1])) ||
             (index < production.rhs.length && nullable.has(production.rhs[index]))),
       recursive,
+      grammarReachable: reachableFromStart.has(production.lhs),
       separatorTerminals: terminals.filter((symbol) =>
         ["SPACE", "COMMA", "SEMI", "NEWLINE", "EOF", "AMP", "COLON", "PIPE"].includes(symbol)),
       delimiter: delimiter ? { open: delimiter[0], close: delimiter[1] } : null,
@@ -231,6 +252,17 @@ export async function loadSequenceGrammar(version, sourcePath) {
   const productions = enrichProductions(parseRules(source));
   if (productions.length !== 105) {
     throw new Error(`Expected 105 sequence productions, parsed ${productions.length}`);
+  }
+  return { source: { url, sha256 }, productions };
+}
+
+export async function loadClassGrammar(version, sourcePath) {
+  const { source, url, sha256 } = await readLockedGrammar(
+    classGrammarByVersion[version], version, "classDiagram.jison", sourcePath,
+  );
+  const productions = enrichProductions(parseRules(source));
+  if (productions.length !== 138) {
+    throw new Error(`Expected 138 classDiagram productions, parsed ${productions.length}`);
   }
   return { source: { url, sha256 }, productions };
 }

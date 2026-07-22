@@ -999,9 +999,12 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     const MermaidRenderEntry entry = mermaidSyncMode_ ? mermaidCache_->getSync(key, source) : mermaidCache_->request(key, source);
     layout->setMermaidState(static_cast<BlockLayout::MermaidState>(
         static_cast<int>(entry.status)));  // MermaidRenderStatus ↔ BlockLayout::MermaidState are ordered identically
-    if (entry.status == MermaidRenderStatus::Ready && (entry.scene || entry.sequenceScene)) {
+    if (entry.status == MermaidRenderStatus::Ready &&
+        (entry.scene || entry.sequenceScene || entry.classScene)) {
       if (entry.scene) layout->setMermaidScene(entry.scene, entry.naturalSize);
-      else layout->setMermaidSequenceScene(entry.sequenceScene, entry.naturalSize);
+      else if (entry.sequenceScene)
+        layout->setMermaidSequenceScene(entry.sequenceScene, entry.naturalSize);
+      else layout->setMermaidClassScene(entry.classScene, entry.naturalSize);
       const int contentWidth = static_cast<int>(qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right()));
       const qreal natW = entry.naturalSize.width();
       const qreal scale = natW > 0.0 ? qMin<qreal>(1.0, contentWidth / natW) : 1.0;

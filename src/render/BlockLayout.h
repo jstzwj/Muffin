@@ -5,6 +5,7 @@
 #include "html/HtmlLayoutResult.h"
 #include "math/MathRenderNode.h"
 #include "mermaid/scene/FlowScene.h"
+#include "mermaid/classdiagram/ClassScene.h"
 #include "mermaid/sequence/SequenceScene.h"
 #include "render/CodeHighlight.h"
 #include "render/InlineLayout.h"
@@ -155,6 +156,8 @@ public:
   void setMermaidScene(std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene, QSizeF naturalSize);
   void setMermaidSequenceScene(std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene,
                                QSizeF naturalSize);
+  void setMermaidClassScene(std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> scene,
+                            QSizeF naturalSize);
   const muffin::mermaid::flowscene::FlowScene* mermaidScene() const;
   QSizeF mermaidNaturalSize() const;
   void setMermaidState(MermaidState state);
@@ -323,6 +326,7 @@ private:
   std::shared_ptr<html::HtmlLayoutResult> htmlLayout_;
   std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> mermaidScene_;
   std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> mermaidSequenceScene_;
+  std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> mermaidClassScene_;
   QSizeF mermaidNaturalSize_;
   MermaidState mermaidState_ = MermaidState::None;
   QString mermaidErrorMessage_;

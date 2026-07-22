@@ -3,6 +3,10 @@
 #include "mermaid/MermaidDiagramDetector.h"
 #include "mermaid/MermaidPreprocessor.h"
 #include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/classdiagram/ClassDiagram.h"
+#include "mermaid/classdiagram/ClassLayout.h"
+#include "mermaid/classdiagram/ClassScene.h"
+#include "mermaid/classdiagram/ClassScenePainter.h"
 #include "mermaid/flowchart/Flowchart.h"
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/math/MathMlCssLayout.h"
@@ -14,6 +18,7 @@
 #include "mermaid/sequence/SequenceScene.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidColor.h"
 
 #include <QBuffer>
 #include <QCryptographicHash>
@@ -244,11 +249,17 @@ void MermaidRenderCache::clear() {
 QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(const QString& source, qreal dpr) {
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
-  if (entry.status != MermaidRenderStatus::Ready || (!entry.scene && !entry.sequenceScene)) return {};
-  const QImage image = entry.scene
-      ? flowscene::renderFlowSceneToImage(*entry.scene, dpr, 8.0, MermaidFontRegistry::primaryFamily())
-      : sequence::renderSequenceSceneToImage(
-            *entry.sequenceScene, dpr, entry.sequenceViewport);
+  if (entry.status != MermaidRenderStatus::Ready ||
+      (!entry.scene && !entry.sequenceScene && !entry.classScene)) return {};
+  QImage image;
+  if (entry.scene)
+    image = flowscene::renderFlowSceneToImage(
+        *entry.scene, dpr, 8.0, MermaidFontRegistry::primaryFamily());
+  else if (entry.sequenceScene)
+    image = sequence::renderSequenceSceneToImage(
+        *entry.sequenceScene, dpr, entry.sequenceViewport);
+  else
+    image = classdiagram::renderClassSceneToImage(*entry.classScene, dpr);
   QByteArray png;
   QBuffer buffer(&png);
   if (!buffer.open(QIODevice::WriteOnly)) return {};
@@ -270,7 +281,8 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
 
   const QString type = detectDiagramType(pre.code, pre.config);
   if (type != QLatin1String("flowchart") && type != QLatin1String("flowchart-v2") &&
-      type != QLatin1String("sequence")) {
+      type != QLatin1String("sequence") && type != QLatin1String("class") &&
+      type != QLatin1String("classDiagram")) {
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Unsupported;
     entry.errorMessage = QStringLiteral("Diagram type '%1' is not natively supported").arg(type);
@@ -278,6 +290,64 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   }
 
   try {
+    if (type == QLatin1String("class") || type == QLatin1String("classDiagram")) {
+      const classdiagram::ClassDiagram diagram =
+          classdiagram::ClassDiagram::parse(pre.code);
+      const QString configuredTheme = themeFromConfig(pre.config);
+      const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
+          themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme),
+          themeOverrides(pre.config));
+      const QJsonObject classConfig = pre.config.value(QStringLiteral("class")).toObject();
+      classdiagram::ClassLayoutOptions options;
+      options.padding = configNumber(classConfig, QStringLiteral("padding"), 12.0);
+      options.nodeSpacing = configNumber(classConfig, QStringLiteral("nodeSpacing"), 50.0);
+      options.rankSpacing = configNumber(classConfig, QStringLiteral("rankSpacing"), 50.0);
+      options.hierarchicalNamespaces =
+          classConfig.value(QStringLiteral("hierarchicalNamespaces")).toBool(true);
+      options.hideEmptyMembersBox =
+          classConfig.value(QStringLiteral("hideEmptyMembersBox")).toBool(false);
+      options.htmlLabels = pre.config.value(QStringLiteral("htmlLabels")).toBool(true);
+      options.look = pre.config.value(QStringLiteral("look")).toString(QStringLiteral("classic"));
+      const classdiagram::ClassLayoutInput input =
+          classdiagram::buildClassLayoutInput(diagram.data(), options);
+      classdiagram::ClassLabelMeasureOptions measureOptions;
+      measureOptions.fontFamily = firstFontFamily(themeVars.fontFamily);
+      measureOptions.fontPixelSize = pixelValue(themeVars.fontSize, 16.0);
+      measureOptions.lineHeight = measureOptions.fontPixelSize * 1.5;
+      const classdiagram::ClassLayoutMeasurements labelMeasurements =
+          classdiagram::measureClassLayoutLabels(input, measureOptions);
+      const QVector<classdiagram::ClassBoxGeometry> boxes =
+          classdiagram::layoutClassBoxes(input, labelMeasurements, options);
+      const classdiagram::ClassDagreMeasurements dagreMeasurements =
+          classdiagram::measureClassDagreInput(input, boxes, measureOptions);
+      const classdiagram::ClassPlacementResult placement =
+          classdiagram::layoutClassDiagramDagre(input, dagreMeasurements);
+      classdiagram::ClassSceneStyle style;
+      style.classFill = themeVars.mainBkg;
+      style.classStroke = themeVars.border1;
+      style.textColor = themeVars.primaryTextColor;
+      style.lineColor = themeVars.lineColor;
+      style.edgeLabelFill = themeVars.mainBkg;
+      style.clusterFill = themeVars.secondaryColor;
+      style.clusterStroke = themeVars.border2;
+      style.titleColor = themeVars.titleColor;
+      style.strokeWidth = themeVars.strokeWidth;
+      if (configuredTheme.compare(QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
+        style.noteFill = QStringLiteral("#474949");
+        style.noteStroke = QStringLiteral("#2f2f2f");
+        style.noteTextColor = color::invert(themeVars.secondaryColor);
+      }
+      style.fontFamily = measureOptions.fontFamily;
+      style.fontSize = measureOptions.fontPixelSize;
+      style.lineHeight = measureOptions.lineHeight;
+      classdiagram::ClassScene scene = classdiagram::buildClassScene(
+          input, boxes, labelMeasurements, placement, std::move(style));
+      MermaidRenderEntry entry;
+      entry.status = MermaidRenderStatus::Ready;
+      entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+      entry.classScene = std::make_shared<const classdiagram::ClassScene>(std::move(scene));
+      return entry;
+    }
     if (type == QLatin1String("sequence")) {
       const sequence::SequenceDiagram diagram = sequence::SequenceDiagram::parse(pre.code);
       sequence::SequenceLayoutMeasurements measurements;

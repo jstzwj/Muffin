@@ -607,10 +607,68 @@ struct TokenValidationResult {
   std::optional<FlowchartSourceSpan> edgeLimitSpan;
 };
 
+std::optional<FlowchartSourceSpan> validateSimpleVertexPrefix(
+    const QString& source, int maxVertices) {
+  const qsizetype headerEnd = source.indexOf(QLatin1Char('\n'));
+  if (headerEnd < 0) return std::nullopt;
+  QSet<QStringView> vertices;
+  qsizetype lineStart = headerEnd + 1;
+  int lineNumber = 2;
+  while (lineStart < source.size()) {
+    qsizetype lineEnd = source.indexOf(QLatin1Char('\n'), lineStart);
+    if (lineEnd < 0) lineEnd = source.size();
+    qsizetype start = lineStart;
+    qsizetype end = lineEnd;
+    while (start < end &&
+           (source.at(start) == QLatin1Char(' ') ||
+            source.at(start) == QLatin1Char('\t')))
+      ++start;
+    while (end > start &&
+           (source.at(end - 1) == QLatin1Char(' ') ||
+            source.at(end - 1) == QLatin1Char('\t')))
+      --end;
+    if (start < end) {
+      qsizetype idEnd = start;
+      while (idEnd < end) {
+        const QChar character = source.at(idEnd);
+        const ushort value = character.unicode();
+        const bool asciiIdentifier =
+            (value >= 'a' && value <= 'z') ||
+            (value >= 'A' && value <= 'Z') ||
+            (value >= '0' && value <= '9') || value == '_';
+        if (!asciiIdentifier)
+          break;
+        ++idEnd;
+      }
+      // This is deliberately a strict subset of the grammar. Any complex
+      // statement falls back to the token validator below.
+      if (idEnd == start || idEnd >= end ||
+          source.at(idEnd) != QLatin1Char('[') ||
+          source.at(end - 1) != QLatin1Char(']'))
+        return std::nullopt;
+      const QStringView id(source.constData() + start, idEnd - start);
+      if (!vertices.contains(id)) {
+        vertices.insert(id);
+        if (vertices.size() > maxVertices)
+          return FlowchartSourceSpan{start, id.size(), lineNumber,
+                                     int(start - lineStart + 1)};
+      }
+    }
+    if (lineEnd == source.size()) break;
+    lineStart = lineEnd + 1;
+    ++lineNumber;
+  }
+  return std::nullopt;
+}
+
 TokenValidationResult validateTokenStream(const QString& source, int maxVertices,
                                           int maxEdges) {
-  FlowchartTokenizer tokenizer(source);
   TokenValidationResult result;
+  if (const auto span = validateSimpleVertexPrefix(source, maxVertices)) {
+    result.vertexLimitSpan = *span;
+    return result;
+  }
+  FlowchartTokenizer tokenizer(source);
   QSet<QString> definiteVertices;
   QString candidateId;
   FlowToken candidateToken;

@@ -155,6 +155,24 @@ const std::vector<Generator> kGenerators = {
 }  // namespace
 
 int main() {
+  {
+    QString source = QStringLiteral("flowchart TB\n");
+    for (int i = 0; i <= FlowchartLimits{}.maxVertices; ++i)
+      source += QStringLiteral("V%1[Node]\n").arg(i);
+    bool rejected = false;
+    try {
+      Flowchart::parse(source);
+    } catch (const FlowchartParseError& error) {
+      rejected = error.category() == FlowchartErrorCategory::LimitExceeded;
+      require(error.diagnostic().span.line ==
+                  FlowchartLimits{}.maxVertices + 2 &&
+                  error.diagnostic().span.column == 1,
+              QStringLiteral("Simple-vertex preflight span drifted"));
+    }
+    require(rejected,
+            QStringLiteral("Simple-vertex preflight did not enforce the limit"));
+  }
+
   const uint64_t seedEnv = qgetenv("MUFFIN_FUZZ_SEED").toULongLong();
   const uint64_t seed = seedEnv ? seedEnv : 0xC0FFEEuLL;
   std::mt19937_64 rng(seed);

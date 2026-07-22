@@ -512,6 +512,16 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/scene/FlowScenePainter.h
   src/mermaid/rough/RoughOps.cpp
   src/mermaid/rough/RoughOps.h
+  src/mermaid/classdiagram/ClassDiagram.cpp
+  src/mermaid/classdiagram/ClassDiagram.h
+  src/mermaid/classdiagram/ClassLayout.cpp
+  src/mermaid/classdiagram/ClassLayout.h
+  src/mermaid/classdiagram/ClassScene.cpp
+  src/mermaid/classdiagram/ClassScene.h
+  src/mermaid/classdiagram/ClassScenePainter.cpp
+  src/mermaid/classdiagram/ClassScenePainter.h
+  src/mermaid/classdiagram/ClassTokenizer.cpp
+  src/mermaid/classdiagram/ClassTokenizer.h
   src/mermaid/sequence/SequenceDiagram.cpp
   src/mermaid/sequence/SequenceDiagram.h
   src/mermaid/sequence/SequenceLayout.cpp

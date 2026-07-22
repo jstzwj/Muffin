@@ -6,6 +6,7 @@
 #include "document/BlockPredicates.h"
 #include "document/SourceRangeUtil.h"
 #include "mermaid/scene/FlowScenePainter.h"
+#include "mermaid/classdiagram/ClassScenePainter.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 #include "render/DecorationPainter.h"
 
@@ -562,6 +563,13 @@ void BlockLayout::setMermaidSequenceScene(
   mermaidNaturalSize_ = naturalSize;
 }
 
+void BlockLayout::setMermaidClassScene(
+    std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> scene,
+    QSizeF naturalSize) {
+  mermaidClassScene_ = std::move(scene);
+  mermaidNaturalSize_ = naturalSize;
+}
+
 const muffin::mermaid::flowscene::FlowScene* BlockLayout::mermaidScene() const {
   return mermaidScene_.get();
 }
@@ -588,7 +596,8 @@ const QString& BlockLayout::mermaidErrorMessage() const {
 
 bool BlockLayout::isMermaidRendered() const {
   return mermaidState_ == MermaidState::Ready &&
-         (mermaidScene_ != nullptr || mermaidSequenceScene_ != nullptr);
+         (mermaidScene_ != nullptr || mermaidSequenceScene_ != nullptr ||
+          mermaidClassScene_ != nullptr);
 }
 
 void BlockLayout::setLiteralEditing(bool editing) {
@@ -1274,7 +1283,7 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
 }
 
 void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
-  if (!mermaidScene_ && !mermaidSequenceScene_) return;
+  if (!mermaidScene_ && !mermaidSequenceScene_ && !mermaidClassScene_) return;
   painter.save();
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBackgroundColor());
@@ -1298,12 +1307,16 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
     painter.setRenderHint(QPainter::TextAntialiasing, true);
     painter.translate(dx, dy);
     painter.scale(scale, scale);
-    const QRectF sceneBounds = mermaidScene_ ? mermaidScene_->bounds : mermaidSequenceScene_->bounds;
+    const QRectF sceneBounds = mermaidScene_ ? mermaidScene_->bounds
+        : mermaidSequenceScene_ ? mermaidSequenceScene_->bounds
+                                : mermaidClassScene_->bounds;
     painter.translate(-sceneBounds.left(), -sceneBounds.top());
     if (mermaidScene_)
       muffin::mermaid::flowscene::paintFlowScene(*mermaidScene_, painter, QStringLiteral("Arial"));
-    else
+    else if (mermaidSequenceScene_)
       muffin::mermaid::sequence::paintSequenceScene(*mermaidSequenceScene_, painter);
+    else
+      muffin::mermaid::classdiagram::paintClassScene(*mermaidClassScene_, painter);
   }
   painter.restore();
 }

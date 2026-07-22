@@ -528,6 +528,12 @@ FlowLabelDocument parseMarkup(QString source, bool markdown, bool mathEnabled,
     };
 
     bool closing = false;
+    if (markdown && rest.size() >= 2 && rest.at(0) == QLatin1Char('\\') &&
+        QStringView(uR"(!\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~)").contains(rest.at(1))) {
+      plain += rest.at(1);
+      i += 2;
+      continue;
+    }
     if (mathEnabled && rest.startsWith(QStringLiteral("$$"))) {
       const qsizetype close = source.indexOf(QStringLiteral("$$"), i + 2);
       if (close >= 0) {
@@ -935,6 +941,13 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
   const qreal cssDescent = std::floor(std::max<qreal>(0.0, inkMetrics.bottom()));
   const FlowLabelFontMetrics fontBoundingMetrics =
       flowLabelFontBoundingMetrics(fontFamily, fontPixelSize);
+  const bool flowForeignObject =
+      label.formattingContext ==
+      FlowLabelFormattingContext::FlowForeignObjectFlex;
+  const qreal lineAscent = flowForeignObject
+      ? fontBoundingMetrics.ascent : cssAscent;
+  const qreal lineDescent = flowForeignObject
+      ? fontBoundingMetrics.descent : cssDescent;
   FlowLabelLayoutMetrics result;
   const bool sequenceMathMl =
       label.formattingContext ==
@@ -1075,9 +1088,10 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                             : fontBoundingMetrics.height())
           : actualLineHeight;
       measured.blockHeight = actualLineHeight;
-      measured.ascent = cssAscent;
-      measured.descent = cssDescent;
-      measured.baseline = (actualLineHeight - cssAscent - cssDescent) / 2.0 + cssAscent;
+      measured.ascent = lineAscent;
+      measured.descent = lineDescent;
+      measured.baseline =
+          (actualLineHeight - lineAscent - lineDescent) / 2.0 + lineAscent;
       result.size.setWidth(std::max(result.size.width(), sequenceMathMl
           ? std::round(borderRight) : lineWidth));
       result.size.setHeight(result.size.height() + actualLineHeight);
@@ -1109,9 +1123,10 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
     measured.width = shaped.width;
     measured.height = lineHeight;
     measured.blockHeight = lineHeight;
-    measured.ascent = cssAscent;
-    measured.descent = cssDescent;
-    measured.baseline = (lineHeight - cssAscent - cssDescent) / 2.0 + cssAscent;
+    measured.ascent = lineAscent;
+    measured.descent = lineDescent;
+    measured.baseline =
+        (lineHeight - lineAscent - lineDescent) / 2.0 + lineAscent;
     measured.runs = shaped.runs;
     result.size.setWidth(std::max(result.size.width(), measured.width));
     result.size.setHeight(result.size.height() + lineHeight);
@@ -1149,7 +1164,7 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
   const FlowLabelLayoutMetrics layoutMetrics =
       layoutFlowLabel(paintedLabel, fontFamily, fontPixelSize, lineHeight);
   const QSizeF measured = layoutMetrics.size;
-  const qreal qtAscent = QFontMetricsF(font).ascent();
+  const qreal fallbackAscent = QFontMetricsF(font).ascent();
   qreal lineTop = centerVertically
                       ? rect.top() + std::max<qreal>(0.0, (rect.height() - measured.height()) / 2.0)
                       : rect.top();
@@ -1167,11 +1182,28 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
     const qreal lineWidth = measuredLine.width;
     qreal x = rect.left() + (rect.width() - lineWidth) / 2.0;
     const qreal lineOrigin = x;
+    const bool mathFlexLine = std::any_of(
+        measuredLine.runs.cbegin(), measuredLine.runs.cend(),
+        [](const FlowLabelVisualRun& candidate) { return candidate.math; });
     auto drawVisualTextRun = [&](const FlowLabelVisualRun& run) {
       if (!run.preparedGlyphs.isEmpty()) {
+        const bool fallbackFont = !run.fontFamily.isEmpty() &&
+            run.fontFamily.compare(font.family(), Qt::CaseInsensitive) != 0;
+        qreal glyphOriginAscent = fallbackAscent;
+        if (fallbackFont && run.fontAscent > 0.0) {
+          // Chromium honors an explicit OpenType BASE table (notably for CJK
+          // alphabetic/ideographic alignment). In a Math flex line, faces
+          // without BASE inherit the CSS inline box baseline and cannot raise
+          // their top-origin past it; ordinary text lines retain face ascent.
+          const bool hasBaselineTable =
+              !run.preparedGlyphs.rawFont().fontTable("BASE").isEmpty();
+          glyphOriginAscent = !mathFlexLine || hasBaselineTable
+              ? run.fontAscent
+              : std::min(run.fontAscent, measuredLine.baseline);
+        }
         painter.save();
         painter.translate(lineOrigin + run.x,
-                          lineTop + measuredLine.baseline - qtAscent);
+                          lineTop + measuredLine.baseline - glyphOriginAscent);
         if (run.preparedGlyphWidth > 0.0)
           painter.scale(run.width / run.preparedGlyphWidth, 1.0);
         if (run.rightToLeft) {

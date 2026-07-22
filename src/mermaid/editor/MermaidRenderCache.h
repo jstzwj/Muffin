@@ -17,6 +17,7 @@
 // QFutureWatcher + generation-guarded commit).
 
 #include "mermaid/scene/FlowScene.h"
+#include "mermaid/classdiagram/ClassScenePainter.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
 #include <QHash>
@@ -46,6 +47,7 @@ struct MermaidRenderEntry {
   MermaidRenderStatus status = MermaidRenderStatus::Absent;
   std::shared_ptr<const flowscene::FlowScene> scene;  // set when Ready
   std::shared_ptr<const sequence::SequenceScene> sequenceScene;
+  std::shared_ptr<const classdiagram::ClassScene> classScene;
   sequence::SequenceViewportOptions sequenceViewport;
   QSize naturalSize;                                   // scene.bounds size (logical px)
   QString errorMessage;                                // set when Error

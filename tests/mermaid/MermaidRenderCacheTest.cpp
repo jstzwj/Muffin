@@ -45,6 +45,9 @@ int main(int argc, char** argv) {
   const QString flow = QStringLiteral("flowchart TB\nA[Alpha] --> B[Beta] --> C[Gamma]");
   const QString malformed = QStringLiteral("flowchart TB\nA --> B\nlinkStyle 9 stroke:red");
   const QString sequence = QStringLiteral("sequenceDiagram\nAlice->>Bob: Hi");
+  const QString classDiagram = QStringLiteral(
+      "classDiagram\nclass Service {\n  <<interface>>\n  +run() Result\n}\n"
+      "class Client\nClient --> Service : uses");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
@@ -57,6 +60,20 @@ int main(int argc, char** argv) {
     // Second getSync hits the cache (same entry, no re-render).
     const MermaidRenderEntry e2 = cache.getSync(key, flow);
     require(e2.status == kReady && e2.scene == e.scene, QStringLiteral("cache hit returns the same scene"));
+  }
+
+  // --- class diagrams use the immutable class scene pipeline ---
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(classDiagram), classDiagram);
+    require(entry.status == kReady && entry.classScene != nullptr,
+            QStringLiteral("classDiagram should be Ready"));
+    require(entry.classScene->nodes.size() == 2 &&
+                entry.classScene->edges.size() == 1 &&
+                entry.classScene->markers.size() == 20 &&
+                entry.naturalSize.width() > 0 && entry.naturalSize.height() > 0,
+            QStringLiteral("classDiagram scene must contain class, relation, and marker geometry"));
   }
 
   // --- getSync: malformed → Error ---
