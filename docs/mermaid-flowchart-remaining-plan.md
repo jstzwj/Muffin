@@ -1,9 +1,9 @@
 # Mermaid Flowchart 原生移植计划与完成记录
 
-> 状态快照（2026-07-22）：Windows 上的 Mermaid 11.16.0 flowchart 原生链路已完成
+> 状态快照（2026-07-23）：Windows 上的 Mermaid 11.16.0 flowchart 原生链路已完成
 > parser/DB、compound Dagre、48 个 shape、scene/painter、主题/look、三级 golden、
 > fuzz/安全保护以及编辑器和打印/PDF 接入。当前 Conan Release 全量门禁为
-> 164/164；下面的 A-I 章节保留为实现合同和回归审计依据。
+> 165/165；下面的 A-I 章节保留为实现合同和回归审计依据。
 
 ## 1. 目标与边界
 
@@ -28,7 +28,7 @@ golden，不得成为 Muffin 构建、运行、测试或发布依赖。
 5. 无 JS/浏览器运行时依赖，并通过资源、错误输入和性能保护测试；
 6. 只有以上门槛全部通过后才接入 Muffin 编辑器和导出路径。
 
-## 2. 当前基线（2026-07-22）
+## 2. 当前基线（2026-07-23）
 
 已经具备：
 
@@ -41,7 +41,7 @@ golden，不得成为 Muffin 构建、运行、测试或发布依赖。
 - AST/DB、几何、scene、SVG structural、像素、coverage matrix 和 differential fuzz；
 - 异步缓存、所见即所得编辑器、打印/PDF，以及“显示源码”和 diagrams 总开关；
 - 四类 painter 的 dirty viewport culling、全量导出回退和大 scene 确定性性能门禁；
-- Windows Conan Release 全量构建和 164 项测试通过。
+- Windows Conan Release 全量构建和 165 项测试通过。
 
 仍可继续强化但不阻塞当前兼容范围的项目：更多平台专属像素基线，以及尚未移植的
 其他 Mermaid diagram family。

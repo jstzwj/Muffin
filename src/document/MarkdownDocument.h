@@ -55,6 +55,7 @@ signals:
 
 private:
   void bindSourcePositionSlots();
+  void refreshRootSourceRange();
   void rebuildOutlineIndex();
   void replaceOutlineRange(
       qsizetype first,

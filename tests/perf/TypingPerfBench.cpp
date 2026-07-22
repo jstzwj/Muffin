@@ -21,6 +21,8 @@
 #include "document/MarkdownNode.h"
 #include "document/PendingBlockMarker.h"
 
+#include "LargeDocumentFixture.h"
+
 #include <QCoreApplication>
 #include <QElapsedTimer>
 #include <QFile>
@@ -119,24 +121,6 @@ void countTree(const muffin::MarkdownNode& node, qsizetype& blocks, qsizetype& i
   }
 }
 
-// Paragraphs rich in inline formatting (**bold**, _em_, `code`, [links](…)) so the inline count
-// — and therefore the shiftRanges recursion cost — matches a real document.
-QString makeBigDoc(qsizetype targetBytes) {
-  static const char* units[] = {
-      "This **bold** and _italic_ and `code` and [link](http://example.com/x) text.\n\n",
-      "Another *em* phrase with **strong** words plus a [ref][1] inline node here.\n\n",
-      "Plain sentence with `monospace` and **emphasis** scattered across the line.\n\n",
-      "A line with [a link](https://site.example/path?q=1) and _underlined_ bits.\n\n",
-  };
-  QString doc;
-  doc.reserve(targetBytes + 256);
-  int i = 0;
-  while (doc.size() < targetBytes) {
-    doc += QString::fromLatin1(units[i++ % 4]);
-  }
-  return doc;
-}
-
 void typeAt(muffin::DocumentSession& session, qsizetype offset, int iters) {
   g_perfLines.clear();
   for (int k = 0; k < iters; ++k) {
@@ -163,10 +147,12 @@ int main(int argc, char** argv) {
   const QString doc = [&] {
     const QByteArray fileEnv = qgetenv("MUFFIN_BENCH_FILE");
     if (fileEnv.isEmpty()) {
-      return makeBigDoc(sizeMb * 1024 * 1024);
+      return muffin::test::makeInlineDenseMarkdown(sizeMb * 1024 * 1024);
     }
     QFile f(QString::fromLocal8Bit(fileEnv));
-    f.open(QIODevice::ReadOnly);
+    if (!f.open(QIODevice::ReadOnly)) {
+      qFatal("Could not open MUFFIN_BENCH_FILE: %s", qPrintable(f.errorString()));
+    }
     QString t = QString::fromUtf8(f.readAll());
     t.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
     t.replace(QLatin1Char('\r'), QLatin1Char('\n'));

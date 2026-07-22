@@ -15,7 +15,10 @@
 #include <QLoggingCategory>
 #include <QStringList>
 #include <QVector>
+#include <algorithm>
+#include <limits>
 #include <mutex>
+#include <vector>
 
 extern "C" {
 #include "cmark-gfm-core-extensions.h"
@@ -930,6 +933,42 @@ void insertTrailingEmptyParagraphAfterDefinition(
   root.appendChild(std::move(paragraph));
 }
 
+void restoreTopLevelSourceOrder(MarkdownNode& root) {
+  if (root.type() != BlockType::Document || root.children().size() < 2) {
+    return;
+  }
+  const auto sourceStart = [](const std::unique_ptr<MarkdownNode>& node) {
+    const qsizetype start = node->sourceRange().byteStart;
+    return start >= 0 ? start : std::numeric_limits<qsizetype>::max();
+  };
+  if (std::is_sorted(
+          root.children().cbegin(), root.children().cend(),
+          [&](const auto& left, const auto& right) {
+            return sourceStart(left) < sourceStart(right);
+          })) {
+    return;
+  }
+
+  // cmark collects footnote definitions at the end of its document tree even when their source
+  // lines occur in the middle of the file. Muffin's source-position index and incremental suffix
+  // shifts operate in top-level tree order, so retain source order in the editor AST. Export still
+  // hoists footnotes into its trailing section independently.
+  std::vector<std::unique_ptr<MarkdownNode>> ordered;
+  ordered.reserve(root.children().size());
+  while (!root.children().empty()) {
+    ordered.push_back(root.detachChild(root.children().size() - 1));
+  }
+  std::reverse(ordered.begin(), ordered.end());
+  std::stable_sort(
+      ordered.begin(), ordered.end(),
+      [&](const auto& left, const auto& right) {
+        return sourceStart(left) < sourceStart(right);
+      });
+  for (auto& node : ordered) {
+    root.appendChild(std::move(node));
+  }
+}
+
 struct TableCellFieldRange {
   qsizetype start = -1;
   qsizetype end = -1;
@@ -1492,6 +1531,10 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   {
     ParsePerfTimer t("parse.insertTrailingVEPAfterDefinition");
     insertTrailingEmptyParagraphAfterDefinition(markdownToParse, *result.root, definitions, lineOffsets);
+  }
+  {
+    ParsePerfTimer t("parse.restoreTopLevelSourceOrder");
+    restoreTopLevelSourceOrder(*result.root);
   }
   {
     ParsePerfTimer t("parse.annotateTableCellRanges");

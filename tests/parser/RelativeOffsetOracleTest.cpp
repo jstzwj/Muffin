@@ -97,6 +97,31 @@ bool compareNode(const MarkdownNode& fresh, const MarkdownNode& session, QString
 bool documentMatchesFreshParse(const DocumentSession& session, QString& err) {
   CmarkGfmParser parser;
   const ParseResult fresh = parser.parseDocument(QStringView(session.markdownText().toString()), ParseOptions{});
+  const SourceRange freshRoot = fresh.root->sourceRange();
+  const SourceRange sessionRoot = session.document().root().sourceRange();
+  if (freshRoot.byteStart != sessionRoot.byteStart ||
+      freshRoot.byteEnd != sessionRoot.byteEnd ||
+      freshRoot.lineStart != sessionRoot.lineStart ||
+      freshRoot.lineEnd != sessionRoot.lineEnd ||
+      freshRoot.columnStart != sessionRoot.columnStart ||
+      freshRoot.columnEnd != sessionRoot.columnEnd) {
+    err = QStringLiteral(
+              "document root range mismatch: got=[%1,%2) %3:%4-%5:%6 "
+              "want=[%7,%8) %9:%10-%11:%12")
+              .arg(sessionRoot.byteStart)
+              .arg(sessionRoot.byteEnd)
+              .arg(sessionRoot.lineStart)
+              .arg(sessionRoot.columnStart)
+              .arg(sessionRoot.lineEnd)
+              .arg(sessionRoot.columnEnd)
+              .arg(freshRoot.byteStart)
+              .arg(freshRoot.byteEnd)
+              .arg(freshRoot.lineStart)
+              .arg(freshRoot.columnStart)
+              .arg(freshRoot.lineEnd)
+              .arg(freshRoot.columnEnd);
+    return false;
+  }
   const auto& freshChildren = fresh.root->children();
   const auto& sessChildren = session.document().root().children();
   if (freshChildren.size() != sessChildren.size()) {
@@ -197,6 +222,23 @@ void testEditThenCompare() {
           "descendant paragraph must resolve to absolute shifted by +3");
   require(descAfterRange.byteEnd == descBeforeRange.byteEnd + 3,
           "descendant paragraph byteEnd must resolve shifted by +3");
+  QString err;
+  const bool matches = documentMatchesFreshParse(session, err);
+  require(matches, QStringLiteral("local edit root/source oracle: %1").arg(err));
+}
+
+void testFrontMatterRootRangeAfterLocalEdit() {
+  DocumentSession session;
+  session.setMarkdownText(
+      QStringLiteral("---\ntitle: Example\n---\n\nbody paragraph\n\nlast line\n"), false);
+  const qsizetype body = session.markdownText().indexOf(QStringView(u"body"));
+  require(body >= 0, "front-matter sample should contain body text");
+  require(session.applyTextDelta(body + 4, 0, QStringLiteral(" edited"), true),
+          "front-matter body edit should apply");
+  require(session.lastParseWasLocalEdit(), "front-matter body edit should remain local");
+  QString err;
+  const bool matches = documentMatchesFreshParse(session, err);
+  require(matches, QStringLiteral("front-matter local root/source oracle: %1").arg(err));
 }
 
 int main() {
@@ -207,5 +249,6 @@ int main() {
   runTest("testDefinition", testDefinition);
   runTest("testCodeFenceAndMathBlock", testCodeFenceAndMathBlock);
   runTest("testEditThenCompare", testEditThenCompare);
+  runTest("testFrontMatterRootRangeAfterLocalEdit", testFrontMatterRootRangeAfterLocalEdit);
   return 0;
 }

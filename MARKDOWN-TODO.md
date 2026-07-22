@@ -75,7 +75,7 @@ dirty viewport culling；屏幕路径只执行可见 primitive，打印/PDF 保�
 `tests/render/RenderMermaidBlockTest.cpp`，以及 `tests/mermaid/` 下的 parser、layout、
 scene、structural、pixel、coverage 和 differential fuzz 门禁。
 
-**验证：** Conan Release 全量构建与 164/164 项测试通过，`dist` 目标已刷新。
+**验证：** Conan Release 全量构建与 165/165 项测试通过，`dist` 目标已刷新。
 
 ---
 

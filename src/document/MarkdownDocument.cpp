@@ -128,6 +128,7 @@ void MarkdownDocument::replaceTopLevelRange(
     }
     index_.addSubtreesToLookup(inserted);
   }
+  refreshRootSourceRange();
 
   ++revision_;
   emit documentReset();
@@ -167,6 +168,40 @@ void MarkdownDocument::bindSourcePositionSlots() {
   for (qsizetype i = 0; i < static_cast<qsizetype>(children.size()); ++i) {
     children.at(static_cast<size_t>(i))->sourcePositionToken_ = tokens.at(i);
   }
+}
+
+void MarkdownDocument::refreshRootSourceRange() {
+  qsizetype parseStart = 0;
+  if (!root_->children().empty() &&
+      root_->children().front()->type() == BlockType::FrontMatter) {
+    parseStart = qBound<qsizetype>(
+        0, root_->children().front()->sourceRange().byteEnd, text_.size());
+    if (parseStart < text_.size() && text_.at(parseStart) == QLatin1Char('\r')) {
+      ++parseStart;
+    }
+    if (parseStart < text_.size() && text_.at(parseStart) == QLatin1Char('\n')) {
+      ++parseStart;
+    }
+  }
+
+  SourceRange range;
+  range.lineStart = 1;
+  range.columnStart = 1;
+  if (parseStart < text_.size()) {
+    const bool endsWithNewline = text_.at(text_.size() - 1) == QLatin1Char('\n');
+    const int fullEndLine = lineOffsets_.lineCount() - (endsWithNewline ? 1 : 0);
+    const int parseStartLine = lineOffsets_.lineForOffset(parseStart);
+    const qsizetype fullByteEnd = lineOffsets_.lineEndOffset(fullEndLine);
+    const qsizetype lastLineStart = lineOffsets_.lineStartOffset(fullEndLine);
+    QString lastLine = text_.mid(lastLineStart, fullByteEnd - lastLineStart);
+    if (lastLine.endsWith(QLatin1Char('\r'))) {
+      lastLine.chop(1);
+    }
+    range.byteEnd = fullByteEnd - parseStart;
+    range.lineEnd = fullEndLine - parseStartLine + 1;
+    range.columnEnd = lastLine.toUtf8().size();
+  }
+  root_->setSourceRange(range);
 }
 
 void MarkdownDocument::rebuildOutlineIndex() {

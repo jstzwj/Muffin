@@ -217,7 +217,7 @@ Muffin already covers nearly all of core and extended Markdown — headings, par
 - [ ] Polish the rendered editor surface — selection, cursor, IME, and local refresh edge cases.
 - [x] Add native Mermaid flowchart, sequence, class, and state diagrams.
 - [ ] Continue extending GFM coverage.
-- [ ] Harden performance — roundtrip verification and profiling diagnostics for very large documents.
+- [ ] Harden performance — the deterministic large-document roundtrip baseline is in place; continue profiling real 50–100 MB workloads.
 - [ ] Accessibility — keyboard navigation improvements and screen reader support.
 
 ## Contributing

@@ -163,6 +163,40 @@ void testMultiLineFootnoteKeepsCmarkRange() {
           QStringLiteral("Footnote editable note field should stay first-line text"));
 }
 
+void testFootnoteDefinitionsRemainInSourceOrder() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "before\n\n"
+      "[^first]: first note\n\n"
+      "middle\n\n"
+      "[^second]: second note\n\n"
+      "after\n");
+
+  ParseResult parsed = parser.parseDocument(markdown, options);
+  require(parsed.root != nullptr,
+          QStringLiteral("Parser returned null root for footnote source-order sample"));
+  qsizetype previousStart = -1;
+  for (const auto& child : parsed.root->children()) {
+    const qsizetype start = child->sourceRange().byteStart;
+    require(start >= previousStart,
+            QStringLiteral("Top-level source order regressed at offset %1 after %2")
+                .arg(start)
+                .arg(previousStart));
+    previousStart = start;
+  }
+  const MarkdownNode& first = definitionByLabel(
+      *parsed.root, BlockType::FootnoteDefinition, QStringLiteral("first"));
+  const MarkdownNode& second = definitionByLabel(
+      *parsed.root, BlockType::FootnoteDefinition, QStringLiteral("second"));
+  require(first.sourceRange().byteStart == markdown.indexOf(QStringLiteral("[^first]:")),
+          QStringLiteral("First footnote source offset mismatch"));
+  require(second.sourceRange().byteStart == markdown.indexOf(QStringLiteral("[^second]:")),
+          QStringLiteral("Second footnote source offset mismatch"));
+  require(first.siblingIndex() < second.siblingIndex(),
+          QStringLiteral("Footnote sibling order should follow source order"));
+}
+
 void testDefinitionCommonMarkBoundaryMatrix() {
   CmarkGfmParser parser;
   ParseOptions options;
@@ -286,6 +320,7 @@ int main(int argc, char** argv) {
   testDefinitionSerializationRebuildsEditedTitle();
   testDefinitionSerializationRebuildsParenthesizedTitleShape();
   testMultiLineFootnoteKeepsCmarkRange();
+  testFootnoteDefinitionsRemainInSourceOrder();
   testDefinitionCommonMarkBoundaryMatrix();
   testMultiLineFootnoteSerializationPreservesContinuation();
   testNonVirtualTemplateWithTitleButNoDestination();

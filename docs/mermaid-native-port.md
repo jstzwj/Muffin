@@ -3,7 +3,7 @@
 The flowchart execution contract and milestone history are maintained in
 [`mermaid-flowchart-remaining-plan.md`](mermaid-flowchart-remaining-plan.md).
 
-## Current status (2026-07-22)
+## Current status (2026-07-23)
 
 Muffin renders four Mermaid families through a native C++20/Qt pipeline:
 
@@ -15,7 +15,7 @@ Muffin renders four Mermaid families through a native C++20/Qt pipeline:
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 164/164 tests, including 47 `MuffinMermaid*` tests and the end-to-end
+currently 165/165 tests, including 47 `MuffinMermaid*` tests and the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
 ## Compatibility target

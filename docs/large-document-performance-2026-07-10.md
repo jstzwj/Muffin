@@ -2,6 +2,8 @@
 
 Date: 2026-07-10
 
+Updated: 2026-07-23
+
 ## Scope
 
 This report covers the remaining input latency observed after the first round of
@@ -92,6 +94,50 @@ visible animations.
 The benchmark still invokes the old full pending-marker scan explicitly as an isolated
 complexity oracle; it measured about 1,010 ms on this file. That scan is not called by the
 editing or debounce paths.
+
+## End-to-End Roundtrip Baseline (2026-07-23)
+
+`MuffinLargeDocumentRoundTripTest` now provides one deterministic contract across the real
+file, parser, document, lazy-layout, editor, undo/redo, and save paths. Its shared fixture
+generator mixes front matter, headings, editable inline-rich paragraphs, alerts, nested task
+and ordered lists, tables, code, math, HTML, Mermaid, references, footnotes, and Unicode.
+
+The default CTest fixture is 1 MiB so the Release suite stays practical. The test performs:
+
+1. UTF-8 fixture generation, asynchronous `FileController` open, and parse completion;
+2. lazy `DocumentLayout` construction with no eager promotion, then first-viewport promotion;
+3. local edits near the top, middle, and 90% position, followed by undo-all and redo-all;
+4. a real save and asynchronous reopen into a second session;
+5. exact source SHA-256 and complete semantic/source-range AST fingerprint comparison.
+
+Timing and working-set samples are emitted as structured JSON but remain informational, so
+machine load cannot make CI flaky. Deterministic gates require local parsing, zero full-layout
+fallbacks, bounded promoted slots, bounded piece-table fragmentation, exact undo/redo source and
+tree restoration, byte-identical save/reopen, and AST equivalence after the full roundtrip.
+
+Larger profiling runs accept 1-100 MiB fixtures:
+
+```powershell
+$env:MUFFIN_BENCH_SIZE_MB = "20"
+$env:MUFFIN_BENCH_JSON = "large-document-roundtrip.json"
+ctest --preset conan-release -R "^MuffinLargeDocumentRoundTripTest$" --output-on-failure -V
+```
+
+On the 20 MiB mixed fixture (20,972,406 UTF-8 bytes, 323,478 top-level blocks), the Release
+baseline measured:
+
+- open and parse: 11.586 s; lazy layout index: 2.273 s; first viewport: 74.3 ms;
+- top/middle/near-end edits: 4.20 / 3.31 / 2.03 ms;
+- undo all: 6.83 ms; redo all: 134.1 ms; save: 97.8 ms; reopen: 12.428 s;
+- zero full-layout refreshes, 32 promoted slots, and 7 piece-table pieces;
+- 1.64 GiB peak working set while both the edited and reopened full documents were alive for
+  structural comparison.
+
+The first complete run exposed and now guards two source-range defects: cmark-gfm collected
+footnote definitions at the document tail instead of source order, which made local suffix shifts
+move the wrong definitions; and local replacement left the synthetic document-root range stale.
+Top-level nodes are now restored to source order, and the root range is refreshed with the same
+front-matter and trailing-line semantics as a fresh cmark parse.
 
 ## Residual Risk
 
