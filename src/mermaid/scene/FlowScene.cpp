@@ -16,6 +16,25 @@ namespace {
 
 qreal r3(qreal v) { return std::round(v * 1000.0) / 1000.0; }
 
+QRectF edgePaintBounds(const flowchart::FlowLayoutEdge& edge) {
+  QRectF bounds;
+  bool initialized = false;
+  auto includePoint = [&](const QPointF& point) {
+    const QRectF pixel(point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0));
+    if (!initialized) {
+      bounds = pixel;
+      initialized = true;
+    } else {
+      bounds = bounds.united(pixel);
+    }
+  };
+  for (const QPointF& point : edge.points) includePoint(point);
+  for (const QVector<QPointF>& segment : edge.segments)
+    for (const QPointF& point : segment) includePoint(point);
+  // Point/circle/cross markers extend roughly 10 scene pixels past endpoints.
+  return initialized ? bounds.adjusted(-12.0, -12.0, 12.0, 12.0) : QRectF{};
+}
+
 QPainterPath polygonPath(const QVector<QPointF>& points) {
   QPainterPath path;
   if (points.isEmpty()) return path;
@@ -401,6 +420,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     FlowSceneEdge se;
     se.id = e.id;
     se.path = e.path;
+    se.pathBounds = edgePaintBounds(e);
     const flowchart::FlowEdge* fe = edgeById.value(e.id);
     if (fe) {
       flowchart::FlowEdge effectiveEdge = *fe;
@@ -431,6 +451,10 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
         se.label.fontSize = theme.fontSize;
         se.label.richText = e.labelDocument;
         se.labelSize = e.labelSize;
+        se.labelBounds = QRectF(
+            QPointF(se.label.x - se.labelSize.width() / 2.0,
+                    se.label.y - se.labelSize.height() / 2.0),
+            se.labelSize);
       }
     } else {
       se.stroke = theme.lineColor;

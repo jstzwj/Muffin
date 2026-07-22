@@ -459,6 +459,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/MermaidDiagramDetector.h
   src/mermaid/MermaidDiagnostic.cpp
   src/mermaid/MermaidDiagnostic.h
+  src/mermaid/MermaidPaintOptions.h
   src/mermaid/MermaidPreprocessor.cpp
   src/mermaid/MermaidPreprocessor.h
   src/mermaid/MermaidFontRegistry.cpp

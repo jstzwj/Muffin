@@ -78,6 +78,10 @@ struct FlowSceneEdge {
   QString markerStart;
   FlowSceneLabel label;   // text empty if the edge has no label
   QSizeF labelSize;
+  // Painter-only bounds. Keeping path and label separate lets viewport paint
+  // skip path parsing without hiding an independently visible label.
+  QRectF pathBounds;
+  QRectF labelBounds;
   // Painter-only: path endpoints + tangent directions for marker orientation
   // (from FlowLayoutEdge.points; NOT serialized by toJson).
   QPointF startPoint, endPoint, startTangent, endTangent;

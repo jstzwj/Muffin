@@ -649,6 +649,14 @@ void BlockLayout::setMermaidStateScene(
   mermaidNaturalSize_ = naturalSize;
 }
 
+void BlockLayout::setMermaidViewportCullingEnabled(bool enabled) {
+  mermaidViewportCullingEnabled_ = enabled;
+}
+
+bool BlockLayout::mermaidViewportCullingEnabled() const {
+  return mermaidViewportCullingEnabled_;
+}
+
 const muffin::mermaid::flowscene::FlowScene* BlockLayout::mermaidScene() const {
   return mermaidScene_.get();
 }
@@ -1446,21 +1454,43 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
     const qreal dy = content.top() + qMax<qreal>(0.0, (content.height() - drawH) / 2.0);
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
-    painter.translate(dx, dy);
-    painter.scale(scale, scale);
     const QRectF sceneBounds = mermaidScene_ ? mermaidScene_->bounds
         : mermaidSequenceScene_ ? mermaidSequenceScene_->bounds
         : mermaidClassScene_ ? mermaidClassScene_->bounds
                              : mermaidStateScene_->bounds;
+    muffin::mermaid::MermaidPaintOptions paintOptions;
+    if (mermaidViewportCullingEnabled_ && painter.hasClipping()) {
+      const QRectF visibleView = painter.clipBoundingRect().intersected(
+          QRectF(dx, dy, drawW, drawH));
+      if (!visibleView.isValid()) {
+        painter.restore();
+        return;
+      }
+      paintOptions.cullToVisibleRect = true;
+      paintOptions.visibleSceneRect = QRectF(
+          sceneBounds.left() + (visibleView.left() - dx) / scale,
+          sceneBounds.top() + (visibleView.top() - dy) / scale,
+          visibleView.width() / scale,
+          visibleView.height() / scale);
+    }
+    painter.translate(dx, dy);
+    painter.scale(scale, scale);
     painter.translate(-sceneBounds.left(), -sceneBounds.top());
     if (mermaidScene_)
-      muffin::mermaid::flowscene::paintFlowScene(*mermaidScene_, painter, QStringLiteral("Arial"));
+      muffin::mermaid::flowscene::paintFlowScene(
+          *mermaidScene_, painter, QStringLiteral("Arial"),
+          muffin::mermaid::flowscene::PaintMode::Color, paintOptions);
     else if (mermaidSequenceScene_)
-      muffin::mermaid::sequence::paintSequenceScene(*mermaidSequenceScene_, painter);
+      muffin::mermaid::sequence::paintSequenceScene(
+          *mermaidSequenceScene_, painter, paintOptions);
     else if (mermaidClassScene_)
-      muffin::mermaid::classdiagram::paintClassScene(*mermaidClassScene_, painter);
+      muffin::mermaid::classdiagram::paintClassScene(
+          *mermaidClassScene_, painter,
+          muffin::mermaid::classdiagram::ClassPaintMode::Color,
+          paintOptions);
     else
-      muffin::mermaid::state::paintStateScene(*mermaidStateScene_, painter);
+      muffin::mermaid::state::paintStateScene(
+          *mermaidStateScene_, painter, paintOptions);
   }
   painter.restore();
 }

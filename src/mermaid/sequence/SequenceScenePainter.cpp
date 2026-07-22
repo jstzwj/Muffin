@@ -5,6 +5,7 @@
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFont>
+#include <QHash>
 #include <QPainter>
 #include <QPainterPath>
 
@@ -15,6 +16,62 @@ namespace muffin::mermaid::sequence {
 namespace {
 
 QColor color(const QString& value) { return mermaid::color::toQColor(value); }
+
+void includeBounds(QRectF& target, bool& initialized, const QRectF& value) {
+  if (value.isNull()) return;
+  QRectF normalized = value.normalized();
+  if (normalized.width() <= 0.0) normalized.adjust(-0.5, 0.0, 0.5, 0.0);
+  if (normalized.height() <= 0.0) normalized.adjust(0.0, -0.5, 0.0, 0.5);
+  if (!initialized) {
+    target = normalized;
+    initialized = true;
+  } else {
+    target = target.united(normalized);
+  }
+}
+
+QRectF participantBounds(const SequenceLayoutParticipant& actor) {
+  QRectF bounds;
+  bool initialized = false;
+  includeBounds(bounds, initialized,
+      QRectF(QPointF(actor.anchorX, actor.lifelineStartY),
+             QPointF(actor.anchorX, actor.lifelineStopY)));
+  if (actor.drawTop) {
+    includeBounds(bounds, initialized, actor.topPaintedBounds);
+    includeBounds(bounds, initialized, actor.topLabelRect);
+    for (const QPainterPath& path : actor.topShapePaths)
+      includeBounds(bounds, initialized, path.boundingRect());
+  }
+  if (actor.drawBottom) {
+    includeBounds(bounds, initialized, actor.bottomPaintedBounds);
+    includeBounds(bounds, initialized, actor.bottomLabelRect);
+    for (const QPainterPath& path : actor.bottomShapePaths)
+      includeBounds(bounds, initialized, path.boundingRect());
+  }
+  return bounds;
+}
+
+QRectF messageBounds(const SequenceLayoutMessage& message,
+                     const SequenceLayoutNumber* number) {
+  QRectF bounds;
+  bool initialized = false;
+  if (message.painterPath.isEmpty()) {
+    includeBounds(bounds, initialized,
+        QRectF(QPointF(message.startX, message.lineY),
+               QPointF(message.stopX, message.lineY)));
+  } else {
+    includeBounds(bounds, initialized, message.painterPath.boundingRect());
+  }
+  includeBounds(bounds, initialized, message.labelRect);
+  for (const QPointF& center : message.centralConnections)
+    includeBounds(bounds, initialized,
+                  QRectF(center - QPointF(5.0, 5.0), QSizeF(10.0, 10.0)));
+  if (number)
+    includeBounds(bounds, initialized,
+                  QRectF(number->position.x() - 10.0,
+                         number->position.y() - 14.0, 20.0, 20.0));
+  return initialized ? bounds.adjusted(-12.0, -12.0, 12.0, 12.0) : bounds;
+}
 
 void centeredText(QPainter& painter, const SequenceLabelDocument& label, const QRectF& rect,
                   const SequenceSceneStyle& style, const QString& textColor) {
@@ -72,12 +129,20 @@ void marker(QPainter& painter, const QString& type, QPointF point, QPointF direc
 
 }  // namespace
 
-void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
+void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
+                        const MermaidPaintOptions& options) {
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setRenderHint(QPainter::TextAntialiasing);
 
+  QHash<int, const SequenceLayoutNumber*> numbersByMessage;
+  numbersByMessage.reserve(scene.sequenceNumbers.size());
+  for (const SequenceLayoutNumber& number : scene.sequenceNumbers)
+    numbersByMessage.insert(number.messageIndex, &number);
+
   for (qsizetype index = 0; index < scene.boxes.size(); ++index) {
     const auto& box = scene.boxes[index];
+    if (!mermaidPrimitiveIsVisible(box.rect.united(box.labelRect), options))
+      continue;
     painter.setPen(QPen(color(scene.style.boxStroke), 1.0));
     painter.setBrush(box.fill == QLatin1String("transparent") ? Qt::NoBrush : color(box.fill));
     painter.drawRect(box.rect);
@@ -86,6 +151,7 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
   }
   for (qsizetype index = 0; index < scene.participants.size(); ++index) {
     const auto& actor = scene.participants[index];
+    if (!mermaidPrimitiveIsVisible(participantBounds(actor), options)) continue;
     painter.setPen(QPen(color(scene.style.lifelineColor), 0.5, Qt::DashLine));
     painter.drawLine(QPointF(actor.anchorX, actor.lifelineStartY),
                      QPointF(actor.anchorX, actor.lifelineStopY));
@@ -93,12 +159,14 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
     if (actor.drawBottom) participantShape(painter, actor, scene.participantLabels[index], true, scene.style);
   }
   for (const auto& activation : scene.activations) {
+    if (!mermaidPrimitiveIsVisible(activation.rect, options)) continue;
     painter.setPen(QPen(color(scene.style.activationStroke), 1.0));
     painter.setBrush(color(scene.style.activationFill));
     painter.drawRect(activation.rect);
   }
   for (qsizetype index = 0; index < scene.fragments.size(); ++index) {
     const auto& fragment = scene.fragments[index];
+    if (!mermaidPrimitiveIsVisible(fragment.rect, options)) continue;
     painter.setPen(QPen(color(scene.style.fragmentStroke), 2.0));
     painter.setBrush(scene.style.fragmentFill == QLatin1String("transparent")
                          ? Qt::NoBrush : QBrush(color(scene.style.fragmentFill)));
@@ -120,6 +188,7 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
   }
   for (qsizetype index = 0; index < scene.notes.size(); ++index) {
     const auto& note = scene.notes[index];
+    if (!mermaidPrimitiveIsVisible(note.rect, options)) continue;
     painter.setPen(QPen(color(scene.style.noteStroke), 1.0));
     painter.setBrush(color(scene.style.noteFill));
     painter.drawRect(note.rect);
@@ -128,6 +197,10 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
   }
   for (qsizetype index = 0; index < scene.messages.size(); ++index) {
     const auto& message = scene.messages[index];
+    const SequenceLayoutNumber* number =
+        numbersByMessage.value(message.messageIndex, nullptr);
+    if (!mermaidPrimitiveIsVisible(messageBounds(message, number), options))
+      continue;
     QPen pen(color(scene.style.signalColor), 2.0);
     if (message.dashed) pen.setDashPattern({3.0, 3.0});
     painter.setPen(pen);
@@ -150,9 +223,7 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter) {
            message.markerStartDirection, color(scene.style.signalColor));
     centeredText(painter, scene.messageLabels[index], message.labelRect, scene.style,
                  scene.style.signalTextColor);
-    const auto number = std::find_if(scene.sequenceNumbers.cbegin(), scene.sequenceNumbers.cend(),
-        [&](const SequenceLayoutNumber& item) { return item.messageIndex == message.messageIndex; });
-    if (number != scene.sequenceNumbers.cend()) {
+    if (number) {
       painter.setPen(QPen(color(scene.style.signalColor), 1.0));
       painter.setBrush(color(scene.style.actorFill));
       painter.drawEllipse(QPointF(number->position.x(), number->position.y() - 4.0), 6.0, 6.0);

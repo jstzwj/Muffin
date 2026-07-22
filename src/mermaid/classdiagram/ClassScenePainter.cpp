@@ -136,11 +136,13 @@ void drawMarker(QPainter& painter, const ClassScene& scene, const QString& type,
 }  // namespace
 
 void paintClassScene(const ClassScene& scene, QPainter& painter,
-                     ClassPaintMode mode) {
+                     ClassPaintMode mode,
+                     const MermaidPaintOptions& options) {
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
 
   for (const auto& cluster : scene.clusters) {
+    if (!mermaidPrimitiveIsVisible(cluster.bounds, options)) continue;
     const QColor clusterColor = mode == ClassPaintMode::SemanticMask
         ? QColor::fromRgba(kClassMaskCluster) : color(scene.style.clusterStroke);
     if (mode != ClassPaintMode::TextMask) {
@@ -167,6 +169,10 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
 
   for (const auto& edge : scene.edges) {
     if (mode == ClassPaintMode::TextMask) continue;
+    if (!mermaidPrimitiveIsVisible(
+            edge.pathBounds.isValid() ? edge.pathBounds : scene.bounds,
+            options))
+      continue;
     QPen pen(mode == ClassPaintMode::SemanticMask
                  ? QColor::fromRgba(kClassMaskEdge)
                  : color(scene.style.lineColor), scene.style.strokeWidth);
@@ -185,35 +191,47 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
 
   for (const auto& edge : scene.edges) {
     if (!edge.label.isEmpty() && edge.labelPosition) {
-      auto document = flowchart::parseFlowLabel(edge.label, QStringLiteral("markdown"), true);
-      document.formattingContext =
-          flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
-      flowchart::prepareFlowLabelMath(document, scene.style.fontSize);
-      const QSizeF size = flowchart::measureFlowLabel(
-          document, scene.style.fontFamily, scene.style.fontSize, scene.style.lineHeight);
+      flowchart::FlowLabelDocument document = edge.labelDocument;
+      QSizeF size = edge.labelSize;
+      if (document.text.isEmpty()) {
+        document = flowchart::parseFlowLabel(
+            edge.label, QStringLiteral("markdown"), true);
+        document.formattingContext =
+            flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
+        flowchart::prepareFlowLabelMath(document, scene.style.fontSize);
+        size = flowchart::measureFlowLabel(
+            document, scene.style.fontFamily, scene.style.fontSize,
+            scene.style.lineHeight);
+      }
       const QRectF rect(edge.labelPosition->x() - size.width() / 2.0,
                         edge.labelPosition->y() - size.height() / 2.0,
                         size.width(), size.height());
-      if (mode != ClassPaintMode::TextMask)
-        painter.fillRect(rect, mode == ClassPaintMode::SemanticMask
-                                   ? QColor::fromRgba(kClassMaskEdgeLabel)
-                                   : color(scene.style.edgeLabelFill));
-      painter.save();
-      painter.setClipRect(rect);
-      flowchart::paintFlowLabel(painter, document, rect, scene.style.fontFamily,
-          scene.style.fontSize, scene.style.lineHeight,
-          mode != ClassPaintMode::Color
-              ? QColor::fromRgba(kClassMaskText)
-              : color(scene.style.textColor), true);
-      painter.restore();
+      if (mermaidPrimitiveIsVisible(
+              edge.labelBounds.isValid() ? edge.labelBounds : rect, options)) {
+        if (mode != ClassPaintMode::TextMask)
+          painter.fillRect(rect, mode == ClassPaintMode::SemanticMask
+                                     ? QColor::fromRgba(kClassMaskEdgeLabel)
+                                     : color(scene.style.edgeLabelFill));
+        painter.save();
+        painter.setClipRect(rect);
+        flowchart::paintFlowLabel(painter, document, rect, scene.style.fontFamily,
+            scene.style.fontSize, scene.style.lineHeight,
+            mode != ClassPaintMode::Color
+                ? QColor::fromRgba(kClassMaskText)
+                : color(scene.style.textColor), true);
+        painter.restore();
+      }
     }
     const auto terminal = [&](const std::optional<ClassSceneTerminalLabel>& label) {
       if (!label) return;
-      const QSizeF size = flowchart::measureFlowLabel(
-          label->document, scene.style.fontFamily, 11.0, 12.0);
+      const QSizeF size = label->size.isValid()
+          ? label->size
+          : flowchart::measureFlowLabel(
+                label->document, scene.style.fontFamily, 11.0, 12.0);
       const QRectF rect(label->center.x() - size.width() / 2.0,
                         label->center.y() - size.height() / 2.0,
                         size.width(), size.height());
+      if (!mermaidPrimitiveIsVisible(rect, options)) return;
       painter.save();
       painter.setClipRect(rect);
       flowchart::paintFlowLabel(painter, label->document, rect,
@@ -228,6 +246,12 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
   }
 
   for (const auto& node : scene.nodes) {
+    const QRectF nodeBounds = node.localOuter.isValid()
+        ? node.localOuter.translated(node.center)
+        : QRectF(node.center - QPointF(node.size.width() / 2.0,
+                                       node.size.height() / 2.0),
+                 node.size);
+    if (!mermaidPrimitiveIsVisible(nodeBounds, options)) continue;
     const bool transparentOuter = std::any_of(node.cssStyles.cbegin(), node.cssStyles.cend(),
         [](const QString& style) { return style.contains(QStringLiteral("opacity: 0")); });
     if (!transparentOuter && mode != ClassPaintMode::TextMask) {

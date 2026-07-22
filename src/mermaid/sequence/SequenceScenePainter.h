@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/sequence/SequenceScene.h"
 
 #include <QImage>
@@ -16,7 +17,8 @@ struct SequenceViewportOptions {
   bool mirrorActors = true;
 };
 
-void paintSequenceScene(const SequenceScene& scene, QPainter& painter);
+void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
+                        const MermaidPaintOptions& options = {});
 QRectF sequenceViewportRect(const SequenceScene& scene,
                             SequenceViewportOptions options = {});
 QImage renderSequenceSceneToImage(const SequenceScene& scene, qreal dpr = 1.0,

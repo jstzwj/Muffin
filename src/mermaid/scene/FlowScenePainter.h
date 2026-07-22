@@ -13,6 +13,7 @@
 // colours (exact) + compares alpha silhouettes (AA tolerance) rather than
 // requiring byte-exact text.
 
+#include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/scene/FlowScene.h"
 
 #include <QImage>
@@ -48,7 +49,8 @@ constexpr QRgb kCatBoundary = 0xFF000107u;
 // pixel golden uses Arial).
 void paintFlowScene(const FlowScene& scene, QPainter& painter,
                     const QString& fontFamily = QStringLiteral("Arial"),
-                    PaintMode mode = PaintMode::Color);
+                    PaintMode mode = PaintMode::Color,
+                    const MermaidPaintOptions& options = {});
 
 // Convenience: render the scene to a fresh QImage at the given DPR. The image
 // is sized to scene.bounds + padding, with scene coords translated so the

@@ -1008,6 +1008,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
         static_cast<int>(entry.status)));  // MermaidRenderStatus ↔ BlockLayout::MermaidState are ordered identically
     if (!keepSource && entry.status == MermaidRenderStatus::Ready &&
         (entry.scene || entry.sequenceScene || entry.classScene || entry.stateScene)) {
+      layout->setMermaidViewportCullingEnabled(!mermaidSyncMode_);
       if (entry.scene) layout->setMermaidScene(entry.scene, entry.naturalSize);
       else if (entry.sequenceScene)
         layout->setMermaidSequenceScene(entry.sequenceScene, entry.naturalSize);

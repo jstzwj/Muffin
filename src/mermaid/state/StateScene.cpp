@@ -28,6 +28,19 @@ void include(QRectF& bounds, bool& initialized, const QRectF& value) {
   if (!initialized) { bounds = value; initialized = true; }
   else bounds = bounds.united(value);
 }
+QRectF edgePaintBounds(const QVector<QPointF>& points,
+                       const QVector<QVector<QPointF>>& segments) {
+  QRectF bounds;
+  bool initialized = false;
+  for (const QPointF& point : points)
+    include(bounds, initialized,
+            QRectF(point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0)));
+  for (const QVector<QPointF>& segment : segments)
+    for (const QPointF& point : segment)
+      include(bounds, initialized,
+              QRectF(point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0)));
+  return initialized ? bounds.adjusted(-12.0, -12.0, 12.0, 12.0) : QRectF{};
+}
 }
 
 StateScene buildStateScene(const StateLayoutInput& input,
@@ -81,6 +94,17 @@ StateScene buildStateScene(const StateLayoutInput& input,
     edge.segments = placed.segments; edge.labelPosition = placed.labelPosition;
     edge.path = placed.path;
     edge.labelDocument = prepareLabel(edge.label, scene.style.fontSize);
+    edge.pathBounds = edgePaintBounds(edge.points, edge.segments);
+    if (!edge.label.isEmpty() && edge.labelPosition) {
+      edge.labelSize = flowchart::measureFlowLabel(
+          edge.labelDocument, scene.style.fontFamily,
+          scene.style.fontSize, scene.style.lineHeight);
+      edge.labelBounds = QRectF(
+          *edge.labelPosition -
+              QPointF(edge.labelSize.width() / 2.0,
+                      edge.labelSize.height() / 2.0),
+          edge.labelSize);
+    }
     scene.edges.append(std::move(edge));
     for (const QPointF& point : placed.points)
       include(scene.bounds, initialized, QRectF(point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0)));

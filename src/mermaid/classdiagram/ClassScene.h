@@ -58,6 +58,7 @@ struct ClassSceneNode {
 struct ClassSceneTerminalLabel {
   QString text;
   QPointF center;
+  QSizeF size;
   flowchart::FlowLabelDocument document;
 };
 
@@ -75,6 +76,10 @@ struct ClassSceneEdge {
   QStringList paths;
   QString label;
   std::optional<QPointF> labelPosition;
+  flowchart::FlowLabelDocument labelDocument;
+  QSizeF labelSize;
+  QRectF pathBounds;
+  QRectF labelBounds;
   std::optional<ClassSceneTerminalLabel> startLabelRight;
   std::optional<ClassSceneTerminalLabel> endLabelLeft;
   QStringList style;

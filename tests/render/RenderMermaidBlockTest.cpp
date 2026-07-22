@@ -46,6 +46,37 @@ QImage renderBlockImage(const BlockLayout* block, const RenderTheme& theme) {
   return img;
 }
 
+QImage renderBlockSlice(const BlockLayout& block, const RenderTheme& theme,
+                        qreal scrollY, QSize viewport = QSize(360, 240)) {
+  QImage image(viewport, QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setClipRect(image.rect());
+  block.paint(painter, theme, scrollY);
+  painter.end();
+  return image;
+}
+
+std::shared_ptr<const mermaid::flowscene::FlowScene> largeFlowScene() {
+  auto scene = std::make_shared<mermaid::flowscene::FlowScene>();
+  scene->bounds = QRectF(0.0, 0.0, 240.0, 6400.0);
+  for (int index = 0; index < 160; ++index) {
+    mermaid::flowscene::FlowSceneNode node;
+    node.id = QStringLiteral("n%1").arg(index);
+    node.shapeType = QStringLiteral("rect");
+    node.shapeKind = QStringLiteral("rect");
+    node.cx = 120.0;
+    node.cy = 20.0 + index * 40.0;
+    node.width = 100.0;
+    node.height = 26.0;
+    node.fill = QStringLiteral("#ececff");
+    node.stroke = QStringLiteral("#9370db");
+    node.strokeWidth = QStringLiteral("1px");
+    scene->nodes.append(std::move(node));
+  }
+  return scene;
+}
+
 // Count non-transparent pixels in a rendered block (the diagram actually drew).
 qint64 opaquePixels(const BlockLayout* block, const RenderTheme& theme) {
   const QImage img = renderBlockImage(block, theme);
@@ -116,6 +147,36 @@ int main(int argc, char** argv) {
 
   const RenderTheme theme = RenderTheme::defaultTheme();
 
+  // --- BlockLayout maps a scrolled dirty clip into scene coordinates ---
+  {
+    const auto scene = largeFlowScene();
+    const QMarginsF padding = theme.codePadding();
+    const QSizeF naturalSize = scene->bounds.size();
+    const QRectF blockRect(24.0, 100.0, 300.0,
+                           naturalSize.height() + padding.top() + padding.bottom());
+    BlockLayout fullPaint;
+    fullPaint.setType(BlockType::CodeFence);
+    fullPaint.setRect(blockRect);
+    fullPaint.setMermaidScene(scene, naturalSize);
+    fullPaint.setMermaidState(BlockLayout::MermaidState::Ready);
+
+    BlockLayout culledPaint;
+    culledPaint.setType(BlockType::CodeFence);
+    culledPaint.setRect(blockRect);
+    culledPaint.setMermaidScene(scene, naturalSize);
+    culledPaint.setMermaidState(BlockLayout::MermaidState::Ready);
+    culledPaint.setMermaidViewportCullingEnabled(true);
+
+    for (const qreal sceneOffset : {0.0, 2480.0, 5760.0, 6400.0}) {
+      const qreal scroll = blockRect.top() + padding.top() + sceneOffset;
+      const QImage expected = renderBlockSlice(fullPaint, theme, scroll);
+      const QImage actual = renderBlockSlice(culledPaint, theme, scroll);
+      require(actual == expected,
+              QStringLiteral("viewport culling changed BlockLayout pixels at offset %1")
+                  .arg(sceneOffset));
+    }
+  }
+
   // --- a valid mermaid fence renders the diagram ---
   {
     DocumentSession session;
@@ -131,8 +192,20 @@ int main(int argc, char** argv) {
     require(block != nullptr, QStringLiteral("mermaid block should be built"));
     require(block->isMermaidRendered(), QStringLiteral("valid mermaid fence should render the diagram"));
     require(block->mermaidScene() != nullptr, QStringLiteral("rendered block must carry a scene"));
+    require(!block->mermaidViewportCullingEnabled(),
+            QStringLiteral("sync export/print layout must keep full-scene painting"));
     require(block->rect().height() > 10.0, QStringLiteral("rendered block must have height"));
     require(opaquePixels(block, theme) > 50, QStringLiteral("the diagram must draw pixels"));
+
+    // Reusing the ready cache through the normal editor path must enable dirty
+    // viewport culling without rebuilding the scene.
+    DocumentLayout editorLayout;
+    editorLayout.setMermaidRenderCache(&cache);
+    editorLayout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* editorBlock = editorLayout.block(fenceId);
+    require(editorBlock != nullptr && editorBlock->isMermaidRendered() &&
+                editorBlock->mermaidViewportCullingEnabled(),
+            QStringLiteral("editor layout must enable Mermaid viewport culling"));
   }
 
   // --- state diagrams use the same rendered block pipeline ---

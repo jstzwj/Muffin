@@ -68,13 +68,14 @@
 打印/PDF；编辑时、关闭 diagrams 设置或选择“显示 Mermaid 源码”时保留代码围栏。
 语法与语义错误通过统一结构化诊断保留 stage/code、实际值、预期值及精确行列；
 预处理前后的 offset 映射可穿过 front matter、init directive 和注释。错误范围会在
-源码中标记，点击诊断面板可直接把光标定位到对应位置。
+源码中标记，点击诊断面板可直接把光标定位到对应位置。四类 scene painter 均支持
+dirty viewport culling；屏幕路径只执行可见 primitive，打印/PDF 保持全量绘制。
 
 **证据：** `src/mermaid/`、`src/render/BlockLayoutBuilder.cpp`、
 `tests/render/RenderMermaidBlockTest.cpp`，以及 `tests/mermaid/` 下的 parser、layout、
 scene、structural、pixel、coverage 和 differential fuzz 门禁。
 
-**验证：** Conan Release 全量构建与 163/163 项测试通过，`dist` 目标已刷新。
+**验证：** Conan Release 全量构建与 164/164 项测试通过，`dist` 目标已刷新。
 
 ---
 

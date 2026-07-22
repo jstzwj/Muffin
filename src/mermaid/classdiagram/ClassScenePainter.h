@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/classdiagram/ClassScene.h"
 
 #include <QImage>
@@ -18,7 +19,8 @@ constexpr QRgb kClassMaskMarker = 0xFF00FFFFu;
 constexpr QRgb kClassMaskCluster = 0xFFFFFF00u;
 
 void paintClassScene(const ClassScene& scene, QPainter& painter,
-                     ClassPaintMode mode = ClassPaintMode::Color);
+                     ClassPaintMode mode = ClassPaintMode::Color,
+                     const MermaidPaintOptions& options = {});
 QImage renderClassSceneToImage(const ClassScene& scene, qreal dpr = 1.0,
                                qreal padding = 8.0,
                                ClassPaintMode mode = ClassPaintMode::Color);

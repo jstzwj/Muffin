@@ -110,11 +110,13 @@ void paintArrow(QPainter& painter, const StateSceneEdge& edge,
 }
 }
 
-void paintStateScene(const StateScene& scene, QPainter& painter) {
+void paintStateScene(const StateScene& scene, QPainter& painter,
+                     const MermaidPaintOptions& options) {
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
   const QColor transition = color(scene.style.transitionColor);
   for (const StateSceneNode& cluster : scene.clusters) {
+    if (!mermaidPrimitiveIsVisible(cluster.bounds, options)) continue;
     if (cluster.shape == QLatin1String("noteGroup")) continue;
     painter.setPen(QPen(color(scene.style.compositeStroke), scene.style.strokeWidth));
     painter.setBrush(color(scene.style.compositeFill));
@@ -130,6 +132,10 @@ void paintStateScene(const StateScene& scene, QPainter& painter) {
     }
   }
   for (const StateSceneEdge& edge : scene.edges) {
+    if (!mermaidPrimitiveIsVisible(
+            edge.pathBounds.isValid() ? edge.pathBounds : scene.bounds,
+            options))
+      continue;
     painter.setPen(QPen(transition, scene.style.strokeWidth));
     painter.setBrush(Qt::NoBrush);
     painter.drawPath(edgePath(edge));
@@ -137,15 +143,22 @@ void paintStateScene(const StateScene& scene, QPainter& painter) {
   }
   for (const StateSceneEdge& edge : scene.edges) {
     if (edge.label.isEmpty() || !edge.labelPosition) continue;
-    const QSizeF size = flowchart::measureFlowLabel(edge.labelDocument,
-        scene.style.fontFamily, scene.style.fontSize, scene.style.lineHeight);
+    const QSizeF size = edge.labelSize.isValid()
+        ? edge.labelSize
+        : flowchart::measureFlowLabel(edge.labelDocument,
+              scene.style.fontFamily, scene.style.fontSize,
+              scene.style.lineHeight);
     const QRectF bounds(*edge.labelPosition - QPointF(size.width() / 2.0,
                                                        size.height() / 2.0), size);
+    if (!mermaidPrimitiveIsVisible(
+            edge.labelBounds.isValid() ? edge.labelBounds : bounds, options))
+      continue;
     painter.fillRect(bounds, color(scene.style.edgeLabelFill));
     paintLabel(painter, edge.labelDocument, bounds, scene.style,
                color(scene.style.textColor));
   }
   for (const StateSceneNode& node : scene.nodes) {
+    if (!mermaidPrimitiveIsVisible(node.bounds, options)) continue;
     const QString shape = node.shape;
     const QPointF center = node.bounds.center();
     painter.setPen(QPen(color(scene.style.stateStroke), scene.style.strokeWidth));

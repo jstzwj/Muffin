@@ -15,7 +15,7 @@ Muffin renders four Mermaid families through a native C++20/Qt pipeline:
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 163/163 tests, including 46 `MuffinMermaid*` tests and the end-to-end
+currently 164/164 tests, including 47 `MuffinMermaid*` tests and the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
 ## Compatibility target
@@ -325,6 +325,25 @@ visible with a marked source range; clicking the diagnostic panel moves the
 caret to that range. Detector, preprocessing, resource, security, and native
 render failures use the same diagnostic envelope even when no source span is
 available.
+
+## Large-scene paint contract
+
+The editor inverse-maps the current `QPainter` dirty clip into scene
+coordinates and passes it to all four family painters. Clusters, edge paths,
+edge labels, nodes, notes, fragments, activations, and participant lifelines
+are rejected before expensive path parsing, rich-text layout, or drawing when
+their precomputed bounds are outside the viewport plus a conservative overscan.
+Class and state edge-label documents and sizes are prepared with the immutable
+scene; sequence-number lookup is indexed once per paint instead of scanning the
+full number list for every message.
+
+`MermaidPaintOptions` disables culling by default. `BlockLayoutBuilder` enables
+it only for the asynchronous editor path; synchronous image, print, and PDF
+layouts therefore paint the complete scene. `MuffinMermaidSceneCullingTest`
+constructs 2,400 primitives for each supported family, requires the culled and
+full paths to produce identical visible pixels, and places a deterministic
+upper bound on painted primitives. Timings are reported for profiling but are
+not used as a platform-sensitive pass/fail threshold.
 
 ## Port order
 

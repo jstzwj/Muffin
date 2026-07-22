@@ -47,6 +47,9 @@ struct StateSceneEdge {
   std::optional<QPointF> labelPosition;
   QString path;
   flowchart::FlowLabelDocument labelDocument;
+  QSizeF labelSize;
+  QRectF pathBounds;
+  QRectF labelBounds;
 };
 struct StateScene {
   QString role = QStringLiteral("graphics-document document");

@@ -13,6 +13,25 @@
 namespace muffin::mermaid::classdiagram {
 namespace {
 
+QRectF pointsBounds(const QVector<QPointF>& points,
+                    const QVector<QVector<QPointF>>& segments = {}) {
+  QRectF bounds;
+  bool initialized = false;
+  auto includePoint = [&](const QPointF& point) {
+    const QRectF pixel(point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0));
+    if (!initialized) {
+      bounds = pixel;
+      initialized = true;
+    } else {
+      bounds = bounds.united(pixel);
+    }
+  };
+  for (const QPointF& point : points) includePoint(point);
+  for (const QVector<QPointF>& segment : segments)
+    for (const QPointF& point : segment) includePoint(point);
+  return initialized ? bounds.adjusted(-18.0, -18.0, 18.0, 18.0) : QRectF{};
+}
+
 qreal markerOffset(const QString& type) {
   if (type == QLatin1String("aggregation") ||
       type == QLatin1String("extension") ||
@@ -377,6 +396,19 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     }
     rendered.label = edge.label; rendered.labelPosition = found->labelPosition;
     rendered.style = edge.style; rendered.labelStyle = edge.labelStyle;
+    rendered.pathBounds = pointsBounds(rendered.renderedPoints,
+                                       rendered.renderedSegments);
+    if (!rendered.label.isEmpty() && rendered.labelPosition) {
+      rendered.labelDocument = prepareLabel(rendered.label, scene.style.fontSize);
+      rendered.labelSize = flowchart::measureFlowLabel(
+          rendered.labelDocument, scene.style.fontFamily,
+          scene.style.fontSize, scene.style.lineHeight);
+      rendered.labelBounds = QRectF(
+          *rendered.labelPosition -
+              QPointF(rendered.labelSize.width() / 2.0,
+                      rendered.labelSize.height() / 2.0),
+          rendered.labelSize);
+    }
     if (!edge.startLabelRight.isEmpty()) {
       ClassSceneTerminalLabel terminal;
       terminal.text = edge.startLabelRight;
@@ -385,6 +417,8 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
       terminal.center = terminalPosition(terminalPoints, true, true,
                                          !edge.arrowTypeStart.isEmpty());
       terminal.document = prepareLabel(terminal.text, scene.style.fontSize);
+      terminal.size = flowchart::measureFlowLabel(
+          terminal.document, scene.style.fontFamily, 11.0, 12.0);
       rendered.startLabelRight = std::move(terminal);
     }
     if (!edge.endLabelLeft.isEmpty()) {
@@ -395,6 +429,8 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
       terminal.center = terminalPosition(terminalPoints, false, false,
                                          !edge.arrowTypeEnd.isEmpty());
       terminal.document = prepareLabel(terminal.text, scene.style.fontSize);
+      terminal.size = flowchart::measureFlowLabel(
+          terminal.document, scene.style.fontFamily, 11.0, 12.0);
       rendered.endLabelLeft = std::move(terminal);
     }
     scene.edges.append(std::move(rendered));

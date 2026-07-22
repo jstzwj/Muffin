@@ -314,7 +314,9 @@ void drawNeoShadowMask(QPainter& painter, const FlowSceneNode& node, const QRect
 
 }  // namespace
 
-void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fontFamily, PaintMode mode) {
+void paintFlowScene(const FlowScene& scene, QPainter& painter,
+                    const QString& fontFamily, PaintMode mode,
+                    const MermaidPaintOptions& options) {
   // mermaid's flowchart SVG has no background rect (transparent where there is
   // no shape); the painter matches that. scene.background is kept in the scene
   // for the JSON golden + future editor use, but is NOT painted here.
@@ -334,6 +336,7 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
   // Clusters (drawn first).
   for (const FlowSceneCluster& c : scene.clusters) {
     const QRectF r(c.cx - c.width / 2.0, c.cy - c.height / 2.0, c.width, c.height);
+    if (!mermaidPrimitiveIsVisible(r, options)) continue;
     if (scene.look == flowchart::FlowLook::Neo) {
       painter.setPen(Qt::NoPen);
       for (int y = -4; y <= 4; ++y) {
@@ -362,13 +365,13 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
     }
     painter.setPen(pen);
     if (scene.look == flowchart::FlowLook::HandDrawn) {
-      rough::Options options;
-      options.seed = scene.handDrawnSeed;
-      options.roughness = 0.7;
-      options.strokeWidth = 1.3;
-      options.fill = QStringLiteral("#000");
-      options.fillWeight = 3.0;
-      options.hachureGap = 5.2;
+      rough::Options roughOptions;
+      roughOptions.seed = scene.handDrawnSeed;
+      roughOptions.roughness = 0.7;
+      roughOptions.strokeWidth = 1.3;
+      roughOptions.fill = QStringLiteral("#000");
+      roughOptions.fillWeight = 3.0;
+      roughOptions.hachureGap = 5.2;
       QPen hachurePen(mode == PaintMode::CategoryMask ? QColor(kCatBoundary)
                                                        : clusterFill);
       hachurePen.setWidthF(mode == PaintMode::CategoryMask ? 4.0
@@ -377,7 +380,7 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
         pen.setWidthF(std::max<qreal>(5.0, pen.widthF() + 4.0));
       QPainterPath clusterPath;
       clusterPath.addRect(r);
-      drawRoughDrawable(painter, rough::path(clusterPath, options),
+      drawRoughDrawable(painter, rough::path(clusterPath, roughOptions),
                         clusterFill, pen, hachurePen);
     } else {
       painter.drawRoundedRect(r, 0, 0);
@@ -390,37 +393,40 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
 
   // Edges (drawn second).
   for (const FlowSceneEdge& e : scene.edges) {
-    const ParsedPath pp = parsePath(e.path);
-    QPen pen(paletteColor(e.stroke, kCatEdge)); pen.setWidthF(pxSize(e.strokeWidth));
-    if (!e.strokeDasharray.isEmpty()) {
-      QStringList parts = e.strokeDasharray.split(QRegularExpression(QStringLiteral("[\\s,]+")), Qt::SkipEmptyParts);
-      QVector<qreal> dash; for (const QString& s : parts) dash.append(s.toDouble());
-      // Qt requires an even-length pattern (dash/gap pairs). A mermaid dotted edge
-      // has dasharray "2" (one value); duplicate an odd-length pattern so Qt
-      // doesn't warn + fall back to a solid line.
-      if (dash.size() % 2 != 0) dash += dash;
-      pen.setDashPattern(dash);
-    }
-    pen.setCapStyle(Qt::RoundCap); pen.setJoinStyle(Qt::RoundJoin);
-    if (scene.look == flowchart::FlowLook::HandDrawn) {
-      if (mode == PaintMode::CategoryMask)
-        pen.setWidthF(std::max<qreal>(5.0, pen.widthF() + 4.0));
-      rough::Options options;
-      options.seed = scene.handDrawnSeed;
-      options.roughness = 0.3;
-      options.strokeWidth = pxSize(e.strokeWidth);
-      drawRoughDrawable(painter, rough::path(pp.path, options), Qt::NoBrush,
-                        pen, Qt::NoPen);
-    } else {
-      painter.setPen(pen); painter.setBrush(Qt::NoBrush);
-      painter.drawPath(pp.path);
-    }
-    // Markers.
-    const QColor mc = paletteColor(e.stroke, kCatEdge);
-    if (!e.markerEnd.isEmpty()) drawMarker(painter, e.markerEnd, pp.endPoint, pp.endTangent, mc);
-    if (!e.markerStart.isEmpty()) {
-      QPointF t = pp.startTangent;
-      drawMarker(painter, e.markerStart, pp.startPoint, QPointF(-t.x(), -t.y()), mc);  // start marker points backward
+    const QRectF pathBounds = e.pathBounds.isValid() ? e.pathBounds : scene.bounds;
+    if (mermaidPrimitiveIsVisible(pathBounds, options)) {
+      const ParsedPath pp = parsePath(e.path);
+      QPen pen(paletteColor(e.stroke, kCatEdge)); pen.setWidthF(pxSize(e.strokeWidth));
+      if (!e.strokeDasharray.isEmpty()) {
+        QStringList parts = e.strokeDasharray.split(QRegularExpression(QStringLiteral("[\\s,]+")), Qt::SkipEmptyParts);
+        QVector<qreal> dash; for (const QString& s : parts) dash.append(s.toDouble());
+        // Qt requires an even-length pattern (dash/gap pairs). A mermaid dotted edge
+        // has dasharray "2" (one value); duplicate an odd-length pattern so Qt
+        // doesn't warn + fall back to a solid line.
+        if (dash.size() % 2 != 0) dash += dash;
+        pen.setDashPattern(dash);
+      }
+      pen.setCapStyle(Qt::RoundCap); pen.setJoinStyle(Qt::RoundJoin);
+      if (scene.look == flowchart::FlowLook::HandDrawn) {
+        if (mode == PaintMode::CategoryMask)
+          pen.setWidthF(std::max<qreal>(5.0, pen.widthF() + 4.0));
+        rough::Options roughOptions;
+        roughOptions.seed = scene.handDrawnSeed;
+        roughOptions.roughness = 0.3;
+        roughOptions.strokeWidth = pxSize(e.strokeWidth);
+        drawRoughDrawable(painter, rough::path(pp.path, roughOptions), Qt::NoBrush,
+                          pen, Qt::NoPen);
+      } else {
+        painter.setPen(pen); painter.setBrush(Qt::NoBrush);
+        painter.drawPath(pp.path);
+      }
+      // Markers.
+      const QColor mc = paletteColor(e.stroke, kCatEdge);
+      if (!e.markerEnd.isEmpty()) drawMarker(painter, e.markerEnd, pp.endPoint, pp.endTangent, mc);
+      if (!e.markerStart.isEmpty()) {
+        QPointF t = pp.startTangent;
+        drawMarker(painter, e.markerStart, pp.startPoint, QPointF(-t.x(), -t.y()), mc);  // start marker points backward
+      }
     }
     // Edge label.
     if (!e.label.text.isEmpty()) {
@@ -428,6 +434,9 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
       const QRectF lr(e.label.x - measured.width() / 2.0,
                       e.label.y - measured.height() / 2.0,
                       measured.width(), measured.height());
+      if (!mermaidPrimitiveIsVisible(
+              e.labelBounds.isValid() ? e.labelBounds : lr, options))
+        continue;
       painter.setPen(Qt::NoPen); painter.setBrush(paletteColor(e.label.background, kCatEdgeLabelBg));
       painter.drawRoundedRect(lr, 2, 2);
       drawLabel(painter, e.label, lr, fontFamily, true, mode);
@@ -437,6 +446,13 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter, const QString& fo
   // Nodes (drawn last).
   for (const FlowSceneNode& n : scene.nodes) {
     const QRectF r(n.cx - n.width / 2.0, n.cy - n.height / 2.0, n.width, n.height);
+    QRectF paintBounds = r;
+    if (!n.label.text.isEmpty()) {
+      QRectF labelBounds = r;
+      labelBounds.translate(n.label.x - n.cx, n.label.y - n.cy);
+      paintBounds = paintBounds.united(labelBounds);
+    }
+    if (!mermaidPrimitiveIsVisible(paintBounds, options)) continue;
     if (scene.look == flowchart::FlowLook::Neo) {
       if (mode == PaintMode::Color) drawNeoShadow(painter, n, r, scene);
       else drawNeoShadowMask(painter, n, r);

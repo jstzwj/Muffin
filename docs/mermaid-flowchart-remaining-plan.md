@@ -3,7 +3,7 @@
 > 状态快照（2026-07-22）：Windows 上的 Mermaid 11.16.0 flowchart 原生链路已完成
 > parser/DB、compound Dagre、48 个 shape、scene/painter、主题/look、三级 golden、
 > fuzz/安全保护以及编辑器和打印/PDF 接入。当前 Conan Release 全量门禁为
-> 163/163；下面的 A-I 章节保留为实现合同和回归审计依据。
+> 164/164；下面的 A-I 章节保留为实现合同和回归审计依据。
 
 ## 1. 目标与边界
 
@@ -40,10 +40,11 @@ golden，不得成为 Muffin 构建、运行、测试或发布依赖。
 - plain/Markdown/HTML/MathML/CJK/bidi 文字测量与绘制；
 - AST/DB、几何、scene、SVG structural、像素、coverage matrix 和 differential fuzz；
 - 异步缓存、所见即所得编辑器、打印/PDF，以及“显示源码”和 diagrams 总开关；
-- Windows Conan Release 全量构建和 163 项测试通过。
+- 四类 painter 的 dirty viewport culling、全量导出回退和大 scene 确定性性能门禁；
+- Windows Conan Release 全量构建和 164 项测试通过。
 
-仍可继续强化但不阻塞当前兼容范围的项目：超大 scene 的细粒度 culling、更多
-平台专属像素基线，以及尚未移植的其他 Mermaid diagram family。
+仍可继续强化但不阻塞当前兼容范围的项目：更多平台专属像素基线，以及尚未移植的
+其他 Mermaid diagram family。
 
 ## 3. 总体依赖顺序
 
@@ -411,6 +412,12 @@ Chrome 与 Qt 的字体栅格和抗锯齿不保证逐字节相同，因此严格
 6. 链接和 tooltip 使用 Muffin 现有安全交互路径；
 7. 大图采用 viewport culling，不在 paint event 重新布局；
 8. 保留“以源码显示”回退开关。
+
+当前编辑器将 `QPainter` dirty clip 反算为 scene 坐标，并为 flowchart、sequence、
+class 和 state 的 cluster、边、标签和节点执行带 overscan 的细粒度裁剪。默认 painter
+选项不裁剪，因此打印、PDF 和图片导出仍绘制完整 scene。`MuffinMermaidSceneCullingTest`
+使用每类 2400 个 primitive 验证可见像素与全量路径一致，并限制昂贵绘制工作为单个
+viewport 内的 primitive 数量。
 
 ### 编辑器验收
 

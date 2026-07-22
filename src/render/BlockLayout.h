@@ -162,6 +162,8 @@ public:
                             QSizeF naturalSize);
   void setMermaidStateScene(std::shared_ptr<const muffin::mermaid::state::StateScene> scene,
                             QSizeF naturalSize);
+  void setMermaidViewportCullingEnabled(bool enabled);
+  bool mermaidViewportCullingEnabled() const;
   const muffin::mermaid::flowscene::FlowScene* mermaidScene() const;
   QSizeF mermaidNaturalSize() const;
   void setMermaidState(MermaidState state);
@@ -343,6 +345,7 @@ private:
   std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> mermaidSequenceScene_;
   std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> mermaidClassScene_;
   std::shared_ptr<const muffin::mermaid::state::StateScene> mermaidStateScene_;
+  bool mermaidViewportCullingEnabled_ = false;
   QSizeF mermaidNaturalSize_;
   MermaidState mermaidState_ = MermaidState::None;
   muffin::mermaid::MermaidDiagnostic mermaidDiagnostic_;
