@@ -55,17 +55,26 @@
 
 ---
 
-## P1 — 常见扩展特性（完全未支持）
+## P1 — 常见扩展特性
 
-### 5. 图表（Mermaid / 流程图 / 时序图）
+### 5. 图表（Mermaid）
 
-- [ ] 接入图表渲染引擎，支持 ```` ```mermaid ```` 代码块
+- [x] 接入原生图表渲染引擎，支持 ```` ```mermaid ```` 代码块
 
-**现状：** 明确未实现。设置页的 diagrams 复选框被禁用并标注 "coming soon"。
+**已实现（2026-07-22）：** 使用纯 C++20/Qt 实现 Mermaid 11.16.0 兼容层，
+支持 flowchart、sequence、class 和 state diagram。Node/Puppeteer 仅用于离线生成
+上游 fixture，构建、测试、运行和发布产物均无 JavaScript/浏览器依赖。渲染通过
+`MermaidRenderCache`、不可变 scene 和各 family painter 接入所见即所得编辑器及
+打印/PDF；编辑时、关闭 diagrams 设置或选择“显示 Mermaid 源码”时保留代码围栏。
+语法与语义错误通过统一结构化诊断保留 stage/code、实际值、预期值及精确行列；
+预处理前后的 offset 映射可穿过 front matter、init directive 和注释。错误范围会在
+源码中标记，点击诊断面板可直接把光标定位到对应位置。
 
-**证据：** `src/app/PrefsMarkdownPage.cpp:235-244`
+**证据：** `src/mermaid/`、`src/render/BlockLayoutBuilder.cpp`、
+`tests/render/RenderMermaidBlockTest.cpp`，以及 `tests/mermaid/` 下的 parser、layout、
+scene、structural、pixel、coverage 和 differential fuzz 门禁。
 
-**备注：** README Roadmap 已把 diagrams (Mermaid) 列为下一步 Markdown 特性。可选实现：嵌入 mermaid.js（或其精简 C++ 端口），在代码块渲染时按语言分发。
+**验证：** Conan Release 全量构建与 163/163 项测试通过，`dist` 目标已刷新。
 
 ---
 

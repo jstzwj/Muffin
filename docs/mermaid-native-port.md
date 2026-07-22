@@ -1,13 +1,29 @@
 # Mermaid native C++ port
 
-The detailed execution plan for the remaining flowchart work is maintained in
+The flowchart execution contract and milestone history are maintained in
 [`mermaid-flowchart-remaining-plan.md`](mermaid-flowchart-remaining-plan.md).
+
+## Current status (2026-07-22)
+
+Muffin renders four Mermaid families through a native C++20/Qt pipeline:
+
+- flowchart/graph;
+- sequence diagram;
+- class diagram;
+- state diagram (`stateDiagram-v2` and the supported legacy renderer path).
+
+Each supported family has parser/database, layout, immutable scene, structural,
+pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
+source fences instead of being approximated. The Windows Conan Release gate is
+currently 163/163 tests, including 46 `MuffinMermaid*` tests and the end-to-end
+`MuffinRenderMermaidBlockTest`.
 
 ## Compatibility target
 
-The compatibility baseline is `mermaid` 11.16.0 (MIT), resolved by the
-`@mermaid-js/mermaid-cli` 11.16.0 lockfile at
-`C:\Users\jstzw\Documents\github\mermaid-cli\package-lock.json`.
+The compatibility baseline is `mermaid` 11.16.0 (MIT), resolved by the pinned
+`@mermaid-js/mermaid-cli` 11.16.0 package used by the fixture generators. The
+generator scripts accept the local Mermaid package path explicitly; no
+machine-specific source path is part of Muffin's build or test contract.
 
 `mermaid-cli` is not the Mermaid implementation. Its rendering path starts a
 Puppeteer browser, loads Mermaid and external layout packages, renders into an
@@ -20,20 +36,20 @@ semantic pipeline and render it through Qt:
 4. shape, edge, label, theme, accessibility, and interaction rendering;
 5. code-fence integration and export.
 
-The first implemented layer is (1), in `src/mermaid`. It is linked into
+The shared implementation layer is in `src/mermaid`. It is linked into
 `MuffinCore` and has no JavaScript or browser dependency. YAML frontmatter uses
 the native `yaml-cpp` library.
 
-The first flowchart parser milestone is in `src/mermaid/flowchart`. It exposes a
-typed `FlowchartData` model for later layout work and currently has upstream DB
-goldens for legacy node shapes, edge forms and labels, grouped/chained links,
+The flowchart parser in `src/mermaid/flowchart` exposes a typed `FlowchartData`
+model and has upstream DB goldens for legacy node shapes, edge forms and labels,
+grouped/chained links,
 parallel edge IDs, classes/styles, nested subgraphs, and string/Markdown labels.
 The same comparison covers accessibility statements, click/callback/link data,
 node and edge metadata (`@{...}`), explicit edge IDs, animation properties,
 long link spellings, default `linkStyle`, tooltips, and Mermaid's default edge
-and text-size limits. Compatibility remains scoped to those fixtures: the
-remaining `flow.jison` productions and invalid-input branches must receive
-explicit upstream cases before parser compatibility can be declared complete.
+and text-size limits. `MuffinMermaidFlowchartCoverageMatrixTest`, parser-error
+goldens, and differential fuzz fixtures close the audited `flow.jison` grammar
+and invalid-input contract for the supported baseline.
 
 `src/mermaid/flowchart/FlowchartLayout.cpp` contains a native Sugiyama/Dagre
 pipeline: deterministic feedback-edge reversal, network-simplex ranking,
@@ -47,11 +63,10 @@ exact upstream node and edge label measurements so layout errors remain
 separate from font errors.
 
 Native Arial measurement uses `QTextLayout` design metrics and has a separate
-sub-pixel comparison. `FlowchartShapes` implements the 13 legacy flowchart
-shapes: rectangle, rounded rectangle, circle, diamond, stadium, subroutine,
-cylinder, asymmetric/odd, hexagon, trapezoid, inverse trapezoid, and the two
-leaning parallelograms. Each has a browser-generated silhouette compared with
-the Qt alpha mask.
+sub-pixel comparison. `FlowchartShapes` began with the 13 legacy bracket shapes
+and now implements the full audited registry. Browser-generated silhouette,
+structural, and pixel matrices compare the Qt geometry across the supported
+classic, hand-drawn, and neo looks.
 
 The full Dagre compound pipeline is now the active flowchart layout engine
 (`layoutFlowchartNodes` delegates to `layoutFlowchartNodesDagre`). All 22
@@ -61,12 +76,12 @@ chains, add-border-segments, compound ordering, BK type-2 coordinate
 assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 27-phase `runLayout` orchestration) lives in `src/mermaid/dagre/`.
 
-Mermaid's modern expanded shape catalogue still remains beyond the 13 legacy
-shapes above, and silhouette masks validate geometry only; complete theme
-pixels still require native fill/stroke, markers, labels, fonts, CSS/theme
-mapping, and a whole-diagram painter. No editor integration is enabled while
-those contracts remain incomplete. The legacy flat `WorkGraph` pipeline
-(`FlowchartLayout.cpp` anonymous namespace) is now dead code pending removal.
+The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
+and whole-diagram painter are now native and covered by structural and pixel
+oracles. Flowchart, sequence, class, and state scenes are integrated into the
+editor and print/PDF path through `MermaidRenderCache`. The legacy flat
+`WorkGraph` implementation remains as inactive reference code; the active path
+always delegates to the compound Dagre pipeline.
 
 ## Native graphlib compound multigraph
 
@@ -83,11 +98,10 @@ re-parenting, ancestors and lowest-common-ancestor, parallel named edges,
 compound/leaf traversal, `__proto__`-style special IDs, a 50 000-deep parent
 chain (proving the cycle check and ancestor walk are iterative, not recursive),
 insertion-order stability including delete-then-re-add, and cross-run
-determinism. The flowchart layout pipeline does not yet use this graph; it keeps
-its flat `WorkGraph` until milestone C switches the Dagre compound pipeline
-over, so existing non-compound geometry goldens are unaffected.
+determinism. The active flowchart layout pipeline uses this graph through
+`layoutFlowchartNodesDagre`; the flat `WorkGraph` implementation is not called.
 
-## Dagre compound pipeline (milestone C, in progress)
+## Dagre compound pipeline (milestone C, done)
 
 `src/mermaid/dagre/` is a faithful, file-by-file port of the Dagre
 `runLayout` phases that the flat `WorkGraph` pipeline lacks. Each phase operates
@@ -109,13 +123,6 @@ on the `DagreGraph` model above and carries hand-verified unit tests in
 - `ParentDummyChains` (C2, `parent-dummy-chains.js`) — postorder low/lim LCA
   and ascending-then-descending parent assignment for long-edge dummy chains
   crossing cluster boundaries.
-
-Still ahead for milestone C: the compound-aware ordering port (`order/*.js`,
-C4), the full BK coordinate assignment with `findType2Conflicts` and block-graph
-compaction (`position/bk.js`, C5), the remaining orchestration (`normalize`,
-`acyclic`, `coordinate-system`, self-edge handling, `layout.js` glue), switching
-`FlowchartLayout` from `WorkGraph` to the `DagreGraph` pipeline, and only then
-dropping the `compound-crossing` `pendingNative` marker.
 
 ### C4 / C5 / orchestration / integration — DONE
 
@@ -190,7 +197,7 @@ Edge marker clipping is marker-aware (`clipForMarkers` in
 (`-->`, `--x`, `--o`, `---`) and `edge-styles` (`-->`, `-.->`, `==>`) verify the
 matrix. Path-coordinate comparison is float-safe (`<= 0.002 + 1e-9`).
 
-The remaining D items are landed (37 geometry golden cases, 122/122 ctest):
+The D items are landed and retained by the current geometry and coverage gates:
 
 - **Curve variants.** `src/mermaid/flowchart/D3Curves.h` is a 1:1 port of the
   d3-shape curve state machines (`basis`, `linear`, `step`, `stepBefore`,
@@ -211,16 +218,14 @@ The remaining D items are landed (37 geometry golden cases, 122/122 ctest):
 - **Per-shape border intersection.** `intersectEllipse`/`intersectCircle`/
   `intersectPolygon` (+ `intersectLine`) are ported in `FlowchartLayout.cpp`.
   Edge extraction re-intersects the first/last interior point against each
-  node's shape (`tail.intersect`/`head.intersect`): circle →
-  `intersectCircle(r=w/2)`, diamond → `intersectPolygon` (vertices at ±w/2),
-  rect/rounded → `intersectRect`. dagre-d3's `intersectLine` carries an
+  canonical node geometry (`tail.intersect`/`head.intersect`); circle and
+  polygon handlers use their native outlines, while rect-like shapes and
+  upstream handlers defined with `intersect_default.rect` use `intersectRect`.
+  dagre-d3's `intersectLine` carries an
   `offset=abs(denom/2)` bias (a Graphics Gems integer-rounding trick that adds
   ±0.5 in floating point) which the goldens do not reproduce, so the true
-  quotient `num/denom` is used. `diag-shapes` (diagonal edges into a circle
-  and a diamond) verifies it; horizontal approaches hit the shape at the same
-  point as the rect edge, which is why earlier rect-only goldens passed.
-  Other polygon shapes (hexagon/trapezoid/stadium/…) fall back to
-  `intersectRect` until diagonal goldens are added for them.
+  quotient `num/denom` is used. Diagonal and expanded-shape matrices retain the
+  intersection behavior.
 - **Invisible and bidirectional edges.** The parser tokenises `~~~`
   (`arrow_open` + `stroke:"invisible"`), `o--o` (`double_arrow_circle`), and
   `x--x` (`double_arrow_cross`), plus their thick variants. `edge-bidirectional`
@@ -234,17 +239,17 @@ The remaining D items are landed (37 geometry golden cases, 122/122 ctest):
   is a bare keyword followed by a space — `interpolate:linear` is a mermaid
   parse error) and `@{curve:X}` set `edge.interpolate`; the layout uses it per
   edge (else `options.curve`), matching mermaid's `resolveEdgeCurveType`.
-  `edge-interpolate` (edge 0 `linear`, edge 1 `basis`) verifies. Rendering the
-  label background rect, stroke colour, and `classDef` styles on the painted
-  path is milestone-E work (no painter yet).
+  `edge-interpolate` (edge 0 `linear`, edge 1 `basis`) verifies. The scene and
+  painter apply label backgrounds, stroke colour, and `classDef` styles to the
+  final painted path.
 
-## Milestone E (expanded node shapes) — started
+## Milestone E (expanded node shapes) — done
 
-Mermaid 11.16.0's flowchart shape registry (`shapesDefs` in
-`chunk-65BZPYT2.mjs`) exposes 49 documented shapes selectable via
-`@{ shape: NAME }`, each with a shortName, aliases, and a semanticName. The 13
-legacy bracket shapes are ported; the remaining 36 expanded shapes are in
-progress.
+Mermaid 11.16.0's audited flowchart shape registry (`shapesDefs`) exposes 48
+documented short names selectable through `@{ shape: NAME }`. All 48 resolve to
+native canonical shapes; the original 13 bracket shapes and all expanded
+polygon, wave, arc, cylinder, brace, circle, document, and process variants
+have native sizing, border intersection, geometry, and painting.
 
 `src/mermaid/flowchart/FlowchartShapeRegistry.h` is the canonicalisation layer:
 `canonicalShape(type)` collapses the three naming systems — legacy bracket name
@@ -256,57 +261,12 @@ into `flowShapeGeometry`, `measureFlowchartNodes`, and `intersectNodeForShape`,
 so every `@{ shape: }` alias now routes to its shape's handling. Unrecognised
 names fall back to `rect` (mermaid's default shape).
 
-`upstreamShortNames()` (the 49 names) and `nativeShapeCanonicalNames()` (the
-ported set) feed `MuffinMermaidShapeRegistryTest`, a registry-diff gate that
-fails if any upstream shortName is unmapped (a typo or missing entry) and
-reports the ported/pending count. The diff must reach zero by the end of E.
-
-Still ahead for E: port each expanded shape's geometry (`flowShapeGeometry`),
-theme-dependent sizing (`measureFlowchartNodes`), border intersection
-(`intersectNodeForShape`), and alpha-silhouette golden (extending the
-`legacy-shapes` fixture). Each shape's handler in
-`node_modules/mermaid/dist/chunks/mermaid.esm/chunk-65BZPYT2.mjs` is the source
-of truth for its polygon points, padding, and `node.intersect`.
-
-### E sizing batch — 16 shapes ported
-
-`measureFlowchartNodes` sizing is ported and golden-verified (0.2 px tolerance)
-for 16 expanded shapes via a new `expanded-shapes` fixture case (isolated nodes,
-like `legacy-shapes`): `triangle`, `flipped_triangle`, `hourglass`,
-`notched_pentagon`, `card`, `sloped_rect`, `divided_rect`, `lightning_bolt`,
-`double_circle`, `filled_circle`, `crossed_circle`, `text`, `datastore`,
-`tagged_rect`, `stacked_rect`, `lined_process`. The registry's native set is
-now 30/49.
-
-Calibration: mermaid's flowchart `node.padding` is 15 (the default), and
-`labelHelper`'s `bbox` equals the raw label measurement (no extra padding), so
-`measureLabel` == mermaid `bbox`. Each shape's `labelPaddingX/Y` = 15 (or 30
-for `datastore`'s `drawRect` delegate), with shape-specific extras (NOTCH=12,
-FRAME=8, rectOffset=5, tagWidth=0.2·h, etc.).
-
-Two latent parser bugs surfaced and were fixed: `parseNode` now parses the
-bracket part of `A[Label]@{ shape: X }` before applying metadata (it previously
-took the whole `A[Label]` as the id), and the edge-metadata block no longer
-throws "Unknown edge metadata id" when the id isn't an edge — it falls through
-to node parsing (the throw was an uncaught exception that crashed the test on
-node-metadata lines).
-
-`fork` is deferred: its handler runs `node.height += padding/2` after
-`updateNodeBounds`, so the dagre layout height (74) differs from the SVG bbox
-(70) the golden captures — it can't satisfy both the sizing and layout checks
-until the generator captures dagre's `node.height` for shapes with
-post-`updateNodeBounds` size adjustments.
-
-Remaining for these 16: per-shape border intersection (currently rect-fallback
-— only `circle`/`diamond` have real polygon/ellipse intersect), the
-`flowShapeGeometry` polygon/ellipse points, and the alpha-silhouette golden
-(add `expanded-shapes` to the test's silhouette condition and extend the
-QPainter rendering for `double_circle` etc.). Then the 19 wave/arc/cylinder
-shapes (document, multi-document, tagged/lined document, horizontal/lined
-cylinder, bow-tie rect, half-rounded rect, curved trapezoid, braces, flag,
-bang, cloud, small/framed circle). None use SVG arc commands — all curves are
-50-point polyline approximations, so `QPainter::drawPolygon` can render them
-once the point generation is ported.
+`upstreamShortNames()` and `nativeShapeCanonicalNames()` feed
+`MuffinMermaidShapeRegistryTest`; the upstream-minus-native diff is empty.
+`MuffinMermaidFlowchartCoverageMatrixTest` additionally requires classic,
+hand-drawn, and neo shape matrices across directions, themes, and DPRs. Shape
+calibration retains Mermaid's raw label bbox, padding, post-measurement fork
+adjustment, and per-handler intersection rules.
 
 ## Verification contract
 
@@ -352,17 +312,26 @@ For all 13 legacy shapes the same fixture embeds isolated upstream PNG alpha
 masks, allowing a pixel-level geometry comparison without mixing in theme or
 font antialiasing. These masks are not described as theme pixel goldens.
 
-Strict compatibility is claimed only for modules that have an upstream golden
-and a passing native comparison. Parser, layout, and renderer coverage will be
-added per diagram family. Until those layers exist, a `mermaid` code fence must
-remain a normal code fence rather than silently producing an approximate graph.
+Strict compatibility is claimed only for modules with an upstream golden and a
+passing native comparison. Supported families render from their immutable
+scenes; detected but unsupported families remain normal code fences rather
+than silently producing an approximate graph.
+
+Editor-facing failures use a family-neutral structured diagnostic. Parser
+stage/code, actual and expected tokens, and 1-based line/column spans survive
+the render cache boundary. Preprocessor offset maps restore positions after
+front matter, init directives, and comments are removed. Invalid source remains
+visible with a marked source range; clicking the diagnostic panel moves the
+caret to that range. Detector, preprocessing, resource, security, and native
+render failures use the same diagnostic envelope even when no source span is
+available.
 
 ## Port order
 
-Flowchart is the first full diagram family because it exercises the shared
-graph database, Dagre layout, most node shapes, edge markers, labels, classes,
-styles, links, subgraphs, and Mermaid configuration. Sequence diagrams should
-follow because their layout is diagram-specific and does not validate the
-general graph path. Each family needs AST/database goldens, layout geometry
-goldens, SVG/DOM geometry goldens, Qt pixel tests, invalid-input tests, and
-recursion/size guards before editor integration is enabled for it.
+The implemented order was flowchart, sequence, class, then state. Flowchart
+established the shared graph, Dagre, shape, theme, and style layers; sequence
+established diagram-specific placement and the shared structured text/MathML
+pipeline; class and state reused those contracts. New families must add
+AST/database goldens, layout geometry goldens, SVG/DOM structural goldens, Qt
+pixel tests, invalid-input tests, and recursion/size guards before editor
+integration is enabled.

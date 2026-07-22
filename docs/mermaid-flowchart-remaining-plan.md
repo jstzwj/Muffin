@@ -1,12 +1,18 @@
-# Mermaid Flowchart 原生移植剩余工作计划
+# Mermaid Flowchart 原生移植计划与完成记录
+
+> 状态快照（2026-07-22）：Windows 上的 Mermaid 11.16.0 flowchart 原生链路已完成
+> parser/DB、compound Dagre、48 个 shape、scene/painter、主题/look、三级 golden、
+> fuzz/安全保护以及编辑器和打印/PDF 接入。当前 Conan Release 全量门禁为
+> 163/163；下面的 A-I 章节保留为实现合同和回归审计依据。
 
 ## 1. 目标与边界
 
 本计划以 `mermaid` 11.16.0 和其锁定的 `dagre-d3-es` 实现为唯一兼容
-基线。版本来源是：
+基线。fixture generator 使用锁定的 `@mermaid-js/mermaid-cli` 11.16.0 依赖，
+调用时显式传入本机 Mermaid package 路径，例如：
 
 ```text
-C:\Users\jstzw\Documents\github\mermaid-cli\package-lock.json
+<path-to-mermaid-cli>\package-lock.json
 ```
 
 最终目标是在 Muffin 中使用纯 C++20/Qt 实现 Mermaid flowchart 的解析、
@@ -22,32 +28,22 @@ golden，不得成为 Muffin 构建、运行、测试或发布依赖。
 5. 无 JS/浏览器运行时依赖，并通过资源、错误输入和性能保护测试；
 6. 只有以上门槛全部通过后才接入 Muffin 编辑器和导出路径。
 
-## 2. 当前基线
+## 2. 当前基线（2026-07-22）
 
 已经具备：
 
-- Mermaid 预处理、diagram detection 和 FlowDB 的第一阶段原生实现；
-- cycle removal、network-simplex、dummy edge chain、crossing sweep、四向 BK
-  坐标平衡、基础曲线、矩形交点和原生文字测量；
-- 普通 cluster 和嵌套 cluster 的边界计算；
-- TB、BT、LR、RL 四方向 self-edge；
-- parallel edge 及现有 fixture 的 label center position；
-- 13 个 legacy flowchart 形状及 alpha silhouette golden；
-- AST/DB、几何和形状 silhouette 三类离线上游 fixture；
-- Release 全量构建和 119 项测试通过。
+- Mermaid 预处理、diagram detection、FlowDB、parser coverage 和错误 golden；
+- 完整 compound `Graph`、27 阶段 Dagre、BK type-2、cluster/self/parallel/cycle；
+- 48/48 上游 flowchart shortName 的原生 sizing、geometry、intersection 和 painter；
+- edge、marker、label、class/style/linkStyle 及 D3 curve 矩阵；
+- default/base/dark/forest/neutral/neo/redux 系列主题，classic/handDrawn/neo look；
+- plain/Markdown/HTML/MathML/CJK/bidi 文字测量与绘制；
+- AST/DB、几何、scene、SVG structural、像素、coverage matrix 和 differential fuzz；
+- 异步缓存、所见即所得编辑器、打印/PDF，以及“显示源码”和 diagrams 总开关；
+- Windows Conan Release 全量构建和 163 项测试通过。
 
-当前不得关闭的已知差距：
-
-- `compound-crossing` 仍标记为 `pendingNative`；
-- cluster 仍有布局完成后计算包围盒的成分，尚未成为完整 Dagre compound
-  图参与者；
-- BK compound type-2 conflicts 尚未接入坐标分配；
-- parallel edge 的 `labelpos=l/r/c`、`labeloffset`、反向边和 compound 组合
-  尚未形成完整矩阵；
-- Mermaid 11.16.0 的扩展 shape registry 尚未移植完；
-- 尚无完整 flowchart painter、marker、主题级 RGBA golden；
-- parser 的剩余产生式、错误分支和深度保护尚未封口；
-- 尚未接入编辑器。
+仍可继续强化但不阻塞当前兼容范围的项目：超大 scene 的细粒度 culling、更多
+平台专属像素基线，以及尚未移植的其他 Mermaid diagram family。
 
 ## 3. 总体依赖顺序
 
@@ -94,8 +90,8 @@ golden 会反复失效，也会把错误几何固化为 UI 行为。
 
 - golden 能说明由哪个精确上游版本、浏览器和字体生成；
 - 任意 pending case 必须带唯一 issue/里程碑名称，测试拒绝未知 pending；
-- 当前唯一允许的 geometry pending 是 `compound-crossing`，完成里程碑 C 后
-  必须删除，而不是长期跳过。
+- 实现阶段唯一临时允许的 geometry pending 是 `compound-crossing`；里程碑 C
+  完成后已删除该标记，当前 geometry/pixel case 无 pending 或专用跳过。
 
 ## 5. 里程碑 B：原生 compound 图模型
 
@@ -463,3 +459,5 @@ Flowchart 原生移植只有在以下条件全部满足时才算完成：
 - 发布产物和运行进程不包含 JS 或浏览器引擎依赖；
 - `docs/mermaid-native-port.md` 从“阶段性兼容”更新为精确列出的正式兼容范围。
 
+Windows 上当前支持的 flowchart 合同已满足上述门禁。新增平台、上游版本或
+diagram family 时，必须重新走对应 fixture 审计，不能沿用本结论自动放宽范围。

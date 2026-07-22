@@ -371,7 +371,11 @@ The raw HTML below is intentionally unsafe. Muffin should preserve it as source 
 
 ## Mermaid
 
-A complex flowchart exercising nested subgraphs, cluster-crossing edges, several node shapes, edge labels, a self-loop, and a cycle.
+Muffin renders flowchart, sequence, class, and state diagrams through its native C++/Qt Mermaid pipeline. Unsupported Mermaid families remain editable source fences.
+
+### Flowchart
+
+This flowchart exercises nested subgraphs, cluster-crossing edges, several node shapes, edge labels, a self-loop, and a cycle.
 
 > The native Mermaid renderer renders this fence as a live diagram (parse → Dagre layout → Qt paint, no JS/browser runtime). The cached render is async; editing the fence shows the source. PDF/print and HTML export include the diagram too.
 
@@ -399,13 +403,106 @@ flowchart TB
     G --> I
 ```
 
+### Sequence Diagram
+
+This sequence diagram combines participants, automatic numbering, activation, notes, and alternative branches.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant UI as Muffin Editor
+    participant Cache as Mermaid Cache
+    participant Painter as Qt Painter
+
+    User->>UI: Open a Markdown document
+    UI->>Cache: Request diagram scene
+    activate Cache
+    Cache-->>UI: Return immutable scene
+    deactivate Cache
+    UI->>Painter: Paint scene
+
+    alt Diagram is supported
+        Painter-->>User: Show native diagram
+    else Diagram has an error
+        UI-->>User: Show source fence
+    end
+
+    Note over UI,Cache: Editing keeps the source visible
+```
+
+### Class Diagram
+
+This class diagram exercises members, an interface annotation, composition, dependency, inheritance, and labelled relations.
+
+```mermaid
+classDiagram
+    direction LR
+
+    class DiagramScene {
+        <<interface>>
+        +bounds
+    }
+
+    class DocumentSession {
+        +open(path) bool
+        +save() bool
+    }
+
+    class MarkdownDocument {
+        +parse(source)
+        +blocks()
+    }
+
+    class MermaidRenderCache {
+        +request(key, source)
+        +getSync(key, source)
+    }
+
+    class BlockLayout {
+        +paint(painter)
+        +isMermaidRendered() bool
+    }
+
+    DocumentSession "1" *-- "1" MarkdownDocument : owns
+    MarkdownDocument ..> MermaidRenderCache : requests
+    MermaidRenderCache --> BlockLayout : provides scene
+    BlockLayout ..|> DiagramScene : paints
+```
+
+### State Diagram
+
+This state diagram exercises start/end states, labelled transitions, a composite state, and an attached note.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Editing : open document
+    Editing --> Rendering : leave Mermaid fence
+    Rendering --> Ready : scene built
+    Rendering --> Error : parse failed
+    Error --> Editing : fix source
+    Ready --> Editing : move caret into fence
+    Ready --> [*] : close document
+
+    state Rendering {
+        direction LR
+        [*] --> Parse
+        Parse --> Layout
+        Layout --> Paint
+        Paint --> [*]
+    }
+
+    note right of Ready : Native C++/Qt scene
+```
+
 ## Unsupported or Planned Markdown-Adjacent Features
 
 The following syntax is useful for compatibility tests, but full editing/rendering support is not complete yet:
 
 - Footnotes: `A note reference[^sample-note]`
 - Definition lists
-- Mermaid diagrams: flowchart is rendered natively; other diagram types (sequence, state, …) fall back to source
+- Mermaid families outside the native flowchart, sequence, class, and state coverage remain editable source fences
 - Front matter editor
 - Embedded rich media
 
