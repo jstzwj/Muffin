@@ -1,0 +1,998 @@
+{
+  "upstream": {
+    "version": "11.16.0",
+    "grammar": {
+      "source": "../../../src/diagrams/state/parser/stateDiagram.jison",
+      "sha256": "5d4e6bf04ed6daa180306bf3523ff2d78dffdf18665345fc5f19902ba6b12c57",
+      "productionCount": 49,
+      "productions": [
+        {
+          "id": 1,
+          "symbol": 3,
+          "rhsLength": 2
+        },
+        {
+          "id": 2,
+          "symbol": 3,
+          "rhsLength": 2
+        },
+        {
+          "id": 3,
+          "symbol": 3,
+          "rhsLength": 2
+        },
+        {
+          "id": 4,
+          "symbol": 7,
+          "rhsLength": 0
+        },
+        {
+          "id": 5,
+          "symbol": 7,
+          "rhsLength": 2
+        },
+        {
+          "id": 6,
+          "symbol": 8,
+          "rhsLength": 2
+        },
+        {
+          "id": 7,
+          "symbol": 8,
+          "rhsLength": 1
+        },
+        {
+          "id": 8,
+          "symbol": 8,
+          "rhsLength": 1
+        },
+        {
+          "id": 9,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 10,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 11,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 12,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 13,
+          "symbol": 9,
+          "rhsLength": 2
+        },
+        {
+          "id": 14,
+          "symbol": 9,
+          "rhsLength": 3
+        },
+        {
+          "id": 15,
+          "symbol": 9,
+          "rhsLength": 4
+        },
+        {
+          "id": 16,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 17,
+          "symbol": 9,
+          "rhsLength": 2
+        },
+        {
+          "id": 18,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 19,
+          "symbol": 9,
+          "rhsLength": 4
+        },
+        {
+          "id": 20,
+          "symbol": 9,
+          "rhsLength": 3
+        },
+        {
+          "id": 21,
+          "symbol": 9,
+          "rhsLength": 6
+        },
+        {
+          "id": 22,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 23,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 24,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 25,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 26,
+          "symbol": 9,
+          "rhsLength": 4
+        },
+        {
+          "id": 27,
+          "symbol": 9,
+          "rhsLength": 4
+        },
+        {
+          "id": 28,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 29,
+          "symbol": 9,
+          "rhsLength": 2
+        },
+        {
+          "id": 30,
+          "symbol": 9,
+          "rhsLength": 2
+        },
+        {
+          "id": 31,
+          "symbol": 9,
+          "rhsLength": 1
+        },
+        {
+          "id": 32,
+          "symbol": 9,
+          "rhsLength": 5
+        },
+        {
+          "id": 33,
+          "symbol": 9,
+          "rhsLength": 5
+        },
+        {
+          "id": 34,
+          "symbol": 10,
+          "rhsLength": 3
+        },
+        {
+          "id": 35,
+          "symbol": 10,
+          "rhsLength": 3
+        },
+        {
+          "id": 36,
+          "symbol": 11,
+          "rhsLength": 3
+        },
+        {
+          "id": 37,
+          "symbol": 12,
+          "rhsLength": 3
+        },
+        {
+          "id": 38,
+          "symbol": 32,
+          "rhsLength": 1
+        },
+        {
+          "id": 39,
+          "symbol": 32,
+          "rhsLength": 1
+        },
+        {
+          "id": 40,
+          "symbol": 32,
+          "rhsLength": 1
+        },
+        {
+          "id": 41,
+          "symbol": 32,
+          "rhsLength": 1
+        },
+        {
+          "id": 42,
+          "symbol": 55,
+          "rhsLength": 1
+        },
+        {
+          "id": 43,
+          "symbol": 55,
+          "rhsLength": 1
+        },
+        {
+          "id": 44,
+          "symbol": 13,
+          "rhsLength": 1
+        },
+        {
+          "id": 45,
+          "symbol": 13,
+          "rhsLength": 1
+        },
+        {
+          "id": 46,
+          "symbol": 13,
+          "rhsLength": 3
+        },
+        {
+          "id": 47,
+          "symbol": 13,
+          "rhsLength": 3
+        },
+        {
+          "id": 48,
+          "symbol": 30,
+          "rhsLength": 1
+        },
+        {
+          "id": 49,
+          "symbol": 30,
+          "rhsLength": 1
+        }
+      ]
+    }
+  },
+  "cases": [
+    {
+      "id": "transitions-start-end",
+      "source": "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]",
+      "expected": {
+        "root": [
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "root_start",
+              "type": "default",
+              "description": "",
+              "start": true
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "Idle",
+              "type": "default",
+              "description": ""
+            }
+          },
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "Idle",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "Active",
+              "type": "default",
+              "description": ""
+            },
+            "description": "start"
+          },
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "Active",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "root_end",
+              "type": "default",
+              "description": "",
+              "start": false
+            }
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "root_start",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "Idle",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "Active",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "root_end",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [
+          {
+            "id1": "root_start",
+            "id2": "Idle",
+            "relationTitle": ""
+          },
+          {
+            "id1": "Idle",
+            "id2": "Active",
+            "relationTitle": "start"
+          },
+          {
+            "id1": "Active",
+            "id2": "root_end",
+            "relationTitle": ""
+          }
+        ],
+        "classes": [],
+        "links": []
+      }
+    },
+    {
+      "id": "aliases-descriptions",
+      "source": "stateDiagram-v2\nstate \"Long state name\" as long_id\nlong_id : first description\nlong_id : second description",
+      "expected": {
+        "root": [
+          {
+            "stmt": "state",
+            "id": "long_id",
+            "type": "default",
+            "description": "Long state name"
+          },
+          {
+            "stmt": "state",
+            "id": "long_id",
+            "type": "default",
+            "description": "first description"
+          },
+          {
+            "stmt": "state",
+            "id": "long_id",
+            "type": "default",
+            "description": "second description"
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "long_id",
+            "type": "default",
+            "descriptions": [
+              "Long state name",
+              "first description",
+              "second description"
+            ],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [],
+        "classes": [],
+        "links": []
+      }
+    },
+    {
+      "id": "composite-direction-concurrency",
+      "source": "stateDiagram-v2\nstate Running {\n  direction LR\n  [*] --> Warmup\n  Warmup --> Ready\n  --\n  Waiting --> Done\n}",
+      "expected": {
+        "root": [
+          {
+            "stmt": "state",
+            "id": "Running",
+            "type": "default",
+            "description": "",
+            "doc": [
+              {
+                "stmt": "state",
+                "id": "divider-id-1",
+                "type": "divider",
+                "doc": [
+                  {
+                    "stmt": "dir",
+                    "value": "LR"
+                  },
+                  {
+                    "stmt": "relation",
+                    "state1": {
+                      "stmt": "state",
+                      "id": "divider-id-1_start",
+                      "type": "default",
+                      "description": "",
+                      "start": true
+                    },
+                    "state2": {
+                      "stmt": "state",
+                      "id": "Warmup",
+                      "type": "default",
+                      "description": ""
+                    }
+                  },
+                  {
+                    "stmt": "relation",
+                    "state1": {
+                      "stmt": "state",
+                      "id": "Warmup",
+                      "type": "default",
+                      "description": ""
+                    },
+                    "state2": {
+                      "stmt": "state",
+                      "id": "Ready",
+                      "type": "default",
+                      "description": ""
+                    }
+                  }
+                ]
+              },
+              {
+                "stmt": "state",
+                "id": "$generated-1",
+                "type": "divider",
+                "doc": [
+                  {
+                    "stmt": "relation",
+                    "state1": {
+                      "stmt": "state",
+                      "id": "Waiting",
+                      "type": "default",
+                      "description": ""
+                    },
+                    "state2": {
+                      "stmt": "state",
+                      "id": "Done",
+                      "type": "default",
+                      "description": ""
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "Running",
+            "type": "default",
+            "descriptions": [],
+            "doc": [
+              {
+                "stmt": "state",
+                "id": "divider-id-1",
+                "type": "divider",
+                "doc": [
+                  {
+                    "stmt": "dir",
+                    "value": "LR"
+                  },
+                  {
+                    "stmt": "relation",
+                    "state1": {
+                      "stmt": "state",
+                      "id": "divider-id-1_start",
+                      "type": "default",
+                      "description": "",
+                      "start": true
+                    },
+                    "state2": {
+                      "stmt": "state",
+                      "id": "Warmup",
+                      "type": "default",
+                      "description": ""
+                    }
+                  },
+                  {
+                    "stmt": "relation",
+                    "state1": {
+                      "stmt": "state",
+                      "id": "Warmup",
+                      "type": "default",
+                      "description": ""
+                    },
+                    "state2": {
+                      "stmt": "state",
+                      "id": "Ready",
+                      "type": "default",
+                      "description": ""
+                    }
+                  }
+                ]
+              },
+              {
+                "stmt": "state",
+                "id": "$generated-1",
+                "type": "divider",
+                "doc": [
+                  {
+                    "stmt": "relation",
+                    "state1": {
+                      "stmt": "state",
+                      "id": "Waiting",
+                      "type": "default",
+                      "description": ""
+                    },
+                    "state2": {
+                      "stmt": "state",
+                      "id": "Done",
+                      "type": "default",
+                      "description": ""
+                    }
+                  }
+                ]
+              }
+            ],
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [],
+        "classes": [],
+        "links": []
+      }
+    },
+    {
+      "id": "pseudostates",
+      "source": "stateDiagram-v2\nstate fork_state <<fork>>\nstate join_state <<join>>\nstate choice_state <<choice>>\nA --> fork_state\nfork_state --> B\nB --> join_state\njoin_state --> choice_state",
+      "expected": {
+        "root": [
+          {
+            "stmt": "state",
+            "id": "fork_state",
+            "type": "fork"
+          },
+          {
+            "stmt": "state",
+            "id": "join_state",
+            "type": "join"
+          },
+          {
+            "stmt": "state",
+            "id": "choice_state",
+            "type": "choice"
+          },
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "A",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "fork_state",
+              "type": "default",
+              "description": ""
+            }
+          },
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "fork_state",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "B",
+              "type": "default",
+              "description": ""
+            }
+          },
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "B",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "join_state",
+              "type": "default",
+              "description": ""
+            }
+          },
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "join_state",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "choice_state",
+              "type": "default",
+              "description": ""
+            }
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "fork_state",
+            "type": "fork",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "join_state",
+            "type": "join",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "choice_state",
+            "type": "choice",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "A",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "B",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [
+          {
+            "id1": "A",
+            "id2": "fork_state",
+            "relationTitle": ""
+          },
+          {
+            "id1": "fork_state",
+            "id2": "B",
+            "relationTitle": ""
+          },
+          {
+            "id1": "B",
+            "id2": "join_state",
+            "relationTitle": ""
+          },
+          {
+            "id1": "join_state",
+            "id2": "choice_state",
+            "relationTitle": ""
+          }
+        ],
+        "classes": [],
+        "links": []
+      }
+    },
+    {
+      "id": "notes",
+      "source": "stateDiagram-v2\nstate Active\nnote right of Active : Inline note\nnote left of Active\n  Multiline note\nend note",
+      "expected": {
+        "root": [
+          "Active",
+          {
+            "stmt": "state",
+            "id": "Active",
+            "note": {
+              "position": "right of",
+              "text": "Inline note"
+            }
+          },
+          {
+            "stmt": "state",
+            "id": "Active",
+            "note": {
+              "position": "left of",
+              "text": "Multiline note"
+            }
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "Active",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": {
+              "position": "left of",
+              "text": "Multiline note"
+            },
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [],
+        "classes": [],
+        "links": []
+      }
+    },
+    {
+      "id": "styles-classes",
+      "source": "stateDiagram-v2\nstate A\nstate B\nclassDef hot fill:#f00,color:#fff\nclass A,B hot\nstyle B fill:#0f0,stroke:#333",
+      "expected": {
+        "root": [
+          "A",
+          "B",
+          {
+            "stmt": "classDef",
+            "id": "hot",
+            "classes": "fill:#f00,color:#fff"
+          },
+          {
+            "stmt": "applyClass",
+            "id": "A,B",
+            "styleClass": "hot"
+          },
+          {
+            "stmt": "style",
+            "id": "B",
+            "styleClass": "fill:#0f0,stroke:#333"
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "A",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [
+              "hot"
+            ],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "B",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [
+              "hot"
+            ],
+            "styles": [
+              "fill:#0f0",
+              "stroke:#333"
+            ],
+            "textStyles": []
+          }
+        ],
+        "relations": [],
+        "classes": [
+          {
+            "id": "hot",
+            "styles": [
+              "fill:#f00",
+              "color:#fff"
+            ],
+            "textStyles": [
+              "fill:#fff"
+            ]
+          }
+        ],
+        "links": []
+      }
+    },
+    {
+      "id": "accessibility-click",
+      "source": "stateDiagram-v2\naccTitle: State model\naccDescr: Accessible state model\nstate Docs\nclick Docs \"https://example.com\" \"Open docs\"",
+      "expected": {
+        "root": [
+          "State model",
+          "Accessible state model",
+          "Docs",
+          {
+            "stmt": "click",
+            "id": {
+              "stmt": "state",
+              "id": "Docs",
+              "type": "default",
+              "description": ""
+            },
+            "url": "\"https://example.com\"",
+            "tooltip": "\"Open docs\""
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "State model",
+        "accDescription": "Accessible state model",
+        "states": [],
+        "relations": [],
+        "classes": [],
+        "links": [
+          {
+            "id": {
+              "stmt": "state",
+              "id": "Docs",
+              "type": "default",
+              "description": ""
+            },
+            "url": "\"https://example.com\"",
+            "tooltip": "\"Open docs\""
+          }
+        ]
+      }
+    },
+    {
+      "id": "unicode-comments",
+      "source": "stateDiagram-v2\n%% ignored\n待机 --> 运行 : تشغيل\n运行 --> שלום",
+      "expected": {
+        "root": [
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "待机",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "运行",
+              "type": "default",
+              "description": ""
+            },
+            "description": "تشغيل"
+          },
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "运行",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "שלום",
+              "type": "default",
+              "description": ""
+            }
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "待机",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "运行",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "שלום",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [
+          {
+            "id1": "待机",
+            "id2": "运行",
+            "relationTitle": "تشغيل"
+          },
+          {
+            "id1": "运行",
+            "id2": "שלום",
+            "relationTitle": ""
+          }
+        ],
+        "classes": [],
+        "links": []
+      }
+    }
+  ],
+  "fixtureSha256": "a383cf8182f8b64568ec19c406d544c2f7b58d509fb256f74c258c970c2a5a9c"
+}

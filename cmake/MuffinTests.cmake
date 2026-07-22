@@ -43,6 +43,7 @@ muffin_add_test(NAME MuffinMermaidTextLayoutAuditTest SOURCE tests/mermaid/Merma
 muffin_add_test(NAME MuffinMermaidRoughOpsTest SOURCE tests/mermaid/MermaidRoughOpsTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/rough-ops.json)
 muffin_add_test(NAME MuffinMermaidSequenceParserTest SOURCE tests/mermaid/MermaidSequenceParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/sequence-db.json)
 muffin_add_test(NAME MuffinMermaidClassParserTest SOURCE tests/mermaid/MermaidClassParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/class-db.json)
+muffin_add_test(NAME MuffinMermaidStateUpstreamContractTest SOURCE tests/mermaid/MermaidStateUpstreamContractTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/state-db.json)
 muffin_add_test(NAME MuffinMermaidClassDifferentialFuzzTest SOURCE tests/mermaid/MermaidClassDifferentialFuzzTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/class-differential-fuzz.json)
 muffin_add_test(NAME MuffinMermaidClassLayoutOracleTest SOURCE tests/mermaid/MermaidClassLayoutOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/class-layout.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidClassSceneOracleTest SOURCE tests/mermaid/MermaidClassSceneOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/class-layout.json RESOURCE_LOCK)
