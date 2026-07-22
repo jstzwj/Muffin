@@ -374,6 +374,48 @@ void testTaskListAndLooseListRoundTrip() {
   require(!reLooseList.listTight(), QStringLiteral("Loose list became tight after round-trip"));
 }
 
+void testProfiledParseMetrics() {
+  CmarkGfmParser parser;
+  ParseOptions options;
+  const QString markdown = QStringLiteral(
+      "# Heading\n\n"
+      "Paragraph with **strong** and [link](https://example.com).\n\n"
+      "| A | B |\n"
+      "| - | - |\n"
+      "| 1 | 2 |\n");
+
+  ParseResult regular = parser.parseDocument(markdown, options);
+  require(regular.performanceMetrics.isEmpty(),
+          QStringLiteral("Normal parsing should not collect performance metrics"));
+
+  ParseResult profiled = parser.parseDocumentProfiled(markdown, options);
+  const ParsePerformanceMetrics& metrics = profiled.performanceMetrics;
+  require(profiled.root != nullptr, QStringLiteral("Profiled parser returned a null root"));
+  require(!metrics.isEmpty(), QStringLiteral("Profiled parser returned no phase metrics"));
+  require(metrics.totalElapsedNs >= 0,
+          QStringLiteral("Profiled parser returned a negative total duration"));
+  require(metrics.workingSetBytesBefore >= 0 && metrics.workingSetBytesAfter >= 0,
+          QStringLiteral("Profiled parser returned an invalid working-set sample"));
+
+  bool sawCmark = false;
+  bool sawConvertBlock = false;
+  bool sawSourceOffsets = false;
+  for (const ParsePhasePerformance& phase : metrics.phases) {
+    require(!phase.name.isEmpty(), QStringLiteral("Profiled parser returned an unnamed phase"));
+    require(phase.elapsedNs >= 0,
+            QStringLiteral("Profiled parser returned a negative phase duration"));
+    require(phase.workingSetBytesAfter >= 0,
+            QStringLiteral("Profiled parser returned an invalid phase working set"));
+    sawCmark = sawCmark || phase.name == QStringLiteral("parse.cmark");
+    sawConvertBlock =
+        sawConvertBlock || phase.name == QStringLiteral("parse.convertBlock");
+    sawSourceOffsets =
+        sawSourceOffsets || phase.name == QStringLiteral("parse.annotateSourceOffsets");
+  }
+  require(sawCmark && sawConvertBlock && sawSourceOffsets,
+          QStringLiteral("Profiled parser omitted a required full-parse phase"));
+}
+
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testLineStartOffsetCache();
@@ -386,5 +428,6 @@ int main(int argc, char** argv) {
   testSetextHeadingParseAndSerialize();
   testTableCellSourceRanges();
   testTaskListAndLooseListRoundTrip();
+  testProfiledParseMetrics();
   return 0;
 }

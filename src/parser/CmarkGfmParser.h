@@ -15,9 +15,14 @@ public:
   CmarkGfmParser();
 
   ParseResult parseDocument(QStringView markdown, const ParseOptions& options) override;
+  ParseResult parseDocumentProfiled(QStringView markdown, const ParseOptions& options);
   ParseResult parseBlock(QStringView markdown, BlockType context, const ParseOptions& options) override;
 
 private:
+  ParseResult parseDocumentImpl(
+      QStringView markdown,
+      const ParseOptions& options,
+      bool collectPerformanceMetrics);
   void ensureExtensionsRegistered();
   void attachExtensions(cmark_parser* parser, const ParseOptions& options);
   void insertVirtualEmptyParagraphs(QStringView markdown, MarkdownNode& root, const LineStartOffsetCache& lineOffsets) const;

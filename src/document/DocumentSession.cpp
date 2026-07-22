@@ -591,6 +591,18 @@ qint64 muffin::DocumentSession::lastParseElapsedMs() const {
   return lastParseElapsedMs_;
 }
 
+void muffin::DocumentSession::setFullParsePerformanceMetricsEnabled(bool enabled) {
+  fullParsePerformanceMetricsEnabled_ = enabled;
+  if (!enabled) {
+    lastFullParsePerformanceMetrics_ = {};
+  }
+}
+
+const muffin::ParsePerformanceMetrics&
+muffin::DocumentSession::lastFullParsePerformanceMetrics() const {
+  return lastFullParsePerformanceMetrics_;
+}
+
 bool muffin::DocumentSession::lastParseWasLocalEdit() const {
   return lastParseWasLocalEdit_;
 }
@@ -826,12 +838,17 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
     pendingModified_ = modified;
     pendingDemoteAtOffsets_ = std::move(demoteAtOffsets);
     const ParseOptions options = parseOptions_;
+    const bool collectPerformanceMetrics = fullParsePerformanceMetricsEnabled_;
     launchGeneration_ = parseGeneration_;
     asyncParsePending_ = true;
     emit parseBusy(true);
     parseWatcher_->setFuture(QtConcurrent::run(
-        [text = std::move(text), options, this]() -> std::shared_ptr<ParseResult> {
-          return std::make_shared<ParseResult>(parser_.parseDocument(QStringView(text), options));
+        [text = std::move(text), options, collectPerformanceMetrics, this]()
+            -> std::shared_ptr<ParseResult> {
+          ParseResult result = collectPerformanceMetrics
+              ? parser_.parseDocumentProfiled(QStringView(text), options)
+              : parser_.parseDocument(QStringView(text), options);
+          return std::make_shared<ParseResult>(std::move(result));
         }));
     return;
   }
@@ -840,9 +857,12 @@ void muffin::DocumentSession::parseAndStore(QString text, bool modified, QVector
   ParseResult result;
   {
     PerfTimer parsePerf("session.parse");
-    result = parser_.parseDocument(QStringView(text), parseOptions_);
+    result = fullParsePerformanceMetricsEnabled_
+        ? parser_.parseDocumentProfiled(QStringView(text), parseOptions_)
+        : parser_.parseDocument(QStringView(text), parseOptions_);
   }
   lastParseElapsedMs_ = result.elapsedMs;
+  lastFullParsePerformanceMetrics_ = std::move(result.performanceMetrics);
   lastParseWasLocalEdit_ = false;
   lastLocalEditChangedTopLevelStructure_ = false;
   lastLocalTopLevelRangeChange_ = {};
@@ -882,6 +902,7 @@ void muffin::DocumentSession::finishAsyncParse() {
   ParseResult& result = *resultPtr;
   const auto sharedText = std::make_shared<const QString>(pendingText_);
   lastParseElapsedMs_ = result.elapsedMs;
+  lastFullParsePerformanceMetrics_ = std::move(result.performanceMetrics);
   lastParseWasLocalEdit_ = false;
   lastLocalEditChangedTopLevelStructure_ = false;
   lastLocalTopLevelRangeChange_ = {};

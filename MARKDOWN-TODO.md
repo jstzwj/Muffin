@@ -21,6 +21,8 @@
 
 **已实现（2026-07-08）：** 新增 `InlineType::FootnoteReference` + `InlineNode::footnoteReference(label, ordinal)`。`convertInline` 用 cmark 解析期的 `cmark_node_parent_footnote_def` + `cmark_node_get_literal`（引用 literal=序号、定义 literal=标签）取数据。投影按**原子叶子**建模：非激活态序号 `1` 作 N:1 上标链接 span（`superscript`+`link` 正交标志）+ `linkRange` 带 `#fn:<label>`；激活态 reveal 原始 `[^label]`。导航复用 TOC 的片段拦截模式：`EditorView` 拦截 `#fn:` → `DocumentLayout::footnoteDefinitionIdForLabel` 按标签查定义块 → `scrollToNode`。测试：`tests/render/RenderInlineProjectionTest.cpp`（testFootnoteReferenceRendersAsSuperscriptLink / RevealsLiteralWhenActive / ResolvesToDefinition）。
 
+**补充回归（2026-07-23）：** cmark 脚注节点的起始列位于 `[^label]:` 标记之后，旧的精确 offset 匹配会漏掉真实节点并再合成一个重复脚注。现改为按源行匹配并恢复完整定义范围；512 组密集链接定义/脚注及缩进定义测试验证每个定义只出现一次且保持源顺序。
+
 ---
 
 ### 2. HTML 导出扩展与编辑器不一致

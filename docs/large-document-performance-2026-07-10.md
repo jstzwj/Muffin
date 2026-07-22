@@ -110,8 +110,11 @@ The default CTest fixture is 1 MiB so the Release suite stays practical. The tes
 4. a real save, destruction of the editor/layout/first session, and asynchronous reopen;
 5. exact source SHA-256 and complete semantic/source-range AST fingerprint comparison.
 
-Timing and working-set samples are emitted as structured JSON but remain informational, so
-machine load cannot make CI flaky. Deterministic gates require local parsing, zero full-layout
+Timing and working-set samples are emitted as schema-version-2 structured JSON but remain
+informational, so machine load cannot make CI flaky. `parserRuns.open` and `parserRuns.reopen`
+contain the parser total plus every cmark/conversion/annotation phase and its post-phase working
+set. Collection is explicitly enabled by the benchmark; normal full parses and local edit slices
+retain the uninstrumented path. Deterministic gates require local parsing, zero full-layout
 fallbacks, bounded promoted slots, bounded piece-table fragmentation, exact undo/redo source and
 tree restoration, byte-identical save/reopen, and AST equivalence after the full roundtrip.
 
@@ -124,42 +127,62 @@ ctest --preset conan-release -R "^MuffinLargeDocumentRoundTripTest$" --output-on
 ```
 
 The edited tree is reduced to its digest, node counts, and SHA-256 fingerprint before reopening.
-This preserves the complete deterministic comparison without keeping two full ASTs alive. The
-Release baselines on the dense mixed fixture measured:
+This preserves the complete deterministic comparison without keeping two full ASTs alive. After
+removing the definition-insertion quadratic path, the Release baselines on the dense mixed fixture
+measured:
 
 | Metric | 50 MiB | 100 MiB |
 | --- | ---: | ---: |
 | UTF-8 bytes | 52,429,529 | 104,858,485 |
-| Top-level / block / inline nodes | 800,583 / 2,134,884 / 2,294,998 | 1,592,763 / 4,247,364 / 4,565,914 |
-| Open and parse | 51.417 s | 200.590 s |
-| Parser-reported time | 47.652 s | 193.470 s |
-| Lazy layout index | 5.218 s | 9.426 s |
-| First viewport | 68.0 ms | 68.0 ms |
-| Top/middle/near-end edits | 3.91 / 5.35 / 6.32 ms | 4.33 / 3.71 / 6.17 ms |
-| Undo all / redo all | 18.7 / 195.6 ms | 11.8 / 382.2 ms |
-| Save | 234.1 ms | 373.9 ms |
-| Working set before release | 2,130.9 MiB | 4,216.3 MiB |
-| Release time / working set after release | 1.023 s / 43.2 MiB | 2.482 s / 51.0 MiB |
-| Reopen time / working set | 54.510 s / 2,002.3 MiB | 198.352 s / 3,924.4 MiB |
+| Top-level / block / inline nodes | 747,211 / 2,081,512 / 2,294,998 | 1,486,579 / 4,141,180 / 4,565,914 |
+| Open and parse | 14.467 s | 31.264 s |
+| Structured parser open / reopen | 10.464 / 10.238 s | 23.151 / 22.627 s |
+| Lazy layout index | 4.216 s | 8.095 s |
+| First viewport | 73.4 ms | 61.6 ms |
+| Top/middle/near-end edits | 2.47 / 4.66 / 4.48 ms | 3.71 / 6.06 / 6.44 ms |
+| Undo all / redo all | 18.4 / 196.9 ms | 16.6 / 354.0 ms |
+| Save | 266.5 ms | 353.4 ms |
+| Working set before release | 2,089.9 MiB | 4,135.3 MiB |
+| Release time / working set after release | 1.311 s / 43.0 MiB | 2.655 s / 51.0 MiB |
+| Reopen time / working set | 18.238 s / 1,973.2 MiB | 48.139 s / 3,886.6 MiB |
 
 Both sizes retained zero full-layout refreshes, 32 promoted slots, and 7 piece-table pieces.
 Memory scales approximately with node count and returns close to the process baseline before the
-second open, eliminating the previous double-AST peak. The 50-to-100 MiB parse time increased by
-about 4x while input and node counts increased by about 2x. The next profiling pass should split
-the full parser/annotation pipeline by phase; the edit and first-viewport paths are not the current
-scaling bottleneck.
+second open, eliminating the previous double-AST peak. The structured parser scaling matrix was:
 
-The first complete run exposed and now guards two source-range defects: cmark-gfm collected
-footnote definitions at the document tail instead of source order, which made local suffix shifts
-move the wrong definitions; and local replacement left the synthetic document-root range stale.
-Top-level nodes are now restored to source order, and the root range is refreshed with the same
-front-matter and trailing-line semantics as a fresh cmark parse.
+| Fixture | Open parser | Reopen parser | `insertMissingDefinitions` (open) |
+| ---: | ---: | ---: | ---: |
+| 25 MiB | 5.484 s | 5.283 s | 86.5 ms |
+| 50 MiB | 10.464 s | 10.238 s | 144.2 ms |
+| 75 MiB | 19.752 s | 18.328 s | 436.9 ms |
+| 100 MiB | 23.151 s | 22.627 s | 305.9 ms |
+
+The 75 MiB outer roundtrip coincided with heavy Windows memory compression, but both structured
+parser samples remained bounded between the 50 and 100 MiB results. Across the 25-to-100 MiB
+endpoints, bytes grew 4x and parser time grew 4.22x (open) / 4.28x (reopen), replacing the prior
+superlinear result with approximately linear scaling.
+
+The structured data identified `insertMissingDefinitions` as the old dominant cost. Although its
+search cursor was monotonic, every synthetic definition still performed a middle insert into the
+root `std::vector`, shifting the remaining nodes and making dense definitions quadratic. A single
+detach/filter/append pass now feeds the existing stable source-order sort. At 25 MiB this phase fell
+from 8.325 s to 86.5 ms (96x); at 50 MiB it fell from 38.924 s to 144.2 ms (270x). Total parser time
+fell from 47.652 s to 10.464 s at 50 MiB and from 193.470 s to 23.151 s at 100 MiB.
+
+The profiling work also exposed and now guards three definition/range defects: cmark-gfm collects
+footnote definitions at the document tail; its footnote source start is after the `[^label]:`
+marker; and local replacement could leave the synthetic document-root range stale. The old exact
+start lookup missed each real cmark footnote and synthesized a duplicate. Footnotes now match by
+source line, retain the parsed subtree, and expand back to the complete definition range. A
+512-link/512-footnote dense regression verifies exact counts and source order, including indented
+definitions. The corrected 100 MiB tree contains 106,184 fewer duplicate top-level/block nodes.
 
 ## Residual Risk
 
 At working sets close to physical-memory pressure, Windows paging, memory compression,
 font loading, or graphics-driver scheduling can still create occasional outliers that are
 outside the deterministic edit path. Ordinary prose remains much smaller than the deliberately
-node-dense mixed fixture, but the 100 MiB result now demonstrates a parser-side superlinear trend.
-Future work should use the existing per-phase parse diagnostics to identify that cost before
-adding another document-wide cache.
+node-dense mixed fixture. The remaining dominant parser phases are cmark construction and
+`convertBlock`, while the reopened 100 MiB AST still occupies about 3.8 GiB. Future work should
+reduce cmark/AST construction memory and post-parse materialization cost, using the structured
+open/reopen phase data to distinguish stable regressions from paging or memory-compression outliers.

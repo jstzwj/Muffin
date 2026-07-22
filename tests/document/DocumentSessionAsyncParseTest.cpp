@@ -58,6 +58,33 @@ void testOpenDocumentAsyncEmitsParseBusy() {
   require(sawIdle, "finishAsyncParse should signal parseBusy(false) on completion");
 }
 
+void testOpenDocumentAsyncRetainsProfiledMetrics() {
+  DocumentSession session;
+  session.setFullParsePerformanceMetricsEnabled(true);
+
+  QEventLoop loop;
+  QObject::connect(&session, &DocumentSession::parsed, [&loop](qint64) { loop.quit(); });
+  session.openDocumentAsync(QStringLiteral(
+      "# Profiled open\n\n"
+      "Paragraph with **inline content**.\n"));
+  QTimer::singleShot(5000, &loop, &QEventLoop::quit);
+  loop.exec();
+
+  const ParsePerformanceMetrics& metrics =
+      session.lastFullParsePerformanceMetrics();
+  require(!metrics.isEmpty(),
+          "async full parse should retain structured performance metrics");
+  bool sawCmark = false;
+  for (const ParsePhasePerformance& phase : metrics.phases) {
+    sawCmark = sawCmark || phase.name == QStringLiteral("parse.cmark");
+  }
+  require(sawCmark, "async full parse metrics should contain the cmark phase");
+
+  session.setFullParsePerformanceMetricsEnabled(false);
+  require(session.lastFullParsePerformanceMetrics().isEmpty(),
+          "disabling full-parse profiling should clear retained metrics");
+}
+
 // A finished worker is not a finished open: its result is installed by a queued GUI-thread slot.
 // Keep the GUI thread blocked long enough for a tiny parse to finish and verify that the session
 // remains busy until that slot has committed the new document.
@@ -152,6 +179,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testOpenDocumentAsyncEmitsParsed);
   RUN_TEST(testOpenDocumentAsyncEmitsParseBusy);
+  RUN_TEST(testOpenDocumentAsyncRetainsProfiledMetrics);
   RUN_TEST(testAsyncStateCoversPendingGuiCommit);
   RUN_TEST(testOpenDocumentAsyncSupersedesInFlight);
   RUN_TEST(testApplyTextDeltaRejectedWhileAsyncInFlight);

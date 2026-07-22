@@ -77,18 +77,52 @@ public:
     metadata_.insert(key, value);
   }
 
+  void addParserRun(const QString& name, const ParsePerformanceMetrics& metrics) {
+    QJsonArray phases;
+    for (const ParsePhasePerformance& metric : metrics.phases) {
+      const double elapsedMs = metric.elapsedNs / 1000000.0;
+      const double workingSetMiB =
+          metric.workingSetBytesAfter / (1024.0 * 1024.0);
+      qInfo().noquote() << "LargeDocumentParserPhase"
+                        << name
+                        << metric.name
+                        << "elapsedMs=" << elapsedMs
+                        << "workingSetMiB=" << workingSetMiB;
+      QJsonObject phase;
+      phase.insert(QStringLiteral("name"), metric.name);
+      phase.insert(QStringLiteral("elapsedMs"), elapsedMs);
+      phase.insert(QStringLiteral("workingSetMiB"), workingSetMiB);
+      phases.append(phase);
+    }
+
+    QJsonObject run;
+    run.insert(
+        QStringLiteral("totalElapsedMs"),
+        metrics.totalElapsedNs / 1000000.0);
+    run.insert(
+        QStringLiteral("workingSetMiBBefore"),
+        metrics.workingSetBytesBefore / (1024.0 * 1024.0));
+    run.insert(
+        QStringLiteral("workingSetMiBAfter"),
+        metrics.workingSetBytesAfter / (1024.0 * 1024.0));
+    run.insert(QStringLiteral("phases"), phases);
+    parserRuns_.insert(name, run);
+  }
+
   QByteArray finish() {
     QJsonObject result;
-    result.insert(QStringLiteral("schemaVersion"), 1);
+    result.insert(QStringLiteral("schemaVersion"), 2);
     result.insert(QStringLiteral("status"), QStringLiteral("passed"));
     result.insert(QStringLiteral("metadata"), metadata_);
     result.insert(QStringLiteral("phases"), phases_);
+    result.insert(QStringLiteral("parserRuns"), parserRuns_);
     return QJsonDocument(result).toJson(QJsonDocument::Compact);
   }
 
 private:
   QJsonObject metadata_;
   QJsonArray phases_;
+  QJsonObject parserRuns_;
 };
 
 void addInteger(QCryptographicHash& hash, qint64 value) {
@@ -370,12 +404,17 @@ int main(int argc, char** argv) {
   int rangeRefreshes = 0;
   {
     DocumentSession session;
+    session.setFullParsePerformanceMetricsEnabled(true);
     timer.restart();
     require(files.open(session, nullptr, path),
             QStringLiteral("FileController could not open generated fixture"));
     waitForParse(session, timeoutMs);
     report.addPhase(QStringLiteral("file.openAndParse"), timer.nsecsElapsed());
     report.setNumber(QStringLiteral("parserReportedMs"), session.lastParseElapsedMs());
+    require(!session.lastFullParsePerformanceMetrics().isEmpty(),
+            QStringLiteral("Initial full parse did not retain performance metrics"));
+    report.addParserRun(
+        QStringLiteral("open"), session.lastFullParsePerformanceMetrics());
     require(session.markdownText().toString() == source,
             QStringLiteral("Initial FileController open changed source text"));
     require(session.fileFormat().encodingName.compare(
@@ -540,11 +579,18 @@ int main(int argc, char** argv) {
   report.addPhase(QStringLiteral("session.releaseEdited"), timer.nsecsElapsed());
 
   DocumentSession reopened;
+  reopened.setFullParsePerformanceMetricsEnabled(true);
   timer.restart();
   require(files.open(reopened, nullptr, path),
           QStringLiteral("FileController could not reopen saved large document"));
   waitForParse(reopened, timeoutMs);
   report.addPhase(QStringLiteral("file.reopenAndParse"), timer.nsecsElapsed());
+  report.setNumber(
+      QStringLiteral("reopenParserReportedMs"), reopened.lastParseElapsedMs());
+  require(!reopened.lastFullParsePerformanceMetrics().isEmpty(),
+          QStringLiteral("Reopened full parse did not retain performance metrics"));
+  report.addParserRun(
+      QStringLiteral("reopen"), reopened.lastFullParsePerformanceMetrics());
   require(digest(reopened.markdownText()) == editedDigest,
           QStringLiteral("Reopened source did not match saved edited source"));
   const TreeFingerprint reopenedTree = fingerprint(reopened.document());

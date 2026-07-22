@@ -197,6 +197,68 @@ void testFootnoteDefinitionsRemainInSourceOrder() {
           QStringLiteral("Footnote sibling order should follow source order"));
 }
 
+void testDenseDefinitionsRetainSourceOrderAndTypes() {
+  constexpr int definitionCount = 512;
+  QString markdown;
+  markdown.reserve(definitionCount * 160);
+  for (int index = 0; index < definitionCount; ++index) {
+    markdown += QStringLiteral(
+        "Paragraph %1 uses [link][ref-%1] and [^note-%1].\n\n"
+        "[ref-%1]: https://example.test/%1 \"Reference %1\"\n"
+        "[^note-%1]: Footnote %1.\n\n")
+                    .arg(index);
+  }
+
+  CmarkGfmParser parser;
+  ParseResult parsed = parser.parseDocument(markdown, ParseOptions{});
+  require(parsed.root != nullptr,
+          QStringLiteral("Parser returned null root for dense definitions"));
+
+  int linkDefinitions = 0;
+  int footnoteDefinitions = 0;
+  qsizetype previousStart = -1;
+  for (const auto& child : parsed.root->children()) {
+    const qsizetype sourceStart = child->sourceRange().byteStart;
+    require(sourceStart >= previousStart,
+            QStringLiteral("Dense definition source order regressed at %1 after %2")
+                .arg(sourceStart)
+                .arg(previousStart));
+    previousStart = sourceStart;
+    linkDefinitions += child->type() == BlockType::LinkDefinition ? 1 : 0;
+    footnoteDefinitions += child->type() == BlockType::FootnoteDefinition ? 1 : 0;
+  }
+  require(linkDefinitions == definitionCount,
+          QStringLiteral("Dense parse produced %1/%2 link definitions")
+              .arg(linkDefinitions)
+              .arg(definitionCount));
+  require(footnoteDefinitions == definitionCount,
+          QStringLiteral("Dense parse produced %1/%2 footnote definitions")
+              .arg(footnoteDefinitions)
+              .arg(definitionCount));
+}
+
+void testIndentedDefinitionsAreNotDuplicated() {
+  const QString markdown = QStringLiteral(
+      "Use [link][ref] and [^note].\n\n"
+      "  [ref]: https://example.test/indented\n"
+      "  [^note]: Indented footnote.\n");
+  CmarkGfmParser parser;
+  ParseResult parsed = parser.parseDocument(markdown, ParseOptions{});
+  require(parsed.root != nullptr,
+          QStringLiteral("Parser returned null root for indented definitions"));
+
+  int linkDefinitions = 0;
+  int footnoteDefinitions = 0;
+  for (const auto& child : parsed.root->children()) {
+    linkDefinitions += child->type() == BlockType::LinkDefinition ? 1 : 0;
+    footnoteDefinitions += child->type() == BlockType::FootnoteDefinition ? 1 : 0;
+  }
+  require(linkDefinitions == 1,
+          QStringLiteral("Indented link definition should appear exactly once"));
+  require(footnoteDefinitions == 1,
+          QStringLiteral("Indented footnote definition should appear exactly once"));
+}
+
 void testDefinitionCommonMarkBoundaryMatrix() {
   CmarkGfmParser parser;
   ParseOptions options;
@@ -321,6 +383,8 @@ int main(int argc, char** argv) {
   testDefinitionSerializationRebuildsParenthesizedTitleShape();
   testMultiLineFootnoteKeepsCmarkRange();
   testFootnoteDefinitionsRemainInSourceOrder();
+  testDenseDefinitionsRetainSourceOrderAndTypes();
+  testIndentedDefinitionsAreNotDuplicated();
   testDefinitionCommonMarkBoundaryMatrix();
   testMultiLineFootnoteSerializationPreservesContinuation();
   testNonVirtualTemplateWithTitleButNoDestination();

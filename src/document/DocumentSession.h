@@ -38,6 +38,9 @@ public:
   // need a contiguous QString call .toString(); most read size/mid/at directly. See MarkdownDocument.
   const PieceTable& markdownText() const { return document_.markdownText(); }
   qint64 lastParseElapsedMs() const;
+  // Opt-in diagnostics for full parses only. Local edit slices stay on the zero-overhead path.
+  void setFullParsePerformanceMetricsEnabled(bool enabled);
+  const ParsePerformanceMetrics& lastFullParsePerformanceMetrics() const;
   bool lastParseWasLocalEdit() const;
   bool lastLocalEditChangedTopLevelStructure() const;
   TopLevelRangeChange lastLocalTopLevelRangeChange() const;
@@ -132,6 +135,8 @@ private:
   QString filePath_;
   TextFileFormat fileFormat_;
   qint64 lastParseElapsedMs_ = 0;
+  bool fullParsePerformanceMetricsEnabled_ = false;
+  ParsePerformanceMetrics lastFullParsePerformanceMetrics_;
   bool lastParseWasLocalEdit_ = false;
   bool lastLocalEditChangedTopLevelStructure_ = false;
   TopLevelRangeChange lastLocalTopLevelRangeChange_;

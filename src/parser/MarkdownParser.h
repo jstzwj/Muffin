@@ -14,6 +14,24 @@ struct ParseDiagnostic {
   SourceRange range;
 };
 
+struct ParsePhasePerformance {
+  QString name;
+  qint64 elapsedNs = 0;
+  qint64 workingSetBytesAfter = 0;
+
+  bool operator==(const ParsePhasePerformance&) const = default;
+};
+
+struct ParsePerformanceMetrics {
+  qint64 totalElapsedNs = 0;
+  qint64 workingSetBytesBefore = 0;
+  qint64 workingSetBytesAfter = 0;
+  QVector<ParsePhasePerformance> phases;
+
+  bool isEmpty() const { return phases.isEmpty(); }
+  bool operator==(const ParsePerformanceMetrics&) const = default;
+};
+
 struct ParseOptions {
   bool enableTable = true;
   bool enableStrikethrough = true;
@@ -40,6 +58,7 @@ struct ParseResult {
   std::unique_ptr<MarkdownNode> root;
   QVector<ParseDiagnostic> diagnostics;
   qint64 elapsedMs = 0;
+  ParsePerformanceMetrics performanceMetrics;
 };
 
 class MarkdownParser {

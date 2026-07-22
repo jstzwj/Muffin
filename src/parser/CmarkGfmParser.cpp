@@ -13,6 +13,7 @@
 #include <QHash>
 #include <QJsonDocument>
 #include <QLoggingCategory>
+#include <QSet>
 #include <QStringList>
 #include <QVector>
 #include <algorithm>
@@ -34,20 +35,37 @@ Q_LOGGING_CATEGORY(parsePerf, "muffin.perf", QtWarningMsg)
 // category's debug level is disabled.
 class ParsePerfTimer {
 public:
-  explicit ParsePerfTimer(const char* label) : label_(label), enabled_(parsePerf().isDebugEnabled()) {
+  explicit ParsePerfTimer(
+      const char* label,
+      ParsePerformanceMetrics* metrics = nullptr)
+      : label_(label),
+        metrics_(metrics),
+        logEnabled_(parsePerf().isDebugEnabled()),
+        enabled_(logEnabled_ || metrics_ != nullptr) {
     if (enabled_) {
       timer_.start();
     }
   }
   ~ParsePerfTimer() {
     if (enabled_) {
-      qCDebug(parsePerf).nospace() << label_ << " " << timer_.nsecsElapsed() / 1000000.0
-                                   << " ms ws=" << (muffin::diag::workingSetBytes() >> 20) << "MB";
+      const qint64 elapsedNs = timer_.nsecsElapsed();
+      const qint64 workingSetBytes = muffin::diag::workingSetBytes();
+      if (metrics_) {
+        metrics_->phases.append(ParsePhasePerformance{
+            QString::fromLatin1(label_), elapsedNs, workingSetBytes});
+      }
+      if (logEnabled_) {
+        qCDebug(parsePerf).nospace()
+            << label_ << " " << elapsedNs / 1000000.0
+            << " ms ws=" << (workingSetBytes >> 20) << "MB";
+      }
     }
   }
 
 private:
   const char* label_;
+  ParsePerformanceMetrics* metrics_ = nullptr;
+  bool logEnabled_ = false;
   bool enabled_ = false;
   QElapsedTimer timer_;
 };
@@ -741,13 +759,19 @@ void annotateDefinitionBlocks(
   if (definitions.isEmpty()) {
     return;
   }
-  // Index every footnote/link definition node by its source start offset once, so each definition
-  // resolves in O(1) instead of re-walking the whole tree per definition (was O(N x nodes)).
-  QHash<qsizetype, MarkdownNode*> defNodeByStart;
+  // Index link definitions by source start and cmark footnotes by source line once, so each
+  // definition resolves in O(1) instead of re-walking the whole tree per definition. cmark starts
+  // footnote ranges after the marker, so byteStart is not a stable key until annotation fixes it.
+  QHash<qsizetype, MarkdownNode*> linkDefinitionByStart;
+  QHash<int, MarkdownNode*> footnoteDefinitionByLine;
   const auto indexTree = [&](const auto& self, MarkdownNode& node) -> void {
-    if ((node.type() == BlockType::FootnoteDefinition || node.type() == BlockType::LinkDefinition) &&
-        node.sourceRange().byteStart >= 0) {
-      defNodeByStart.insert(node.sourceRange().byteStart, &node);
+    const SourceRange range = node.sourceRange();
+    if (node.type() == BlockType::FootnoteDefinition && range.lineStart > 0) {
+      // cmark starts a footnote definition after its `[^label]:` marker, so its byteStart cannot
+      // match the scanner's markerRange.start until this annotation pass fixes the range.
+      footnoteDefinitionByLine.insert(range.lineStart, &node);
+    } else if (node.type() == BlockType::LinkDefinition && range.byteStart >= 0) {
+      linkDefinitionByStart.insert(range.byteStart, &node);
     }
     for (const auto& child : node.children()) {
       self(self, *child);
@@ -757,35 +781,58 @@ void annotateDefinitionBlocks(
 
   for (const DefinitionParseResult& parsedDefinition : definitions) {
     const DefinitionBlock& definition = parsedDefinition.definition;
-    const auto found = defNodeByStart.constFind(definition.markerRange.start);
-    if (found == defNodeByStart.constEnd()) {
+    MarkdownNode* node = nullptr;
+    if (definition.kind == DefinitionBlock::Kind::Footnote) {
+      node = footnoteDefinitionByLine.value(
+          lineOffsets.lineForOffset(definition.markerRange.start), nullptr);
+    } else {
+      node = linkDefinitionByStart.value(definition.markerRange.start, nullptr);
+    }
+    if (!node) {
       continue;
     }
-    MarkdownNode& node = *found.value();
-    const SourceRange range = node.sourceRange();
-    const bool matchesRange = range.byteStart == definition.markerRange.start &&
-                              range.byteEnd >= definition.markerRange.end;
+    const SourceRange range = node->sourceRange();
+    const bool matchesRange =
+        definition.kind == DefinitionBlock::Kind::Footnote
+        ? range.lineStart == lineOffsets.lineForOffset(definition.markerRange.start) &&
+              range.byteEnd >= definition.markerRange.end
+        : range.byteStart == definition.markerRange.start &&
+              range.byteEnd >= definition.markerRange.end;
     const bool matchesType =
-        (definition.kind == DefinitionBlock::Kind::Footnote && node.type() == BlockType::FootnoteDefinition) ||
-        (definition.kind == DefinitionBlock::Kind::Link && node.type() == BlockType::LinkDefinition);
+        (definition.kind == DefinitionBlock::Kind::Footnote &&
+         node->type() == BlockType::FootnoteDefinition) ||
+        (definition.kind == DefinitionBlock::Kind::Link &&
+         node->type() == BlockType::LinkDefinition);
     if (!matchesRange || !matchesType) {
       continue;
     }
     DefinitionBlock annotated = definition;
-    if (node.type() == BlockType::FootnoteDefinition) {
-      annotated.sourceRange = {range.byteStart, range.byteEnd};
+    if (node->type() == BlockType::FootnoteDefinition) {
+      const qsizetype sourceStart = definition.sourceRange.isValid()
+          ? definition.sourceRange.start
+          : definition.markerRange.start;
+      const qsizetype sourceEnd = definition.sourceRange.isValid()
+          ? qMax(definition.sourceRange.end, range.byteEnd)
+          : range.byteEnd;
+      annotated.sourceRange = {sourceStart, sourceEnd};
     }
-    node.setDefinition(annotated);
-    if (definition.sourceRange.isValid() && node.type() != BlockType::FootnoteDefinition) {
-      SourceRange preciseRange = node.sourceRange();
+    node->setDefinition(annotated);
+    if (definition.sourceRange.isValid()) {
+      SourceRange preciseRange = node->sourceRange();
       preciseRange.byteStart = definition.sourceRange.start;
-      preciseRange.byteEnd = definition.sourceRange.end;
+      preciseRange.byteEnd = node->type() == BlockType::FootnoteDefinition
+          ? qMax(definition.sourceRange.end, range.byteEnd)
+          : definition.sourceRange.end;
       preciseRange.lineStart = lineOffsets.lineForOffset(preciseRange.byteStart);
       preciseRange.lineEnd = lineOffsets.lineForOffset(preciseRange.byteEnd);
       const qsizetype lineStart = lineOffsets.offsetForLineColumn(preciseRange.lineStart, 1);
+      const qsizetype lineEndStart =
+          lineOffsets.offsetForLineColumn(preciseRange.lineEnd, 1);
       preciseRange.columnStart = lineStart >= 0 ? static_cast<int>(preciseRange.byteStart - lineStart + 1) : 1;
-      preciseRange.columnEnd = lineStart >= 0 ? static_cast<int>(preciseRange.byteEnd - lineStart + 1) : preciseRange.columnStart;
-      node.setSourceRange(preciseRange);
+      preciseRange.columnEnd = lineEndStart >= 0
+          ? static_cast<int>(preciseRange.byteEnd - lineEndStart + 1)
+          : preciseRange.columnStart;
+      node->setSourceRange(preciseRange);
     }
   }
 }
@@ -834,20 +881,28 @@ void insertMissingDefinitions(MarkdownNode& root, const QVector<DefinitionParseR
   if (root.type() != BlockType::Document || definitions.isEmpty()) {
     return;
   }
-  // definitions are scanned top-to-bottom, so markerRange.start is non-decreasing. Index existing
-  // top-level definition blocks once so the existence check is O(1) (was O(M) per definition), and
-  // a monotonically advancing cursor makes the insert-position search O(N + M) overall instead of
-  // re-scanning from the first child for every definition.
+  // Index existing top-level definition blocks once so the existence check is O(1). Missing link
+  // definitions and virtual templates cannot be inserted into the root vector one at a time: each
+  // middle insertion shifts the remaining unique_ptrs, making a definition-dense document O(N^2).
+  // Collect all missing definitions, rebuild the existing child list once while dropping cmark's
+  // paragraph/VEP placeholders, then append the synthetic nodes. restoreTopLevelSourceOrder runs
+  // after annotation and performs the one stable ordering pass needed by the editor AST.
   QHash<qsizetype, BlockType> existingDefTypeByStart;
+  QSet<int> existingFootnoteLines;
   for (const auto& child : root.children()) {
     const BlockType type = child->type();
-    if ((type == BlockType::FootnoteDefinition || type == BlockType::LinkDefinition) &&
-        child->sourceRange().byteStart >= 0) {
+    if (type == BlockType::FootnoteDefinition &&
+        child->sourceRange().lineStart > 0) {
+      existingFootnoteLines.insert(child->sourceRange().lineStart);
+    } else if (type == BlockType::LinkDefinition &&
+               child->sourceRange().byteStart >= 0) {
       existingDefTypeByStart.insert(child->sourceRange().byteStart, type);
     }
   }
 
-  qsizetype cursor = 0;
+  QVector<const DefinitionBlock*> missingDefinitions;
+  missingDefinitions.reserve(definitions.size());
+  QHash<qsizetype, const DefinitionBlock*> missingDefinitionByStart;
   for (const DefinitionParseResult& parsedDefinition : definitions) {
     if (!shouldInsertSyntheticDefinition(parsedDefinition)) {
       continue;
@@ -855,25 +910,46 @@ void insertMissingDefinitions(MarkdownNode& root, const QVector<DefinitionParseR
     const DefinitionBlock& definition = parsedDefinition.definition;
     const BlockType expectedType =
         definition.kind == DefinitionBlock::Kind::Footnote ? BlockType::FootnoteDefinition : BlockType::LinkDefinition;
+    if (definition.kind == DefinitionBlock::Kind::Footnote &&
+        existingFootnoteLines.contains(
+            lineOffsets.lineForOffset(definition.markerRange.start))) {
+      continue;
+    }
     const auto existing = existingDefTypeByStart.constFind(definition.markerRange.start);
     if (existing != existingDefTypeByStart.constEnd() && existing.value() == expectedType) {
       continue;
     }
+    missingDefinitions.append(&definition);
+    missingDefinitionByStart.insert(definition.markerRange.start, &definition);
+    if (definition.sourceRange.isValid()) {
+      missingDefinitionByStart.insert(definition.sourceRange.start, &definition);
+    }
+  }
+  if (missingDefinitions.isEmpty()) {
+    return;
+  }
 
-    const auto& children = root.children();
-    while (cursor < static_cast<qsizetype>(children.size()) &&
-           children.at(static_cast<size_t>(cursor))->sourceRange().byteStart < definition.markerRange.start) {
-      ++cursor;
+  std::vector<std::unique_ptr<MarkdownNode>> existingChildren;
+  existingChildren.reserve(root.children().size());
+  while (!root.children().empty()) {
+    existingChildren.push_back(root.detachChild(root.children().size() - 1));
+  }
+  std::reverse(existingChildren.begin(), existingChildren.end());
+  for (auto& child : existingChildren) {
+    const qsizetype sourceStart = child->sourceRange().byteStart;
+    const auto missing = missingDefinitionByStart.constFind(sourceStart);
+    if (missing != missingDefinitionByStart.constEnd()) {
+      const DefinitionBlock& definition = *missing.value();
+      if (isDefinitionSourceParagraph(*child, definition) ||
+          (isVirtualEmptyParagraph(*child) &&
+           sourceStart == definition.markerRange.start)) {
+        continue;
+      }
     }
-    const qsizetype insertAt = cursor;
-    if (insertAt < static_cast<qsizetype>(children.size()) &&
-        (isDefinitionSourceParagraph(*children.at(static_cast<size_t>(insertAt)), definition) ||
-         (isVirtualEmptyParagraph(*children.at(static_cast<size_t>(insertAt))) &&
-          children.at(static_cast<size_t>(insertAt))->sourceRange().byteStart == definition.markerRange.start))) {
-      root.detachChild(insertAt);
-    }
-    root.insertChild(insertAt, createDefinitionNode(definition, lineOffsets));
-    cursor = insertAt + 1;
+    root.appendChild(std::move(child));
+  }
+  for (const DefinitionBlock* definition : missingDefinitions) {
+    root.appendChild(createDefinitionNode(*definition, lineOffsets));
   }
 }
 
@@ -1367,12 +1443,31 @@ CmarkGfmParser::CmarkGfmParser() {
 }
 
 ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptions& options) {
+  return parseDocumentImpl(markdown, options, false);
+}
+
+ParseResult CmarkGfmParser::parseDocumentProfiled(
+    QStringView markdown,
+    const ParseOptions& options) {
+  return parseDocumentImpl(markdown, options, true);
+}
+
+ParseResult CmarkGfmParser::parseDocumentImpl(
+    QStringView markdown,
+    const ParseOptions& options,
+    bool collectPerformanceMetrics) {
   QElapsedTimer timer;
   timer.start();
+  ParsePerformanceMetrics performanceMetrics;
+  ParsePerformanceMetrics* metrics =
+      collectPerformanceMetrics ? &performanceMetrics : nullptr;
+  if (metrics) {
+    metrics->workingSetBytesBefore = muffin::diag::workingSetBytes();
+  }
 
   FrontMatterScanResult frontMatter;
   {
-    ParsePerfTimer t("parse.frontMatter");
+    ParsePerfTimer t("parse.frontMatter", metrics);
     frontMatter = options.enableFrontMatter ? scanFrontMatter(markdown) : FrontMatterScanResult{};
   }
   qsizetype markdownStart = 0;
@@ -1410,18 +1505,18 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   QString remapped;
   QStringView cmarkInput = markdownToParse;
   if (needsMathConvert) {
-    ParsePerfTimer t("parse.mathConvert");
+    ParsePerfTimer t("parse.mathConvert", metrics);
     mathConverted = legacyMathDelimitersToDollar(markdownToParse);
     cmarkInput = mathConverted;
   }
   if (options.enableUnicodeRemap) {
-    ParsePerfTimer t("parse.unicodeRemap");
+    ParsePerfTimer t("parse.unicodeRemap", metrics);
     remapped = remapUnicodePunctuation(cmarkInput);
     cmarkInput = remapped;
   }
   QByteArray utf8;
   {
-    ParsePerfTimer t("parse.toUtf8");
+    ParsePerfTimer t("parse.toUtf8", metrics);
     utf8 = cmarkInput.toUtf8();
   }
   // mathConverted / remapped only back `cmarkInput` for the toUtf8 above; the bytes now live in
@@ -1433,13 +1528,13 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   cmarkInput = {};
   QVector<DefinitionParseResult> definitions;
   {
-    ParsePerfTimer t("parse.scanDefinitions");
+    ParsePerfTimer t("parse.scanDefinitions", metrics);
     definitions = scanDefinitionBlocks(markdownToParse);
   }
   cmark_parser* parser = nullptr;
   cmark_node* document = nullptr;
   {
-    ParsePerfTimer t("parse.cmark");
+    ParsePerfTimer t("parse.cmark", metrics);
     parser = cmark_parser_new(CMARK_OPT_DEFAULT | CMARK_OPT_FOOTNOTES);
     attachExtensions(parser, options);
     cmark_parser_feed(parser, utf8.constData(), static_cast<size_t>(utf8.size()));
@@ -1451,14 +1546,14 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   // this buffer surviving until function return is a big slice of the open-time memory peak.
   utf8 = {};
 
-  const LineStartOffsetCache lineOffsets = [markdownToParse] {
-    ParsePerfTimer t("parse.lineOffsets");
+  const LineStartOffsetCache lineOffsets = [markdownToParse, metrics] {
+    ParsePerfTimer t("parse.lineOffsets", metrics);
     return LineStartOffsetCache(markdownToParse);
   }();
   CmarkNodeAdapter adapter(&lineOffsets, markdownToParse);
   ParseResult result;
   {
-    ParsePerfTimer t("parse.convertBlock");
+    ParsePerfTimer t("parse.convertBlock", metrics);
     const bool perf = parsePerf().isDebugEnabled();
     CmarkNodeAdapter::setPerfEnabled(perf);
     CmarkNodeAdapter::resetPerfCounters();
@@ -1482,69 +1577,69 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   document = nullptr;
   parser = nullptr;
   {
-    ParsePerfTimer t("parse.insertVirtualEmptyParagraphs");
+    ParsePerfTimer t("parse.insertVirtualEmptyParagraphs", metrics);
     insertVirtualEmptyParagraphs(markdownToParse, *result.root, lineOffsets);
   }
   {
-    ParsePerfTimer t("parse.annotateSourceOffsets");
+    ParsePerfTimer t("parse.annotateSourceOffsets", metrics);
     annotateSourceOffsets(lineOffsets, markdownToParse, *result.root);
   }
   {
-    ParsePerfTimer t("parse.annotateMathDelimiters");
+    ParsePerfTimer t("parse.annotateMathDelimiters", metrics);
     annotateMathDelimiters(markdownToParse, *result.root);
   }
   if (options.enableAlertBox) {
-    ParsePerfTimer t("parse.annotateAlertKinds");
+    ParsePerfTimer t("parse.annotateAlertKinds", metrics);
     annotateAlertKinds(*result.root);
   }
   if (options.enableHighlight) {
-    ParsePerfTimer t("parse.splitHighlight");
+    ParsePerfTimer t("parse.splitHighlight", metrics);
     splitDelimInlines(*result.root, markdownToParse, specForHighlight());
   }
   // cmark's strikethrough extension is never attached (see attachExtensions), so `~~` is always
   // handled here (run 2). It MUST run before the subscript pass (run 1) so a `~~` pair is consumed
   // first and only single `~` is left for subscript.
   if (options.enableStrikethrough) {
-    ParsePerfTimer t("parse.splitStrikethrough");
+    ParsePerfTimer t("parse.splitStrikethrough", metrics);
     splitDelimInlines(*result.root, markdownToParse, specForStrikethrough());
   }
   if (options.enableSubscript) {
-    ParsePerfTimer t("parse.splitSubscript");
+    ParsePerfTimer t("parse.splitSubscript", metrics);
     splitDelimInlines(*result.root, markdownToParse, specForSubscript());
   }
   if (options.enableSuperscript) {
-    ParsePerfTimer t("parse.splitSuperscript");
+    ParsePerfTimer t("parse.splitSuperscript", metrics);
     splitDelimInlines(*result.root, markdownToParse, specForSuperscript());
   }
   {
-    ParsePerfTimer t("parse.insertVEPInBlockQuotes");
+    ParsePerfTimer t("parse.insertVEPInBlockQuotes", metrics);
     insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root, lineOffsets);
   }
   {
-    ParsePerfTimer t("parse.insertMissingDefinitions");
+    ParsePerfTimer t("parse.insertMissingDefinitions", metrics);
     insertMissingDefinitions(*result.root, definitions, lineOffsets);
   }
   {
-    ParsePerfTimer t("parse.annotateDefinitionBlocks");
+    ParsePerfTimer t("parse.annotateDefinitionBlocks", metrics);
     annotateDefinitionBlocks(*result.root, definitions, lineOffsets);
   }
   {
-    ParsePerfTimer t("parse.insertTrailingVEPAfterDefinition");
+    ParsePerfTimer t("parse.insertTrailingVEPAfterDefinition", metrics);
     insertTrailingEmptyParagraphAfterDefinition(markdownToParse, *result.root, definitions, lineOffsets);
   }
   {
-    ParsePerfTimer t("parse.restoreTopLevelSourceOrder");
+    ParsePerfTimer t("parse.restoreTopLevelSourceOrder", metrics);
     restoreTopLevelSourceOrder(*result.root);
   }
   {
-    ParsePerfTimer t("parse.annotateTableCellRanges");
+    ParsePerfTimer t("parse.annotateTableCellRanges", metrics);
     annotateTableCellSourceRanges(markdownToParse, lineOffsets, *result.root);
   }
   // cmark turns a lone `*`/`-`/`+`/`1.` (trailing newline satisfies its bullet check) into an empty
   // list item the editor can't edit (its list-marker validation requires a space). Demote those to
   // paragraphs at parse time so load and edit paths agree. Done last, on the pre-front-matter tree.
   {
-    ParsePerfTimer t("parse.demoteListMarkers");
+    ParsePerfTimer t("parse.demoteListMarkers", metrics);
     demotePendingListMarkers(*result.root, markdownToParse);
   }
   // cmark emits a childless BlockQuote for a `>`/`> ` line that has no following content (a
@@ -1554,7 +1649,7 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
   // the lone-list demotion above; once real content follows (`> text`) cmark emits the child and the
   // quote materialises normally.
   {
-    ParsePerfTimer t("parse.demoteEmptyBlockQuotes");
+    ParsePerfTimer t("parse.demoteEmptyBlockQuotes", metrics);
     demoteEmptyBlockQuotes(*result.root, markdownToParse);
   }
 
@@ -1566,7 +1661,13 @@ ParseResult CmarkGfmParser::parseDocument(QStringView markdown, const ParseOptio
     result.root->insertChild(0, std::move(frontMatterNode));
   }
 
-  result.elapsedMs = timer.elapsed();
+  const qint64 totalElapsedNs = timer.nsecsElapsed();
+  result.elapsedMs = totalElapsedNs / 1000000;
+  if (metrics) {
+    metrics->totalElapsedNs = totalElapsedNs;
+    metrics->workingSetBytesAfter = muffin::diag::workingSetBytes();
+    result.performanceMetrics = std::move(performanceMetrics);
+  }
   // cmark document + parser freed right after convertBlock above; nothing past that point touches
   // the cmark tree.
   return result;
