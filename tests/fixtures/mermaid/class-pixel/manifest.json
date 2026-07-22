@@ -8,7 +8,7 @@
       "cropTarget": "node",
       "cropKind": "node-html-math",
       "cropSelector": "g.node .label",
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"<b>Service</b><br/>$$\\frac{x}{y}$$\"]",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"<b>Service</b><br/>$$\\frac{x}{y}$$\"]",
       "cropFile": "label-node-html-math-label.png",
       "cropSha256": "b411f36f86e791e5850a9fcb204118833282eba7fd2a532d4beced65b5044abe",
       "labelBox": {
@@ -30,6 +30,8 @@
           "direction": "ltr"
         },
         "foreignObjectCount": 1,
+        "textCount": 0,
+        "tspanCount": 0,
         "mathCount": 1
       },
       "cssWidth": 104.390625,
@@ -421,6 +423,8 @@
               "transform": "translate(0,-8.203125)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 1
           }
         ],
@@ -495,7 +499,7 @@
       "cropKind": "node-markdown",
       "cropSelector": "g.node .label",
       "dpr": 1.25,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"**Service** _value_\"]",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"**Service** _value_\"]",
       "cropFile": "label-node-markdown-label.png",
       "cropSha256": "fe77032a0183f23f806deb79b747562d82f0f467d463b0c20ddba6495ca07a61",
       "labelBox": {
@@ -517,6 +521,8 @@
           "direction": "ltr"
         },
         "foreignObjectCount": 1,
+        "textCount": 0,
+        "tspanCount": 0,
         "mathCount": 0
       },
       "cssWidth": 137.71875,
@@ -908,6 +914,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -981,7 +989,7 @@
       "cropKind": "node-cjk",
       "cropSelector": "g.node .label",
       "dpr": 1.5,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"用户服务无空格换行\"]",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"用户服务无空格换行\"]",
       "cropFile": "label-node-cjk-label.png",
       "cropSha256": "bb0bf3dc8786d2983cd5677869f1ca6f209508d8e8d3dc8dc147d61cb41a1304",
       "labelBox": {
@@ -1003,6 +1011,8 @@
           "direction": "ltr"
         },
         "foreignObjectCount": 1,
+        "textCount": 0,
+        "tspanCount": 0,
         "mathCount": 0
       },
       "cssWidth": 184,
@@ -1394,6 +1404,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -1468,7 +1480,7 @@
       "cropSelector": "g.node .label",
       "dpr": 2,
       "theme": "dark",
-      "source": "%%{init: {\"theme\":\"dark\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"مرحبا 123 שלום\"]",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"مرحبا 123 שלום\"]",
       "cropFile": "label-node-rtl-dark-label.png",
       "cropSha256": "209225401d3f162ab212d6b8f73964a724f40afb6dbc755fb467fc74b10fe8f0",
       "labelBox": {
@@ -1490,6 +1502,8 @@
           "direction": "ltr"
         },
         "foreignObjectCount": 1,
+        "textCount": 0,
+        "tspanCount": 0,
         "mathCount": 0
       },
       "cssWidth": 145.09375,
@@ -1881,6 +1895,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -1954,7 +1970,7 @@
       "cropKind": "edge-math-bidi",
       "cropSelector": "g.edgeLabel .label",
       "dpr": 1.5,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nA --> B : $$\\sqrt{x^2}$$ שלום 42",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nA --> B : $$\\sqrt{x^2}$$ שלום 42",
       "cropFile": "label-edge-math-bidi-label.png",
       "cropSha256": "2515833fb1811ccfdf378c3544a399f922ff54bccdfc7f4b183f975b043fde44",
       "labelBox": {
@@ -1976,6 +1992,8 @@
           "direction": "ltr"
         },
         "foreignObjectCount": 1,
+        "textCount": 0,
+        "tspanCount": 0,
         "mathCount": 1
       },
       "cssWidth": 102.234375,
@@ -2429,6 +2447,8 @@
               "transform": "translate(-43.1171875, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 1
           },
           {
@@ -2441,6 +2461,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -2453,6 +2475,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -2532,7 +2556,7 @@
       "cropSelector": "g.cluster .cluster-label",
       "dpr": 1.25,
       "theme": "dark",
-      "source": "%%{init: {\"theme\":\"dark\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Core[\"核心 مرحبا\"] {\nclass A\n}",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Core[\"核心 مرحبا\"] {\nclass A\n}",
       "cropFile": "label-cluster-cjk-rtl-dark-label.png",
       "cropSha256": "113990e0f27475cd7103a44d72e2c9d66a9bb2eda08c7b5c4a88882d0a3d0696",
       "labelBox": {
@@ -2554,6 +2578,8 @@
           "direction": "ltr"
         },
         "foreignObjectCount": 1,
+        "textCount": 0,
+        "tspanCount": 0,
         "mathCount": 0
       },
       "cssWidth": 125.234375,
@@ -2962,6 +2988,8 @@
               "transform": "translate(27.6953125, 8)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -2974,6 +3002,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -3047,9 +3077,1001 @@
       }
     },
     {
+      "id": "label-node-svg-multiline-cjk",
+      "cropOnly": true,
+      "cropTarget": "node",
+      "cropKind": "node-svg-multiline-cjk",
+      "cropSelector": "g.node .label-group .label",
+      "dpr": 1.5,
+      "htmlLabels": false,
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":false,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"Service<br/>中文 مرحبا\"]",
+      "cropFile": "label-node-svg-multiline-cjk-label.png",
+      "cropSha256": "211c628e7204c1dc85956489c3b3feb7e73d887ee10ea552359826a62bdf1822",
+      "labelBox": {
+        "width": 71.4044189453125,
+        "height": 39.596675872802734,
+        "tag": "g",
+        "class": "label",
+        "text": "Service中文 مرحبا",
+        "contentBox": {
+          "width": 71.4044189453125,
+          "height": 39.596675872802734
+        },
+        "style": {
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontWeight": "700",
+          "fontStyle": "normal",
+          "direction": "ltr"
+        },
+        "foreignObjectCount": 0,
+        "textCount": 1,
+        "tspanCount": 5,
+        "mathCount": 0
+      },
+      "cssWidth": 111.421875,
+      "cssHeight": 115.578125,
+      "viewBox": {
+        "x": 0,
+        "y": 0,
+        "width": 111.43585205078125,
+        "height": 115.5999984741211
+      },
+      "structure": {
+        "nodes": [
+          {
+            "id": "class-pixel-label-node-svg-multiline-cjk-classId-A-0",
+            "text": "Service中文 مرحبا",
+            "bbox": {
+              "x": -47.718,
+              "y": -49.8,
+              "width": 95.436,
+              "height": 99.6
+            },
+            "outer": {
+              "x": -47.718,
+              "y": -49.8,
+              "width": 95.436,
+              "height": 99.6
+            },
+            "style": {
+              "fill": "rgb(236, 236, 255)",
+              "stroke": "rgb(147, 112, 219)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(19, 19, 0)",
+              "stroke": "none",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          }
+        ],
+        "clusters": [],
+        "edgePaths": [],
+        "edgeLabels": []
+      },
+      "svgStructure": {
+        "root": {
+          "id": "class-pixel-label-node-svg-multiline-cjk",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "classDiagram",
+          "style": "max-width: 111.43585205078125px;",
+          "viewBox": "0 0 111.43585205078125 115.5999984741211",
+          "role": "graphics-document document",
+          "aria-roledescription": "class"
+        },
+        "markers": [
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-aggregationStart",
+              "class": "marker aggregation class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-aggregationEnd",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-aggregationStart-margin",
+              "class": "marker aggregation class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-aggregationEnd-margin",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-extensionStart",
+              "class": "marker extension class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,7 L18,13 V 1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-extensionEnd",
+              "class": "marker extension class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,1 V 13 L18,7 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-extensionEnd-margin",
+              "class": "marker extension class",
+              "refX": "9",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse",
+              "viewBox": "0 0 20 14"
+            },
+            "childTag": "polygon",
+            "childAttributes": {
+              "points": "10,1 10,13 18,7",
+              "style": "stroke-width: 2; stroke-dasharray: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-compositionStart",
+              "class": "marker composition class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-compositionEnd",
+              "class": "marker composition class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-compositionStart-margin",
+              "class": "marker composition class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "viewBox": "0 0 15 15",
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-compositionEnd-margin",
+              "class": "marker composition class",
+              "refX": "3.5",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-dependencyStart",
+              "class": "marker dependency class",
+              "refX": "6",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-dependencyEnd",
+              "class": "marker dependency class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-dependencyStart-margin",
+              "class": "marker dependency class",
+              "refX": "4",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-dependencyEnd-margin",
+              "class": "marker dependency class",
+              "refX": "16",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-lollipopStart",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-lollipopEnd",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-lollipopStart-margin",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-multiline-cjk_class-lollipopEnd-margin",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          }
+        ],
+        "labelContainers": [
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "Service中文 مرحبا",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-9.899999618530273)"
+            },
+            "foreignObjectCount": 0,
+            "textCount": 1,
+            "tspanCount": 5,
+            "mathCount": 0
+          }
+        ],
+        "domOrder": [
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "g:clusters",
+          "g:edgePaths",
+          "g:edgeLabels",
+          "g:nodes",
+          "g:node default",
+          "text:",
+          "tspan:text-outer-tspan row",
+          "tspan:text-inner-tspan",
+          "tspan:text-outer-tspan row",
+          "tspan:text-inner-tspan",
+          "tspan:text-inner-tspan",
+          "defs:",
+          "defs:"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "counts": {
+          "defs": 21,
+          "markers": 19,
+          "nodes": 1,
+          "clusters": 0,
+          "edgePaths": 0,
+          "edgeLabels": 0,
+          "foreignObject": 0,
+          "math": 0
+        }
+      }
+    },
+    {
+      "id": "label-node-svg-rtl-dark",
+      "cropOnly": true,
+      "cropTarget": "node",
+      "cropKind": "node-svg-rtl",
+      "cropSelector": "g.node .label-group .label",
+      "dpr": 2,
+      "theme": "dark",
+      "htmlLabels": false,
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":false,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass A[\"مرحبا 123 שלום\"]",
+      "cropFile": "label-node-svg-rtl-dark-label.png",
+      "cropSha256": "f5057681960327d64421259203fc3ba553dc27cee41b811a2e2d130d563d16ac",
+      "labelBox": {
+        "width": 106.65442657470703,
+        "height": 22.000001907348633,
+        "tag": "g",
+        "class": "label",
+        "text": "مرحبا 123 שלום",
+        "contentBox": {
+          "width": 106.65442657470703,
+          "height": 22.000001907348633
+        },
+        "style": {
+          "fontSize": "16px",
+          "lineHeight": "normal",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "fontWeight": "700",
+          "fontStyle": "normal",
+          "direction": "ltr"
+        },
+        "foreignObjectCount": 0,
+        "textCount": 1,
+        "tspanCount": 4,
+        "mathCount": 0
+      },
+      "cssWidth": 146.6875,
+      "cssHeight": 97.984375,
+      "viewBox": {
+        "x": 0,
+        "y": 0,
+        "width": 146.70147705078125,
+        "height": 98
+      },
+      "structure": {
+        "nodes": [
+          {
+            "id": "class-pixel-label-node-svg-rtl-dark-classId-A-0",
+            "text": "مرحبا 123 שלום",
+            "bbox": {
+              "x": -65.351,
+              "y": -41,
+              "width": 130.701,
+              "height": 82
+            },
+            "outer": {
+              "x": -65.351,
+              "y": -41,
+              "width": 130.701,
+              "height": 82
+            },
+            "style": {
+              "fill": "rgb(31, 32, 32)",
+              "stroke": "rgb(204, 204, 204)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(224, 223, 223)",
+              "stroke": "none",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          }
+        ],
+        "clusters": [],
+        "edgePaths": [],
+        "edgeLabels": []
+      },
+      "svgStructure": {
+        "root": {
+          "id": "class-pixel-label-node-svg-rtl-dark",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "classDiagram",
+          "style": "max-width: 146.70147705078125px;",
+          "viewBox": "0 0 146.70147705078125 98",
+          "role": "graphics-document document",
+          "aria-roledescription": "class"
+        },
+        "markers": [
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-aggregationStart",
+              "class": "marker aggregation class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-aggregationEnd",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-aggregationStart-margin",
+              "class": "marker aggregation class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-aggregationEnd-margin",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-extensionStart",
+              "class": "marker extension class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,7 L18,13 V 1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-extensionEnd",
+              "class": "marker extension class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,1 V 13 L18,7 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-extensionEnd-margin",
+              "class": "marker extension class",
+              "refX": "9",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse",
+              "viewBox": "0 0 20 14"
+            },
+            "childTag": "polygon",
+            "childAttributes": {
+              "points": "10,1 10,13 18,7",
+              "style": "stroke-width: 2; stroke-dasharray: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-compositionStart",
+              "class": "marker composition class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-compositionEnd",
+              "class": "marker composition class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-compositionStart-margin",
+              "class": "marker composition class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "viewBox": "0 0 15 15",
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-compositionEnd-margin",
+              "class": "marker composition class",
+              "refX": "3.5",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-dependencyStart",
+              "class": "marker dependency class",
+              "refX": "6",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-dependencyEnd",
+              "class": "marker dependency class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-dependencyStart-margin",
+              "class": "marker dependency class",
+              "refX": "4",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-dependencyEnd-margin",
+              "class": "marker dependency class",
+              "refX": "16",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-lollipopStart",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-lollipopEnd",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-lollipopStart-margin",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-label-node-svg-rtl-dark_class-lollipopEnd-margin",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          }
+        ],
+        "labelContainers": [
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "مرحبا 123 שלום",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-11)"
+            },
+            "foreignObjectCount": 0,
+            "textCount": 1,
+            "tspanCount": 4,
+            "mathCount": 0
+          }
+        ],
+        "domOrder": [
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "g:clusters",
+          "g:edgePaths",
+          "g:edgeLabels",
+          "g:nodes",
+          "g:node default",
+          "text:",
+          "tspan:text-outer-tspan row",
+          "tspan:text-inner-tspan",
+          "tspan:text-inner-tspan",
+          "tspan:text-inner-tspan",
+          "defs:",
+          "defs:"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "counts": {
+          "defs": 21,
+          "markers": 19,
+          "nodes": 1,
+          "clusters": 0,
+          "edgePaths": 0,
+          "edgeLabels": 0,
+          "foreignObject": 0,
+          "math": 0
+        }
+      }
+    },
+    {
       "id": "compartments",
       "dpr": 1,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\naccTitle: Service classes\naccDescr: Service inheritance model\nclass Service {\n  <<interface>>\n  +String name\n  +run(input) Result*\n}\nclass Empty\nService <|-- Empty : extends",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\naccTitle: Service classes\naccDescr: Service inheritance model\nclass Service {\n  <<interface>>\n  +String name\n  +run(input) Result*\n}\nclass Empty\nService <|-- Empty : extends",
       "file": "compartments.png",
       "sha256": "1a562f63270026dfac6af88863293fc398c50e3613966211e13b24e16cfa3234",
       "cssWidth": 225.15625,
@@ -3505,6 +4527,8 @@
               "transform": "translate(-29.6875, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -3517,6 +4541,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -3529,6 +4555,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -3541,6 +4569,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -3553,6 +4583,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -3565,6 +4597,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -3641,9 +4675,9 @@
     {
       "id": "marker-matrix",
       "dpr": 1,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nA <|-- B : extension\nC *-- D : composition\nE o-- F : aggregation\nG <.. H : dependency\nI ()-- J",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nA <|-- B : extension\nC *-- D : composition\nE o-- F : aggregation\nG <.. H : dependency\nI ()-- J",
       "file": "marker-matrix.png",
-      "sha256": "a46dffd2338384d213da18273b68866ded6985fa76e2a36f269bf09828ba4f6e",
+      "sha256": "959c5087daddbe21883978bcea87fb648a47f9eadfa037845ac7f5652323a608",
       "maskFile": "marker-matrix-mask.png",
       "maskSha256": "906d44d8fd8f87ccd674a6c15d4eb1087c20e786824c865297be1c5204b1fcc2",
       "textMaskFile": "marker-matrix-text-mask.png",
@@ -4467,6 +5501,8 @@
               "transform": "translate(-36.609375, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4479,6 +5515,8 @@
               "transform": "translate(-46.5546875, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4491,6 +5529,8 @@
               "transform": "translate(-46.1328125, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4503,6 +5543,8 @@
               "transform": "translate(-46.109375, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4515,6 +5557,8 @@
               "transform": "translate(0, 0)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4527,6 +5571,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4539,6 +5585,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4551,6 +5599,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4563,6 +5613,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4575,6 +5627,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4587,6 +5641,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4599,6 +5655,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4611,6 +5669,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4623,6 +5683,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -4635,6 +5697,8 @@
               "transform": "translate(-2.71875, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -4732,7 +5796,7 @@
     {
       "id": "note",
       "dpr": 1,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Service\nnote for Service \"A folded note\"\nclass Client\nClient --> Service : uses",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Service\nnote for Service \"A folded note\"\nclass Client\nClient --> Service : uses",
       "file": "note.png",
       "sha256": "3dc4993c4fe55ee4de91263fa8cb200333001e49e15fffe35ae3950cf19cee80",
       "cssWidth": 258,
@@ -5246,6 +6310,8 @@
               "transform": "translate(0, 0)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -5258,6 +6324,8 @@
               "transform": "translate(-17.125, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -5270,6 +6338,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -5282,6 +6352,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -5294,6 +6366,8 @@
               "transform": "translate(-50.46875, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -5371,7 +6445,7 @@
     {
       "id": "nested-namespaces",
       "dpr": 1,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Company {\n  namespace Core {\n    class Api\n    class Worker\n  }\n}\nApi --> Worker : delegates",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Company {\n  namespace Core {\n    class Api\n    class Worker\n  }\n}\nApi --> Worker : delegates",
       "file": "nested-namespaces.png",
       "sha256": "b531fa2f31d59d54b7ed48a9620610d93c29085dde9871815ea3d96e8d14d0b1",
       "cssWidth": 240.03125,
@@ -5859,6 +6933,8 @@
               "transform": "translate(84.203125, 8)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -5870,6 +6946,8 @@
               "transform": "translate(64.9609375, 8)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -5882,6 +6960,8 @@
               "transform": "translate(-36.6484375, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -5894,6 +6974,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -5906,6 +6988,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -5991,7 +7075,7 @@
     {
       "id": "styled-members",
       "dpr": 1.5,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Generic~T~ {\n  +T value\n  +get() T$\n  +abstract() void*\n}\nstyle Generic fill:#e8f5e9,stroke:#2e7d32,color:#102810",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Generic~T~ {\n  +T value\n  +get() T$\n  +abstract() void*\n}\nstyle Generic fill:#e8f5e9,stroke:#2e7d32,color:#102810",
       "file": "styled-members.png",
       "sha256": "112f3003b7d70dfd1bf94ca5708055d6575cbd8bbff27c6f57fb3c3f651f0877",
       "cssWidth": 206.71875,
@@ -6383,6 +7467,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -6395,6 +7481,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -6407,6 +7495,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -6419,6 +7509,8 @@
               "transform": "translate(0,12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -6491,7 +7583,7 @@
     {
       "id": "cjk-rtl",
       "dpr": 1.5,
-      "source": "%%{init: {\"theme\":\"default\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass 用户服务 {\n  +字符串 名称\n  +执行() 结果\n}\nclass مرحبا\n用户服务 --> مرحبا : שלום 123",
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass 用户服务 {\n  +字符串 名称\n  +执行() 结果\n}\nclass مرحبا\n用户服务 --> مرحبا : שלום 123",
       "file": "cjk-rtl.png",
       "sha256": "376c5650e6949c30ba3bcdc9cc8f2d6e16f4837b4878f0e6e00a981811090bb2",
       "cssWidth": 167.375,
@@ -6945,6 +8037,8 @@
               "transform": "translate(-33.6328125, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -6957,6 +8051,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -6969,6 +8065,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -6981,6 +8079,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -6993,6 +8093,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -7069,7 +8171,7 @@
       "id": "dark-compound",
       "dpr": 2,
       "theme": "dark",
-      "source": "%%{init: {\"theme\":\"dark\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Runtime {\n  class Store {\n    +save() void\n  }\n  class Cache\n}\nStore *-- Cache : owns",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nnamespace Runtime {\n  class Store {\n    +save() void\n  }\n  class Cache\n}\nStore *-- Cache : owns",
       "file": "dark-compound.png",
       "sha256": "6dda6e62f4f87ac7cd68084ada82572709b01814c2b549528dea5155629c5633",
       "cssWidth": 415.90625,
@@ -7540,6 +8642,8 @@
               "transform": "translate(176.140625, 8)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -7552,6 +8656,8 @@
               "transform": "translate(-19.75, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -7564,6 +8670,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -7576,6 +8684,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -7588,6 +8698,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -7669,7 +8781,7 @@
       "id": "dark-note-markers",
       "dpr": 1.25,
       "theme": "dark",
-      "source": "%%{init: {\"theme\":\"dark\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nclass Client\nclass Service\nnote for Client \"客户端 مرحبا\"\nClient ..> Service : calls",
+      "source": "%%{init: {\"theme\":\"dark\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nclass Client\nclass Service\nnote for Client \"客户端 مرحبا\"\nClient ..> Service : calls",
       "file": "dark-note-markers.png",
       "sha256": "944d6b7ddd110be6f53981528ae76e031b08d9e7876eb8429affa9c4f3ef61ef",
       "cssWidth": 402.875,
@@ -8183,6 +9295,8 @@
               "transform": "translate(0, 0)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -8195,6 +9309,8 @@
               "transform": "translate(-16.2890625, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -8207,6 +9323,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -8219,6 +9337,8 @@
               "transform": "translate(0,-12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           },
           {
@@ -8231,6 +9351,8 @@
               "transform": "translate(-42.921875, -12)"
             },
             "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
             "mathCount": 0
           }
         ],
@@ -8304,7 +9426,526 @@
           "math": 0
         }
       }
+    },
+    {
+      "id": "svg-compartments",
+      "dpr": 1.25,
+      "htmlLabels": false,
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":false,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Service {\n  <<interface>>\n  +名称\n  +run(value) Result*\n}",
+      "file": "svg-compartments.png",
+      "sha256": "c134f1d8c7aaa08ddf1c806a34f099beaa822de54b800e8c6b1d6c940e65ce47",
+      "cssWidth": 226,
+      "cssHeight": 175.984375,
+      "viewBox": {
+        "x": 0,
+        "y": 0,
+        "width": 226.00343322753906,
+        "height": 176
+      },
+      "structure": {
+        "nodes": [
+          {
+            "id": "class-pixel-svg-compartments-classId-Service-0",
+            "text": "«interface»Service+名称+run(value) : Result",
+            "bbox": {
+              "x": -105.002,
+              "y": -80,
+              "width": 210.003,
+              "height": 160
+            },
+            "outer": {
+              "x": -105.002,
+              "y": -80,
+              "width": 210.003,
+              "height": 160
+            },
+            "style": {
+              "fill": "rgb(236, 236, 255)",
+              "stroke": "rgb(147, 112, 219)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(19, 19, 0)",
+              "stroke": "none",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          }
+        ],
+        "clusters": [],
+        "edgePaths": [],
+        "edgeLabels": []
+      },
+      "svgStructure": {
+        "root": {
+          "id": "class-pixel-svg-compartments",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "classDiagram",
+          "style": "max-width: 226.00343322753906px;",
+          "viewBox": "0 0 226.00343322753906 176",
+          "role": "graphics-document document",
+          "aria-roledescription": "class"
+        },
+        "markers": [
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-aggregationStart",
+              "class": "marker aggregation class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-aggregationEnd",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-aggregationStart-margin",
+              "class": "marker aggregation class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-aggregationEnd-margin",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-extensionStart",
+              "class": "marker extension class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,7 L18,13 V 1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-extensionEnd",
+              "class": "marker extension class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,1 V 13 L18,7 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-extensionEnd-margin",
+              "class": "marker extension class",
+              "refX": "9",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse",
+              "viewBox": "0 0 20 14"
+            },
+            "childTag": "polygon",
+            "childAttributes": {
+              "points": "10,1 10,13 18,7",
+              "style": "stroke-width: 2; stroke-dasharray: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-compositionStart",
+              "class": "marker composition class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-compositionEnd",
+              "class": "marker composition class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-compositionStart-margin",
+              "class": "marker composition class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "viewBox": "0 0 15 15",
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-compositionEnd-margin",
+              "class": "marker composition class",
+              "refX": "3.5",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-dependencyStart",
+              "class": "marker dependency class",
+              "refX": "6",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-dependencyEnd",
+              "class": "marker dependency class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-dependencyStart-margin",
+              "class": "marker dependency class",
+              "refX": "4",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-dependencyEnd-margin",
+              "class": "marker dependency class",
+              "refX": "16",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-lollipopStart",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-lollipopEnd",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-lollipopStart-margin",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-svg-compartments_class-lollipopEnd-margin",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          }
+        ],
+        "labelContainers": [
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "«interface»",
+            "attributes": {
+              "class": "label",
+              "style": "",
+              "transform": "translate(0,-11)"
+            },
+            "foreignObjectCount": 0,
+            "textCount": 1,
+            "tspanCount": 2,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "Service",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-11)"
+            },
+            "foreignObjectCount": 0,
+            "textCount": 1,
+            "tspanCount": 2,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "+名称",
+            "attributes": {
+              "class": "label",
+              "style": "",
+              "transform": "translate(0,-11)"
+            },
+            "foreignObjectCount": 0,
+            "textCount": 1,
+            "tspanCount": 2,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "+run(value) : Result",
+            "attributes": {
+              "class": "label",
+              "style": "font-style:italic;",
+              "transform": "translate(0,-11)"
+            },
+            "foreignObjectCount": 0,
+            "textCount": 1,
+            "tspanCount": 4,
+            "mathCount": 0
+          }
+        ],
+        "domOrder": [
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "g:clusters",
+          "g:edgePaths",
+          "g:edgeLabels",
+          "g:nodes",
+          "g:node default",
+          "text:",
+          "tspan:text-outer-tspan row",
+          "tspan:text-inner-tspan",
+          "text:",
+          "tspan:text-outer-tspan row",
+          "tspan:text-inner-tspan",
+          "text:",
+          "tspan:text-outer-tspan row",
+          "tspan:text-inner-tspan",
+          "text:",
+          "tspan:text-outer-tspan row",
+          "tspan:text-inner-tspan",
+          "tspan:text-inner-tspan",
+          "tspan:text-inner-tspan",
+          "defs:",
+          "defs:"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "counts": {
+          "defs": 21,
+          "markers": 19,
+          "nodes": 1,
+          "clusters": 0,
+          "edgePaths": 0,
+          "edgeLabels": 0,
+          "foreignObject": 0,
+          "math": 0
+        }
+      }
     }
   ],
-  "fixtureSha256": "706dd83d649c8c763b09311d106522c63fdac0b64516d0af895b82ff78cc465f"
+  "fixtureSha256": "39272a26cf151587343b5a5e4840b3d710a4a52a43964c14f000840e8924b182"
 }

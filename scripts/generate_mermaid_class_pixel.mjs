@@ -25,8 +25,9 @@ const faces = fonts.map(([family, file]) =>
   `@font-face{font-family:"${family}";src:url("${pathToFileURL(path.join(notoDir, file)).href}")}`
 ).join("\n");
 const stack = '"Noto Sans", "Noto Sans CJK SC", "Noto Sans Arabic", "Noto Sans Hebrew", sans-serif';
-const init = (theme = "default") =>
-  `%%{init: {"theme":"${theme}","themeVariables":{"fontFamily":${JSON.stringify(stack)}}}}%%\n`;
+const init = (theme = "default", htmlLabels = true) =>
+  `%%{init: {"theme":"${theme}","htmlLabels":${htmlLabels},` +
+  `"themeVariables":{"fontFamily":${JSON.stringify(stack)}}}}%%\n`;
 const cases = [
   { id: "label-node-html-math", cropOnly: true, cropTarget: "node",
     cropKind: "node-html-math", cropSelector: "g.node .label", source: init() + [
@@ -48,6 +49,16 @@ const cases = [
     cropKind: "cluster-cjk-rtl", cropSelector: "g.cluster .cluster-label", dpr: 1.25,
     theme: "dark", source: init("dark") + [
       "classDiagram", 'namespace Core["\u6838\u5fc3 \u0645\u0631\u062d\u0628\u0627"] {', "class A", "}",
+    ].join("\n") },
+  { id: "label-node-svg-multiline-cjk", cropOnly: true, cropTarget: "node",
+    cropKind: "node-svg-multiline-cjk", cropSelector: "g.node .label-group .label",
+    dpr: 1.5, htmlLabels: false, source: init("default", false) + [
+      "classDiagram", 'class A["Service<br/>中文 مرحبا"]',
+    ].join("\n") },
+  { id: "label-node-svg-rtl-dark", cropOnly: true, cropTarget: "node",
+    cropKind: "node-svg-rtl", cropSelector: "g.node .label-group .label",
+    dpr: 2, theme: "dark", htmlLabels: false, source: init("dark", false) + [
+      "classDiagram", 'class A["مرحبا 123 שלום"]',
     ].join("\n") },
   { id: "compartments", dpr: 1, source: init() + [
     "classDiagram", "accTitle: Service classes", "accDescr: Service inheritance model",
@@ -82,6 +93,11 @@ const cases = [
     "classDiagram", "direction LR", "class Client", "class Service",
     "note for Client \"客户端 مرحبا\"", "Client ..> Service : calls",
   ].join("\n") },
+  { id: "svg-compartments", dpr: 1.25, htmlLabels: false,
+    source: init("default", false) + [
+      "classDiagram", "class Service {", "  <<interface>>", "  +名称",
+      "  +run(value) Result*", "}",
+    ].join("\n") },
 ];
 
 const puppeteer = await import(pathToFileURL(
@@ -134,7 +150,8 @@ try {
     await page.setViewport({ width: 1600, height: 1200, deviceScaleFactor: fixture.dpr });
     await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
     const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
-    await page.evaluate(async ({ mermaidModule, faces, stack, source, id, theme }) => {
+    await page.evaluate(async ({ mermaidModule, faces, stack, source, id, theme,
+                                 htmlLabels }) => {
       const { default: mermaid } = await import(mermaidModule);
       const style = document.createElement("style");
       style.textContent = faces;
@@ -148,7 +165,7 @@ try {
       await document.fonts.ready;
       mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme,
         fontFamily: stack, themeVariables: { fontFamily: stack },
-        class: { padding: 12, hierarchicalNamespaces: true } });
+        htmlLabels, class: { padding: 12, hierarchicalNamespaces: true } });
       // The directive remains in the fixture source so the native cache sees the
       // same theme. Mermaid generates browser theme CSS during initialize(), so
       // applying it again during parsing would reset the fixed font to the
@@ -160,7 +177,7 @@ try {
       await document.fonts.ready;
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }, { mermaidModule, faces, stack, source: fixture.source, id: fixture.id,
-         theme: fixture.theme ?? "default" });
+         theme: fixture.theme ?? "default", htmlLabels: fixture.htmlLabels ?? true });
     const dimensions = await page.$eval("svg", (svg) => {
       const rect = svg.getBoundingClientRect();
       const viewBox = svg.viewBox.baseVal;
@@ -211,10 +228,12 @@ try {
           text: element.textContent ?? "",
           attributes: attributes(element),
           foreignObjectCount: element.querySelectorAll("foreignObject").length,
+          textCount: element.querySelectorAll("text").length,
+          tspanCount: element.querySelectorAll("tspan").length,
           mathCount: element.querySelectorAll("math").length,
         }));
       const domOrder = [...svg.querySelectorAll(
-        "defs, marker, g.clusters, g.edgePaths, g.edgeLabels, g.nodes, g.cluster, g.edgeLabel, g.node, foreignObject, math")]
+        "defs, marker, g.clusters, g.edgePaths, g.edgeLabels, g.nodes, g.cluster, g.edgeLabel, g.node, foreignObject, text, tspan, math")]
         .map((element) => `${element.tagName}:${element.getAttribute("class") ?? ""}`);
       const rootAttributes = attributes(svg);
       const ariaTitle = rootAttributes["aria-labelledby"]
@@ -247,6 +266,9 @@ try {
             fontStyle: style.fontStyle, direction: style.direction },
           foreignObjectCount: element.querySelectorAll("foreignObject").length +
             (element.tagName === "foreignObject" ? 1 : 0),
+          textCount: element.querySelectorAll("text").length +
+            (element.tagName === "text" ? 1 : 0),
+          tspanCount: element.querySelectorAll("tspan").length,
           mathCount: element.querySelectorAll("math").length };
       });
       const crop = await page.$eval(fixture.cropSelector, (element) => {

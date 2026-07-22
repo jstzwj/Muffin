@@ -163,6 +163,13 @@ int main(int argc, char** argv) {
                   QLatin1String("\\+find(id) : Optional&lt;T&gt;"),
           QStringLiteral("Class generic label/member normalization drifted"));
 
+  const ClassDiagram breakDiagram = ClassDiagram::parse(QStringLiteral(
+      "classDiagram\nclass Service[\"first<br/>second<BR />third\"]"));
+  require(breakDiagram.data().classes.size() == 1 &&
+              breakDiagram.data().classes.first().label ==
+                  QLatin1String("first<br>second<br>third"),
+          QStringLiteral("Class label break-tag normalization drifted"));
+
   const auto requireResourceLimit = [](const QString& source,
                                        const ClassLimits& limits,
                                        int line, int column,

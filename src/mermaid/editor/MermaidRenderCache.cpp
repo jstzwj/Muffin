@@ -312,6 +312,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       measureOptions.fontFamily = firstFontFamily(themeVars.fontFamily);
       measureOptions.fontPixelSize = pixelValue(themeVars.fontSize, 16.0);
       measureOptions.lineHeight = measureOptions.fontPixelSize * 1.5;
+      measureOptions.htmlLabels = options.htmlLabels;
       const classdiagram::ClassLayoutMeasurements labelMeasurements =
           classdiagram::measureClassLayoutLabels(input, measureOptions);
       const QVector<classdiagram::ClassBoxGeometry> boxes =

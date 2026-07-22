@@ -69,17 +69,25 @@ struct ClassLayoutOptions {
   bool hideEmptyMembersBox = false;
 };
 
+struct ClassTextMeasurement {
+  QRectF bounds;
+  qsizetype lineCount = 1;
+  bool svgText = false;
+};
+
 struct ClassNodeMeasurements {
-  QVector<QSizeF> annotations;
-  QVector<QSizeF> labels;
-  QVector<QSizeF> members;
-  QVector<QSizeF> methods;
+  QVector<ClassTextMeasurement> annotations;
+  QVector<ClassTextMeasurement> labels;
+  QVector<ClassTextMeasurement> members;
+  QVector<ClassTextMeasurement> methods;
+  qreal textPadding = 0.0;
 };
 
 struct ClassLabelMeasureOptions {
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontPixelSize = 16.0;
   qreal lineHeight = 24.0;
+  bool htmlLabels = true;
 };
 
 using ClassLayoutMeasurements = QMap<QString, ClassNodeMeasurements>;

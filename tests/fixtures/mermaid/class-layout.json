@@ -72,7 +72,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 82.906,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "label": [
@@ -80,7 +82,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 53.391,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [
@@ -88,7 +92,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 101.188,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "methods": [
@@ -96,7 +102,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 143.703,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ]
             },
@@ -126,7 +134,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 82.906,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -155,7 +165,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 53.391,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -184,7 +196,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 101.188,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -213,7 +227,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 143.703,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -254,7 +270,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 47.641,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -297,7 +315,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 47.641,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -1171,7 +1191,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 24.203,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -1214,7 +1236,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 24.203,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -1277,7 +1301,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 55.031,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -1320,7 +1346,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 55.031,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -2271,7 +2299,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.234,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -2314,7 +2344,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.234,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -2377,7 +2409,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.406,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -2420,7 +2454,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.406,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -3334,7 +3370,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.234,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -3377,7 +3415,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.234,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -3440,7 +3480,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.406,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -3483,7 +3525,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.406,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -3546,7 +3590,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.125,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -3589,7 +3635,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.125,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -4646,7 +4694,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.234,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -4689,7 +4739,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.234,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -4752,7 +4804,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.406,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -4795,7 +4849,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.406,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -4858,7 +4914,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.125,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -4901,7 +4959,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.125,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -4964,7 +5024,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 11.688,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -5007,7 +5069,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 11.688,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -5070,7 +5134,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 8.906,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -5113,7 +5179,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 8.906,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -5176,7 +5244,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 8.313,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -5219,7 +5289,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 8.313,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -5282,7 +5354,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 11.656,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -5325,7 +5399,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 11.656,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -5388,7 +5464,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 11.859,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -5431,7 +5509,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 11.859,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -6698,7 +6778,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 53.391,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -6741,7 +6823,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 53.391,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -6804,7 +6888,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 43.063,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -6847,7 +6933,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 43.063,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -7853,7 +7941,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 118.469,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [
@@ -7861,7 +7951,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 41.156,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "methods": [
@@ -7869,7 +7961,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 127.375,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ]
             },
@@ -7910,7 +8004,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 118.469,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -7939,7 +8035,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 41.156,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -7968,7 +8066,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 127.375,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -8706,7 +8806,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 59.047,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "label": [
@@ -8714,7 +8816,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 52.734,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [
@@ -8722,13 +8826,17 @@
                   "x": 0,
                   "y": 0,
                   "width": 72.313,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 },
                 {
                   "x": 0,
                   "y": 0,
                   "width": 99.828,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "methods": [
@@ -8736,13 +8844,17 @@
                   "x": 0,
                   "y": 0,
                   "width": 150.219,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 },
                 {
                   "x": 0,
                   "y": 0,
                   "width": 115.203,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ]
             },
@@ -8772,7 +8884,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 59.047,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -8801,7 +8915,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 52.734,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -8830,13 +8946,17 @@
                     "x": 0,
                     "y": 0,
                     "width": 72.313,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   },
                   {
                     "x": 0,
                     "y": 0,
                     "width": 99.828,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -8875,13 +8995,17 @@
                     "x": 0,
                     "y": 0,
                     "width": 150.219,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   },
                   {
                     "x": 0,
                     "y": 0,
                     "width": 115.203,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -9649,7 +9773,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 109.641,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [
@@ -9657,7 +9783,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 85.469,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "methods": [
@@ -9665,7 +9793,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 100.672,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ]
             },
@@ -9706,7 +9836,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 109.641,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -9735,7 +9867,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 85.469,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -9764,7 +9898,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 100.672,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -10483,7 +10619,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 102.219,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -10526,7 +10664,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 102.219,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -11250,7 +11390,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 24.203,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -11293,7 +11435,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 24.203,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -12058,7 +12202,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 82.906,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "label": [
@@ -12066,7 +12212,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 80.516,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [
@@ -12074,13 +12222,17 @@
                   "x": 0,
                   "y": 0,
                   "width": 108.031,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 },
                 {
                   "x": 0,
                   "y": 0,
                   "width": 161.281,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "methods": [
@@ -12088,13 +12240,17 @@
                   "x": 0,
                   "y": 0,
                   "width": 166.813,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 },
                 {
                   "x": 0,
                   "y": 0,
                   "width": 180.125,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ]
             },
@@ -12124,7 +12280,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 82.906,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -12153,7 +12311,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 80.516,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -12182,13 +12342,17 @@
                     "x": 0,
                     "y": 0,
                     "width": 108.031,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   },
                   {
                     "x": 0,
                     "y": 0,
                     "width": 161.281,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -12227,13 +12391,17 @@
                     "x": 0,
                     "y": 0,
                     "width": 166.813,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   },
                   {
                     "x": 0,
                     "y": 0,
                     "width": 180.125,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -13053,7 +13221,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 53.391,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -13096,7 +13266,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 53.391,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -14010,7 +14182,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 39.563,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -14053,7 +14227,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 39.563,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -15037,7 +15213,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.234,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -15080,7 +15258,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.234,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -15143,7 +15323,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.406,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -15186,7 +15368,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.406,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -15249,7 +15433,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.125,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -15292,7 +15478,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.125,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -15355,7 +15543,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 11.688,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -15398,7 +15588,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 11.688,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -16441,7 +16633,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.234,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -16484,7 +16678,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.234,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -16547,7 +16743,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.406,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -16590,7 +16788,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.406,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -16653,7 +16853,9 @@
                   "x": 0,
                   "y": 0,
                   "width": 10.125,
-                  "height": 24
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
                 }
               ],
               "members": [],
@@ -16696,7 +16898,9 @@
                     "x": 0,
                     "y": 0,
                     "width": 10.125,
-                    "height": 24
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
                   }
                 ],
                 "itemDetails": [
@@ -17544,162 +17748,42 @@
       }
     },
     {
-      "id": "compound-self-parallel-relations",
-      "source": "classDiagram\ndirection LR\nnamespace Outer {\n  class A\n  namespace Inner {\n    class B\n  }\n}\nclass C\nA \"self\" --> \"one\" A : recursive\nA --> B : first\nA ..> B : second\nB o-- C : cross",
+      "id": "svg-label-compartments",
+      "htmlLabels": false,
+      "source": "classDiagram\nclass Service {\n  <<interface>>\n  +String name\n  +run(input) Result*\n}",
       "expected": {
         "nodes": [
           {
-            "id": "Outer",
-            "label": "Outer",
-            "text": "",
-            "shape": "rect",
-            "parentId": "",
-            "cssClasses": "",
-            "cssStyles": [],
-            "styles": [],
-            "annotations": [],
-            "members": [],
-            "methods": [],
-            "padding": 12,
-            "isGroup": true,
-            "look": "classic"
-          },
-          {
-            "id": "Outer.Inner",
-            "label": "Inner",
-            "text": "",
-            "shape": "rect",
-            "parentId": "Outer",
-            "cssClasses": "",
-            "cssStyles": [],
-            "styles": [],
-            "annotations": [],
-            "members": [],
-            "methods": [],
-            "padding": 12,
-            "isGroup": true,
-            "look": "classic"
-          },
-          {
-            "id": "A",
-            "label": "A",
-            "text": "A",
-            "shape": "classBox",
-            "parentId": "Outer",
-            "cssClasses": "default",
-            "cssStyles": [],
-            "styles": [],
-            "annotations": [],
-            "members": [],
-            "methods": [],
-            "padding": null,
-            "isGroup": false,
-            "look": "classic"
-          },
-          {
-            "id": "B",
-            "label": "B",
-            "text": "B",
-            "shape": "classBox",
-            "parentId": "Outer.Inner",
-            "cssClasses": "default",
-            "cssStyles": [],
-            "styles": [],
-            "annotations": [],
-            "members": [],
-            "methods": [],
-            "padding": null,
-            "isGroup": false,
-            "look": "classic"
-          },
-          {
-            "id": "C",
-            "label": "C",
-            "text": "C",
+            "id": "Service",
+            "label": "Service",
+            "text": "Service",
             "shape": "classBox",
             "parentId": "",
             "cssClasses": "default",
             "cssStyles": [],
             "styles": [],
-            "annotations": [],
-            "members": [],
-            "methods": [],
+            "annotations": [
+              "interface"
+            ],
+            "members": [
+              {
+                "text": "\\+String name",
+                "cssStyle": ""
+              }
+            ],
+            "methods": [
+              {
+                "text": "\\+run(input) : Result",
+                "cssStyle": "font-style:italic;"
+              }
+            ],
             "padding": null,
             "isGroup": false,
             "look": "classic"
           }
         ],
-        "edges": [
-          {
-            "id": "id_A_A_1",
-            "start": "A",
-            "end": "A",
-            "label": "recursive",
-            "pattern": "solid",
-            "arrowTypeStart": "none",
-            "arrowTypeEnd": "dependency",
-            "startLabelRight": "self",
-            "endLabelLeft": "one",
-            "style": [],
-            "labelStyle": [
-              "display: inline-block"
-            ],
-            "classes": "relation",
-            "look": "classic"
-          },
-          {
-            "id": "id_A_B_2",
-            "start": "A",
-            "end": "B",
-            "label": "first",
-            "pattern": "solid",
-            "arrowTypeStart": "none",
-            "arrowTypeEnd": "dependency",
-            "startLabelRight": "",
-            "endLabelLeft": "",
-            "style": [],
-            "labelStyle": [
-              "display: inline-block"
-            ],
-            "classes": "relation",
-            "look": "classic"
-          },
-          {
-            "id": "id_A_B_3",
-            "start": "A",
-            "end": "B",
-            "label": "second",
-            "pattern": "dashed",
-            "arrowTypeStart": "none",
-            "arrowTypeEnd": "dependency",
-            "startLabelRight": "",
-            "endLabelLeft": "",
-            "style": [],
-            "labelStyle": [
-              "display: inline-block"
-            ],
-            "classes": "relation",
-            "look": "classic"
-          },
-          {
-            "id": "id_B_C_4",
-            "start": "B",
-            "end": "C",
-            "label": "cross",
-            "pattern": "solid",
-            "arrowTypeStart": "aggregation",
-            "arrowTypeEnd": "none",
-            "startLabelRight": "",
-            "endLabelLeft": "",
-            "style": [],
-            "labelStyle": [
-              "display: inline-block"
-            ],
-            "classes": "relation",
-            "look": "classic"
-          }
-        ],
-        "direction": "LR",
+        "edges": [],
+        "direction": "TB",
         "nodeSpacing": 50,
         "rankSpacing": 50,
         "markers": [
@@ -17711,318 +17795,197 @@
         ],
         "renderedNodes": [
           {
-            "id": "A",
+            "id": "Service",
             "measured": {
-              "annotation": [],
-              "label": [
+              "annotation": [
                 {
                   "x": 0,
-                  "y": 0,
-                  "width": 10.234,
-                  "height": 24
+                  "y": -1.002,
+                  "width": 82.867,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
                 }
               ],
-              "members": [],
-              "methods": []
-            },
-            "geometry": {
-              "bbox": {
-                "x": -17.117,
-                "y": -42,
-                "width": 34.234,
-                "height": 84
-              },
-              "outer": {
-                "x": -17.117,
-                "y": -42,
-                "width": 34.234,
-                "height": 84
-              },
-              "annotation": {
-                "bbox": {
-                  "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
-                },
-                "transform": "translate(0, -18)",
-                "items": [],
-                "itemDetails": []
-              },
-              "label": {
-                "bbox": {
-                  "x": 0,
-                  "y": -12,
-                  "width": 10.234,
-                  "height": 24
-                },
-                "transform": "translate(-5.1171875, -18)",
-                "items": [
-                  {
-                    "x": 0,
-                    "y": 0,
-                    "width": 10.234,
-                    "height": 24
-                  }
-                ],
-                "itemDetails": [
-                  {
-                    "bbox": {
-                      "x": 0,
-                      "y": 0,
-                      "width": 10.234,
-                      "height": 24
-                    },
-                    "transform": "translate(0,-12)",
-                    "text": "A"
-                  }
-                ]
-              },
-              "members": {
-                "bbox": {
-                  "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
-                },
-                "transform": "translate(-5.1171875, 30)",
-                "items": [],
-                "itemDetails": []
-              },
-              "methods": {
-                "bbox": {
-                  "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
-                },
-                "transform": "translate(-5.1171875, 60)",
-                "items": [],
-                "itemDetails": []
-              },
-              "dividers": [
+              "label": [
                 {
-                  "x": -17.117,
-                  "y": 6,
-                  "width": 34.234,
-                  "height": 0.001
-                },
+                  "x": -1,
+                  "y": -1.002,
+                  "width": 55.329,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
+                }
+              ],
+              "members": [
                 {
-                  "x": -17.117,
-                  "y": 24,
-                  "width": 34.234,
-                  "height": 0.001
+                  "x": 0,
+                  "y": -1.002,
+                  "width": 101.15,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
+                }
+              ],
+              "methods": [
+                {
+                  "x": 0,
+                  "y": -1.002,
+                  "width": 143.863,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
                 }
               ]
-            }
-          },
-          {
-            "id": "B",
-            "measured": {
-              "annotation": [],
-              "label": [
-                {
-                  "x": 0,
-                  "y": 0,
-                  "width": 10.406,
-                  "height": 24
-                }
-              ],
-              "members": [],
-              "methods": []
             },
             "geometry": {
               "bbox": {
-                "x": -17.203,
-                "y": -42,
-                "width": 34.406,
-                "height": 84
+                "x": -104.689,
+                "y": -80,
+                "width": 209.378,
+                "height": 160
               },
               "outer": {
-                "x": -17.203,
-                "y": -42,
-                "width": 34.406,
-                "height": 84
+                "x": -104.689,
+                "y": -80,
+                "width": 209.378,
+                "height": 160
               },
               "annotation": {
                 "bbox": {
                   "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
+                  "y": -12.002,
+                  "width": 82.867,
+                  "height": 22.002
                 },
-                "transform": "translate(0, -18)",
-                "items": [],
-                "itemDetails": []
-              },
-              "label": {
-                "bbox": {
-                  "x": 0,
-                  "y": -12,
-                  "width": 10.406,
-                  "height": 24
-                },
-                "transform": "translate(-5.203125, -18)",
+                "transform": "translate(-41.453125, -60)",
                 "items": [
                   {
                     "x": 0,
-                    "y": 0,
-                    "width": 10.406,
-                    "height": 24
+                    "y": -1.002,
+                    "width": 82.867,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
                   }
                 ],
                 "itemDetails": [
                   {
                     "bbox": {
                       "x": 0,
-                      "y": 0,
-                      "width": 10.406,
-                      "height": 24
+                      "y": -1.002,
+                      "width": 82.867,
+                      "height": 22.002
                     },
-                    "transform": "translate(0,-12)",
-                    "text": "B"
+                    "transform": "translate(0,-11)",
+                    "text": "«interface»"
+                  }
+                ]
+              },
+              "label": {
+                "bbox": {
+                  "x": -1,
+                  "y": -12.002,
+                  "width": 55.329,
+                  "height": 22.002
+                },
+                "transform": "translate(-27.67597198486328, -38)",
+                "items": [
+                  {
+                    "x": -1,
+                    "y": -1.002,
+                    "width": 55.329,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": -1,
+                      "y": -1.002,
+                      "width": 55.329,
+                      "height": 22.002
+                    },
+                    "transform": "translate(0,-11)",
+                    "text": "Service"
                   }
                 ]
               },
               "members": {
                 "bbox": {
                   "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
+                  "y": -12.002,
+                  "width": 101.15,
+                  "height": 22.002
                 },
-                "transform": "translate(-5.203125, 30)",
-                "items": [],
-                "itemDetails": []
-              },
-              "methods": {
-                "bbox": {
-                  "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
-                },
-                "transform": "translate(-5.203125, 60)",
-                "items": [],
-                "itemDetails": []
-              },
-              "dividers": [
-                {
-                  "x": -17.203,
-                  "y": 6,
-                  "width": 34.406,
-                  "height": 0.001
-                },
-                {
-                  "x": -17.203,
-                  "y": 24,
-                  "width": 34.406,
-                  "height": 0.001
-                }
-              ]
-            }
-          },
-          {
-            "id": "C",
-            "measured": {
-              "annotation": [],
-              "label": [
-                {
-                  "x": 0,
-                  "y": 0,
-                  "width": 10.125,
-                  "height": 24
-                }
-              ],
-              "members": [],
-              "methods": []
-            },
-            "geometry": {
-              "bbox": {
-                "x": -17.062,
-                "y": -42,
-                "width": 34.125,
-                "height": 84
-              },
-              "outer": {
-                "x": -17.062,
-                "y": -42,
-                "width": 34.125,
-                "height": 84
-              },
-              "annotation": {
-                "bbox": {
-                  "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
-                },
-                "transform": "translate(0, -18)",
-                "items": [],
-                "itemDetails": []
-              },
-              "label": {
-                "bbox": {
-                  "x": 0,
-                  "y": -12,
-                  "width": 10.125,
-                  "height": 24
-                },
-                "transform": "translate(-5.0625, -18)",
+                "transform": "translate(-92.68921661376953, 8)",
                 "items": [
                   {
                     "x": 0,
-                    "y": 0,
-                    "width": 10.125,
-                    "height": 24
+                    "y": -1.002,
+                    "width": 101.15,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
                   }
                 ],
                 "itemDetails": [
                   {
                     "bbox": {
                       "x": 0,
-                      "y": 0,
-                      "width": 10.125,
-                      "height": 24
+                      "y": -1.002,
+                      "width": 101.15,
+                      "height": 22.002
                     },
-                    "transform": "translate(0,-12)",
-                    "text": "C"
+                    "transform": "translate(0,-11)",
+                    "text": "+String name"
                   }
                 ]
-              },
-              "members": {
-                "bbox": {
-                  "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
-                },
-                "transform": "translate(-5.0625, 30)",
-                "items": [],
-                "itemDetails": []
               },
               "methods": {
                 "bbox": {
                   "x": 0,
-                  "y": 0,
-                  "width": 0,
-                  "height": 0
+                  "y": -12.002,
+                  "width": 143.863,
+                  "height": 22.002
                 },
-                "transform": "translate(-5.0625, 60)",
-                "items": [],
-                "itemDetails": []
+                "transform": "translate(-92.68921661376953, 54)",
+                "items": [
+                  {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 143.863,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": 0,
+                      "y": -1.002,
+                      "width": 143.863,
+                      "height": 22.002
+                    },
+                    "transform": "translate(0,-11)",
+                    "text": "+run(input) : Result"
+                  }
+                ]
               },
               "dividers": [
                 {
-                  "x": -17.062,
-                  "y": 6,
-                  "width": 34.125,
+                  "x": -104.689,
+                  "y": -12,
+                  "width": 209.378,
                   "height": 0.001
                 },
                 {
-                  "x": -17.062,
-                  "y": 24,
-                  "width": 34.125,
+                  "x": -104.689,
+                  "y": 34,
+                  "width": 209.378,
                   "height": 0.001
                 }
               ]
@@ -18032,623 +17995,64 @@
         "placement": {
           "nodes": [
             {
-              "id": "A",
+              "id": "Service",
               "dx": 0,
               "dy": 0,
-              "width": 34.234,
-              "height": 84,
+              "width": 209.378,
+              "height": 160,
               "labels": [
                 {
                   "bbox": {
                     "x": 0,
-                    "y": 0,
-                    "width": 10.234,
-                    "height": 24
+                    "y": -1.002,
+                    "width": 82.867,
+                    "height": 22.002
                   },
-                  "dx": 0,
-                  "dy": -18
-                }
-              ]
-            },
-            {
-              "id": "B",
-              "dx": 163.1,
-              "dy": 70.499,
-              "width": 34.406,
-              "height": 84,
-              "labels": [
+                  "dx": -0.02,
+                  "dy": -60.996
+                },
+                {
+                  "bbox": {
+                    "x": -1,
+                    "y": -1.002,
+                    "width": 55.329,
+                    "height": 22.002
+                  },
+                  "dx": -1.011,
+                  "dy": -38.998
+                },
                 {
                   "bbox": {
                     "x": 0,
-                    "y": 0,
-                    "width": 10.406,
-                    "height": 24
+                    "y": -1.002,
+                    "width": 101.15,
+                    "height": 22.002
                   },
-                  "dx": 163.1,
-                  "dy": 52.5
-                }
-              ]
-            },
-            {
-              "id": "C",
-              "dx": 340.802,
-              "dy": 244.498,
-              "width": 34.125,
-              "height": 84,
-              "labels": [
+                  "dx": -42.11,
+                  "dy": 6.998
+                },
                 {
                   "bbox": {
                     "x": 0,
-                    "y": 0,
-                    "width": 10.125,
-                    "height": 24
+                    "y": -1.002,
+                    "width": 143.863,
+                    "height": 22.002
                   },
-                  "dx": 340.802,
-                  "dy": 226.498
+                  "dx": -20.756,
+                  "dy": 52.994
                 }
               ]
             }
           ],
-          "edgeLabels": [
-            {
-              "domId": "",
-              "text": "recursive",
-              "bbox": {
-                "x": -34.219,
-                "y": -12,
-                "width": 68.438,
-                "height": 24
-              },
-              "dx": 264.521,
-              "dy": -65.05
-            },
-            {
-              "domId": "",
-              "text": "first",
-              "bbox": {
-                "x": -14.844,
-                "y": -12,
-                "width": 29.688,
-                "height": 24
-              },
-              "dx": 69.007,
-              "dy": 48.5
-            },
-            {
-              "domId": "",
-              "text": "second",
-              "bbox": {
-                "x": -26.891,
-                "y": -12,
-                "width": 53.781,
-                "height": 24
-              },
-              "dx": 69.007,
-              "dy": 98.999
-            },
-            {
-              "domId": "",
-              "text": "cross",
-              "bbox": {
-                "x": -19.492,
-                "y": -12,
-                "width": 38.984,
-                "height": 24
-              },
-              "dx": 264.521,
-              "dy": 70.499
-            }
-          ],
-          "clusters": [
-            {
-              "id": "Outer",
-              "domId": "class-layout-16-Outer",
-              "text": "Outer",
-              "bbox": {
-                "x": 8,
-                "y": 8,
-                "width": 424.984,
-                "height": 271.05
-              },
-              "labels": [
-                {
-                  "bbox": {
-                    "x": 0,
-                    "y": 0,
-                    "width": 43.797,
-                    "height": 24
-                  },
-                  "dx": 170.374,
-                  "dy": -91.549
-                }
-              ],
-              "dx": 170.374,
-              "dy": 31.975
-            },
-            {
-              "id": "Outer.Inner",
-              "domId": "class-layout-16-Outer.Inner",
-              "text": "Inner",
-              "bbox": {
-                "x": 171.016,
-                "y": 101.55,
-                "width": 84.406,
-                "height": 157.5
-              },
-              "labels": [
-                {
-                  "bbox": {
-                    "x": 0,
-                    "y": 0,
-                    "width": 40.844,
-                    "height": 24
-                  },
-                  "dx": 163.1,
-                  "dy": 2
-                }
-              ],
-              "dx": 163.101,
-              "dy": 68.749
-            }
-          ]
+          "edgeLabels": [],
+          "clusters": []
         },
         "structure": {
           "origin": {
-            "x": 50.118,
-            "y": 111.549
+            "x": 112.688,
+            "y": 87.992
           },
-          "edges": [
-            {
-              "id": "id_A_A_1",
-              "path": {
-                "id": "class-layout-16-A-cyclic-special-1",
-                "class": "edge-thickness-normal edge-pattern-solid relation",
-                "d": "M67.234,95.415L75.883,87.262C84.531,79.11,101.828,62.805,119.125,54.652C136.422,46.5,153.719,46.5,169.393,46.5C185.067,46.5,199.118,46.5,206.143,46.5L213.169,46.5",
-                "style": ";;;",
-                "marker-start": "",
-                "marker-end": "",
-                "data-points": "W3sieCI6NjcuMjM0Mzc1LCJ5Ijo5NS40MTQ1MzYzOTgxNjAxNX0seyJ4IjoxMTkuMTI1LCJ5Ijo0Ni41fSx7IngiOjE3MS4wMTU2MjUsInkiOjQ2LjV9LHsieCI6MjEzLjE2ODc0OTk5OTI1NDk0LCJ5Ijo0Ni41fV0="
-              },
-              "normalizedPoints": [],
-              "normalizedPath": [],
-              "segments": [
-                {
-                  "path": {
-                    "id": "class-layout-16-A-cyclic-special-1",
-                    "class": "edge-thickness-normal edge-pattern-solid relation",
-                    "d": "M67.234,95.415L75.883,87.262C84.531,79.11,101.828,62.805,119.125,54.652C136.422,46.5,153.719,46.5,169.393,46.5C185.067,46.5,199.118,46.5,206.143,46.5L213.169,46.5",
-                    "style": ";;;",
-                    "marker-start": "",
-                    "marker-end": "",
-                    "data-points": "W3sieCI6NjcuMjM0Mzc1LCJ5Ijo5NS40MTQ1MzYzOTgxNjAxNX0seyJ4IjoxMTkuMTI1LCJ5Ijo0Ni41fSx7IngiOjE3MS4wMTU2MjUsInkiOjQ2LjV9LHsieCI6MjEzLjE2ODc0OTk5OTI1NDk0LCJ5Ijo0Ni41fV0="
-                  },
-                  "normalizedPoints": [
-                    {
-                      "x": 17.117,
-                      "y": -16.135
-                    },
-                    {
-                      "x": 69.007,
-                      "y": -65.05
-                    },
-                    {
-                      "x": 120.898,
-                      "y": -65.05
-                    },
-                    {
-                      "x": 163.05,
-                      "y": -65.05
-                    }
-                  ],
-                  "normalizedPath": [
-                    "M",
-                    17.117,
-                    -16.135,
-                    "L",
-                    25.766,
-                    -24.288,
-                    "C",
-                    34.414,
-                    -32.44,
-                    51.71,
-                    -48.745,
-                    69.007,
-                    -56.898,
-                    "C",
-                    86.304,
-                    -65.05,
-                    103.601,
-                    -65.05,
-                    119.275,
-                    -65.05,
-                    "C",
-                    134.949,
-                    -65.05,
-                    149,
-                    -65.05,
-                    156.025,
-                    -65.05,
-                    "L",
-                    163.051,
-                    -65.05
-                  ]
-                },
-                {
-                  "path": {
-                    "id": "class-layout-16-A-cyclic-special-mid",
-                    "class": "edge-thickness-normal edge-pattern-solid relation",
-                    "d": "M213.269,46.5L220.294,46.5C227.32,46.5,241.371,46.5,258.266,46.5C275.161,46.5,294.901,46.5,317.476,51.755C340.051,57.01,365.461,67.52,378.167,72.774L390.872,78.029",
-                    "style": ";;;",
-                    "marker-start": "",
-                    "marker-end": "",
-                    "data-points": "W3sieCI6MjEzLjI2ODc1MDAwMDc0NTA2LCJ5Ijo0Ni41fSx7IngiOjI1NS40MjE4NzUsInkiOjQ2LjV9LHsieCI6MzE0LjY0MDYyNSwieSI6NDYuNX0seyJ4IjozOTAuODcxODc0OTk5MjU0OTQsInkiOjc4LjAyOTMxOTk1MTI3NjI0fV0="
-                  },
-                  "normalizedPoints": [
-                    {
-                      "x": 163.15,
-                      "y": -65.05
-                    },
-                    {
-                      "x": 205.303,
-                      "y": -65.05
-                    },
-                    {
-                      "x": 264.521,
-                      "y": -65.05
-                    },
-                    {
-                      "x": 340.752,
-                      "y": -33.52
-                    }
-                  ],
-                  "normalizedPath": [
-                    "M",
-                    163.151,
-                    -65.05,
-                    "L",
-                    170.176,
-                    -65.05,
-                    "C",
-                    177.201,
-                    -65.05,
-                    191.252,
-                    -65.05,
-                    208.147,
-                    -65.05,
-                    "C",
-                    225.042,
-                    -65.05,
-                    244.782,
-                    -65.05,
-                    267.357,
-                    -59.795,
-                    "C",
-                    289.932,
-                    -54.54,
-                    315.341,
-                    -44.03,
-                    328.047,
-                    -38.776,
-                    "L",
-                    340.752,
-                    -33.521
-                  ]
-                },
-                {
-                  "path": {
-                    "id": "class-layout-16-A-cyclic-special-2",
-                    "class": "edge-thickness-normal edge-pattern-solid relation",
-                    "d": "M390.872,78.052L378.167,78.635C365.461,79.218,340.051,80.384,317.476,80.967C294.901,81.55,275.161,81.55,258.258,81.55C241.354,81.55,227.286,81.55,213.219,81.55C199.151,81.55,185.083,81.55,169.401,81.55C153.719,81.55,136.422,81.55,120.042,84.911C103.662,88.272,88.2,94.994,80.468,98.355L72.737,101.716",
-                    "style": ";;;",
-                    "marker-start": "",
-                    "marker-end": "url(#class-layout-16_class-dependencyEnd)",
-                    "data-points": "W3sieCI6MzkwLjg3MTg3NDk5OTI1NDk0LCJ5Ijo3OC4wNTIyOTQxNDI1MjQ0M30seyJ4IjozMTQuNjQwNjI1LCJ5Ijo4MS41NTAwMDAwMDA3NDUwNn0seyJ4IjoyNTUuNDIxODc1LCJ5Ijo4MS41NTAwMDAwMDA3NDUwNn0seyJ4IjoyMTMuMjE4NzUsInkiOjgxLjU1MDAwMDAwMDc0NTA2fSx7IngiOjE3MS4wMTU2MjUsInkiOjgxLjU1MDAwMDAwMDc0NTA2fSx7IngiOjExOS4xMjUsInkiOjgxLjU1MDAwMDAwMDc0NTA2fSx7IngiOjY3LjIzNDM3NSwieSI6MTA0LjEwODU4NzExNzI0MDAyfV0="
-                  },
-                  "normalizedPoints": [
-                    {
-                      "x": 340.752,
-                      "y": -33.497
-                    },
-                    {
-                      "x": 264.521,
-                      "y": -30
-                    },
-                    {
-                      "x": 205.303,
-                      "y": -30
-                    },
-                    {
-                      "x": 163.1,
-                      "y": -30
-                    },
-                    {
-                      "x": 120.898,
-                      "y": -30
-                    },
-                    {
-                      "x": 69.007,
-                      "y": -30
-                    },
-                    {
-                      "x": 17.117,
-                      "y": -7.441
-                    }
-                  ],
-                  "normalizedPath": [
-                    "M",
-                    340.752,
-                    -33.498,
-                    "L",
-                    328.047,
-                    -32.915,
-                    "C",
-                    315.341,
-                    -32.332,
-                    289.932,
-                    -31.166,
-                    267.357,
-                    -30.583,
-                    "C",
-                    244.782,
-                    -30,
-                    225.042,
-                    -30,
-                    208.139,
-                    -30,
-                    "C",
-                    191.235,
-                    -30,
-                    177.167,
-                    -30,
-                    163.101,
-                    -30,
-                    "C",
-                    149.033,
-                    -30,
-                    134.965,
-                    -30,
-                    119.283,
-                    -30,
-                    "C",
-                    103.601,
-                    -30,
-                    86.304,
-                    -30,
-                    69.924,
-                    -26.639,
-                    "C",
-                    53.544,
-                    -23.278,
-                    38.083,
-                    -16.556,
-                    30.351,
-                    -13.195,
-                    "L",
-                    22.62,
-                    -9.834
-                  ]
-                }
-              ],
-              "terminals": {
-                "startLabelRight": {
-                  "text": "self",
-                  "dx": 40.14,
-                  "dy": -17.224,
-                  "bbox": {
-                    "x": -9.055,
-                    "y": -8.25,
-                    "width": 36,
-                    "height": 12
-                  },
-                  "transform": "translate(90.25750509672402, 94.32571514429036)"
-                },
-                "endLabelLeft": {
-                  "text": "one",
-                  "dx": 34.146,
-                  "dy": -5.662,
-                  "bbox": {
-                    "x": 0,
-                    "y": 0,
-                    "width": 27,
-                    "height": 12
-                  },
-                  "transform": "translate(84.2637111454072, 105.88784135621742)"
-                }
-              }
-            },
-            {
-              "id": "id_A_B_2",
-              "path": {
-                "id": "class-layout-16-id_A_B_2",
-                "class": "edge-thickness-normal edge-pattern-solid relation",
-                "d": "M67.234,123.58L75.883,129.659C84.531,135.737,101.828,147.893,119.125,153.972C136.422,160.05,153.719,160.05,165.647,161.76C177.575,163.47,184.135,166.889,187.415,168.599L190.695,170.309",
-                "style": ";;;",
-                "marker-start": "",
-                "marker-end": "url(#class-layout-16_class-dependencyEnd)",
-                "data-points": "W3sieCI6NjcuMjM0Mzc1LCJ5IjoxMjMuNTgwMjg0MTYyNDExNTN9LHsieCI6MTE5LjEyNSwieSI6MTYwLjA1MDAwMDAwMDc0NTA2fSx7IngiOjE3MS4wMTU2MjUsInkiOjE2MC4wNTAwMDAwMDA3NDUwNn0seyJ4IjoxOTYuMDE1NjI1LCJ5IjoxNzMuMDgyMjEwMjkzMjI5M31d"
-              },
-              "normalizedPoints": [
-                {
-                  "x": 17.117,
-                  "y": 12.03
-                },
-                {
-                  "x": 69.007,
-                  "y": 48.5
-                },
-                {
-                  "x": 120.898,
-                  "y": 48.5
-                },
-                {
-                  "x": 145.897,
-                  "y": 61.532
-                }
-              ],
-              "normalizedPath": [
-                "M",
-                17.117,
-                12.03,
-                "L",
-                25.766,
-                18.109,
-                "C",
-                34.414,
-                24.187,
-                51.71,
-                36.343,
-                69.007,
-                42.422,
-                "C",
-                86.304,
-                48.5,
-                103.601,
-                48.5,
-                115.529,
-                50.21,
-                "C",
-                127.457,
-                51.92,
-                134.017,
-                55.339,
-                137.297,
-                57.049,
-                "L",
-                140.577,
-                58.759
-              ],
-              "segments": [],
-              "terminals": {}
-            },
-            {
-              "id": "id_A_B_3",
-              "path": {
-                "id": "class-layout-16-id_A_B_3",
-                "class": "edge-thickness-normal edge-pattern-dashed relation",
-                "d": "M67.234,136.107L75.883,148.514C84.531,160.921,101.828,185.736,119.125,198.143C136.422,210.55,153.719,210.55,165.705,208.296C177.691,206.042,184.367,201.533,187.705,199.279L191.043,197.025",
-                "style": ";;;",
-                "marker-start": "",
-                "marker-end": "url(#class-layout-16_class-dependencyEnd)",
-                "data-points": "W3sieCI6NjcuMjM0Mzc1LCJ5IjoxMzYuMTA2NjYyNTE2MzExNjd9LHsieCI6MTE5LjEyNSwieSI6MjEwLjU1MDAwMDAwMDc0NTA2fSx7IngiOjE3MS4wMTU2MjUsInkiOjIxMC41NTAwMDAwMDA3NDUwNn0seyJ4IjoxOTYuMDE1NjI1LCJ5IjoxOTMuNjY3MzYzOTQwMDI2OH1d"
-              },
-              "normalizedPoints": [
-                {
-                  "x": 17.117,
-                  "y": 24.556
-                },
-                {
-                  "x": 69.007,
-                  "y": 98.999
-                },
-                {
-                  "x": 120.898,
-                  "y": 98.999
-                },
-                {
-                  "x": 145.897,
-                  "y": 82.117
-                }
-              ],
-              "normalizedPath": [
-                "M",
-                17.117,
-                24.557,
-                "L",
-                25.766,
-                36.964,
-                "C",
-                34.414,
-                49.371,
-                51.71,
-                74.185,
-                69.007,
-                86.592,
-                "C",
-                86.304,
-                98.999,
-                103.601,
-                98.999,
-                115.587,
-                96.745,
-                "C",
-                127.573,
-                94.491,
-                134.249,
-                89.982,
-                137.587,
-                87.728,
-                "L",
-                140.925,
-                85.474
-              ],
-              "segments": [],
-              "terminals": {}
-            },
-            {
-              "id": "id_B_C_4",
-              "path": {
-                "id": "class-layout-16-id_B_C_4",
-                "class": "edge-thickness-normal edge-pattern-solid relation",
-                "d": "M247.672,182.05L248.964,182.05C250.255,182.05,252.839,182.05,264,182.05C275.161,182.05,294.901,182.05,314.641,204.563C334.38,227.077,354.12,272.103,363.99,294.617L373.859,317.13",
-                "style": ";;;",
-                "marker-start": "url(#class-layout-16_class-aggregationStart)",
-                "marker-end": "",
-                "data-points": "W3sieCI6MjMwLjQyMTg3NSwieSI6MTgyLjA1MDAwMDAwMDc0NTA2fSx7IngiOjI1NS40MjE4NzUsInkiOjE4Mi4wNTAwMDAwMDA3NDUwNn0seyJ4IjozMTQuNjQwNjI1LCJ5IjoxODIuMDUwMDAwMDAwNzQ1MDZ9LHsieCI6MzczLjg1OTM3NSwieSI6MzE3LjEyOTg4NTI5MzY1Nzh9XQ=="
-              },
-              "normalizedPoints": [
-                {
-                  "x": 180.303,
-                  "y": 70.499
-                },
-                {
-                  "x": 205.303,
-                  "y": 70.499
-                },
-                {
-                  "x": 264.521,
-                  "y": 70.499
-                },
-                {
-                  "x": 323.74,
-                  "y": 205.578
-                }
-              ],
-              "normalizedPath": [
-                "M",
-                197.553,
-                70.499,
-                "L",
-                198.845,
-                70.499,
-                "C",
-                200.136,
-                70.499,
-                202.72,
-                70.499,
-                213.881,
-                70.499,
-                "C",
-                225.042,
-                70.499,
-                244.782,
-                70.499,
-                264.522,
-                93.012,
-                "C",
-                284.261,
-                115.526,
-                304,
-                160.552,
-                313.87,
-                183.066,
-                "L",
-                323.739,
-                205.578
-              ],
-              "segments": [],
-              "terminals": {}
-            }
-          ],
+          "edges": [],
           "markers": [
             {
               "attributes": {
@@ -19239,7 +18643,3428 @@
           ]
         }
       }
+    },
+    {
+      "id": "svg-multiline-cjk-rtl",
+      "htmlLabels": false,
+      "source": "classDiagram\nclass Mixed[\"Service<br/>中文 مرحبا\"] {\n  +名称\n  +שלום(value) نتيجة\n}",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Mixed",
+            "label": "Service<br>中文 مرحبا",
+            "text": "Service<br>中文 مرحبا",
+            "shape": "classBox",
+            "parentId": "",
+            "cssClasses": "default",
+            "cssStyles": [],
+            "styles": [],
+            "annotations": [],
+            "members": [
+              {
+                "text": "\\+名称",
+                "cssStyle": ""
+              }
+            ],
+            "methods": [
+              {
+                "text": "\\+שלום(value) : نتيجة",
+                "cssStyle": ""
+              }
+            ],
+            "padding": null,
+            "isGroup": false,
+            "look": "classic"
+          }
+        ],
+        "edges": [],
+        "direction": "TB",
+        "nodeSpacing": 50,
+        "rankSpacing": 50,
+        "markers": [
+          "aggregation",
+          "extension",
+          "composition",
+          "dependency",
+          "lollipop"
+        ],
+        "renderedNodes": [
+          {
+            "id": "Mixed",
+            "measured": {
+              "annotation": [],
+              "label": [
+                {
+                  "x": -1,
+                  "y": -1.002,
+                  "width": 71.411,
+                  "height": 39.602,
+                  "lineCount": 2,
+                  "svgText": true
+                }
+              ],
+              "members": [
+                {
+                  "x": 0,
+                  "y": -1.002,
+                  "width": 42.14,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
+                }
+              ],
+              "methods": [
+                {
+                  "x": 0,
+                  "y": -1.002,
+                  "width": 141.325,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
+                }
+              ]
+            },
+            "geometry": {
+              "bbox": {
+                "x": -101.054,
+                "y": -77.25,
+                "width": 202.109,
+                "height": 154.5
+              },
+              "outer": {
+                "x": -101.054,
+                "y": -77.25,
+                "width": 202.109,
+                "height": 154.5
+              },
+              "annotation": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(0, -57.25)",
+                "items": [],
+                "itemDetails": []
+              },
+              "label": {
+                "bbox": {
+                  "x": -1,
+                  "y": -10.902,
+                  "width": 71.411,
+                  "height": 39.602
+                },
+                "transform": "translate(-35.717926025390625, -57.25)",
+                "items": [
+                  {
+                    "x": -1,
+                    "y": -1.002,
+                    "width": 71.411,
+                    "height": 39.602,
+                    "lineCount": 2,
+                    "svgText": true
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": -1,
+                      "y": -1.002,
+                      "width": 71.411,
+                      "height": 39.602
+                    },
+                    "transform": "translate(0,-9.899999618530273)",
+                    "text": "Service中文 مرحبا"
+                  }
+                ]
+              },
+              "members": {
+                "bbox": {
+                  "x": 0,
+                  "y": -12.002,
+                  "width": 42.14,
+                  "height": 22.002
+                },
+                "transform": "translate(-89.05427551269531, 6.349998474121094)",
+                "items": [
+                  {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 42.14,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": 0,
+                      "y": -1.002,
+                      "width": 42.14,
+                      "height": 22.002
+                    },
+                    "transform": "translate(0,-11)",
+                    "text": "+名称"
+                  }
+                ]
+              },
+              "methods": {
+                "bbox": {
+                  "x": 0,
+                  "y": -12.002,
+                  "width": 141.325,
+                  "height": 22.002
+                },
+                "transform": "translate(-89.05427551269531, 52.349998474121094)",
+                "items": [
+                  {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 141.325,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": 0,
+                      "y": -1.002,
+                      "width": 141.325,
+                      "height": 22.002
+                    },
+                    "transform": "translate(0,-11)",
+                    "text": "+שלום(value) : نتيجة"
+                  }
+                ]
+              },
+              "dividers": [
+                {
+                  "x": -101.054,
+                  "y": -13.65,
+                  "width": 202.109,
+                  "height": 0.001
+                },
+                {
+                  "x": -101.054,
+                  "y": 32.35,
+                  "width": 202.109,
+                  "height": 0.001
+                }
+              ]
+            }
+          }
+        ],
+        "placement": {
+          "nodes": [
+            {
+              "id": "Mixed",
+              "dx": 0,
+              "dy": 0,
+              "width": 202.109,
+              "height": 154.5,
+              "labels": [
+                {
+                  "bbox": {
+                    "x": -1,
+                    "y": -1.002,
+                    "width": 71.411,
+                    "height": 39.602
+                  },
+                  "dx": -1.012,
+                  "dy": -48.347
+                },
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 42.14,
+                    "height": 22.002
+                  },
+                  "dx": -67.978,
+                  "dy": 5.349
+                },
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 141.325,
+                    "height": 22.002
+                  },
+                  "dx": -18.39,
+                  "dy": 51.344
+                }
+              ]
+            }
+          ],
+          "edgeLabels": [],
+          "clusters": []
+        },
+        "structure": {
+          "origin": {
+            "x": 109.047,
+            "y": 85.242
+          },
+          "edges": [],
+          "markers": [
+            {
+              "attributes": {
+                "id": "class-layout-17_class-aggregationStart",
+                "class": "marker aggregation class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-aggregationEnd",
+                "class": "marker aggregation class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-aggregationStart-margin",
+                "class": "marker aggregation class",
+                "refX": "15",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-aggregationEnd-margin",
+                "class": "marker aggregation class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-extensionStart",
+                "class": "marker extension class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,7 L18,13 V 1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-extensionEnd",
+                "class": "marker extension class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 V 13 L18,7 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-extensionStart-margin",
+                "class": "marker extension class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": "0 0 20 14"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "d": "",
+                    "points": "10,7 18,13 18,1",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2; stroke-dasharray: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-extensionEnd-margin",
+                "class": "marker extension class",
+                "refX": "9",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": "0 0 20 14"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "d": "",
+                    "points": "10,1 10,13 18,7",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2; stroke-dasharray: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-compositionStart",
+                "class": "marker composition class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-compositionEnd",
+                "class": "marker composition class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-compositionStart-margin",
+                "class": "marker composition class",
+                "refX": "15",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-compositionEnd-margin",
+                "class": "marker composition class",
+                "refX": "3.5",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-dependencyStart",
+                "class": "marker dependency class",
+                "refX": "6",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-dependencyEnd",
+                "class": "marker dependency class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-dependencyStart-margin",
+                "class": "marker dependency class",
+                "refX": "4",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-dependencyEnd-margin",
+                "class": "marker dependency class",
+                "refX": "16",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-lollipopStart",
+                "class": "marker lollipop class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-lollipopEnd",
+                "class": "marker lollipop class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-lollipopStart-margin",
+                "class": "marker lollipop class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": "2"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-17_class-lollipopEnd-margin",
+                "class": "marker lollipop class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": "2"
+                  }
+                }
+              ]
+            }
+          ],
+          "order": [
+            "clusters",
+            "edgePaths",
+            "edgeLabels",
+            "nodes"
+          ]
+        }
+      }
+    },
+    {
+      "id": "svg-classifier-styles",
+      "htmlLabels": false,
+      "source": "classDiagram\nclass Styled {\n  +staticValue$\n  +abstractMethod()*\n}",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Styled",
+            "label": "Styled",
+            "text": "Styled",
+            "shape": "classBox",
+            "parentId": "",
+            "cssClasses": "default",
+            "cssStyles": [],
+            "styles": [],
+            "annotations": [],
+            "members": [
+              {
+                "text": "\\+staticValue",
+                "cssStyle": "text-decoration:underline;"
+              }
+            ],
+            "methods": [
+              {
+                "text": "\\+abstractMethod()",
+                "cssStyle": "font-style:italic;"
+              }
+            ],
+            "padding": null,
+            "isGroup": false,
+            "look": "classic"
+          }
+        ],
+        "edges": [],
+        "direction": "TB",
+        "nodeSpacing": 50,
+        "rankSpacing": 50,
+        "markers": [
+          "aggregation",
+          "extension",
+          "composition",
+          "dependency",
+          "lollipop"
+        ],
+        "renderedNodes": [
+          {
+            "id": "Styled",
+            "measured": {
+              "annotation": [],
+              "label": [
+                {
+                  "x": -1,
+                  "y": -1.002,
+                  "width": 46.854,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
+                }
+              ],
+              "members": [
+                {
+                  "x": 0,
+                  "y": -1.002,
+                  "width": 90.415,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
+                }
+              ],
+              "methods": [
+                {
+                  "x": 0,
+                  "y": -1.002,
+                  "width": 138.578,
+                  "height": 22.002,
+                  "lineCount": 1,
+                  "svgText": true
+                }
+              ]
+            },
+            "geometry": {
+              "bbox": {
+                "x": -93.542,
+                "y": -69,
+                "width": 187.084,
+                "height": 138
+              },
+              "outer": {
+                "x": -93.542,
+                "y": -69,
+                "width": 187.084,
+                "height": 138
+              },
+              "annotation": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(0, -49)",
+                "items": [],
+                "itemDetails": []
+              },
+              "label": {
+                "bbox": {
+                  "x": -1,
+                  "y": -12.002,
+                  "width": 46.854,
+                  "height": 22.002
+                },
+                "transform": "translate(-23.43597412109375, -49)",
+                "items": [
+                  {
+                    "x": -1,
+                    "y": -1.002,
+                    "width": 46.854,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": -1,
+                      "y": -1.002,
+                      "width": 46.854,
+                      "height": 22.002
+                    },
+                    "transform": "translate(0,-11)",
+                    "text": "Styled"
+                  }
+                ]
+              },
+              "members": {
+                "bbox": {
+                  "x": 0,
+                  "y": -12.002,
+                  "width": 90.415,
+                  "height": 22.002
+                },
+                "transform": "translate(-81.54190826416016, -3)",
+                "items": [
+                  {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 90.415,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": 0,
+                      "y": -1.002,
+                      "width": 90.415,
+                      "height": 22.002
+                    },
+                    "transform": "translate(0,-11)",
+                    "text": "+staticValue"
+                  }
+                ]
+              },
+              "methods": {
+                "bbox": {
+                  "x": 0,
+                  "y": -12.002,
+                  "width": 138.578,
+                  "height": 22.002
+                },
+                "transform": "translate(-81.54190826416016, 43)",
+                "items": [
+                  {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 138.578,
+                    "height": 22.002,
+                    "lineCount": 1,
+                    "svgText": true
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": 0,
+                      "y": -1.002,
+                      "width": 138.578,
+                      "height": 22.002
+                    },
+                    "transform": "translate(0,-11)",
+                    "text": "+abstractMethod()"
+                  }
+                ]
+              },
+              "dividers": [
+                {
+                  "x": -93.542,
+                  "y": -23,
+                  "width": 187.084,
+                  "height": 0.001
+                },
+                {
+                  "x": -93.542,
+                  "y": 23,
+                  "width": 187.084,
+                  "height": 0.001
+                }
+              ]
+            }
+          }
+        ],
+        "placement": {
+          "nodes": [
+            {
+              "id": "Styled",
+              "dx": 0,
+              "dy": 0,
+              "width": 187.084,
+              "height": 138,
+              "labels": [
+                {
+                  "bbox": {
+                    "x": -1,
+                    "y": -1.002,
+                    "width": 46.854,
+                    "height": 22.002
+                  },
+                  "dx": -1.009,
+                  "dy": -49.996
+                },
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 90.415,
+                    "height": 22.002
+                  },
+                  "dx": -36.331,
+                  "dy": -4.001
+                },
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": -1.002,
+                    "width": 138.578,
+                    "height": 22.002
+                  },
+                  "dx": -12.252,
+                  "dy": 41.995
+                }
+              ]
+            }
+          ],
+          "edgeLabels": [],
+          "clusters": []
+        },
+        "structure": {
+          "origin": {
+            "x": 101.539,
+            "y": 76.992
+          },
+          "edges": [],
+          "markers": [
+            {
+              "attributes": {
+                "id": "class-layout-18_class-aggregationStart",
+                "class": "marker aggregation class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-aggregationEnd",
+                "class": "marker aggregation class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-aggregationStart-margin",
+                "class": "marker aggregation class",
+                "refX": "15",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-aggregationEnd-margin",
+                "class": "marker aggregation class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-extensionStart",
+                "class": "marker extension class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,7 L18,13 V 1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-extensionEnd",
+                "class": "marker extension class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 V 13 L18,7 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-extensionStart-margin",
+                "class": "marker extension class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": "0 0 20 14"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "d": "",
+                    "points": "10,7 18,13 18,1",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2; stroke-dasharray: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-extensionEnd-margin",
+                "class": "marker extension class",
+                "refX": "9",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": "0 0 20 14"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "d": "",
+                    "points": "10,1 10,13 18,7",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2; stroke-dasharray: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-compositionStart",
+                "class": "marker composition class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-compositionEnd",
+                "class": "marker composition class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-compositionStart-margin",
+                "class": "marker composition class",
+                "refX": "15",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-compositionEnd-margin",
+                "class": "marker composition class",
+                "refX": "3.5",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-dependencyStart",
+                "class": "marker dependency class",
+                "refX": "6",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-dependencyEnd",
+                "class": "marker dependency class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-dependencyStart-margin",
+                "class": "marker dependency class",
+                "refX": "4",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-dependencyEnd-margin",
+                "class": "marker dependency class",
+                "refX": "16",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-lollipopStart",
+                "class": "marker lollipop class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-lollipopEnd",
+                "class": "marker lollipop class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-lollipopStart-margin",
+                "class": "marker lollipop class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": "2"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-18_class-lollipopEnd-margin",
+                "class": "marker lollipop class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": "2"
+                  }
+                }
+              ]
+            }
+          ],
+          "order": [
+            "clusters",
+            "edgePaths",
+            "edgeLabels",
+            "nodes"
+          ]
+        }
+      }
+    },
+    {
+      "id": "compound-self-parallel-relations",
+      "source": "classDiagram\ndirection LR\nnamespace Outer {\n  class A\n  namespace Inner {\n    class B\n  }\n}\nclass C\nA \"self\" --> \"one\" A : recursive\nA --> B : first\nA ..> B : second\nB o-- C : cross",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Outer",
+            "label": "Outer",
+            "text": "",
+            "shape": "rect",
+            "parentId": "",
+            "cssClasses": "",
+            "cssStyles": [],
+            "styles": [],
+            "annotations": [],
+            "members": [],
+            "methods": [],
+            "padding": 12,
+            "isGroup": true,
+            "look": "classic"
+          },
+          {
+            "id": "Outer.Inner",
+            "label": "Inner",
+            "text": "",
+            "shape": "rect",
+            "parentId": "Outer",
+            "cssClasses": "",
+            "cssStyles": [],
+            "styles": [],
+            "annotations": [],
+            "members": [],
+            "methods": [],
+            "padding": 12,
+            "isGroup": true,
+            "look": "classic"
+          },
+          {
+            "id": "A",
+            "label": "A",
+            "text": "A",
+            "shape": "classBox",
+            "parentId": "Outer",
+            "cssClasses": "default",
+            "cssStyles": [],
+            "styles": [],
+            "annotations": [],
+            "members": [],
+            "methods": [],
+            "padding": null,
+            "isGroup": false,
+            "look": "classic"
+          },
+          {
+            "id": "B",
+            "label": "B",
+            "text": "B",
+            "shape": "classBox",
+            "parentId": "Outer.Inner",
+            "cssClasses": "default",
+            "cssStyles": [],
+            "styles": [],
+            "annotations": [],
+            "members": [],
+            "methods": [],
+            "padding": null,
+            "isGroup": false,
+            "look": "classic"
+          },
+          {
+            "id": "C",
+            "label": "C",
+            "text": "C",
+            "shape": "classBox",
+            "parentId": "",
+            "cssClasses": "default",
+            "cssStyles": [],
+            "styles": [],
+            "annotations": [],
+            "members": [],
+            "methods": [],
+            "padding": null,
+            "isGroup": false,
+            "look": "classic"
+          }
+        ],
+        "edges": [
+          {
+            "id": "id_A_A_1",
+            "start": "A",
+            "end": "A",
+            "label": "recursive",
+            "pattern": "solid",
+            "arrowTypeStart": "none",
+            "arrowTypeEnd": "dependency",
+            "startLabelRight": "self",
+            "endLabelLeft": "one",
+            "style": [],
+            "labelStyle": [
+              "display: inline-block"
+            ],
+            "classes": "relation",
+            "look": "classic"
+          },
+          {
+            "id": "id_A_B_2",
+            "start": "A",
+            "end": "B",
+            "label": "first",
+            "pattern": "solid",
+            "arrowTypeStart": "none",
+            "arrowTypeEnd": "dependency",
+            "startLabelRight": "",
+            "endLabelLeft": "",
+            "style": [],
+            "labelStyle": [
+              "display: inline-block"
+            ],
+            "classes": "relation",
+            "look": "classic"
+          },
+          {
+            "id": "id_A_B_3",
+            "start": "A",
+            "end": "B",
+            "label": "second",
+            "pattern": "dashed",
+            "arrowTypeStart": "none",
+            "arrowTypeEnd": "dependency",
+            "startLabelRight": "",
+            "endLabelLeft": "",
+            "style": [],
+            "labelStyle": [
+              "display: inline-block"
+            ],
+            "classes": "relation",
+            "look": "classic"
+          },
+          {
+            "id": "id_B_C_4",
+            "start": "B",
+            "end": "C",
+            "label": "cross",
+            "pattern": "solid",
+            "arrowTypeStart": "aggregation",
+            "arrowTypeEnd": "none",
+            "startLabelRight": "",
+            "endLabelLeft": "",
+            "style": [],
+            "labelStyle": [
+              "display: inline-block"
+            ],
+            "classes": "relation",
+            "look": "classic"
+          }
+        ],
+        "direction": "LR",
+        "nodeSpacing": 50,
+        "rankSpacing": 50,
+        "markers": [
+          "aggregation",
+          "extension",
+          "composition",
+          "dependency",
+          "lollipop"
+        ],
+        "renderedNodes": [
+          {
+            "id": "A",
+            "measured": {
+              "annotation": [],
+              "label": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "width": 10.234,
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
+                }
+              ],
+              "members": [],
+              "methods": []
+            },
+            "geometry": {
+              "bbox": {
+                "x": -17.117,
+                "y": -42,
+                "width": 34.234,
+                "height": 84
+              },
+              "outer": {
+                "x": -17.117,
+                "y": -42,
+                "width": 34.234,
+                "height": 84
+              },
+              "annotation": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(0, -18)",
+                "items": [],
+                "itemDetails": []
+              },
+              "label": {
+                "bbox": {
+                  "x": 0,
+                  "y": -12,
+                  "width": 10.234,
+                  "height": 24
+                },
+                "transform": "translate(-5.1171875, -18)",
+                "items": [
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "width": 10.234,
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 10.234,
+                      "height": 24
+                    },
+                    "transform": "translate(0,-12)",
+                    "text": "A"
+                  }
+                ]
+              },
+              "members": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(-5.1171875, 30)",
+                "items": [],
+                "itemDetails": []
+              },
+              "methods": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(-5.1171875, 60)",
+                "items": [],
+                "itemDetails": []
+              },
+              "dividers": [
+                {
+                  "x": -17.117,
+                  "y": 6,
+                  "width": 34.234,
+                  "height": 0.001
+                },
+                {
+                  "x": -17.117,
+                  "y": 24,
+                  "width": 34.234,
+                  "height": 0.001
+                }
+              ]
+            }
+          },
+          {
+            "id": "B",
+            "measured": {
+              "annotation": [],
+              "label": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "width": 10.406,
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
+                }
+              ],
+              "members": [],
+              "methods": []
+            },
+            "geometry": {
+              "bbox": {
+                "x": -17.203,
+                "y": -42,
+                "width": 34.406,
+                "height": 84
+              },
+              "outer": {
+                "x": -17.203,
+                "y": -42,
+                "width": 34.406,
+                "height": 84
+              },
+              "annotation": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(0, -18)",
+                "items": [],
+                "itemDetails": []
+              },
+              "label": {
+                "bbox": {
+                  "x": 0,
+                  "y": -12,
+                  "width": 10.406,
+                  "height": 24
+                },
+                "transform": "translate(-5.203125, -18)",
+                "items": [
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "width": 10.406,
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 10.406,
+                      "height": 24
+                    },
+                    "transform": "translate(0,-12)",
+                    "text": "B"
+                  }
+                ]
+              },
+              "members": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(-5.203125, 30)",
+                "items": [],
+                "itemDetails": []
+              },
+              "methods": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(-5.203125, 60)",
+                "items": [],
+                "itemDetails": []
+              },
+              "dividers": [
+                {
+                  "x": -17.203,
+                  "y": 6,
+                  "width": 34.406,
+                  "height": 0.001
+                },
+                {
+                  "x": -17.203,
+                  "y": 24,
+                  "width": 34.406,
+                  "height": 0.001
+                }
+              ]
+            }
+          },
+          {
+            "id": "C",
+            "measured": {
+              "annotation": [],
+              "label": [
+                {
+                  "x": 0,
+                  "y": 0,
+                  "width": 10.125,
+                  "height": 24,
+                  "lineCount": 1,
+                  "svgText": false
+                }
+              ],
+              "members": [],
+              "methods": []
+            },
+            "geometry": {
+              "bbox": {
+                "x": -17.062,
+                "y": -42,
+                "width": 34.125,
+                "height": 84
+              },
+              "outer": {
+                "x": -17.062,
+                "y": -42,
+                "width": 34.125,
+                "height": 84
+              },
+              "annotation": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(0, -18)",
+                "items": [],
+                "itemDetails": []
+              },
+              "label": {
+                "bbox": {
+                  "x": 0,
+                  "y": -12,
+                  "width": 10.125,
+                  "height": 24
+                },
+                "transform": "translate(-5.0625, -18)",
+                "items": [
+                  {
+                    "x": 0,
+                    "y": 0,
+                    "width": 10.125,
+                    "height": 24,
+                    "lineCount": 1,
+                    "svgText": false
+                  }
+                ],
+                "itemDetails": [
+                  {
+                    "bbox": {
+                      "x": 0,
+                      "y": 0,
+                      "width": 10.125,
+                      "height": 24
+                    },
+                    "transform": "translate(0,-12)",
+                    "text": "C"
+                  }
+                ]
+              },
+              "members": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(-5.0625, 30)",
+                "items": [],
+                "itemDetails": []
+              },
+              "methods": {
+                "bbox": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 0,
+                  "height": 0
+                },
+                "transform": "translate(-5.0625, 60)",
+                "items": [],
+                "itemDetails": []
+              },
+              "dividers": [
+                {
+                  "x": -17.062,
+                  "y": 6,
+                  "width": 34.125,
+                  "height": 0.001
+                },
+                {
+                  "x": -17.062,
+                  "y": 24,
+                  "width": 34.125,
+                  "height": 0.001
+                }
+              ]
+            }
+          }
+        ],
+        "placement": {
+          "nodes": [
+            {
+              "id": "A",
+              "dx": 0,
+              "dy": 0,
+              "width": 34.234,
+              "height": 84,
+              "labels": [
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": 0,
+                    "width": 10.234,
+                    "height": 24
+                  },
+                  "dx": 0,
+                  "dy": -18
+                }
+              ]
+            },
+            {
+              "id": "B",
+              "dx": 163.1,
+              "dy": 70.499,
+              "width": 34.406,
+              "height": 84,
+              "labels": [
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": 0,
+                    "width": 10.406,
+                    "height": 24
+                  },
+                  "dx": 163.1,
+                  "dy": 52.5
+                }
+              ]
+            },
+            {
+              "id": "C",
+              "dx": 340.802,
+              "dy": 244.498,
+              "width": 34.125,
+              "height": 84,
+              "labels": [
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": 0,
+                    "width": 10.125,
+                    "height": 24
+                  },
+                  "dx": 340.802,
+                  "dy": 226.498
+                }
+              ]
+            }
+          ],
+          "edgeLabels": [
+            {
+              "domId": "",
+              "text": "recursive",
+              "bbox": {
+                "x": -34.219,
+                "y": -12,
+                "width": 68.438,
+                "height": 24
+              },
+              "dx": 264.521,
+              "dy": -65.05
+            },
+            {
+              "domId": "",
+              "text": "first",
+              "bbox": {
+                "x": -14.844,
+                "y": -12,
+                "width": 29.688,
+                "height": 24
+              },
+              "dx": 69.007,
+              "dy": 48.5
+            },
+            {
+              "domId": "",
+              "text": "second",
+              "bbox": {
+                "x": -26.891,
+                "y": -12,
+                "width": 53.781,
+                "height": 24
+              },
+              "dx": 69.007,
+              "dy": 98.999
+            },
+            {
+              "domId": "",
+              "text": "cross",
+              "bbox": {
+                "x": -19.492,
+                "y": -12,
+                "width": 38.984,
+                "height": 24
+              },
+              "dx": 264.521,
+              "dy": 70.499
+            }
+          ],
+          "clusters": [
+            {
+              "id": "Outer",
+              "domId": "class-layout-19-Outer",
+              "text": "Outer",
+              "bbox": {
+                "x": 8,
+                "y": 8,
+                "width": 424.984,
+                "height": 271.05
+              },
+              "labels": [
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": 0,
+                    "width": 43.797,
+                    "height": 24
+                  },
+                  "dx": 170.374,
+                  "dy": -91.549
+                }
+              ],
+              "dx": 170.374,
+              "dy": 31.975
+            },
+            {
+              "id": "Outer.Inner",
+              "domId": "class-layout-19-Outer.Inner",
+              "text": "Inner",
+              "bbox": {
+                "x": 171.016,
+                "y": 101.55,
+                "width": 84.406,
+                "height": 157.5
+              },
+              "labels": [
+                {
+                  "bbox": {
+                    "x": 0,
+                    "y": 0,
+                    "width": 40.844,
+                    "height": 24
+                  },
+                  "dx": 163.1,
+                  "dy": 2
+                }
+              ],
+              "dx": 163.101,
+              "dy": 68.749
+            }
+          ]
+        },
+        "structure": {
+          "origin": {
+            "x": 50.118,
+            "y": 111.549
+          },
+          "edges": [
+            {
+              "id": "id_A_A_1",
+              "path": {
+                "id": "class-layout-19-A-cyclic-special-1",
+                "class": "edge-thickness-normal edge-pattern-solid relation",
+                "d": "M67.234,95.415L75.883,87.262C84.531,79.11,101.828,62.805,119.125,54.652C136.422,46.5,153.719,46.5,169.393,46.5C185.067,46.5,199.118,46.5,206.143,46.5L213.169,46.5",
+                "style": ";;;",
+                "marker-start": "",
+                "marker-end": "",
+                "data-points": "W3sieCI6NjcuMjM0Mzc1LCJ5Ijo5NS40MTQ1MzYzOTgxNjAxNX0seyJ4IjoxMTkuMTI1LCJ5Ijo0Ni41fSx7IngiOjE3MS4wMTU2MjUsInkiOjQ2LjV9LHsieCI6MjEzLjE2ODc0OTk5OTI1NDk0LCJ5Ijo0Ni41fV0="
+              },
+              "normalizedPoints": [],
+              "normalizedPath": [],
+              "segments": [
+                {
+                  "path": {
+                    "id": "class-layout-19-A-cyclic-special-1",
+                    "class": "edge-thickness-normal edge-pattern-solid relation",
+                    "d": "M67.234,95.415L75.883,87.262C84.531,79.11,101.828,62.805,119.125,54.652C136.422,46.5,153.719,46.5,169.393,46.5C185.067,46.5,199.118,46.5,206.143,46.5L213.169,46.5",
+                    "style": ";;;",
+                    "marker-start": "",
+                    "marker-end": "",
+                    "data-points": "W3sieCI6NjcuMjM0Mzc1LCJ5Ijo5NS40MTQ1MzYzOTgxNjAxNX0seyJ4IjoxMTkuMTI1LCJ5Ijo0Ni41fSx7IngiOjE3MS4wMTU2MjUsInkiOjQ2LjV9LHsieCI6MjEzLjE2ODc0OTk5OTI1NDk0LCJ5Ijo0Ni41fV0="
+                  },
+                  "normalizedPoints": [
+                    {
+                      "x": 17.117,
+                      "y": -16.135
+                    },
+                    {
+                      "x": 69.007,
+                      "y": -65.05
+                    },
+                    {
+                      "x": 120.898,
+                      "y": -65.05
+                    },
+                    {
+                      "x": 163.05,
+                      "y": -65.05
+                    }
+                  ],
+                  "normalizedPath": [
+                    "M",
+                    17.117,
+                    -16.135,
+                    "L",
+                    25.766,
+                    -24.288,
+                    "C",
+                    34.414,
+                    -32.44,
+                    51.71,
+                    -48.745,
+                    69.007,
+                    -56.898,
+                    "C",
+                    86.304,
+                    -65.05,
+                    103.601,
+                    -65.05,
+                    119.275,
+                    -65.05,
+                    "C",
+                    134.949,
+                    -65.05,
+                    149,
+                    -65.05,
+                    156.025,
+                    -65.05,
+                    "L",
+                    163.051,
+                    -65.05
+                  ]
+                },
+                {
+                  "path": {
+                    "id": "class-layout-19-A-cyclic-special-mid",
+                    "class": "edge-thickness-normal edge-pattern-solid relation",
+                    "d": "M213.269,46.5L220.294,46.5C227.32,46.5,241.371,46.5,258.266,46.5C275.161,46.5,294.901,46.5,317.476,51.755C340.051,57.01,365.461,67.52,378.167,72.774L390.872,78.029",
+                    "style": ";;;",
+                    "marker-start": "",
+                    "marker-end": "",
+                    "data-points": "W3sieCI6MjEzLjI2ODc1MDAwMDc0NTA2LCJ5Ijo0Ni41fSx7IngiOjI1NS40MjE4NzUsInkiOjQ2LjV9LHsieCI6MzE0LjY0MDYyNSwieSI6NDYuNX0seyJ4IjozOTAuODcxODc0OTk5MjU0OTQsInkiOjc4LjAyOTMxOTk1MTI3NjI0fV0="
+                  },
+                  "normalizedPoints": [
+                    {
+                      "x": 163.15,
+                      "y": -65.05
+                    },
+                    {
+                      "x": 205.303,
+                      "y": -65.05
+                    },
+                    {
+                      "x": 264.521,
+                      "y": -65.05
+                    },
+                    {
+                      "x": 340.752,
+                      "y": -33.52
+                    }
+                  ],
+                  "normalizedPath": [
+                    "M",
+                    163.151,
+                    -65.05,
+                    "L",
+                    170.176,
+                    -65.05,
+                    "C",
+                    177.201,
+                    -65.05,
+                    191.252,
+                    -65.05,
+                    208.147,
+                    -65.05,
+                    "C",
+                    225.042,
+                    -65.05,
+                    244.782,
+                    -65.05,
+                    267.357,
+                    -59.795,
+                    "C",
+                    289.932,
+                    -54.54,
+                    315.341,
+                    -44.03,
+                    328.047,
+                    -38.776,
+                    "L",
+                    340.752,
+                    -33.521
+                  ]
+                },
+                {
+                  "path": {
+                    "id": "class-layout-19-A-cyclic-special-2",
+                    "class": "edge-thickness-normal edge-pattern-solid relation",
+                    "d": "M390.872,78.052L378.167,78.635C365.461,79.218,340.051,80.384,317.476,80.967C294.901,81.55,275.161,81.55,258.258,81.55C241.354,81.55,227.286,81.55,213.219,81.55C199.151,81.55,185.083,81.55,169.401,81.55C153.719,81.55,136.422,81.55,120.042,84.911C103.662,88.272,88.2,94.994,80.468,98.355L72.737,101.716",
+                    "style": ";;;",
+                    "marker-start": "",
+                    "marker-end": "url(#class-layout-19_class-dependencyEnd)",
+                    "data-points": "W3sieCI6MzkwLjg3MTg3NDk5OTI1NDk0LCJ5Ijo3OC4wNTIyOTQxNDI1MjQ0M30seyJ4IjozMTQuNjQwNjI1LCJ5Ijo4MS41NTAwMDAwMDA3NDUwNn0seyJ4IjoyNTUuNDIxODc1LCJ5Ijo4MS41NTAwMDAwMDA3NDUwNn0seyJ4IjoyMTMuMjE4NzUsInkiOjgxLjU1MDAwMDAwMDc0NTA2fSx7IngiOjE3MS4wMTU2MjUsInkiOjgxLjU1MDAwMDAwMDc0NTA2fSx7IngiOjExOS4xMjUsInkiOjgxLjU1MDAwMDAwMDc0NTA2fSx7IngiOjY3LjIzNDM3NSwieSI6MTA0LjEwODU4NzExNzI0MDAyfV0="
+                  },
+                  "normalizedPoints": [
+                    {
+                      "x": 340.752,
+                      "y": -33.497
+                    },
+                    {
+                      "x": 264.521,
+                      "y": -30
+                    },
+                    {
+                      "x": 205.303,
+                      "y": -30
+                    },
+                    {
+                      "x": 163.1,
+                      "y": -30
+                    },
+                    {
+                      "x": 120.898,
+                      "y": -30
+                    },
+                    {
+                      "x": 69.007,
+                      "y": -30
+                    },
+                    {
+                      "x": 17.117,
+                      "y": -7.441
+                    }
+                  ],
+                  "normalizedPath": [
+                    "M",
+                    340.752,
+                    -33.498,
+                    "L",
+                    328.047,
+                    -32.915,
+                    "C",
+                    315.341,
+                    -32.332,
+                    289.932,
+                    -31.166,
+                    267.357,
+                    -30.583,
+                    "C",
+                    244.782,
+                    -30,
+                    225.042,
+                    -30,
+                    208.139,
+                    -30,
+                    "C",
+                    191.235,
+                    -30,
+                    177.167,
+                    -30,
+                    163.101,
+                    -30,
+                    "C",
+                    149.033,
+                    -30,
+                    134.965,
+                    -30,
+                    119.283,
+                    -30,
+                    "C",
+                    103.601,
+                    -30,
+                    86.304,
+                    -30,
+                    69.924,
+                    -26.639,
+                    "C",
+                    53.544,
+                    -23.278,
+                    38.083,
+                    -16.556,
+                    30.351,
+                    -13.195,
+                    "L",
+                    22.62,
+                    -9.834
+                  ]
+                }
+              ],
+              "terminals": {
+                "startLabelRight": {
+                  "text": "self",
+                  "dx": 40.14,
+                  "dy": -17.224,
+                  "bbox": {
+                    "x": -9.055,
+                    "y": -8.25,
+                    "width": 36,
+                    "height": 12
+                  },
+                  "transform": "translate(90.25750509672402, 94.32571514429036)"
+                },
+                "endLabelLeft": {
+                  "text": "one",
+                  "dx": 34.146,
+                  "dy": -5.662,
+                  "bbox": {
+                    "x": 0,
+                    "y": 0,
+                    "width": 27,
+                    "height": 12
+                  },
+                  "transform": "translate(84.2637111454072, 105.88784135621742)"
+                }
+              }
+            },
+            {
+              "id": "id_A_B_2",
+              "path": {
+                "id": "class-layout-19-id_A_B_2",
+                "class": "edge-thickness-normal edge-pattern-solid relation",
+                "d": "M67.234,123.58L75.883,129.659C84.531,135.737,101.828,147.893,119.125,153.972C136.422,160.05,153.719,160.05,165.647,161.76C177.575,163.47,184.135,166.889,187.415,168.599L190.695,170.309",
+                "style": ";;;",
+                "marker-start": "",
+                "marker-end": "url(#class-layout-19_class-dependencyEnd)",
+                "data-points": "W3sieCI6NjcuMjM0Mzc1LCJ5IjoxMjMuNTgwMjg0MTYyNDExNTN9LHsieCI6MTE5LjEyNSwieSI6MTYwLjA1MDAwMDAwMDc0NTA2fSx7IngiOjE3MS4wMTU2MjUsInkiOjE2MC4wNTAwMDAwMDA3NDUwNn0seyJ4IjoxOTYuMDE1NjI1LCJ5IjoxNzMuMDgyMjEwMjkzMjI5M31d"
+              },
+              "normalizedPoints": [
+                {
+                  "x": 17.117,
+                  "y": 12.03
+                },
+                {
+                  "x": 69.007,
+                  "y": 48.5
+                },
+                {
+                  "x": 120.898,
+                  "y": 48.5
+                },
+                {
+                  "x": 145.897,
+                  "y": 61.532
+                }
+              ],
+              "normalizedPath": [
+                "M",
+                17.117,
+                12.03,
+                "L",
+                25.766,
+                18.109,
+                "C",
+                34.414,
+                24.187,
+                51.71,
+                36.343,
+                69.007,
+                42.422,
+                "C",
+                86.304,
+                48.5,
+                103.601,
+                48.5,
+                115.529,
+                50.21,
+                "C",
+                127.457,
+                51.92,
+                134.017,
+                55.339,
+                137.297,
+                57.049,
+                "L",
+                140.577,
+                58.759
+              ],
+              "segments": [],
+              "terminals": {}
+            },
+            {
+              "id": "id_A_B_3",
+              "path": {
+                "id": "class-layout-19-id_A_B_3",
+                "class": "edge-thickness-normal edge-pattern-dashed relation",
+                "d": "M67.234,136.107L75.883,148.514C84.531,160.921,101.828,185.736,119.125,198.143C136.422,210.55,153.719,210.55,165.705,208.296C177.691,206.042,184.367,201.533,187.705,199.279L191.043,197.025",
+                "style": ";;;",
+                "marker-start": "",
+                "marker-end": "url(#class-layout-19_class-dependencyEnd)",
+                "data-points": "W3sieCI6NjcuMjM0Mzc1LCJ5IjoxMzYuMTA2NjYyNTE2MzExNjd9LHsieCI6MTE5LjEyNSwieSI6MjEwLjU1MDAwMDAwMDc0NTA2fSx7IngiOjE3MS4wMTU2MjUsInkiOjIxMC41NTAwMDAwMDA3NDUwNn0seyJ4IjoxOTYuMDE1NjI1LCJ5IjoxOTMuNjY3MzYzOTQwMDI2OH1d"
+              },
+              "normalizedPoints": [
+                {
+                  "x": 17.117,
+                  "y": 24.556
+                },
+                {
+                  "x": 69.007,
+                  "y": 98.999
+                },
+                {
+                  "x": 120.898,
+                  "y": 98.999
+                },
+                {
+                  "x": 145.897,
+                  "y": 82.117
+                }
+              ],
+              "normalizedPath": [
+                "M",
+                17.117,
+                24.557,
+                "L",
+                25.766,
+                36.964,
+                "C",
+                34.414,
+                49.371,
+                51.71,
+                74.185,
+                69.007,
+                86.592,
+                "C",
+                86.304,
+                98.999,
+                103.601,
+                98.999,
+                115.587,
+                96.745,
+                "C",
+                127.573,
+                94.491,
+                134.249,
+                89.982,
+                137.587,
+                87.728,
+                "L",
+                140.925,
+                85.474
+              ],
+              "segments": [],
+              "terminals": {}
+            },
+            {
+              "id": "id_B_C_4",
+              "path": {
+                "id": "class-layout-19-id_B_C_4",
+                "class": "edge-thickness-normal edge-pattern-solid relation",
+                "d": "M247.672,182.05L248.964,182.05C250.255,182.05,252.839,182.05,264,182.05C275.161,182.05,294.901,182.05,314.641,204.563C334.38,227.077,354.12,272.103,363.99,294.617L373.859,317.13",
+                "style": ";;;",
+                "marker-start": "url(#class-layout-19_class-aggregationStart)",
+                "marker-end": "",
+                "data-points": "W3sieCI6MjMwLjQyMTg3NSwieSI6MTgyLjA1MDAwMDAwMDc0NTA2fSx7IngiOjI1NS40MjE4NzUsInkiOjE4Mi4wNTAwMDAwMDA3NDUwNn0seyJ4IjozMTQuNjQwNjI1LCJ5IjoxODIuMDUwMDAwMDAwNzQ1MDZ9LHsieCI6MzczLjg1OTM3NSwieSI6MzE3LjEyOTg4NTI5MzY1Nzh9XQ=="
+              },
+              "normalizedPoints": [
+                {
+                  "x": 180.303,
+                  "y": 70.499
+                },
+                {
+                  "x": 205.303,
+                  "y": 70.499
+                },
+                {
+                  "x": 264.521,
+                  "y": 70.499
+                },
+                {
+                  "x": 323.74,
+                  "y": 205.578
+                }
+              ],
+              "normalizedPath": [
+                "M",
+                197.553,
+                70.499,
+                "L",
+                198.845,
+                70.499,
+                "C",
+                200.136,
+                70.499,
+                202.72,
+                70.499,
+                213.881,
+                70.499,
+                "C",
+                225.042,
+                70.499,
+                244.782,
+                70.499,
+                264.522,
+                93.012,
+                "C",
+                284.261,
+                115.526,
+                304,
+                160.552,
+                313.87,
+                183.066,
+                "L",
+                323.739,
+                205.578
+              ],
+              "segments": [],
+              "terminals": {}
+            }
+          ],
+          "markers": [
+            {
+              "attributes": {
+                "id": "class-layout-19_class-aggregationStart",
+                "class": "marker aggregation class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-aggregationEnd",
+                "class": "marker aggregation class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-aggregationStart-margin",
+                "class": "marker aggregation class",
+                "refX": "15",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-aggregationEnd-margin",
+                "class": "marker aggregation class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-extensionStart",
+                "class": "marker extension class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,7 L18,13 V 1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-extensionEnd",
+                "class": "marker extension class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 1,1 V 13 L18,7 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-extensionStart-margin",
+                "class": "marker extension class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": "0 0 20 14"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "d": "",
+                    "points": "10,7 18,13 18,1",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2; stroke-dasharray: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-extensionEnd-margin",
+                "class": "marker extension class",
+                "refX": "9",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": "0 0 20 14"
+              },
+              "children": [
+                {
+                  "tag": "polygon",
+                  "attributes": {
+                    "d": "",
+                    "points": "10,1 10,13 18,7",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 2; stroke-dasharray: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-compositionStart",
+                "class": "marker composition class",
+                "refX": "18",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-compositionEnd",
+                "class": "marker composition class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-compositionStart-margin",
+                "class": "marker composition class",
+                "refX": "15",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-compositionEnd-margin",
+                "class": "marker composition class",
+                "refX": "3.5",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-dependencyStart",
+                "class": "marker dependency class",
+                "refX": "6",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-dependencyEnd",
+                "class": "marker dependency class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-dependencyStart-margin",
+                "class": "marker dependency class",
+                "refX": "4",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-dependencyEnd-margin",
+                "class": "marker dependency class",
+                "refX": "16",
+                "refY": "7",
+                "markerWidth": "20",
+                "markerHeight": "28",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "path",
+                  "attributes": {
+                    "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+                    "points": "",
+                    "cx": "",
+                    "cy": "",
+                    "r": "",
+                    "fill": "",
+                    "class": "",
+                    "style": "stroke-width: 0;",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-lollipopStart",
+                "class": "marker lollipop class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-lollipopEnd",
+                "class": "marker lollipop class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": ""
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-lollipopStart-margin",
+                "class": "marker lollipop class",
+                "refX": "13",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": "2"
+                  }
+                }
+              ]
+            },
+            {
+              "attributes": {
+                "id": "class-layout-19_class-lollipopEnd-margin",
+                "class": "marker lollipop class",
+                "refX": "1",
+                "refY": "7",
+                "markerWidth": "190",
+                "markerHeight": "240",
+                "markerUnits": "userSpaceOnUse",
+                "orient": "auto",
+                "viewBox": ""
+              },
+              "children": [
+                {
+                  "tag": "circle",
+                  "attributes": {
+                    "d": "",
+                    "points": "",
+                    "cx": "7",
+                    "cy": "7",
+                    "r": "6",
+                    "fill": "transparent",
+                    "class": "",
+                    "style": "",
+                    "stroke-width": "2"
+                  }
+                }
+              ]
+            }
+          ],
+          "order": [
+            "clusters",
+            "edgePaths",
+            "edgeLabels",
+            "nodes"
+          ]
+        }
+      }
     }
   ],
-  "fixtureSha256": "d368cf325b7b2d14dfca388f358209b86c79839d939db9e420b6c832d4b9f08c"
+  "fixtureSha256": "e1d7c6e3f17cc8ccacdbc208a3a52e378dd6a8d4174ebd3eb0f5c113aaf0c419"
 }

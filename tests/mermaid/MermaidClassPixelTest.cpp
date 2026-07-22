@@ -232,11 +232,11 @@ int main(int argc, char** argv) {
               QLatin1String("bundled-noto-2.13b171"),
           QStringLiteral("Class pixel font contract drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("706dd83d649c8c763b09311d106522c63fdac0b64516d0af895b82ff78cc465f"),
+              QLatin1String("39272a26cf151587343b5a5e4840b3d710a4a52a43964c14f000840e8924b182"),
           QStringLiteral("Class pixel fixture changed; audit the browser oracle and update its digest"));
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 14,
-          QStringLiteral("Class pixel matrix must retain 8 scene and 6 label cases"));
+  require(cases.size() == 17,
+          QStringLiteral("Class pixel matrix must retain 9 scene and 8 label cases"));
   const QString directory = QFileInfo(manifest).absolutePath();
   editor::MermaidRenderCache cache;
   for (const QJsonValue& value : cases) {
@@ -258,9 +258,12 @@ int main(int argc, char** argv) {
       const QJsonObject labelBox = fixture.value(QStringLiteral("labelBox")).toObject();
       const QSizeF cssSize(labelBox.value(QStringLiteral("width")).toDouble(),
                            labelBox.value(QStringLiteral("height")).toDouble());
-      require(labelBox.value(QStringLiteral("foreignObjectCount")).toInt() == 1 &&
-                  labelBox.value(QStringLiteral("tag")).toString() == QLatin1String("g"),
-              id + QStringLiteral(": browser label container is not foreignObject-backed"));
+      const bool htmlBacked = labelBox.value(QStringLiteral("foreignObjectCount")).toInt() == 1;
+      const bool svgBacked = labelBox.value(QStringLiteral("textCount")).toInt() == 1 &&
+                             labelBox.value(QStringLiteral("tspanCount")).toInt() >= 1;
+      require(labelBox.value(QStringLiteral("tag")).toString() == QLatin1String("g") &&
+                  htmlBacked != svgBacked,
+              id + QStringLiteral(": browser label container mode drifted"));
       require((labelBox.value(QStringLiteral("mathCount")).toInt() > 0) ==
                   source.contains(QLatin1String("$$")),
               id + QStringLiteral(": browser MathML classification drifted"));
@@ -290,6 +293,8 @@ int main(int argc, char** argv) {
           {QStringLiteral("node-rtl"), {0.31, 0.845, 1.0}},
           {QStringLiteral("edge-math-bidi"), {0.145, 0.86, 3.0}},
           {QStringLiteral("cluster-cjk-rtl"), {0.48, 0.995, 2.0}},
+          {QStringLiteral("node-svg-multiline-cjk"), {0.36, 0.87, 2.0}},
+          {QStringLiteral("node-svg-rtl"), {0.285, 0.845, 2.0}},
       };
       const QString cropKind = fixture.value(QStringLiteral("cropKind")).toString();
       require(thresholds.contains(cropKind),
@@ -332,9 +337,14 @@ int main(int argc, char** argv) {
       const auto& node = entry.classScene->nodes.at(index);
       const QJsonObject expected = expectedNodes.at(index).toObject();
       const QSizeF browserOuter = jsonSize(expected.value(QStringLiteral("outer")).toObject());
-      require(std::abs(node.localOuter.width() - browserOuter.width()) <= 0.1 &&
-                  std::abs(node.localOuter.height() - browserOuter.height()) <= 0.1,
-              QStringLiteral("%1/%2: node outer bbox differs").arg(id, node.id));
+      const qreal outerTolerance = fixture.value(QStringLiteral("htmlLabels")).toBool(true)
+          ? 0.1 : 0.5;
+      require(std::abs(node.localOuter.width() - browserOuter.width()) <= outerTolerance &&
+                  std::abs(node.localOuter.height() - browserOuter.height()) <= outerTolerance,
+              QStringLiteral("%1/%2: node outer bbox differs: %3x%4 vs %5x%6")
+                  .arg(id, node.id)
+                  .arg(node.localOuter.width()).arg(node.localOuter.height())
+                  .arg(browserOuter.width()).arg(browserOuter.height()));
       const QJsonObject expectedStyle = expected.value(QStringLiteral("style")).toObject();
       requireColor(node.fill, expectedStyle.value(QStringLiteral("fill")).toString(),
                    id + QLatin1Char('/') + node.id + QStringLiteral(" fill"));
@@ -342,9 +352,12 @@ int main(int argc, char** argv) {
                    id + QLatin1Char('/') + node.id + QStringLiteral(" stroke"));
       const QJsonObject expectedLabelStyle =
           expected.value(QStringLiteral("labelStyle")).toObject();
+      const QString labelColorProperty =
+          fixture.value(QStringLiteral("htmlLabels")).toBool(true)
+              ? QStringLiteral("color") : QStringLiteral("fill");
       requireColor(node.textColor,
-                   expectedLabelStyle.value(QStringLiteral("color")).toString(),
-                   id + QLatin1Char('/') + node.id + QStringLiteral(" label"));
+                    expectedLabelStyle.value(labelColorProperty).toString(),
+                    id + QLatin1Char('/') + node.id + QStringLiteral(" label"));
     }
     require(entry.classScene->edges.size() ==
                 structure.value(QStringLiteral("edgePaths")).toArray().size(),
@@ -409,7 +422,13 @@ int main(int argc, char** argv) {
     }
     const qreal minimumIou = id == QLatin1String("marker-matrix") ? 0.965 : 0.985;
     const qreal maximumMae = id == QLatin1String("marker-matrix") ? 0.075 : 0.06;
-    require(aspectError <= 0.002, id + QStringLiteral(": painted aspect ratio differs"));
+    const qreal maximumAspectError =
+        fixture.value(QStringLiteral("htmlLabels")).toBool(true) ? 0.002 : 0.01;
+    require(aspectError <= maximumAspectError,
+            QStringLiteral("%1: painted aspect ratio differs by %2 (%3x%4 vs %5x%6)")
+                .arg(id).arg(aspectError)
+                .arg(native.width()).arg(native.height())
+                .arg(browser.width()).arg(browser.height()));
     require(iou >= minimumIou,
             QStringLiteral("%1: alpha IoU %2 is below %3").arg(id).arg(iou).arg(minimumIou));
     require(mae <= maximumMae,

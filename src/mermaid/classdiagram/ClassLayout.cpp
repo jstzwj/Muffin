@@ -49,7 +49,7 @@ ClassLayoutMemberInput memberInput(const ClassMember& member) {
   return {member.text, classifierStyle(member)};
 }
 
-QRectF compartmentBounds(const QVector<QSizeF>& items, qreal gap,
+QRectF compartmentBounds(const QVector<ClassTextMeasurement>& items, qreal gap,
                          bool firstOnly = false) {
   QRectF bounds;
   bool initialized = false;
@@ -57,12 +57,14 @@ QRectF compartmentBounds(const QVector<QSizeF>& items, qreal gap,
   const qsizetype count = firstOnly ? std::min<qsizetype>(items.size(), 1)
                                     : items.size();
   for (qsizetype index = 0; index < count; ++index) {
-    const QSizeF size = items.at(index);
-    const QRectF item(0.0, offset - size.height() / 2.0,
-                      size.width(), size.height());
+    const ClassTextMeasurement& measured = items.at(index);
+    const qsizetype lineCount = std::max<qsizetype>(1, measured.lineCount);
+    const qreal labelOffset =
+        -measured.bounds.height() / (2.0 * lineCount) + offset;
+    const QRectF item = measured.bounds.translated(0.0, labelOffset);
     bounds = initialized ? bounds.united(item) : item;
     initialized = true;
-    offset += size.height() + gap;
+    offset += measured.bounds.height() + gap;
   }
   return bounds;
 }
@@ -75,12 +77,17 @@ void uniteTranslated(QRectF& bounds, bool& initialized,
   initialized = true;
 }
 
-QSizeF measureClassText(const QString& source, const QString& cssStyle,
-                        const ClassLabelMeasureOptions& options, bool bold = false) {
-  flowchart::FlowLabelDocument document =
-      flowchart::parseFlowLabel(source, QStringLiteral("markdown"), true);
-  document.formattingContext =
-      flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
+ClassTextMeasurement measureClassText(
+    const QString& source, const QString& cssStyle,
+    const ClassLabelMeasureOptions& options, bool bold = false) {
+  const bool svgText = !options.htmlLabels &&
+      !source.contains(QStringLiteral("$$"));
+  flowchart::FlowLabelDocument document = svgText
+      ? flowchart::parseFlowSvgLabel(source, QStringLiteral("markdown"))
+      : flowchart::parseFlowLabel(source, QStringLiteral("markdown"), true);
+  if (!svgText)
+    document.formattingContext =
+        flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
   if (bold || !cssStyle.isEmpty()) {
     QTextCharFormat format;
     if (bold) format.setFontWeight(QFont::Bold);
@@ -90,8 +97,16 @@ QSizeF measureClassText(const QString& source, const QString& cssStyle,
       format.setFontUnderline(true);
     document.formats.append({0, static_cast<int>(document.text.size()), format});
   }
-  return flowchart::measureFlowLabel(document, options.fontFamily,
-                                     options.fontPixelSize, options.lineHeight);
+  const flowchart::FlowLabelLayoutMetrics layout = flowchart::layoutFlowLabel(
+      document, options.fontFamily, options.fontPixelSize, options.lineHeight);
+  ClassTextMeasurement measured;
+  measured.lineCount = std::max<qsizetype>(1, layout.lines.size());
+  measured.svgText = svgText;
+  measured.bounds = svgText
+      ? flowchart::measureFlowSvgTextBounds(
+            document, options.fontFamily, options.fontPixelSize)
+      : QRectF(QPointF(0.0, 0.0), layout.size);
+  return measured;
 }
 
 }  // namespace
@@ -216,6 +231,9 @@ QVector<ClassBoxGeometry> layoutClassBoxes(
   QVector<ClassBoxGeometry> result;
   const qreal padding = options.padding;
   const qreal gap = options.htmlLabels ? 0.0 : 3.0;
+  // classBox.ts applies this explicit correction after positioning every text
+  // group. It is part of Mermaid's SVG-label contract, not a font heuristic.
+  constexpr qreal kSvgTextGroupBaselineCorrection = -4.0;
 
   for (const ClassLayoutNodeInput& node : input.nodes) {
     if (node.shape != QLatin1String("classBox")) continue;
@@ -308,10 +326,10 @@ QVector<ClassBoxGeometry> layoutClassBoxes(
       geometry.methods.translation.setY(methodsInitialY + annotationOffset);
     }
     if (!options.htmlLabels) {
-      geometry.annotation.translation.ry() -= 4.0;
-      geometry.label.translation.ry() -= 4.0;
-      geometry.members.translation.ry() -= 4.0;
-      geometry.methods.translation.ry() -= 4.0;
+      geometry.annotation.translation.ry() += kSvgTextGroupBaselineCorrection;
+      geometry.label.translation.ry() += kSvgTextGroupBaselineCorrection;
+      geometry.members.translation.ry() += kSvgTextGroupBaselineCorrection;
+      geometry.methods.translation.ry() += kSvgTextGroupBaselineCorrection;
     }
 
     if (!noMembers || !noMethods || drawEmptyCompartments) {
@@ -336,6 +354,7 @@ ClassLayoutMeasurements measureClassLayoutLabels(
   for (const ClassLayoutNodeInput& node : input.nodes) {
     if (node.shape != QLatin1String("classBox")) continue;
     ClassNodeMeasurements measured;
+    measured.textPadding = options.htmlLabels ? 0.0 : 3.0;
     if (!node.annotations.isEmpty()) {
       measured.annotations.append(measureClassText(
           QString(QChar(0x00ab)) + node.annotations.first() + QChar(0x00bb),
@@ -365,7 +384,7 @@ ClassDagreMeasurements measureClassDagreInput(
       result.nodes.insert(node.id, classBoxes.value(node.id));
       continue;
     }
-    const QSizeF label = measureClassText(node.label, {}, options);
+    const QSizeF label = measureClassText(node.label, {}, options).bounds.size();
     const qreal padding = node.padding.value_or(0.0);
     result.nodes.insert(node.id,
         QSizeF(label.width() + padding * 2.0,
@@ -376,7 +395,8 @@ ClassDagreMeasurements measureClassDagreInput(
       result.edgeLabels.insert(edge.id, QSizeF(0.0, 0.0));
       continue;
     }
-    result.edgeLabels.insert(edge.id, measureClassText(edge.label, {}, options));
+    result.edgeLabels.insert(
+        edge.id, measureClassText(edge.label, {}, options).bounds.size());
   }
   return result;
 }

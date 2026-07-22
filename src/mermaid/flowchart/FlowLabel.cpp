@@ -168,6 +168,8 @@ QString normalizeBreaks(QString text) {
 struct ShapedTextMetrics {
   qreal width = 0.0;
   qreal inkWidth = 0.0;
+  qreal inkLeft = 0.0;
+  qreal inkRight = 0.0;
   QVector<FlowLabelVisualRun> runs;
 };
 
@@ -426,8 +428,11 @@ ShapedTextMetrics shapeTextRangePass(const FlowLabelDocument& label,
           logicalMaximum.at(runIndex) - logicalMinimum.at(runIndex) + 1;
     }
   }
-  if (inkLeft != std::numeric_limits<qreal>::max())
+  if (inkLeft != std::numeric_limits<qreal>::max()) {
     result.inkWidth = std::max<qreal>(0.0, inkRight - inkLeft);
+    result.inkLeft = inkLeft - left;
+    result.inkRight = inkRight - left;
+  }
   std::sort(result.runs.begin(), result.runs.end(),
             [](const FlowLabelVisualRun& a, const FlowLabelVisualRun& b) {
               return a.x < b.x;
@@ -887,6 +892,82 @@ QVector<FlowLabelLineRange> flowLabelLineRanges(
 }
 
 }  // namespace
+
+QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
+                                const QString& fontFamily,
+                                qreal fontPixelSize) {
+  QFont font(fontFamily);
+  MermaidFontRegistry::configureFont(font, fontFamily);
+  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
+  font.setHintingPreference(QFont::PreferNoHinting);
+
+  const QVector<FlowLabelLineRange> lines = flowLabelLineRanges(label);
+  qreal left = std::numeric_limits<qreal>::max();
+  qreal right = std::numeric_limits<qreal>::lowest();
+  for (const FlowLabelLineRange& line : lines) {
+    const ShapedTextMetrics shaped = shapeTextRange(
+        label, line.start, line.length, font);
+    const bool syntheticBold = std::any_of(
+        label.formats.cbegin(), label.formats.cend(),
+        [&](const QTextLayout::FormatRange& range) {
+          return range.start < line.start + line.length &&
+              range.start + range.length > line.start &&
+              range.format.fontWeight() > QFont::Normal;
+        });
+    const bool syntheticItalic = std::any_of(
+        label.formats.cbegin(), label.formats.cend(),
+        [&](const QTextLayout::FormatRange& range) {
+          return range.start < line.start + line.length &&
+              range.start + range.length > line.start &&
+              range.format.fontItalic();
+        });
+    const bool cjkOutline = std::any_of(
+        shaped.runs.cbegin(), shaped.runs.cend(),
+        [](const FlowLabelVisualRun& run) {
+          return run.fontFamily.contains(QStringLiteral("CJK"),
+                                         Qt::CaseInsensitive);
+        });
+    const bool hasFallbackRun = std::any_of(
+        shaped.runs.cbegin(), shaped.runs.cend(),
+        [](const FlowLabelVisualRun& run) {
+          return run.fontFamily.compare(QStringLiteral("Noto Sans"),
+                                        Qt::CaseInsensitive) != 0;
+        });
+    // Skia emboldens a registered Regular webfont by one CSS pixel at 16px.
+    // Qt's synthetic face has a different outline overhang, while both retain
+    // the same OpenType advance. Model Chromium's synthetic stroke directly.
+    const qreal boldOverhang = syntheticBold ? fontPixelSize / 16.0 : 0.0;
+    const ShapedTextMetrics regularOutline = syntheticBold
+        ? shapeTextRangePass(label, line.start, line.length, font, false)
+        : ShapedTextMetrics{};
+    const qreal lineLeft = syntheticBold ? -boldOverhang
+        : syntheticItalic ? 0.0
+        : shaped.inkWidth > 0.0 ? std::min<qreal>(0.0, shaped.inkLeft) : 0.0;
+    const qreal lineRight = syntheticBold
+        ? (hasFallbackRun
+               ? shaped.width + boldOverhang
+               : std::max(regularOutline.width,
+                          regularOutline.inkLeft + regularOutline.inkRight +
+                              boldOverhang))
+        : syntheticItalic ? shaped.width
+        : shaped.inkWidth > 0.0 ? std::max(shaped.width, shaped.inkRight)
+                                : shaped.width;
+    const qreal chromiumRight = lineRight +
+        (!syntheticBold && !syntheticItalic && cjkOutline
+             ? fontPixelSize / 16.0 : 0.0);
+    left = std::min(left, lineLeft);
+    right = std::max(right, chromiumRight);
+  }
+  if (left == std::numeric_limits<qreal>::max()) left = right = 0.0;
+
+  const FlowLabelFontMetrics vertical =
+      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize);
+  const qsizetype lineCount = std::max<qsizetype>(1, lines.size());
+  const qreal top = fontPixelSize - vertical.ascent;
+  const qreal height = vertical.height() +
+      (lineCount - 1) * flowSvgFormattedTextLineStep(fontPixelSize);
+  return {left, top, std::max<qreal>(0.0, right - left), height};
+}
 
 FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
                                 const QString& fontFamily,

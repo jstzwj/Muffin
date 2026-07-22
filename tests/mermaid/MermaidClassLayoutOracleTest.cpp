@@ -17,6 +17,8 @@
 using namespace muffin::mermaid::classdiagram;
 
 namespace {
+qreal coordinateTolerance = 0.01;
+qreal measurementTolerance = 0.2;
 [[noreturn]] void fail(const QString& message) {
   qCritical().noquote() << message;
   std::exit(1);
@@ -82,7 +84,7 @@ QString json(const QJsonObject& value) {
 }
 
 void requireNear(qreal actual, qreal expected, const QString& context) {
-  if (std::abs(actual - expected) > 0.01)
+  if (std::abs(actual - expected) > coordinateTolerance)
     fail(QStringLiteral("%1: native %2, upstream %3")
              .arg(context).arg(actual, 0, 'f', 3).arg(expected, 0, 'f', 3));
 }
@@ -93,9 +95,18 @@ QSizeF size(const QJsonValue& value) {
           object.value(QStringLiteral("height")).toDouble()};
 }
 
-QVector<QSizeF> sizes(const QJsonArray& values) {
-  QVector<QSizeF> result;
-  for (const QJsonValue& value : values) result.append(size(value));
+QVector<ClassTextMeasurement> measurements(const QJsonArray& values,
+                                           bool svgText) {
+  QVector<ClassTextMeasurement> result;
+  for (const QJsonValue& value : values) {
+    const QJsonObject object = value.toObject();
+    result.append({QRectF(object.value(QStringLiteral("x")).toDouble(),
+                          object.value(QStringLiteral("y")).toDouble(),
+                          object.value(QStringLiteral("width")).toDouble(),
+                          object.value(QStringLiteral("height")).toDouble()),
+                   object.value(QStringLiteral("lineCount")).toInteger(1),
+                   object.value(QStringLiteral("svgText")).toBool(svgText)});
+  }
   return result;
 }
 
@@ -132,7 +143,8 @@ void requireCompartmentNear(const ClassCompartmentGeometry& actual,
   requireNear(actual.translation.y(), point.y(), context + QStringLiteral(".translateY"));
 }
 
-void requireSizesNear(const QVector<QSizeF>& actual, const QJsonArray& expected,
+void requireMeasurementsNear(const QVector<ClassTextMeasurement>& actual,
+                      const QJsonArray& expected,
                       const QString& context) {
   require(actual.size() == expected.size(),
           QStringLiteral("%1 item count: native %2, upstream %3")
@@ -140,12 +152,23 @@ void requireSizesNear(const QVector<QSizeF>& actual, const QJsonArray& expected,
   for (qsizetype index = 0; index < actual.size(); ++index) {
     const QSizeF upstream = size(expected.at(index));
     const QString item = context + QStringLiteral("[%1]").arg(index);
-    require(std::abs(actual.at(index).width() - upstream.width()) <= 0.2,
+    const QRectF bounds = actual.at(index).bounds;
+    require(std::abs(bounds.x() - expected.at(index).toObject()
+                                  .value(QStringLiteral("x")).toDouble()) <= measurementTolerance &&
+                std::abs(bounds.y() - expected.at(index).toObject()
+                                  .value(QStringLiteral("y")).toDouble()) <= measurementTolerance,
+            QStringLiteral("%1.bounds: native %2,%3 %4x%5; upstream %6,%7 %8x%9")
+                .arg(item).arg(bounds.x()).arg(bounds.y())
+                .arg(bounds.width()).arg(bounds.height())
+                .arg(expected.at(index).toObject().value(QStringLiteral("x")).toDouble())
+                .arg(expected.at(index).toObject().value(QStringLiteral("y")).toDouble())
+                .arg(upstream.width()).arg(upstream.height()));
+    require(std::abs(bounds.width() - upstream.width()) <= measurementTolerance,
             QStringLiteral("%1.width: native %2, upstream %3")
-                .arg(item).arg(actual.at(index).width()).arg(upstream.width()));
-    require(std::abs(actual.at(index).height() - upstream.height()) <= 0.2,
+                .arg(item).arg(bounds.width()).arg(upstream.width()));
+    require(std::abs(bounds.height() - upstream.height()) <= measurementTolerance,
             QStringLiteral("%1.height: native %2, upstream %3")
-                .arg(item).arg(actual.at(index).height()).arg(upstream.height()));
+                .arg(item).arg(bounds.height()).arg(upstream.height()));
   }
 }
 }  // namespace
@@ -161,11 +184,11 @@ int main(int argc, char** argv) {
                   QLatin1String("ClassDB.getData+classBox.svg+dagre.svg+structure.svg"),
           QStringLiteral("Class layout upstream contract drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("d368cf325b7b2d14dfca388f358209b86c79839d939db9e420b6c832d4b9f08c"),
+              QLatin1String("e1d7c6e3f17cc8ccacdbc208a3a52e378dd6a8d4174ebd3eb0f5c113aaf0c419"),
           QStringLiteral("Class layout fixture changed; audit input mapping and update its digest"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 17, QStringLiteral("Class layout case count drifted"));
+  require(cases.size() == 20, QStringLiteral("Class layout case count drifted"));
   QSet<QString> ids, shapes, markers;
   for (const QJsonValue& caseValue : cases) {
     const QJsonObject fixture = caseValue.toObject();
@@ -179,6 +202,11 @@ int main(int argc, char** argv) {
     options.hideEmptyMembersBox =
         fixture.value(QStringLiteral("hideEmptyMembersBox")).toBool(false);
     options.htmlLabels = fixture.value(QStringLiteral("htmlLabels")).toBool(true);
+    coordinateTolerance = options.htmlLabels ? 0.01 : 0.2;
+    const QString source = fixture.value(QStringLiteral("source")).toString();
+    measurementTolerance = !options.htmlLabels && std::any_of(
+        source.cbegin(), source.cend(), [](QChar ch) { return ch.unicode() > 0x7f; })
+        ? 0.5 : options.htmlLabels ? 0.2 : 0.3;
     const ClassLayoutInput input = buildClassLayoutInput(diagram.data(), options);
     const QJsonObject actual = inputJson(input);
     QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
@@ -193,14 +221,19 @@ int main(int argc, char** argv) {
     for (const QJsonValue& renderedValue : renderedNodes) {
       const QJsonObject rendered = renderedValue.toObject();
       const QJsonObject measured = rendered.value(QStringLiteral("measured")).toObject();
+      const bool svgText = !options.htmlLabels;
       measurements.insert(rendered.value(QStringLiteral("id")).toString(), {
-          sizes(measured.value(QStringLiteral("annotation")).toArray()),
-          sizes(measured.value(QStringLiteral("label")).toArray()),
-          sizes(measured.value(QStringLiteral("members")).toArray()),
-          sizes(measured.value(QStringLiteral("methods")).toArray())});
+          ::measurements(measured.value(QStringLiteral("annotation")).toArray(), svgText),
+          ::measurements(measured.value(QStringLiteral("label")).toArray(), svgText),
+          ::measurements(measured.value(QStringLiteral("members")).toArray(), svgText),
+          ::measurements(measured.value(QStringLiteral("methods")).toArray(), svgText),
+          svgText ? 3.0 : 0.0});
     }
     const QVector<ClassBoxGeometry> geometries = layoutClassBoxes(input, measurements, options);
-    const ClassLayoutMeasurements nativeMeasurements = measureClassLayoutLabels(input);
+    ClassLabelMeasureOptions nativeMeasureOptions;
+    nativeMeasureOptions.htmlLabels = options.htmlLabels;
+    const ClassLayoutMeasurements nativeMeasurements =
+        measureClassLayoutLabels(input, nativeMeasureOptions);
     require(geometries.size() == renderedNodes.size(),
             QStringLiteral("Class geometry count mismatch for %1").arg(id));
     for (const QJsonValue& renderedValue : renderedNodes) {
@@ -214,13 +247,13 @@ int main(int argc, char** argv) {
       const QJsonObject measured = rendered.value(QStringLiteral("measured")).toObject();
       const QString context = id + QLatin1Char('/') + nodeId;
       const ClassNodeMeasurements nativeMeasured = nativeMeasurements.value(nodeId);
-      requireSizesNear(nativeMeasured.annotations,
+      requireMeasurementsNear(nativeMeasured.annotations,
           measured.value(QStringLiteral("annotation")).toArray(), context + QStringLiteral(".measured.annotation"));
-      requireSizesNear(nativeMeasured.labels,
+      requireMeasurementsNear(nativeMeasured.labels,
           measured.value(QStringLiteral("label")).toArray(), context + QStringLiteral(".measured.label"));
-      requireSizesNear(nativeMeasured.members,
+      requireMeasurementsNear(nativeMeasured.members,
           measured.value(QStringLiteral("members")).toArray(), context + QStringLiteral(".measured.members"));
-      requireSizesNear(nativeMeasured.methods,
+      requireMeasurementsNear(nativeMeasured.methods,
           measured.value(QStringLiteral("methods")).toArray(), context + QStringLiteral(".measured.methods"));
       requireRectNear(found->bounds, rect(geometry.value(QStringLiteral("bbox"))),
                       context + QStringLiteral(".bbox"));
@@ -262,7 +295,7 @@ int main(int argc, char** argv) {
                    box.value(QStringLiteral("height")).toDouble()));
       }
       const ClassDagreMeasurements nativeDagreMeasurements =
-          measureClassDagreInput(input, geometries);
+          measureClassDagreInput(input, geometries, nativeMeasureOptions);
       for (auto iterator = dagreMeasurements.nodes.cbegin();
            iterator != dagreMeasurements.nodes.cend(); ++iterator) {
         const QSizeF native = nativeDagreMeasurements.nodes.value(iterator.key());

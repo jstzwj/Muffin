@@ -210,6 +210,40 @@ const cases = [
     ].join("\n"),
   },
   {
+    id: "svg-label-compartments",
+    htmlLabels: false,
+    source: [
+      "classDiagram",
+      "class Service {",
+      "  <<interface>>",
+      "  +String name",
+      "  +run(input) Result*",
+      "}",
+    ].join("\n"),
+  },
+  {
+    id: "svg-multiline-cjk-rtl",
+    htmlLabels: false,
+    source: [
+      "classDiagram",
+      "class Mixed[\"Service<br/>中文 مرحبا\"] {",
+      "  +名称",
+      "  +שלום(value) نتيجة",
+      "}",
+    ].join("\n"),
+  },
+  {
+    id: "svg-classifier-styles",
+    htmlLabels: false,
+    source: [
+      "classDiagram",
+      "class Styled {",
+      "  +staticValue$",
+      "  +abstractMethod()*",
+      "}",
+    ].join("\n"),
+  },
+  {
     id: "compound-self-parallel-relations",
     source: [
       "classDiagram",
@@ -338,10 +372,23 @@ try {
           const groupSnapshot = (name) => {
             const current = group(name);
             const labels = [...(current?.querySelectorAll(":scope > .label") ?? [])];
+            const itemSnapshot = (label) => {
+              const foreign = label.querySelector("foreignObject");
+              const html = foreign?.querySelector("div")?.innerHTML ?? "";
+              const mathRows = html.includes("</math>")
+                ? (html.match(/<mrow>/g)?.length ?? 0) : 0;
+              return {
+                ...bbox(label),
+                lineCount: foreign
+                  ? Math.max(1, html.split(/<br\s*\/?\s*>/i).length + mathRows)
+                  : Math.max(1, label.querySelector("text")?.children.length ?? 0),
+                svgText: !foreign,
+              };
+            };
             return {
               bbox: bbox(current),
               transform: current?.getAttribute("transform") ?? "",
-              items: labels.map(bbox),
+              items: labels.map(itemSnapshot),
               itemDetails: labels.map((label) => ({
                 bbox: bbox(label),
                 transform: label.getAttribute("transform") ?? "",

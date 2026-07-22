@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("mermaidVersion")).toString() ==
               QLatin1String("11.16.0") &&
               root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("706dd83d649c8c763b09311d106522c63fdac0b64516d0af895b82ff78cc465f"),
+              QLatin1String("39272a26cf151587343b5a5e4840b3d710a4a52a43964c14f000840e8924b182"),
           QStringLiteral("Class SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;
@@ -77,10 +77,12 @@ int main(int argc, char** argv) {
   int mathCases = 0;
   int orderedEntries = 0;
   int labelContainers = 0;
+  int svgTextContainers = 0;
+  int tspanEntries = 0;
   int markerEntries = 0;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 14,
-          QStringLiteral("Class SVG structural matrix must retain 14 cases"));
+  require(cases.size() == 17,
+          QStringLiteral("Class SVG structural matrix must retain 17 cases"));
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
@@ -121,15 +123,25 @@ int main(int argc, char** argv) {
                 counts.value(QStringLiteral("defs")).toInt() >= 1,
             QStringLiteral("%1 browser/native structural counts differ").arg(id));
     const QJsonArray labels = structure.value(QStringLiteral("labelContainers")).toArray();
-    require(labels.size() == counts.value(QStringLiteral("foreignObject")).toInt(),
-            QStringLiteral("%1 foreignObject/label count drifted").arg(id));
+    int htmlLabels = 0;
+    int svgLabels = 0;
     for (const QJsonValue& labelValue : labels) {
       const QJsonObject label = labelValue.toObject();
+      const bool htmlBacked =
+          label.value(QStringLiteral("foreignObjectCount")).toInt() == 1;
+      const bool svgBacked = label.value(QStringLiteral("textCount")).toInt() >= 1 &&
+                             label.value(QStringLiteral("tspanCount")).toInt() >= 1;
       require(label.value(QStringLiteral("tag")).toString() == QLatin1String("g") &&
-                  label.value(QStringLiteral("foreignObjectCount")).toInt() == 1 &&
+                  htmlBacked != svgBacked &&
                   !label.value(QStringLiteral("class")).toString().isEmpty(),
               QStringLiteral("%1 label container structure drifted").arg(id));
+      htmlLabels += htmlBacked;
+      svgLabels += svgBacked;
+      tspanEntries += label.value(QStringLiteral("tspanCount")).toInt();
     }
+    require(htmlLabels == counts.value(QStringLiteral("foreignObject")).toInt(),
+            QStringLiteral("%1 foreignObject/label count drifted").arg(id));
+    svgTextContainers += svgLabels;
     labelContainers += labels.size();
     const int browserMath = counts.value(QStringLiteral("math")).toInt();
     require(nativeMathCount(scene) == browserMath,
@@ -185,8 +197,9 @@ int main(int argc, char** argv) {
               QStringLiteral("%1 lost accessibility references").arg(id));
     }
   }
-  require(ariaCases == 1 && mathCases == 2 && labelContainers == 59 &&
-              markerEntries == 266 && orderedEntries >= 750,
+  require(ariaCases == 1 && mathCases == 2 && labelContainers == 65 &&
+              svgTextContainers == 6 && tspanEntries == 19 &&
+              markerEntries == 323 && orderedEntries >= 900,
           QStringLiteral("Class SVG structural coverage matrix regressed"));
   qDebug() << "MermaidClassSvgStructuralTest:" << cases.size()
            << "cases," << orderedEntries << "ordered DOM entries passed";

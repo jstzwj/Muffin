@@ -127,7 +127,7 @@ int main(int argc, char** argv) {
                                       QStringLiteral("parser")},
           QStringLiteral("Class diagnostic mutation coverage regressed"));
 
-  require(layoutCases.size() >= 17, QStringLiteral("Class layout corpus regressed"));
+  require(layoutCases.size() >= 20, QStringLiteral("Class layout corpus regressed"));
   for (const QString& id : {QStringLiteral("class-compartments"),
                             QStringLiteral("relation-marker-label-matrix"),
                             QStringLiteral("lollipop-and-note-edge"),
@@ -136,6 +136,9 @@ int main(int argc, char** argv) {
                             QStringLiteral("nested-namespace-label-matrix"),
                             QStringLiteral("inert-spacing-rl"),
                             QStringLiteral("inert-spacing-bt"),
+                            QStringLiteral("svg-label-compartments"),
+                            QStringLiteral("svg-multiline-cjk-rtl"),
+                            QStringLiteral("svg-classifier-styles"),
                             QStringLiteral("compound-self-parallel-relations")})
     require(layoutIds.contains(id), QStringLiteral("Class layout axis missing: %1").arg(id));
   for (const QJsonValue& value : layoutCases) {
@@ -191,16 +194,16 @@ int main(int argc, char** argv) {
   const QStringList diskPngList = QDir(pixelDir).entryList(
       {QStringLiteral("*.png")}, QDir::Files, QDir::Name);
   const QSet<QString> diskPngs(diskPngList.cbegin(), diskPngList.cend());
-  require(referencedPngs == diskPngs && diskPngs.size() == 16,
+  require(referencedPngs == diskPngs && diskPngs.size() == 19,
           QStringLiteral("Class PNG fixture references/orphans regressed"));
-  require(pixelCases.size() >= 14 && cropCases >= 6 && sceneCases >= 8 &&
+  require(pixelCases.size() >= 17 && cropCases >= 8 && sceneCases >= 9 &&
               themes == QSet<QString>{QStringLiteral("default"), QStringLiteral("dark")} &&
               dprs == QSet<QString>{QStringLiteral("1"), QStringLiteral("1.25"),
                                     QStringLiteral("1.5"), QStringLiteral("2")} &&
               cropTargets == QSet<QString>{QStringLiteral("node"), QStringLiteral("edge"),
                                            QStringLiteral("cluster")} &&
-              cropKinds.size() == 6 && mathCases >= 2 && bidiCases >= 3 && cjkCases >= 3 &&
-              markerDefinitions >= 266 && labelContainers >= 59 && domEntries >= 750 &&
+              cropKinds.size() == 8 && mathCases >= 2 && bidiCases >= 5 && cjkCases >= 5 &&
+              markerDefinitions >= 323 && labelContainers >= 65 && domEntries >= 900 &&
               ariaCases >= 1,
           QStringLiteral("Class theme/DPR/label/SVG coverage regressed: themes=%1 dprs=%2 "
                          "crops=%3 scenes=%4 targets=%5 kinds=%6 math=%7 bidi=%8 cjk=%9 "

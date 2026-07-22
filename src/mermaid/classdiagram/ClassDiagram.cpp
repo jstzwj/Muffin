@@ -2,6 +2,7 @@
 
 #include <QJsonArray>
 #include <QMap>
+#include <QRegularExpression>
 #include <algorithm>
 
 namespace muffin::mermaid::classdiagram {
@@ -22,6 +23,13 @@ QString memberHtmlText(QString text) {
     cursor = closing + 1;
   }
   return htmlText(std::move(text));
+}
+
+QString canonicalizeLabelHtml(QString label) {
+  static const QRegularExpression breakTag(
+      QStringLiteral(R"(<\s*br\s*/?\s*>)"),
+      QRegularExpression::CaseInsensitiveOption);
+  return label.replace(breakTag, QStringLiteral("<br>"));
 }
 
 ClassSourceSpan spanForOffset(const QString& source, qsizetype offset, qsizetype length = 0) {
@@ -415,7 +423,7 @@ private:
               ClassErrorStage::Parser, ClassErrorCode::InvalidClassLabel,
               QStringLiteral("classLabel"), cursor.raw(source_),
               {QStringLiteral("STR"), QStringLiteral("SQE")});
-      node.label = cursor.consume().text;
+      node.label = canonicalizeLabelHtml(cursor.consume().text);
       if (!cursor.match(ClassTokenKind::RBracket))
         raise(source_, openingBracket.offset,
               ClassErrorStage::Parser, ClassErrorCode::InvalidClassLabel,

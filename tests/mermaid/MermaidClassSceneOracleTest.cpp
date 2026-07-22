@@ -18,18 +18,20 @@
 using namespace muffin::mermaid::classdiagram;
 
 namespace {
+qreal coordinateTolerance = 0.01;
+qreal labelMetricTolerance = 0.2;
 [[noreturn]] void fail(const QString& message) {
   qCritical().noquote() << message;
   std::exit(1);
 }
 void require(bool condition, const QString& message) { if (!condition) fail(message); }
 void near(qreal actual, qreal expected, const QString& context) {
-  if (std::abs(actual - expected) > 0.01)
+  if (std::abs(actual - expected) > coordinateTolerance)
     fail(QStringLiteral("%1: native %2, upstream %3")
              .arg(context).arg(actual, 0, 'f', 4).arg(expected, 0, 'f', 4));
 }
 void nearLabelMetric(qreal actual, qreal expected, const QString& context) {
-  if (std::abs(actual - expected) > 0.2)
+  if (std::abs(actual - expected) > labelMetricTolerance)
     fail(QStringLiteral("%1: native %2, upstream %3")
              .arg(context).arg(actual, 0, 'f', 4).arg(expected, 0, 'f', 4));
 }
@@ -37,9 +39,18 @@ QSizeF size(const QJsonObject& value) {
   return {value.value(QStringLiteral("width")).toDouble(),
           value.value(QStringLiteral("height")).toDouble()};
 }
-QVector<QSizeF> sizes(const QJsonArray& values) {
-  QVector<QSizeF> result;
-  for (const QJsonValue& value : values) result.append(size(value.toObject()));
+QVector<ClassTextMeasurement> measurements(const QJsonArray& values,
+                                           bool svgText) {
+  QVector<ClassTextMeasurement> result;
+  for (const QJsonValue& value : values) {
+    const QJsonObject object = value.toObject();
+    result.append({QRectF(object.value(QStringLiteral("x")).toDouble(),
+                          object.value(QStringLiteral("y")).toDouble(),
+                          object.value(QStringLiteral("width")).toDouble(),
+                          object.value(QStringLiteral("height")).toDouble()),
+                   object.value(QStringLiteral("lineCount")).toInteger(1),
+                   object.value(QStringLiteral("svgText")).toBool(svgText)});
+  }
   return result;
 }
 qreal number(const QString& value) {
@@ -80,16 +91,18 @@ void comparePath(const QString& actual, const QJsonArray& expected,
   }
 }
 
-ClassLayoutMeasurements browserMeasurements(const QJsonArray& nodes) {
+ClassLayoutMeasurements browserMeasurements(const QJsonArray& nodes,
+                                             bool svgText) {
   ClassLayoutMeasurements result;
   for (const QJsonValue& value : nodes) {
     const QJsonObject node = value.toObject();
     const QJsonObject measured = node.value(QStringLiteral("measured")).toObject();
     ClassNodeMeasurements item;
-    item.annotations = sizes(measured.value(QStringLiteral("annotation")).toArray());
-    item.labels = sizes(measured.value(QStringLiteral("label")).toArray());
-    item.members = sizes(measured.value(QStringLiteral("members")).toArray());
-    item.methods = sizes(measured.value(QStringLiteral("methods")).toArray());
+    item.annotations = measurements(measured.value(QStringLiteral("annotation")).toArray(), svgText);
+    item.labels = measurements(measured.value(QStringLiteral("label")).toArray(), svgText);
+    item.members = measurements(measured.value(QStringLiteral("members")).toArray(), svgText);
+    item.methods = measurements(measured.value(QStringLiteral("methods")).toArray(), svgText);
+    item.textPadding = svgText ? 3.0 : 0.0;
     result.insert(node.value(QStringLiteral("id")).toString(), std::move(item));
   }
   return result;
@@ -154,8 +167,9 @@ void compareLabelGroup(const QVector<ClassSceneLabel>& actual,
     nearLabelMetric(actual.at(index).size.height(),
                     box.value(QStringLiteral("height")).toDouble(),
                     context + QStringLiteral("[%1].height").arg(index));
-    require(actual.at(index).document.text ==
-                item.value(QStringLiteral("text")).toString(),
+    QString domText = actual.at(index).document.text;
+    domText.remove(QLatin1Char('\n'));
+    require(domText == item.value(QStringLiteral("text")).toString(),
             context + QStringLiteral("[%1].text").arg(index));
   }
 }
@@ -225,11 +239,17 @@ int main(int argc, char** argv) {
     options.hierarchicalNamespaces = fixture.value(QStringLiteral("hierarchicalNamespaces")).toBool(true);
     options.hideEmptyMembersBox = fixture.value(QStringLiteral("hideEmptyMembersBox")).toBool(false);
     options.htmlLabels = fixture.value(QStringLiteral("htmlLabels")).toBool(true);
+    coordinateTolerance = options.htmlLabels ? 0.01 : 0.2;
+    const QString source = fixture.value(QStringLiteral("source")).toString();
+    labelMetricTolerance = !options.htmlLabels && std::any_of(
+        source.cbegin(), source.cend(), [](QChar ch) { return ch.unicode() > 0x7f; })
+        ? 0.5 : options.htmlLabels ? 0.2 : 0.3;
     const ClassLayoutInput input = buildClassLayoutInput(
         ClassDiagram::parse(fixture.value(QStringLiteral("source")).toString()).data(), options);
     const QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
     const ClassLayoutMeasurements measurements = browserMeasurements(
-        expected.value(QStringLiteral("renderedNodes")).toArray());
+        expected.value(QStringLiteral("renderedNodes")).toArray(),
+        !options.htmlLabels);
     const QVector<ClassBoxGeometry> boxes = layoutClassBoxes(input, measurements, options);
     const QJsonObject placementJson = expected.value(QStringLiteral("placement")).toObject();
     const ClassPlacementResult placement = layoutClassDiagramDagre(

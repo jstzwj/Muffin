@@ -31,6 +31,7 @@ struct ClassSceneLabel {
   QString cssStyle;
   QPointF center;
   QSizeF size;
+  bool svgText = false;
   flowchart::FlowLabelDocument document;
 };
 

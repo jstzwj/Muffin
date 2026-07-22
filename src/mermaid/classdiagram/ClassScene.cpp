@@ -114,10 +114,14 @@ QPointF terminalPosition(const QVector<QPointF>& source, bool start,
 
 flowchart::FlowLabelDocument prepareLabel(const QString& text, qreal fontSize,
                                           bool bold = false,
-                                          const QString& cssStyle = {}) {
-  auto document = flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
-  document.formattingContext =
-      flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
+                                          const QString& cssStyle = {},
+                                          bool svgText = false) {
+  auto document = svgText
+      ? flowchart::parseFlowSvgLabel(text, QStringLiteral("markdown"))
+      : flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
+  if (!svgText)
+    document.formattingContext =
+        flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
   if ((bold || !cssStyle.isEmpty()) && !document.text.isEmpty()) {
     QTextCharFormat format;
     if (bold) format.setFontWeight(QFont::Bold);
@@ -132,24 +136,30 @@ flowchart::FlowLabelDocument prepareLabel(const QString& text, qreal fontSize,
 }
 
 QVector<ClassSceneLabel> compartmentLabels(
-    const QVector<QString>& texts, const QVector<QSizeF>& sizes,
+    const QVector<QString>& texts,
+    const QVector<ClassTextMeasurement>& measurements,
     const ClassCompartmentGeometry& geometry, const QVector<QString>& styles,
-    const ClassSceneStyle& sceneStyle, bool centered, bool bold = false) {
+    const ClassSceneStyle& sceneStyle, qreal textPadding,
+    bool bold = false) {
   QVector<ClassSceneLabel> labels;
-  qreal y = 0.0;
+  qreal offset = 0.0;
   for (qsizetype i = 0; i < texts.size(); ++i) {
-    const QSizeF size = sizes.value(i);
+    const ClassTextMeasurement measured = measurements.value(i);
+    const qsizetype lineCount = std::max<qsizetype>(1, measured.lineCount);
+    const qreal labelOffset =
+        -measured.bounds.height() / (2.0 * lineCount) + offset;
     ClassSceneLabel label;
     label.text = texts.at(i);
     label.cssStyle = styles.value(i);
-    label.size = size;
-    label.center = geometry.translation + QPointF(
-        centered ? geometry.localBounds.width() / 2.0 : size.width() / 2.0,
-        y);
+    label.size = measured.bounds.size();
+    label.svgText = measured.svgText;
+    label.center = geometry.translation +
+        QPointF(measured.bounds.center().x(),
+                measured.bounds.center().y() + labelOffset);
     label.document = prepareLabel(label.text, sceneStyle.fontSize, bold,
-                                  label.cssStyle);
+                                  label.cssStyle, label.svgText);
     labels.append(std::move(label));
-    y += size.height();
+    offset += measured.bounds.height() + textPadding;
   }
   return labels;
 }
@@ -312,17 +322,17 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
       if (!node.annotations.isEmpty())
         annotationTexts.append(QString(QChar(0x00ab)) + node.annotations.first() + QChar(0x00bb));
       rendered.annotationLabels = compartmentLabels(annotationTexts, measured.annotations,
-          box.annotation, {}, scene.style, true);
+          box.annotation, {}, scene.style, measured.textPadding);
       rendered.nameLabels = compartmentLabels(
           {classBoxLabelMarkup(node.label, node.text)}, measured.labels,
-          box.label, {}, scene.style, true, true);
+          box.label, {}, scene.style, measured.textPadding, true);
       QVector<QString> memberTexts, memberStyles, methodTexts, methodStyles;
       for (const auto& value : node.members) { memberTexts.append(value.text); memberStyles.append(value.cssStyle); }
       for (const auto& value : node.methods) { methodTexts.append(value.text); methodStyles.append(value.cssStyle); }
       rendered.memberLabels = compartmentLabels(memberTexts, measured.members,
-          box.members, memberStyles, scene.style, false);
+          box.members, memberStyles, scene.style, measured.textPadding);
       rendered.methodLabels = compartmentLabels(methodTexts, measured.methods,
-          box.methods, methodStyles, scene.style, false);
+          box.methods, methodStyles, scene.style, measured.textPadding);
     } else {
       rendered.localOuter = QRectF(-placed.width / 2.0, -placed.height / 2.0,
                                   placed.width, placed.height);

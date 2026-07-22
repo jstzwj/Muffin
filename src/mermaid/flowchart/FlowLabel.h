@@ -175,6 +175,12 @@ qreal measureFlowTextInkWidth(const FlowLabelDocument& label,
                               const QString& fontFamily,
                               qreal fontPixelSize);
 
+// Chromium SVGTextElement.getBBox() for createFormattedText(): the first
+// tspan baseline is 1em and following lines advance by 1.1em.
+QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
+                                const QString& fontFamily,
+                                qreal fontPixelSize);
+
 // CSS inline advance for a document range, using the same OpenType tables and
 // visual glyph runs as label layout.
 qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
