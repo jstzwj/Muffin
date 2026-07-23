@@ -15,6 +15,44 @@ qsizetype InlineRange::length() const {
 
 InlineNode::InlineNode(InlineType type) : type_(type) {}
 
+InlineNode::InlineNode(const InlineNode& other)
+    : type_(other.type_), text_(other.text_), children_(other.children_),
+      sourceRanges_(other.sourceRanges_),
+      extendedMetadata_(other.extendedMetadata_
+                            ? std::make_unique<ExtendedMetadata>(*other.extendedMetadata_)
+                            : nullptr) {}
+
+InlineNode& InlineNode::operator=(const InlineNode& other) {
+  if (this != &other) {
+    auto extendedMetadata = other.extendedMetadata_
+        ? std::make_unique<ExtendedMetadata>(*other.extendedMetadata_)
+        : nullptr;
+    type_ = other.type_;
+    text_ = other.text_;
+    children_ = other.children_;
+    sourceRanges_ = other.sourceRanges_;
+    extendedMetadata_ = std::move(extendedMetadata);
+  }
+  return *this;
+}
+
+bool InlineNode::ExtendedMetadata::isEmpty() const {
+  return marker.isEmpty() && href.isEmpty() && title.isEmpty() && alt.isEmpty() && !autolink;
+}
+
+InlineNode::ExtendedMetadata& InlineNode::ensureExtendedMetadata() {
+  if (!extendedMetadata_) {
+    extendedMetadata_ = std::make_unique<ExtendedMetadata>();
+  }
+  return *extendedMetadata_;
+}
+
+void InlineNode::pruneExtendedMetadata() {
+  if (extendedMetadata_ && extendedMetadata_->isEmpty()) {
+    extendedMetadata_.reset();
+  }
+}
+
 InlineType InlineNode::type() const {
   return type_;
 }
@@ -85,35 +123,51 @@ bool InlineNode::usesSharedText() const {
 }
 
 QString InlineNode::marker() const {
-  return marker_;
+  return extendedMetadata_ ? extendedMetadata_->marker : QString();
 }
 
 void InlineNode::setMarker(QString marker) {
-  marker_ = std::move(marker);
+  if (marker.isEmpty() && !extendedMetadata_) {
+    return;
+  }
+  ensureExtendedMetadata().marker = std::move(marker);
+  pruneExtendedMetadata();
 }
 
 QString InlineNode::href() const {
-  return href_;
+  return extendedMetadata_ ? extendedMetadata_->href : QString();
 }
 
 void InlineNode::setHref(QString href) {
-  href_ = std::move(href);
+  if (href.isEmpty() && !extendedMetadata_) {
+    return;
+  }
+  ensureExtendedMetadata().href = std::move(href);
+  pruneExtendedMetadata();
 }
 
 QString InlineNode::title() const {
-  return title_;
+  return extendedMetadata_ ? extendedMetadata_->title : QString();
 }
 
 void InlineNode::setTitle(QString title) {
-  title_ = std::move(title);
+  if (title.isEmpty() && !extendedMetadata_) {
+    return;
+  }
+  ensureExtendedMetadata().title = std::move(title);
+  pruneExtendedMetadata();
 }
 
 QString InlineNode::alt() const {
-  return alt_;
+  return extendedMetadata_ ? extendedMetadata_->alt : QString();
 }
 
 void InlineNode::setAlt(QString alt) {
-  alt_ = std::move(alt);
+  if (alt.isEmpty() && !extendedMetadata_) {
+    return;
+  }
+  ensureExtendedMetadata().alt = std::move(alt);
+  pruneExtendedMetadata();
 }
 
 qsizetype InlineNode::sourceStart() const {
@@ -173,11 +227,15 @@ void InlineNode::setSourceRanges(InlineSourceRanges ranges) {
 }
 
 bool InlineNode::isAutolink() const {
-  return autolink_;
+  return extendedMetadata_ && extendedMetadata_->autolink;
 }
 
 void InlineNode::setAutolink(bool autolink) {
-  autolink_ = autolink;
+  if (!autolink && !extendedMetadata_) {
+    return;
+  }
+  ensureExtendedMetadata().autolink = autolink;
+  pruneExtendedMetadata();
 }
 
 QVector<InlineNode>& InlineNode::children() {

@@ -177,12 +177,54 @@ source line, retain the parsed subtree, and expand back to the complete definiti
 512-link/512-footnote dense regression verifies exact counts and source order, including indented
 definitions. The corrected 100 MiB tree contains 106,184 fewer duplicate top-level/block nodes.
 
+## Sparse AST Node Layout (2026-07-23)
+
+The next profile showed that every block carried heading, list, code, table, quote, definition,
+and range storage simultaneously, while every inline carried four link/image/marker strings even
+for plain text. The Release benchmark now records `sizeof(MarkdownNode)`, `sizeof(InlineNode)`,
+`sizeof(SourceRange)`, and `sizeof(InlineSourceRanges)` in its JSON metadata so layout changes are
+measured with the active compiler and Qt ABI.
+
+Block scalar state is now packed into one word. Code-language, table-alignment, and definition
+ownership share a lazy block payload. Inline marker/link/image fields likewise use a lazy payload;
+the child vector remains inline so read/write traversals do not allocate metadata accidentally.
+Explicit copy operations preserve value semantics, and `MarkdownNode::clone()` still deep-copies
+definition ownership and all packed flags.
+
+| Release metric | Before | After | Change |
+| --- | ---: | ---: | ---: |
+| `sizeof(MarkdownNode)` | 280 B | 184 B | -96 B (-34.3%) |
+| `sizeof(InlineNode)` | 232 B | 136 B | -96 B (-41.4%) |
+| 50 MiB parser-end working set | 1,884.5 MiB | 1,444.6 MiB | -439.9 MiB |
+| 50 MiB post-open working set | 2,079.8 MiB | 1,643.4 MiB | -436.4 MiB |
+| 50 MiB reopened working set | 1,973.2 MiB | 1,515.6 MiB | -457.6 MiB |
+| 100 MiB parser-end working set | 3,735.5 MiB | 2,936.9 MiB | -798.6 MiB |
+| 100 MiB post-open working set | 4,129.4 MiB | 3,295.7 MiB | -833.7 MiB |
+| 100 MiB pre-release working set | 4,135.3 MiB | 3,286.4 MiB | -848.9 MiB |
+| 100 MiB reopened working set | 3,886.6 MiB | 3,013.2 MiB | -873.3 MiB |
+
+At the 100 MiB node counts, the two 96-byte body reductions remove 797.2 MiB of fixed object
+storage before accounting for the minority lazy payloads. The measured parser-end reduction was
+798.6 MiB. `parse.convertBlock` previously raised working set from 2,873.0 to 3,680.9 MiB while
+cmark nodes and Muffin nodes overlapped; it now ends at 2,842.9 MiB, below the post-cmark sample.
+The same run reduced `convertBlock` from 6.084 to 4.866 seconds and the structured parser total
+from 23.151 to 17.582 seconds. Source SHA-256 and the complete semantic/source-range AST SHA-256
+matched the pre-layout baselines at 25, 50, and 100 MiB.
+
+The Conan Release build and all 165 CTest targets passed after the layout change. The `dist` target
+was refreshed, and its `Muffin.exe` matched the Release executable byte-for-byte by SHA-256.
+
 ## Residual Risk
 
 At working sets close to physical-memory pressure, Windows paging, memory compression,
 font loading, or graphics-driver scheduling can still create occasional outliers that are
-outside the deterministic edit path. Ordinary prose remains much smaller than the deliberately
-node-dense mixed fixture. The remaining dominant parser phases are cmark construction and
-`convertBlock`, while the reopened 100 MiB AST still occupies about 3.8 GiB. Future work should
-reduce cmark/AST construction memory and post-parse materialization cost, using the structured
-open/reopen phase data to distinguish stable regressions from paging or memory-compression outliers.
+outside the deterministic edit path. The cold 25 MiB sample was slower despite lower memory, while
+the 50 and 100 MiB parser totals were stable or faster, so deterministic correctness gates remain
+separate from informational timing.
+
+Ordinary prose remains much smaller than the deliberately node-dense mixed fixture. cmark
+construction still reaches about 2.87 GiB before conversion on the 100 MiB fixture, the reopened
+session still occupies about 3.01 GiB, and the 100 MiB lazy layout index takes about 9.4 seconds.
+The next memory work should target cmark's parse-tree peak and remaining range/index materialization;
+the next latency work should profile the large-tree lazy-layout build without regressing bounded
+viewport promotion or millisecond local edits.

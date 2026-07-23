@@ -217,7 +217,7 @@ Muffin already covers nearly all of core and extended Markdown — headings, par
 - [ ] Polish the rendered editor surface — selection, cursor, IME, and local refresh edge cases.
 - [x] Add native Mermaid flowchart, sequence, class, and state diagrams.
 - [ ] Continue extending GFM coverage.
-- [ ] Harden performance — structured 1–100 MB parser phases now scale approximately linearly; reduce cmark/AST construction memory and post-parse materialization cost.
+- [ ] Harden performance — structured 1–100 MB parser phases scale approximately linearly; AST node bodies are now 96 B smaller each and the 100 MiB roundtrip uses about 834 MiB less resident memory. Next, reduce cmark's parse-tree peak and very-large-document layout cost.
 - [ ] Accessibility — keyboard navigation improvements and screen reader support.
 
 ## Contributing

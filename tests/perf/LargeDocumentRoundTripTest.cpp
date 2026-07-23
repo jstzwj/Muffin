@@ -376,6 +376,10 @@ int main(int argc, char** argv) {
   const qint64 timeoutMs = parseTimeoutMs(sizeMb);
   PerformanceReport report;
   report.setNumber(QStringLiteral("requestedSizeMiB"), sizeMb);
+  report.setNumber(QStringLiteral("markdownNodeSizeBytes"), sizeof(MarkdownNode));
+  report.setNumber(QStringLiteral("inlineNodeSizeBytes"), sizeof(InlineNode));
+  report.setNumber(QStringLiteral("sourceRangeSizeBytes"), sizeof(SourceRange));
+  report.setNumber(QStringLiteral("inlineSourceRangesSizeBytes"), sizeof(InlineSourceRanges));
 
   QElapsedTimer timer;
   timer.start();

@@ -45,6 +45,10 @@ struct InlineSourceRanges {
 class InlineNode {
 public:
   explicit InlineNode(InlineType type = InlineType::Text);
+  InlineNode(const InlineNode& other);
+  InlineNode& operator=(const InlineNode& other);
+  InlineNode(InlineNode&&) noexcept = default;
+  InlineNode& operator=(InlineNode&&) noexcept = default;
 
   InlineType type() const;
   QString text() const;
@@ -112,15 +116,27 @@ private:
     int length = 0;
   };
 
+  // Most inline nodes are plain text, code, math, or breaks and never use any of these fields.
+  // Keep the four implicitly-shared QString handles off those hot nodes; formatting/link/image
+  // nodes allocate this payload on demand.
+  struct ExtendedMetadata {
+    QString marker;
+    QString href;
+    QString title;
+    QString alt;
+    bool autolink = false;
+
+    bool isEmpty() const;
+  };
+
+  ExtendedMetadata& ensureExtendedMetadata();
+  void pruneExtendedMetadata();
+
   InlineType type_ = InlineType::Text;
   std::variant<QString, SharedTextSlice> text_;
-  QString marker_;
-  QString href_;
-  QString title_;
-  QString alt_;
   QVector<InlineNode> children_;
   InlineSourceRanges sourceRanges_;
-  bool autolink_ = false;
+  std::unique_ptr<ExtendedMetadata> extendedMetadata_;
 };
 
 void shiftInlineSourcePositions(QVector<InlineNode>& inlines, qsizetype delta);

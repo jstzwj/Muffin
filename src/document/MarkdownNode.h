@@ -188,59 +188,64 @@ public:
 private:
   friend class MarkdownDocument;
 
-  struct HeadingInfo {
-    int level = 0;
-    bool setext = false;
+  // Code fences, tables, and definitions are a minority of block nodes. Their owning Qt handles
+  // live in one payload allocated only when one of those block kinds needs it.
+  struct ExtendedMetadata {
+    ExtendedMetadata() = default;
+    ExtendedMetadata(const ExtendedMetadata&);
+    ExtendedMetadata& operator=(const ExtendedMetadata&);
+    ExtendedMetadata(ExtendedMetadata&&) noexcept = default;
+    ExtendedMetadata& operator=(ExtendedMetadata&&) noexcept = default;
+
+    QString codeLanguage;
+    QVector<TableAlignment> tableAlignments;
+    std::unique_ptr<DefinitionBlock> definition;
+
+    bool isEmpty() const;
   };
-  struct ListInfo {
-    ListKind kind = ListKind::None;
-    int start = 1;
-    bool tight = false;
-    bool taskChecked = false;
-    bool taskItem = false;
-  };
-  struct CodeInfo {
-    QString language;
-    bool indented = false;
-  };
-  struct TableInfo {
-    QVector<TableAlignment> alignments;
-    bool rowIsHeader = false;
-  };
-  struct QuoteInfo {
-    AlertKind alertKind = AlertKind::None;
+
+  // Type-specific scalar values still have independent accessor semantics, but only need one word.
+  struct BlockFlags {
+    quint32 setext : 1 = 0;
+    quint32 listKind : 2 = 0;
+    quint32 listTight : 1 = 0;
+    quint32 taskChecked : 1 = 0;
+    quint32 taskItem : 1 = 0;
+    quint32 indentedCode : 1 = 0;
+    quint32 alertKind : 3 = 0;
+    quint32 mathDelimiter : 1 = 0;
+    quint32 frontMatterFormat : 2 = 0;
+    quint32 tableRowIsHeader : 1 = 0;
+    quint32 offsetsRelative : 1 = 0;
   };
   // All per-block domain state in one copyable aggregate, so clone() copies it in a single
   // assignment and adding a field can never be silently dropped — the flat layout previously let
   // clone() miss taskItem_, which shipped as a round-trip bug.
   struct BlockMetadata {
-    // Custom copy: the domain fields above copy trivially, but `definition` is a unique_ptr that
-    // must deep-copy. Defined out-of-line in MarkdownNode.cpp; keep the field list in sync there
-    // when adding a field (the old flat-layout taskItem_ bug bit us once).
+    // The lazy payload owns a DefinitionBlock, so this copy is defined out of line and deep-copies
+    // both ownership layers. Keep the field list in sync with MarkdownNode.cpp.
     BlockMetadata() = default;
     BlockMetadata(const BlockMetadata&);
     BlockMetadata& operator=(const BlockMetadata&);
+    BlockMetadata(BlockMetadata&&) noexcept = default;
+    BlockMetadata& operator=(BlockMetadata&&) noexcept = default;
     QVector<InlineNode> inlines;
     QString literal;
-    HeadingInfo heading;
-    ListInfo list;
-    CodeInfo code;
-    TableInfo table;
-    QuoteInfo quote;
-    MathDelimiter mathDelimiter = MathDelimiter::Dollar;
-    FrontMatterFormat frontMatterFormat = FrontMatterFormat::None;
-    // Null for ~99.99% of blocks (only link/footnote definitions allocate). Heap-allocated on
-    // demand instead of inlined 160B in every block node — saves ~152B × every block.
-    std::unique_ptr<DefinitionBlock> definition;
     SourceRange sourceRange;
+    std::unique_ptr<ExtendedMetadata> extended;
+    int headingLevel = 0;
+    int listStart = 1;
+    BlockFlags flags;
     // Set on a top-level block by relativizeDescendants() once its subtree's offsets have been
     // converted to block-relative. Lives IN this aggregate on purpose: clone() copies metadata_ in
     // a single assignment, so a standalone member would be silently dropped (it once was), leaving a
     // cloned subtree with relative-stored offsets but the flag false — accessors would then return
     // unresolved relative values. Only the owning top-level block's flag is ever read (descendants
-    // read it via topLevelBlock()->metadata_); their own copy stays false and is unused.
-    bool offsetsRelative = false;
+    // read it via topLevelBlock()->metadata_); their own flag stays false and is unused.
   };
+
+  ExtendedMetadata& ensureExtendedMetadata();
+  void pruneExtendedMetadata();
 
   NodeId id_;
   BlockType type_ = BlockType::Unknown;

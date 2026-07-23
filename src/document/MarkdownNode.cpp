@@ -8,29 +8,59 @@
 
 namespace muffin {
 
-// BlockMetadata is no longer an aggregate (custom copy for the unique_ptr definition). Every field
-// is listed explicitly — keep in sync with the struct in MarkdownNode.h when adding a field.
+// The lazy payload owns DefinitionBlock, so both metadata layers need explicit deep-copy support.
+// Keep their field lists in sync with MarkdownNode.h when adding domain state.
+MarkdownNode::ExtendedMetadata::ExtendedMetadata(const ExtendedMetadata& o)
+    : codeLanguage(o.codeLanguage), tableAlignments(o.tableAlignments),
+      definition(o.definition ? std::make_unique<DefinitionBlock>(*o.definition) : nullptr) {}
+
+MarkdownNode::ExtendedMetadata& MarkdownNode::ExtendedMetadata::operator=(
+    const ExtendedMetadata& o) {
+  if (this != &o) {
+    auto copiedDefinition = o.definition
+        ? std::make_unique<DefinitionBlock>(*o.definition)
+        : nullptr;
+    codeLanguage = o.codeLanguage;
+    tableAlignments = o.tableAlignments;
+    definition = std::move(copiedDefinition);
+  }
+  return *this;
+}
+
+bool MarkdownNode::ExtendedMetadata::isEmpty() const {
+  return codeLanguage.isEmpty() && tableAlignments.isEmpty() && !definition;
+}
+
+MarkdownNode::ExtendedMetadata& MarkdownNode::ensureExtendedMetadata() {
+  if (!metadata_.extended) {
+    metadata_.extended = std::make_unique<ExtendedMetadata>();
+  }
+  return *metadata_.extended;
+}
+
+void MarkdownNode::pruneExtendedMetadata() {
+  if (metadata_.extended && metadata_.extended->isEmpty()) {
+    metadata_.extended.reset();
+  }
+}
+
 MarkdownNode::BlockMetadata::BlockMetadata(const BlockMetadata& o)
-    : inlines(o.inlines), literal(o.literal), heading(o.heading), list(o.list), code(o.code),
-      table(o.table), quote(o.quote), mathDelimiter(o.mathDelimiter),
-      frontMatterFormat(o.frontMatterFormat),
-      definition(o.definition ? std::make_unique<DefinitionBlock>(*o.definition) : nullptr),
-      sourceRange(o.sourceRange), offsetsRelative(o.offsetsRelative) {}
+    : inlines(o.inlines), literal(o.literal), sourceRange(o.sourceRange),
+      extended(o.extended ? std::make_unique<ExtendedMetadata>(*o.extended) : nullptr),
+      headingLevel(o.headingLevel), listStart(o.listStart), flags(o.flags) {}
 
 MarkdownNode::BlockMetadata& MarkdownNode::BlockMetadata::operator=(const BlockMetadata& o) {
   if (this != &o) {
+    auto extendedMetadata = o.extended
+        ? std::make_unique<ExtendedMetadata>(*o.extended)
+        : nullptr;
     inlines = o.inlines;
     literal = o.literal;
-    heading = o.heading;
-    list = o.list;
-    code = o.code;
-    table = o.table;
-    quote = o.quote;
-    mathDelimiter = o.mathDelimiter;
-    frontMatterFormat = o.frontMatterFormat;
-    definition.reset(o.definition ? new DefinitionBlock(*o.definition) : nullptr);
     sourceRange = o.sourceRange;
-    offsetsRelative = o.offsetsRelative;
+    extended = std::move(extendedMetadata);
+    headingLevel = o.headingLevel;
+    listStart = o.listStart;
+    flags = o.flags;
   }
   return *this;
 }
@@ -69,9 +99,9 @@ MarkdownNode* MarkdownNode::nextSibling() const {
 quint8 MarkdownNode::siblingKind() const {
   switch (type_) {
     case BlockType::Paragraph: return 1;
-    case BlockType::Heading: return static_cast<quint8>(1 + std::clamp(metadata_.heading.level, 1, 6));
+    case BlockType::Heading: return static_cast<quint8>(1 + std::clamp(metadata_.headingLevel, 1, 6));
     case BlockType::BlockQuote: return 8;
-    case BlockType::List: return metadata_.list.kind == ListKind::Ordered ? 9 : 10;
+    case BlockType::List: return listKind() == ListKind::Ordered ? 9 : 10;
     case BlockType::ListItem: return 11;
     case BlockType::CodeFence:
     case BlockType::FrontMatter: return 12;
@@ -196,109 +226,115 @@ void MarkdownNode::setLiteral(QString text) {
 }
 
 int MarkdownNode::headingLevel() const {
-  return metadata_.heading.level;
+  return metadata_.headingLevel;
 }
 
 void MarkdownNode::setHeadingLevel(int level) {
-  metadata_.heading.level = level;
+  metadata_.headingLevel = level;
 }
 
 bool MarkdownNode::setext() const {
-  return metadata_.heading.setext;
+  return metadata_.flags.setext;
 }
 
 void MarkdownNode::setSetext(bool setext) {
-  metadata_.heading.setext = setext;
+  metadata_.flags.setext = setext;
 }
 
 ListKind MarkdownNode::listKind() const {
-  return metadata_.list.kind;
+  return static_cast<ListKind>(metadata_.flags.listKind);
 }
 
 void MarkdownNode::setListKind(ListKind kind) {
-  metadata_.list.kind = kind;
+  metadata_.flags.listKind = static_cast<quint32>(kind);
 }
 
 int MarkdownNode::listStart() const {
-  return metadata_.list.start;
+  return metadata_.listStart;
 }
 
 void MarkdownNode::setListStart(int start) {
-  metadata_.list.start = start;
+  metadata_.listStart = start;
 }
 
 bool MarkdownNode::listTight() const {
-  return metadata_.list.tight;
+  return metadata_.flags.listTight;
 }
 
 void MarkdownNode::setListTight(bool tight) {
-  metadata_.list.tight = tight;
+  metadata_.flags.listTight = tight;
 }
 
 bool MarkdownNode::taskChecked() const {
-  return metadata_.list.taskChecked;
+  return metadata_.flags.taskChecked;
 }
 
 void MarkdownNode::setTaskChecked(bool checked) {
-  metadata_.list.taskChecked = checked;
+  metadata_.flags.taskChecked = checked;
 }
 
 bool MarkdownNode::isTaskItem() const {
-  return metadata_.list.taskItem;
+  return metadata_.flags.taskItem;
 }
 
 void MarkdownNode::setTaskItem(bool taskItem) {
-  metadata_.list.taskItem = taskItem;
+  metadata_.flags.taskItem = taskItem;
 }
 
 QString MarkdownNode::codeLanguage() const {
-  return metadata_.code.language;
+  return metadata_.extended ? metadata_.extended->codeLanguage : QString();
 }
 
 void MarkdownNode::setCodeLanguage(QString language) {
-  metadata_.code.language = std::move(language);
+  if (language.isEmpty() && !metadata_.extended) {
+    return;
+  }
+  ensureExtendedMetadata().codeLanguage = std::move(language);
+  pruneExtendedMetadata();
 }
 
 bool MarkdownNode::isIndentedCode() const {
-  return metadata_.code.indented;
+  return metadata_.flags.indentedCode;
 }
 
 void MarkdownNode::setIndentedCode(bool indented) {
-  metadata_.code.indented = indented;
+  metadata_.flags.indentedCode = indented;
 }
 
 MathDelimiter MarkdownNode::mathDelimiter() const {
-  return metadata_.mathDelimiter;
+  return static_cast<MathDelimiter>(metadata_.flags.mathDelimiter);
 }
 
 void MarkdownNode::setMathDelimiter(MathDelimiter delimiter) {
-  metadata_.mathDelimiter = delimiter;
+  metadata_.flags.mathDelimiter = static_cast<quint32>(delimiter);
 }
 
 AlertKind MarkdownNode::alertKind() const {
-  return metadata_.quote.alertKind;
+  return static_cast<AlertKind>(metadata_.flags.alertKind);
 }
 
 void MarkdownNode::setAlertKind(AlertKind kind) {
-  metadata_.quote.alertKind = kind;
+  metadata_.flags.alertKind = static_cast<quint32>(kind);
 }
 
 FrontMatterFormat MarkdownNode::frontMatterFormat() const {
-  return metadata_.frontMatterFormat;
+  return static_cast<FrontMatterFormat>(metadata_.flags.frontMatterFormat);
 }
 
 void MarkdownNode::setFrontMatterFormat(FrontMatterFormat format) {
-  metadata_.frontMatterFormat = format;
+  metadata_.flags.frontMatterFormat = static_cast<quint32>(format);
 }
 
 DefinitionBlock MarkdownNode::definition() const {
-  DefinitionBlock def = metadata_.definition ? *metadata_.definition : DefinitionBlock{};
+  DefinitionBlock def = metadata_.extended && metadata_.extended->definition
+      ? *metadata_.extended->definition
+      : DefinitionBlock{};
   if (!def.isValid()) {
     return def;
   }
   const MarkdownNode* top = topLevelBlock();
   // Pre-relativize (parser/annotation passes on the absolute tree): fields are absolute — raw.
-  if (!top->metadata_.offsetsRelative) {
+  if (!top->metadata_.flags.offsetsRelative) {
     return def;
   }
   // Post-relativize: field ranges are stored relative to the owning top-level block's byteStart;
@@ -321,23 +357,28 @@ DefinitionBlock MarkdownNode::definition() const {
 }
 
 void MarkdownNode::setDefinition(DefinitionBlock definition) {
-  metadata_.definition = std::make_unique<DefinitionBlock>(std::move(definition));
+  ensureExtendedMetadata().definition =
+      std::make_unique<DefinitionBlock>(std::move(definition));
 }
 
 QVector<TableAlignment> MarkdownNode::tableAlignments() const {
-  return metadata_.table.alignments;
+  return metadata_.extended ? metadata_.extended->tableAlignments : QVector<TableAlignment>();
 }
 
 void MarkdownNode::setTableAlignments(QVector<TableAlignment> alignments) {
-  metadata_.table.alignments = std::move(alignments);
+  if (alignments.isEmpty() && !metadata_.extended) {
+    return;
+  }
+  ensureExtendedMetadata().tableAlignments = std::move(alignments);
+  pruneExtendedMetadata();
 }
 
 bool MarkdownNode::tableRowIsHeader() const {
-  return metadata_.table.rowIsHeader;
+  return metadata_.flags.tableRowIsHeader;
 }
 
 void MarkdownNode::setTableRowIsHeader(bool header) {
-  metadata_.table.rowIsHeader = header;
+  metadata_.flags.tableRowIsHeader = header;
 }
 
 SourceRange MarkdownNode::sourceRange() const {
@@ -366,7 +407,7 @@ SourceRange MarkdownNode::sourceRange() const {
   const MarkdownNode* top = topLevelBlock();
   // Descendant: storage is block-relative only after the owning top-level block has been
   // relativized. Before that (parser/annotation/demote passes on the absolute tree) return raw.
-  if (!top->metadata_.offsetsRelative) {
+  if (!top->metadata_.flags.offsetsRelative) {
     return range;
   }
   // Post-relativize: stored RELATIVE to the owning top-level block's byteStart/lineStart — resolve.
@@ -449,8 +490,8 @@ void MarkdownNode::relativizeNodeAndDescendants(const MarkdownNode* topLevel, qs
     range.lineEnd -= lineBase;
   }
   metadata_.sourceRange = range;
-  if (metadata_.definition) {
-    subtractDefinitionFields(*metadata_.definition, byteBase);
+  if (metadata_.extended && metadata_.extended->definition) {
+    subtractDefinitionFields(*metadata_.extended->definition, byteBase);
   }
   shiftInlineSourcePositions(metadata_.inlines, -byteBase);
   for (const auto& child : children_) {
@@ -466,10 +507,10 @@ void MarkdownNode::relativizeDescendants() {
   // absolutized, so the base is slice-relative and descendants become relative-to-block).
   const qsizetype byteBase = metadata_.sourceRange.byteStart;
   const int lineBase = metadata_.sourceRange.lineStart;
-  metadata_.offsetsRelative = true;
+  metadata_.flags.offsetsRelative = true;
   topLevelCache_ = this;  // this block is its own top-level
-  if (metadata_.definition) {
-    subtractDefinitionFields(*metadata_.definition, byteBase);
+  if (metadata_.extended && metadata_.extended->definition) {
+    subtractDefinitionFields(*metadata_.extended->definition, byteBase);
   }
   shiftInlineSourcePositions(metadata_.inlines, -byteBase);
   for (const auto& child : children_) {
