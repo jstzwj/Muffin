@@ -57,6 +57,8 @@ int main(int argc, char** argv) {
   requireTranslation("muffin::SourceEditorWidget", "Start writing...", QStringLiteral("\u5F00\u59CB\u5199\u4F5C..."));
   requireTranslation("muffin::BlockLayoutBuilder", "Start writing...", QStringLiteral("\u5F00\u59CB\u5199\u4F5C..."));
   requireTranslation("muffin::FileController", "Open", QStringLiteral("\u6253\u5F00"));
+  requireTranslation("muffin::MainWindow", "Export Mermaid as SVG...",
+                     QStringLiteral("\u5C06 Mermaid \u5BFC\u51FA\u4E3A SVG..."));
   QCoreApplication::removeTranslator(&translator);
 
   verifyTranslationResource(QStringLiteral("vi"), QStringLiteral("T\u1EC7p"), QStringLiteral("T\u00F9y ch\u1EC9nh"));

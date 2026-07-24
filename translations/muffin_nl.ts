@@ -1022,19 +1022,19 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
 <context>
     <name>muffin::EditorView</name>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="62"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="68"/>
         <location filename="../src/editor/VirtualSourceEdit.cpp" line="1170"/>
         <source>(no spelling suggestions)</source>
         <translation>(geen spellingssuggesties)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="76"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="82"/>
         <location filename="../src/editor/VirtualSourceEdit.cpp" line="1182"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>&quot;%1&quot; negeren</translation>
     </message>
     <message>
-        <location filename="../src/editor/EditorViewPaint.cpp" line="57"/>
+        <location filename="../src/editor/EditorViewPaint.cpp" line="59"/>
         <source>Loading…</source>
         <translation>Laden…</translation>
     </message>
@@ -1349,7 +1349,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="149"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="215"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="266"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="354"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1326"/>
         <source>Properties</source>
@@ -1459,7 +1459,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1794"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="174"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="186"/>
         <source>Select</source>
         <translation>Selecteren</translation>
     </message>
@@ -1489,7 +1489,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="431"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="213"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
         <source>Delete</source>
         <translation>Verwijderen</translation>
     </message>
@@ -1564,7 +1564,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="581"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="1861"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="154"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="166"/>
         <source>Paragraph</source>
         <translation>Alinea</translation>
     </message>
@@ -1585,7 +1585,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1894"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="1958"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="110"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="122"/>
         <source>Table</source>
         <translation>Tabel</translation>
     </message>
@@ -1741,7 +1741,7 @@ Een snelle, lichtgewicht native Markdown-editor gebouwd met C++ en Qt 6 Widgets.
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2009"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="93"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="105"/>
         <source>Image</source>
         <translation>Afbeelding</translation>
     </message>
@@ -2806,6 +2806,7 @@ Parsetijd: %6 ms</translation>
         <translation>Niets om te exporteren</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="223"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="780"/>
         <source>Export As</source>
         <translation>Exporteren als</translation>
@@ -2826,11 +2827,13 @@ Parsetijd: %6 ms</translation>
         <translation>Pandoc is mislukt:</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="232"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="844"/>
         <source>Export Failed</source>
         <translation>Exporteren mislukt</translation>
     </message>
     <message>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="236"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="848"/>
         <source>Exported to %1</source>
         <translation>Geëxporteerd naar %1</translation>
@@ -3100,66 +3103,71 @@ Wilt u de downloadpagina openen?</translation>
 %1</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="97"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="94"/>
+        <source>Export Mermaid as SVG...</source>
+        <translation>Mermaid exporteren als SVG...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="109"/>
         <source>Resize</source>
         <translation>Formaat wijzigen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="101"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="113"/>
         <source>Convert</source>
         <translation>Converteren</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="136"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="148"/>
         <source>Copy as</source>
         <translation>Kopiëren als</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="205"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="256"/>
         <source>Open</source>
         <translation type="unfinished">Openen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="206"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="221"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="272"/>
         <source>Open in New Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="208"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="223"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="259"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="274"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1114"/>
         <source>New File</source>
         <translation type="unfinished">Nieuw bestand</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="209"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="224"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1127"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1133"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="211"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="262"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="212"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1249"/>
         <source>Duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="217"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="226"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="268"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="277"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="218"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="227"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1342"/>
         <source>Reveal in File Manager</source>
         <translation type="unfinished"></translation>
