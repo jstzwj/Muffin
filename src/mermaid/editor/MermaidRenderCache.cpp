@@ -3,6 +3,7 @@
 #include "mermaid/editor/MermaidSvgExporter.h"
 
 #include "mermaid/MermaidDiagramDetector.h"
+#include "mermaid/MermaidDiagram.h"
 #include "mermaid/MermaidPreprocessor.h"
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/MermaidRenderMetadata.h"
@@ -643,6 +644,72 @@ QString MermaidRenderCache::renderMermaidSourceToSvgDataUrl(
   return renderMermaidSourceToSvg(source, instanceIndex).dataUrl;
 }
 
+namespace {
+
+// erDiagram behind the Diagram contract (step 3 incremental migration). The
+// render() body is the former renderSource() er branch, verbatim; the central
+// catch in renderSource still handles its parse errors.
+struct ErDiagramImpl : Diagram {
+  QStringList ids() const override { return {QStringLiteral("er")}; }
+
+  MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
+                            const QString& theme) const override {
+    const er::ErDiagram diagram = er::ErDiagram::parse(pre.code);
+    const QString configuredTheme = themeFromConfig(pre.config);
+    const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
+        themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme),
+        themeOverrides(pre.config));
+    const er::ErLayoutInput input = er::buildErLayoutInput(diagram.data());
+    const QString fontFamily = firstFontFamily(themeVars.fontFamily);
+    const qreal fontSize = pixelValue(themeVars.fontSize, 16.0);
+    const er::ErLayoutMeasurements measurements =
+        er::measureErLayoutInput(input, fontFamily, fontSize);
+    const er::ErPlacementResult placement =
+        er::layoutErDiagramDagre(input, measurements);
+    er::ErSceneStyle style;
+    style.entityFill = themeVars.mainBkg;
+    style.entityStroke = themeVars.border1;
+    style.entityTitle1 = themeVars.primaryTextColor;
+    style.attributeColor = themeVars.primaryTextColor;
+    style.relationshipColor = themeVars.lineColor;
+    style.relationshipLabelColor = themeVars.textColor;
+    style.labelBackground = themeVars.mainBkg;
+    style.strokeWidth = themeVars.strokeWidth;
+    style.fontFamily = fontFamily;
+    style.fontSize = fontSize;
+    style.lineHeight = fontSize * 1.5;
+    const QJsonObject erConfig = pre.config.value(QStringLiteral("er")).toObject();
+    MermaidRenderMetadata metadata = renderMetadata(
+        pre, type, diagram.data().title, diagram.data().accTitle,
+        diagram.data().accDescription, style.entityTitle1, style.fontFamily,
+        18.0, configNumber(erConfig, QStringLiteral("titleTopMargin"), 25.0), 8.0);
+    er::ErScene scene = er::buildErScene(input, placement, std::move(style));
+    MermaidRenderEntry entry;
+    entry.status = MermaidRenderStatus::Ready;
+    entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+    entry.erScene = std::make_shared<const er::ErScene>(std::move(scene));
+    finalizeReadyEntry(entry, std::move(metadata));
+    return entry;
+  }
+};
+
+// Registry of natively-rendered diagrams, keyed by detected type id. As each
+// family migrates onto the Diagram contract it is added to kAll and its
+// renderSource() branch removed, until the if/else dispatch is gone.
+const Diagram* findMermaidDiagram(const QString& type) {
+  static const ErDiagramImpl erImpl;
+  static const QVector<const Diagram*> kAll = {&erImpl};
+  static const QHash<QString, const Diagram*> kByType = [] {
+    QHash<QString, const Diagram*> registry;
+    for (const Diagram* diagram : kAll)
+      for (const QString& id : diagram->ids()) registry.insert(id, diagram);
+    return registry;
+  }();
+  return kByType.value(type, nullptr);
+}
+
+}  // namespace
+
 MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const QString& theme) {
   MermaidPreprocessResult pre;
   try {
@@ -684,6 +751,8 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   }
 
   try {
+    if (const Diagram* diagram = findMermaidDiagram(type))
+      return diagram->render(pre, type, theme);
     if (type == QLatin1String("state") || type == QLatin1String("stateDiagram")) {
       const state::StateDiagram diagram = state::StateDiagram::parse(pre.code);
       const QString configuredTheme = themeFromConfig(pre.config);
@@ -802,44 +871,6 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
       entry.classScene = std::make_shared<const classdiagram::ClassScene>(std::move(scene));
-      finalizeReadyEntry(entry, std::move(metadata));
-      return entry;
-    }
-    if (type == QLatin1String("er")) {
-      const er::ErDiagram diagram = er::ErDiagram::parse(pre.code);
-      const QString configuredTheme = themeFromConfig(pre.config);
-      const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
-          themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme),
-          themeOverrides(pre.config));
-      const er::ErLayoutInput input = er::buildErLayoutInput(diagram.data());
-      const QString fontFamily = firstFontFamily(themeVars.fontFamily);
-      const qreal fontSize = pixelValue(themeVars.fontSize, 16.0);
-      const er::ErLayoutMeasurements measurements =
-          er::measureErLayoutInput(input, fontFamily, fontSize);
-      const er::ErPlacementResult placement =
-          er::layoutErDiagramDagre(input, measurements);
-      er::ErSceneStyle style;
-      style.entityFill = themeVars.mainBkg;
-      style.entityStroke = themeVars.border1;
-      style.entityTitle1 = themeVars.primaryTextColor;
-      style.attributeColor = themeVars.primaryTextColor;
-      style.relationshipColor = themeVars.lineColor;
-      style.relationshipLabelColor = themeVars.textColor;
-      style.labelBackground = themeVars.mainBkg;
-      style.strokeWidth = themeVars.strokeWidth;
-      style.fontFamily = fontFamily;
-      style.fontSize = fontSize;
-      style.lineHeight = fontSize * 1.5;
-      const QJsonObject erConfig = pre.config.value(QStringLiteral("er")).toObject();
-      MermaidRenderMetadata metadata = renderMetadata(
-          pre, type, diagram.data().title, diagram.data().accTitle,
-          diagram.data().accDescription, style.entityTitle1, style.fontFamily,
-          18.0, configNumber(erConfig, QStringLiteral("titleTopMargin"), 25.0), 8.0);
-      er::ErScene scene = er::buildErScene(input, placement, std::move(style));
-      MermaidRenderEntry entry;
-      entry.status = MermaidRenderStatus::Ready;
-      entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
-      entry.erScene = std::make_shared<const er::ErScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
     }
