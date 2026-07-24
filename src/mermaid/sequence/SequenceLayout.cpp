@@ -6,6 +6,10 @@
 #include <QSet>
 
 namespace muffin::mermaid::sequence {
+
+QString sequenceMenuLabelKey(const QString& actorId, const QString& label) {
+  return actorId + QChar(0x1f) + label;
+}
 namespace {
 
 constexpr int kNote = 2;
@@ -341,6 +345,7 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
                                     const SequenceLayoutMeasurements& measurements,
                                     SequenceLayoutOptions options) {
   SequenceLayoutResult result;
+  result.forceMenus = options.forceMenus;
   const SequenceLayoutInput input = buildSequenceLayoutInput(data, measurements);
   QMap<int, QSizeF> measuredMessages, measuredNotes, measuredFragments;
   const auto rounded = [](const QSizeF& size) {
@@ -483,7 +488,7 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
   QVector<OpenActivation> active;
   qreal sequenceIndex = 1.0;
   qreal sequenceIndexStep = 1.0;
-  bool sequenceNumbersVisible = false;
+  bool sequenceNumbersVisible = options.showSequenceNumbers;
   auto participantFor = [&](const QString& id) -> const SequenceLayoutParticipant& {
     return result.participants[placedActor.value(id)];
   };
@@ -842,6 +847,7 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       logicalBottom = std::max(logicalBottom, participantBottom);
     }
   }
+
   qreal logicalLeft = bounds.hasBounds ? bounds.all.left() : 0.0;
   qreal logicalRight = bounds.hasBounds ? bounds.all.right() : 0.0;
   for (const SequenceLayoutParticipant& participant : result.participants) {
@@ -880,6 +886,48 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       bounds.insert(box.rect.left(), box.rect.top(), box.rect.right(), box.rect.bottom());
       logicalBottom = std::max(logicalBottom, box.rect.bottom());
     }
+  }
+  // Mermaid always reserves popup geometry in the sequence viewBox. The
+  // forceMenus flag changes visibility only; closed interactive menus still
+  // contribute their width/height so toggling never relayouts the diagram.
+  for (const SequenceLayoutParticipant& participant : result.participants) {
+    const int sourceIndex = actorIndex.value(participant.id, -1);
+    if (sourceIndex < 0) continue;
+    const SequenceActor& actor = data.actors.at(sourceIndex);
+    if (actor.links.isEmpty()) continue;
+    qreal menuWidth = participant.logicalRect.width();
+    for (auto it = actor.links.begin(); it != actor.links.end(); ++it) {
+      const QSizeF measured = measurements.menuItems.value(
+          sequenceMenuLabelKey(actor.id, it.key()));
+      menuWidth = std::max(
+          menuWidth, std::round(measured.width()) +
+              2.0 * options.wrapPadding + 2.0 * options.boxMargin);
+    }
+    const qreal menuTop = participant.topY + participant.logicalRect.height();
+    SequenceLayoutMenu menu;
+    menu.actorId = actor.id;
+    menu.panelRect = QRectF(participant.logicalRect.x(), menuTop, menuWidth,
+                            20.0 + 30.0 * actor.links.size());
+    int itemIndex = 0;
+    for (auto it = actor.links.begin(); it != actor.links.end(); ++it, ++itemIndex) {
+      const QSizeF measured = measurements.menuItems.value(
+          sequenceMenuLabelKey(actor.id, it.key()));
+      const qreal rowTop = menuTop + 5.0 + itemIndex * 30.0;
+      SequenceLayoutMenuItem item;
+      item.label = it.key();
+      item.link = it.value().toString();
+      item.hitRect = QRectF(menu.panelRect.x() + 5.0, rowTop,
+                            menu.panelRect.width() - 10.0, 24.0);
+      item.labelRect = QRectF(menu.panelRect.x() + 10.0,
+                              rowTop + (24.0 - measured.height()) / 2.0,
+                              measured.width(), measured.height());
+      menu.items.append(std::move(item));
+    }
+    bounds.insert(menu.panelRect.left(), menu.panelRect.top(),
+                  menu.panelRect.right(), menu.panelRect.bottom());
+    logicalRight = std::max(logicalRight, menu.panelRect.right());
+    logicalBottom = std::max(logicalBottom, menu.panelRect.bottom());
+    result.menus.append(std::move(menu));
   }
   for (const SequenceLayoutParticipant& participant : result.participants)
     bounds.insert(participant.anchorX, participant.lifelineStartY,

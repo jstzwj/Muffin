@@ -23,6 +23,11 @@ struct StateLayoutNodeInput {
   bool isGroup = false;
   QString cssClasses;
   QStringList cssStyles;
+  // classDef (matching cssClasses) + inline `style` cascade, merged last-wins —
+  // the exact declarations compileStyles (chunk-BNCO5QFQ.mjs) feeds the renderer.
+  // NOT serialized by stateLayoutInputToJson: the upstream-comparable layout
+  // contract keeps cssStyles as inline-only; the merged cascade is render state.
+  QStringList styles;
   QString position;
   QJsonValue description = QJsonValue::Null;
 };

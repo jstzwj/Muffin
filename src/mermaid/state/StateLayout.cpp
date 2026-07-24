@@ -14,6 +14,7 @@ struct CachedNode {
   QJsonValue description;
   QString cssClasses;
   QStringList cssStyles;
+  QStringList styles;
   QString type;
   QString direction;
 };
@@ -56,6 +57,26 @@ private:
   QStringList stylesFor(const QString& id) const {
     const StateNode* state = states_.value(id, nullptr);
     return state ? state->styles : QStringList{};
+  }
+  // compileStyles (chunk-YI7H2ERT.mjs getCompiledStyles): for each class on the
+  // state, push the classDef's node styles; then the inline `style` declarations.
+  // The classDef parser (StateDiagram.cpp) also routes `color:X` into textStyles
+  // as a transformed `fill:X` — but that is a LABEL-bucket style (label fill ==
+  // text color) in upstream, distinct from the node-bucket fill. We keep only the
+  // node bucket here; textColor already comes from the `color` key in styles.
+  // Declarations apply in order, last-wins per key (the painter re-splits them).
+  QStringList mergedStylesFor(const QString& id) const {
+    const StateNode* state = states_.value(id, nullptr);
+    if (!state) return {};
+    QStringList result;
+    for (const QString& name : state->classes)
+      for (const StateStyleClass& cls : data_.styleClasses)
+        if (cls.id == name) {
+          result.append(cls.styles);
+          break;
+        }
+    result.append(state->styles);
+    return result;
   }
   void setupDocument(const QJsonObject& parent, const QJsonArray& document,
                      bool alternate) {
@@ -104,6 +125,7 @@ private:
         cached.description = itemId;
         cached.cssClasses = classesFor(itemId) + QStringLiteral(" statediagram-state");
         cached.cssStyles = stylesFor(itemId);
+        cached.styles = mergedStylesFor(itemId);
         cache_.insert(itemId, cached);
       }
       CachedNode& cached = cache_[itemId];
@@ -152,6 +174,7 @@ private:
       node.isGroup = cached.type == QLatin1String("group");
       node.cssClasses = cached.cssClasses;
       node.cssStyles = cached.cssStyles;
+      node.styles = cached.styles;
       node.description = QJsonValue::Null;
       if (node.label.isArray()) {
         const QJsonArray labels = node.label.toArray();

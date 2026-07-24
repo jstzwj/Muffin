@@ -18,6 +18,7 @@ SequenceScene buildSequenceScene(const SequenceLayoutResult& layout,
   scene.notes = layout.notes;
   scene.fragments = layout.fragments;
   scene.sequenceNumbers = layout.sequenceNumbers;
+  scene.forceMenus = layout.forceMenus;
   scene.style = std::move(style);
   const auto fallbackLabel = [&](const QString& text,
                                  SequenceLabelKind kind) {
@@ -56,6 +57,24 @@ SequenceScene buildSequenceScene(const SequenceLayoutResult& layout,
     scene.fragmentLabels.append(labelFor(
         prepared.fragmentsByIndex, fragment.messageIndex, fragment.label,
         SequenceLabelKind::Fragment));
+  }
+  for (const auto& sourceMenu : layout.menus) {
+    SequenceSceneMenu menu;
+    menu.actorId = sourceMenu.actorId;
+    menu.panelRect = sourceMenu.panelRect;
+    for (const auto& sourceItem : sourceMenu.items) {
+      SequenceSceneMenuItem item;
+      item.label = sourceItem.label;
+      item.link = sourceItem.link;
+      item.hitRect = sourceItem.hitRect;
+      item.labelRect = sourceItem.labelRect;
+      item.labelDocument = labelFor(
+          prepared.menuItemsByKey,
+          sequenceMenuLabelKey(sourceMenu.actorId, sourceItem.label),
+          sourceItem.label, SequenceLabelKind::Participant);
+      menu.items.append(std::move(item));
+    }
+    scene.menus.append(std::move(menu));
   }
   return scene;
 }

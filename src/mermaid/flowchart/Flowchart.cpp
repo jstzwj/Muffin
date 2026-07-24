@@ -1268,6 +1268,21 @@ private:
     const QStringList ids = vertices.split(QLatin1Char(','), Qt::SkipEmptyParts);
     const QStringList names = classes.split(QLatin1Char(','), Qt::SkipEmptyParts);
     for (const QString& id : ids) {
+      // Upstream setClass (mermaid.js:47629) applies to vertices, edges, AND
+      // subgraphs. Match that order so `class <edgeId>` / `class <subgraphId>`
+      // style the right element instead of fabricating a phantom vertex.
+      const auto found = vertexLookup_.constFind(id);
+      if (found != vertexLookup_.constEnd()) {
+        vertices_[found.value()].classes += names;
+        continue;
+      }
+      bool matched = false;
+      for (Edge& edge : edges_)
+        if (edge.id == id) { edge.classes += names; matched = true; break; }
+      if (matched) continue;
+      for (Subgraph& subgraph : subgraphs_)
+        if (subgraph.id == id) { subgraph.classes += names; matched = true; break; }
+      if (matched) continue;
       ParsedNode node;
       node.id = id;
       node.text = id;

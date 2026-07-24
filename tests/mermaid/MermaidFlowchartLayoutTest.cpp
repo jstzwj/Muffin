@@ -1,4 +1,5 @@
 #include "mermaid/flowchart/Flowchart.h"
+#include "mermaid/flowchart/D3Curves.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/flowchart/FlowchartShapeRegistry.h"
@@ -159,6 +160,24 @@ void requireLabelLayoutNear(const FlowLabelLayoutMetrics& native,
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
   require(argc == 2, QStringLiteral("Expected flowchart geometry fixture path"));
+
+  using muffin::mermaid::flowchart::d3curve::generateRoundedPath;
+  require(generateRoundedPath({}).isEmpty() &&
+              generateRoundedPath({QPointF(0, 0), QPointF(10, 0)}) ==
+                  QLatin1String("M0,0L10,0"),
+          QStringLiteral("Rounded path endpoint contract drifted"));
+  require(generateRoundedPath(
+              {QPointF(0, 0), QPointF(10, 0), QPointF(10, 10)}) ==
+              QLatin1String("M0,0L5,0Q10,0 10,5L10,10"),
+          QStringLiteral("Rounded path short-segment clamp drifted"));
+  require(generateRoundedPath({QPointF(0, 0), QPointF(10, 0),
+                               QPointF(10, 0), QPointF(20, 0)}) ==
+              QLatin1String("M0,0L10,0L10,0L20,0") &&
+              generateRoundedPath({QPointF(0, 0), QPointF(10, 0),
+                                   QPointF(0, 0)}) ==
+                  QLatin1String("M0,0L10,0L0,0"),
+          QStringLiteral("Rounded path degenerate-point contract drifted"));
+
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), QStringLiteral("Could not open flowchart geometry fixture"));
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();

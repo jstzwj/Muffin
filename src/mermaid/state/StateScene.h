@@ -30,6 +30,11 @@ struct StateSceneNode {
   QString label;
   QStringList descriptions;
   QString cssClasses;
+  QStringList styles;
+  QString fill;
+  QString stroke;
+  QString textColor;
+  qreal strokeWidth = 1.0;
   QRectF bounds;
   bool group = false;
   flowchart::FlowLabelDocument labelDocument;
@@ -63,6 +68,10 @@ struct StateScene {
   QVector<StateSceneEdge> edges;
   QVector<StateSceneNode> nodes;
   StateSceneStyle style;
+  // handDrawn (rough) look — gated in the painter, only set when the diagram
+  // config requests `look: handDrawn`. Default rendering is unaffected.
+  bool handDrawn = false;
+  quint32 handDrawnSeed = 0;
 };
 
 StateScene buildStateScene(const StateLayoutInput& input,

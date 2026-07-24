@@ -1,5 +1,6 @@
 #include "mermaid/state/StateScenePainter.h"
 
+#include "mermaid/rough/RoughPaint.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QPainter>
@@ -118,9 +119,13 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
   for (const StateSceneNode& cluster : scene.clusters) {
     if (!mermaidPrimitiveIsVisible(cluster.bounds, options)) continue;
     if (cluster.shape == QLatin1String("noteGroup")) continue;
-    painter.setPen(QPen(color(scene.style.compositeStroke), scene.style.strokeWidth));
-    painter.setBrush(color(scene.style.compositeFill));
-    painter.drawRoundedRect(cluster.bounds, 5.0, 5.0);
+    painter.setPen(QPen(color(cluster.stroke), cluster.strokeWidth));
+    painter.setBrush(color(cluster.fill));
+    if (scene.handDrawn)
+      rough::roughRect(painter, cluster.bounds, scene.handDrawnSeed,
+                       color(cluster.fill), color(cluster.stroke), cluster.strokeWidth);
+    else
+      painter.drawRoundedRect(cluster.bounds, 5.0, 5.0);
     if (cluster.shape == QLatin1String("divider")) {
       painter.drawLine(cluster.bounds.left(), cluster.bounds.top(),
                        cluster.bounds.left(), cluster.bounds.bottom());
@@ -128,7 +133,7 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
       QRectF title = cluster.bounds.adjusted(8.0, 0.0, -8.0, 0.0);
       title.setHeight(scene.style.lineHeight + 16.0);
       paintLabel(painter, cluster.labelDocument, title, scene.style,
-                 color(scene.style.textColor));
+                 color(cluster.textColor));
     }
   }
   for (const StateSceneEdge& edge : scene.edges) {
@@ -138,7 +143,11 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
       continue;
     painter.setPen(QPen(transition, scene.style.strokeWidth));
     painter.setBrush(Qt::NoBrush);
-    painter.drawPath(edgePath(edge));
+    if (scene.handDrawn)
+      rough::roughPath(painter, edgePath(edge), scene.handDrawnSeed,
+                       transition, scene.style.strokeWidth);
+    else
+      painter.drawPath(edgePath(edge));
     paintArrow(painter, edge, transition);
   }
   for (const StateSceneEdge& edge : scene.edges) {
@@ -161,8 +170,8 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
     if (!mermaidPrimitiveIsVisible(node.bounds, options)) continue;
     const QString shape = node.shape;
     const QPointF center = node.bounds.center();
-    painter.setPen(QPen(color(scene.style.stateStroke), scene.style.strokeWidth));
-    painter.setBrush(color(scene.style.stateFill));
+    painter.setPen(QPen(color(node.stroke), node.strokeWidth));
+    painter.setBrush(color(node.fill));
     if (shape == QLatin1String("stateStart")) {
       painter.setPen(Qt::NoPen); painter.setBrush(transition);
       painter.drawEllipse(center, 7.0, 7.0); continue;
@@ -185,18 +194,29 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
       painter.drawPolygon(diamond); continue;
     }
     if (shape == QLatin1String("note")) {
-      painter.setPen(QPen(color(scene.style.noteStroke), scene.style.strokeWidth));
-      painter.setBrush(color(scene.style.noteFill));
-      painter.drawRect(node.bounds);
-      paintNodeLabel(painter, node, scene.style, color(scene.style.noteTextColor));
+      if (scene.handDrawn)
+        rough::roughRect(painter, node.bounds, scene.handDrawnSeed,
+                         color(node.fill), color(node.stroke), node.strokeWidth);
+      else
+        painter.drawRect(node.bounds);
+      paintNodeLabel(painter, node, scene.style, color(node.textColor));
       continue;
     }
-    painter.drawRoundedRect(node.bounds, 5.0, 5.0);
+    if (scene.handDrawn)
+      rough::roughRect(painter, node.bounds, scene.handDrawnSeed,
+                       color(node.fill), color(node.stroke), node.strokeWidth);
+    else
+      painter.drawRoundedRect(node.bounds, 5.0, 5.0);
     if (!node.descriptions.isEmpty()) {
       const qreal dividerY = node.bounds.top() + scene.style.lineHeight + 16.0;
-      painter.drawLine(node.bounds.left(), dividerY, node.bounds.right(), dividerY);
+      if (scene.handDrawn)
+        rough::roughLine(painter, QPointF(node.bounds.left(), dividerY),
+                         QPointF(node.bounds.right(), dividerY),
+                         scene.handDrawnSeed, color(node.stroke), node.strokeWidth);
+      else
+        painter.drawLine(node.bounds.left(), dividerY, node.bounds.right(), dividerY);
     }
-    paintNodeLabel(painter, node, scene.style, color(scene.style.textColor));
+    paintNodeLabel(painter, node, scene.style, color(node.textColor));
   }
 }
 

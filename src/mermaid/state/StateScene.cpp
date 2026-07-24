@@ -18,6 +18,36 @@ QStringList descriptions(const QJsonValue& value) {
     for (const QJsonValue& item : value.toArray()) result.append(item.toString());
   return result;
 }
+// Resolve the merged style cascade (node.styles) into paint values, defaulting
+// to the caller-supplied theme strings. Mirrors classdiagram::applyNodeStyles;
+// mermaid splits inline `style`/classDef by key (fill/stroke/color/stroke-width)
+// with last-wins, stripping `!important`.
+void applyStateNodeStyles(StateSceneNode& node, const QString& defaultFill,
+                          const QString& defaultStroke, const QString& defaultText,
+                          qreal defaultStrokeWidth) {
+  node.fill = defaultFill;
+  node.stroke = defaultStroke;
+  node.textColor = defaultText;
+  node.strokeWidth = defaultStrokeWidth;
+  const auto apply = [&](const QString& declaration) {
+    const int colon = declaration.indexOf(QLatin1Char(':'));
+    if (colon < 0) return;
+    const QString key = declaration.left(colon).trimmed();
+    QString value = declaration.mid(colon + 1).trimmed();
+    value.remove(QStringLiteral("!important"), Qt::CaseInsensitive);
+    value = value.trimmed();
+    if (key == QLatin1String("fill")) node.fill = value;
+    else if (key == QLatin1String("stroke")) node.stroke = value;
+    else if (key == QLatin1String("color")) node.textColor = value;
+    else if (key == QLatin1String("stroke-width")) {
+      if (value.endsWith(QStringLiteral("px"), Qt::CaseInsensitive)) value.chop(2);
+      bool ok = false;
+      const qreal width = value.toDouble(&ok);
+      if (ok && width >= 0.0) node.strokeWidth = width;
+    }
+  };
+  for (const QString& declaration : node.styles) apply(declaration);
+}
 const StateLayoutNodeInput* inputNode(const StateLayoutInput& input, const QString& id) {
   const auto it = std::find_if(input.nodes.cbegin(), input.nodes.cend(),
       [&](const StateLayoutNodeInput& node) { return node.id == id; });
@@ -58,9 +88,12 @@ StateScene buildStateScene(const StateLayoutInput& input,
     node.label = source->label.toString();
     node.descriptions = descriptions(source->description);
     node.cssClasses = source->cssClasses;
+    node.styles = source->styles;
     node.bounds = QRectF(placed.center - QPointF(placed.size.width() / 2.0,
                                                  placed.size.height() / 2.0), placed.size);
     node.group = true;
+    applyStateNodeStyles(node, scene.style.compositeFill, scene.style.compositeStroke,
+                         scene.style.textColor, scene.style.strokeWidth);
     node.labelDocument = prepareLabel(node.label, scene.style.fontSize);
     scene.clusters.append(node);
     include(scene.bounds, initialized, node.bounds);
@@ -74,12 +107,19 @@ StateScene buildStateScene(const StateLayoutInput& input,
     node.label = source->label.toString();
     node.descriptions = descriptions(source->description);
     node.cssClasses = source->cssClasses;
+    node.styles = source->styles;
     node.labelDocument = prepareLabel(node.label, scene.style.fontSize);
     for (const QString& description : node.descriptions)
       node.descriptionDocuments.append(prepareLabel(description, scene.style.fontSize));
     node.bounds = QRectF(placed.center - QPointF(placed.paintedSize.width() / 2.0,
                                                  placed.paintedSize.height() / 2.0),
                          placed.paintedSize);
+    const bool note = node.shape == QLatin1String("note");
+    applyStateNodeStyles(node,
+        note ? scene.style.noteFill : scene.style.stateFill,
+        note ? scene.style.noteStroke : scene.style.stateStroke,
+        note ? scene.style.noteTextColor : scene.style.textColor,
+        scene.style.strokeWidth);
     scene.nodes.append(node);
     include(scene.bounds, initialized, node.bounds);
   }

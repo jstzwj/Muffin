@@ -55,6 +55,13 @@ ResolvedNodeStyle resolveNodeStyle(const flowchart::FlowVertex& vertex,
 ResolvedEdgeStyle resolveEdgeStyle(const flowchart::FlowEdge& edge,
                                    const flowtheme::FlowThemeVariables& theme);
 
+// Merged classDef declarations (key:value, last-wins) for the given class names.
+// Used by edges/subgraphs, which upstream styles via `class <id> <name>`
+// (setClass) rather than inline `style`. Returns node+label bucket declarations
+// together; callers split by key (fill/stroke/color/...).
+QStringList compiledClassStyles(const QStringList& classNames,
+                                const QVector<flowchart::FlowClass>& classes);
+
 // Whether a CSS property key is a label (text) style vs a node (box) style.
 // Mirrors khroma/mermaid's isLabelStyle predicate (chunk-BNCO5QFQ.mjs:38).
 bool isLabelStyle(const QString& key);

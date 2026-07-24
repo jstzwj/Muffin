@@ -23,7 +23,11 @@ struct SequenceLayoutMeasurements {
   QMap<int, QSizeF> marginNotesByIndex;
   QMap<int, QString> noteDisplayByIndex;
   QMap<int, QSizeF> fragmentsByIndex;
+  // Keyed by sequenceMenuLabelKey(actorId, label).
+  QMap<QString, QSizeF> menuItems;
 };
+
+QString sequenceMenuLabelKey(const QString& actorId, const QString& label);
 
 struct SequenceLayoutParticipantInput {
   int actorIndex = -1;
@@ -91,6 +95,21 @@ struct SequenceLayoutOptions {
   bool wrap = false;
   bool mirrorActors = true;
   bool hideUnusedParticipants = false;
+  bool showSequenceNumbers = false;
+  bool forceMenus = false;
+};
+
+struct SequenceLayoutMenuItem {
+  QString label;
+  QString link;
+  QRectF hitRect;
+  QRectF labelRect;
+};
+
+struct SequenceLayoutMenu {
+  QString actorId;
+  QRectF panelRect;
+  QVector<SequenceLayoutMenuItem> items;
 };
 
 struct SequenceLayoutBox {
@@ -185,6 +204,8 @@ struct SequenceLayoutResult {
   QVector<SequenceLayoutNote> notes;
   QVector<SequenceLayoutFragment> fragments;
   QVector<SequenceLayoutNumber> sequenceNumbers;
+  QVector<SequenceLayoutMenu> menus;
+  bool forceMenus = false;
   // Width passed to Mermaid's second wrapLabel() call after actor and
   // activation endpoints are known. Keyed by parser message index.
   QMap<int, qreal> messageWrapWidthsByIndex;

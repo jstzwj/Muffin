@@ -1,6 +1,7 @@
 #include "mermaid/sequence/SequenceScenePainter.h"
 
 #include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/rough/RoughPaint.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/theme/MermaidColor.h"
 
@@ -145,7 +146,11 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
       continue;
     painter.setPen(QPen(color(scene.style.boxStroke), 1.0));
     painter.setBrush(box.fill == QLatin1String("transparent") ? Qt::NoBrush : color(box.fill));
-    painter.drawRect(box.rect);
+    if (scene.handDrawn)
+      rough::roughRect(painter, box.rect, scene.handDrawnSeed,
+                       color(box.fill), color(scene.style.boxStroke), 1.0);
+    else
+      painter.drawRect(box.rect);
     if (!box.label.isEmpty()) centeredText(painter, scene.boxLabels[index], box.labelRect,
                                            scene.style, scene.style.labelTextColor);
   }
@@ -162,19 +167,45 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     if (!mermaidPrimitiveIsVisible(activation.rect, options)) continue;
     painter.setPen(QPen(color(scene.style.activationStroke), 1.0));
     painter.setBrush(color(scene.style.activationFill));
-    painter.drawRect(activation.rect);
+    if (scene.handDrawn)
+      rough::roughRect(painter, activation.rect, scene.handDrawnSeed,
+                       color(scene.style.activationFill),
+                       color(scene.style.activationStroke), 1.0);
+    else
+      painter.drawRect(activation.rect);
   }
   for (qsizetype index = 0; index < scene.fragments.size(); ++index) {
     const auto& fragment = scene.fragments[index];
     if (!mermaidPrimitiveIsVisible(fragment.rect, options)) continue;
+    if (fragment.kind == QLatin1String("rect")) {
+      // `rect <color>` is a borderless background highlight over the contained
+      // messages (mermaid drawBackgroundRect). Its label IS the color spec; there
+      // is no tag box, fragment label, or section divider — unlike loop/alt/etc.
+      if (!fragment.label.trimmed().isEmpty()) {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(color(fragment.label));
+        painter.drawRect(fragment.rect);
+      }
+      continue;
+    }
     painter.setPen(QPen(color(scene.style.fragmentStroke), 2.0));
     painter.setBrush(scene.style.fragmentFill == QLatin1String("transparent")
                          ? Qt::NoBrush : QBrush(color(scene.style.fragmentFill)));
-    painter.drawRect(fragment.rect);
+    if (scene.handDrawn)
+      rough::roughRect(painter, fragment.rect, scene.handDrawnSeed,
+                       scene.style.fragmentFill == QLatin1String("transparent")
+                           ? QColor(Qt::transparent) : color(scene.style.fragmentFill),
+                       color(scene.style.fragmentStroke), 2.0);
+    else
+      painter.drawRect(fragment.rect);
     const QRectF tag(fragment.rect.x(), fragment.rect.y(), 50.0, 20.0);
     painter.setPen(QPen(color(scene.style.labelStroke), 1.0));
     painter.setBrush(color(scene.style.labelFill));
-    painter.drawRect(tag);
+    if (scene.handDrawn)
+      rough::roughRect(painter, tag, scene.handDrawnSeed,
+                       color(scene.style.labelFill), color(scene.style.labelStroke), 1.0);
+    else
+      painter.drawRect(tag);
     centeredText(painter, scene.fragmentKindLabels[index], tag, scene.style,
                  scene.style.labelTextColor);
     centeredText(painter, scene.fragmentLabels[index],
@@ -183,15 +214,25 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
                  scene.style.loopTextColor);
     QPen sectionPen(color(scene.style.fragmentStroke), 1.0, Qt::DashLine);
     painter.setPen(sectionPen);
-    for (qreal y : fragment.sectionY)
-      painter.drawLine(QPointF(fragment.rect.left(), y), QPointF(fragment.rect.right(), y));
+    for (qreal y : fragment.sectionY) {
+      if (scene.handDrawn)
+        rough::roughLine(painter, QPointF(fragment.rect.left(), y),
+                         QPointF(fragment.rect.right(), y), scene.handDrawnSeed,
+                         color(scene.style.fragmentStroke), 1.0);
+      else
+        painter.drawLine(QPointF(fragment.rect.left(), y), QPointF(fragment.rect.right(), y));
+    }
   }
   for (qsizetype index = 0; index < scene.notes.size(); ++index) {
     const auto& note = scene.notes[index];
     if (!mermaidPrimitiveIsVisible(note.rect, options)) continue;
     painter.setPen(QPen(color(scene.style.noteStroke), 1.0));
     painter.setBrush(color(scene.style.noteFill));
-    painter.drawRect(note.rect);
+    if (scene.handDrawn)
+      rough::roughRect(painter, note.rect, scene.handDrawnSeed,
+                       color(scene.style.noteFill), color(scene.style.noteStroke), 1.0);
+    else
+      painter.drawRect(note.rect);
     centeredText(painter, scene.noteLabels[index], note.rect, scene.style,
                  scene.style.noteTextColor);
   }
@@ -206,9 +247,18 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
     if (message.painterPath.isEmpty()) {
-      painter.drawLine(QPointF(message.startX, message.lineY), QPointF(message.stopX, message.lineY));
+      if (scene.handDrawn)
+        rough::roughLine(painter, QPointF(message.startX, message.lineY),
+                         QPointF(message.stopX, message.lineY), scene.handDrawnSeed,
+                         color(scene.style.signalColor), 2.0);
+      else
+        painter.drawLine(QPointF(message.startX, message.lineY), QPointF(message.stopX, message.lineY));
     } else {
-      painter.drawPath(message.painterPath);
+      if (scene.handDrawn)
+        rough::roughPath(painter, message.painterPath, scene.handDrawnSeed,
+                         color(scene.style.signalColor), 2.0);
+      else
+        painter.drawPath(message.painterPath);
     }
     for (const QPointF& center : message.centralConnections) {
       painter.setPen(QPen(color(scene.style.signalColor), 1.0));
@@ -234,6 +284,27 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
       painter.setPen(color(scene.style.sequenceNumberColor));
       painter.drawText(QRectF(number->position.x() - 10.0, number->position.y() - 10.0,
                               20.0, 14.0), Qt::AlignCenter, number->text);
+    }
+  }
+
+  // Popups are appended last in Mermaid's SVG, above messages and actors.
+  for (const SequenceSceneMenu& menu : scene.menus) {
+    const bool visible = scene.forceMenus ||
+        (options.openSequenceMenus &&
+         options.openSequenceMenus->contains(menu.actorId));
+    if (!visible ||
+        !mermaidPrimitiveIsVisible(menu.panelRect, options)) {
+      continue;
+    }
+    painter.setPen(QPen(color(scene.style.actorStroke), 2.0));
+    painter.setBrush(color(scene.style.actorFill));
+    painter.drawRect(menu.panelRect);
+    for (const SequenceSceneMenuItem& item : menu.items) {
+      paintSequenceLabel(
+          painter, item.labelDocument, item.labelRect,
+          scene.style.fontFamily, scene.style.fontSize,
+          scene.style.fontSize * 1.375,
+          color(scene.style.actorTextColor), true);
     }
   }
 }

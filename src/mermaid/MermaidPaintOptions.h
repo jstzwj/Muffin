@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QRectF>
+#include <QSet>
+#include <QString>
 #include <QtGlobal>
 
 #include <algorithm>
@@ -24,6 +26,14 @@ struct MermaidPaintOptions {
   // Covers strokes, markers, rough jitter and shadows crossing the clip edge.
   qreal overscan = 24.0;
   MermaidPaintStats* stats = nullptr;
+
+  // A non-negative timestamp enables live animation. The default keeps the
+  // deterministic CSS initial frame used by PNG/PDF/print export.
+  qreal animationTimeSeconds = -1.0;
+
+  // Runtime-only Sequence Diagram menu state. `forceMenus` is stored in the
+  // immutable scene; this set contains actor ids toggled open by the editor.
+  const QSet<QString>* openSequenceMenus = nullptr;
 };
 
 inline bool mermaidPrimitiveIsVisible(

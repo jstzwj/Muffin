@@ -115,6 +115,35 @@ int main(int argc, char** argv) {
                 .arg(i).arg(r.strokeWidth).arg(e.value(QStringLiteral("strokeWidth")).toString()));
   }
 
+  // classDef `default` auto-applies to every vertex (mermaid.js:48113 prepends
+  // ["default","node"] in getCompiledStyles), so a class-less node still picks
+  // up a user-authored `classDef default fill:...`.
+  {
+    flowchart::FlowClass defaultClass;
+    defaultClass.id = QStringLiteral("default");
+    defaultClass.styles = QStringList{QStringLiteral("fill:#112233")};
+    QVector<flowchart::FlowClass> classes = chart.data().classes;
+    classes.append(defaultClass);
+    flowchart::FlowVertex vertex;
+    vertex.id = QStringLiteral("__default_probe__");
+    const flowstyle::ResolvedNodeStyle r = flowstyle::resolveNodeStyle(vertex, classes, theme);
+    require(colorsEqual(r.fill, QStringLiteral("#112233")),
+            QStringLiteral("classDef default did not propagate to class-less node: %1").arg(r.fill));
+  }
+
+  // compiledClassStyles: the edge/subgraph classDef resolver (setClass analogue).
+  {
+    flowchart::FlowClass thick;
+    thick.id = QStringLiteral("thick");
+    thick.styles = QStringList{QStringLiteral("stroke:#ff0000"), QStringLiteral("stroke-width:4px")};
+    const QStringList merged = flowstyle::compiledClassStyles(
+        QStringList{QStringLiteral("thick")}, QVector<flowchart::FlowClass>{thick});
+    require(merged.contains(QStringLiteral("stroke:#ff0000")),
+            QStringLiteral("compiledClassStyles lost stroke: %1").arg(merged.join(QLatin1Char(','))));
+    require(merged.contains(QStringLiteral("stroke-width:4px")),
+            QStringLiteral("compiledClassStyles lost stroke-width: %1").arg(merged.join(QLatin1Char(','))));
+  }
+
   qDebug().noquote() << "MermaidFlowStyleResolveTest: cascade matches golden";
   return 0;
 }

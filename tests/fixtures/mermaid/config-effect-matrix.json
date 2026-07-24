@@ -1,0 +1,2167 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "configTypeSha256": "be369beb8545de3e1d35c387d7ce0f328fb672f7c347e6540617a40d1b7244c0"
+  },
+  "dimensions": [
+    "parsed",
+    "layout",
+    "text",
+    "paint",
+    "viewport",
+    "interaction",
+    "export"
+  ],
+  "scope": {
+    "families": [
+      "flowchart",
+      "sequence",
+      "class",
+      "state"
+    ],
+    "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
+  },
+  "summary": {
+    "parity": 40,
+    "partial": 8,
+    "unsupported": 18,
+    "security-fixed": 1,
+    "deferred": 5,
+    "upstream-inert": 8,
+    "api-only": 3,
+    "legacy-only": 19
+  },
+  "entries": [
+    {
+      "path": "theme",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ]
+    },
+    {
+      "path": "themeVariables.*",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "partial",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "note": "The matrix covers the native theme-variable subset, not arbitrary Mermaid CSS variables."
+    },
+    {
+      "path": "fontFamily",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ]
+    },
+    {
+      "path": "htmlLabels",
+      "families": [
+        "flowchart",
+        "class"
+      ],
+      "status": "partial",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "note": "Native class labels consume this option; native flow labels do not yet branch on it."
+    },
+    {
+      "path": "look",
+      "families": [
+        "flowchart",
+        "class",
+        "state"
+      ],
+      "status": "partial",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "note": "Flowchart is complete; state currently uses look for marker selection and class retains it without rough painting."
+    },
+    {
+      "path": "handDrawnSeed",
+      "families": [
+        "flowchart"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "interaction",
+        "export"
+      ]
+    },
+    {
+      "path": "layout",
+      "families": [
+        "flowchart",
+        "class",
+        "state"
+      ],
+      "status": "partial",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "note": "dagre is supported; elk and unknown engines return unsupported-layout-engine."
+    },
+    {
+      "path": "wrap",
+      "families": [
+        "sequence"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "note": "Includes the %%{wrap}%% directive promoted by Mermaid preprocessing."
+    },
+    {
+      "path": "maxEdges",
+      "families": [
+        "flowchart"
+      ],
+      "status": "unsupported",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Muffin keeps a fixed safety ceiling instead of allowing source config to raise it."
+    },
+    {
+      "path": "maxTextSize",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "unsupported",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Muffin keeps family-specific safety ceilings instead of trusting document config."
+    },
+    {
+      "path": "securityLevel",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "security-fixed",
+      "upstream": [
+        "parsed",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The desktop renderer always applies its strict URL and content policy."
+    },
+    {
+      "path": "arrowMarkerAbsolute",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "deferred",
+      "upstream": [
+        "parsed",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Requires native SVG marker serialization."
+    },
+    {
+      "path": "deterministicIds",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "export"
+      ]
+    },
+    {
+      "path": "deterministicIDSeed",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "export"
+      ]
+    },
+    {
+      "path": "themeCSS",
+      "families": [
+        "flowchart",
+        "sequence",
+        "class",
+        "state"
+      ],
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Native scenes consume typed theme variables rather than arbitrary browser CSS."
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.titleTopMargin",
+      "field": "titleTopMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 25
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.subGraphTitleMargin",
+      "field": "subGraphTitleMargin",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Cluster title margins are not forwarded to native compound layout.",
+      "default": {
+        "top": 0,
+        "bottom": 0
+      }
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.arrowMarkerAbsolute",
+      "field": "arrowMarkerAbsolute",
+      "hasDefault": false,
+      "status": "deferred",
+      "upstream": [
+        "parsed",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only meaningful for SVG marker URL serialization."
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.diagramPadding",
+      "field": "diagramPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": 8
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.htmlLabels",
+      "field": "htmlLabels",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Deprecated upstream alias; native flow labels currently use one structured text path.",
+      "default": null
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.nodeSpacing",
+      "field": "nodeSpacing",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.rankSpacing",
+      "field": "rankSpacing",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.curve",
+      "field": "curve",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": "basis"
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 15
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.defaultRenderer",
+      "field": "defaultRenderer",
+      "hasDefault": true,
+      "status": "partial",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "note": "dagre-wrapper is supported; dagre-d3 and elk return an explicit unsupported diagnostic.",
+      "default": "dagre-wrapper"
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.wrappingWidth",
+      "field": "wrappingWidth",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Native flow markdown wrapping does not yet consume this width.",
+      "default": 200
+    },
+    {
+      "family": "flowchart",
+      "interface": "FlowchartDiagramConfig",
+      "path": "flowchart.inheritDir",
+      "field": "inheritDir",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Subgraph direction inheritance is parsed but not forwarded.",
+      "default": false
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.arrowMarkerAbsolute",
+      "field": "arrowMarkerAbsolute",
+      "hasDefault": false,
+      "status": "deferred",
+      "upstream": [
+        "parsed",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only meaningful for SVG marker URL serialization."
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.hideUnusedParticipants",
+      "field": "hideUnusedParticipants",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.activationWidth",
+      "field": "activationWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.diagramMarginX",
+      "field": "diagramMarginX",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.diagramMarginY",
+      "field": "diagramMarginY",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.actorMargin",
+      "field": "actorMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 150
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 65
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.boxMargin",
+      "field": "boxMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.boxTextMargin",
+      "field": "boxTextMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.noteMargin",
+      "field": "noteMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.messageMargin",
+      "field": "messageMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Mermaid 11.16.0 resolves this value but does not consume it in sequence layout.",
+      "default": 35
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.messageAlign",
+      "field": "messageAlign",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Native message labels are currently centered.",
+      "default": "center"
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.mirrorActors",
+      "field": "mirrorActors",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.forceMenus",
+      "field": "forceMenus",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "interaction",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.bottomMarginAdj",
+      "field": "bottomMarginAdj",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": 1
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.rightAngles",
+      "field": "rightAngles",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.showSequenceNumbers",
+      "field": "showSequenceNumbers",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.actorFontSize",
+      "field": "actorFontSize",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": 14
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.actorFontFamily",
+      "field": "actorFontFamily",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.actorFontWeight",
+      "field": "actorFontWeight",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": 400
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.noteFontSize",
+      "field": "noteFontSize",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": 14
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.noteFontFamily",
+      "field": "noteFontFamily",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": "\"trebuchet ms\", verdana, arial, sans-serif"
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.noteFontWeight",
+      "field": "noteFontWeight",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": 400
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.noteAlign",
+      "field": "noteAlign",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Native note labels are currently centered.",
+      "default": "center"
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.messageFontSize",
+      "field": "messageFontSize",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": 16
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.messageFontFamily",
+      "field": "messageFontFamily",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": "\"trebuchet ms\", verdana, arial, sans-serif"
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.messageFontWeight",
+      "field": "messageFontWeight",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Per-label sequence fonts are not split yet.",
+      "default": 400
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.wrap",
+      "field": "wrap",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.wrapPadding",
+      "field": "wrapPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.labelBoxWidth",
+      "field": "labelBoxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.labelBoxHeight",
+      "field": "labelBoxHeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 20
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.messageFont",
+      "field": "messageFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.noteFont",
+      "field": "noteFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "sequence",
+      "interface": "SequenceDiagramConfig",
+      "path": "sequence.actorFont",
+      "field": "actorFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The 11.16 unified class renderer reads state.useMaxWidth instead of class.useMaxWidth."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.titleTopMargin",
+      "field": "titleTopMargin",
+      "hasDefault": false,
+      "status": "partial",
+      "upstream": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "note": "Effective in the legacy renderer; the 11.16 unified renderer reads state.titleTopMargin."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.arrowMarkerAbsolute",
+      "field": "arrowMarkerAbsolute",
+      "hasDefault": false,
+      "status": "deferred",
+      "upstream": [
+        "parsed",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only meaningful for SVG marker URL serialization."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.dividerMargin",
+      "field": "dividerMargin",
+      "hasDefault": false,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Consumed by the legacy class renderer, not the unified native scene."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.padding",
+      "field": "padding",
+      "hasDefault": false,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ]
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.textHeight",
+      "field": "textHeight",
+      "hasDefault": false,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Consumed by the legacy class renderer, not the unified native scene."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.defaultRenderer",
+      "field": "defaultRenderer",
+      "hasDefault": false,
+      "status": "partial",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "note": "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.nodeSpacing",
+      "field": "nodeSpacing",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The Mermaid 11.16 class renderer currently resets this value to 50 before Dagre."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.rankSpacing",
+      "field": "rankSpacing",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The Mermaid 11.16 class renderer currently resets this value to 50 before Dagre."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.diagramPadding",
+      "field": "diagramPadding",
+      "hasDefault": false,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The unified renderer uses a fixed 8 px viewport padding."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.htmlLabels",
+      "field": "htmlLabels",
+      "hasDefault": false,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The unified renderer consumes the global htmlLabels option instead."
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.hideEmptyMembersBox",
+      "field": "hideEmptyMembersBox",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "class",
+      "interface": "ClassDiagramConfig",
+      "path": "class.hierarchicalNamespaces",
+      "field": "hierarchicalNamespaces",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.titleTopMargin",
+      "field": "titleTopMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 25
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.arrowMarkerAbsolute",
+      "field": "arrowMarkerAbsolute",
+      "hasDefault": false,
+      "status": "deferred",
+      "upstream": [
+        "parsed",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only meaningful for SVG marker URL serialization."
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.dividerMargin",
+      "field": "dividerMargin",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer geometry option.",
+      "default": 10
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.sizeUnit",
+      "field": "sizeUnit",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer geometry option.",
+      "default": 5
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer text-box option.",
+      "default": 8
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.textHeight",
+      "field": "textHeight",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer text metric option.",
+      "default": 10
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.titleShift",
+      "field": "titleShift",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer geometry option.",
+      "default": -15
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.noteMargin",
+      "field": "noteMargin",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer note geometry option.",
+      "default": 10
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.nodeSpacing",
+      "field": "nodeSpacing",
+      "hasDefault": false,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ]
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.rankSpacing",
+      "field": "rankSpacing",
+      "hasDefault": false,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ]
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.forkWidth",
+      "field": "forkWidth",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer fork geometry option.",
+      "default": 70
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.forkHeight",
+      "field": "forkHeight",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer fork geometry option.",
+      "default": 7
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.miniPadding",
+      "field": "miniPadding",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer geometry option.",
+      "default": 2
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.fontSizeFactor",
+      "field": "fontSizeFactor",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer text estimate option.",
+      "default": 5.02
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.fontSize",
+      "field": "fontSize",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer font option.",
+      "default": 24
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.labelHeight",
+      "field": "labelHeight",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer label option.",
+      "default": 16
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.edgeLengthFactor",
+      "field": "edgeLengthFactor",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer edge option.",
+      "default": "20"
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.compositTitleSize",
+      "field": "compositTitleSize",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state renderer title option.",
+      "default": 35
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.radius",
+      "field": "radius",
+      "hasDefault": true,
+      "status": "legacy-only",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Legacy state corner radius option.",
+      "default": 5
+    },
+    {
+      "family": "state",
+      "interface": "StateDiagramConfig",
+      "path": "state.defaultRenderer",
+      "field": "defaultRenderer",
+      "hasDefault": true,
+      "status": "partial",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "note": "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
+      "default": "dagre-wrapper"
+    }
+  ],
+  "fixtureSha256": "11e8b2e9c6157305f03d48dcb8d1be3193bb9bef73d3b6e78ac3d05ead3ee53a"
+}

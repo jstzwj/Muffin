@@ -24599,6 +24599,859 @@
                     }
                 }
             ]
+        },
+        {
+            "id": "curve-rounded",
+            "snapshots": [
+                {
+                    "phase": "input",
+                    "state": {
+                        "edges": [
+                            {
+                                "height": 0,
+                                "id": "L_A_B_0",
+                                "labeloffset": 10,
+                                "labelpos": "c",
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "B",
+                                "weight": 1,
+                                "width": 0
+                            },
+                            {
+                                "height": 0,
+                                "id": "L_A_C_0",
+                                "labeloffset": 10,
+                                "labelpos": "c",
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "C",
+                                "weight": 1,
+                                "width": 0
+                            },
+                            {
+                                "height": 0,
+                                "id": "L_B_D_0",
+                                "labeloffset": 10,
+                                "labelpos": "c",
+                                "minlen": 1,
+                                "v": "B",
+                                "w": "D",
+                                "weight": 1,
+                                "width": 0
+                            },
+                            {
+                                "height": 0,
+                                "id": "L_C_D_0",
+                                "labeloffset": 10,
+                                "labelpos": "c",
+                                "minlen": 1,
+                                "v": "C",
+                                "w": "D",
+                                "weight": 1,
+                                "width": 0
+                            },
+                            {
+                                "height": 0,
+                                "id": "L_A_D_0",
+                                "labeloffset": 10,
+                                "labelpos": "c",
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "D",
+                                "weight": 1,
+                                "width": 0
+                            }
+                        ],
+                        "graph": {
+                            "edgesep": 20,
+                            "nodesep": 50,
+                            "padding": 15,
+                            "rankdir": "TB",
+                            "ranksep": 50
+                        },
+                        "nodes": [
+                            {
+                                "height": 54,
+                                "id": "A",
+                                "parent": null,
+                                "width": 93.797
+                            },
+                            {
+                                "height": 54,
+                                "id": "B",
+                                "parent": null,
+                                "width": 86.688
+                            },
+                            {
+                                "height": 54,
+                                "id": "C",
+                                "parent": null,
+                                "width": 97.359
+                            },
+                            {
+                                "height": 54,
+                                "id": "D",
+                                "parent": null,
+                                "width": 88.469
+                            }
+                        ]
+                    }
+                },
+                {
+                    "phase": "rank",
+                    "state": {
+                        "dummyCounts": {
+                            "root": 1
+                        },
+                        "edges": [
+                            {
+                                "minlen": 2,
+                                "v": "A",
+                                "w": "B",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 2,
+                                "v": "A",
+                                "w": "C",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 2,
+                                "v": "A",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 2,
+                                "v": "B",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 2,
+                                "v": "C",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:root",
+                                "w": "A",
+                                "weight": 0
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:root",
+                                "w": "B",
+                                "weight": 0
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:root",
+                                "w": "C",
+                                "weight": 0
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:root",
+                                "w": "D",
+                                "weight": 0
+                            }
+                        ],
+                        "realNodes": [
+                            {
+                                "id": "A",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": -4
+                            },
+                            {
+                                "id": "B",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": -2
+                            },
+                            {
+                                "id": "C",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": -2
+                            },
+                            {
+                                "id": "D",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 0
+                            }
+                        ]
+                    }
+                },
+                {
+                    "phase": "parentDummyChains",
+                    "state": {
+                        "dummyCounts": {
+                            "edge": 7
+                        },
+                        "edges": [
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "B",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "C",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "B",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "C",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            }
+                        ],
+                        "realNodes": [
+                            {
+                                "id": "A",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 0
+                            },
+                            {
+                                "id": "B",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "C",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "D",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 4
+                            }
+                        ]
+                    }
+                },
+                {
+                    "phase": "addBorderSegments",
+                    "state": {
+                        "dummyCounts": {
+                            "edge": 7
+                        },
+                        "edges": [
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "B",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "C",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "B",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "C",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            }
+                        ],
+                        "realNodes": [
+                            {
+                                "id": "A",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 0
+                            },
+                            {
+                                "id": "B",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "C",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "D",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 4
+                            }
+                        ]
+                    }
+                },
+                {
+                    "phase": "order",
+                    "state": {
+                        "dummyCounts": {
+                            "edge": 7
+                        },
+                        "edges": [
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "B",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "C",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "B",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "C",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "D",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            }
+                        ],
+                        "realNodes": [
+                            {
+                                "id": "A",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": 0,
+                                "parent": null,
+                                "rank": 0
+                            },
+                            {
+                                "id": "B",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": 0,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "C",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": 1,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "D",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": 0,
+                                "parent": null,
+                                "rank": 4
+                            }
+                        ]
+                    }
+                }
+            ]
+        },
+        {
+            "id": "edge-rounded-override",
+            "snapshots": [
+                {
+                    "phase": "input",
+                    "state": {
+                        "edges": [
+                            {
+                                "height": 0,
+                                "id": "roundedEdge",
+                                "labeloffset": 10,
+                                "labelpos": "c",
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "B",
+                                "weight": 1,
+                                "width": 0
+                            },
+                            {
+                                "height": 0,
+                                "id": "L_B_C_0",
+                                "labeloffset": 10,
+                                "labelpos": "c",
+                                "minlen": 1,
+                                "v": "B",
+                                "w": "C",
+                                "weight": 1,
+                                "width": 0
+                            }
+                        ],
+                        "graph": {
+                            "edgesep": 20,
+                            "nodesep": 50,
+                            "padding": 15,
+                            "rankdir": "LR",
+                            "ranksep": 50
+                        },
+                        "nodes": [
+                            {
+                                "height": 54,
+                                "id": "A",
+                                "parent": null,
+                                "width": 93.797
+                            },
+                            {
+                                "height": 54,
+                                "id": "B",
+                                "parent": null,
+                                "width": 107.141
+                            },
+                            {
+                                "height": 54,
+                                "id": "C",
+                                "parent": null,
+                                "width": 88.469
+                            }
+                        ]
+                    }
+                },
+                {
+                    "phase": "rank",
+                    "state": {
+                        "dummyCounts": {
+                            "root": 1
+                        },
+                        "edges": [
+                            {
+                                "minlen": 2,
+                                "v": "A",
+                                "w": "B",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 2,
+                                "v": "B",
+                                "w": "C",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:root",
+                                "w": "A",
+                                "weight": 0
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:root",
+                                "w": "B",
+                                "weight": 0
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:root",
+                                "w": "C",
+                                "weight": 0
+                            }
+                        ],
+                        "realNodes": [
+                            {
+                                "id": "A",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": -4
+                            },
+                            {
+                                "id": "B",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": -2
+                            },
+                            {
+                                "id": "C",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 0
+                            }
+                        ]
+                    }
+                },
+                {
+                    "phase": "parentDummyChains",
+                    "state": {
+                        "dummyCounts": {
+                            "edge": 2
+                        },
+                        "edges": [
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "B",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "B",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "C",
+                                "weight": 1
+                            }
+                        ],
+                        "realNodes": [
+                            {
+                                "id": "A",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 0
+                            },
+                            {
+                                "id": "B",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "C",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 4
+                            }
+                        ]
+                    }
+                },
+                {
+                    "phase": "addBorderSegments",
+                    "state": {
+                        "dummyCounts": {
+                            "edge": 2
+                        },
+                        "edges": [
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "B",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "B",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "C",
+                                "weight": 1
+                            }
+                        ],
+                        "realNodes": [
+                            {
+                                "id": "A",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 0
+                            },
+                            {
+                                "id": "B",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "C",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": null,
+                                "parent": null,
+                                "rank": 4
+                            }
+                        ]
+                    }
+                },
+                {
+                    "phase": "order",
+                    "state": {
+                        "dummyCounts": {
+                            "edge": 2
+                        },
+                        "edges": [
+                            {
+                                "minlen": 1,
+                                "v": "A",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "B",
+                                "w": "dummy:edge",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "B",
+                                "weight": 1
+                            },
+                            {
+                                "minlen": 1,
+                                "v": "dummy:edge",
+                                "w": "C",
+                                "weight": 1
+                            }
+                        ],
+                        "realNodes": [
+                            {
+                                "id": "A",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": 0,
+                                "parent": null,
+                                "rank": 0
+                            },
+                            {
+                                "id": "B",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": 0,
+                                "parent": null,
+                                "rank": 2
+                            },
+                            {
+                                "id": "C",
+                                "maxRank": null,
+                                "minRank": null,
+                                "order": 0,
+                                "parent": null,
+                                "rank": 4
+                            }
+                        ]
+                    }
+                }
+            ]
         }
     ],
     "upstream": {

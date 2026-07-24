@@ -410,6 +410,16 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       sc.label.color = theme.titleColor;
       sc.label.fontFamily = theme.fontFamily;
       sc.label.fontSize = theme.fontSize;
+      // classDef applied to a subgraph (`class <subgraphId> <name>`) overrides
+      // the theme cluster fill/stroke — upstream setClass hits subgraphs too.
+      for (const QString& decl : flowstyle::compiledClassStyles(s->classes, data.classes)) {
+        const int colon = decl.indexOf(QLatin1Char(':'));
+        if (colon < 0) continue;
+        const QString key = decl.left(colon).trimmed();
+        const QString value = decl.mid(colon + 1).trimmed();
+        if (key == QLatin1String("fill")) sc.fill = value;
+        else if (key == QLatin1String("stroke")) sc.stroke = value;
+      }
     }
     prepareSceneLabel(sc.label);
     scene.clusters.append(sc);
@@ -424,7 +434,11 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     const flowchart::FlowEdge* fe = edgeById.value(e.id);
     if (fe) {
       flowchart::FlowEdge effectiveEdge = *fe;
-      effectiveEdge.style = data.defaultEdgeStyles + effectiveEdge.style;
+      // Cascade order (low -> high): classDef (`class <edgeId> <name>`) < the
+      // linkStyle default < this edge's own linkStyle entries. resolveEdgeStyle
+      // applies declarations in order, last-wins.
+      effectiveEdge.style = flowstyle::compiledClassStyles(fe->classes, data.classes)
+          + data.defaultEdgeStyles + effectiveEdge.style;
       const flowstyle::ResolvedEdgeStyle rs = flowstyle::resolveEdgeStyle(effectiveEdge, theme);
       se.stroke = rs.stroke;
       se.strokeWidth = rs.strokeWidth;
@@ -432,6 +446,10 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       se.markerEnd = markerEndType(fe->type);
       se.markerStart = markerStartType(fe->type);
       se.animated = fe->animate || !fe->animation.isEmpty();
+      if (se.animated) {
+        se.animation = fe->animation == QLatin1String("slow")
+            ? QStringLiteral("slow") : QStringLiteral("fast");
+      }
       // Path endpoints + tangents (for marker orientation in the painter).
       if (e.points.size() >= 2) {
         se.startPoint = e.points.first();
@@ -597,6 +615,10 @@ QString FlowScene::toJson() const {
     if (!e.strokeDasharray.isEmpty()) o[QStringLiteral("strokeDasharray")] = e.strokeDasharray;
     o[QStringLiteral("markerEnd")] = e.markerEnd;
     o[QStringLiteral("markerStart")] = e.markerStart;
+    if (e.animated) {
+      o[QStringLiteral("animated")] = true;
+      o[QStringLiteral("animation")] = e.animation;
+    }
     o[QStringLiteral("label")] = labelJson(e.label);
     edgesJson.append(o);
   }
@@ -612,6 +634,8 @@ QString FlowScene::toJson() const {
     o[QStringLiteral("fill")] = n.fill; o[QStringLiteral("stroke")] = n.stroke;
     o[QStringLiteral("strokeWidth")] = n.strokeWidth;
     o[QStringLiteral("label")] = labelJson(n.label);
+    if (!n.link.isEmpty()) o[QStringLiteral("link")] = n.link;
+    if (!n.tooltip.isEmpty()) o[QStringLiteral("tooltip")] = n.tooltip;
     nodesJson.append(o);
   }
   root[QStringLiteral("nodes")] = nodesJson;

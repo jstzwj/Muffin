@@ -86,6 +86,9 @@ struct FlowSceneEdge {
   // (from FlowLayoutEdge.points; NOT serialized by toJson).
   QPointF startPoint, endPoint, startTangent, endTangent;
   bool animated = false;
+  // Mermaid maps animate:true to `fast`, while an explicit animation value
+  // overrides it. Empty for a static edge; otherwise `fast` or `slow`.
+  QString animation;
 };
 
 struct FlowSceneCluster {

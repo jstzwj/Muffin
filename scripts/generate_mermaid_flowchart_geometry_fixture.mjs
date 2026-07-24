@@ -375,6 +375,26 @@ const cases = [
     id: "grammar-grouped-links",
     source: "flowchart TB\nA[Alpha] & B[Beta] --> C[Gamma] & D[Delta]",
   },
+  {
+    id: "curve-rounded",
+    curve: "rounded",
+    source: [
+      "flowchart TB",
+      "A[Start] --> B[Left]",
+      "A --> C[Right]",
+      "B --> D[End]",
+      "C --> D",
+      "A --> D",
+    ].join("\n"),
+  },
+  {
+    id: "edge-rounded-override",
+    source: [
+      "flowchart LR",
+      "A[Start] roundedEdge@--> B[Middle] --> C[End]",
+      "roundedEdge@{ curve: rounded }",
+    ].join("\n"),
+  },
 ];
 const duplicateCaseIds = cases
   .map((fixture) => fixture.id)

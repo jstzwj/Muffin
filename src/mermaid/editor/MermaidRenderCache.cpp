@@ -1,8 +1,11 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 
+#include "mermaid/editor/MermaidSvgExporter.h"
+
 #include "mermaid/MermaidDiagramDetector.h"
 #include "mermaid/MermaidPreprocessor.h"
 #include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/MermaidRenderMetadata.h"
 #include "mermaid/classdiagram/ClassDiagram.h"
 #include "mermaid/classdiagram/ClassLayout.h"
 #include "mermaid/classdiagram/ClassScene.h"
@@ -21,6 +24,10 @@
 #include "mermaid/state/StateLayout.h"
 #include "mermaid/state/StateScene.h"
 #include "mermaid/state/StateScenePainter.h"
+#include "mermaid/erdiagram/ErDiagram.h"
+#include "mermaid/erdiagram/ErLayout.h"
+#include "mermaid/erdiagram/ErScene.h"
+#include "mermaid/erdiagram/ErScenePainter.h"
 #include "mermaid/theme/FlowTheme.h"
 #include "mermaid/theme/MermaidColor.h"
 
@@ -29,9 +36,11 @@
 #include <QFutureWatcher>
 #include <QImage>
 #include <QJsonObject>
+#include <QPainter>
 #include <QRegularExpression>
 #include <QtConcurrent>
 
+#include <optional>
 #include <utility>
 
 namespace muffin::mermaid::editor {
@@ -242,6 +251,46 @@ qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback
   return value.isDouble() && value.toDouble() >= 0.0 ? value.toDouble() : fallback;
 }
 
+std::optional<MermaidRenderEntry> unsupportedLayoutConfiguration(
+    const MermaidPreprocessResult& pre, const QString& type) {
+  QString section;
+  if (type.startsWith(QLatin1String("flowchart")))
+    section = QStringLiteral("flowchart");
+  else if (type == QLatin1String("class") ||
+           type == QLatin1String("classDiagram"))
+    section = QStringLiteral("class");
+  else if (type == QLatin1String("state") ||
+           type == QLatin1String("stateDiagram"))
+    section = QStringLiteral("state");
+  else
+    return std::nullopt;
+
+  QString path = QStringLiteral("layout");
+  QString actual = pre.config.value(path).toString();
+  QString expected = QStringLiteral("dagre");
+  if (actual.isEmpty() || actual == expected) {
+    path = section + QStringLiteral(".defaultRenderer");
+    actual = pre.config.value(section).toObject()
+                 .value(QStringLiteral("defaultRenderer"))
+                 .toString();
+    expected = QStringLiteral("dagre-wrapper");
+  }
+  if (actual.isEmpty() || actual == expected) return std::nullopt;
+
+  MermaidDiagnostic diagnostic;
+  diagnostic.diagramType = type;
+  diagnostic.stage = QStringLiteral("configuration");
+  diagnostic.code = QStringLiteral("unsupported-layout-engine");
+  diagnostic.message = QStringLiteral(
+      "Native Mermaid rendering does not support %1='%2'.")
+                           .arg(path, actual);
+  diagnostic.production = path;
+  diagnostic.actual = actual;
+  diagnostic.expected = {expected};
+  return errorEntry(std::move(diagnostic),
+                    MermaidRenderStatus::Unsupported);
+}
+
 bool isSequenceFragment(int type) {
   return type == 10 || type == 12 || type == 15 || type == 19 ||
          type == 22 || type == 27 || type == 30 || type == 32;
@@ -300,6 +349,69 @@ sequence::SequenceSceneStyle sequenceStyleFromConfig(
     style.fontSize = pixelValue(
         theme.value(QStringLiteral("fontSize")), style.fontSize);
   return style;
+}
+
+MermaidRenderMetadata renderMetadata(
+    const MermaidPreprocessResult& pre, const QString& diagramType,
+    const QString& diagramTitle, const QString& accessibleTitle,
+    const QString& accessibleDescription, const QString& titleColor,
+    const QString& fontFamily, qreal titleFontSize,
+    qreal titleTopMargin = 25.0, qreal diagramPadding = 0.0) {
+  MermaidRenderMetadata metadata;
+  metadata.diagramType = diagramType;
+  metadata.roleDescription = diagramType;
+  metadata.title = diagramTitle.trimmed().isEmpty() ? pre.title : diagramTitle;
+  metadata.accessibleTitle = accessibleTitle;
+  metadata.accessibleDescription = accessibleDescription;
+  metadata.titleColor = titleColor;
+  metadata.fontFamily = firstFontFamily(fontFamily);
+  metadata.titleFontSize = titleFontSize;
+  metadata.titleTopMargin = titleTopMargin;
+  metadata.diagramPadding = qMax<qreal>(0.0, diagramPadding);
+  const bool classDiagram = diagramType.startsWith(QLatin1String("class"));
+  QString configSection = QStringLiteral("state");
+  if (diagramType.startsWith(QLatin1String("flowchart")))
+    configSection = QStringLiteral("flowchart");
+  else if (diagramType == QLatin1String("sequence"))
+    configSection = QStringLiteral("sequence");
+  // Mermaid 11.16's unified class renderer reads state.useMaxWidth; the class
+  // field itself is upstream-inert and the generated effect matrix records it.
+  const QJsonObject svgConfig = pre.config.value(configSection).toObject();
+  metadata.svgUseMaxWidth = svgConfig.contains(QStringLiteral("useMaxWidth"))
+      ? svgConfig.value(QStringLiteral("useMaxWidth")).toBool(true) : true;
+  const QJsonObject familyConfig = pre.config.value(
+      classDiagram ? QStringLiteral("class") : configSection).toObject();
+  metadata.svgArrowMarkerAbsolute = familyConfig.contains(
+      QStringLiteral("arrowMarkerAbsolute"))
+      ? familyConfig.value(QStringLiteral("arrowMarkerAbsolute")).toBool(false)
+      : pre.config.value(QStringLiteral("arrowMarkerAbsolute")).toBool(false);
+  metadata.svgDeterministicIds =
+      pre.config.value(QStringLiteral("deterministicIds")).toBool(false);
+  metadata.svgDeterministicIdSeed =
+      pre.config.value(QStringLiteral("deterministicIDSeed")).toString();
+  return metadata;
+}
+
+void finalizeReadyEntry(MermaidRenderEntry& entry,
+                        MermaidRenderMetadata metadata) {
+  metadata.contentSize = QSizeF(entry.naturalSize);
+  entry.naturalSize = QSize(
+      qCeil(metadata.contentSize.width() + 2.0 * metadata.diagramPadding),
+      qCeil(metadata.contentSize.height() + 2.0 * metadata.diagramPadding));
+  if (metadata.hasVisibleTitle()) {
+    // Mermaid places its title 25 px above the diagram and reserves about a
+    // 40 px strip in the resulting SVG viewBox. Grow for larger configured
+    // margins while retaining that 11.16 default geometry.
+    metadata.titleHeight = qCeil(qMax(
+        40.0, metadata.titleTopMargin +
+                  qMax(15.0, metadata.titleFontSize * 0.75)));
+    const qreal titleWidth = measureMermaidTitleWidth(metadata) + 16.0;
+    entry.naturalSize.setWidth(qCeil(qMax(
+        static_cast<qreal>(entry.naturalSize.width()), titleWidth)));
+    entry.naturalSize.setHeight(qCeil(
+        entry.naturalSize.height() + metadata.titleHeight));
+  }
+  entry.metadata = std::move(metadata);
 }
 
 }  // namespace
@@ -451,27 +563,84 @@ void MermaidRenderCache::clear() {
   lru_.clear();
 }
 
-QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(const QString& source, qreal dpr) {
+MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(
+    const QString& source, qreal dpr) {
+  MermaidPngRenderResult result;
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
   if (entry.status != MermaidRenderStatus::Ready ||
-      (!entry.scene && !entry.sequenceScene && !entry.classScene && !entry.stateScene)) return {};
+      (!entry.scene && !entry.sequenceScene && !entry.classScene &&
+       !entry.stateScene && !entry.erScene)) return result;
+  result.metadata = entry.metadata;
+  dpr = qMax<qreal>(0.25, dpr);
   QImage image;
   if (entry.scene)
     image = flowscene::renderFlowSceneToImage(
-        *entry.scene, dpr, 8.0, MermaidFontRegistry::primaryFamily());
+        *entry.scene, dpr, entry.metadata.diagramPadding,
+        MermaidFontRegistry::primaryFamily());
   else if (entry.sequenceScene)
     image = sequence::renderSequenceSceneToImage(
         *entry.sequenceScene, dpr, entry.sequenceViewport);
   else if (entry.classScene)
-    image = classdiagram::renderClassSceneToImage(*entry.classScene, dpr);
-  else image = state::renderStateSceneToImage(*entry.stateScene, dpr);
+    image = classdiagram::renderClassSceneToImage(
+        *entry.classScene, dpr, entry.metadata.diagramPadding);
+  else if (entry.erScene)
+    image = er::renderErSceneToImage(
+        *entry.erScene, dpr, entry.metadata.diagramPadding);
+  else image = state::renderStateSceneToImage(
+      *entry.stateScene, dpr, entry.metadata.diagramPadding);
+  if (entry.metadata.hasVisibleTitle()) {
+    const qreal contentWidth = image.width() / dpr;
+    const qreal contentHeight = image.height() / dpr;
+    const qreal canvasWidth = qMax<qreal>(
+        contentWidth, entry.naturalSize.width());
+    const qreal canvasHeight = entry.metadata.titleHeight + contentHeight;
+    QImage titled(qCeil(canvasWidth * dpr), qCeil(canvasHeight * dpr),
+                  QImage::Format_ARGB32_Premultiplied);
+    titled.fill(Qt::transparent);
+    QPainter painter(&titled);
+    const QPoint contentTopLeft(
+        qRound((canvasWidth - contentWidth) * dpr / 2.0),
+        qRound(entry.metadata.titleHeight * dpr));
+    painter.drawImage(contentTopLeft, image);
+    painter.scale(dpr, dpr);
+    paintMermaidTitle(entry.metadata, painter,
+                      QRectF(0.0, 0.0, canvasWidth,
+                             entry.metadata.titleHeight));
+    painter.end();
+    image = std::move(titled);
+  }
   QByteArray png;
   QBuffer buffer(&png);
-  if (!buffer.open(QIODevice::WriteOnly)) return {};
-  image.save(&buffer, "PNG");
+  if (!buffer.open(QIODevice::WriteOnly)) return result;
+  if (!image.save(&buffer, "PNG")) return result;
   buffer.close();
-  return QStringLiteral("data:image/png;base64,") + QString::fromLatin1(png.toBase64());
+  result.dataUrl = QStringLiteral("data:image/png;base64,") +
+                   QString::fromLatin1(png.toBase64());
+  return result;
+}
+
+QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(
+    const QString& source, qreal dpr) {
+  return renderMermaidSourceToPng(source, dpr).dataUrl;
+}
+
+MermaidSvgRenderResult MermaidRenderCache::renderMermaidSourceToSvg(
+    const QString& source, qsizetype instanceIndex) {
+  MermaidSvgRenderResult result;
+  const MermaidRenderKey key = makeKey(source);
+  const MermaidRenderEntry entry = renderSource(source, key.theme);
+  result.svg = renderMermaidEntryToSvg(entry, instanceIndex);
+  if (result.svg.isEmpty()) return result;
+  result.metadata = entry.metadata;
+  result.dataUrl = QStringLiteral("data:image/svg+xml;base64,") +
+                   QString::fromLatin1(result.svg.toBase64());
+  return result;
+}
+
+QString MermaidRenderCache::renderMermaidSourceToSvgDataUrl(
+    const QString& source, qsizetype instanceIndex) {
+  return renderMermaidSourceToSvg(source, instanceIndex).dataUrl;
 }
 
 MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const QString& theme) {
@@ -499,10 +668,12 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
   }
+  if (const auto unsupported = unsupportedLayoutConfiguration(pre, type))
+    return *unsupported;
   if (type != QLatin1String("flowchart") && type != QLatin1String("flowchart-v2") &&
       type != QLatin1String("sequence") && type != QLatin1String("class") &&
       type != QLatin1String("classDiagram") && type != QLatin1String("state") &&
-      type != QLatin1String("stateDiagram")) {
+      type != QLatin1String("stateDiagram") && type != QLatin1String("er")) {
     MermaidDiagnostic diagnostic;
     diagnostic.diagramType = type;
     diagnostic.stage = QStringLiteral("unsupported");
@@ -521,6 +692,8 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
           themeOverrides(pre.config));
       const QString look = pre.config.value(QStringLiteral("look"))
           .toString(QStringLiteral("classic"));
+      const QJsonObject stateConfig =
+          pre.config.value(QStringLiteral("state")).toObject();
       const state::StateLayoutInput input =
           state::buildStateLayoutInput(diagram.data(), look);
       state::StateSceneStyle style;
@@ -543,13 +716,26 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       const state::StateLayoutMeasurements measurements = state::measureStateLayoutInput(
           input, style.fontFamily, style.fontSize);
       const state::StatePlacementResult placement =
-          state::layoutStateDiagramDagre(input, measurements);
+          state::layoutStateDiagramDagre(
+              input, measurements,
+              configNumber(stateConfig, QStringLiteral("nodeSpacing"), 50.0),
+              configNumber(stateConfig, QStringLiteral("rankSpacing"), 50.0));
+      MermaidRenderMetadata metadata = renderMetadata(
+          pre, type, {}, diagram.data().accTitle,
+          diagram.data().accDescription, style.textColor, style.fontFamily,
+          18.0, configNumber(stateConfig, QStringLiteral("titleTopMargin"),
+                             25.0), 8.0);
       state::StateScene scene = state::buildStateScene(
           input, placement, std::move(style));
+      scene.handDrawn = look.compare(
+          QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0;
+      scene.handDrawnSeed = static_cast<quint32>(
+          std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
       entry.stateScene = std::make_shared<const state::StateScene>(std::move(scene));
+      finalizeReadyEntry(entry, std::move(metadata));
       return entry;
     }
     if (type == QLatin1String("class") || type == QLatin1String("classDiagram")) {
@@ -601,12 +787,60 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       style.fontFamily = measureOptions.fontFamily;
       style.fontSize = measureOptions.fontPixelSize;
       style.lineHeight = measureOptions.lineHeight;
+      MermaidRenderMetadata metadata = renderMetadata(
+          pre, type, diagram.data().title, diagram.data().accTitle,
+          diagram.data().accDescription, style.textColor, style.fontFamily,
+          18.0, configNumber(classConfig, QStringLiteral("titleTopMargin"),
+                             25.0), 8.0);
       classdiagram::ClassScene scene = classdiagram::buildClassScene(
           input, boxes, labelMeasurements, placement, std::move(style));
+      scene.handDrawn = options.look.compare(
+          QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0;
+      scene.handDrawnSeed = static_cast<quint32>(
+          std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
       entry.classScene = std::make_shared<const classdiagram::ClassScene>(std::move(scene));
+      finalizeReadyEntry(entry, std::move(metadata));
+      return entry;
+    }
+    if (type == QLatin1String("er")) {
+      const er::ErDiagram diagram = er::ErDiagram::parse(pre.code);
+      const QString configuredTheme = themeFromConfig(pre.config);
+      const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
+          themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme),
+          themeOverrides(pre.config));
+      const er::ErLayoutInput input = er::buildErLayoutInput(diagram.data());
+      const QString fontFamily = firstFontFamily(themeVars.fontFamily);
+      const qreal fontSize = pixelValue(themeVars.fontSize, 16.0);
+      const er::ErLayoutMeasurements measurements =
+          er::measureErLayoutInput(input, fontFamily, fontSize);
+      const er::ErPlacementResult placement =
+          er::layoutErDiagramDagre(input, measurements);
+      er::ErSceneStyle style;
+      style.entityFill = themeVars.mainBkg;
+      style.entityStroke = themeVars.border1;
+      style.entityTitle1 = themeVars.primaryTextColor;
+      style.attributeColor = themeVars.primaryTextColor;
+      style.relationshipColor = themeVars.lineColor;
+      style.relationshipLabelColor = themeVars.textColor;
+      style.labelBackground = themeVars.mainBkg;
+      style.strokeWidth = themeVars.strokeWidth;
+      style.fontFamily = fontFamily;
+      style.fontSize = fontSize;
+      style.lineHeight = fontSize * 1.5;
+      const QJsonObject erConfig = pre.config.value(QStringLiteral("er")).toObject();
+      MermaidRenderMetadata metadata = renderMetadata(
+          pre, type, diagram.data().title, diagram.data().accTitle,
+          diagram.data().accDescription, style.entityTitle1, style.fontFamily,
+          18.0, configNumber(erConfig, QStringLiteral("titleTopMargin"), 25.0), 8.0);
+      er::ErScene scene = er::buildErScene(input, placement, std::move(style));
+      MermaidRenderEntry entry;
+      entry.status = MermaidRenderStatus::Ready;
+      entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+      entry.erScene = std::make_shared<const er::ErScene>(std::move(scene));
+      finalizeReadyEntry(entry, std::move(metadata));
       return entry;
     }
     if (type == QLatin1String("sequence")) {
@@ -615,11 +849,17 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       sequence::SequencePreparedLabels preparedLabels;
       const QJsonObject sequenceConfig = pre.config.value(QStringLiteral("sequence")).toObject();
       sequence::SequenceSceneStyle style = sequenceStyleFromConfig(pre.config);
+      MermaidRenderMetadata metadata = renderMetadata(
+          pre, type, diagram.data().title, diagram.data().accTitle,
+          diagram.data().accDescription, style.textColor, style.fontFamily,
+          style.fontSize);
       const qreal labelLineHeight = style.fontSize * (22.0 / 16.0);
       const qreal actorMargin = configNumber(sequenceConfig, QStringLiteral("actorMargin"), 50.0);
       const qreal actorWidth = configNumber(sequenceConfig, QStringLiteral("width"), 150.0);
       const qreal wrapPadding = configNumber(sequenceConfig, QStringLiteral("wrapPadding"), 10.0);
-      const bool globalWrap = sequenceConfig.value(QStringLiteral("wrap")).toBool(false);
+      const bool globalWrap = sequenceConfig.contains(QStringLiteral("wrap"))
+          ? sequenceConfig.value(QStringLiteral("wrap")).toBool(false)
+          : pre.config.value(QStringLiteral("wrap")).toBool(false);
       const auto labelDocument = [&](const QString& text, sequence::SequenceLabelKind kind) {
         return sequence::parseSequenceLabel(text, kind);
       };
@@ -641,6 +881,13 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         document = prepare(std::move(document));
         measurements.participants.insert(actor.id, measure(document));
         preparedLabels.participantsById.insert(actor.id, std::move(document));
+        for (auto it = actor.links.begin(); it != actor.links.end(); ++it) {
+          auto menuDocument = prepare(labelDocument(
+              it.key(), sequence::SequenceLabelKind::Participant));
+          const QString key = sequence::sequenceMenuLabelKey(actor.id, it.key());
+          measurements.menuItems.insert(key, measure(menuDocument));
+          preparedLabels.menuItemsByKey.insert(key, std::move(menuDocument));
+        }
       }
       for (qsizetype index = 0; index < diagram.data().boxes.size(); ++index) {
         auto document = prepare(labelDocument(
@@ -710,10 +957,14 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       layoutOptions.labelBoxWidth = configNumber(sequenceConfig, QStringLiteral("labelBoxWidth"), 50.0);
       layoutOptions.labelBoxHeight = configNumber(sequenceConfig, QStringLiteral("labelBoxHeight"), 20.0);
       layoutOptions.rightAngles = sequenceConfig.value(QStringLiteral("rightAngles")).toBool(false);
-      layoutOptions.wrap = sequenceConfig.value(QStringLiteral("wrap")).toBool(false);
+      layoutOptions.wrap = globalWrap;
       layoutOptions.mirrorActors = sequenceConfig.value(QStringLiteral("mirrorActors")).toBool(true);
       layoutOptions.hideUnusedParticipants =
           sequenceConfig.value(QStringLiteral("hideUnusedParticipants")).toBool(false);
+      layoutOptions.showSequenceNumbers =
+          sequenceConfig.value(QStringLiteral("showSequenceNumbers")).toBool(false);
+      layoutOptions.forceMenus =
+          sequenceConfig.value(QStringLiteral("forceMenus")).toBool(false);
       const sequence::SequenceLayoutResult provisionalLayout =
           sequence::layoutSequence(diagram.data(), measurements, layoutOptions);
       for (qsizetype index = 0; index < diagram.data().messages.size(); ++index) {
@@ -742,6 +993,10 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       }
       sequence::SequenceScene scene = sequence::buildSequenceScene(
           layout, std::move(style), preparedLabels, true);
+      scene.handDrawn = pre.config.value(QStringLiteral("look"))
+          .toString().compare(QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0;
+      scene.handDrawnSeed = static_cast<quint32>(
+          std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
       sequence::SequenceViewportOptions viewportOptions;
       viewportOptions.diagramMarginX = configNumber(
           sequenceConfig, QStringLiteral("diagramMarginX"), 50.0);
@@ -757,6 +1012,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       entry.naturalSize = QSize(qCeil(viewport.width()), qCeil(viewport.height()));
       entry.sequenceViewport = viewportOptions;
       entry.sequenceScene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
+      finalizeReadyEntry(entry, std::move(metadata));
       return entry;
     }
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(pre.code);
@@ -771,6 +1027,8 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     textOptions.fontPixelSize = pixelValue(themeVars.fontSize, 16.0);
     textOptions.lineHeight = textOptions.fontPixelSize * 1.5;
     const qreal padding = configNumber(flowConfig, QStringLiteral("padding"), 15.0);
+    const qreal diagramPadding = configNumber(
+        flowConfig, QStringLiteral("diagramPadding"), 8.0);
     textOptions.horizontalPadding = padding * 2.0;
     textOptions.verticalPadding = padding;
     textOptions.look = look;
@@ -798,12 +1056,20 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     const flowchart::FlowLayoutResult layout = flowchart::layoutFlowchartNodes(chart.data(), sizes, layoutOptions);
     const quint32 handDrawnSeed = static_cast<quint32>(
         std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
+    MermaidRenderMetadata metadata = renderMetadata(
+        pre, type, chart.data().title, chart.data().accTitle,
+        chart.data().accDescription, themeVars.textColor,
+        textOptions.fontFamily, 18.0,
+        configNumber(flowConfig, QStringLiteral("titleTopMargin"), 25.0),
+        diagramPadding);
     flowscene::FlowScene scene = flowscene::buildFlowScene(
         chart.data(), layout, themeVars, look, handDrawnSeed);
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
-    entry.naturalSize = QSize(scene.bounds.width(), scene.bounds.height());
+    entry.naturalSize = QSize(qCeil(scene.bounds.width()),
+                              qCeil(scene.bounds.height()));
     entry.scene = std::make_shared<const flowscene::FlowScene>(std::move(scene));
+    finalizeReadyEntry(entry, std::move(metadata));
     return entry;
   } catch (const math::MathMlPaintError& error) {
     MermaidDiagnostic diagnostic;

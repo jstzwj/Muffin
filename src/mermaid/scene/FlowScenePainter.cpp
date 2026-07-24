@@ -3,6 +3,7 @@
 
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/rough/RoughOps.h"
+#include "mermaid/rough/RoughPaint.h"
 #include "mermaid/scene/FlowMarkers.h"
 #include "mermaid/theme/MermaidColor.h"
 
@@ -42,28 +43,6 @@ qreal pxSize(const QString& s) {
   static const QRegularExpression re(QStringLiteral("(\\d+(?:\\.\\d+)?)"));
   const QRegularExpressionMatch m = re.match(s);
   return m.hasMatch() ? m.captured(1).toDouble() : 16.0;
-}
-
-void drawRoughDrawable(QPainter& painter, const rough::Drawable& drawable,
-                       const QBrush& fillBrush, const QPen& strokePen,
-                       const QPen& fillSketchPen) {
-  for (const rough::OpSet& set : drawable.sets) {
-    switch (set.type) {
-      case rough::OpSetType::FillPath:
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(fillBrush);
-        break;
-      case rough::OpSetType::FillSketch:
-        painter.setPen(fillSketchPen);
-        painter.setBrush(Qt::NoBrush);
-        break;
-      case rough::OpSetType::Path:
-        painter.setPen(strokePen);
-        painter.setBrush(Qt::NoBrush);
-        break;
-    }
-    painter.drawPath(rough::toPainterPath(set));
-  }
 }
 
 bool isAxisAlignedRectangle(const QPainterPath& path) {
@@ -265,8 +244,8 @@ void drawNodeShape(QPainter& painter, const FlowSceneNode& n, QRectF r,
         QPen fillSketch(categoryMask ? QColor(kCatBoundary) : itemBrush.color());
         fillSketch.setWidthF(categoryMask ? 4.0
                                           : pxSize(n.strokeWidth));
-        drawRoughDrawable(painter, nodeRoughDrawable(n, item, options), itemBrush,
-                          roughStroke, fillSketch);
+        rough::drawRoughDrawable(painter, nodeRoughDrawable(n, item, options), itemBrush,
+                                 roughStroke, fillSketch);
       } else {
         painter.drawPath(item.path);
       }
@@ -380,8 +359,8 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
         pen.setWidthF(std::max<qreal>(5.0, pen.widthF() + 4.0));
       QPainterPath clusterPath;
       clusterPath.addRect(r);
-      drawRoughDrawable(painter, rough::path(clusterPath, roughOptions),
-                        clusterFill, pen, hachurePen);
+      rough::drawRoughDrawable(painter, rough::path(clusterPath, roughOptions),
+                               clusterFill, pen, hachurePen);
     } else {
       painter.drawRoundedRect(r, 0, 0);
     }
@@ -397,7 +376,18 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
     if (mermaidPrimitiveIsVisible(pathBounds, options)) {
       const ParsedPath pp = parsePath(e.path);
       QPen pen(paletteColor(e.stroke, kCatEdge)); pen.setWidthF(pxSize(e.strokeWidth));
-      if (!e.strokeDasharray.isEmpty()) {
+      if (e.animated) {
+        // Mermaid 11.16.0 uses stroke-dasharray 9,5 and animates
+        // stroke-dashoffset from 900 to 0 over 20s (fast) or 50s (slow).
+        // QPen dash lengths and offsets are expressed in pen-width units.
+        const qreal width = std::max<qreal>(0.001, pen.widthF());
+        pen.setDashPattern({9.0 / width, 5.0 / width});
+        const qreal duration = e.animation == QLatin1String("slow") ? 50.0 : 20.0;
+        const qreal elapsed = options.animationTimeSeconds < 0.0
+            ? 0.0 : std::fmod(options.animationTimeSeconds, duration);
+        const qreal offset = 900.0 * (1.0 - elapsed / duration);
+        pen.setDashOffset(offset / width);
+      } else if (!e.strokeDasharray.isEmpty()) {
         QStringList parts = e.strokeDasharray.split(QRegularExpression(QStringLiteral("[\\s,]+")), Qt::SkipEmptyParts);
         QVector<qreal> dash; for (const QString& s : parts) dash.append(s.toDouble());
         // Qt requires an even-length pattern (dash/gap pairs). A mermaid dotted edge
@@ -414,8 +404,8 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
         roughOptions.seed = scene.handDrawnSeed;
         roughOptions.roughness = 0.3;
         roughOptions.strokeWidth = pxSize(e.strokeWidth);
-        drawRoughDrawable(painter, rough::path(pp.path, roughOptions), Qt::NoBrush,
-                          pen, Qt::NoPen);
+        rough::drawRoughDrawable(painter, rough::path(pp.path, roughOptions), Qt::NoBrush,
+                                 pen, Qt::NoPen);
       } else {
         painter.setPen(pen); painter.setBrush(Qt::NoBrush);
         painter.drawPath(pp.path);

@@ -126,6 +126,10 @@ struct ClassScene {
   QVector<ClassSceneNode> nodes;
   QVector<ClassMarkerDefinition> markers;
   ClassSceneStyle style;
+  // handDrawn (rough) look — gated in the painter, only set when the diagram
+  // config requests `look: handDrawn`. Default rendering is unaffected.
+  bool handDrawn = false;
+  quint32 handDrawnSeed = 0;
 };
 
 QVector<ClassMarkerDefinition> classMarkerDefinitions();

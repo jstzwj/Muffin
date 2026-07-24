@@ -27,7 +27,8 @@ namespace d = muffin::mermaid::dagre;  // visible to the anon-namespace helpers 
 // bumpY/catmullRom/natural), driven the way mermaid's `d3.line().curve(...)`
 // drives them. See D3Curves.h. The previous hand-written basis/linear/step
 // helpers reproduced curveBasis/curveLinear/curveStep for 2+ points; the
-// faithful port reproduces all twelve d3 curves including their edge cases.
+// faithful port reproduces all twelve d3 curves including their edge cases;
+// D3Curves.h also carries Mermaid's separate quadratic rounded-path generator.
 QString pathForCurve(const QVector<QPointF>& points, const QString& curve) {
   return d3curve::pathForCurve(points, curve);
 }

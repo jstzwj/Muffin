@@ -1,6 +1,7 @@
 #include "mermaid/classdiagram/ClassScenePainter.h"
 
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/rough/RoughPaint.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
@@ -149,7 +150,12 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
       painter.setPen(QPen(clusterColor, 1.0));
       painter.setBrush(mode == ClassPaintMode::SemanticMask
                            ? clusterColor : color(scene.style.clusterFill));
-      painter.drawRect(cluster.bounds);
+      if (mode == ClassPaintMode::Color && scene.handDrawn)
+        rough::roughRect(painter, cluster.bounds, scene.handDrawnSeed,
+                         color(scene.style.clusterFill),
+                         color(scene.style.clusterStroke), 1.0);
+      else
+        painter.drawRect(cluster.bounds);
     }
     if (!cluster.titleLabel.text.isEmpty()) {
       const QRectF labelRect(
@@ -180,7 +186,13 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
     else if (edge.pattern == QLatin1String("dotted")) pen.setDashPattern({2.0, 2.0});
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
-    for (const QString& path : edge.paths) painter.drawPath(painterPath(path));
+    if (mode == ClassPaintMode::Color && scene.handDrawn) {
+      for (const QString& path : edge.paths)
+        rough::roughPath(painter, painterPath(path), scene.handDrawnSeed,
+                         color(scene.style.lineColor), scene.style.strokeWidth);
+    } else {
+      for (const QString& path : edge.paths) painter.drawPath(painterPath(path));
+    }
     const QVector<QPointF>& startPoints = edge.renderedSegments.isEmpty()
         ? edge.renderedPoints : edge.renderedSegments.first();
     const QVector<QPointF>& endPoints = edge.renderedSegments.isEmpty()
@@ -261,9 +273,17 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
       painter.setPen(QPen(nodeColor, node.strokeWidth));
       painter.setBrush(mode == ClassPaintMode::SemanticMask
                            ? nodeColor : color(node.fill));
-      painter.drawRect(outer);
-      for (const QRectF& divider : node.localDividers)
-        painter.drawRect(divider.translated(node.center));
+      if (mode == ClassPaintMode::Color && scene.handDrawn) {
+        rough::roughRect(painter, outer, scene.handDrawnSeed,
+                         color(node.fill), color(node.stroke), node.strokeWidth);
+        for (const QRectF& divider : node.localDividers)
+          rough::roughRect(painter, divider.translated(node.center), scene.handDrawnSeed,
+                           color(node.fill), color(node.stroke), node.strokeWidth);
+      } else {
+        painter.drawRect(outer);
+        for (const QRectF& divider : node.localDividers)
+          painter.drawRect(divider.translated(node.center));
+      }
     }
     ClassSceneStyle nodeStyle = scene.style;
     nodeStyle.textColor = mode != ClassPaintMode::Color

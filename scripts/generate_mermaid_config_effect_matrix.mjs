@@ -1,0 +1,458 @@
+import { createHash } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
+const mermaidRoot = path.resolve(
+  process.argv[2] ?? path.join("..", "mermaid-cli", "node_modules", "mermaid"),
+);
+const output = path.resolve(
+  process.argv[3] ??
+    path.join("tests", "fixtures", "mermaid", "config-effect-matrix.json"),
+);
+const packageJson = JSON.parse(
+  fs.readFileSync(path.join(mermaidRoot, "package.json"), "utf8"),
+);
+if (packageJson.version !== "11.16.0") {
+  throw new Error(`Expected mermaid 11.16.0, found ${packageJson.version}`);
+}
+
+const configTypesPath = path.join(mermaidRoot, "dist", "config.type.d.ts");
+const configTypes = fs.readFileSync(configTypesPath, "utf8");
+const { defaultConfig } = await import(
+  pathToFileURL(
+    path.join(
+      mermaidRoot,
+      "dist",
+      "chunks",
+      "mermaid.core",
+      "chunk-WYO6CB5R.mjs",
+    ),
+  )
+);
+
+const dimensions = [
+  "parsed",
+  "layout",
+  "text",
+  "paint",
+  "viewport",
+  "interaction",
+  "export",
+];
+
+const policy = (status, upstream, native, note) => ({
+  status,
+  upstream,
+  native,
+  ...(note ? { note } : {}),
+});
+const parity = (...effects) => policy("parity", effects, effects);
+const inert = (note) => policy("upstream-inert", [], [], note);
+const deferred = (effects, note) => policy("deferred", effects, [], note);
+const unsupported = (effects, note) =>
+  policy("unsupported", effects, [], note);
+const partial = (upstream, native, note) =>
+  policy("partial", upstream, native, note);
+const legacyOnly = (effects, note) =>
+  policy("legacy-only", effects, [], note);
+const apiOnly = (effects, note) => policy("api-only", effects, [], note);
+
+const layout = ["layout", "paint", "viewport", "export"];
+const interactiveLayout = [
+  "layout",
+  "paint",
+  "viewport",
+  "interaction",
+  "export",
+];
+const textLayout = ["text", "layout", "paint", "viewport", "export"];
+
+// This table is the reviewed semantic policy. Interface membership and defaults
+// are generated from Mermaid itself below, so adding or removing an upstream
+// field makes generation fail until its effect is classified here.
+const familyPolicies = {
+  flowchart: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    titleTopMargin: parity("paint", "viewport", "export"),
+    subGraphTitleMargin: unsupported(
+      ["layout", "viewport", "export"],
+      "Cluster title margins are not forwarded to native compound layout.",
+    ),
+    arrowMarkerAbsolute: deferred(
+      ["export"],
+      "Only meaningful for SVG marker URL serialization.",
+    ),
+    diagramPadding: parity("viewport", "export"),
+    htmlLabels: unsupported(
+      textLayout,
+      "Deprecated upstream alias; native flow labels currently use one structured text path.",
+    ),
+    nodeSpacing: parity(...interactiveLayout),
+    rankSpacing: parity(...interactiveLayout),
+    curve: parity(...interactiveLayout),
+    padding: parity("text", ...interactiveLayout),
+    defaultRenderer: partial(
+      interactiveLayout,
+      interactiveLayout,
+      "dagre-wrapper is supported; dagre-d3 and elk return an explicit unsupported diagnostic.",
+    ),
+    wrappingWidth: unsupported(
+      textLayout,
+      "Native flow markdown wrapping does not yet consume this width.",
+    ),
+    inheritDir: unsupported(
+      interactiveLayout,
+      "Subgraph direction inheritance is parsed but not forwarded.",
+    ),
+  },
+  sequence: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    arrowMarkerAbsolute: deferred(
+      ["export"],
+      "Only meaningful for SVG marker URL serialization.",
+    ),
+    hideUnusedParticipants: parity(...layout),
+    activationWidth: parity(...layout),
+    diagramMarginX: parity("viewport", "export"),
+    diagramMarginY: parity("viewport", "export"),
+    actorMargin: parity(...layout),
+    width: parity("text", ...layout),
+    height: parity(...layout),
+    boxMargin: parity(...layout),
+    boxTextMargin: parity(...layout),
+    noteMargin: parity(...layout),
+    messageMargin: inert(
+      "Mermaid 11.16.0 resolves this value but does not consume it in sequence layout.",
+    ),
+    messageAlign: unsupported(
+      ["text", "paint", "export"],
+      "Native message labels are currently centered.",
+    ),
+    mirrorActors: parity(...layout),
+    forceMenus: parity("paint", "interaction", "export"),
+    bottomMarginAdj: parity("viewport", "export"),
+    rightAngles: parity("layout", "paint", "export"),
+    showSequenceNumbers: parity("text", ...layout),
+    actorFontSize: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    actorFontFamily: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    actorFontWeight: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    noteFontSize: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    noteFontFamily: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    noteFontWeight: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    noteAlign: unsupported(
+      ["text", "paint", "export"],
+      "Native note labels are currently centered.",
+    ),
+    messageFontSize: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    messageFontFamily: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    messageFontWeight: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    wrap: parity(...textLayout),
+    wrapPadding: parity(...textLayout),
+    labelBoxWidth: parity(...layout),
+    labelBoxHeight: parity(...layout),
+    messageFont: apiOnly(
+      textLayout,
+      "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config.",
+    ),
+    noteFont: apiOnly(
+      textLayout,
+      "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config.",
+    ),
+    actorFont: apiOnly(
+      textLayout,
+      "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config.",
+    ),
+  },
+  class: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: inert(
+      "The 11.16 unified class renderer reads state.useMaxWidth instead of class.useMaxWidth.",
+    ),
+    titleTopMargin: partial(
+      ["paint", "viewport", "export"],
+      ["paint", "viewport", "export"],
+      "Effective in the legacy renderer; the 11.16 unified renderer reads state.titleTopMargin.",
+    ),
+    arrowMarkerAbsolute: deferred(
+      ["export"],
+      "Only meaningful for SVG marker URL serialization.",
+    ),
+    dividerMargin: legacyOnly(
+      layout,
+      "Consumed by the legacy class renderer, not the unified native scene.",
+    ),
+    padding: parity("text", ...layout),
+    textHeight: legacyOnly(
+      textLayout,
+      "Consumed by the legacy class renderer, not the unified native scene.",
+    ),
+    defaultRenderer: partial(
+      interactiveLayout,
+      interactiveLayout,
+      "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
+    ),
+    nodeSpacing: inert(
+      "The Mermaid 11.16 class renderer currently resets this value to 50 before Dagre.",
+    ),
+    rankSpacing: inert(
+      "The Mermaid 11.16 class renderer currently resets this value to 50 before Dagre.",
+    ),
+    diagramPadding: legacyOnly(
+      ["viewport", "export"],
+      "The unified renderer uses a fixed 8 px viewport padding.",
+    ),
+    htmlLabels: legacyOnly(
+      textLayout,
+      "The unified renderer consumes the global htmlLabels option instead.",
+    ),
+    hideEmptyMembersBox: parity("layout", "paint", "viewport", "export"),
+    hierarchicalNamespaces: parity(...interactiveLayout),
+  },
+  state: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    titleTopMargin: parity("paint", "viewport", "export"),
+    arrowMarkerAbsolute: deferred(
+      ["export"],
+      "Only meaningful for SVG marker URL serialization.",
+    ),
+    dividerMargin: legacyOnly(layout, "Legacy state renderer geometry option."),
+    sizeUnit: legacyOnly(layout, "Legacy state renderer geometry option."),
+    padding: legacyOnly(textLayout, "Legacy state renderer text-box option."),
+    textHeight: legacyOnly(textLayout, "Legacy state renderer text metric option."),
+    titleShift: legacyOnly(layout, "Legacy state renderer geometry option."),
+    noteMargin: legacyOnly(layout, "Legacy state renderer note geometry option."),
+    nodeSpacing: parity(...interactiveLayout),
+    rankSpacing: parity(...interactiveLayout),
+    forkWidth: legacyOnly(layout, "Legacy state renderer fork geometry option."),
+    forkHeight: legacyOnly(layout, "Legacy state renderer fork geometry option."),
+    miniPadding: legacyOnly(layout, "Legacy state renderer geometry option."),
+    fontSizeFactor: legacyOnly(textLayout, "Legacy state renderer text estimate option."),
+    fontSize: legacyOnly(textLayout, "Legacy state renderer font option."),
+    labelHeight: legacyOnly(textLayout, "Legacy state renderer label option."),
+    edgeLengthFactor: legacyOnly(layout, "Legacy state renderer edge option."),
+    compositTitleSize: legacyOnly(textLayout, "Legacy state renderer title option."),
+    radius: legacyOnly(["layout", "paint", "export"], "Legacy state corner radius option."),
+    defaultRenderer: partial(
+      interactiveLayout,
+      interactiveLayout,
+      "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
+    ),
+  },
+};
+
+const shared = [
+  {
+    path: "theme",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...parity("text", "layout", "paint", "viewport", "export"),
+  },
+  {
+    path: "themeVariables.*",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...partial(
+      ["text", "layout", "paint", "viewport", "export"],
+      ["text", "layout", "paint", "viewport", "export"],
+      "The matrix covers the native theme-variable subset, not arbitrary Mermaid CSS variables.",
+    ),
+  },
+  {
+    path: "fontFamily",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...parity("text", "layout", "paint", "viewport", "export"),
+  },
+  {
+    path: "htmlLabels",
+    families: ["flowchart", "class"],
+    ...partial(
+      textLayout,
+      textLayout,
+      "Native class labels consume this option; native flow labels do not yet branch on it.",
+    ),
+  },
+  {
+    path: "look",
+    families: ["flowchart", "class", "state"],
+    ...partial(
+      interactiveLayout,
+      interactiveLayout,
+      "Flowchart is complete; state currently uses look for marker selection and class retains it without rough painting.",
+    ),
+  },
+  {
+    path: "handDrawnSeed",
+    families: ["flowchart"],
+    ...parity("layout", "paint", "interaction", "export"),
+  },
+  {
+    path: "layout",
+    families: ["flowchart", "class", "state"],
+    ...partial(
+      interactiveLayout,
+      interactiveLayout,
+      "dagre is supported; elk and unknown engines return unsupported-layout-engine.",
+    ),
+  },
+  {
+    path: "wrap",
+    families: ["sequence"],
+    ...parity(...textLayout),
+    note: "Includes the %%{wrap}%% directive promoted by Mermaid preprocessing.",
+  },
+  {
+    path: "maxEdges",
+    families: ["flowchart"],
+    ...unsupported(
+      ["parsed"],
+      "Muffin keeps a fixed safety ceiling instead of allowing source config to raise it.",
+    ),
+  },
+  {
+    path: "maxTextSize",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...unsupported(
+      ["parsed"],
+      "Muffin keeps family-specific safety ceilings instead of trusting document config.",
+    ),
+  },
+  {
+    path: "securityLevel",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...policy(
+      "security-fixed",
+      ["interaction", "export"],
+      [],
+      "The desktop renderer always applies its strict URL and content policy.",
+    ),
+  },
+  {
+    path: "arrowMarkerAbsolute",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...deferred(["export"], "Requires native SVG marker serialization."),
+  },
+  {
+    path: "deterministicIds",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...parity("export"),
+  },
+  {
+    path: "deterministicIDSeed",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...parity("export"),
+  },
+  {
+    path: "themeCSS",
+    families: ["flowchart", "sequence", "class", "state"],
+    ...unsupported(
+      ["paint", "export"],
+      "Native scenes consume typed theme variables rather than arbitrary browser CSS.",
+    ),
+  },
+];
+
+function interfaceProperties(name) {
+  const marker = `export interface ${name}`;
+  const start = configTypes.indexOf(marker);
+  if (start < 0) throw new Error(`Missing ${name} in config.type.d.ts`);
+  const open = configTypes.indexOf("{", start);
+  let depth = 1;
+  let end = open + 1;
+  for (; end < configTypes.length && depth > 0; ++end) {
+    if (configTypes[end] === "{") ++depth;
+    else if (configTypes[end] === "}") --depth;
+  }
+  const body = configTypes
+    .slice(open + 1, end - 1)
+    .replace(/\/\*[\s\S]*?\*\//g, "");
+  const result = [];
+  depth = 0;
+  for (const line of body.split(/\r?\n/)) {
+    if (depth === 0) {
+      const match = /^\s*([A-Za-z_$][\w$]*)\??\s*:/.exec(line);
+      if (match) result.push(match[1]);
+    }
+    for (const character of line) {
+      if (character === "{") ++depth;
+      else if (character === "}") --depth;
+    }
+  }
+  return result;
+}
+
+const baseFields = interfaceProperties("BaseDiagramConfig");
+const interfaces = {
+  flowchart: "FlowchartDiagramConfig",
+  sequence: "SequenceDiagramConfig",
+  class: "ClassDiagramConfig",
+  state: "StateDiagramConfig",
+};
+
+const entries = [];
+for (const [family, interfaceName] of Object.entries(interfaces)) {
+  const fields = [...baseFields, ...interfaceProperties(interfaceName)];
+  const policies = familyPolicies[family];
+  const missing = fields.filter((field) => !policies[field]);
+  const extra = Object.keys(policies).filter((field) => !fields.includes(field));
+  if (missing.length || extra.length) {
+    throw new Error(
+      `${family} config classification mismatch; missing=[${missing}], extra=[${extra}]`,
+    );
+  }
+  for (const field of fields) {
+    const section = defaultConfig[family] ?? {};
+    const hasDefault = Object.prototype.hasOwnProperty.call(section, field);
+    const item = {
+      family,
+      interface: interfaceName,
+      path: `${family}.${field}`,
+      field,
+      hasDefault,
+      ...policies[field],
+    };
+    if (hasDefault && section[field] !== undefined) item.default = section[field];
+    entries.push(item);
+  }
+}
+
+const withParsed = (entry) => ({
+  ...entry,
+  upstream: ["parsed", ...entry.upstream.filter((value) => value !== "parsed")],
+  native: ["parsed", ...entry.native.filter((value) => value !== "parsed")],
+});
+const normalizedEntries = [...shared, ...entries].map(withParsed);
+for (const entry of normalizedEntries) {
+  for (const side of ["upstream", "native"]) {
+    const unknown = entry[side].filter((effect) => !dimensions.includes(effect));
+    if (unknown.length) {
+      throw new Error(`${entry.path} has unknown ${side} effects: ${unknown}`);
+    }
+  }
+}
+
+const summary = {};
+for (const entry of normalizedEntries) {
+  summary[entry.status] = (summary[entry.status] ?? 0) + 1;
+}
+const payload = {
+  upstream: {
+    package: packageJson.name,
+    version: packageJson.version,
+    configTypeSha256: createHash("sha256").update(configTypes).digest("hex"),
+  },
+  dimensions,
+  scope: {
+    families: Object.keys(interfaces),
+    note: "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred.",
+  },
+  summary,
+  entries: normalizedEntries,
+};
+const canonical = JSON.stringify(payload);
+payload.fixtureSha256 = createHash("sha256").update(canonical).digest("hex");
+fs.mkdirSync(path.dirname(output), { recursive: true });
+fs.writeFileSync(output, `${JSON.stringify(payload, null, 2)}\n`);
+console.log(`Wrote ${normalizedEntries.length} config effects to ${output}`);
+console.log(`fixtureSha256=${payload.fixtureSha256}`);

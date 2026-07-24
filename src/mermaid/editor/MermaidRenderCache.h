@@ -14,7 +14,9 @@
 // QtConcurrent + QFutureWatcher pattern.
 
 #include "mermaid/classdiagram/ClassScenePainter.h"
+#include "mermaid/erdiagram/ErScenePainter.h"
 #include "mermaid/MermaidDiagnostic.h"
+#include "mermaid/MermaidRenderMetadata.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 #include "mermaid/state/StateScenePainter.h"
@@ -49,11 +51,24 @@ struct MermaidRenderEntry {
   std::shared_ptr<const sequence::SequenceScene> sequenceScene;
   std::shared_ptr<const classdiagram::ClassScene> classScene;
   std::shared_ptr<const state::StateScene> stateScene;
+  std::shared_ptr<const er::ErScene> erScene;
   sequence::SequenceViewportOptions sequenceViewport;
+  MermaidRenderMetadata metadata;
   QSize naturalSize;                                   // scene.bounds size (logical px)
   QString errorMessage;                                // set for Error/Unsupported
   MermaidDiagnostic diagnostic;                        // family-neutral source diagnostic
   QJsonObject errorDiagnostic;                         // structured Error details when available
+};
+
+struct MermaidPngRenderResult {
+  QString dataUrl;
+  MermaidRenderMetadata metadata;
+};
+
+struct MermaidSvgRenderResult {
+  QByteArray svg;
+  QString dataUrl;
+  MermaidRenderMetadata metadata;
 };
 
 class MermaidRenderCache : public QObject {
@@ -88,7 +103,17 @@ public:
   // One-shot render of a mermaid source to a `data:image/png;base64,…` URL (or
   // empty on Error/Unsupported/Loading). Used by HTML export (milestone I-5): the
   // serializer embeds the PNG inline. Renders at `dpr` for crispness; synchronous.
+  static MermaidPngRenderResult renderMermaidSourceToPng(
+      const QString& source, qreal dpr = 2.0);
   static QString renderMermaidSourceToPngDataUrl(const QString& source, qreal dpr = 2.0);
+
+  // Deterministic, vector-native SVG export. `instanceIndex` disambiguates
+  // repeated equal diagrams embedded in one HTML document without changing
+  // standalone output (the default index is zero).
+  static MermaidSvgRenderResult renderMermaidSourceToSvg(
+      const QString& source, qsizetype instanceIndex = 0);
+  static QString renderMermaidSourceToSvgDataUrl(
+      const QString& source, qsizetype instanceIndex = 0);
 
 signals:
   void renderReady(MermaidRenderKey key);

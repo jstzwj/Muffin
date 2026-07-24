@@ -51,6 +51,12 @@ int main(int argc, char** argv) {
       "class Client\nClient --> Service : uses");
   const QString stateDiagram = QStringLiteral(
       "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]");
+  const QString erDiagram = QStringLiteral(
+      "erDiagram\n"
+      "CUSTOMER ||--o{ ORDER : places\n"
+      "ORDER ||--|{ LINE-ITEM : contains\n"
+      "CUSTOMER {\n  string name PK\n  int age\n}\n"
+      "ORDER {\n  bigint id PK\n  string status\n}");
   const QString unsupported = QStringLiteral(
       "pie title Pets\n  \"Dogs\" : 42\n  \"Cats\" : 58");
 
@@ -62,9 +68,147 @@ int main(int argc, char** argv) {
     require(e.status == kReady, QStringLiteral("valid flowchart should be Ready (got %1)").arg((int)e.status));
     require(e.scene != nullptr, QStringLiteral("Ready entry must carry a scene"));
     require(e.naturalSize.width() > 0 && e.naturalSize.height() > 0, QStringLiteral("natural size must be positive"));
+    require(e.metadata.title.isEmpty() && e.metadata.titleHeight == 0.0 &&
+                e.metadata.diagramPadding == 8.0 &&
+                e.naturalSize.width() ==
+                    qCeil(e.metadata.contentSize.width() + 16.0) &&
+                e.naturalSize.height() ==
+                    qCeil(e.metadata.contentSize.height() + 16.0),
+            QStringLiteral("untitled flowcharts must retain configured viewport padding"));
     // Second getSync hits the cache (same entry, no re-render).
     const MermaidRenderEntry e2 = cache.getSync(key, flow);
     require(e2.status == kReady && e2.scene == e.scene, QStringLiteral("cache hit returns the same scene"));
+  }
+
+  // --- getSync: valid erDiagram → Ready + er scene + positive size ---
+  // Exercises the full er pipeline (parse → layout → scene → painter entry
+  // points) end to end, mirroring the flowchart smoke above.
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderKey key = MermaidRenderCache::makeKey(erDiagram);
+    const MermaidRenderEntry e = cache.getSync(key, erDiagram);
+    require(e.status == kReady, QStringLiteral("valid erDiagram should be Ready (got %1)").arg((int)e.status));
+    require(e.erScene != nullptr, QStringLiteral("Ready er entry must carry an erScene"));
+    require(e.naturalSize.width() > 0 && e.naturalSize.height() > 0, QStringLiteral("er natural size must be positive"));
+  }
+
+  // --- look: handDrawn renders sequence/class/state through the rough painter
+  // without crashing, and the scene's handDrawn flag + seed propagate from the
+  // frontmatter config. Default-look tests never reach these branches, so this
+  // block is the guard that the handDrawn wiring (Task 5) stays functional.
+  {
+    const QString handDrawnSources[] = {
+        QStringLiteral("---\nconfig:\n  look: handDrawn\n  handDrawnSeed: 7\n---\n"
+                       "sequenceDiagram\nAlice->>Bob: Hi\nBob-->>Alice: Yo\n"
+                       "Note over Alice,Bob: shared\n"),
+        QStringLiteral("---\nconfig:\n  look: handDrawn\n  handDrawnSeed: 7\n---\n"
+                       "classDiagram\nclass Foo\nclass Bar\nFoo --> Bar : uses\n"),
+        QStringLiteral("---\nconfig:\n  look: handDrawn\n  handDrawnSeed: 7\n---\n"
+                       "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : go\n"
+                       "Active --> [*]\n"),
+    };
+    for (const QString& src : handDrawnSources) {
+      const QString url = MermaidRenderCache::renderMermaidSourceToPngDataUrl(src, 1.0);
+      require(url.startsWith(QStringLiteral("data:image/png")),
+              QStringLiteral("handDrawn look must render a PNG for: %1").arg(src));
+    }
+    MermaidRenderCache cache;
+    const MermaidRenderEntry seq = cache.getSync(
+        MermaidRenderCache::makeKey(handDrawnSources[0]), handDrawnSources[0]);
+    require(seq.status == kReady, QStringLiteral("handDrawn sequence should be Ready"));
+    require(seq.sequenceScene && seq.sequenceScene->handDrawn,
+            QStringLiteral("sequence scene must reflect look: handDrawn"));
+    require(seq.sequenceScene->handDrawnSeed == 7u,
+            QStringLiteral("handDrawnSeed must propagate to the sequence scene"));
+  }
+
+  // --- shared title/accessibility metadata reaches all four native families ---
+  {
+    struct MetadataCase {
+      QString family;
+      QString source;
+      QString title;
+      QString accessibleTitle;
+      QString accessibleDescription;
+    };
+    const QVector<MetadataCase> cases = {
+        {QStringLiteral("flowchart"),
+         QStringLiteral(
+             "---\ntitle: A deliberately long flowchart overview title\n---\n"
+             "flowchart TB\naccTitle: Flow accessible\n"
+             "accDescr: Flow description\nA --> B"),
+         QStringLiteral("A deliberately long flowchart overview title"),
+         QStringLiteral("Flow accessible"),
+         QStringLiteral("Flow description")},
+        {QStringLiteral("sequence"),
+         QStringLiteral(
+             "---\ntitle: Sequence overview\n---\nsequenceDiagram\n"
+             "accTitle: Sequence accessible\n"
+             "accDescr: Sequence description\nA->>B: Hi"),
+         QStringLiteral("Sequence overview"),
+         QStringLiteral("Sequence accessible"),
+         QStringLiteral("Sequence description")},
+        {QStringLiteral("class"),
+         QStringLiteral(
+             "---\ntitle: Class overview\n---\nclassDiagram\n"
+             "accTitle: Class accessible\naccDescr: Class description\n"
+             "class Service"),
+         QStringLiteral("Class overview"),
+         QStringLiteral("Class accessible"),
+         QStringLiteral("Class description")},
+        {QStringLiteral("state"),
+         QStringLiteral(
+             "---\ntitle: State overview\n---\nstateDiagram-v2\n"
+             "accTitle: State accessible\naccDescr: State description\n"
+             "[*] --> Idle"),
+         QStringLiteral("State overview"),
+         QStringLiteral("State accessible"),
+         QStringLiteral("State description")},
+    };
+    MermaidRenderCache cache;
+    for (const MetadataCase& value : cases) {
+      const MermaidRenderEntry entry = cache.getSync(
+          MermaidRenderCache::makeKey(value.source), value.source);
+      require(entry.status == kReady,
+              value.family + QStringLiteral(" titled diagram must render"));
+      require(entry.metadata.title == value.title &&
+                  entry.metadata.accessibleTitle == value.accessibleTitle &&
+                  entry.metadata.accessibleDescription ==
+                      value.accessibleDescription &&
+                  entry.metadata.accessibleName() == value.accessibleTitle &&
+                  !entry.metadata.roleDescription.isEmpty(),
+              value.family +
+                  QStringLiteral(" title/accessibility metadata drifted"));
+      require(entry.metadata.titleHeight >= 40.0 &&
+                  entry.metadata.contentSize.width() > 0.0 &&
+                  entry.metadata.contentSize.height() > 0.0 &&
+                  entry.naturalSize.width() >=
+                      qCeil(entry.metadata.contentSize.width()) &&
+                  entry.naturalSize.height() >=
+                      qCeil(entry.metadata.contentSize.height() +
+                            entry.metadata.titleHeight),
+              value.family + QStringLiteral(" title canvas was not reserved"));
+      const MermaidPngRenderResult png =
+          MermaidRenderCache::renderMermaidSourceToPng(value.source, 1.0);
+      require(!png.dataUrl.isEmpty() &&
+                  png.metadata.accessibleName() == value.accessibleTitle,
+              value.family +
+                  QStringLiteral(" PNG export lost accessibility metadata"));
+    }
+  }
+
+  // Mermaid sets frontmatter metadata before parsing, so sequence's native
+  // `title` statement wins when both are present.
+  {
+    const QString source = QStringLiteral(
+        "---\ntitle: Frontmatter title\n---\nsequenceDiagram\n"
+        "title Inline title\nA->>B: Hi");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    require(entry.status == kReady &&
+                entry.metadata.title == QLatin1String("Inline title"),
+            QStringLiteral("sequence inline title must override frontmatter"));
   }
 
   // --- state diagrams use the immutable state scene pipeline ---

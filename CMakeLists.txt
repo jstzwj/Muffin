@@ -462,6 +462,10 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/MermaidPaintOptions.h
   src/mermaid/MermaidPreprocessor.cpp
   src/mermaid/MermaidPreprocessor.h
+  src/mermaid/MermaidRenderMetadata.cpp
+  src/mermaid/MermaidRenderMetadata.h
+  src/mermaid/editor/MermaidSvgExporter.cpp
+  src/mermaid/editor/MermaidSvgExporter.h
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -525,6 +529,16 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/classdiagram/ClassScenePainter.h
   src/mermaid/classdiagram/ClassTokenizer.cpp
   src/mermaid/classdiagram/ClassTokenizer.h
+  src/mermaid/erdiagram/ErDiagram.cpp
+  src/mermaid/erdiagram/ErDiagram.h
+  src/mermaid/erdiagram/ErLayout.cpp
+  src/mermaid/erdiagram/ErLayout.h
+  src/mermaid/erdiagram/ErScene.cpp
+  src/mermaid/erdiagram/ErScene.h
+  src/mermaid/erdiagram/ErScenePainter.cpp
+  src/mermaid/erdiagram/ErScenePainter.h
+  src/mermaid/erdiagram/ErTokenizer.cpp
+  src/mermaid/erdiagram/ErTokenizer.h
   src/mermaid/sequence/SequenceDiagram.cpp
   src/mermaid/sequence/SequenceDiagram.h
   src/mermaid/sequence/SequenceLayout.cpp
@@ -605,6 +619,7 @@ target_link_libraries(MuffinCore
   PRIVATE
     Qt6::Concurrent
     Qt6::Gui
+    Qt6::Svg
     yaml-cpp::yaml-cpp
     libcmark-gfm-extensions_static
     libcmark-gfm_static

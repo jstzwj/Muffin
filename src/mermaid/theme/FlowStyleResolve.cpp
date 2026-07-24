@@ -36,10 +36,10 @@ QPair<QString, QString> splitStyle(const QString& style) {
 // getCompiledStyles (chunk-YI7H2ERT.mjs:934): for each class name, push the
 // class's styles then its textStyles. "default"/"node" built-in classes are
 // empty, so only the user's vertex.classes contribute.
-StyleMap compileStyles(const flowchart::FlowVertex& vertex,
-                       const QVector<flowchart::FlowClass>& classes) {
+StyleMap compileClassMap(const QStringList& classNames,
+                         const QVector<flowchart::FlowClass>& classes) {
   StyleMap map;
-  for (const QString& name : vertex.classes) {
+  for (const QString& name : classNames) {
     for (const flowchart::FlowClass& cls : classes) {
       if (cls.id != name) continue;
       for (const QString& s : cls.styles) { const auto [k, v] = splitStyle(s); if (!k.isEmpty()) map.insert(k, v); }
@@ -47,12 +47,44 @@ StyleMap compileStyles(const flowchart::FlowVertex& vertex,
       break;
     }
   }
+  return map;
+}
+
+// compileStyles (chunk-YI7H2ERT.mjs): mermaid prepends the built-in "default"
+// and "node" classes to every vertex (mermaid.js:48113 getCompiledStyles(["default",
+// "node", ...vertex.classes])), so a user-authored `classDef default ...` or
+// `classDef node ...` applies to all nodes. They are looked up in the classDef
+// table; when undefined (the common case) they are absent and contribute
+// nothing, preserving prior behaviour. Inline `style` is applied after classDef.
+StyleMap compileStyles(const flowchart::FlowVertex& vertex,
+                       const QVector<flowchart::FlowClass>& classes) {
+  QStringList names;
+  names.reserve(vertex.classes.size() + 2);
+  names.append(QStringLiteral("default"));
+  names.append(QStringLiteral("node"));
+  names.append(vertex.classes);
+  StyleMap map = compileClassMap(names, classes);
   // inline `style A ...` (cssStyles) — applied after classDef.
   for (const QString& s : vertex.styles) { const auto [k, v] = splitStyle(s); if (!k.isEmpty()) map.insert(k, v); }
   return map;
 }
 
 }  // namespace
+
+// Merged classDef declarations (key:value strings, last-wins) for the given
+// class names — the edge/subgraph analogue of compileStyles without the inline
+// `style` tail or the vertex-only default/node prepend. Upstream applies edge
+// and subgraph classDef via setClass (mermaid.js:47629), which looks up edges
+// and subgraphs in addition to vertices.
+QStringList compiledClassStyles(const QStringList& classNames,
+                                const QVector<flowchart::FlowClass>& classes) {
+  const StyleMap map = compileClassMap(classNames, classes);
+  QStringList out;
+  out.reserve(map.entries.size());
+  for (const auto& [key, value] : map.entries)
+    out.append(key + QLatin1Char(':') + value);
+  return out;
+}
 
 bool isLabelStyle(const QString& key) {
   static const QStringList keys = {

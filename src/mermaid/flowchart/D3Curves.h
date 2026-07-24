@@ -8,7 +8,7 @@
 // Each curve is ported verbatim from node_modules/d3-shape/src/curve/*.js:
 // the same `_point` state machine, the same shift registers, the same
 // coincident-point guard, the same `_line` closePath condition. The sink is a
-// d3.path()-compatible PathContext that emits M/L/C/Z commands. mermaid
+// d3.path()-compatible PathContext that emits M/L/C/Q/Z commands. mermaid
 // produces its edge `d` attribute via `d3.line().x(x).y(y).curve(factory)
 // (points)`, so the driver here is `lineStart(); point(x,y)*; lineEnd();` —
 // exactly what d3.line invokes (no areaStart/areaEnd, so `_line` stays
@@ -22,6 +22,7 @@
 #include <QString>
 #include <QVector>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 
@@ -39,6 +40,10 @@ struct PathContext {
     out += QLatin1Char('C'); writeNumber(c1x); out += QLatin1Char(','); writeNumber(c1y);
     out += QLatin1Char(','); writeNumber(c2x); out += QLatin1Char(','); writeNumber(c2y);
     out += QLatin1Char(','); writeNumber(x); out += QLatin1Char(','); writeNumber(y);
+  }
+  void quadraticCurveTo(qreal cx, qreal cy, qreal x, qreal y) {
+    out += QLatin1Char('Q'); writeNumber(cx); out += QLatin1Char(','); writeNumber(cy);
+    out += QLatin1Char(' '); writeNumber(x); out += QLatin1Char(','); writeNumber(y);
   }
   void closePath() { out += QLatin1Char('Z'); }
 
@@ -422,6 +427,57 @@ struct CatmullRom {
 
 }  // namespace detail
 
+// Mermaid's generateRoundedPath is separate from d3-shape. It trims each
+// side of an interior corner by a radius-derived distance and joins the cut
+// points with a quadratic Bezier controlled by the original vertex.
+inline QString generateRoundedPath(const QVector<QPointF>& points,
+                                   qreal radius = 5.0) {
+  if (points.size() < 2) return {};
+
+  constexpr qreal kEpsilon = 1e-5;
+  constexpr qreal kPi = 3.14159265358979323846;
+  PathContext context;
+  for (qsizetype index = 0; index < points.size(); ++index) {
+    const QPointF& current = points.at(index);
+    if (index == 0) {
+      context.moveTo(current.x(), current.y());
+      continue;
+    }
+    if (index == points.size() - 1) {
+      context.lineTo(current.x(), current.y());
+      continue;
+    }
+
+    const QPointF incoming = current - points.at(index - 1);
+    const QPointF outgoing = points.at(index + 1) - current;
+    const qreal incomingLength = std::hypot(incoming.x(), incoming.y());
+    const qreal outgoingLength = std::hypot(outgoing.x(), outgoing.y());
+    if (incomingLength < kEpsilon || outgoingLength < kEpsilon) {
+      context.lineTo(current.x(), current.y());
+      continue;
+    }
+
+    const QPointF incomingUnit = incoming / incomingLength;
+    const QPointF outgoingUnit = outgoing / outgoingLength;
+    const qreal dot = incomingUnit.x() * outgoingUnit.x() +
+                      incomingUnit.y() * outgoingUnit.y();
+    const qreal angle = std::acos(std::clamp(dot, qreal(-1.0), qreal(1.0)));
+    if (angle < kEpsilon || std::abs(kPi - angle) < kEpsilon) {
+      context.lineTo(current.x(), current.y());
+      continue;
+    }
+
+    const qreal cutLength =
+        std::min({radius / std::sin(angle / 2.0), incomingLength / 2.0,
+                  outgoingLength / 2.0});
+    const QPointF start = current - incomingUnit * cutLength;
+    const QPointF end = current + outgoingUnit * cutLength;
+    context.lineTo(start.x(), start.y());
+    context.quadraticCurveTo(current.x(), current.y(), end.x(), end.y());
+  }
+  return context.out;
+}
+
 // Drive a curve the way d3.line does: lineStart, point per data point, lineEnd.
 template <typename Curve>
 inline void drive(Curve& curve, const QVector<QPointF>& points) {
@@ -430,11 +486,11 @@ inline void drive(Curve& curve, const QVector<QPointF>& points) {
   curve.lineEnd();
 }
 
-// mermaid's insertEdge switch (edgeCurveType), verbatim mapping. "rounded" uses
-// a custom generator (generateRoundedPath) and is NOT a d3 curve — it falls
-// through to the default (basis) here; porting it is deferred. Unknown values
-// also default to basis, matching mermaid's `default:` branch.
+// Mermaid's insertEdge switch (edgeCurveType), including its custom rounded
+// generator. Unknown values default to basis, matching Mermaid's `default:`
+// branch.
 inline QString pathForCurve(const QVector<QPointF>& points, const QString& name) {
+  if (name == QLatin1String("rounded")) return generateRoundedPath(points);
   PathContext c;
   if (name == QLatin1String("linear")) { detail::Linear cur(c); drive(cur, points); }
   else if (name == QLatin1String("basis")) { detail::Basis cur(c); drive(cur, points); }
@@ -448,7 +504,7 @@ inline QString pathForCurve(const QVector<QPointF>& points, const QString& name)
   else if (name == QLatin1String("bumpY")) { detail::Bump cur(c, false); drive(cur, points); }
   else if (name == QLatin1String("catmullRom")) { detail::CatmullRom cur(c, 0.5); drive(cur, points); }
   else if (name == QLatin1String("natural")) { detail::Natural cur(c); drive(cur, points); }
-  else { detail::Basis cur(c); drive(cur, points); }  // default / rounded / unknown -> basis
+  else { detail::Basis cur(c); drive(cur, points); }  // default / unknown -> basis
   return c.out;
 }
 

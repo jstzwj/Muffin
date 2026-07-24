@@ -37,6 +37,21 @@ struct SequencePreparedLabels {
   QMap<int, SequenceLabelDocument> notesByIndex;
   QMap<int, SequenceLabelDocument> fragmentKindsByIndex;
   QMap<int, SequenceLabelDocument> fragmentsByIndex;
+  QMap<QString, SequenceLabelDocument> menuItemsByKey;
+};
+
+struct SequenceSceneMenuItem {
+  QString label;
+  QString link;
+  QRectF hitRect;
+  QRectF labelRect;
+  SequenceLabelDocument labelDocument;
+};
+
+struct SequenceSceneMenu {
+  QString actorId;
+  QRectF panelRect;
+  QVector<SequenceSceneMenuItem> items;
 };
 
 // Immutable geometry consumed by the sequence painter. The scene never reads
@@ -57,7 +72,13 @@ struct SequenceScene {
   QVector<SequenceLabelDocument> fragmentKindLabels;
   QVector<SequenceLabelDocument> fragmentLabels;
   QVector<SequenceLayoutNumber> sequenceNumbers;
+  QVector<SequenceSceneMenu> menus;
+  bool forceMenus = false;
   SequenceSceneStyle style;
+  // handDrawn (rough) look — gated in the painter, only set when the diagram
+  // config requests `look: handDrawn`. Default rendering is unaffected.
+  bool handDrawn = false;
+  quint32 handDrawnSeed = 0;
 };
 
 SequenceScene buildSequenceScene(const SequenceLayoutResult& layout,
