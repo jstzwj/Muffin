@@ -6,6 +6,7 @@
 #include "document/BlockPredicates.h"
 #include "document/SourceRangeUtil.h"
 #include "mermaid/scene/FlowScenePainter.h"
+#include "mermaid/MermaidRenderMetadata.h"
 #include "mermaid/classdiagram/ClassScenePainter.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 #include "mermaid/state/StateScenePainter.h"
@@ -17,6 +18,7 @@
 #include <QTextLayout>
 #include <QTextOption>
 
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <utility>
@@ -624,29 +626,36 @@ const html::HtmlLayoutResult* BlockLayout::htmlLayout() const {
   return htmlLayout_.get();
 }
 
-void BlockLayout::setMermaidScene(std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene, QSizeF naturalSize) {
+void BlockLayout::setMermaidScene(
+    std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene,
+    QSizeF naturalSize, mermaid::MermaidRenderMetadata metadata) {
   mermaidScene_ = std::move(scene);
   mermaidNaturalSize_ = naturalSize;
+  mermaidMetadata_ = std::move(metadata);
 }
 
 void BlockLayout::setMermaidSequenceScene(
-    std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene, QSizeF naturalSize) {
+    std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene,
+    QSizeF naturalSize, mermaid::MermaidRenderMetadata metadata) {
   mermaidSequenceScene_ = std::move(scene);
   mermaidNaturalSize_ = naturalSize;
+  mermaidMetadata_ = std::move(metadata);
 }
 
 void BlockLayout::setMermaidClassScene(
     std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> scene,
-    QSizeF naturalSize) {
+    QSizeF naturalSize, mermaid::MermaidRenderMetadata metadata) {
   mermaidClassScene_ = std::move(scene);
   mermaidNaturalSize_ = naturalSize;
+  mermaidMetadata_ = std::move(metadata);
 }
 
 void BlockLayout::setMermaidStateScene(
     std::shared_ptr<const muffin::mermaid::state::StateScene> scene,
-    QSizeF naturalSize) {
+    QSizeF naturalSize, mermaid::MermaidRenderMetadata metadata) {
   mermaidStateScene_ = std::move(scene);
   mermaidNaturalSize_ = naturalSize;
+  mermaidMetadata_ = std::move(metadata);
 }
 
 void BlockLayout::setMermaidViewportCullingEnabled(bool enabled) {
@@ -661,8 +670,29 @@ const muffin::mermaid::flowscene::FlowScene* BlockLayout::mermaidScene() const {
   return mermaidScene_.get();
 }
 
+const muffin::mermaid::sequence::SequenceScene*
+BlockLayout::mermaidSequenceScene() const {
+  return mermaidSequenceScene_.get();
+}
+
 QSizeF BlockLayout::mermaidNaturalSize() const {
   return mermaidNaturalSize_;
+}
+
+const mermaid::MermaidRenderMetadata& BlockLayout::mermaidMetadata() const {
+  return mermaidMetadata_;
+}
+
+bool BlockLayout::hasAnimatedMermaid() const {
+  if (mermaidScene_ &&
+      std::any_of(mermaidScene_->edges.cbegin(), mermaidScene_->edges.cend(),
+                  [](const auto& edge) { return edge.animated; })) {
+    return true;
+  }
+  return std::any_of(children_.cbegin(), children_.cend(),
+                     [](const auto& child) {
+                       return child && child->hasAnimatedMermaid();
+                     });
 }
 
 void BlockLayout::setMermaidState(MermaidState state) {
@@ -1098,11 +1128,15 @@ bool BlockLayout::containsInteractiveContent(QPointF documentPos, const RenderTh
   return rect_.adjusted(-2, -theme.blockSpacing() * 0.5, 2, theme.blockSpacing() * 0.5).contains(documentPos);
 }
 
-HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const {
+HitTestResult BlockLayout::hitTest(
+    QPointF documentPos, const RenderTheme& theme,
+    const CodeFenceScrollController* scroll,
+    const QSet<QString>* openSequenceMenus) const {
   for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
     const BlockLayout& child = **it;
     if (child.rect().adjusted(-theme.blockSpacing(), -theme.blockSpacing(), theme.blockSpacing(), theme.blockSpacing()).contains(documentPos)) {
-      HitTestResult childHit = child.hitTest(documentPos, theme, scroll);
+      HitTestResult childHit =
+          child.hitTest(documentPos, theme, scroll, openSequenceMenus);
       if (childHit.isValid()) {
         return childHit;
       }
@@ -1116,7 +1150,7 @@ HitTestResult BlockLayout::hitTest(QPointF documentPos, const RenderTheme& theme
   if (type_ == BlockType::Table) {
     return hitTable(documentPos, theme);
   }
-  return hitSelf(documentPos, theme, scroll);
+  return hitSelf(documentPos, theme, scroll, openSequenceMenus);
 }
 
 QVector<QRectF> BlockLayout::selectionRects(const SelectionRange& selection, const RenderTheme& theme) const {
@@ -1159,7 +1193,7 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
     case BlockType::FrontMatter:
     case BlockType::CodeFence:
       if (isMermaidRendered())
-        paintMermaidDiagram(painter, theme, viewRect);
+        paintMermaidDiagram(painter, theme, viewRect, hover);
       else {
         const QRectF codeRect =
             mermaidCodeFenceRect(theme).translated(0, -scrollY);
@@ -1430,7 +1464,9 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
   painter.restore();
 }
 
-void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
+void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& theme,
+                                      QRectF viewRect,
+                                      BlockPaintState state) const {
   if (!mermaidScene_ && !mermaidSequenceScene_ && !mermaidClassScene_ &&
       !mermaidStateScene_) return;
   painter.save();
@@ -1452,6 +1488,10 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
     const qreal drawH = natH * scale;
     const qreal dx = content.left() + qMax<qreal>(0.0, (content.width() - drawW) / 2.0);
     const qreal dy = content.top() + qMax<qreal>(0.0, (content.height() - drawH) / 2.0);
+    const qreal contentOffsetX = qMax<qreal>(
+        0.0, (natW - mermaidMetadata_.contentSize.width()) / 2.0);
+    const qreal contentOffsetY =
+        mermaidMetadata_.titleHeight + mermaidMetadata_.diagramPadding;
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
     const QRectF sceneBounds = mermaidScene_ ? mermaidScene_->bounds
@@ -1459,23 +1499,29 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
         : mermaidClassScene_ ? mermaidClassScene_->bounds
                              : mermaidStateScene_->bounds;
     muffin::mermaid::MermaidPaintOptions paintOptions;
+    paintOptions.animationTimeSeconds = state.mermaidAnimationTimeSeconds;
+    paintOptions.openSequenceMenus = state.openSequenceMenus;
+    painter.translate(dx, dy);
+    painter.scale(scale, scale);
+    muffin::mermaid::paintMermaidTitle(
+        mermaidMetadata_, painter,
+        QRectF(0.0, 0.0, natW, mermaidMetadata_.titleHeight));
     if (mermaidViewportCullingEnabled_ && painter.hasClipping()) {
-      const QRectF visibleView = painter.clipBoundingRect().intersected(
-          QRectF(dx, dy, drawW, drawH));
-      if (!visibleView.isValid()) {
+      const QRectF visibleCanvas = painter.clipBoundingRect().intersected(
+          QRectF(contentOffsetX, contentOffsetY,
+                 sceneBounds.width(), sceneBounds.height()));
+      if (!visibleCanvas.isValid()) {
         painter.restore();
         return;
       }
       paintOptions.cullToVisibleRect = true;
       paintOptions.visibleSceneRect = QRectF(
-          sceneBounds.left() + (visibleView.left() - dx) / scale,
-          sceneBounds.top() + (visibleView.top() - dy) / scale,
-          visibleView.width() / scale,
-          visibleView.height() / scale);
+          sceneBounds.left() + visibleCanvas.left() - contentOffsetX,
+          sceneBounds.top() + visibleCanvas.top() - contentOffsetY,
+          visibleCanvas.width(), visibleCanvas.height());
     }
-    painter.translate(dx, dy);
-    painter.scale(scale, scale);
-    painter.translate(-sceneBounds.left(), -sceneBounds.top());
+    painter.translate(contentOffsetX - sceneBounds.left(),
+                      contentOffsetY - sceneBounds.top());
     if (mermaidScene_)
       muffin::mermaid::flowscene::paintFlowScene(
           *mermaidScene_, painter, QStringLiteral("Arial"),
@@ -1569,30 +1615,94 @@ void BlockLayout::paintMermaidDiagnostic(
   painter.restore();
 }
 
-QString BlockLayout::mermaidLinkAt(QPointF documentPos, const RenderTheme& theme) const {
-  if (!isMermaidRendered()) return {};
-  if (!mermaidScene_) return {};
+bool BlockLayout::mermaidScenePointAt(
+    QPointF documentPos, const RenderTheme& theme,
+    const QRectF& sceneBounds, QPointF& scenePos) const {
+  if (!isMermaidRendered()) return false;
   const QRectF content = rect_.marginsRemoved(theme.codePadding());
   const qreal natW = mermaidNaturalSize_.width();
   const qreal natH = mermaidNaturalSize_.height();
-  if (natW <= 0.0 || natH <= 0.0) return {};
+  if (natW <= 0.0 || natH <= 0.0) return false;
   const qreal s = qMin<qreal>(1.0, content.width() / natW);
   const qreal drawW = natW * s;
   const qreal drawH = natH * s;
   const qreal dx = content.left() + qMax<qreal>(0.0, (content.width() - drawW) / 2.0);
   const qreal dy = content.top() + qMax<qreal>(0.0, (content.height() - drawH) / 2.0);
+  const qreal contentOffsetX = qMax<qreal>(
+      0.0, (natW - mermaidMetadata_.contentSize.width()) / 2.0);
   // Inverse of the paint transform: document → scene coordinates.
-  const QPointF scenePos((documentPos.x() - dx) / s + mermaidScene_->bounds.left(),
-                         (documentPos.y() - dy) / s + mermaidScene_->bounds.top());
-  for (const auto& node : mermaidScene_->nodes) {
-    if (node.link.isEmpty()) continue;
-    const QRectF nr(node.cx - node.width / 2.0, node.cy - node.height / 2.0, node.width, node.height);
-    if (nr.contains(scenePos)) {
-      // Strict policy: only follow URLs that pass the safety check (drops javascript:/data:/…).
-      return isSafeUrl(node.link, false) ? node.link : QString();
+  scenePos = QPointF(
+      (documentPos.x() - dx) / s - contentOffsetX +
+          sceneBounds.left(),
+      (documentPos.y() - dy) / s - mermaidMetadata_.titleHeight -
+          mermaidMetadata_.diagramPadding +
+          sceneBounds.top());
+  return true;
+}
+
+BlockLayout::MermaidInteractionHit BlockLayout::mermaidInteractionAt(
+    QPointF documentPos, const RenderTheme& theme,
+    const QSet<QString>* openSequenceMenus) const {
+  MermaidInteractionHit result;
+  if (mermaidSequenceScene_) {
+    QPointF scenePos;
+    if (!mermaidScenePointAt(documentPos, theme,
+                             mermaidSequenceScene_->bounds, scenePos)) {
+      return result;
     }
+    for (auto menuIt = mermaidSequenceScene_->menus.crbegin();
+         menuIt != mermaidSequenceScene_->menus.crend(); ++menuIt) {
+      const bool visible = mermaidSequenceScene_->forceMenus ||
+          (openSequenceMenus &&
+           openSequenceMenus->contains(menuIt->actorId));
+      if (!visible) continue;
+      for (auto itemIt = menuIt->items.crbegin();
+           itemIt != menuIt->items.crend(); ++itemIt) {
+        if (!itemIt->hitRect.contains(scenePos)) continue;
+        if (isSafeUrl(itemIt->link, false)) result.linkHref = itemIt->link;
+        return result;
+      }
+    }
+    if (!mermaidSequenceScene_->forceMenus) {
+      for (auto menuIt = mermaidSequenceScene_->menus.crbegin();
+           menuIt != mermaidSequenceScene_->menus.crend(); ++menuIt) {
+        const auto actorIt = std::find_if(
+            mermaidSequenceScene_->participants.cbegin(),
+            mermaidSequenceScene_->participants.cend(),
+            [&](const auto& actor) { return actor.id == menuIt->actorId; });
+        if (actorIt == mermaidSequenceScene_->participants.cend()) continue;
+        const QRectF actorHit = actorIt->topPaintedBounds
+            .united(actorIt->topLabelRect)
+            .united(QRectF(actorIt->logicalRect.x(), actorIt->topY,
+                           actorIt->logicalRect.width(),
+                           actorIt->logicalRect.height()));
+        if (actorHit.contains(scenePos)) {
+          result.menuActorId = menuIt->actorId;
+          return result;
+        }
+      }
+    }
+    return result;
   }
-  return {};
+  if (!mermaidScene_) return result;
+  QPointF scenePos;
+  if (!mermaidScenePointAt(documentPos, theme, mermaidScene_->bounds,
+                           scenePos)) {
+    return result;
+  }
+  for (auto it = mermaidScene_->nodes.crbegin();
+       it != mermaidScene_->nodes.crend(); ++it) {
+    const QRectF nodeRect(it->cx - it->width / 2.0,
+                          it->cy - it->height / 2.0,
+                          it->width, it->height);
+    if (!nodeRect.contains(scenePos)) continue;
+    result.toolTip = it->tooltip;
+    if (!it->link.isEmpty() && isSafeUrl(it->link, false)) {
+      result.linkHref = it->link;
+    }
+    return result;
+  }
+  return result;
 }
 
 void BlockLayout::paintHtmlBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const {
@@ -2015,7 +2125,10 @@ void BlockLayout::paintCodeLineNumbers(QPainter& painter, const RenderTheme& the
   }
 }
 
-HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const {
+HitTestResult BlockLayout::hitSelf(
+    QPointF documentPos, const RenderTheme& theme,
+    const CodeFenceScrollController* scroll,
+    const QSet<QString>* openSequenceMenus) const {
   HitTestResult result;
   result.blockId = id_;
   result.textNodeId = id_;
@@ -2096,10 +2209,15 @@ HitTestResult BlockLayout::hitSelf(QPointF documentPos, const RenderTheme& theme
       result.zone = type_ == BlockType::FrontMatter ? HitTestResult::Zone::FrontMatter : HitTestResult::Zone::Code;
       // Rendered mermaid diagram: a click on a node carrying a safe link follows it
       // (Ctrl+click in EditorView); otherwise fall through to caret placement below.
-      if (isMermaidRendered()) {
-        const QString link = mermaidLinkAt(documentPos, theme);
-        if (!link.isEmpty()) {
-          result.linkHref = link;
+      result.mermaidRendered = isMermaidRendered();
+      if (result.mermaidRendered) {
+        const MermaidInteractionHit interaction =
+            mermaidInteractionAt(documentPos, theme, openSequenceMenus);
+        result.linkHref = interaction.linkHref;
+        result.toolTip = interaction.toolTip;
+        result.mermaidMenuActorId = interaction.menuActorId;
+        if (!result.linkHref.isEmpty() ||
+            !result.mermaidMenuActorId.isEmpty()) {
           return result;
         }
       }

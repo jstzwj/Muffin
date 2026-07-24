@@ -1009,13 +1009,17 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     if (!keepSource && entry.status == MermaidRenderStatus::Ready &&
         (entry.scene || entry.sequenceScene || entry.classScene || entry.stateScene)) {
       layout->setMermaidViewportCullingEnabled(!mermaidSyncMode_);
-      if (entry.scene) layout->setMermaidScene(entry.scene, entry.naturalSize);
+      if (entry.scene)
+        layout->setMermaidScene(entry.scene, entry.naturalSize, entry.metadata);
       else if (entry.sequenceScene)
-        layout->setMermaidSequenceScene(entry.sequenceScene, entry.naturalSize);
+        layout->setMermaidSequenceScene(
+            entry.sequenceScene, entry.naturalSize, entry.metadata);
       else if (entry.classScene)
-        layout->setMermaidClassScene(entry.classScene, entry.naturalSize);
+        layout->setMermaidClassScene(
+            entry.classScene, entry.naturalSize, entry.metadata);
       else
-        layout->setMermaidStateScene(entry.stateScene, entry.naturalSize);
+        layout->setMermaidStateScene(
+            entry.stateScene, entry.naturalSize, entry.metadata);
       const int contentWidth = static_cast<int>(qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right()));
       const qreal natW = entry.naturalSize.width();
       const qreal scale = natW > 0.0 ? qMin<qreal>(1.0, contentWidth / natW) : 1.0;

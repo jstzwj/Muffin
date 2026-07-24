@@ -5,8 +5,8 @@
 #include "parser/CmarkGfmParser.h"
 #include "parser/MarkdownParser.h"
 
-#include <QCoreApplication>
 #include <QDebug>
+#include <QGuiApplication>
 #include <QSettings>
 #include <QString>
 #include <QStringView>
@@ -82,6 +82,52 @@ void testIndentedCode() {
   const QString out = serialize(QStringLiteral("    indented"));
   require(out.contains(QStringLiteral("<pre><code>")) && out.contains(QStringLiteral("indented")),
           QStringLiteral("indented code block"));
+}
+void testMermaidAccessibilityMetadata() {
+  const QString out = serialize(QStringLiteral(
+      "```mermaid\n"
+      "---\ntitle: Visible flow title\n---\n"
+      "flowchart TB\n"
+      "accTitle: Accessible flow name\n"
+      "accDescr: Detailed & safe description\n"
+      "A --> B\n```"));
+  require(out.contains(QStringLiteral("<svg")) &&
+              out.contains(QStringLiteral("class=\"mfn-mermaid flowchart\"")) &&
+              !out.contains(QStringLiteral("data:image/png")),
+          QStringLiteral("supported Mermaid diagram must export as inline SVG"));
+  require(out.contains(QStringLiteral("role=\"graphics-document document\"")) &&
+              out.contains(QStringLiteral("aria-roledescription=\"")) &&
+              out.contains(QStringLiteral("aria-labelledby=\"")) &&
+              out.contains(QStringLiteral("aria-describedby=\"")) &&
+              out.contains(QStringLiteral(">Accessible flow name</title>")) &&
+              out.contains(QStringLiteral(
+                  ">Detailed &amp; safe description</desc>")),
+          QStringLiteral("Mermaid HTML export must preserve accessible metadata"));
+
+  const QString titleFallback = serialize(QStringLiteral(
+      "```mermaid\n---\ntitle: Title fallback\n---\n"
+      "flowchart TB\nA --> B\n```"));
+  require(titleFallback.contains(QStringLiteral(">Title fallback</title>")),
+          QStringLiteral("visible Mermaid title must be the SVG title fallback"));
+
+  const QString repeated = serialize(QStringLiteral(
+      "```mermaid\nflowchart TB\nA --> B\n```\n\n"
+      "```mermaid\nflowchart TB\nA --> B\n```"));
+  const auto rootIdAt = [&repeated](qsizetype svgOffset) {
+    const qsizetype idStart = repeated.indexOf(QStringLiteral(" id=\""), svgOffset);
+    const qsizetype valueStart = idStart < 0 ? -1 : idStart + 5;
+    const qsizetype valueEnd = valueStart < 0
+        ? -1 : repeated.indexOf(QLatin1Char('"'), valueStart);
+    return valueEnd < 0 ? QString()
+                        : repeated.mid(valueStart, valueEnd - valueStart);
+  };
+  const qsizetype firstSvg = repeated.indexOf(QStringLiteral("<svg"));
+  const qsizetype secondSvg = repeated.indexOf(QStringLiteral("<svg"), firstSvg + 1);
+  const QString firstRootId = rootIdAt(firstSvg);
+  const QString secondRootId = rootIdAt(secondSvg);
+  require(firstSvg >= 0 && secondSvg > firstSvg &&
+              !firstRootId.isEmpty() && firstRootId != secondRootId,
+          QStringLiteral("multiple Mermaid SVG roots must have distinct IDs"));
 }
 void testHtmlBlockRaw() {
   const QString out = serialize(QStringLiteral("<div>raw</div>"));
@@ -318,7 +364,7 @@ void testSerializeSourceReadsSettings() {
 int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
   QCoreApplication::setApplicationName(QStringLiteral("MuffinTest"));
-  QCoreApplication app(argc, argv);
+  QGuiApplication app(argc, argv);
 
   testHeading();
   testParagraph();
@@ -326,6 +372,7 @@ int main(int argc, char** argv) {
   testCodeFenceWithLang();
   testCodeFenceWithoutLang();
   testIndentedCode();
+  testMermaidAccessibilityMetadata();
   testHtmlBlockRaw();
   testBlockQuotePlain();
   testAlertNote();

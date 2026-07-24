@@ -196,6 +196,7 @@ struct Serializer {
   QString out;
   MarkdownHtmlOptions opts;
   HtmlSanitizer sanitizer;  // sanitizes raw HTML blocks/inlines so export can't carry an XSS payload
+  qsizetype mermaidInstanceIndex = 0;
   // Footnote definitions are hoisted to a trailing <section> (mirrors cmark), collected during the
   // block walk and emitted once at the end.
   QVector<const MarkdownNode*> footnotes;
@@ -244,14 +245,15 @@ struct Serializer {
 
   void emitCode(const MarkdownNode& node) {
     const QString lang = node.codeLanguage();  // already the first whitespace-delimited token
-    // Mermaid (milestone I-5): render the diagram to an inline PNG so the exported
-    // HTML shows it with no JS/browser dependency. On any render failure (malformed,
-    // unsupported diagram type) fall through to the source so content is never lost.
+    // Keep Mermaid HTML self-contained without a browser-side Mermaid runtime.
+    // On render failure, fall through to source so content is never lost.
     if (lang == QLatin1String("mermaid")) {
-      const QString dataUrl = mermaid::editor::MermaidRenderCache::renderMermaidSourceToPngDataUrl(node.literal());
-      if (!dataUrl.isEmpty()) {
-        out += QStringLiteral("<img class=\"mfn-mermaid\" alt=\"mermaid diagram\" src=\"") + dataUrl +
-               QStringLiteral("\" />\n");
+      const auto rendered =
+          mermaid::editor::MermaidRenderCache::renderMermaidSourceToSvg(
+              node.literal(), mermaidInstanceIndex++);
+      if (!rendered.svg.isEmpty()) {
+        out += QString::fromUtf8(rendered.svg);
+        out += QLatin1Char('\n');
         out += QStringLiteral("<details class=\"mfn-mermaid-source\"><summary>") + escapeText(QStringLiteral("source")) +
                QStringLiteral("</summary><pre><code class=\"language-mermaid\">") + escapeText(node.literal()) +
                QStringLiteral("</code></pre></details>\n");

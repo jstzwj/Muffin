@@ -5,6 +5,7 @@
 #include "html/HtmlLayoutResult.h"
 #include "math/MathRenderNode.h"
 #include "mermaid/MermaidDiagnostic.h"
+#include "mermaid/MermaidRenderMetadata.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/classdiagram/ClassScene.h"
 #include "mermaid/sequence/SequenceScene.h"
@@ -14,6 +15,7 @@
 #include "theme/RenderTheme.h"
 
 #include <QRectF>
+#include <QSet>
 #include <QString>
 #include <QVector>
 
@@ -115,6 +117,10 @@ public:
     qreal hoverPhase = 0.0;  // 0..1
     bool focusActive = false;
     qreal focusPhase = 0.0;  // 0..1
+    // Negative means deterministic/static export; non-negative is the shared
+    // editor animation clock in seconds.
+    qreal mermaidAnimationTimeSeconds = -1.0;
+    const QSet<QString>* openSequenceMenus = nullptr;
   };
 
   explicit BlockLayout(NodeId id = {});
@@ -155,17 +161,27 @@ public:
   // Mermaid diagram (milestone I). When state == Ready the block paints the
   // cached immutable scene scaled to fit the content width instead of the source code.
   enum class MermaidState { None, Loading, Ready, Error, Unsupported };
-  void setMermaidScene(std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene, QSizeF naturalSize);
+  void setMermaidScene(
+      std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene,
+      QSizeF naturalSize,
+      muffin::mermaid::MermaidRenderMetadata metadata = {});
   void setMermaidSequenceScene(std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene,
-                               QSizeF naturalSize);
+                               QSizeF naturalSize,
+                               muffin::mermaid::MermaidRenderMetadata metadata = {});
   void setMermaidClassScene(std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> scene,
-                            QSizeF naturalSize);
+                            QSizeF naturalSize,
+                            muffin::mermaid::MermaidRenderMetadata metadata = {});
   void setMermaidStateScene(std::shared_ptr<const muffin::mermaid::state::StateScene> scene,
-                            QSizeF naturalSize);
+                            QSizeF naturalSize,
+                            muffin::mermaid::MermaidRenderMetadata metadata = {});
   void setMermaidViewportCullingEnabled(bool enabled);
   bool mermaidViewportCullingEnabled() const;
   const muffin::mermaid::flowscene::FlowScene* mermaidScene() const;
+  const muffin::mermaid::sequence::SequenceScene*
+  mermaidSequenceScene() const;
   QSizeF mermaidNaturalSize() const;
+  const muffin::mermaid::MermaidRenderMetadata& mermaidMetadata() const;
+  bool hasAnimatedMermaid() const;
   void setMermaidState(MermaidState state);
   MermaidState mermaidState() const;
   void setMermaidDiagnostic(muffin::mermaid::MermaidDiagnostic diagnostic);
@@ -272,12 +288,14 @@ public:
   // BlockPaintState's inactive defaults (hover/focus inactive, phases 0).
   void paint(QPainter& painter, const RenderTheme& theme, qreal scrollY,
              const CodeFenceScrollController* scroll = nullptr,
-             BlockPaintState hover = BlockPaintState{false, 0.0, false, 0.0}) const;
+             BlockPaintState hover =
+                 BlockPaintState{false, 0.0, false, 0.0, -1.0, nullptr}) const;
   bool intersects(const QRectF& documentViewport) const;
   bool containsNode(NodeId id) const;
   bool containsInteractiveContent(QPointF documentPos, const RenderTheme& theme) const;
   HitTestResult hitTest(QPointF documentPos, const RenderTheme& theme,
-                        const CodeFenceScrollController* scroll = nullptr) const;
+                        const CodeFenceScrollController* scroll = nullptr,
+                        const QSet<QString>* openSequenceMenus = nullptr) const;
   QVector<QRectF> selectionRects(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
   // Selection rects for THIS block's own content within [startOffset, endOffset] only — does NOT
@@ -296,17 +314,29 @@ private:
   void paintInlineBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY, BlockPaintState hover) const;
   void paintBlockQuote(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const;
   void paintMathBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect, qreal scrollY) const;
-  void paintMermaidDiagram(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
+  void paintMermaidDiagram(QPainter& painter, const RenderTheme& theme,
+                           QRectF viewRect, BlockPaintState state) const;
   void paintMermaidDiagnostic(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   QRectF mermaidCodeFenceRect(const RenderTheme& theme) const;
   bool hasMermaidDiagnostic() const;
-  // If a rendered mermaid diagram has a SAFE link on the node under documentPos, return it
-  // (empty otherwise). Used by hitSelf so Ctrl+click on a mermaid node follows the link.
-  QString mermaidLinkAt(QPointF documentPos, const RenderTheme& theme) const;
+  struct MermaidInteractionHit {
+    QString linkHref;
+    QString toolTip;
+    QString menuActorId;
+  };
+  bool mermaidScenePointAt(QPointF documentPos, const RenderTheme& theme,
+                           const QRectF& sceneBounds,
+                           QPointF& scenePos) const;
+  MermaidInteractionHit mermaidInteractionAt(
+      QPointF documentPos, const RenderTheme& theme,
+      const QSet<QString>* openSequenceMenus) const;
   void paintHtmlBlock(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   void paintThematicBreak(QPainter& painter, const RenderTheme& theme, QRectF viewRect) const;
   void paintTable(QPainter& painter, const RenderTheme& theme, qreal scrollY) const;
-  HitTestResult hitSelf(QPointF documentPos, const RenderTheme& theme, const CodeFenceScrollController* scroll) const;
+  HitTestResult hitSelf(
+      QPointF documentPos, const RenderTheme& theme,
+      const CodeFenceScrollController* scroll,
+      const QSet<QString>* openSequenceMenus) const;
   HitTestResult hitTable(QPointF documentPos, const RenderTheme& theme) const;
   QVector<QRectF> selectionRectsSelf(const SelectionRange& selection, const RenderTheme& theme) const;
   QVector<QRectF> literalSelectionRects(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
@@ -347,6 +377,7 @@ private:
   std::shared_ptr<const muffin::mermaid::state::StateScene> mermaidStateScene_;
   bool mermaidViewportCullingEnabled_ = false;
   QSizeF mermaidNaturalSize_;
+  muffin::mermaid::MermaidRenderMetadata mermaidMetadata_;
   MermaidState mermaidState_ = MermaidState::None;
   muffin::mermaid::MermaidDiagnostic mermaidDiagnostic_;
   QString mermaidDiagnosticMessage_;

@@ -16,7 +16,9 @@
 #include <QImage>
 #include <QPainter>
 #include <QSettings>
+#include <QSet>
 
+#include <algorithm>
 #include <cstdlib>
 
 using namespace muffin;
@@ -108,6 +110,28 @@ QColor colorAt(const BlockLayout* block, const RenderTheme& theme,
   return img.rect().contains(local) ? img.pixelColor(local) : QColor();
 }
 
+QPointF mermaidScenePointToDocument(const BlockLayout& block,
+                                    const RenderTheme& theme,
+                                    const QRectF& sceneBounds,
+                                    QPointF scenePoint) {
+  const QRectF content = block.rect().marginsRemoved(theme.codePadding());
+  const QSizeF natural = block.mermaidNaturalSize();
+  const qreal scale = qMin<qreal>(1.0, content.width() / natural.width());
+  const qreal drawWidth = natural.width() * scale;
+  const qreal drawHeight = natural.height() * scale;
+  const qreal dx = content.left() +
+      qMax<qreal>(0.0, (content.width() - drawWidth) / 2.0);
+  const qreal dy = content.top() +
+      qMax<qreal>(0.0, (content.height() - drawHeight) / 2.0);
+  const auto& metadata = block.mermaidMetadata();
+  const qreal contentOffsetX = qMax<qreal>(
+      0.0, (natural.width() - metadata.contentSize.width()) / 2.0);
+  return QPointF(
+      dx + scale * (contentOffsetX + scenePoint.x() - sceneBounds.left()),
+      dy + scale * (metadata.titleHeight + metadata.diagramPadding +
+                    scenePoint.y() - sceneBounds.top()));
+}
+
 qint64 pixelsNearColorInRect(
     const BlockLayout* block, const RenderTheme& theme,
     QRectF documentRect, const QColor& expected, int tolerance = 120) {
@@ -175,6 +199,43 @@ int main(int argc, char** argv) {
               QStringLiteral("viewport culling changed BlockLayout pixels at offset %1")
                   .arg(sceneOffset));
     }
+
+    mermaid::MermaidRenderMetadata metadata;
+    metadata.title = QStringLiteral("Large titled scene");
+    metadata.titleColor = QStringLiteral("#112233");
+    metadata.titleHeight = 40.0;
+    metadata.diagramPadding = 12.0;
+    metadata.contentSize = naturalSize;
+    const QSizeF titledSize(
+        naturalSize.width() + 2.0 * metadata.diagramPadding,
+        naturalSize.height() + metadata.titleHeight +
+            2.0 * metadata.diagramPadding);
+    const QRectF titledRect(
+        blockRect.left(), blockRect.top(), blockRect.width(),
+        titledSize.height() + padding.top() + padding.bottom());
+    BlockLayout titledFullPaint;
+    titledFullPaint.setType(BlockType::CodeFence);
+    titledFullPaint.setRect(titledRect);
+    titledFullPaint.setMermaidScene(scene, titledSize, metadata);
+    titledFullPaint.setMermaidState(BlockLayout::MermaidState::Ready);
+    BlockLayout titledCulledPaint;
+    titledCulledPaint.setType(BlockType::CodeFence);
+    titledCulledPaint.setRect(titledRect);
+    titledCulledPaint.setMermaidScene(scene, titledSize, metadata);
+    titledCulledPaint.setMermaidState(BlockLayout::MermaidState::Ready);
+    titledCulledPaint.setMermaidViewportCullingEnabled(true);
+    for (const qreal canvasOffset : {0.0, 40.0, 52.0, 2532.0,
+                                     5812.0, 6452.0}) {
+      const qreal scroll = titledRect.top() + padding.top() + canvasOffset;
+      const QImage expected =
+          renderBlockSlice(titledFullPaint, theme, scroll);
+      const QImage actual =
+          renderBlockSlice(titledCulledPaint, theme, scroll);
+      require(actual == expected,
+              QStringLiteral(
+                  "titled viewport culling changed pixels at offset %1")
+                  .arg(canvasOffset));
+    }
   }
 
   // --- a valid mermaid fence renders the diagram ---
@@ -206,6 +267,161 @@ int main(int argc, char** argv) {
     require(editorBlock != nullptr && editorBlock->isMermaidRendered() &&
                 editorBlock->mermaidViewportCullingEnabled(),
             QStringLiteral("editor layout must enable Mermaid viewport culling"));
+  }
+
+  // --- diagram titles share the block canvas and preserve link hit testing ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\n"
+        "---\ntitle: Checkout flow\n---\n"
+        "%%{init: {\"themeVariables\": {\"textColor\": \"#ff00ff\"}}}%%\n"
+        "flowchart TB\n"
+        "accTitle: Accessible checkout flow\n"
+        "accDescr: Checkout states and transitions\n"
+        "A[Start] --> B[Done]\n"
+        "click A href \"https://example.com/start\" \"Open start\"\n"
+        "```\n"), false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && block->isMermaidRendered() &&
+                block->mermaidScene() != nullptr,
+            QStringLiteral("titled Mermaid block must render"));
+    const auto& metadata = block->mermaidMetadata();
+    require(metadata.title == QLatin1String("Checkout flow") &&
+                metadata.accessibleTitle ==
+                    QLatin1String("Accessible checkout flow") &&
+                metadata.accessibleDescription ==
+                    QLatin1String("Checkout states and transitions") &&
+                metadata.titleHeight >= 40.0 &&
+                metadata.diagramPadding == 8.0,
+            QStringLiteral("BlockLayout lost Mermaid presentation metadata"));
+
+    const QRectF content = block->rect().marginsRemoved(theme.codePadding());
+    const QSizeF natural = block->mermaidNaturalSize();
+    const qreal scale = qMin<qreal>(1.0, content.width() / natural.width());
+    const qreal drawWidth = natural.width() * scale;
+    const qreal drawHeight = natural.height() * scale;
+    const qreal dx = content.left() +
+        qMax<qreal>(0.0, (content.width() - drawWidth) / 2.0);
+    const qreal dy = content.top() +
+        qMax<qreal>(0.0, (content.height() - drawHeight) / 2.0);
+    require(pixelsNearColorInRect(
+                block, theme,
+                QRectF(dx, dy, drawWidth, metadata.titleHeight * scale),
+                QColor(QStringLiteral("#ff00ff")), 80) > 2,
+            QStringLiteral("shared Mermaid title painter produced no title pixels"));
+
+    const auto& scene = *block->mermaidScene();
+    const auto node = std::find_if(
+        scene.nodes.cbegin(), scene.nodes.cend(),
+        [](const auto& value) { return value.id == QLatin1String("A"); });
+    require(node != scene.nodes.cend(),
+            QStringLiteral("linked flowchart node A must exist"));
+    const qreal contentOffsetX = qMax<qreal>(
+        0.0, (natural.width() - metadata.contentSize.width()) / 2.0);
+    const QPointF nodePoint(
+        dx + scale * (contentOffsetX + node->cx - scene.bounds.left()),
+        dy + scale * (metadata.titleHeight + metadata.diagramPadding +
+                      node->cy - scene.bounds.top()));
+    const HitTestResult nodeHit = block->hitTest(nodePoint, theme, nullptr);
+    require(nodeHit.mermaidRendered &&
+                nodeHit.linkHref == QLatin1String("https://example.com/start") &&
+                nodeHit.toolTip == QLatin1String("Open start"),
+            QStringLiteral("title offset or export-ready hit state drifted"));
+  }
+
+  // --- sequence participant menus share paint, hit, and URL safety geometry ---
+  {
+    const QString body = QStringLiteral(
+        "sequenceDiagram\n"
+        "participant A as Browser\n"
+        "participant B as API\n"
+        "links A: {\"Docs\":\"https://example.com/docs\","
+        "\"Blocked\":\"javascript:alert(1)\"}\n"
+        "A->>B: request\n");
+    const auto build = [&](const QString& source,
+                           DocumentSession& session,
+                           mermaid::editor::MermaidRenderCache& cache,
+                           DocumentLayout& layout) {
+      session.setMarkdownText(
+          QStringLiteral("```mermaid\n") + source +
+              QStringLiteral("```\n"), false);
+      layout.setMermaidRenderCache(&cache);
+      layout.setMermaidSyncMode(true);
+      layout.rebuild(session.document(), theme, 800.0);
+      return layout.block(firstCodeFenceId(session.document()));
+    };
+
+    DocumentSession forcedSession;
+    mermaid::editor::MermaidRenderCache forcedCache;
+    DocumentLayout forcedLayout;
+    const BlockLayout* forced = build(
+        QStringLiteral(
+            "%%{init: {\"sequence\": {\"forceMenus\": true}}}%%\n") +
+            body,
+        forcedSession, forcedCache, forcedLayout);
+    require(forced && forced->mermaidSequenceScene() &&
+                forced->mermaidSequenceScene()->forceMenus &&
+                forced->mermaidSequenceScene()->menus.size() == 1,
+            QStringLiteral("forceMenus sequence scene did not expose one menu"));
+    const auto& forcedScene = *forced->mermaidSequenceScene();
+    const auto& forcedMenu = forcedScene.menus.first();
+    const auto docs = std::find_if(
+        forcedMenu.items.cbegin(), forcedMenu.items.cend(),
+        [](const auto& item) { return item.label == QLatin1String("Docs"); });
+    const auto blocked = std::find_if(
+        forcedMenu.items.cbegin(), forcedMenu.items.cend(),
+        [](const auto& item) { return item.label == QLatin1String("Blocked"); });
+    require(docs != forcedMenu.items.cend() &&
+                blocked != forcedMenu.items.cend(),
+            QStringLiteral("sequence menu items were lost"));
+    const QPointF docsPoint = mermaidScenePointToDocument(
+        *forced, theme, forcedScene.bounds, docs->hitRect.center());
+    const QPointF blockedPoint = mermaidScenePointToDocument(
+        *forced, theme, forcedScene.bounds, blocked->hitRect.center());
+    require(forced->hitTest(docsPoint, theme).linkHref ==
+                QLatin1String("https://example.com/docs") &&
+                forced->hitTest(blockedPoint, theme).linkHref.isEmpty(),
+            QStringLiteral("sequence menu URL safety contract failed"));
+
+    DocumentSession toggleSession;
+    mermaid::editor::MermaidRenderCache toggleCache;
+    DocumentLayout toggleLayout;
+    const BlockLayout* toggle =
+        build(body, toggleSession, toggleCache, toggleLayout);
+    require(toggle && toggle->mermaidSequenceScene() &&
+                !toggle->mermaidSequenceScene()->forceMenus,
+            QStringLiteral("default sequence menu must start closed"));
+    const auto& toggleScene = *toggle->mermaidSequenceScene();
+    const auto actor = std::find_if(
+        toggleScene.participants.cbegin(), toggleScene.participants.cend(),
+        [](const auto& value) { return value.id == QLatin1String("A"); });
+    require(actor != toggleScene.participants.cend(),
+            QStringLiteral("sequence menu actor A missing"));
+    const QPointF actorPoint = mermaidScenePointToDocument(
+        *toggle, theme, toggleScene.bounds,
+        actor->topPaintedBounds.center());
+    require(toggle->hitTest(actorPoint, theme).mermaidMenuActorId ==
+                QLatin1String("A"),
+            QStringLiteral("participant click did not request menu toggle"));
+    QSet<QString> openMenus{QStringLiteral("A")};
+    const auto openDocs = std::find_if(
+        toggleScene.menus.first().items.cbegin(),
+        toggleScene.menus.first().items.cend(),
+        [](const auto& item) { return item.label == QLatin1String("Docs"); });
+    require(openDocs != toggleScene.menus.first().items.cend(),
+            QStringLiteral("toggle menu Docs item missing"));
+    const QPointF openDocsPoint = mermaidScenePointToDocument(
+        *toggle, theme, toggleScene.bounds,
+        openDocs->hitRect.center());
+    require(toggle->hitTest(openDocsPoint, theme, nullptr, &openMenus)
+                    .linkHref == QLatin1String("https://example.com/docs"),
+            QStringLiteral("toggled sequence menu did not expose its safe link"));
   }
 
   // --- state diagrams use the same rendered block pipeline ---
