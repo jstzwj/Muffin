@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mermaid/MermaidScene.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
@@ -71,7 +72,10 @@ struct ErSceneRelationship {
   QRectF labelBounds;
 };
 
-struct ErScene {
+struct ErScene : MermaidScene {
+  QRectF sceneBounds() const override { return bounds; }
+  void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
+
   QRectF bounds;
   QVector<ErSceneEntity> entities;
   QVector<ErSceneRelationship> relationships;

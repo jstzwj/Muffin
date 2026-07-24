@@ -13,6 +13,7 @@
 // in mermaid 11.16 even with htmlLabels:false, but the scene captures only the
 // label text, parsed rich-text data, prepared Math operations, position and font.
 
+#include "mermaid/MermaidScene.h"
 #include "mermaid/flowchart/Flowchart.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/flowchart/FlowchartLayout.h"
@@ -101,7 +102,10 @@ struct FlowSceneCluster {
   FlowSceneLabel label;
 };
 
-struct FlowScene {
+struct FlowScene : MermaidScene {
+  QRectF sceneBounds() const override { return bounds; }
+  void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
+
   QRectF bounds;          // diagram bounds (scene coords)
   QString background;     // theme.background
   flowchart::FlowLook look = flowchart::FlowLook::Classic;

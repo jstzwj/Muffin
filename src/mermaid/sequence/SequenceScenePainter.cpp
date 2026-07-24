@@ -348,4 +348,8 @@ QImage renderSequenceSceneToImage(const SequenceScene& scene, qreal dpr,
   return image;
 }
 
+void SequenceScene::paint(QPainter& painter, const MermaidPaintOptions& options) const {
+  paintSequenceScene(*this, painter, options);
+}
+
 }  // namespace muffin::mermaid::sequence

@@ -235,4 +235,8 @@ QImage renderStateSceneToImage(const StateScene& scene, qreal dpr, qreal padding
   return image;
 }
 
+void StateScene::paint(QPainter& painter, const MermaidPaintOptions& options) const {
+  paintStateScene(*this, painter, options);
+}
+
 }  // namespace muffin::mermaid::state

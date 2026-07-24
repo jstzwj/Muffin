@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mermaid/MermaidScene.h"
 #include "mermaid/classdiagram/ClassLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
@@ -119,7 +120,10 @@ struct ClassMarkerDefinition {
   ClassMarkerChild child;
 };
 
-struct ClassScene {
+struct ClassScene : MermaidScene {
+  QRectF sceneBounds() const override { return bounds; }
+  void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
+
   QRectF bounds;
   QVector<ClassSceneCluster> clusters;
   QVector<ClassSceneEdge> edges;

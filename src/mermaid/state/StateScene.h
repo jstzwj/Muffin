@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mermaid/MermaidScene.h"
 #include "mermaid/state/StateLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
@@ -56,7 +57,10 @@ struct StateSceneEdge {
   QRectF pathBounds;
   QRectF labelBounds;
 };
-struct StateScene {
+struct StateScene : MermaidScene {
+  QRectF sceneBounds() const override { return bounds; }
+  void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
+
   QString role = QStringLiteral("graphics-document document");
   QString ariaRoleDescription = QStringLiteral("stateDiagram");
   QString arrowMarkerId = QStringLiteral("barbEnd");

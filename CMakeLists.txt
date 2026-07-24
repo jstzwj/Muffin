@@ -464,6 +464,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/MermaidPreprocessor.h
   src/mermaid/MermaidRenderMetadata.cpp
   src/mermaid/MermaidRenderMetadata.h
+  src/mermaid/MermaidScene.h
   src/mermaid/editor/MermaidSvgExporter.cpp
   src/mermaid/editor/MermaidSvgExporter.h
   src/mermaid/MermaidFontRegistry.cpp

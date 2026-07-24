@@ -492,4 +492,9 @@ QImage renderFlowSceneToImage(const FlowScene& scene, qreal dpr, qreal padding, 
   return image;
 }
 
+void FlowScene::paint(QPainter& painter, const MermaidPaintOptions& options) const {
+  paintFlowScene(*this, painter, MermaidFontRegistry::primaryFamily(),
+                 PaintMode::Color, options);
+}
+
 }  // namespace muffin::mermaid::flowscene

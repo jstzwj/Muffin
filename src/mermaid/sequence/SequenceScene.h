@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mermaid/MermaidScene.h"
 #include "mermaid/sequence/SequenceLayout.h"
 #include "mermaid/sequence/SequenceLabel.h"
 
@@ -56,7 +57,10 @@ struct SequenceSceneMenu {
 
 // Immutable geometry consumed by the sequence painter. The scene never reads
 // the parser DB and never performs placement.
-struct SequenceScene {
+struct SequenceScene : MermaidScene {
+  QRectF sceneBounds() const override { return bounds; }
+  void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
+
   QRectF bounds;
   QRectF logicalBounds;
   QVector<SequenceLayoutBox> boxes;

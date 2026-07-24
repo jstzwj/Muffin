@@ -309,4 +309,8 @@ QImage renderClassSceneToImage(const ClassScene& scene, qreal dpr, qreal padding
   return image;
 }
 
+void ClassScene::paint(QPainter& painter, const MermaidPaintOptions& options) const {
+  paintClassScene(*this, painter, ClassPaintMode::Color, options);
+}
+
 }  // namespace muffin::mermaid::classdiagram

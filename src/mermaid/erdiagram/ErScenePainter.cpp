@@ -357,3 +357,8 @@ QImage muffin::mermaid::er::renderErSceneToImage(const ErScene& scene,
   image.setDevicePixelRatio(dpr);
   return image;
 }
+
+void muffin::mermaid::er::ErScene::paint(QPainter& painter,
+                                         const MermaidPaintOptions& options) const {
+  paintErScene(*this, painter, options);
+}
