@@ -3,7 +3,7 @@
 The flowchart execution contract and milestone history are maintained in
 [`mermaid-flowchart-remaining-plan.md`](mermaid-flowchart-remaining-plan.md).
 
-## Current status (2026-07-23)
+## Current status (2026-07-24)
 
 Muffin renders four Mermaid families through a native C++20/Qt pipeline:
 
@@ -15,8 +15,45 @@ Muffin renders four Mermaid families through a native C++20/Qt pipeline:
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 165/165 tests, including 47 `MuffinMermaid*` tests and the end-to-end
+currently 168/168 tests, including 50 `MuffinMermaid*` tests and the end-to-end
 `MuffinRenderMermaidBlockTest`.
+
+All four native families now share `MermaidRenderMetadata` for the diagram
+title, accessible title/description, role description, title styling, and
+content-canvas geometry. Frontmatter titles are applied before family parsing,
+so a sequence diagram's native `title` statement retains Mermaid's override
+precedence. The common title painter is used by the editor, print/PDF block
+path, PNG export, and SVG export; title growth is included in scaling,
+dirty-viewport culling, and flowchart link hit testing. HTML export now embeds
+the native SVG fragment instead of a raster `<img>`. Its root carries
+Mermaid-compatible `role`, `aria-roledescription`, `aria-labelledby`, and
+`aria-describedby` attributes plus linked `<title>` and `<desc>` elements.
+
+`MermaidSvgExporter` sends each immutable scene through its production painter
+and Qt's SVG generator, then normalizes the root contract. Output is directly
+embeddable XML with a stable ID, family class, viewBox, `useMaxWidth` sizing,
+accessibility nodes, and sanitized Flowchart/forced-Sequence link overlays.
+`deterministicIds` and `deterministicIDSeed` match the Mermaid 11.16 ID counter
+contract. HTML uses per-document instance indices to avoid duplicate IDs, and
+the rendered-diagram context menu writes an individual `.svg` atomically.
+
+The custom editor canvas does not yet expose a separate Qt `QAccessible`
+object for each diagram, so SVG ARIA completeness is not described as complete
+editor screen-reader parity.
+
+The editor interaction path now consumes the same immutable scenes. Flowchart
+nodes expose Mermaid tooltips and safe links through normal hit testing;
+opening a link retains Muffin's `Ctrl+Click` policy, while callback/call forms
+remain inert under the strict desktop security policy. Sequence `links` and
+`link` statements build participant menus. A participant click toggles its
+menu, while `sequence.forceMenus` keeps menus visible without changing the
+reserved canvas geometry; unsafe menu URLs are never handed to the OS.
+
+Animated Flowchart edges project `animate`/`animation` metadata into Mermaid's
+9/5 dash pattern and 20-second fast or 50-second slow motion. A shared 33 ms
+editor clock runs only while an animated Mermaid block is visible. One-shot
+PNG, SVG, HTML, print, and PDF paths retain a deterministic initial frame, so
+export bytes and pagination do not depend on wall-clock timing.
 
 ## Compatibility target
 
@@ -203,13 +240,14 @@ The D items are landed and retained by the current geometry and coverage gates:
   d3-shape curve state machines (`basis`, `linear`, `step`, `stepBefore`,
   `stepAfter`, `cardinal`, `monotoneX`, `monotoneY`, `bumpX`, `bumpY`,
   `catmullRom`, `natural`) driven through a `d3.path()`-compatible
-  `PathContext`; `pathForCurve` dispatches by name, mirroring mermaid's
-  `insertEdge` switch. `FlowLayoutOptions.curve` (default `basis`) selects the
-  generator; the fixture generator re-initialises mermaid per case with
-  `flowchart.curve`, and the tests read `curve` from the fixture. `monotoneX`
-  is exercised on a horizontal edge and `monotoneY`/`bumpY` on a vertical one
-  (the slope math hits `0*inf=NaN` on a degenerate collinear edge). The custom
-  `rounded` curve (`generateRoundedPath`) is not a d3 curve and is deferred.
+  `PathContext`; `pathForCurve` dispatches by name, mirroring Mermaid's
+  `insertEdge` switch. Mermaid's separate `generateRoundedPath` is also ported:
+  it uses a fixed 5px radius, clamps each cut to half of its adjacent segment,
+  preserves repeated/collinear/reversing points, emits quadratic `Q` corners,
+  and applies the same filled-arrow endpoint offset. `FlowLayoutOptions.curve`
+  (default `basis`) selects the global generator while edge metadata can
+  override it. Upstream geometry cases cover both `flowchart.curve: rounded`
+  with real corners and `@{ curve: rounded }` beside an unchanged basis edge.
 - **`labelpos` l/r + `labeloffset`.** Already faithful in the dagre port
   (`makeSpaceForEdgeLabels`, `fixupEdgeLabelCoords`, BK `sep()`, dummy
   propagation). mermaid hardcodes `labelpos:"c"` + `labeloffset:10` for all
@@ -307,7 +345,8 @@ the committed fixture and therefore require neither Node nor Chromium.
 fixed-theme flowcharts with upstream `dagre-wrapper` and records node bounds,
 relative centers, and edge paths in
 `tests/fixtures/mermaid/flowchart-geometry.json`. The native test currently
-compares node/cluster geometry and every cubic path command and coordinate.
+compares node/cluster geometry and every edge path command and coordinate,
+including quadratic rounded corners.
 For all 13 legacy shapes the same fixture embeds isolated upstream PNG alpha
 masks, allowing a pixel-level geometry comparison without mixing in theme or
 font antialiasing. These masks are not described as theme pixel goldens.
@@ -325,6 +364,73 @@ visible with a marked source range; clicking the diagnostic panel moves the
 caret to that range. Detector, preprocessing, resource, security, and native
 render failures use the same diagnostic envelope even when no source span is
 available.
+
+## Configuration-effect matrix
+
+`scripts/generate_mermaid_config_effect_matrix.mjs` reads Mermaid 11.16.0's
+`BaseDiagramConfig`, `FlowchartDiagramConfig`, `SequenceDiagramConfig`,
+`ClassDiagramConfig`, and `StateDiagramConfig` declarations and writes the
+committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
+generator fails if an upstream family field is missing from the reviewed
+policy or the policy contains a stale field. The current matrix contains 102
+rows: 87 family-interface fields and 15 shared root/theme/security fields.
+
+Each row records both upstream and native effects across these direct stages:
+
+| Stage | Observable contract |
+| --- | --- |
+| `parsed` | preprocessing retains the requested key/value |
+| `layout` | semantic geometry or routing changes |
+| `text` | label content, wrapping, font, or alignment changes |
+| `paint` | color, stroke, marker, or other pixels change |
+| `viewport` | natural canvas/viewBox sizing changes |
+| `interaction` | hit geometry, links, menus, or animation state changes |
+| `export` | raster/SVG serialization or exported sizing changes |
+
+The reviewed statuses are deliberately not a yes/no support flag:
+
+| Status | Rows | Meaning |
+| --- | ---: | --- |
+| `parity` | 40 | Audited upstream and native stages agree |
+| `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
+| `upstream-inert` | 8 | Mermaid retains the option but 11.16.0 does not consume it |
+| `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
+| `unsupported` | 18 | Upstream effect exists but no native consumer exists yet |
+| `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
+| `api-only` | 3 | Function-valued hooks cannot be expressed by Markdown JSON/YAML config |
+| `security-fixed` | 1 | Muffin intentionally keeps its strict desktop security policy |
+
+`MuffinMermaidConfigEffectMatrixTest` validates the generated fixture digest,
+schema completeness, status invariants, all seven dimensions, and production
+probes. The first audit also closed concrete gaps: Flowchart `diagramPadding`
+now reaches editor/PNG canvas geometry, State `nodeSpacing`/`rankSpacing` reach
+Dagre, Sequence honors root `%%{wrap}%%` and `showSequenceNumbers`, and
+unsupported root `layout` or family `defaultRenderer` engines return
+`configuration/unsupported-layout-engine` instead of silently rendering with
+Dagre.
+
+Regenerate the immutable matrix only when reviewing a Mermaid baseline or its
+policy:
+
+```powershell
+node scripts/generate_mermaid_config_effect_matrix.mjs `
+  path\to\mermaid `
+  tests\fixtures\mermaid\config-effect-matrix.json
+```
+
+`flowchart.curve` now has full matrix parity, including the custom `rounded`
+variant through config, per-edge metadata, scene paint, interaction geometry,
+and PNG export. The interaction/animation milestone is also complete: safe
+Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
+Sequence participant menus, and `sequence.forceMenus` all reach their runtime
+consumers. Native SVG export is now complete at the product boundary: all four
+families produce deterministic, renderable fragments; HTML embeds them; and a
+rendered diagram can be saved from its context menu. The matrix moved
+`deterministicIds`, `deterministicIDSeed`, and the effective family
+`useMaxWidth` rows to parity. The remaining SVG-specific work is the five
+root/family `arrowMarkerAbsolute` rows: Qt currently expands arrowheads into
+painted paths instead of serializing reusable marker URL references. Complete
+that marker contract before starting ER Diagram as the fifth native family.
 
 ## Large-scene paint contract
 

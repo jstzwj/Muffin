@@ -375,14 +375,15 @@ Muffin renders flowchart, sequence, class, and state diagrams through its native
 
 ### Flowchart
 
-This flowchart exercises nested subgraphs, cluster-crossing edges, several node shapes, edge labels, a self-loop, and a cycle.
+This flowchart exercises rounded routes, an animated edge, a safe link with a tooltip, nested subgraphs, cluster-crossing edges, several node shapes, edge labels, a self-loop, and a cycle.
 
-> The native Mermaid renderer renders this fence as a live diagram (parse → Dagre layout → Qt paint, no JS/browser runtime). The cached render is async; editing the fence shows the source. PDF/print and HTML export include the diagram too.
+> The native Mermaid renderer renders this fence as a live diagram (parse → Dagre layout → Qt paint, no JS/browser runtime). The cached render is async; editing the fence shows the source. PDF/print includes the diagram, HTML embeds native SVG, and the rendered diagram's context menu can save a standalone SVG.
 
 ```mermaid
+%%{init: {"flowchart": {"curve": "rounded"}}}%%
 flowchart TB
     subgraph Client["Client Tier"]
-        A([Browser]) --> B[Web App]
+        A([Browser]) browserEdge@--> B[Web App]
         B --> C{Cache hit?}
         C -- yes --> D[(Cache)]
     end
@@ -401,19 +402,23 @@ flowchart TB
     B --> B
     I --> H
     G --> I
+    browserEdge@{ animate: true, animation: fast }
+    click A href "https://www.qt.io" "Open the Qt website" _blank
 ```
 
 ### Sequence Diagram
 
-This sequence diagram combines participants, automatic numbering, activation, notes, and alternative branches.
+This sequence diagram combines participants, an always-visible link menu, automatic numbering, activation, notes, and alternative branches.
 
 ```mermaid
+%%{init: {"sequence": {"forceMenus": true}}}%%
 sequenceDiagram
     autonumber
     actor User
     participant UI as Muffin Editor
     participant Cache as Mermaid Cache
     participant Painter as Qt Painter
+    links UI: {"Qt":"https://www.qt.io","Mermaid":"https://mermaid.js.org"}
 
     User->>UI: Open a Markdown document
     UI->>Cache: Request diagram scene

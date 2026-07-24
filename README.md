@@ -63,7 +63,7 @@ Muffin is the only fully native, fully open-source WYSIWYG editor in this group 
 - **Editable tables** — Add, resize, align, and delete rows and columns inline. Insert tables via a configurable dialog.
 - **Editable code blocks** — Inline editing with syntax highlighting for 20+ languages via tree-sitter. Set the language from an autocomplete dropdown. Code Tools add line-by-line indent/dedent and a copy-block-content action.
 - **Editable math blocks** — Write LaTeX expressions rendered live by a full KaTeX-compatible engine written in C++, with a dual-pane edit/preview layout. Supports user-defined macros, braket notation, commutative diagrams, and a one-click "Refresh All" to re-render every formula.
-- **Native Mermaid diagrams** — Render flowcharts, sequence diagrams, class diagrams, and state diagrams live from ```` ```mermaid ```` fences through a pure C++/Qt engine, with no JavaScript or browser runtime dependency. Invalid source stays editable with exact line/column diagnostics, an in-source error marker, and click-to-jump navigation. Large scenes cull work outside the dirty viewport while print and export keep full-scene output.
+- **Native Mermaid diagrams** — Render flowcharts, sequence diagrams, class diagrams, and state diagrams live from ```` ```mermaid ```` fences through a pure C++/Qt engine, with no JavaScript or browser runtime dependency. Invalid source stays editable with exact line/column diagnostics, an in-source error marker, and click-to-jump navigation. Shared title/accessibility metadata, rounded flow routes, safe links and tooltips, live animated edges, Sequence link menus, deterministic native SVG/HTML export, and a generated 102-row configuration-effect matrix keep editor and export behavior explicit.
 - **Editable HTML blocks** — Edit raw HTML blocks inline with Lexbor-based parsing and Yoga-based flexbox layout, themed to match the active document.
 - **Footnotes & link definitions** — Full support for footnote (`[^id]: text`) and link reference definitions with rendering, editing, and insertion commands.
 - **Front matter** — Full YAML front matter support.
@@ -216,6 +216,9 @@ Muffin already covers nearly all of core and extended Markdown — headings, par
 
 - [ ] Polish the rendered editor surface — selection, cursor, IME, and local refresh edge cases.
 - [x] Add native Mermaid flowchart, sequence, class, and state diagrams.
+- [x] Add safe Mermaid links/tooltips, live Flowchart edge animation, and Sequence participant menus.
+- [x] Add deterministic native Mermaid SVG export, including inline HTML output and single-diagram context-menu saving.
+- [ ] Finish absolute SVG marker URL parity, then add ER diagrams.
 - [ ] Continue extending GFM coverage.
 - [ ] Harden performance — structured 1–100 MB parser phases scale approximately linearly; AST node bodies are now 96 B smaller each and the 100 MiB roundtrip uses about 834 MiB less resident memory. Next, reduce cmark's parse-tree peak and very-large-document layout cost.
 - [ ] Accessibility — keyboard navigation improvements and screen reader support.

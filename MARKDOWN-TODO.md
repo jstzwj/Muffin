@@ -73,11 +73,30 @@
 源码中标记，点击诊断面板可直接把光标定位到对应位置。四类 scene painter 均支持
 dirty viewport culling；屏幕路径只执行可见 primitive，打印/PDF 保持全量绘制。
 
-**证据：** `src/mermaid/`、`src/render/BlockLayoutBuilder.cpp`、
-`tests/render/RenderMermaidBlockTest.cpp`，以及 `tests/mermaid/` 下的 parser、layout、
-scene、structural、pixel、coverage 和 differential fuzz 门禁。
+**配置对齐（2026-07-23 至 2026-07-24）：** 已建立由 Mermaid 11.16.0 类型定义生成的 102 行
+配置生效矩阵，分别标记解析、布局、文字、绘制、视口、交互和导出效果，并区分
+parity、partial、upstream-inert、deferred、unsupported、legacy-only、API-only 与
+固定安全策略。Flowchart `diagramPadding`、State `nodeSpacing`/`rankSpacing`、Sequence
+根级 `%%{wrap}%%` 与 `showSequenceNumbers` 已补齐；ELK 等不支持的布局配置会返回
+结构化错误，不再静默回退到 Dagre。Flowchart `curve: rounded` 现已按 Mermaid 的固定
+5px 半径算法补齐，支持全局配置和单边 `@{ curve: rounded }`，并覆盖短线段夹断、退化点、
+箭头偏移、场景绘制与 PNG 导出。交互/动画阶段也已完成：Flowchart 节点支持提示和
+受控链接，fast/slow 动画边只在可见时驱动；Sequence `links`/`link` 参与者菜单支持点击
+切换与 `forceMenus` 常显。回调型链接继续按严格安全策略禁用，PNG、打印与 PDF 使用
+确定性首帧。原生 SVG 阶段也已完成：四类 scene 复用生产 painter 生成可渲染的矢量片段，
+统一写入 viewBox、`useMaxWidth`、稳定/确定性 ID、`<title>`/`<desc>` 与 ARIA 属性；Flowchart
+和强制显示的 Sequence 菜单链接经过安全过滤后写入交互覆盖层。HTML 导出改为直接内联 SVG，
+已渲染图表可通过右键菜单原子保存为独立 `.svg`。矩阵现为 40 项 parity、5 项 deferred；
+剩余项均为根级及四个 family 的 `arrowMarkerAbsolute`，因为 Qt 当前会把箭头展开为路径，尚未
+序列化 marker URL。下一步先补齐该 marker 合同，再将 ER Diagram 作为第五类原生图。
 
-**验证：** Conan Release 全量构建与 165/165 项测试通过，`dist` 目标已刷新。
+**证据：** `src/mermaid/`、`src/render/BlockLayoutBuilder.cpp`、
+`tests/render/RenderMermaidBlockTest.cpp`、`tests/mermaid/MermaidConfigEffectMatrixTest.cpp`、
+`tests/mermaid/MermaidSvgExportTest.cpp`、`tests/projection/MarkdownHtmlSerializerTest.cpp`，
+以及 `tests/mermaid/` 下的 parser、layout、scene、structural、pixel、coverage 和
+differential fuzz 门禁。
+
+**验证：** Conan Release 全量构建与 168/168 项测试通过，`dist` 目标已刷新。
 
 ---
 
