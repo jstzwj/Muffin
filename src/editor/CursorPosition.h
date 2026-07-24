@@ -45,6 +45,13 @@ struct HitTestResult {
   DefinitionField definitionField = DefinitionField::None;
   QString linkHref;
   QString imageSrc;
+  QString toolTip;
+  // True only when the hit belongs to a Mermaid code fence whose immutable
+  // scene is ready and currently displayed instead of source/error/loading UI.
+  bool mermaidRendered = false;
+  // Non-empty when a Sequence Diagram participant click should toggle its
+  // inline links menu. Menu item hits carry linkHref instead.
+  QString mermaidMenuActorId;
   // True when the click landed on a task-list item's checkbox affordance (the
   // marker gutter of a task item). Consumed by the view to toggle the item
   // instead of placing the caret.

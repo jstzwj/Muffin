@@ -122,6 +122,10 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   focusAnimator_->repaintBlock = [this](NodeId id) { repaintFocusBlock(id); };
   keyframeAnimator_ = new KeyframeAnimator(this);
   keyframeAnimator_->repaintAnimated = [this]() { repaintAnimatedBlocks(); };
+  mermaidAnimationTimer_ = new QTimer(this);
+  mermaidAnimationTimer_->setInterval(33);
+  QObject::connect(mermaidAnimationTimer_, &QTimer::timeout, this,
+                   [this] { repaintAnimatedMermaidBlocks(); });
   // Idle-gated spinner driver: runs only while loading_ (set by setLoading), advancing the
   // bright wave around the dot ring and repainting. Costs nothing on a loaded document.
   loadingTimer_ = new QTimer(this);
@@ -199,6 +203,8 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
 }
 
 void EditorView::setDocument(const MarkdownDocument& document, QString documentPath) {
+  if (document_ != &document || documentPath_ != documentPath)
+    openSequenceMenus_.clear();
   document_ = &document;
   documentPath_ = std::move(documentPath);
   blockBuiltAt_.clear();  // fresh document: every block's build stamp is stale
@@ -471,6 +477,7 @@ bool EditorView::event(QEvent* event) {
     clearHtmlHover();
     hoveredBlockId_ = NodeId();
     if (hoverAnimator_) { hoverAnimator_->setHovered(NodeId(), 0.0); }
+    viewport()->setToolTip(QString());
   }
   if (event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride) {
     auto* keyEvent = static_cast<QKeyEvent*>(event);
@@ -580,6 +587,24 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
     }
     if (event->modifiers().testFlag(Qt::ControlModifier) && hit.isValid() && !hit.imageSrc.isEmpty()) {
       QDesktopServices::openUrl(resolvedUrlForDocumentResource(hit.imageSrc, documentPath_));
+      event->accept();
+      return;
+    }
+    if (hit.isValid() && !hit.mermaidMenuActorId.isEmpty()) {
+      const NodeId hostId = layout_
+          ? layout_->topLevelBlockIdFor(hit.blockId) : hit.blockId;
+      QSet<QString>& openMenus = openSequenceMenus_[hostId];
+      if (openMenus.contains(hit.mermaidMenuActorId))
+        openMenus.remove(hit.mermaidMenuActorId);
+      else
+        openMenus.insert(hit.mermaidMenuActorId);
+      if (openMenus.isEmpty()) openSequenceMenus_.remove(hostId);
+      if (layout_) {
+        if (const BlockLayout* block = layout_->blockIfPromoted(hostId)) {
+          viewport()->update(
+              block->rect().translated(0, -scrollY()).toAlignedRect());
+        }
+      }
       event->accept();
       return;
     }
@@ -1168,6 +1193,38 @@ void EditorView::repaintAnimatedBlocks() {
   if (!dirty.isNull()) { viewport()->update(dirty.translated(0, -scrollY()).adjusted(-24, -24, 24, 24).toAlignedRect()); }
 }
 
+void EditorView::repaintAnimatedMermaidBlocks() {
+  PerfTimer perf("view.repaintMermaidAnim");
+  if (!layout_ || !mermaidAnimationTimer_ ||
+      !mermaidAnimationTimer_->isActive()) {
+    return;
+  }
+  const QRectF visible = documentViewportRect();
+  const QVector<const BlockLayout*> blocks =
+      layout_->visibleBlocks(visible.adjusted(0, -40, 0, 40), theme_);
+  QRectF dirty;
+  for (const BlockLayout* block : blocks) {
+    if (!block || !block->hasAnimatedMermaid()) continue;
+    dirty = dirty.isNull() ? block->rect() : dirty.united(block->rect());
+  }
+  if (!dirty.isNull()) {
+    viewport()->update(
+        dirty.translated(0, -scrollY()).adjusted(-2, -2, 2, 2).toAlignedRect());
+  }
+}
+
+void EditorView::updateMermaidAnimationDriver(bool hasVisibleAnimation) {
+  if (!mermaidAnimationTimer_) return;
+  if (hasVisibleAnimation) {
+    if (!mermaidAnimationClock_.isValid()) mermaidAnimationClock_.start();
+    if (!mermaidAnimationTimer_->isActive()) mermaidAnimationTimer_->start();
+  } else if (mermaidAnimationTimer_->isActive()) {
+    // Keep the elapsed clock so scrolling away and back matches CSS animation
+    // time; only the repaint wakeups are idle-gated.
+    mermaidAnimationTimer_->stop();
+  }
+}
+
 void EditorView::updateDragSelection(QPointF viewportPos) {
   PerfTimer perf("view.dragSel");
   if (!dragAnchorHit_.isValid()) {
@@ -1191,13 +1248,20 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
 
 void EditorView::updateMouseCursor(QPointF viewportPos) {
   if (htmlHoverButtonViewportRect().contains(viewportPos)) {
+    viewport()->setToolTip(QString());
     viewport()->setCursor(Qt::PointingHandCursor);
     return;
   }
   const HitTestResult hit = hitTest(viewportPos);
+  const QString toolTip = hit.toolTip.isEmpty()
+      ? QString()
+      : Qt::convertFromPlainText(hit.toolTip, Qt::WhiteSpaceNormal);
+  if (viewport()->toolTip() != toolTip) viewport()->setToolTip(toolTip);
   if (hit.isValid() && !hit.linkHref.isEmpty()) {
     viewport()->setCursor(Qt::PointingHandCursor);
   } else if (hit.isValid() && !hit.imageSrc.isEmpty()) {
+    viewport()->setCursor(Qt::PointingHandCursor);
+  } else if (hit.isValid() && !hit.mermaidMenuActorId.isEmpty()) {
     viewport()->setCursor(Qt::PointingHandCursor);
   } else if (hit.isValid() &&
       (hit.zone == HitTestResult::Zone::Text || hit.zone == HitTestResult::Zone::Code || hit.zone == HitTestResult::Zone::Math ||

@@ -7,10 +7,12 @@
 #include "theme/RenderTheme.h"
 
 #include <QAbstractScrollArea>
+#include <QElapsedTimer>
 #include <QPoint>
 #include <QPointer>
 #include <QRectF>
 #include <QHash>
+#include <QSet>
 #include <QTextLayout>
 
 #include <memory>
@@ -231,6 +233,8 @@ private:
   void repaintFocusBlock(NodeId blockId);
   qreal focusTransitionMs(const QString& host) const;
   void repaintAnimatedBlocks();
+  void repaintAnimatedMermaidBlocks();
+  void updateMermaidAnimationDriver(bool hasVisibleAnimation);
   void clearHtmlHover();
   HtmlBlockHoverController::Inputs htmlHoverInputs() const;
   void applySelectionRange(SelectionRange selection);
@@ -297,6 +301,9 @@ private:
   class FocusAnimator* focusAnimator_ = nullptr;
   NodeId focusedBlockId_;  // top-level block holding the caret (for CSS :focus)
   class KeyframeAnimator* keyframeAnimator_ = nullptr;
+  QTimer* mermaidAnimationTimer_ = nullptr;
+  QElapsedTimer mermaidAnimationClock_;
+  QHash<NodeId, QSet<QString>> openSequenceMenus_;
   // True while a ScopedViewportPin (or restoreViewportAnchor) is reconciling the scrollbar, so the
   // implicit setRange -> clamp -> valueChanged -> scrollContentsBy -> ensureVisibleBuilt cascade
   // cannot re-enter layout and re-promote mid-transaction.

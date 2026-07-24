@@ -205,7 +205,24 @@ HitTestResult EditorView::hitTest(QPointF viewportPos) const {
   if (!layout_) {
     return {};
   }
-  HitTestResult hit = layout_->hitTest(QPointF(viewportPos.x(), viewportPos.y() + scrollY()), theme_);
+  const QPointF documentPos(viewportPos.x(), viewportPos.y() + scrollY());
+  HitTestResult hit = layout_->hitTest(documentPos, theme_);
+  if (hit.isValid()) {
+    const NodeId hostId = layout_->topLevelBlockIdFor(hit.blockId);
+    const auto openIt = openSequenceMenus_.constFind(hostId);
+    if (openIt != openSequenceMenus_.cend() && !openIt->isEmpty()) {
+      if (const BlockLayout* block = layout_->blockIfPromoted(hostId)) {
+        const HitTestResult interactive = block->hitTest(
+            documentPos, theme_, codeFenceScroll_, &openIt.value());
+        if (interactive.isValid() &&
+            (!interactive.linkHref.isEmpty() ||
+             !interactive.toolTip.isEmpty() ||
+             !interactive.mermaidMenuActorId.isEmpty())) {
+          hit = interactive;
+        }
+      }
+    }
+  }
   // The virtual trailing paragraph sits after the last block's content, so as a
   // selection endpoint it is the END of that block — not offset 0. Resolve it
   // here so drag/shift-click selection from the document end selects back

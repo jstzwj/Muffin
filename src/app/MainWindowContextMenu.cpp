@@ -3,14 +3,20 @@
 #include "document/MarkdownDocument.h"
 #include "editor/CursorPosition.h"
 #include "editor/EditorView.h"
+#include "mermaid/editor/MermaidRenderCache.h"
 #include "spellcheck/SpellChecker.h"
 #include "unicode/WordBoundary.h"
 
 #include <QAction>
 #include <QCoreApplication>
+#include <QDir>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QMenu>
+#include <QMessageBox>
 #include <QPoint>
+#include <QSaveFile>
+#include <QStatusBar>
 #include <QString>
 #include <QStringList>
 
@@ -84,6 +90,12 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
   }
 
   // ---- [B] Zone-specific head (link / image / table) -------------------------
+  if (hit.mermaidRendered) {
+    QAction* exportSvg = menu.addAction(tr("Export Mermaid as SVG..."));
+    connect(exportSvg, &QAction::triggered, this,
+            [this, blockId = hit.blockId] { exportMermaidDiagram(blockId); });
+    menu.addSeparator();
+  }
   if (!hit.linkHref.isEmpty()) {
     addCommand(QStringLiteral("link.open"));
     addCommand(QStringLiteral("link.copy_address"));
@@ -184,6 +196,46 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
   addCommand(QStringLiteral("edit.replace"));
 
   menu.exec(globalPos);
+}
+
+void muffin::MainWindow::exportMermaidDiagram(NodeId blockId) {
+  const MarkdownNode* node = session_.document().node(blockId);
+  if (!node || node->type() != BlockType::CodeFence ||
+      node->codeLanguage() != QLatin1String("mermaid")) {
+    return;
+  }
+
+  const auto rendered =
+      mermaid::editor::MermaidRenderCache::renderMermaidSourceToSvg(
+          node->literal());
+  if (rendered.svg.isEmpty()) return;
+
+  const QFileInfo documentInfo(session_.filePath());
+  const QString baseName = documentInfo.completeBaseName().isEmpty()
+      ? QStringLiteral("diagram")
+      : documentInfo.completeBaseName() + QStringLiteral("-diagram");
+  const QString directory = session_.filePath().isEmpty()
+      ? defaultSaveDirectory()
+      : documentInfo.absolutePath();
+  const QString initialPath = directory.isEmpty()
+      ? baseName + QStringLiteral(".svg")
+      : QDir(directory).filePath(baseName + QStringLiteral(".svg"));
+  QString path = QFileDialog::getSaveFileName(
+      this, tr("Export As"), initialPath, QStringLiteral("SVG (*.svg)"));
+  if (path.isEmpty()) return;
+  if (QFileInfo(path).suffix().isEmpty()) path += QStringLiteral(".svg");
+
+  QSaveFile file(path);
+  const bool opened = file.open(QIODevice::WriteOnly);
+  const bool written = opened && file.write(rendered.svg) == rendered.svg.size();
+  const bool committed = written && file.commit();
+  if (!committed) {
+    QMessageBox::warning(this, tr("Export Failed"), file.errorString());
+    return;
+  }
+  statusBar()->showMessage(
+      tr("Exported to %1").arg(QDir::toNativeSeparators(path)),
+      5000);
 }
 
 // Sidebar file-tree right-click menu. Built from ad-hoc actions (no command

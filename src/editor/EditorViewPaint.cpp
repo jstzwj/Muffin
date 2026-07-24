@@ -22,6 +22,8 @@
 #include <QSet>
 #include <QTextLayout>
 
+#include <algorithm>
+
 namespace muffin {
 
 // Pull the stateless geometry helpers (blockComesBefore, blocksBetween, selectableLength, …)
@@ -171,7 +173,23 @@ void EditorView::paintEvent(QPaintEvent* event) {
     keyframeAnimator_->setVisibleHosts(visibleHosts);
   }
 
+  const QVector<const BlockLayout*> animationBlocks =
+      layout_->visibleBlocks(visible.adjusted(0, -80, 0, 80), theme_);
+  const bool hasVisibleMermaidAnimation = std::any_of(
+      animationBlocks.cbegin(), animationBlocks.cend(),
+      [](const BlockLayout* block) {
+        return block && block->hasAnimatedMermaid();
+      });
+  updateMermaidAnimationDriver(hasVisibleMermaidAnimation);
+  const qreal mermaidAnimationTime =
+      hasVisibleMermaidAnimation && mermaidAnimationClock_.isValid()
+          ? mermaidAnimationClock_.elapsed() / 1000.0
+          : -1.0;
+
   for (const BlockLayout* block : blocks) {
+    const auto openMenuIt = openSequenceMenus_.constFind(block->nodeId());
+    const QSet<QString>* openMenus = openMenuIt == openSequenceMenus_.cend()
+        ? nullptr : &openMenuIt.value();
     const QString host = hostKeyForBlock(*block);
     const AnimatedSample* anim = (keyframeAnimator_ && !host.isEmpty()) ? keyframeAnimator_->sampleFor(host) : nullptr;
     const bool hoverActive = hoverAnimator_ && block->nodeId() == hoverAnimator_->animatedBlockId() && hoverAnimator_->phase() > 0.0;
@@ -234,8 +252,11 @@ void EditorView::paintEvent(QPaintEvent* event) {
         painter.translate(-c);
       }
     }
-    const BlockLayout::BlockPaintState blockState{hoverActive, hoverAnimator_ ? hoverAnimator_->phase() : 0.0,
-                                                  focusActive, focusAnimator_ ? focusAnimator_->phase() : 0.0};
+    const BlockLayout::BlockPaintState blockState{
+        hoverActive, hoverAnimator_ ? hoverAnimator_->phase() : 0.0,
+        focusActive, focusAnimator_ ? focusAnimator_->phase() : 0.0,
+        block->hasAnimatedMermaid() ? mermaidAnimationTime : -1.0,
+        openMenus};
     if (focusMode_ && activeTopLevel.isValid() && block->nodeId() != activeTopLevel) {
       painter.save();
       painter.setOpacity(0.35);
