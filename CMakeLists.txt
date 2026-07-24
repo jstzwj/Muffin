@@ -468,6 +468,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/MermaidScene.h
   src/mermaid/editor/MermaidSvgExporter.cpp
   src/mermaid/editor/MermaidSvgExporter.h
+  src/mermaid/editor/MermaidRenderSupport.cpp
+  src/mermaid/editor/MermaidRenderSupport.h
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
