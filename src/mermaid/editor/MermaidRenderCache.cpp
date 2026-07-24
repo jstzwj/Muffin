@@ -646,114 +646,14 @@ QString MermaidRenderCache::renderMermaidSourceToSvgDataUrl(
 
 namespace {
 
-// erDiagram behind the Diagram contract (step 3 incremental migration). The
-// render() body is the former renderSource() er branch, verbatim; the central
-// catch in renderSource still handles its parse errors.
-struct ErDiagramImpl : Diagram {
-  QStringList ids() const override { return {QStringLiteral("er")}; }
-
+// stateDiagram behind the Diagram contract (step 3). Body is the former
+// renderSource() state branch, verbatim.
+struct StateDiagramImpl : Diagram {
+  QStringList ids() const override {
+    return {QStringLiteral("state"), QStringLiteral("stateDiagram")};
+  }
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
                             const QString& theme) const override {
-    const er::ErDiagram diagram = er::ErDiagram::parse(pre.code);
-    const QString configuredTheme = themeFromConfig(pre.config);
-    const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
-        themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme),
-        themeOverrides(pre.config));
-    const er::ErLayoutInput input = er::buildErLayoutInput(diagram.data());
-    const QString fontFamily = firstFontFamily(themeVars.fontFamily);
-    const qreal fontSize = pixelValue(themeVars.fontSize, 16.0);
-    const er::ErLayoutMeasurements measurements =
-        er::measureErLayoutInput(input, fontFamily, fontSize);
-    const er::ErPlacementResult placement =
-        er::layoutErDiagramDagre(input, measurements);
-    er::ErSceneStyle style;
-    style.entityFill = themeVars.mainBkg;
-    style.entityStroke = themeVars.border1;
-    style.entityTitle1 = themeVars.primaryTextColor;
-    style.attributeColor = themeVars.primaryTextColor;
-    style.relationshipColor = themeVars.lineColor;
-    style.relationshipLabelColor = themeVars.textColor;
-    style.labelBackground = themeVars.mainBkg;
-    style.strokeWidth = themeVars.strokeWidth;
-    style.fontFamily = fontFamily;
-    style.fontSize = fontSize;
-    style.lineHeight = fontSize * 1.5;
-    const QJsonObject erConfig = pre.config.value(QStringLiteral("er")).toObject();
-    MermaidRenderMetadata metadata = renderMetadata(
-        pre, type, diagram.data().title, diagram.data().accTitle,
-        diagram.data().accDescription, style.entityTitle1, style.fontFamily,
-        18.0, configNumber(erConfig, QStringLiteral("titleTopMargin"), 25.0), 8.0);
-    er::ErScene scene = er::buildErScene(input, placement, std::move(style));
-    MermaidRenderEntry entry;
-    entry.status = MermaidRenderStatus::Ready;
-    entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
-    entry.erScene = std::make_shared<const er::ErScene>(std::move(scene));
-    finalizeReadyEntry(entry, std::move(metadata));
-    return entry;
-  }
-};
-
-// Registry of natively-rendered diagrams, keyed by detected type id. As each
-// family migrates onto the Diagram contract it is added to kAll and its
-// renderSource() branch removed, until the if/else dispatch is gone.
-const Diagram* findMermaidDiagram(const QString& type) {
-  static const ErDiagramImpl erImpl;
-  static const QVector<const Diagram*> kAll = {&erImpl};
-  static const QHash<QString, const Diagram*> kByType = [] {
-    QHash<QString, const Diagram*> registry;
-    for (const Diagram* diagram : kAll)
-      for (const QString& id : diagram->ids()) registry.insert(id, diagram);
-    return registry;
-  }();
-  return kByType.value(type, nullptr);
-}
-
-}  // namespace
-
-MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const QString& theme) {
-  MermaidPreprocessResult pre;
-  try {
-    pre = preprocessDiagram(source);
-  } catch (const std::exception& error) {
-    return errorEntry(preprocessingDiagnostic(
-        source, QString::fromUtf8(error.what())));
-  }
-
-  QString type;
-  try {
-    type = detectDiagramType(pre.code, pre.config);
-  } catch (const UnknownDiagramError&) {
-    MermaidDiagnostic diagnostic;
-    diagnostic.stage = QStringLiteral("detector");
-    diagnostic.code = QStringLiteral("missing-diagram-header");
-    diagnostic.message = QStringLiteral(
-        "No supported Mermaid diagram header was found.");
-    diagnostic.expected = {
-        QStringLiteral("flowchart"), QStringLiteral("sequenceDiagram"),
-        QStringLiteral("classDiagram"), QStringLiteral("stateDiagram-v2")};
-    diagnostic.span = mappedSourceSpan(
-        source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
-    return errorEntry(std::move(diagnostic));
-  }
-  if (const auto unsupported = unsupportedLayoutConfiguration(pre, type))
-    return *unsupported;
-  if (type != QLatin1String("flowchart") && type != QLatin1String("flowchart-v2") &&
-      type != QLatin1String("sequence") && type != QLatin1String("class") &&
-      type != QLatin1String("classDiagram") && type != QLatin1String("state") &&
-      type != QLatin1String("stateDiagram") && type != QLatin1String("er")) {
-    MermaidDiagnostic diagnostic;
-    diagnostic.diagramType = type;
-    diagnostic.stage = QStringLiteral("unsupported");
-    diagnostic.code = QStringLiteral("unsupported-diagram");
-    diagnostic.message = QStringLiteral(
-        "Diagram type '%1' is not natively supported.").arg(type);
-    return errorEntry(std::move(diagnostic), MermaidRenderStatus::Unsupported);
-  }
-
-  try {
-    if (const Diagram* diagram = findMermaidDiagram(type))
-      return diagram->render(pre, type, theme);
-    if (type == QLatin1String("state") || type == QLatin1String("stateDiagram")) {
       const state::StateDiagram diagram = state::StateDiagram::parse(pre.code);
       const QString configuredTheme = themeFromConfig(pre.config);
       const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
@@ -806,8 +706,17 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       entry.stateScene = std::make_shared<const state::StateScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
-    }
-    if (type == QLatin1String("class") || type == QLatin1String("classDiagram")) {
+  }
+};
+
+// classDiagram behind the Diagram contract (step 3). Body is the former
+// renderSource() class branch, verbatim.
+struct ClassDiagramImpl : Diagram {
+  QStringList ids() const override {
+    return {QStringLiteral("class"), QStringLiteral("classDiagram")};
+  }
+  MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
+                            const QString& theme) const override {
       const classdiagram::ClassDiagram diagram =
           classdiagram::ClassDiagram::parse(pre.code);
       const QString configuredTheme = themeFromConfig(pre.config);
@@ -873,8 +782,16 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       entry.classScene = std::make_shared<const classdiagram::ClassScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
-    }
-    if (type == QLatin1String("sequence")) {
+  }
+};
+
+// sequenceDiagram behind the Diagram contract (step 3). Body is the former
+// renderSource() sequence branch, verbatim.
+struct SequenceDiagramImpl : Diagram {
+  QStringList ids() const override { return {QStringLiteral("sequence")}; }
+  MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
+                            const QString& theme) const override {
+      (void)theme;  // sequence theme is resolved from config, not the requested theme
       const sequence::SequenceDiagram diagram = sequence::SequenceDiagram::parse(pre.code);
       sequence::SequenceLayoutMeasurements measurements;
       sequence::SequencePreparedLabels preparedLabels;
@@ -1045,7 +962,17 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
       entry.sequenceScene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
-    }
+  }
+};
+
+// flowchart behind the Diagram contract (step 3). Body is the former
+// renderSource() flowchart fallthrough, verbatim.
+struct FlowchartDiagramImpl : Diagram {
+  QStringList ids() const override {
+    return {QStringLiteral("flowchart"), QStringLiteral("flowchart-v2")};
+  }
+  MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
+                            const QString& theme) const override {
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(pre.code);
     const QString configuredTheme = themeFromConfig(pre.config);
     const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
@@ -1102,6 +1029,118 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     entry.scene = std::make_shared<const flowscene::FlowScene>(std::move(scene));
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;
+  }
+};
+
+// erDiagram behind the Diagram contract (step 3 incremental migration). The
+// render() body is the former renderSource() er branch, verbatim; the central
+// catch in renderSource still handles its parse errors.
+struct ErDiagramImpl : Diagram {
+  QStringList ids() const override { return {QStringLiteral("er")}; }
+
+  MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
+                            const QString& theme) const override {
+    const er::ErDiagram diagram = er::ErDiagram::parse(pre.code);
+    const QString configuredTheme = themeFromConfig(pre.config);
+    const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
+        themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme),
+        themeOverrides(pre.config));
+    const er::ErLayoutInput input = er::buildErLayoutInput(diagram.data());
+    const QString fontFamily = firstFontFamily(themeVars.fontFamily);
+    const qreal fontSize = pixelValue(themeVars.fontSize, 16.0);
+    const er::ErLayoutMeasurements measurements =
+        er::measureErLayoutInput(input, fontFamily, fontSize);
+    const er::ErPlacementResult placement =
+        er::layoutErDiagramDagre(input, measurements);
+    er::ErSceneStyle style;
+    style.entityFill = themeVars.mainBkg;
+    style.entityStroke = themeVars.border1;
+    style.entityTitle1 = themeVars.primaryTextColor;
+    style.attributeColor = themeVars.primaryTextColor;
+    style.relationshipColor = themeVars.lineColor;
+    style.relationshipLabelColor = themeVars.textColor;
+    style.labelBackground = themeVars.mainBkg;
+    style.strokeWidth = themeVars.strokeWidth;
+    style.fontFamily = fontFamily;
+    style.fontSize = fontSize;
+    style.lineHeight = fontSize * 1.5;
+    const QJsonObject erConfig = pre.config.value(QStringLiteral("er")).toObject();
+    MermaidRenderMetadata metadata = renderMetadata(
+        pre, type, diagram.data().title, diagram.data().accTitle,
+        diagram.data().accDescription, style.entityTitle1, style.fontFamily,
+        18.0, configNumber(erConfig, QStringLiteral("titleTopMargin"), 25.0), 8.0);
+    er::ErScene scene = er::buildErScene(input, placement, std::move(style));
+    MermaidRenderEntry entry;
+    entry.status = MermaidRenderStatus::Ready;
+    entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+    entry.erScene = std::make_shared<const er::ErScene>(std::move(scene));
+    finalizeReadyEntry(entry, std::move(metadata));
+    return entry;
+  }
+};
+
+// Registry of natively-rendered diagrams, keyed by detected type id. As each
+// family migrates onto the Diagram contract it is added to kAll and its
+// renderSource() branch removed, until the if/else dispatch is gone.
+const Diagram* findMermaidDiagram(const QString& type) {
+  static const StateDiagramImpl stateImpl;
+  static const ClassDiagramImpl classImpl;
+  static const SequenceDiagramImpl sequenceImpl;
+  static const FlowchartDiagramImpl flowchartImpl;
+  static const ErDiagramImpl erImpl;
+  static const QVector<const Diagram*> kAll = {
+      &stateImpl, &classImpl, &sequenceImpl, &flowchartImpl, &erImpl};
+  static const QHash<QString, const Diagram*> kByType = [] {
+    QHash<QString, const Diagram*> registry;
+    for (const Diagram* diagram : kAll)
+      for (const QString& id : diagram->ids()) registry.insert(id, diagram);
+    return registry;
+  }();
+  return kByType.value(type, nullptr);
+}
+
+}  // namespace
+
+MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const QString& theme) {
+  MermaidPreprocessResult pre;
+  try {
+    pre = preprocessDiagram(source);
+  } catch (const std::exception& error) {
+    return errorEntry(preprocessingDiagnostic(
+        source, QString::fromUtf8(error.what())));
+  }
+
+  QString type;
+  try {
+    type = detectDiagramType(pre.code, pre.config);
+  } catch (const UnknownDiagramError&) {
+    MermaidDiagnostic diagnostic;
+    diagnostic.stage = QStringLiteral("detector");
+    diagnostic.code = QStringLiteral("missing-diagram-header");
+    diagnostic.message = QStringLiteral(
+        "No supported Mermaid diagram header was found.");
+    diagnostic.expected = {
+        QStringLiteral("flowchart"), QStringLiteral("sequenceDiagram"),
+        QStringLiteral("classDiagram"), QStringLiteral("stateDiagram-v2")};
+    diagnostic.span = mappedSourceSpan(
+        source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
+    return errorEntry(std::move(diagnostic));
+  }
+  if (const auto unsupported = unsupportedLayoutConfiguration(pre, type))
+    return *unsupported;
+  const Diagram* diagram = findMermaidDiagram(type);
+  if (!diagram) {
+    MermaidDiagnostic diagnostic;
+    diagnostic.diagramType = type;
+    diagnostic.stage = QStringLiteral("unsupported");
+    diagnostic.code = QStringLiteral("unsupported-diagram");
+    diagnostic.message = QStringLiteral(
+        "Diagram type '%1' is not natively supported.").arg(type);
+    return errorEntry(std::move(diagnostic), MermaidRenderStatus::Unsupported);
+  }
+
+  try {
+    return diagram->render(pre, type, theme);
   } catch (const math::MathMlPaintError& error) {
     MermaidDiagnostic diagnostic;
     diagnostic.diagramType = type;
