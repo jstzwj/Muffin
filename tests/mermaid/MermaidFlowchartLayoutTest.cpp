@@ -169,6 +169,7 @@ void requireLabelLayoutNear(const FlowLabelLayoutMetrics& native,
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
   require(argc == 2, QStringLiteral("Expected flowchart geometry fixture path"));
+  std::fprintf(stderr, "[diag] stage 1: app + argc ok\n"); std::fflush(stderr);
 
   using muffin::mermaid::flowchart::d3curve::generateRoundedPath;
   require(generateRoundedPath({}).isEmpty() &&
@@ -186,6 +187,7 @@ int main(int argc, char** argv) {
                                    QPointF(0, 0)}) ==
                   QLatin1String("M0,0L10,0L0,0"),
           QStringLiteral("Rounded path degenerate-point contract drifted"));
+  std::fprintf(stderr, "[diag] stage 2: d3curves ok\n"); std::fflush(stderr);
 
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), QStringLiteral("Could not open flowchart geometry fixture"));
@@ -200,9 +202,11 @@ int main(int argc, char** argv) {
                   QLatin1String("third_party/stix"),
           QStringLiteral("Flowchart geometry Math font contract drifted"));
   bool sawFormattedTextBlock = false;
+  std::fprintf(stderr, "[diag] stage 3: fixture loaded, entering cases\n"); std::fflush(stderr);
   for (const QJsonValue& value : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
+    std::fprintf(stderr, "[diag] case: %s\n", id.toUtf8().constData()); std::fflush(stderr);
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const Flowchart chart = Flowchart::parse(source);
     // This legacy geometry fixture intentionally uses Arial plus the host
