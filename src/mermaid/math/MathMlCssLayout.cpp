@@ -866,6 +866,26 @@ struct GlyphInkExtents {
   qreal bottom = 0.0;
 };
 
+void includeMiddleDelimiterLayoutExtents(const MathRenderNode* node,
+                                         GlyphInkExtents* extents,
+                                         bool root = true) {
+  if (!node || !extents) return;
+  if (!node->middleDelimiter.isEmpty()) {
+    const QRectF bounds = middleDelimiterLayoutBounds(
+        node->middleDelimiter, mathStyleScale(node));
+    if (!bounds.isEmpty()) {
+      extents->top = std::max(
+          extents->top, std::max<qreal>(0.0, -bounds.top()));
+      extents->bottom = std::max(
+          extents->bottom, std::max<qreal>(0.0, bounds.bottom()));
+    }
+    return;
+  }
+  if (!root && node->kind == MathRenderKind::LeftRight) return;
+  for (const auto& child : node->children)
+    includeMiddleDelimiterLayoutExtents(child.get(), extents, false);
+}
+
 GlyphInkExtents shapedTextCssExtents(const MathShapedText& shaped) {
   const qreal inkTop = std::max<qreal>(0.0, -shaped.inkBounds.top());
   const qreal inkBottom = std::max<qreal>(0.0, shaped.inkBounds.bottom());
@@ -1439,6 +1459,9 @@ std::optional<FractionMetrics> fractionMetrics(const MathRenderNode* fraction,
   const qreal styleScale = fraction->fractionSizeMultiplier;
   GlyphInkExtents numeratorInk = glyphInkExtents(numerator, 1.0);
   GlyphInkExtents denominatorInk = glyphInkExtents(denominator, 1.0);
+  // Browser fraction rows allocate the full <mo> line box, not only its ink.
+  includeMiddleDelimiterLayoutExtents(numerator, &numeratorInk);
+  includeMiddleDelimiterLayoutExtents(denominator, &denominatorInk);
   const auto includeMathMlRowBox = [cssFontSize, renderScale, styleScale, &constants](
                                         const MathRenderNode* child,
                                         GlyphInkExtents* ink,
