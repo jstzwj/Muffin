@@ -192,6 +192,20 @@ QString mathMiddleDelimiterCharacter(const QString& delimiter) {
   return mathDelimiterCharacter(delimiter);
 }
 
+QRectF middleDelimiterLayoutBounds(const QString& delimiter,
+                                   qreal fontScale) {
+  const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+  const auto glyph = font.glyph(mathMiddleDelimiterCharacter(delimiter));
+  if (!glyph || fontScale <= 0.0) return {};
+  const QRectF& ink = glyph->inkBounds;
+  // Match the baseline-relative pixel rows used by the browser's <mo> box
+  // without feeding backend-specific hinted QRawFont bounds into layout.
+  const qreal top = std::floor(ink.top() * fontScale);
+  const qreal bottom = std::round(ink.bottom() * fontScale);
+  return QRectF(ink.x() * fontScale, top, ink.width() * fontScale,
+                std::max<qreal>(0.0, bottom - top));
+}
+
 qreal arrayDelimiterWidth(const QString& delimiter, qreal targetHeight) {
   if (delimiter.isEmpty() || delimiter == QLatin1String(".")) return 0.0;
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
@@ -3267,7 +3281,8 @@ std::optional<MathCssVerticalGlyphOperation> buildVerticalGlyphOperation(
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
   const QString character = normalizeDelimiter
       ? mathDelimiterCharacter(delimiter) : delimiter;
-  if (character == QString(QChar(0x2223)) ||
+  if (character == QLatin1String("|") ||
+      character == QString(QChar(0x2223)) ||
       character == QString(QChar(0x2225))) {
     const auto base = font.glyph(character);
     if (!base || base->glyphIndex == 0) return std::nullopt;
@@ -3564,14 +3579,18 @@ std::optional<MathCssPaintOperation> buildMiddlePaintOperation(
   if (!glyph || glyph->glyphIndex == 0) return std::nullopt;
 
   const qreal fontScale = mathStyleScale(marker);
+  const QRectF layoutInk = middleDelimiterLayoutBounds(
+      marker->middleDelimiter, fontScale);
+  if (layoutInk.isEmpty()) return std::nullopt;
+  const QRectF rasterInk = font.rasterGlyphBounds(
+      glyph->glyphIndex, fontScale);
+  if (rasterInk.isEmpty()) return std::nullopt;
   const qreal allocationWidth = cssNodeWidth(marker, renderScale);
   const qreal spacing = font.pixelSize() * kMathMlMiddleSpaceEm *
                         fontScale;
   const qreal left = containingRect.left() +
       cssNodeOffset(containingNode, marker, renderScale).value_or(0.0);
-  const QRectF ink = font.rasterGlyphBounds(glyph->glyphIndex, fontScale);
-  if (ink.isEmpty()) return std::nullopt;
-  const qreal height = std::floor(ink.height() + 0.001);
+  const qreal height = std::floor(layoutInk.height() + 0.001);
   const QRectF box(left + spacing,
                    containingRect.top() +
                        (containingRect.height() - height) / 2.0,
@@ -3591,9 +3610,9 @@ std::optional<MathCssPaintOperation> buildMiddlePaintOperation(
   result.glyphRun.positions = {QPointF()};
   result.glyphRun.fontScale = fontScale;
   result.glyphRun.advance = glyph->advance * fontScale;
-  result.glyphRun.inkBounds = ink.translated(
-      box.topLeft() - ink.topLeft());
-  result.glyphRun.baselineOrigin = box.topLeft() - ink.topLeft();
+  result.glyphRun.inkBounds = rasterInk.translated(
+      box.topLeft() - rasterInk.topLeft());
+  result.glyphRun.baselineOrigin = box.topLeft() - rasterInk.topLeft();
   result.glyphRun.clip = box;
   result.glyph = buildInlineFenceGlyphOperation(character, box);
   if (result.glyph) {
@@ -3688,14 +3707,11 @@ std::optional<MathCssPaintOperation> buildLeftRightOperation(
     for (const auto& child : bodyNode->children) {
       const MathRenderNode* marker = middleDelimiterMarker(child.get());
       if (!marker) continue;
-      const QString character = mathMiddleDelimiterCharacter(
-          marker->middleDelimiter);
-      const auto glyph = OpenTypeMathFont::instance().glyph(character);
-      if (!glyph) continue;
+      const QRectF layoutBounds = middleDelimiterLayoutBounds(
+          marker->middleDelimiter, mathStyleScale(marker));
+      if (layoutBounds.isEmpty()) continue;
       middleLineHeight = std::max(
-          middleLineHeight,
-          OpenTypeMathFont::instance()
-              .rasterGlyphBounds(glyph->glyphIndex).height());
+          middleLineHeight, layoutBounds.height());
     }
     qreal cursor = result.body.left();
     for (const auto& child : bodyNode->children) {
@@ -3716,14 +3732,10 @@ std::optional<MathCssPaintOperation> buildLeftRightOperation(
         MathCssMiddleDelimiterOperation middle;
         middle.character = mathMiddleDelimiterCharacter(
             middleMarker->middleDelimiter);
-        const auto glyph = OpenTypeMathFont::instance().glyph(
-            middle.character);
-        const QRectF rasterBounds = glyph
-            ? OpenTypeMathFont::instance().rasterGlyphBounds(
-                  glyph->glyphIndex)
-            : QRectF{};
-        const qreal middleHeight = !rasterBounds.isEmpty()
-            ? rasterBounds.height() : result.container.height();
+        const QRectF layoutBounds = middleDelimiterLayoutBounds(
+            middleMarker->middleDelimiter, mathStyleScale(middleMarker));
+        const qreal middleHeight = !layoutBounds.isEmpty()
+            ? layoutBounds.height() : result.container.height();
         const qreal middleSpace =
             OpenTypeMathFont::instance().pixelSize() *
             kMathMlMiddleSpaceEm;
