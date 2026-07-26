@@ -126,12 +126,6 @@ jobs:
             libxcb-util-dev \
             uuid-dev \
             xvfb
-          # Map the Windows reference fonts to metric-compatible Liberation faces
-          # so Muffin's font-dependent measurements match the x86-Windows-captured
-          # goldens (Linux has no Arial; without this Qt falls back to a wider face).
-          echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
-          sudo apt-get install -y ttf-mscorefonts-installer || echo "mscorefonts unavailable, continuing"
-          sudo fc-cache -f
 
       - name: Install dependencies
         run: conan install . -s build_type=Release -s compiler.cppstd=${{ matrix.conan-cppstd }} -s arch=${{ matrix.conan-arch }} --build=missing
@@ -258,12 +252,6 @@ jobs:
             libxcb-util-dev \
             uuid-dev \
             xvfb
-          # Map the Windows reference fonts to metric-compatible Liberation faces
-          # so Muffin's font-dependent measurements match the x86-Windows-captured
-          # goldens (Linux has no Arial; without this Qt falls back to a wider face).
-          echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
-          sudo apt-get install -y ttf-mscorefonts-installer || echo "mscorefonts unavailable, continuing"
-          sudo fc-cache -f
 
       - name: Install dependencies
         run: conan install . -s build_type=Release -s compiler.cppstd=gnu20 -s arch=x86_64 --build=missing
