@@ -275,10 +275,14 @@ std::unique_ptr<MathLayoutNode> makeLayoutVListBottom(qreal bottom, std::vector<
 }
 
 std::unique_ptr<MathLayoutNode> makeLayoutVListFirstBaseline(std::vector<MathVListEntry> entries) {
+  std::fprintf(stderr, "[vlfb] enter n=%zu empty=%d\n", entries.size(), (int)entries.empty()); std::fflush(stderr);
   if (entries.empty() || entries.front().kern || !entries.front().child.elem) {
+    std::fprintf(stderr, "[vlfb] early-branch\n"); std::fflush(stderr);
     return makeLayoutVListFromEntries(std::move(entries), 0.0);
   }
-  return makeLayoutVListFromEntries(std::move(entries), -entries.front().child.elem->depth);
+  const qreal depth = entries.front().child.elem->depth;
+  std::fprintf(stderr, "[vlfb] pre-call depth=%g\n", depth); std::fflush(stderr);
+  return makeLayoutVListFromEntries(std::move(entries), -depth);
 }
 
 MathVListEntry makeLayoutVListElem(MathVListChild child) {
