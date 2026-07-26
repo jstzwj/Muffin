@@ -1261,14 +1261,9 @@ qreal cssNodeHeight(const MathRenderNode* node, qreal scale) {
     }
   }
   if (!node->middleDelimiter.isEmpty()) {
-    const OpenTypeMathFont& font = OpenTypeMathFont::instance();
-    const auto glyph = font.glyph(
-        mathMiddleDelimiterCharacter(node->middleDelimiter));
-    if (glyph) {
-      const QRectF ink = font.rasterGlyphBounds(
-          glyph->glyphIndex, mathStyleScale(node));
-      return std::floor(ink.height() + 0.001);
-    }
+    const QRectF bounds = middleDelimiterLayoutBounds(
+        node->middleDelimiter, mathStyleScale(node));
+    if (!bounds.isEmpty()) return bounds.height();
   }
   const MathRenderNode* semantic = primarySemanticNode(node);
   if (semantic && semantic != node) {
@@ -4066,12 +4061,6 @@ std::optional<MathCssPaintOperation> buildArrayOperation(
   const qreal intrinsicWidth = leftWidth + tableWidth + rightWidth;
   const bool wrappedByLeftRight =
       enclosingKind(containingNode, array, MathRenderKind::LeftRight);
-  const bool wrappedMiddleArray =
-      wrappedByLeftRight && middleDelimiterMarker(array);
-  const qreal middleLeading = wrappedMiddleArray
-      ? 2.0 * std::floor(OpenTypeMathFont::instance()
-                             .constants().fractionRuleThickness)
-      : 0.0;
   const bool fillsContainingRegion =
       primarySemanticNode(containingNode) == array &&
       (symbolCount(containingNode) == symbolCount(array) ||
@@ -4088,10 +4077,10 @@ std::optional<MathCssPaintOperation> buildArrayOperation(
       delimiterHeight = std::max(delimiterHeight, variant->extent);
   }
   const qreal height = fillsContainingRegion
-      ? containingRect.height() + middleLeading
+      ? containingRect.height()
       : std::max(tableHeight, std::ceil(delimiterHeight));
   const qreal top = fillsContainingRegion
-      ? containingRect.top() - middleLeading / 2.0
+      ? containingRect.top()
       : containingRect.top() + (containingRect.height() - height) / 2.0;
 
   MathCssPaintOperation operation;
