@@ -129,7 +129,8 @@ jobs:
           # Map the Windows reference fonts to metric-compatible Liberation faces
           # so Muffin's font-dependent measurements match the x86-Windows-captured
           # goldens (Linux has no Arial; without this Qt falls back to a wider face).
-          echo '<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.dtd"><fontconfig><match target="pattern"><test name="family"><string>Arial</string></test><edit name="family" mode="assign" binding="strong"><string>Liberation Sans</string></edit></match><match target="pattern"><test name="family"><string>Helvetica</string></test><edit name="family" mode="assign" binding="strong"><string>Liberation Sans</string></edit></match><match target="pattern"><test name="family"><string>Times New Roman</string></test><edit name="family" mode="assign" binding="strong"><string>Liberation Serif</string></edit></match><match target="pattern"><test name="family"><string>Courier New</string></test><edit name="family" mode="assign" binding="strong"><string>Liberation Mono</string></edit></match></fontconfig>' | sudo tee /etc/fonts/conf.d/99-arial-liberation.conf >/dev/null
+          echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+          sudo apt-get install -y ttf-mscorefonts-installer || echo "mscorefonts unavailable, continuing"
           sudo fc-cache -f
 
       - name: Install dependencies
@@ -260,7 +261,8 @@ jobs:
           # Map the Windows reference fonts to metric-compatible Liberation faces
           # so Muffin's font-dependent measurements match the x86-Windows-captured
           # goldens (Linux has no Arial; without this Qt falls back to a wider face).
-          echo '<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.dtd"><fontconfig><match target="pattern"><test name="family"><string>Arial</string></test><edit name="family" mode="assign" binding="strong"><string>Liberation Sans</string></edit></match><match target="pattern"><test name="family"><string>Helvetica</string></test><edit name="family" mode="assign" binding="strong"><string>Liberation Sans</string></edit></match><match target="pattern"><test name="family"><string>Times New Roman</string></test><edit name="family" mode="assign" binding="strong"><string>Liberation Serif</string></edit></match><match target="pattern"><test name="family"><string>Courier New</string></test><edit name="family" mode="assign" binding="strong"><string>Liberation Mono</string></edit></match></fontconfig>' | sudo tee /etc/fonts/conf.d/99-arial-liberation.conf >/dev/null
+          echo "ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true" | sudo debconf-set-selections
+          sudo apt-get install -y ttf-mscorefonts-installer || echo "mscorefonts unavailable, continuing"
           sudo fc-cache -f
 
       - name: Install dependencies
