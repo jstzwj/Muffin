@@ -1,6 +1,7 @@
 #include "math/MathLayoutTree.h"
 
 #include <QtGlobal>
+#include <cstdio>
 
 namespace muffin::math {
 namespace {
@@ -23,11 +24,14 @@ std::unique_ptr<MathLayoutNode> makeLayoutVListFromEntries(std::vector<MathVList
   if (entries.empty()) {
     return vlist;
   }
+  std::fprintf(stderr, "[vl] enter n=%zu\n", entries.size()); std::fflush(stderr);
 
   qreal minPos = depth;
   qreal maxPos = depth;
   qreal currPos = depth;
+  int vi = 0;
   for (MathVListEntry& entry : entries) {
+    std::fprintf(stderr, "[vl] i=%d kern=%d elem=%d\n", vi, (int)entry.kern, entry.child.elem ? 1 : 0); std::fflush(stderr);
     if (entry.kern) {
       currPos += entry.size;
     } else if (entry.child.elem) {
@@ -41,10 +45,13 @@ std::unique_ptr<MathLayoutNode> makeLayoutVListFromEntries(std::vector<MathVList
     }
     minPos = qMin(minPos, currPos);
     maxPos = qMax(maxPos, currPos);
+    ++vi;
   }
+  std::fprintf(stderr, "[vl] loop-done\n"); std::fflush(stderr);
 
   vlist->height = maxPos;
   vlist->depth = -minPos;
+  std::fprintf(stderr, "[vl] return\n"); std::fflush(stderr);
   return vlist;
 }
 
