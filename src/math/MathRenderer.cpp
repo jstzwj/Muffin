@@ -146,7 +146,7 @@ MathLayoutResult MathRenderer::render(const QString& tex, qreal rootFontPixelSiz
                                       const MathSettings& inputSettings,
                                       qreal maxWidth) const {
   MathFontRegistry::ensureLoaded();
-  std::fprintf(stderr, "[render] A ensureLoaded\n"); std::fflush(stderr);
+  std::fprintf(stderr, "[render] A tex=%s\n", tex.toUtf8().constData()); std::fflush(stderr);
 
   MathSettings settings = inputSettings;
   settings.displayMode = displayMode;
