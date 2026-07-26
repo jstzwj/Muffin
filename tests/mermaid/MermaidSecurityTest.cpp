@@ -23,26 +23,30 @@ const flowchart::FlowVertex* vertexById(const flowchart::FlowchartData& data, co
   return nullptr;
 }
 
-// Parse a single-statement flowchart and return the named vertex.
-const flowchart::FlowVertex* parseVertex(const QString& body, const QString& id) {
-  const flowchart::Flowchart chart = flowchart::Flowchart::parse(QStringLiteral("flowchart TB\nA[Alpha]\n") + body);
+// Parse a single-statement flowchart and return the named vertex. The parsed
+// chart is moved into `chart` so the returned pointer stays valid as long as
+// the caller keeps `chart` alive (the vertex points into chart.data()).
+const flowchart::FlowVertex* parseVertex(const QString& body, const QString& id,
+                                         flowchart::Flowchart& chart) {
+  chart = flowchart::Flowchart::parse(QStringLiteral("flowchart TB\nA[Alpha]\n") + body);
   return vertexById(chart.data(), id);
 }
 }  // namespace
 
 int main() {
+  flowchart::Flowchart chart;
   // Unsafe schemes are flagged but the raw link is preserved.
-  const flowchart::FlowVertex* js = parseVertex(QStringLiteral("click A href \"javascript:alert(1)\""), QStringLiteral("A"));
+  const flowchart::FlowVertex* js = parseVertex(QStringLiteral("click A href \"javascript:alert(1)\""), QStringLiteral("A"), chart);
   require(js != nullptr, QStringLiteral("A missing (javascript)"));
   require(js->linkUnsafe, QStringLiteral("javascript: URL should be flagged unsafe (link=%1)").arg(js->link));
   require(!js->link.isEmpty(), QStringLiteral("unsafe link must be PRESERVED for AST fidelity, not dropped"));
 
-  const flowchart::FlowVertex* data = parseVertex(QStringLiteral("click A href \"data:text/html,<b>\""), QStringLiteral("A"));
+  const flowchart::FlowVertex* data = parseVertex(QStringLiteral("click A href \"data:text/html,<b>\""), QStringLiteral("A"), chart);
   require(data != nullptr, QStringLiteral("A missing (data)"));
   require(data->linkUnsafe, QStringLiteral("data: URL should be flagged unsafe"));
 
   // A safe https URL is not flagged.
-  const flowchart::FlowVertex* safe = parseVertex(QStringLiteral("click A href \"https://example.com\""), QStringLiteral("A"));
+  const flowchart::FlowVertex* safe = parseVertex(QStringLiteral("click A href \"https://example.com\""), QStringLiteral("A"), chart);
   require(safe != nullptr, QStringLiteral("A missing (https)"));
   require(!safe->linkUnsafe, QStringLiteral("https URL should NOT be flagged (link=%1)").arg(safe->link));
 

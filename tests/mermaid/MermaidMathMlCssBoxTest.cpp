@@ -17,6 +17,7 @@
 #include <QSizeF>
 
 #include <cmath>
+#include <cstdio>
 #include <iostream>
 #include <stdexcept>
 #include <utility>
@@ -344,6 +345,7 @@ int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) qputenv("QT_QPA_PLATFORM", "offscreen");
   QGuiApplication app(argc, argv);
   try {
+    std::fprintf(stderr, "[cssbox] app ok\n"); std::fflush(stderr);
     require(argc >= 2, QStringLiteral("MathML CSS box fixture path is required"));
     QFile file(QString::fromLocal8Bit(argv[1]));
     require(file.open(QIODevice::ReadOnly), QStringLiteral("Unable to open MathML CSS box fixture"));

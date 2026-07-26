@@ -226,10 +226,14 @@ int main(int argc, char** argv) {
         QString(QChar(0x222D)), 38.0);
     require(productVariant && tripleIntegralVariant,
             QStringLiteral("Large-operator raster variants are missing"));
+    // Raster bounds come from QRawFont::boundingRect, whose value depends on
+    // the font backend (FreeType vs CoreText) — e.g. macOS reports ~20.58 vs
+    // 22.0 elsewhere for the same glyph. Use a renderer-tolerant slack; the
+    // raster>outline relation checked below is the load-bearing assertion.
     near(font.rasterGlyphBounds(productVariant->glyphIndex).width(), 22.0,
-         0.001, QStringLiteral("product raster width"));
+         3.0, QStringLiteral("product raster width"));
     near(font.rasterGlyphBounds(tripleIntegralVariant->glyphIndex).width(),
-         31.0, 0.001, QStringLiteral("triple-integral raster width"));
+         31.0, 3.0, QStringLiteral("triple-integral raster width"));
     require(font.rasterGlyphBounds(productVariant->glyphIndex).width() >
                 font.glyphPath(productVariant->glyphIndex)
                     .boundingRect().width() &&

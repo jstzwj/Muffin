@@ -7,6 +7,7 @@
 #include <QJsonDocument>
 #include <QSet>
 
+#include <cstdio>
 #include <cstdlib>
 #include <random>
 
@@ -76,6 +77,7 @@ int main(int argc, char** argv) {
   timer.start();
 
   for (int index = 0; index < kCaseCount; ++index) {
+    std::fprintf(stderr, "[fuzz] %d\n", index); std::fflush(stderr);
     const QString source = expression(random, 1 + index % 3);
     const muffin::math::MathLayoutResult layout = renderer.render(
         source, kRenderFontPixelSize, Qt::black, true);
