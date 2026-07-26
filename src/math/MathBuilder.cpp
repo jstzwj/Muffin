@@ -1448,7 +1448,9 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& nod
   entries.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(accentWrapper))}));
   auto layout = makeLayoutVListFirstBaseline(std::move(entries));
   layout->renderKind = MathRenderKind::Accent;
+  std::fprintf(stderr, "[accent] pre-render\n"); std::fflush(stderr);
   auto result = renderNodeFromLayout(*layout);
+  std::fprintf(stderr, "[accent] rendered\n"); std::fflush(stderr);
   result->accentKind = MathAccentKind::Over;
   result->accentLabel = node.label;
   return result;
