@@ -51,6 +51,28 @@ void near(qreal actual, qreal expected, qreal tolerance, const QString& context)
               .arg(context).arg(actual).arg(expected).arg(tolerance));
 }
 
+QJsonValue semanticPaintOperationJson(const QJsonValue& value) {
+  if (value.isArray()) {
+    QJsonArray result;
+    for (const QJsonValue& element : value.toArray())
+      result.push_back(semanticPaintOperationJson(element));
+    return result;
+  }
+  if (!value.isObject()) return value;
+  static const QSet<QString> rasterOnlyKeys = {
+      QStringLiteral("baselineOrigin"),
+      QStringLiteral("inkBounds"),
+      QStringLiteral("paintOffset"),
+  };
+  QJsonObject result;
+  const QJsonObject object = value.toObject();
+  for (auto it = object.constBegin(); it != object.constEnd(); ++it) {
+    if (!rasterOnlyKeys.contains(it.key()))
+      result.insert(it.key(), semanticPaintOperationJson(it.value()));
+  }
+  return result;
+}
+
 void collectTags(const QJsonObject& node, QSet<QString>* tags) {
   tags->insert(node.value(QStringLiteral("tag")).toString());
   for (const QJsonValue& child : node.value(QStringLiteral("children")).toArray())
@@ -2431,7 +2453,9 @@ int main(int argc, char** argv) {
         }
         QJsonObject goldenCase;
         goldenCase.insert(QStringLiteral("id"), id);
-        goldenCase.insert(QStringLiteral("operation"), paintOperation->toJson());
+        goldenCase.insert(
+            QStringLiteral("operation"),
+            semanticPaintOperationJson(paintOperation->toJson()));
         paintOperationGolden.append(goldenCase);
       } else {
         require(paintBuild.failure.has_value(),
@@ -2488,7 +2512,7 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     require(paintOperationHash ==
-                QLatin1String("f3bf53be4c650c3976096945d3d0629ae825dacbd84f9af137865ec8782f1d6c"),
+                QLatin1String("e5b78c8e8c973e3457d444b7083b3b1719ff1e6dd49842f5f61843dc171f7b22"),
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),

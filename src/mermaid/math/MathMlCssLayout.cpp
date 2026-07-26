@@ -4330,6 +4330,12 @@ std::optional<MathCssPaintOperation> buildFractionOperation(
     else
       denominatorHeight = cssNodeHeight(metrics->denominator, renderScale);
   }
+  // Row paint boxes must contain the extents used to size the fraction.
+  numeratorHeight = std::max(
+      numeratorHeight, metrics->numeratorInk.top + metrics->numeratorInk.bottom);
+  denominatorHeight = std::max(
+      denominatorHeight,
+      metrics->denominatorInk.top + metrics->denominatorInk.bottom);
   const auto includeImmediateOperationHeight = [&](const MathRenderNode* row,
                                                     qreal height) {
     QVector<const MathRenderNode*> nodes;
