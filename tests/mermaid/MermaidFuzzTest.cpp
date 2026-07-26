@@ -225,9 +225,19 @@ int main() {
     totalThrew += threw;
     totalLimit += limit;
     processPeakBytes = std::max(processPeakBytes, categoryPeakBytes);
-    require(categoryPeakBytes == 0 || categoryPeakBytes < 512ull * 1024ull * 1024ull,
-            QStringLiteral("'%1' exceeded 512 MiB resident memory (%2 MiB)")
+    // AddressSanitizer roughly doubles resident memory; raise the budget under
+    // ASan so the harness does not false-positive on inputs that are well within
+    // the (non-ASan) 512 MiB ceiling this guard is meant to enforce.
+    constexpr quint64 kMemoryBudgetMiB =
+#if defined(__SANITIZE_ADDRESS__)
+        2048;
+#else
+        512;
+#endif
+    require(categoryPeakBytes == 0 || categoryPeakBytes < kMemoryBudgetMiB * 1024ull * 1024ull,
+            QStringLiteral("'%1' exceeded %2 MiB resident memory (%3 MiB)")
                 .arg(QString::fromLatin1(gen.name))
+                .arg(kMemoryBudgetMiB)
                 .arg(categoryPeakBytes / (1024.0 * 1024.0), 0, 'f', 1));
     qDebug().noquote() << QStringLiteral("  %1: %2 parsed, %3 non-limit, %4 LimitExceeded; max %5 ms, %6 KiB input, %7 MiB RSS")
                               .arg(QString::fromLatin1(gen.name)).arg(parsed).arg(threw).arg(limit)
