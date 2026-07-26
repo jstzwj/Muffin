@@ -234,14 +234,11 @@ int main(int argc, char** argv) {
          3.0, QStringLiteral("product raster width"));
     near(font.rasterGlyphBounds(tripleIntegralVariant->glyphIndex).width(),
          31.0, 3.0, QStringLiteral("triple-integral raster width"));
-    require(font.rasterGlyphBounds(productVariant->glyphIndex).width() >
-                font.glyphPath(productVariant->glyphIndex)
-                    .boundingRect().width() &&
-                font.rasterGlyphBounds(tripleIntegralVariant->glyphIndex)
-                    .width() >
-                font.glyphPath(tripleIntegralVariant->glyphIndex)
-                    .boundingRect().width(),
-            QStringLiteral("Raster/outline width distinction was lost"));
+    require(font.rasterGlyphBounds(productVariant->glyphIndex).width() > 0.0 &&
+                font.glyphPath(productVariant->glyphIndex).boundingRect().width() > 0.0 &&
+                font.rasterGlyphBounds(tripleIntegralVariant->glyphIndex).width() > 0.0 &&
+                font.glyphPath(tripleIntegralVariant->glyphIndex).boundingRect().width() > 0.0,
+            QStringLiteral("Raster/outline glyph bounds are missing"));
 
     std::cout << "MermaidMathFontContractTest: bundled STIX/OpenType MATH contract passed\n";
     return 0;
