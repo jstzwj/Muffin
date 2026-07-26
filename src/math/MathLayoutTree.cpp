@@ -1,7 +1,6 @@
 #include "math/MathLayoutTree.h"
 
 #include <QtGlobal>
-#include <cstdio>
 
 namespace muffin::math {
 namespace {
@@ -24,14 +23,11 @@ std::unique_ptr<MathLayoutNode> makeLayoutVListFromEntries(std::vector<MathVList
   if (entries.empty()) {
     return vlist;
   }
-  std::fprintf(stderr, "[vl] enter n=%zu\n", entries.size()); std::fflush(stderr);
 
   qreal minPos = depth;
   qreal maxPos = depth;
   qreal currPos = depth;
-  int vi = 0;
   for (MathVListEntry& entry : entries) {
-    std::fprintf(stderr, "[vl] i=%d kern=%d elem=%d\n", vi, (int)entry.kern, entry.child.elem ? 1 : 0); std::fflush(stderr);
     if (entry.kern) {
       currPos += entry.size;
     } else if (entry.child.elem) {
@@ -45,13 +41,10 @@ std::unique_ptr<MathLayoutNode> makeLayoutVListFromEntries(std::vector<MathVList
     }
     minPos = qMin(minPos, currPos);
     maxPos = qMax(maxPos, currPos);
-    ++vi;
   }
-  std::fprintf(stderr, "[vl] loop-done\n"); std::fflush(stderr);
 
   vlist->height = maxPos;
   vlist->depth = -minPos;
-  std::fprintf(stderr, "[vl] return\n"); std::fflush(stderr);
   return vlist;
 }
 
@@ -275,14 +268,10 @@ std::unique_ptr<MathLayoutNode> makeLayoutVListBottom(qreal bottom, std::vector<
 }
 
 std::unique_ptr<MathLayoutNode> makeLayoutVListFirstBaseline(std::vector<MathVListEntry> entries) {
-  std::fprintf(stderr, "[vlfb] enter n=%zu empty=%d\n", entries.size(), (int)entries.empty()); std::fflush(stderr);
   if (entries.empty() || entries.front().kern || !entries.front().child.elem) {
-    std::fprintf(stderr, "[vlfb] early-branch\n"); std::fflush(stderr);
     return makeLayoutVListFromEntries(std::move(entries), 0.0);
   }
-  const qreal depth = entries.front().child.elem->depth;
-  std::fprintf(stderr, "[vlfb] pre-call depth=%g\n", depth); std::fflush(stderr);
-  return makeLayoutVListFromEntries(std::move(entries), -depth);
+  return makeLayoutVListFromEntries(std::move(entries), -entries.front().child.elem->depth);
 }
 
 MathVListEntry makeLayoutVListElem(MathVListChild child) {

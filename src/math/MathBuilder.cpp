@@ -7,8 +7,6 @@
 #include "math/MathLayoutTree.h"
 #include "math/MathSvgGeometry.h"
 
-#include <cstdio>
-
 #include <QFileInfo>
 #include <QFontMetricsF>
 #include <QHash>
@@ -1241,9 +1239,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeGenfrac(const MathParseNode& no
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node) {
-  std::fprintf(stderr, "[sqrt] enter\n"); std::fflush(stderr);
   auto body = MathBuilder(options_.cramped()).buildExpression(node.body);
-  std::fprintf(stderr, "[sqrt] body h=%g d=%g w=%g\n", body->height, body->depth, body->width); std::fflush(stderr);
   const qreal em = options_.fontPointSize();
   const GlobalFontMetrics metrics = MathFontMetrics::globalMetrics(options_.style().size());
   if (qFuzzyIsNull(body->height)) {
@@ -1291,14 +1287,12 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
     viewBoxHeight = qRound((1000 + 80) * 3.0);
   }
   const qreal rule = (metrics.sqrtRuleThickness + extraVinculum) * em;
-  std::fprintf(stderr, "[sqrt] sized vbh=%d texH=%g\n", viewBoxHeight, texHeightEm); std::fflush(stderr);
   const qreal delimDepth = texHeightEm * em - rule;
   if (delimDepth > body->height + body->depth + lineClearance) {
     lineClearance = (lineClearance + delimDepth - body->height - body->depth) / 2.0;
   }
   const qreal imgShift = texHeightEm * em - body->height - lineClearance - rule;
   const qreal pad = qMax<qreal>(0.0, spanHeightEm - texHeightEm) * em;
-  std::fprintf(stderr, "[sqrt] pre-radical\n"); std::fflush(stderr);
   auto radical = std::make_unique<MathRenderNode>();
   radical->kind = MathRenderKind::Stretchy;
   radical->text = QStringLiteral("\\sqrt");
@@ -1316,17 +1310,12 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
   body->xOffset = advanceWidthEm * em;
   const qreal innerHeight = body->height;
   Q_UNUSED(pad);
-  std::fprintf(stderr, "[sqrt] pre-vlist-children\n"); std::fflush(stderr);
   std::vector<MathVListEntry> sqrtBodyChildren;
   sqrtBodyChildren.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(body))}));
-  std::fprintf(stderr, "[sqrt] body-elem\n"); std::fflush(stderr);
   sqrtBodyChildren.push_back(makeLayoutVListKern(-(innerHeight + imgShift)));
   sqrtBodyChildren.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(radical))}));
-  std::fprintf(stderr, "[sqrt] radical-elem\n"); std::fflush(stderr);
   sqrtBodyChildren.push_back(makeLayoutVListKern(rule));
-  std::fprintf(stderr, "[sqrt] pre-layout\n"); std::fflush(stderr);
   auto sqrtBodyLayout = makeLayoutVListFirstBaseline(std::move(sqrtBodyChildren));
-  std::fprintf(stderr, "[sqrt] vlist ok\n"); std::fflush(stderr);
   sqrtBodyLayout->width = qMax(sqrtBodyLayout->width, advanceWidthEm * em);
 
   auto sqrtBody = renderNodeFromLayout(*sqrtBodyLayout);
@@ -1358,9 +1347,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
 }
 
 std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& node) {
-  std::fprintf(stderr, "[accent] enter label=%s\n", node.label.toUtf8().constData()); std::fflush(stderr);
   auto body = MathBuilder(options_.cramped()).buildExpression(node.base);
-  std::fprintf(stderr, "[accent] body h=%g d=%g w=%g\n", body->height, body->depth, body->width); std::fflush(stderr);
   std::unique_ptr<MathRenderNode> accent;
 
   if (node.label == QStringLiteral("\\widehat") || node.label == QStringLiteral("\\widetilde") ||
@@ -1448,9 +1435,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeAccent(const MathParseNode& nod
   entries.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(accentWrapper))}));
   auto layout = makeLayoutVListFirstBaseline(std::move(entries));
   layout->renderKind = MathRenderKind::Accent;
-  std::fprintf(stderr, "[accent] pre-render\n"); std::fflush(stderr);
   auto result = renderNodeFromLayout(*layout);
-  std::fprintf(stderr, "[accent] rendered\n"); std::fflush(stderr);
   result->accentKind = MathAccentKind::Over;
   result->accentLabel = node.label;
   return result;
