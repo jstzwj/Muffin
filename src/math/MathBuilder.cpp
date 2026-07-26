@@ -1298,6 +1298,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
   }
   const qreal imgShift = texHeightEm * em - body->height - lineClearance - rule;
   const qreal pad = qMax<qreal>(0.0, spanHeightEm - texHeightEm) * em;
+  std::fprintf(stderr, "[sqrt] pre-radical\n"); std::fflush(stderr);
   auto radical = std::make_unique<MathRenderNode>();
   radical->kind = MathRenderKind::Stretchy;
   radical->text = QStringLiteral("\\sqrt");
@@ -1315,6 +1316,7 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
   body->xOffset = advanceWidthEm * em;
   const qreal innerHeight = body->height;
   Q_UNUSED(pad);
+  std::fprintf(stderr, "[sqrt] pre-vlist-children\n"); std::fflush(stderr);
   std::vector<MathVListEntry> sqrtBodyChildren;
   sqrtBodyChildren.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(body))}));
   sqrtBodyChildren.push_back(makeLayoutVListKern(-(innerHeight + imgShift)));
