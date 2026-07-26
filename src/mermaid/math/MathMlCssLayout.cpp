@@ -4016,9 +4016,11 @@ std::optional<MathCssPaintOperation> buildAccentOperation(
     glyph.italicCorrection =
         selection.assembly->italicCorrection * glyph.fontScale;
     glyph.parts.reserve(selection.assembly->parts.size());
+    const QTransform outlineScale = QTransform::fromScale(
+        glyph.fontScale, glyph.fontScale);
     for (const MathGlyphAssemblyPart& part : selection.assembly->parts) {
-      QRectF partInk = font.rasterGlyphBounds(part.glyphIndex,
-                                              glyph.fontScale);
+      QRectF partInk = outlineScale.mapRect(
+          font.glyphPath(part.glyphIndex).boundingRect());
       glyph.parts.push_back({part.glyphIndex,
                              partInk,
                              part.offset * glyph.fontScale,

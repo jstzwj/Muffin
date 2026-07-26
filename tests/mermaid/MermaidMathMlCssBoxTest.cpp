@@ -1862,11 +1862,17 @@ int main(int argc, char** argv) {
           qreal previousOffset = -1.0;
           const qreal connectorOverlap =
               accent->glyph.parts.front().connectorOverlap;
+          QRectF assemblyInk;
           for (const auto& part : accent->glyph.parts) {
             require(part.glyphIndex != 0 && part.offset > previousOffset &&
                         part.fullAdvance > 0.0 &&
-                        part.connectorOverlap >= 0.0,
+                        part.connectorOverlap >= 0.0 &&
+                        !part.inkBounds.isEmpty(),
                     id + QStringLiteral(" horizontal assembly part drifted"));
+            const QRectF positionedInk =
+                part.inkBounds.translated(part.offset, 0.0);
+            assemblyInk = assemblyInk.isNull()
+                ? positionedInk : assemblyInk.united(positionedInk);
             previousOffset = part.offset;
           }
           for (qsizetype index = 0;
@@ -1877,10 +1883,9 @@ int main(int argc, char** argv) {
           near(accent->glyph.realizedExtent,
                accent->glyph.selectionTarget * accent->glyph.fontScale,
                0.001, id + QStringLiteral(" script-scaled assembly extent"));
-          require(accent->glyph.inkBounds.width() >
-                      accent->glyph.realizedExtent &&
-                      accent->glyph.inkBounds.height() > 0.0,
-                  id + QStringLiteral(" raster ink bounds are missing"));
+          require(!assemblyInk.isEmpty() &&
+                      accent->glyph.inkBounds == assemblyInk,
+                  id + QStringLiteral(" assembly ink bounds drifted"));
           const auto arrayChild = std::find_if(
               operation->children.cbegin(), operation->children.cend(),
               [](const math::MathCssPaintOperation& child) {
