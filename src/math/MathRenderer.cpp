@@ -5,8 +5,6 @@
 #include "math/MathParseError.h"
 #include "math/MathParser.h"
 
-#include <cstdio>
-
 namespace muffin::math {
 namespace {
 
@@ -146,7 +144,6 @@ MathLayoutResult MathRenderer::render(const QString& tex, qreal rootFontPixelSiz
                                       const MathSettings& inputSettings,
                                       qreal maxWidth) const {
   MathFontRegistry::ensureLoaded();
-  std::fprintf(stderr, "[render] A tex=%s\n", tex.toUtf8().constData()); std::fflush(stderr);
 
   MathSettings settings = inputSettings;
   settings.displayMode = displayMode;
@@ -163,17 +160,12 @@ MathLayoutResult MathRenderer::render(const QString& tex, qreal rootFontPixelSiz
     errorNode.text = result.error;
     tree.push_back(std::move(errorNode));
   }
-  std::fprintf(stderr, "[render] B parsed\n"); std::fflush(stderr);
 
   const MathStyle style = displayMode ? MathStyle::display() : MathStyle::textStyle();
   MathOptions options(style, rootFontPixelSize, color, settings);
   MathBuilder builder(options);
 
-  std::fprintf(stderr, "[render] C build\n"); std::fflush(stderr);
-  auto built = builder.buildExpression(tree);
-  std::fprintf(stderr, "[render] D built\n"); std::fflush(stderr);
-  result.root = wrapKatexRoot(std::move(built), options, displayMode);
-  std::fprintf(stderr, "[render] E wrapped\n"); std::fflush(stderr);
+  result.root = wrapKatexRoot(builder.buildExpression(tree), options, displayMode);
   if (!result.root) {
     return result;
   }
