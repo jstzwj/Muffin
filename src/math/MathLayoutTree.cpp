@@ -271,7 +271,8 @@ std::unique_ptr<MathLayoutNode> makeLayoutVListFirstBaseline(std::vector<MathVLi
   if (entries.empty() || entries.front().kern || !entries.front().child.elem) {
     return makeLayoutVListFromEntries(std::move(entries), 0.0);
   }
-  return makeLayoutVListFromEntries(std::move(entries), -entries.front().child.elem->depth);
+  const qreal depth = entries.front().child.elem->depth;
+  return makeLayoutVListFromEntries(std::move(entries), -depth);
 }
 
 MathVListEntry makeLayoutVListElem(MathVListChild child) {

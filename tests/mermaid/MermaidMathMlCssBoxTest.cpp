@@ -343,16 +343,6 @@ const math::MathRenderNode* findAccent(const math::MathRenderNode* node,
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) qputenv("QT_QPA_PLATFORM", "offscreen");
   QGuiApplication app(argc, argv);
-#if defined(Q_OS_DARWIN)
-  // TODO(macOS): MathML layout segfaults under CoreText for expressions like
-  // \vec{\text{中文}} / \sqrt{...} — localized to MathBuilder::makeAccent /
-  // makeSqrt after renderNodeFromLayout, in the destructor of the layout tree
-  // carrying a CJK \text body (heap-corruption signature; passes on Linux/
-  // Windows). Skip on macOS until reproduced with ASan on a macOS host.
-  std::cerr << "MuffinMermaidMathMlCssBoxTest: skipped on macOS (known CoreText "
-               "MathML CJK crash — see TODO)\n";
-  return 0;
-#endif
   try {
     require(argc >= 2, QStringLiteral("MathML CSS box fixture path is required"));
     QFile file(QString::fromLocal8Bit(argv[1]));
