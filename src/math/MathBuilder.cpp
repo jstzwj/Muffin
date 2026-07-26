@@ -1319,9 +1319,12 @@ std::unique_ptr<MathRenderNode> MathBuilder::makeSqrt(const MathParseNode& node)
   std::fprintf(stderr, "[sqrt] pre-vlist-children\n"); std::fflush(stderr);
   std::vector<MathVListEntry> sqrtBodyChildren;
   sqrtBodyChildren.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(body))}));
+  std::fprintf(stderr, "[sqrt] body-elem\n"); std::fflush(stderr);
   sqrtBodyChildren.push_back(makeLayoutVListKern(-(innerHeight + imgShift)));
   sqrtBodyChildren.push_back(makeLayoutVListElem(MathVListChild{layoutFromRenderNode(std::move(radical))}));
+  std::fprintf(stderr, "[sqrt] radical-elem\n"); std::fflush(stderr);
   sqrtBodyChildren.push_back(makeLayoutVListKern(rule));
+  std::fprintf(stderr, "[sqrt] pre-layout\n"); std::fflush(stderr);
   auto sqrtBodyLayout = makeLayoutVListFirstBaseline(std::move(sqrtBodyChildren));
   std::fprintf(stderr, "[sqrt] vlist ok\n"); std::fflush(stderr);
   sqrtBodyLayout->width = qMax(sqrtBodyLayout->width, advanceWidthEm * em);
