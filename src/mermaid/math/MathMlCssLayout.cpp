@@ -3881,8 +3881,23 @@ std::optional<MathCssPaintOperation> buildAccentOperation(
   result.bodyNode = body;
   result.annotationNode = annotation;
   if (auto runs = buildGlyphRunOperations(
-          body, result.box.body, style.fontScale(), true))
+          body, result.box.body, style.fontScale(), true)) {
+    // Brace bodies use a CSS ink line box whose extra operator leading is
+    // allocated above the baseline. Keep raster bounds for painting, but
+    // place them from the bundled-font layout descent so CoreText hinting
+    // cannot move the whole body vertically.
+    if (brace && !containsTextModeRun(body) && !runs->isEmpty()) {
+      const GlyphInkExtents layoutInk = glyphInkExtents(body, style.fontScale());
+      const qreal baseline = result.box.body.bottom() -
+          std::min(result.box.body.height(), layoutInk.bottom);
+      const qreal baselineShift = baseline - runs->front().baselineOrigin.y();
+      for (MathCssGlyphRunOperation& run : *runs) {
+        run.baselineOrigin.ry() += baselineShift;
+        run.inkBounds.translate(0.0, baselineShift);
+      }
+    }
     result.bodyGlyphRuns = std::move(*runs);
+  }
   if (annotation && !result.box.annotation.isEmpty()) {
     const qreal annotationWidth = cssNodeWidth(annotation, renderScale);
     const MathRenderNode* annotationSemantic =
