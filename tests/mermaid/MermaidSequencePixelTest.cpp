@@ -578,14 +578,23 @@ int main(int argc,char** argv) {
                             <<"offset"<<delimiterAlignment.offset
                             <<"target"<<nativeDelimiter.target
                             <<"parts"<<nativeDelimiter.parts.size();
+          // Assembled delimiters have independently quantized top and bottom
+          // pieces, so their alpha-trimmed height can differ at both edges.
+          // The MATH target box and ordered part geometry above remain strict.
+          const QSize delimiterRasterDrift(
+              1,nativeDelimiter.parts.isEmpty() ? 1 : 2);
           require(qAbs(nativeDelimiter.image.width()-
-                           browserDelimiterImage.width())<=1&&
+                           browserDelimiterImage.width())<=
+                      delimiterRasterDrift.width()&&
                       qAbs(nativeDelimiter.image.height()-
-                           browserDelimiterImage.height())<=1,
+                           browserDelimiterImage.height())<=
+                      delimiterRasterDrift.height(),
                   QStringLiteral("%1 delimiter %2 raster bounds drifted")
                       .arg(id).arg(delimiterIndex));
-          require(qAbs(delimiterAlignment.offset.x())<=1&&
-                      qAbs(delimiterAlignment.offset.y())<=1,
+          require(qAbs(delimiterAlignment.offset.x())<=
+                      delimiterRasterDrift.width()&&
+                      qAbs(delimiterAlignment.offset.y())<=
+                      delimiterRasterDrift.height(),
                   QStringLiteral("%1 delimiter %2 raster origin drifted: %3,%4")
                       .arg(id).arg(delimiterIndex)
                       .arg(delimiterAlignment.offset.x())
