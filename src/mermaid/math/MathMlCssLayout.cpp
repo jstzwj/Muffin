@@ -3126,6 +3126,9 @@ std::optional<MathCssScriptOperation> buildScriptOperation(
     result.base = snapVerticalLayoutRect(result.base);
     result.superscript = snapVerticalLayoutRect(result.superscript);
     result.subscript = snapVerticalLayoutRect(result.subscript);
+    result.lineAscent = result.base.center().y() - result.container.top() +
+                        constants.axisHeight;
+    result.lineDescent = result.container.height() - result.lineAscent;
     result.largeOperatorGlyph = buildVerticalGlyphOperation(
         operatorSymbol->text, result.base, false);
     return result;
@@ -5263,7 +5266,7 @@ MathMlPaintOperationBuildResult buildMathMlPaintOperations(
       if (const auto* script =
               std::get_if<MathCssScriptOperation>(&operation.payload);
           script && !script->baseGlyphRuns.isEmpty())
-        return script->baseGlyphRuns.front().baselineOrigin.y();
+        return script->container.top() + script->lineAscent;
       if (const auto* array =
               std::get_if<MathCssArrayOperation>(&operation.payload))
         return array->table.center().y() +
