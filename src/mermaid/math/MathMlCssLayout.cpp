@@ -138,16 +138,6 @@ struct HorizontalAccentSelection {
     return assembly ? std::ceil(assembly->inkBounds.height()) : 0.0;
   }
 
-  qreal pixelCoverageHeight() const {
-    if (!fixed) return height();
-    const QRectF ink = OpenTypeMathFont::instance()
-                           .glyphPath(fixed->glyphIndex)
-                           .boundingRect();
-    const qreal inkHeight = ink.isEmpty()
-        ? 0.0 : std::ceil(ink.bottom()) - std::floor(ink.top());
-    return std::max(std::ceil(fixed->advance), inkHeight);
-  }
-
   qreal rasterHeight() const {
     if (!fixed) return height();
     const qreal inkHeight = OpenTypeMathFont::instance()
@@ -855,12 +845,14 @@ std::optional<MathShapedText> shapeTextModeRun(const QString& text,
 }
 
 qreal shapedTextCssHeight(const MathShapedText& shaped) {
+  const qreal pixelAlignedInkHeight =
+      std::ceil(std::max<qreal>(0.0, -shaped.inkBounds.top())) +
+      std::ceil(std::max<qreal>(0.0, shaped.inkBounds.bottom()));
   if (shaped.fullEmLineBox)
     return std::max(std::round(shaped.fontPixelSize),
-                    std::ceil(shaped.inkBounds.height()));
+                    pixelAlignedInkHeight);
   if (shaped.formatControlledLineBox)
-    return std::ceil(std::max<qreal>(0.0, -shaped.inkBounds.top())) +
-           std::ceil(std::max<qreal>(0.0, shaped.inkBounds.bottom()));
+    return pixelAlignedInkHeight;
   // Visible STIX glyphs contribute the MathML row box; a whitespace-only
   // shaping run must not enlarge a fallback-only text line.
   if (shaped.compoundLineBox && shaped.hasVisibleMathRun)
@@ -1312,9 +1304,7 @@ qreal cssNodeHeight(const MathRenderNode* node, qreal scale) {
     }
     const HorizontalAccentSelection selection = selectHorizontalAccent(
         node->accentCharacter, target);
-    const qreal arrowHeight = node->accentKind == MathAccentKind::Over &&
-            containsTextModeRun(body)
-        ? selection.rasterHeight() : selection.height();
+    const qreal arrowHeight = selection.height();
     const MathFontConstants& constants = font.constants();
     return cssNodeHeight(body, scale) + arrowHeight +
            (node->accentKind == MathAccentKind::Under
@@ -2359,11 +2349,9 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
     root.advance = root.width;
     const HorizontalAccentSelection selection = selectHorizontalAccent(
         accent->accentCharacter, root.width);
-    // Root geometry follows deterministic outline coverage. Nested placement
-    // and painting retain rasterHeight() so the active backend is not clipped.
     const qreal operatorHeight = accent->accentKind == MathAccentKind::Over &&
             containsTextModeRun(body)
-        ? selection.pixelCoverageHeight() : selection.height();
+        ? selection.rasterHeight() : selection.height();
     const MathFontConstants& constants =
         OpenTypeMathFont::instance().constants();
     root.height = accentBodyCssHeight(body, scale) + operatorHeight +
