@@ -5280,6 +5280,34 @@ MathMlPaintOperationBuildResult buildMathMlPaintOperations(
                OpenTypeMathFont::instance().constants().axisHeight;
       return std::nullopt;
     };
+    const auto alignContentGlyphRuns = [](MathCssPaintOperation* operation,
+                                          qreal baseline) {
+      if (!operation) return;
+      QVector<MathCssGlyphRunOperation>* runs = nullptr;
+      if (auto* accent =
+              std::get_if<MathCssAccentOperation>(&operation->payload))
+        runs = &accent->bodyGlyphRuns;
+      else if (auto* radical =
+                   std::get_if<MathCssRadicalOperation>(&operation->payload))
+        runs = &radical->bodyGlyphRuns;
+      else if (auto* leftRight =
+                   std::get_if<MathCssLeftRightOperation>(&operation->payload)) {
+        const auto region = std::find_if(
+            leftRight->bodyRegions.begin(), leftRight->bodyRegions.end(),
+            [](const MathCssLeftRightBodyRegion& candidate) {
+              return !candidate.glyphRuns.isEmpty();
+            });
+        if (region != leftRight->bodyRegions.end()) runs = &region->glyphRuns;
+      } else if (auto* script =
+                     std::get_if<MathCssScriptOperation>(&operation->payload))
+        runs = &script->baseGlyphRuns;
+      if (!runs || runs->isEmpty()) return;
+      const qreal shift = baseline - runs->front().baselineOrigin.y();
+      for (MathCssGlyphRunOperation& run : *runs) {
+        run.baselineOrigin.ry() += shift;
+        run.inkBounds.translate(0.0, shift);
+      }
+    };
     const auto* firstAccent = std::get_if<MathCssAccentOperation>(
         &row.children.front().payload);
     const bool rootOwnsBaseline = !rowPayload.glyphRuns.isEmpty() &&
@@ -5317,6 +5345,7 @@ MathMlPaintOperationBuildResult buildMathMlPaintOperations(
               MathMlPaintFailureCode::AlignedChildOperationUnavailable,
               rootOperations.at(index));
         row.children[index] = std::move(*aligned);
+        alignContentGlyphRuns(&row.children[index], contentBaseline);
       }
     }
     return succeed(std::move(row));
