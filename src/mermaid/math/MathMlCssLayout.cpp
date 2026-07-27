@@ -138,13 +138,6 @@ struct HorizontalAccentSelection {
     return assembly ? std::ceil(assembly->inkBounds.height()) : 0.0;
   }
 
-  qreal rasterHeight() const {
-    if (!fixed) return height();
-    const qreal inkHeight = OpenTypeMathFont::instance()
-                                .rasterGlyphBounds(fixed->glyphIndex)
-                                .height();
-    return std::ceil(std::max(fixed->advance, inkHeight));
-  }
 };
 
 HorizontalAccentSelection selectHorizontalAccent(
@@ -2314,9 +2307,7 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
               !accent->accentCharacter.isEmpty()) {
             const HorizontalAccentSelection selection =
                 selectHorizontalAccent(accent->accentCharacter, root.width);
-            accentHeight = accent->accentKind == MathAccentKind::Over &&
-                    shapedTextBody
-                ? selection.rasterHeight() : selection.height();
+            accentHeight = selection.height();
             if (selection.text)
               root.width = std::max(root.width, selection.text->advance);
           }
@@ -2349,9 +2340,7 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
     root.advance = root.width;
     const HorizontalAccentSelection selection = selectHorizontalAccent(
         accent->accentCharacter, root.width);
-    const qreal operatorHeight = accent->accentKind == MathAccentKind::Over &&
-            containsTextModeRun(body)
-        ? selection.rasterHeight() : selection.height();
+    const qreal operatorHeight = selection.height();
     const MathFontConstants& constants =
         OpenTypeMathFont::instance().constants();
     root.height = accentBodyCssHeight(body, scale) + operatorHeight +
@@ -2552,8 +2541,7 @@ std::optional<MathCssAccentBox> layoutMathMlAccentBox(
         accent->accentCharacter, root.width);
     if (!selection.fixed && !selection.assembly && !selection.text)
       return std::nullopt;
-    const qreal arrowHeight = over && containsTextModeRun(body)
-        ? selection.rasterHeight() : selection.height();
+    const qreal arrowHeight = selection.height();
     const qreal accentWidth = selection.text
         ? selection.text->advance
         : selection.fixed ? selection.fixed->extent

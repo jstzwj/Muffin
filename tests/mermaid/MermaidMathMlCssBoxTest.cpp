@@ -2517,7 +2517,7 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     require(paintOperationHash ==
-                QLatin1String("e694c756dc3a2c55653b275926a49805099d614788aab17cd3dfaac25456dd2a"),
+                QLatin1String("f9506692e95485c1ffe407f8453b8e4ba6df1d8ef90ddad37b311e378676e0c4"),
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),
