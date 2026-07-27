@@ -286,34 +286,48 @@ int main(int argc, char** argv) {
                          << "coverage" << cropCoverage
                          << "ink" << nativeInk << browserInk;
       struct CropThreshold {
-        qreal iou;
         qreal coverage;
+        qreal maximumPositionDriftCss;
         qreal maximumHeightDriftCss;
       };
       static const QHash<QString, CropThreshold> thresholds = {
-          {QStringLiteral("node-html-math"), {0.67, 0.985, 1.0}},
-          {QStringLiteral("node-markdown"), {0.34, 0.93, 2.0}},
-          {QStringLiteral("node-cjk"), {0.685, 0.995, 1.0}},
-          {QStringLiteral("node-rtl"), {0.31, 0.845, 1.0}},
-          {QStringLiteral("edge-math-bidi"), {0.145, 0.86, 3.0}},
-          {QStringLiteral("cluster-cjk-rtl"), {0.48, 0.995, 2.0}},
-          {QStringLiteral("node-svg-multiline-cjk"), {0.36, 0.87, 2.0}},
-          {QStringLiteral("node-svg-rtl"), {0.285, 0.845, 2.0}},
+          {QStringLiteral("node-html-math"), {0.985, 1.0, 1.0}},
+          {QStringLiteral("node-markdown"), {0.93, 1.0, 2.0}},
+          {QStringLiteral("node-cjk"), {0.995, 1.0, 1.0}},
+          {QStringLiteral("node-rtl"), {0.845, 1.0, 1.0}},
+          {QStringLiteral("edge-math-bidi"), {0.86, 3.0, 3.0}},
+          {QStringLiteral("cluster-cjk-rtl"), {0.995, 2.0, 2.0}},
+          {QStringLiteral("node-svg-multiline-cjk"), {0.87, 2.0, 2.0}},
+          {QStringLiteral("node-svg-rtl"), {0.845, 2.0, 2.0}},
       };
       const QString cropKind = fixture.value(QStringLiteral("cropKind")).toString();
       require(thresholds.contains(cropKind),
               id + QStringLiteral(": unknown label crop kind"));
       const CropThreshold threshold = thresholds.value(cropKind);
+      const int maximumPositionDrift =
+          qCeil(threshold.maximumPositionDriftCss * dpr);
+      // Font rasterizers disagree on edge coverage even when glyph placement
+      // is identical. Lock the ink geometry explicitly, then compare the two
+      // masks with bidirectional neighborhood coverage below.
       require(!nativeInk.isEmpty() && !browserInk.isEmpty() &&
+                  std::abs(nativeInk.left() - browserInk.left()) <=
+                      maximumPositionDrift &&
+                  std::abs(nativeInk.top() - browserInk.top()) <=
+                      maximumPositionDrift &&
                   std::abs(nativeInk.width() - browserInk.width()) <= qCeil(2.0 * dpr) &&
                   std::abs(nativeInk.height() - browserInk.height()) <=
                       qCeil(threshold.maximumHeightDriftCss * dpr),
-              QStringLiteral("%1: label ink bounds drifted: %2x%3 vs %4x%5")
-                  .arg(id).arg(nativeInk.width()).arg(nativeInk.height())
+              QStringLiteral(
+                  "%1: label ink bounds drifted: (%2,%3 %4x%5) vs "
+                  "(%6,%7 %8x%9)")
+                  .arg(id)
+                  .arg(nativeInk.x()).arg(nativeInk.y())
+                  .arg(nativeInk.width()).arg(nativeInk.height())
+                  .arg(browserInk.x()).arg(browserInk.y())
                   .arg(browserInk.width()).arg(browserInk.height()));
-      require(cropIou >= threshold.iou && cropCoverage >= threshold.coverage,
-              QStringLiteral("%1: label crop drifted: IoU %2, coverage %3")
-                  .arg(id).arg(cropIou).arg(cropCoverage));
+      require(cropCoverage >= threshold.coverage,
+              QStringLiteral("%1: label glyph coverage drifted: %2 (IoU %3)")
+                  .arg(id).arg(cropCoverage).arg(cropIou));
       continue;
     }
     const QString fileName = fixture.value(QStringLiteral("file")).toString();

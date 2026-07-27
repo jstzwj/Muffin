@@ -535,8 +535,10 @@ int main(int argc, char** argv) {
     const QColor errorAccent = theme.alertAccent(AlertKind::Caution);
     qint64 markedPixels = 0;
     for (const QRectF& mark : sourceMarks) {
+      // QTextLayout selection rectangles cover the line box, while a native
+      // wave underline may extend below it by up to two device pixels.
       markedPixels += pixelsNearColorInRect(
-          block, theme, mark, errorAccent);
+          block, theme, mark.adjusted(0.0, 0.0, 0.0, 2.0), errorAccent);
     }
     require(markedPixels > 0,
             QStringLiteral("diagnostic source range must paint an error accent"));

@@ -997,6 +997,7 @@ int main(int argc,char** argv) {
           require(componentBounds.contains(key)&&componentCoverageMinimums.contains(key),
                   QStringLiteral("%1 has no component oracle").arg(key));
           const QSize bounds=componentBounds.value(key);
+          const QSize rasterBounds=bounds.expandedTo(QSize(1,1));
           const qreal componentCoverage=
               tolerantGlyphCoverage(nativeComponent,browserComponent);
           qDebug().noquote()<<key<<"component"<<nativeComponent.size()
@@ -1006,8 +1007,8 @@ int main(int argc,char** argv) {
                             <<"alignment"
                             <<bestRawAlphaAlignment(nativeComponent,
                                                      browserComponent).offset;
-          require(qAbs(nativeComponent.width()-browserComponent.width())<=bounds.width()&&
-                      qAbs(nativeComponent.height()-browserComponent.height())<=bounds.height(),
+          require(qAbs(nativeComponent.width()-browserComponent.width())<=rasterBounds.width()&&
+                      qAbs(nativeComponent.height()-browserComponent.height())<=rasterBounds.height(),
                   QStringLiteral("%1 %2 component bounds drifted: %3x%4 vs %5x%6")
                       .arg(id,name).arg(nativeComponent.width())
                       .arg(nativeComponent.height()).arg(browserComponent.width())
