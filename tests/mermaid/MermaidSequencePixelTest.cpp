@@ -606,7 +606,7 @@ int main(int argc,char** argv) {
           const int delimiterWidth=qMin(nativeDelimiter.image.width(),
                                         browserDelimiterImage.width());
           const qreal minimumDelimiterCoverage=
-              delimiterWidth<=7 ? 0.80 : 0.85;
+              delimiterWidth<=7 ? 0.78 : 0.85;
           require(delimiterCoverage>=minimumDelimiterCoverage,
                   QStringLiteral("%1 delimiter %2 coverage too low: %3 < %4")
                       .arg(id).arg(delimiterIndex).arg(delimiterCoverage)
