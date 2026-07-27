@@ -947,12 +947,9 @@ GlyphInkExtents glyphInkExtents(const MathRenderNode* node, qreal fontScale) {
   GlyphInkExtents result;
   if (node == nullptr) return result;
   if (!node->middleDelimiter.isEmpty()) {
-    const OpenTypeMathFont& font = OpenTypeMathFont::instance();
-    const auto glyph = font.glyph(
-        mathMiddleDelimiterCharacter(node->middleDelimiter));
-    if (!glyph) return result;
-    const QRectF ink = font.rasterGlyphBounds(
-        glyph->glyphIndex, fontScale);
+    const QRectF ink = middleDelimiterLayoutBounds(
+        node->middleDelimiter, fontScale);
+    if (ink.isEmpty()) return result;
     result.top = std::max<qreal>(0.0, -ink.top());
     result.bottom = std::max<qreal>(0.0, ink.bottom());
     return result;
@@ -4549,7 +4546,13 @@ std::optional<MathCssPaintOperation> buildPaintOperation(
       fences.rightGlyph = buildInlineFenceGlyphOperation(
           fences.rightCharacter, fences.right);
       scriptResult.fences = std::move(fences);
+      const qreal absoluteBaseline = scriptResult.container.top() +
+                                     scriptResult.lineAscent;
       scriptResult.container = containingRect;
+      scriptResult.lineAscent = absoluteBaseline -
+                                scriptResult.container.top();
+      scriptResult.lineDescent = scriptResult.container.height() -
+                                 scriptResult.lineAscent;
     }
   } else if (operationNode->semanticKind == MathSemanticKind::Radical) {
     auto radical = buildRadicalOperation(
@@ -5255,13 +5258,13 @@ MathMlPaintOperationBuildResult buildMathMlPaintOperations(
       if (const auto* radical =
               std::get_if<MathCssRadicalOperation>(&operation.payload);
           radical && !radical->bodyGlyphRuns.isEmpty())
-        return radical->bodyGlyphRuns.front().baselineOrigin.y();
+        return radical->container.top() + radical->lineAscent;
       if (const auto* leftRight =
               std::get_if<MathCssLeftRightOperation>(&operation.payload)) {
         for (const MathCssLeftRightBodyRegion& region :
              leftRight->bodyRegions)
           if (!region.glyphRuns.isEmpty())
-            return region.glyphRuns.front().baselineOrigin.y();
+            return leftRight->container.top() + leftRight->lineAscent;
       }
       if (const auto* script =
               std::get_if<MathCssScriptOperation>(&operation.payload);

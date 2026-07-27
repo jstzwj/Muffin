@@ -73,10 +73,16 @@ QJsonValue semanticPaintOperationJson(const QJsonValue& value) {
                             object.contains(QStringLiteral("position")) &&
                             object.contains(QStringLiteral("offset")) &&
                             object.contains(QStringLiteral("fullAdvance"));
+  const bool verticalGlyph = object.contains(QStringLiteral("target")) &&
+                             object.contains(QStringLiteral("selectionTarget")) &&
+                             object.contains(QStringLiteral("realizedExtent")) &&
+                             object.contains(QStringLiteral("fixedGlyphIndex")) &&
+                             object.contains(QStringLiteral("parts"));
   for (auto it = object.constBegin(); it != object.constEnd(); ++it) {
     const bool rasterOnly = rasterOnlyKeys.contains(it.key()) ||
         (glyphRun && it.key() == QLatin1String("advance")) ||
-        (assemblyPart && it.key() == QLatin1String("position"));
+        (assemblyPart && it.key() == QLatin1String("position")) ||
+        (verticalGlyph && it.key() == QLatin1String("realizedExtent"));
     if (!rasterOnly)
       result.insert(it.key(), semanticPaintOperationJson(it.value()));
   }
@@ -2527,15 +2533,9 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     const QString expectedPaintOperationHash = QStringLiteral(
-        "265cff47b29cbaa065640ffbab6e766ac868f85f9c9adcb352075f5125052bd6");
+        "ef0b86a387fd2e907fc8bfc75c83783f721ee74ef4e2015ccdaafcf51b892840");
     if (paintOperationHash != expectedPaintOperationHash ||
         qEnvironmentVariableIsSet("MUFFIN_MATH_DUMP_PAINT_HASHES")) {
-      static const QSet<QString> diagnosticCases = {
-          QStringLiteral("integral-limits"),
-          QStringLiteral("left-right-middle-script"),
-          QStringLiteral("root-mixed-radical"),
-          QStringLiteral("root-multiple-semantics"),
-      };
       for (const QJsonValue& value : paintOperationGolden) {
         const QJsonObject goldenCase = value.toObject();
         const QByteArray json = QJsonDocument(goldenCase)
@@ -2546,10 +2546,6 @@ int main(int argc, char** argv) {
             << "MathML paint case hash"
             << goldenCase.value(QStringLiteral("id")).toString()
             << hash;
-        if (diagnosticCases.contains(
-                goldenCase.value(QStringLiteral("id")).toString()))
-          qWarning().noquote() << "MathML paint case json"
-                               << json.toBase64();
       }
     }
     require(paintOperationHash == expectedPaintOperationHash,
