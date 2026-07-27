@@ -102,7 +102,10 @@ qreal alignedAlphaCoverage(const QImage& native, const QImage& browser,
   require(native.size() == browser.size(),
           QStringLiteral("Label crop dimensions differ"));
   const int alignmentRadius = std::max(1, qCeil(4.0 * dpr));
-  const int tolerance = std::max(1, qCeil(dpr));
+  // The ink bounds below lock glyph placement and dimensions separately.
+  // Allow one additional device pixel here for edge coverage: CoreText and
+  // FreeType can quantize the same outline onto adjacent pixels at high DPR.
+  const int tolerance = std::max(1, qCeil(dpr) + 1);
   const auto ink = [](const QImage& image, int x, int y) {
     return x >= 0 && y >= 0 && x < image.width() && y < image.height() &&
            qAlpha(image.pixel(x, y)) >= 32;

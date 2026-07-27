@@ -152,6 +152,16 @@ qint64 pixelsNearColorInRect(
   return count;
 }
 
+QColor sourceOverOpaque(const QColor& foreground, const QColor& background) {
+  const int alpha = foreground.alpha();
+  const auto blend = [alpha](int front, int back) {
+    return (front * alpha + back * (255 - alpha) + 127) / 255;
+  };
+  return QColor(blend(foreground.red(), background.red()),
+                blend(foreground.green(), background.green()),
+                blend(foreground.blue(), background.blue()));
+}
+
 SelectionRange focusedSelection(NodeId blockId, qsizetype offset = 0) {
   SelectionRange selection;
   selection.anchor.blockId = blockId;
@@ -532,16 +542,17 @@ int main(int argc, char** argv) {
         block->mermaidDiagnosticSourceRects(theme);
     require(!sourceMarks.isEmpty(),
             QStringLiteral("diagnostic must expose its marked source range"));
-    const QColor errorAccent = theme.alertAccent(AlertKind::Caution);
+    QColor errorWash = theme.alertAccent(AlertKind::Caution);
+    errorWash.setAlpha(32);
+    const QColor paintedErrorWash =
+        sourceOverOpaque(errorWash, theme.codeBlockBackgroundColor());
     qint64 markedPixels = 0;
     for (const QRectF& mark : sourceMarks) {
-      // QTextLayout selection rectangles cover the line box, while a native
-      // wave underline may extend below it by up to two device pixels.
       markedPixels += pixelsNearColorInRect(
-          block, theme, mark.adjusted(0.0, 0.0, 0.0, 2.0), errorAccent);
+          block, theme, mark, paintedErrorWash, 18);
     }
     require(markedPixels > 0,
-            QStringLiteral("diagnostic source range must paint an error accent"));
+            QStringLiteral("diagnostic source range must paint an error wash"));
 
     const HitTestResult diagnosticHit =
         block->hitTest(panel.center(), theme);
