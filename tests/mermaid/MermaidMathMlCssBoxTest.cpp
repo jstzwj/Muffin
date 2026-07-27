@@ -2520,6 +2520,13 @@ int main(int argc, char** argv) {
         "f9506692e95485c1ffe407f8453b8e4ba6df1d8ef90ddad37b311e378676e0c4");
     if (paintOperationHash != expectedPaintOperationHash ||
         qEnvironmentVariableIsSet("MUFFIN_MATH_DUMP_PAINT_HASHES")) {
+      static const QSet<QString> diagnosticCases = {
+          QStringLiteral("relations"),
+          QStringLiteral("integral-limits"),
+          QStringLiteral("tall-paren-assembly"),
+          QStringLiteral("text-bidi-digits-punctuation"),
+          QStringLiteral("over-arrow-fallback-text"),
+      };
       for (const QJsonValue& value : paintOperationGolden) {
         const QJsonObject goldenCase = value.toObject();
         const QByteArray json = QJsonDocument(goldenCase)
@@ -2530,6 +2537,10 @@ int main(int argc, char** argv) {
             << "MathML paint case hash"
             << goldenCase.value(QStringLiteral("id")).toString()
             << hash;
+        if (diagnosticCases.contains(
+                goldenCase.value(QStringLiteral("id")).toString()))
+          qWarning().noquote() << "MathML paint case json"
+                               << json.toBase64();
       }
     }
     require(paintOperationHash == expectedPaintOperationHash,
