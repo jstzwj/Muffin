@@ -2516,8 +2516,23 @@ int main(int argc, char** argv) {
     const QString paintOperationHash = QString::fromLatin1(
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
-    require(paintOperationHash ==
-                QLatin1String("f9506692e95485c1ffe407f8453b8e4ba6df1d8ef90ddad37b311e378676e0c4"),
+    const QString expectedPaintOperationHash = QStringLiteral(
+        "f9506692e95485c1ffe407f8453b8e4ba6df1d8ef90ddad37b311e378676e0c4");
+    if (paintOperationHash != expectedPaintOperationHash ||
+        qEnvironmentVariableIsSet("MUFFIN_MATH_DUMP_PAINT_HASHES")) {
+      for (const QJsonValue& value : paintOperationGolden) {
+        const QJsonObject goldenCase = value.toObject();
+        const QByteArray json = QJsonDocument(goldenCase)
+                                    .toJson(QJsonDocument::Compact);
+        const QByteArray hash = QCryptographicHash::hash(
+            json, QCryptographicHash::Sha256).toHex();
+        qWarning().noquote()
+            << "MathML paint case hash"
+            << goldenCase.value(QStringLiteral("id")).toString()
+            << hash;
+      }
+    }
+    require(paintOperationHash == expectedPaintOperationHash,
             QStringLiteral("MathML paint operation golden changed: %1")
                 .arg(paintOperationHash));
     for (const QString& required : {QStringLiteral("math"), QStringLiteral("mrow"),
