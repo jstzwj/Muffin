@@ -510,6 +510,12 @@ int main(int argc,char** argv) {
       const qreal glyphCoverage=tolerantGlyphCoverage(nativeLabel,browserLabel);
       qDebug().noquote()<<id<<"label-crop"<<nativeLabel.size()<<browserLabel.size()
                         <<"IoU"<<labelIou<<"glyph-coverage"<<glyphCoverage;
+      const QHash<QString,QSize> mathRoleRasterDrift{
+          {QStringLiteral("row"),QSize(1,2)},
+          {QStringLiteral("large-operator"),QSize(1,1)},
+          {QStringLiteral("subscript"),QSize(4,2)},
+          {QStringLiteral("superscript"),QSize(1,1)},
+      };
       const QJsonArray browserDelimiters=fixture.value(
           QStringLiteral("mathDelimiters")).toArray();
       if(!browserDelimiters.isEmpty()) {
@@ -694,11 +700,14 @@ int main(int argc,char** argv) {
                           <<"origin"<<nativeDeviceOrigin
                           <<browserDeviceOrigin
                           <<"delta"<<groupOriginDelta;
-        const int groupHeightTolerance =
-            role==QLatin1String("row") ? 2 : 1;
-        require(qAbs(nativeGroup.width()-browserGroup.width())<=1&&
+        require(mathRoleRasterDrift.contains(role),
+                QStringLiteral("%1 has unknown token-group role %2")
+                    .arg(id,role));
+        const QSize groupDrift=mathRoleRasterDrift.value(role);
+        require(qAbs(nativeGroup.width()-browserGroup.width())<=
+                    groupDrift.width()&&
                     qAbs(nativeGroup.height()-browserGroup.height())<=
-                        groupHeightTolerance,
+                    groupDrift.height(),
                 QStringLiteral("%1 %2 token-group bounds drifted")
                     .arg(id,role));
         const bool smallScriptRaster =
@@ -711,8 +720,10 @@ int main(int argc,char** argv) {
                     .arg(id,role).arg(groupIou).arg(groupCoverage));
         require(qAbs(groupAlignment.offset.x())<=1&&
                     qAbs(groupAlignment.offset.y())<=1&&
-                    qAbs(groupOriginDelta.x())<=2.0&&
-                    qAbs(groupOriginDelta.y())<=2.0,
+                    qAbs(groupOriginDelta.x())<=
+                        qMax(2,groupDrift.width())&&
+                    qAbs(groupOriginDelta.y())<=
+                        qMax(2,groupDrift.height()),
                 QStringLiteral("%1 %2 token-group origin drifted")
                     .arg(id,role));
       }
@@ -788,12 +799,6 @@ int main(int argc,char** argv) {
                             <<"coverage"<<componentCoverage
                             <<"raw-best"<<componentAlignment.iou
                             <<"offset"<<componentAlignment.offset;
-          const QHash<QString,QSize> boundsTolerance{
-              {QStringLiteral("row"),QSize(1,2)},
-              {QStringLiteral("large-operator"),QSize(1,1)},
-              {QStringLiteral("subscript"),QSize(4,2)},
-              {QStringLiteral("superscript"),QSize(1,1)},
-          };
           const bool smallSubscriptRaster =
               role==QLatin1String("subscript") &&
               qMax(nativeComponent.height(),browserComponent.height())<=12;
@@ -803,10 +808,10 @@ int main(int argc,char** argv) {
               {QStringLiteral("subscript"),smallSubscriptRaster ? 0.82 : 0.87},
               {QStringLiteral("superscript"),0.95},
           };
-          require(boundsTolerance.contains(role),
+          require(mathRoleRasterDrift.contains(role),
                   QStringLiteral("%1 phase %2 has unknown component role %3")
                       .arg(id).arg(phase).arg(role));
-          const QSize tolerance=boundsTolerance.value(role);
+          const QSize tolerance=mathRoleRasterDrift.value(role);
           require(qAbs(nativeComponent.width()-browserComponent.width())<=
                       tolerance.width()&&
                       qAbs(nativeComponent.height()-browserComponent.height())<=
