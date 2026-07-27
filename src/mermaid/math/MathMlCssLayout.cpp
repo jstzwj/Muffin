@@ -851,6 +851,12 @@ qreal shapedTextCssHeight(const MathShapedText& shaped) {
   if (shaped.formatControlledLineBox)
     return std::ceil(std::max<qreal>(0.0, -shaped.inkBounds.top())) +
            std::ceil(std::max<qreal>(0.0, shaped.inkBounds.bottom()));
+  // Visible STIX glyphs contribute the MathML row box; a whitespace-only
+  // shaping run must not enlarge a fallback-only text line.
+  if (shaped.compoundLineBox && shaped.hasVisibleMathRun)
+    return std::max(std::ceil(shaped.inkBounds.height()),
+                    std::round(shaped.fontPixelSize *
+                               kMathTableRowHeightEm));
   return shaped.compoundLineBox
       ? std::ceil(shaped.inkBounds.height())
       : std::round(shaped.inkBounds.height());

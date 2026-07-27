@@ -107,6 +107,7 @@ struct MathShapedText {
   QVector<MathShapedTextRun> runs;
   qreal advance = 0.0;
   QRectF inkBounds;
+  bool hasVisibleMathRun = false;
   bool compoundLineBox = false;
   bool formatControlledLineBox = false;
   bool fullEmLineBox = false;

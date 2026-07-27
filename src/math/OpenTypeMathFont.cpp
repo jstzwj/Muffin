@@ -23,6 +23,14 @@ namespace {
 constexpr qreal kCssMathPixelSize = 16.0;
 constexpr qreal kOutlineLoadPixelSize = 1000.0;
 
+QRectF scaledOutlineBounds(const QRawFont& font, quint32 glyphIndex,
+                           qreal scale) {
+  if (!font.isValid() || glyphIndex == 0 || scale <= 0.0) return {};
+  QTransform transform;
+  transform.scale(scale, scale);
+  return transform.map(font.pathForGlyph(glyphIndex)).boundingRect();
+}
+
 quint16 u16(const QByteArray& data, qsizetype offset) {
   if (offset < 0 || offset + 2 > data.size()) return 0;
   const auto* p = reinterpret_cast<const uchar*>(data.constData() + offset);
@@ -540,8 +548,9 @@ std::optional<MathShapedTextRun> OpenTypeMathFont::shapeMathMlText(
           (positions.at(index).y() - line.ascent()) * scale);
       result.glyphIndexes.push_back(indexes.at(index));
       result.positions.push_back(position);
-      const QRectF glyphInk = rawFont.boundingRect(indexes.at(index))
-                                  .translated(position);
+      const QRectF glyphInk =
+          scaledOutlineBounds(run.rawFont(), indexes.at(index), scale)
+              .translated(position);
       result.inkBounds = result.inkBounds.isNull()
           ? glyphInk : result.inkBounds.united(glyphInk);
     }
@@ -620,10 +629,8 @@ std::optional<MathShapedText> OpenTypeMathFont::shapeMathMlTextWithFallback(
           (positions.at(index).y() - line.ascent()) * scale);
       run.glyphIndexes.push_back(indexes.at(index));
       run.positions.push_back(position);
-      QRectF glyphInk = mathFamily
-          ? run.rawFont.boundingRect(indexes.at(index))
-          : QTransform::fromScale(scale, scale).mapRect(
-                outlineFont.boundingRect(indexes.at(index)));
+      QRectF glyphInk = scaledOutlineBounds(
+          outlineFont, indexes.at(index), scale);
       glyphInk.translate(position);
       run.inkBounds = run.inkBounds.isNull()
           ? glyphInk : run.inkBounds.united(glyphInk);
@@ -635,6 +642,8 @@ std::optional<MathShapedText> OpenTypeMathFont::shapeMathMlTextWithFallback(
                                    : 0.0));
     }
     run.advance = runRight;
+    result.hasVisibleMathRun = result.hasVisibleMathRun ||
+                               (mathFamily && !run.inkBounds.isEmpty());
     result.runs.push_back(std::move(run));
   }
   if (result.runs.isEmpty()) return std::nullopt;
