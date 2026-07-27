@@ -98,7 +98,14 @@ OpenTypeMathFont::OpenTypeMathFont() {
   // Keep a separately hinted font for those bounds and for QGlyphRun painting.
   rasterFont_.loadFromData(fontData, kCssMathPixelSize,
                            QFont::PreferDefaultHinting);
-  if (font_.isValid()) parseMathTable(font_.fontTable("MATH"));
+  if (font_.isValid()) {
+    const QByteArray hhea = font_.fontTable("hhea");
+    if (hhea.size() >= 8) {
+      typographicAscent_ = designUnitsToPixels(s16(hhea, 4));
+      typographicDescent_ = -designUnitsToPixels(s16(hhea, 6));
+    }
+    parseMathTable(font_.fontTable("MATH"));
+  }
 }
 
 bool OpenTypeMathFont::valid() const { return font_.isValid(); }
@@ -108,6 +115,14 @@ QString OpenTypeMathFont::familyName() const { return font_.familyName(); }
 qreal OpenTypeMathFont::pixelSize() const { return kCssMathPixelSize; }
 
 qreal OpenTypeMathFont::unitsPerEm() const { return font_.unitsPerEm(); }
+
+qreal OpenTypeMathFont::typographicAscent() const {
+  return typographicAscent_;
+}
+
+qreal OpenTypeMathFont::typographicDescent() const {
+  return typographicDescent_;
+}
 
 const MathFontConstants& OpenTypeMathFont::constants() const { return constants_; }
 

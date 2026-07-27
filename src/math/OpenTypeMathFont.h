@@ -124,6 +124,8 @@ public:
   QString familyName() const;
   qreal pixelSize() const;
   qreal unitsPerEm() const;
+  qreal typographicAscent() const;
+  qreal typographicDescent() const;
   const MathFontConstants& constants() const;
   std::optional<MathGlyphMetrics> glyph(const QString& character) const;
   std::optional<MathGlyphMetrics> mathItalicGlyph(QChar character) const;
@@ -161,6 +163,8 @@ private:
 
   QRawFont font_;
   QRawFont rasterFont_;
+  qreal typographicAscent_ = 0.0;
+  qreal typographicDescent_ = 0.0;
   MathFontConstants constants_;
   QHash<quint32, qint16> italicCorrections_;
   QHash<quint32, qint16> accentAttachments_;

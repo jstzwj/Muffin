@@ -34,12 +34,13 @@ qreal snapLayoutUnit(qreal value) {
 
 qreal mathMlInlineAscent(qreal fontScale = 1.0) {
   const OpenTypeMathFont& font = OpenTypeMathFont::instance();
-  const QRawFont raw = font.rasterFont(fontScale);
   const qreal lineHeight = font.pixelSize() * kMathTableRowHeightEm *
                            fontScale;
+  const qreal ascent = std::round(font.typographicAscent() * fontScale);
+  const qreal descent = std::round(font.typographicDescent() * fontScale);
   const qreal leading = std::max<qreal>(
-      0.0, lineHeight - raw.ascent() - raw.descent());
-  return raw.ascent() + leading / 2.0;
+      0.0, lineHeight - ascent - descent);
+  return ascent + leading / 2.0;
 }
 
 qreal mathStyleScale(const MathRenderNode* node) {
@@ -2760,6 +2761,57 @@ bool collectGlyphRunSymbols(const MathRenderNode* node,
   return true;
 }
 
+std::optional<GlyphInkExtents> paintOutlineInkExtents(
+    const MathRenderNode* node, qreal fontScale,
+    bool allowPartialOwnership = false) {
+  if (!node || fontScale <= 0.0) return std::nullopt;
+  QVector<const MathRenderNode*> symbols;
+  bool collected = collectGlyphRunSymbols(node, &symbols);
+  if (!collected && allowPartialOwnership) {
+    symbols.clear();
+    collected = collectGlyphRunSymbols(node, &symbols, true);
+  }
+  if (!collected || symbols.isEmpty()) return std::nullopt;
+
+  const OpenTypeMathFont& font = OpenTypeMathFont::instance();
+  GlyphInkExtents result;
+  bool hasVisibleInk = false;
+  for (const MathRenderNode* symbol : symbols) {
+    QRectF ink;
+    if (const MathRenderNode* textRun = wrappedTextModeRun(symbol)) {
+      QString text;
+      if (!collectTextModeRun(textRun, &text) || text.isEmpty())
+        return std::nullopt;
+      const auto shaped = shapeTextModeRun(text, fontScale);
+      if (!shaped) return std::nullopt;
+      ink = shaped->inkBounds;
+    } else if (symbol->text.size() == 1) {
+      const QChar character = symbol->text.front();
+      const bool italic = character.isLetter() &&
+          (symbol->fontClass == QLatin1String("mathnormal") ||
+           symbol->fontClass == QLatin1String("mathit"));
+      const auto glyph = italic ? font.mathItalicGlyph(character)
+                                : font.glyph(symbol->text);
+      if (!glyph) return std::nullopt;
+      ink = QRectF(glyph->inkBounds.x() * fontScale,
+                   glyph->inkBounds.y() * fontScale,
+                   glyph->inkBounds.width() * fontScale,
+                   glyph->inkBounds.height() * fontScale);
+    } else {
+      const auto shaped = font.shapeMathMlText(symbol->text, fontScale);
+      if (!shaped) return std::nullopt;
+      ink = shaped->inkBounds;
+    }
+    if (ink.isEmpty()) continue;
+    hasVisibleInk = true;
+    result.top = std::max(result.top, std::max<qreal>(0.0, -ink.top()));
+    result.bottom = std::max(
+        result.bottom, std::max<qreal>(0.0, ink.bottom()));
+  }
+  return hasVisibleInk ? std::optional<GlyphInkExtents>{result}
+                       : std::nullopt;
+}
+
 std::optional<QVector<MathCssGlyphRunOperation>> buildGlyphRunOperations(
     const MathRenderNode* node, QRectF target, qreal fontScale,
     bool allowPartialOwnership = false,
@@ -4600,15 +4652,17 @@ std::optional<MathCssPaintOperation> buildPaintOperation(
       }
     }
     if (rootRowChild) {
-      const auto rowRuns = buildGlyphRunOperations(
-          containingNode, containingRect, style.fontScale(), true);
-      const auto bodyRuns = buildGlyphRunOperations(
-          radical->bodyNode, radical->body, style.fontScale(), true);
-      if (rowRuns && !rowRuns->isEmpty() && bodyRuns &&
-          !bodyRuns->isEmpty()) {
-        radical->body.translate(
-            0.0, rowRuns->front().baselineOrigin.y() -
-                     bodyRuns->front().baselineOrigin.y());
+      const auto rowInk = paintOutlineInkExtents(
+          containingNode, style.fontScale(), true);
+      const auto bodyInk = paintOutlineInkExtents(
+          radical->bodyNode, style.fontScale(), true);
+      if (rowInk && bodyInk) {
+        const qreal rowBaseline = containingRect.center().y() +
+            (rowInk->top - rowInk->bottom) / 2.0;
+        const qreal bodyPaintBaseline = radical->body.center().y() +
+            (bodyInk->top - bodyInk->bottom) / 2.0;
+        radical->body.moveTop(snapLayoutUnit(
+            radical->body.top() + rowBaseline - bodyPaintBaseline));
       }
     } else {
       radical->body.moveTop(snapLayoutUnit(
@@ -4648,6 +4702,13 @@ std::optional<MathCssPaintOperation> buildPaintOperation(
             script->subscriptNode, script->subscript,
             style.scriptStyle().fontScale(), true, cssPositionScale))
       script->subscriptGlyphRuns = std::move(*runs);
+    if (script->largeOperatorGlyph) {
+      script->lineAscent = script->base.center().y() -
+                           script->container.top() +
+                           OpenTypeMathFont::instance().constants().axisHeight;
+      script->lineDescent = script->container.height() -
+                            script->lineAscent;
+    }
   }
   if (const auto* script = std::get_if<MathCssScriptOperation>(&result.payload)) {
     appendRegion(script->baseNode, script->base, style);

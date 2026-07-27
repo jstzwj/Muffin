@@ -2533,15 +2533,9 @@ int main(int argc, char** argv) {
         QCryptographicHash::hash(paintOperationJson,
                                  QCryptographicHash::Sha256).toHex());
     const QString expectedPaintOperationHash = QStringLiteral(
-        "ef0b86a387fd2e907fc8bfc75c83783f721ee74ef4e2015ccdaafcf51b892840");
+        "0ac65710d059da205424679186ee51bf5e4c83da12b3999fa775dbe292ce1cec");
     if (paintOperationHash != expectedPaintOperationHash ||
         qEnvironmentVariableIsSet("MUFFIN_MATH_DUMP_PAINT_HASHES")) {
-      static const QSet<QString> diagnosticCases = {
-          QStringLiteral("integral-limits"),
-          QStringLiteral("left-right-middle-radical"),
-          QStringLiteral("root-mixed-radical"),
-          QStringLiteral("root-multiple-semantics"),
-      };
       for (const QJsonValue& value : paintOperationGolden) {
         const QJsonObject goldenCase = value.toObject();
         const QByteArray json = QJsonDocument(goldenCase)
@@ -2552,10 +2546,6 @@ int main(int argc, char** argv) {
             << "MathML paint case hash"
             << goldenCase.value(QStringLiteral("id")).toString()
             << hash;
-        if (diagnosticCases.contains(
-                goldenCase.value(QStringLiteral("id")).toString()))
-          qWarning().noquote() << "MathML paint case json"
-                               << json.toBase64();
       }
     }
     require(paintOperationHash == expectedPaintOperationHash,

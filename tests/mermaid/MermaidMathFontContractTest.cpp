@@ -46,6 +46,10 @@ int main(int argc, char** argv) {
     require(font.familyName() == QLatin1String("STIX Two Math"),
             QStringLiteral("Strict oracle resolved an unexpected font family"));
     near(font.unitsPerEm(), 1000.0, 0.0, QStringLiteral("units per em"));
+    near(font.typographicAscent(), 12.192, 0.001,
+         QStringLiteral("typographic ascent"));
+    near(font.typographicDescent(), 3.808, 0.001,
+         QStringLiteral("typographic descent"));
     near(font.constants().scriptPercentScaleDown, 0.70, 0.0001,
          QStringLiteral("script scale"));
     near(font.constants().scriptScriptPercentScaleDown, 0.55, 0.0001,
