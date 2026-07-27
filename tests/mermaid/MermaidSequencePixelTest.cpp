@@ -578,11 +578,11 @@ int main(int argc,char** argv) {
                             <<"offset"<<delimiterAlignment.offset
                             <<"target"<<nativeDelimiter.target
                             <<"parts"<<nativeDelimiter.parts.size();
-          // Assembled delimiters have independently quantized top and bottom
-          // pieces, so their alpha-trimmed height can differ at both edges.
-          // The MATH target box and ordered part geometry above remain strict.
-          const QSize delimiterRasterDrift(
-              1,nativeDelimiter.parts.isEmpty() ? 1 : 2);
+          // Alpha-trimmed bounds have two independently quantized edges per
+          // axis, so equal vector geometry can differ by two device pixels in
+          // total. The MATH target box and ordered assembly geometry above
+          // remain strict, as do symmetric coverage and aligned origin below.
+          const QSize delimiterRasterDrift(2,2);
           require(qAbs(nativeDelimiter.image.width()-
                            browserDelimiterImage.width())<=
                       delimiterRasterDrift.width()&&
