@@ -138,6 +138,16 @@ struct HorizontalAccentSelection {
     return assembly ? std::ceil(assembly->inkBounds.height()) : 0.0;
   }
 
+  qreal pixelCoverageHeight() const {
+    if (!fixed) return height();
+    const QRectF ink = OpenTypeMathFont::instance()
+                           .glyphPath(fixed->glyphIndex)
+                           .boundingRect();
+    const qreal inkHeight = ink.isEmpty()
+        ? 0.0 : std::ceil(ink.bottom()) - std::floor(ink.top());
+    return std::max(std::ceil(fixed->advance), inkHeight);
+  }
+
   qreal rasterHeight() const {
     if (!fixed) return height();
     const qreal inkHeight = OpenTypeMathFont::instance()
@@ -2349,9 +2359,11 @@ MathCssBox layoutMathMlCssBox(const MathLayoutResult& layout,
     root.advance = root.width;
     const HorizontalAccentSelection selection = selectHorizontalAccent(
         accent->accentCharacter, root.width);
+    // Root geometry follows deterministic outline coverage. Nested placement
+    // and painting retain rasterHeight() so the active backend is not clipped.
     const qreal operatorHeight = accent->accentKind == MathAccentKind::Over &&
             containsTextModeRun(body)
-        ? selection.rasterHeight() : selection.height();
+        ? selection.pixelCoverageHeight() : selection.height();
     const MathFontConstants& constants =
         OpenTypeMathFont::instance().constants();
     root.height = accentBodyCssHeight(body, scale) + operatorHeight +
