@@ -1,0 +1,688 @@
+{
+    "cases": [
+        {
+            "expected": {
+                "ariaRoleDescription": "erDiagram",
+                "bounds": {
+                    "height": 178,
+                    "width": 101.032,
+                    "x": -50.516,
+                    "y": -18.5
+                },
+                "entities": [
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 101.032,
+                            "x": -50.516,
+                            "y": -18.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 101.032,
+                            "x": -50.516,
+                            "y": -18.5
+                        },
+                        "id": "CUSTOMER",
+                        "name": "CUSTOMER"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 68.976,
+                            "x": -34.488,
+                            "y": 122.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 68.976,
+                            "x": -34.488,
+                            "y": 122.5
+                        },
+                        "id": "ORDER",
+                        "name": "ORDER"
+                    }
+                ],
+                "relationships": [
+                    {
+                        "cardA": "ExactlyOne",
+                        "cardB": "ExactlyOne",
+                        "id": "rel0",
+                        "identifying": true,
+                        "label": "places",
+                        "labelPosition": {
+                            "x": 0,
+                            "y": 70.5
+                        },
+                        "path": "M0,18.5L0,27.167C0,35.833,0,53.167,0,70.5C0,87.833,0,105.167,0,113.833L0,122.5",
+                        "points": [
+                            [
+                                0,
+                                18.5
+                            ],
+                            [
+                                0,
+                                70.5
+                            ],
+                            [
+                                0,
+                                122.5
+                            ]
+                        ]
+                    }
+                ],
+                "role": "graphics-document document"
+            },
+            "id": "two-entities-identifying",
+            "source": "erDiagram\nCUSTOMER ||--|| ORDER : places"
+        },
+        {
+            "expected": {
+                "ariaRoleDescription": "erDiagram",
+                "bounds": {
+                    "height": 178,
+                    "width": 436.167,
+                    "x": -230.479,
+                    "y": -18.5
+                },
+                "entities": [
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 26.224,
+                            "x": -13.112,
+                            "y": -18.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 26.224,
+                            "x": -13.112,
+                            "y": -18.5
+                        },
+                        "id": "A",
+                        "name": "A"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 26.4,
+                            "x": -230.479,
+                            "y": 122.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 26.4,
+                            "x": -230.479,
+                            "y": 122.5
+                        },
+                        "id": "B",
+                        "name": "B"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 26.112,
+                            "x": -85.284,
+                            "y": 122.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 26.112,
+                            "x": -85.284,
+                            "y": 122.5
+                        },
+                        "id": "C",
+                        "name": "C"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 27.68,
+                            "x": 58.388,
+                            "y": 122.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 27.68,
+                            "x": 58.388,
+                            "y": 122.5
+                        },
+                        "id": "D",
+                        "name": "D"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 24.896,
+                            "x": 180.791,
+                            "y": 122.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 24.896,
+                            "x": 180.791,
+                            "y": 122.5
+                        },
+                        "id": "E",
+                        "name": "E"
+                    }
+                ],
+                "relationships": [
+                    {
+                        "cardA": "ExactlyOne",
+                        "cardB": "ZeroOrMore",
+                        "id": "rel0",
+                        "identifying": true,
+                        "label": "one_to_many",
+                        "labelPosition": {
+                            "x": -217.279,
+                            "y": 70.5
+                        },
+                        "path": "M-13.112,4.254L-47.14,15.295C-81.168,26.336,-149.224,48.418,-183.252,68.126C-217.279,87.833,-217.279,105.167,-217.28,113.833L-217.279,122.5",
+                        "points": [
+                            [
+                                -13.112,
+                                4.254
+                            ],
+                            [
+                                -217.279,
+                                70.5
+                            ],
+                            [
+                                -217.279,
+                                122.5
+                            ]
+                        ]
+                    },
+                    {
+                        "cardA": "ExactlyOne",
+                        "cardB": "ZeroOrOne",
+                        "id": "rel1",
+                        "identifying": true,
+                        "label": "one_to_zero_or_one",
+                        "labelPosition": {
+                            "x": -72.228,
+                            "y": 70.5
+                        },
+                        "path": "M-13.112,12.798L-22.965,22.415C-32.817,32.032,-52.523,51.266,-62.375,69.55C-72.228,87.833,-72.228,105.167,-72.228,113.833L-72.228,122.5",
+                        "points": [
+                            [
+                                -13.112,
+                                12.798
+                            ],
+                            [
+                                -72.228,
+                                70.5
+                            ],
+                            [
+                                -72.228,
+                                122.5
+                            ]
+                        ]
+                    },
+                    {
+                        "cardA": "OneOrMore",
+                        "cardB": "OneOrMore",
+                        "id": "rel2",
+                        "identifying": true,
+                        "label": "one_or_more",
+                        "labelPosition": {
+                            "x": 72.228,
+                            "y": 70.5
+                        },
+                        "path": "M13.112,12.798L22.965,22.415C32.817,32.032,52.523,51.266,62.375,69.55C72.228,87.833,72.228,105.167,72.228,113.833L72.228,122.5",
+                        "points": [
+                            [
+                                13.112,
+                                12.798
+                            ],
+                            [
+                                72.228,
+                                70.5
+                            ],
+                            [
+                                72.228,
+                                122.5
+                            ]
+                        ]
+                    },
+                    {
+                        "cardA": "ZeroOrMore",
+                        "cardB": "ZeroOrMore",
+                        "id": "rel3",
+                        "identifying": true,
+                        "label": "zero_or_more",
+                        "labelPosition": {
+                            "x": 193.239,
+                            "y": 70.5
+                        },
+                        "path": "M13.112,4.784L43.133,15.736C73.154,26.689,133.197,48.595,163.218,68.214C193.239,87.833,193.239,105.167,193.239,113.833L193.239,122.5",
+                        "points": [
+                            [
+                                13.112,
+                                4.784
+                            ],
+                            [
+                                193.239,
+                                70.5
+                            ],
+                            [
+                                193.239,
+                                122.5
+                            ]
+                        ]
+                    }
+                ],
+                "role": "graphics-document document"
+            },
+            "id": "cardinality-types",
+            "source": "erDiagram\nA ||--o{ B : one_to_many\nA ||--o| C : one_to_zero_or_one\nA }|--|{ D : one_or_more\nA }o--o{ E : zero_or_more"
+        },
+        {
+            "expected": {
+                "ariaRoleDescription": "erDiagram",
+                "bounds": {
+                    "height": 274,
+                    "width": 232.363,
+                    "x": -116.181,
+                    "y": -66.5
+                },
+                "entities": [
+                    {
+                        "attributes": [
+                            {
+                                "comment": "primary key",
+                                "text": "string id"
+                            },
+                            {
+                                "text": "string email"
+                            },
+                            {
+                                "text": "int account_id"
+                            },
+                            {
+                                "comment": "display name",
+                                "text": "string name"
+                            }
+                        ],
+                        "bounds": {
+                            "height": 133,
+                            "width": 232.363,
+                            "x": -116.181,
+                            "y": -66.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 232.363,
+                            "x": -116.181,
+                            "y": -66.5
+                        },
+                        "id": "CUSTOMER",
+                        "name": "CUSTOMER"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 68.976,
+                            "x": -34.488,
+                            "y": 170.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 68.976,
+                            "x": -34.488,
+                            "y": 170.5
+                        },
+                        "id": "ORDER",
+                        "name": "ORDER"
+                    }
+                ],
+                "relationships": [
+                    {
+                        "cardA": "ExactlyOne",
+                        "cardB": "ZeroOrMore",
+                        "id": "rel0",
+                        "identifying": true,
+                        "label": "places",
+                        "labelPosition": {
+                            "x": 0,
+                            "y": 118.5
+                        },
+                        "path": "M0,66.5L0,75.167C0,83.833,0,101.167,0,118.5C0,135.833,0,153.167,0,161.833L0,170.5",
+                        "points": [
+                            [
+                                0,
+                                66.5
+                            ],
+                            [
+                                0,
+                                118.5
+                            ],
+                            [
+                                0,
+                                170.5
+                            ]
+                        ]
+                    }
+                ],
+                "role": "graphics-document document"
+            },
+            "id": "entity-attributes-keys",
+            "source": "erDiagram\nCUSTOMER {\n  string id PK \"primary key\"\n  string email UK\n  int account_id FK\n  string name \"display name\"\n}\nCUSTOMER ||--o{ ORDER : places"
+        },
+        {
+            "expected": {
+                "ariaRoleDescription": "erDiagram",
+                "bounds": {
+                    "height": 319,
+                    "width": 235.516,
+                    "x": -50.516,
+                    "y": -18.5
+                },
+                "entities": [
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 101.032,
+                            "x": -50.516,
+                            "y": -18.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 101.032,
+                            "x": -50.516,
+                            "y": -18.5
+                        },
+                        "id": "CUSTOMER",
+                        "name": "CUSTOMER"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 68.976,
+                            "x": -34.488,
+                            "y": 122.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 68.976,
+                            "x": -34.488,
+                            "y": 122.5
+                        },
+                        "id": "ORDER",
+                        "name": "ORDER"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 95.696,
+                            "x": 22.024,
+                            "y": 263.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 95.696,
+                            "x": 22.024,
+                            "y": 263.5
+                        },
+                        "id": "LINE_ITEM",
+                        "name": "LINE_ITEM"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 90.512,
+                            "x": 94.488,
+                            "y": 122.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 90.512,
+                            "x": 94.488,
+                            "y": 122.5
+                        },
+                        "id": "PRODUCT",
+                        "name": "PRODUCT"
+                    }
+                ],
+                "relationships": [
+                    {
+                        "cardA": "ExactlyOne",
+                        "cardB": "ZeroOrMore",
+                        "id": "rel0",
+                        "identifying": true,
+                        "label": "places",
+                        "labelPosition": {
+                            "x": 0,
+                            "y": 70.5
+                        },
+                        "path": "M0,18.5L0,27.167C0,35.833,0,53.167,0,70.5C0,87.833,0,105.167,0,113.833L0,122.5",
+                        "points": [
+                            [
+                                0,
+                                18.5
+                            ],
+                            [
+                                0,
+                                70.5
+                            ],
+                            [
+                                0,
+                                122.5
+                            ]
+                        ]
+                    },
+                    {
+                        "cardA": "ExactlyOne",
+                        "cardB": "OneOrMore",
+                        "id": "rel1",
+                        "identifying": true,
+                        "label": "contains",
+                        "labelPosition": {
+                            "x": 0,
+                            "y": 211.5
+                        },
+                        "path": "M0,159.5L0,168.167C0,176.833,0,194.167,8.589,211.5C17.179,228.833,34.358,246.167,42.947,254.833L51.537,263.5",
+                        "points": [
+                            [
+                                0,
+                                159.5
+                            ],
+                            [
+                                0,
+                                211.5
+                            ],
+                            [
+                                51.537,
+                                263.5
+                            ]
+                        ]
+                    },
+                    {
+                        "cardA": "ExactlyOne",
+                        "cardB": "ZeroOrMore",
+                        "id": "rel2",
+                        "identifying": true,
+                        "label": "\"ordered a",
+                        "labelPosition": {
+                            "x": 139.744,
+                            "y": 211.5
+                        },
+                        "path": "M139.744,159.5L139.744,168.167C139.744,176.833,139.744,194.167,131.155,211.5C122.565,228.833,105.386,246.167,96.797,254.833L88.207,263.5",
+                        "points": [
+                            [
+                                139.744,
+                                159.5
+                            ],
+                            [
+                                139.744,
+                                211.5
+                            ],
+                            [
+                                88.207,
+                                263.5
+                            ]
+                        ]
+                    }
+                ],
+                "role": "graphics-document document"
+            },
+            "id": "multi-entity-roles",
+            "source": "erDiagram\nCUSTOMER ||--o{ ORDER : places\nORDER ||--|{ LINE_ITEM : contains\nPRODUCT ||--o{ LINE_ITEM : \"ordered as\""
+        },
+        {
+            "expected": {
+                "ariaRoleDescription": "erDiagram",
+                "bounds": {
+                    "height": 178,
+                    "width": 101.032,
+                    "x": -50.516,
+                    "y": -18.5
+                },
+                "entities": [
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 101.032,
+                            "x": -50.516,
+                            "y": -18.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 101.032,
+                            "x": -50.516,
+                            "y": -18.5
+                        },
+                        "id": "CUSTOMER",
+                        "name": "CUSTOMER"
+                    },
+                    {
+                        "attributes": [
+                        ],
+                        "bounds": {
+                            "height": 37,
+                            "width": 68.976,
+                            "x": -34.488,
+                            "y": 122.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 68.976,
+                            "x": -34.488,
+                            "y": 122.5
+                        },
+                        "id": "ORDER",
+                        "name": "ORDER"
+                    }
+                ],
+                "relationships": [
+                    {
+                        "cardA": "ZeroOrMore",
+                        "cardB": "ZeroOrMore",
+                        "id": "rel0",
+                        "identifying": false,
+                        "label": "has",
+                        "labelPosition": {
+                            "x": 0,
+                            "y": 70.5
+                        },
+                        "path": "M0,18.5L0,27.167C0,35.833,0,53.167,0,70.5C0,87.833,0,105.167,0,113.833L0,122.5",
+                        "points": [
+                            [
+                                0,
+                                18.5
+                            ],
+                            [
+                                0,
+                                70.5
+                            ],
+                            [
+                                0,
+                                122.5
+                            ]
+                        ]
+                    }
+                ],
+                "role": "graphics-document document"
+            },
+            "id": "non-identifying",
+            "source": "erDiagram\nCUSTOMER }o..o{ ORDER : has"
+        },
+        {
+            "expected": {
+                "ariaRoleDescription": "erDiagram",
+                "bounds": {
+                    "height": 85,
+                    "width": 111.376,
+                    "x": -55.688,
+                    "y": -42.5
+                },
+                "entities": [
+                    {
+                        "attributes": [
+                            {
+                                "text": "string id"
+                            },
+                            {
+                                "text": "string name"
+                            }
+                        ],
+                        "bounds": {
+                            "height": 85,
+                            "width": 111.376,
+                            "x": -55.688,
+                            "y": -42.5
+                        },
+                        "headerRect": {
+                            "height": 24,
+                            "width": 111.376,
+                            "x": -55.688,
+                            "y": -42.5
+                        },
+                        "id": "ACCOUNT",
+                        "name": "ACCOUNT"
+                    }
+                ],
+                "relationships": [
+                ],
+                "role": "graphics-document document"
+            },
+            "id": "single-entity",
+            "source": "erDiagram\nACCOUNT {\n  string id PK\n  string name\n}"
+        }
+    ],
+    "fontMode": "bundled-noto-2.13b171",
+    "mermaidVersion": "11.16.0",
+    "oracle": "ErScene::toJsonObject (Muffin self-snapshot, not real-mermaid)",
+    "upstream": {
+        "notes": "REGRESSION GUARD ONLY. Generated from Muffin's own er::ErScene::toJsonObject(); NOT a real-mermaid reference. Real puppeteer/mermaid 11.16.0 parity deferred until the G:/github/mermaid-cli checkout is restored (docs/mermaid-architecture.md step 5).",
+        "package": "mermaid",
+        "version": "11.16.0"
+    }
+}
