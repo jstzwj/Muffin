@@ -135,7 +135,7 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 | 2（phase 1） | ✅ | **SvgPathParser** 抽取为首个 L2 原语（commit 788386b）：class/state/er 三 painter 的匿名 SVG path 解析拷贝合并为 `scene::parseSvgPath`（ER 超集，M/L/H/V/C/Q/Z），行为保持（170 测试全绿）。探查发现 Label（`paintFlowLabel`）与 Rough（`rough::`）**已是跨图共享**，无需再抽。NodeBox/Edge 变体纠缠、Marker 形状数据来自 5 源需框架——均暂缓（且只被像素 golden 覆盖、reference 不可重生成）。 |
 | 4 | ⬜ | 统一 dagre input + 泛化 style cascade。 |
 
-**ER 回归 oracle 是稳定性守卫，非真-mermaid parity**：fixture = Muffin 自身 `ErScene::toJsonObject()` 快照。真-mermaid reference 被阻塞——生成器依赖 sibling `G:\github\mermaid-cli\` checkout（puppeteer + mermaid + dagre-d3-es + Chrome），当前不在盘上。**恢复该 checkout 是 ER 真 parity + `config-effect-matrix.scope.families` 加 `er` 的共同前置**。
+**ER 回归 oracle 是稳定性守卫，非真-mermaid parity**：fixture = Muffin 自身 `ErScene::toJsonObject()` 快照。真-mermaid reference 此前被 sibling `G:\github\mermaid-cli\` checkout 缺失阻塞——**该 checkout 现已可一键复现**（`node scripts/setup_mermaid_reference_toolchain.mjs`，见 `docs/mermaid-reference-toolchain.md`；mermaid 11.16.0 + dagre-d3-es 7.0.14 + puppeteer shim + 系统 Chrome，重生成 `flowchart-geometry.json` 字节一致）。**ER 真 parity + `config-effect-matrix.scope.families` 加 `er` 的前置已满足**，是下一步。
 
 **已知 follow-up**：ER dagre 曲线坐标存在 run-to-run FP 抖动（QHash 迭代序），回归 oracle 用 path 0.01 容差吸收；根治需在 dagre 移植层做确定性化。
 
