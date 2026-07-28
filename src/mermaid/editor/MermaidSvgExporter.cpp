@@ -10,6 +10,8 @@
 
 #include <QBuffer>
 #include <QCryptographicHash>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QPainter>
 #include <QSvgGenerator>
 #include <QXmlStreamReader>
@@ -65,7 +67,17 @@ QString svgRootId(const MermaidRenderEntry& entry, qsizetype instanceIndex) {
   identity += QByteArray::number(entry.naturalSize.width());
   identity += 'x';
   identity += QByteArray::number(entry.naturalSize.height());
-  if (entry.scene) identity += entry.scene->toJson().toUtf8();
+  // Contribute every family's canonical scene dump so the digest is
+  // content-unique (previously only flowchart contributed; same-sized
+  // class/sequence/state/er diagrams collided on the SVG root id).
+  QJsonObject sceneJson;
+  if (entry.scene)               sceneJson = entry.scene->toJsonObject();
+  else if (entry.classScene)     sceneJson = entry.classScene->toJsonObject();
+  else if (entry.sequenceScene)  sceneJson = entry.sequenceScene->toJsonObject();
+  else if (entry.stateScene)     sceneJson = entry.stateScene->toJsonObject();
+  else if (entry.erScene)        sceneJson = entry.erScene->toJsonObject();
+  if (!sceneJson.isEmpty())
+    identity += QJsonDocument(sceneJson).toJson(QJsonDocument::Compact);
   const QByteArray digest = QCryptographicHash::hash(
       identity, QCryptographicHash::Sha256).toHex().left(16);
   QString id = QStringLiteral("mfn-mermaid-") + QString::fromLatin1(digest);

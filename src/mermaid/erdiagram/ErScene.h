@@ -75,6 +75,7 @@ struct ErSceneRelationship {
 struct ErScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
+  QJsonObject toJsonObject() const override;
 
   QRectF bounds;
   QVector<ErSceneEntity> entities;

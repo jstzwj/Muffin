@@ -1,6 +1,9 @@
 #include "mermaid/erdiagram/ErScene.h"
 
 #include <QHash>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QPointF>
 #include <QRectF>
 #include <QRegularExpression>
@@ -10,6 +13,7 @@
 #include <QVector>
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 // erDiagram scene builder. Mirrors src/mermaid/classdiagram/ClassScene.cpp::
@@ -92,6 +96,40 @@ QRectF edgePointsBounds(const QVector<QPointF>& points,
   for (const QVector<QPointF>& segment : segments)
     for (const QPointF& point : segment) include(point);
   return bounds;
+}
+
+qreal r3(qreal v) { return std::round(v * 1000.0) / 1000.0; }
+
+QJsonObject rectJson(const QRectF& r) {
+  return {{QStringLiteral("x"), r3(r.x())},
+          {QStringLiteral("y"), r3(r.y())},
+          {QStringLiteral("width"), r3(r.width())},
+          {QStringLiteral("height"), r3(r.height())}};
+}
+
+QJsonObject pointJson(const QPointF& p) {
+  return {{QStringLiteral("x"), r3(p.x())}, {QStringLiteral("y"), r3(p.y())}};
+}
+
+QJsonArray pointsJson(const QVector<QPointF>& pts) {
+  QJsonArray a;
+  for (const QPointF& p : pts) {
+    QJsonArray pair;
+    pair.append(r3(p.x()));
+    pair.append(r3(p.y()));
+    a.append(pair);
+  }
+  return a;
+}
+
+QString cardName(er::ErCardinality c) {
+  switch (c) {
+    case er::ErCardinality::ExactlyOne: return QStringLiteral("ExactlyOne");
+    case er::ErCardinality::ZeroOrOne:  return QStringLiteral("ZeroOrOne");
+    case er::ErCardinality::OneOrMore:  return QStringLiteral("OneOrMore");
+    case er::ErCardinality::ZeroOrMore: return QStringLiteral("ZeroOrMore");
+  }
+  return {};
 }
 
 }  // namespace
@@ -210,4 +248,56 @@ er::ErScene er::buildErScene(const er::ErLayoutInput& input,
         unite(QRectF(point, QSizeF(0.0, 0.0)));
   }
   return scene;
+}
+
+QJsonObject er::ErScene::toJsonObject() const {
+  QJsonObject o;
+  o[QStringLiteral("role")] = role;
+  o[QStringLiteral("ariaRoleDescription")] = ariaRoleDescription;
+  o[QStringLiteral("bounds")] = rectJson(bounds);
+
+  QJsonArray entitiesArray;
+  for (const er::ErSceneEntity& entity : entities) {
+    QJsonObject en;
+    en[QStringLiteral("id")] = entity.id;
+    en[QStringLiteral("name")] = entity.name;
+    en[QStringLiteral("bounds")] = rectJson(entity.bounds);
+    en[QStringLiteral("headerRect")] = rectJson(entity.headerRect);
+    QJsonArray attributesArray;
+    for (const er::ErSceneAttribute& attribute : entity.attributes) {
+      QJsonObject at;
+      at[QStringLiteral("text")] = attribute.text;
+      if (!attribute.keyType.isEmpty())
+        at[QStringLiteral("keyType")] = attribute.keyType;
+      if (!attribute.comment.isEmpty())
+        at[QStringLiteral("comment")] = attribute.comment;
+      attributesArray.append(at);
+    }
+    en[QStringLiteral("attributes")] = attributesArray;
+    entitiesArray.append(en);
+  }
+  o[QStringLiteral("entities")] = entitiesArray;
+
+  QJsonArray relationshipsArray;
+  for (const er::ErSceneRelationship& relationship : relationships) {
+    QJsonObject rel;
+    rel[QStringLiteral("id")] = relationship.id;
+    rel[QStringLiteral("path")] = relationship.path;
+    rel[QStringLiteral("points")] = pointsJson(relationship.points);
+    rel[QStringLiteral("cardA")] = cardName(relationship.cardA);
+    rel[QStringLiteral("cardB")] = cardName(relationship.cardB);
+    rel[QStringLiteral("identifying")] = relationship.identifying;
+    if (!relationship.roleA.isEmpty())
+      rel[QStringLiteral("roleA")] = relationship.roleA;
+    if (!relationship.roleB.isEmpty())
+      rel[QStringLiteral("roleB")] = relationship.roleB;
+    if (!relationship.label.isEmpty())
+      rel[QStringLiteral("label")] = relationship.label;
+    if (relationship.labelPosition.has_value())
+      rel[QStringLiteral("labelPosition")] = pointJson(*relationship.labelPosition);
+    relationshipsArray.append(rel);
+  }
+  o[QStringLiteral("relationships")] = relationshipsArray;
+
+  return o;
 }

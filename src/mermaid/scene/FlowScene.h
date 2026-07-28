@@ -123,6 +123,10 @@ struct FlowScene : MermaidScene {
   QVector<FlowSceneEdge> edges;
   QVector<FlowSceneNode> nodes;
 
+  QJsonObject toJsonObject() const override;
+  // Compact-string wrapper retained for callers that want the serialized form
+  // (MermaidSvgExporter digest, debug dumps). Byte-identical to the pre-split
+  // toJson() output: same key order, same r3 rounding.
   QString toJson() const;
 };
 

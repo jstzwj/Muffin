@@ -581,7 +581,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
   return scene;
 }
 
-QString FlowScene::toJson() const {
+QJsonObject FlowScene::toJsonObject() const {
   QJsonObject root;
   root[QStringLiteral("background")] = background;
   root[QStringLiteral("look")] = flowchart::flowLookName(look);
@@ -640,7 +640,11 @@ QString FlowScene::toJson() const {
   }
   root[QStringLiteral("nodes")] = nodesJson;
 
-  return QJsonDocument(root).toJson(QJsonDocument::Compact);
+  return root;
+}
+
+QString FlowScene::toJson() const {
+  return QJsonDocument(toJsonObject()).toJson(QJsonDocument::Compact);
 }
 
 }  // namespace muffin::mermaid::flowscene

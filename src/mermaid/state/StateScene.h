@@ -60,6 +60,7 @@ struct StateSceneEdge {
 struct StateScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
+  QJsonObject toJsonObject() const override;
 
   QString role = QStringLiteral("graphics-document document");
   QString ariaRoleDescription = QStringLiteral("stateDiagram");

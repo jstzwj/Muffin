@@ -13,6 +13,7 @@
 
 #include "mermaid/MermaidPaintOptions.h"
 
+#include <QJsonObject>
 #include <QRectF>
 
 class QPainter;
@@ -30,6 +31,12 @@ struct MermaidScene {
   // directly; this entry covers the normal color render path used by the
   // image and SVG backends.
   virtual void paint(QPainter& painter, const MermaidPaintOptions& options) const = 0;
+
+  // Canonical structural+geometric+style dump shared by (a) the deterministic
+  // SVG root-id digest (MermaidSvgExporter) and (b) parity/regression oracles.
+  // Each concrete scene serializes bounds + its element arrays (id/geometry/
+  // style/label), with numbers rounded to 0.001 — mirrors FlowScene::toJson.
+  virtual QJsonObject toJsonObject() const = 0;
 };
 
 }  // namespace muffin::mermaid

@@ -1,6 +1,11 @@
 #include "mermaid/state/StateScene.h"
 
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonDocument>
+
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 namespace muffin::mermaid::state {
@@ -151,6 +156,91 @@ StateScene buildStateScene(const StateLayoutInput& input,
   }
   if (initialized) scene.bounds.adjust(-8.0, -8.0, 8.0, 8.0);
   return scene;
+}
+
+namespace {
+
+qreal r3(qreal v) { return std::round(v * 1000.0) / 1000.0; }
+
+QJsonObject rectJson(const QRectF& r) {
+  return {{QStringLiteral("x"), r3(r.x())},
+          {QStringLiteral("y"), r3(r.y())},
+          {QStringLiteral("width"), r3(r.width())},
+          {QStringLiteral("height"), r3(r.height())}};
+}
+
+QJsonObject pointJson(const QPointF& p) {
+  return {{QStringLiteral("x"), r3(p.x())}, {QStringLiteral("y"), r3(p.y())}};
+}
+
+QJsonArray pointsJson(const QVector<QPointF>& pts) {
+  QJsonArray a;
+  for (const QPointF& p : pts) {
+    QJsonArray pair;
+    pair.append(r3(p.x()));
+    pair.append(r3(p.y()));
+    a.append(pair);
+  }
+  return a;
+}
+
+}  // namespace
+
+QJsonObject StateScene::toJsonObject() const {
+  QJsonObject o;
+  o[QStringLiteral("role")] = role;
+  o[QStringLiteral("ariaRoleDescription")] = ariaRoleDescription;
+  o[QStringLiteral("bounds")] = rectJson(bounds);
+  if (handDrawn) {
+    o[QStringLiteral("handDrawn")] = true;
+    o[QStringLiteral("handDrawnSeed")] = static_cast<int>(handDrawnSeed);
+  }
+
+  QJsonArray nodesArray;
+  for (const StateSceneNode& node : nodes) {
+    QJsonObject n;
+    n[QStringLiteral("id")] = node.id;
+    if (!node.shape.isEmpty())
+      n[QStringLiteral("shape")] = node.shape;
+    n[QStringLiteral("label")] = node.label;
+    n[QStringLiteral("bounds")] = rectJson(node.bounds);
+    n[QStringLiteral("group")] = node.group;
+    nodesArray.append(n);
+  }
+  o[QStringLiteral("nodes")] = nodesArray;
+
+  QJsonArray clustersArray;
+  for (const StateSceneNode& cluster : clusters) {
+    QJsonObject c;
+    c[QStringLiteral("id")] = cluster.id;
+    if (!cluster.shape.isEmpty())
+      c[QStringLiteral("shape")] = cluster.shape;
+    c[QStringLiteral("label")] = cluster.label;
+    c[QStringLiteral("bounds")] = rectJson(cluster.bounds);
+    c[QStringLiteral("group")] = cluster.group;
+    clustersArray.append(c);
+  }
+  o[QStringLiteral("clusters")] = clustersArray;
+
+  QJsonArray edgesArray;
+  for (const StateSceneEdge& edge : edges) {
+    QJsonObject e;
+    e[QStringLiteral("id")] = edge.id;
+    e[QStringLiteral("start")] = edge.start;
+    e[QStringLiteral("end")] = edge.end;
+    if (!edge.label.isEmpty())
+      e[QStringLiteral("label")] = edge.label;
+    if (!edge.markerEnd.isEmpty())
+      e[QStringLiteral("markerEnd")] = edge.markerEnd;
+    e[QStringLiteral("path")] = edge.path;
+    e[QStringLiteral("points")] = pointsJson(edge.points);
+    if (edge.labelPosition.has_value())
+      e[QStringLiteral("labelPosition")] = pointJson(*edge.labelPosition);
+    edgesArray.append(e);
+  }
+  o[QStringLiteral("edges")] = edgesArray;
+
+  return o;
 }
 
 }  // namespace muffin::mermaid::state
