@@ -132,7 +132,7 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 | 1 | ✅ | `MermaidScene` 基类（`sceneBounds` + `paint`）。 |
 | 3 | ✅ | `Diagram` 契约 + `findMermaidDiagram` registry；`renderSource` 瘦编排器。 |
 | 5（地基） | ✅ | **`toJsonObject()` 纯虚 + 5 scene 实现**（commit 3f29e55）；`MermaidSvgExporter` digest 扩展为全 5 图；`ParityDiff.h` 共享语义比对库（header-only）；**ER scene 回归 oracle**（`MermaidErSceneRegressionTest` + `er-scene.json`，commit 5791db8）。FlowScene `toJson()` 字节稳定，53 个 mermaid 测试全绿。 |
-| 2 | ⬜ | L2 共享渲染原语（Label/Marker/Curve/Rough）。 |
+| 2（phase 1） | ✅ | **SvgPathParser** 抽取为首个 L2 原语（commit 788386b）：class/state/er 三 painter 的匿名 SVG path 解析拷贝合并为 `scene::parseSvgPath`（ER 超集，M/L/H/V/C/Q/Z），行为保持（170 测试全绿）。探查发现 Label（`paintFlowLabel`）与 Rough（`rough::`）**已是跨图共享**，无需再抽。NodeBox/Edge 变体纠缠、Marker 形状数据来自 5 源需框架——均暂缓（且只被像素 golden 覆盖、reference 不可重生成）。 |
 | 4 | ⬜ | 统一 dagre input + 泛化 style cascade。 |
 
 **ER 回归 oracle 是稳定性守卫，非真-mermaid parity**：fixture = Muffin 自身 `ErScene::toJsonObject()` 快照。真-mermaid reference 被阻塞——生成器依赖 sibling `G:\github\mermaid-cli\` checkout（puppeteer + mermaid + dagre-d3-es + Chrome），当前不在盘上。**恢复该 checkout 是 ER 真 parity + `config-effect-matrix.scope.families` 加 `er` 的共同前置**。
