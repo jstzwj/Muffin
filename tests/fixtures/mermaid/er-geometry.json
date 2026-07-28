@@ -1,0 +1,301 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "Real mermaid 11.16.0 erDiagram geometry captured via headless Chrome. Entity bounds + relationship paths are normalized to the first source-order entity's centre (index 0), matching Muffin's FlowchartLayout origin subtraction. cardA/cardB recovered from crow's-foot markers (marker-end=cardA, marker-start=cardB). Compare against er::ErScene::toJsonObject with entity matching by id."
+  },
+  "mermaidVersion": "11.16.0",
+  "fontMode": "trebuchet-ms",
+  "oracle": "erDiagram.render entity bounds + relationship paths (first-entity normalized)",
+  "cases": [
+    {
+      "id": "cardinality-types",
+      "source": "erDiagram\nA ||--|| B : r1\nC |o--o| D : r2\nE }|--|{ F : r3\nG }o--o{ H : r4",
+      "expected": {
+        "entities": [
+          {
+            "id": "A",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "B",
+            "bounds": {
+              "x": -50,
+              "y": 145,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "C",
+            "bounds": {
+              "x": 190,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "D",
+            "bounds": {
+              "x": 190,
+              "y": 145,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "E",
+            "bounds": {
+              "x": 430,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "F",
+            "bounds": {
+              "x": 430,
+              "y": 145,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "G",
+            "bounds": {
+              "x": 670,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "H",
+            "bounds": {
+              "x": 670,
+              "y": 145,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
+            "cardA": "ExactlyOne",
+            "cardB": "ExactlyOne",
+            "identifying": true
+          },
+          {
+            "path": "M240,42L240,50.583C240,59.167,240,76.333,240,93.5C240,110.667,240,127.833,240,136.417L240,145",
+            "cardA": "ZeroOrOne",
+            "cardB": "ZeroOrOne",
+            "identifying": true
+          },
+          {
+            "path": "M480,42L480,50.583C480,59.167,480,76.333,480,93.5C480,110.667,480,127.833,480,136.417L480,145",
+            "cardA": "OneOrMore",
+            "cardB": "OneOrMore",
+            "identifying": true
+          },
+          {
+            "path": "M720,42L720,50.583C720,59.167,720,76.333,720,93.5C720,110.667,720,127.833,720,136.417L720,145",
+            "cardA": "ZeroOrMore",
+            "cardB": "ZeroOrMore",
+            "identifying": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "entity-attributes-keys",
+      "source": "erDiagram\nCUSTOMER {\n  string name PK \"primary name key\"\n  int age\n  bigint account_id FK\n  string email UK \"unique email\"\n}",
+      "expected": {
+        "entities": [
+          {
+            "id": "CUSTOMER",
+            "bounds": {
+              "x": -184.133,
+              "y": -106.875,
+              "width": 368.266,
+              "height": 213.75
+            }
+          }
+        ],
+        "relationships": []
+      }
+    },
+    {
+      "id": "relationship-with-label",
+      "source": "erDiagram\nCUSTOMER ||--o{ ORDER : places",
+      "expected": {
+        "entities": [
+          {
+            "id": "CUSTOMER",
+            "bounds": {
+              "x": -58.031,
+              "y": -42,
+              "width": 116.063,
+              "height": 84
+            }
+          },
+          {
+            "id": "ORDER",
+            "bounds": {
+              "x": -50,
+              "y": 145,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
+            "cardA": "ExactlyOne",
+            "cardB": "ZeroOrMore",
+            "identifying": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "entity-alias",
+      "source": "erDiagram\nENTITY \"Display Name\"\nUSER \"Application User\" {\n  string id PK\n}",
+      "expected": {
+        "entities": [
+          {
+            "id": "ENTITY",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "Display Name",
+            "bounds": {
+              "x": 190,
+              "y": -42,
+              "width": 136.234,
+              "height": 84
+            }
+          },
+          {
+            "id": "USER",
+            "bounds": {
+              "x": 466.234,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "Application User",
+            "bounds": {
+              "x": 706.234,
+              "y": -42.75,
+              "width": 167.734,
+              "height": 85.5
+            }
+          }
+        ],
+        "relationships": []
+      }
+    },
+    {
+      "id": "acc-title",
+      "source": "erDiagram\naccTitle: ER Model\nA ||--|| B : rel",
+      "expected": {
+        "entities": [
+          {
+            "id": "A",
+            "bounds": {
+              "x": -50,
+              "y": -42,
+              "width": 100,
+              "height": 84
+            }
+          },
+          {
+            "id": "B",
+            "bounds": {
+              "x": -50,
+              "y": 145,
+              "width": 100,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
+            "cardA": "ExactlyOne",
+            "cardB": "ExactlyOne",
+            "identifying": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "non-identifying",
+      "source": "erDiagram\nCUSTOMER }|..|{ DELIVERY-ADDRESS : uses",
+      "expected": {
+        "entities": [
+          {
+            "id": "CUSTOMER",
+            "bounds": {
+              "x": -58.031,
+              "y": -42,
+              "width": 116.063,
+              "height": 84
+            }
+          },
+          {
+            "id": "DELIVERY-ADDRESS",
+            "bounds": {
+              "x": -86.289,
+              "y": 145,
+              "width": 172.578,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": [
+          {
+            "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
+            "cardA": "OneOrMore",
+            "cardB": "OneOrMore",
+            "identifying": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "single-entity",
+      "source": "erDiagram\nACCOUNT",
+      "expected": {
+        "entities": [
+          {
+            "id": "ACCOUNT",
+            "bounds": {
+              "x": -54.617,
+              "y": -42,
+              "width": 109.234,
+              "height": 84
+            }
+          }
+        ],
+        "relationships": []
+      }
+    }
+  ]
+}
