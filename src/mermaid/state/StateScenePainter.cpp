@@ -1,11 +1,11 @@
 #include "mermaid/state/StateScenePainter.h"
 
 #include "mermaid/rough/RoughPaint.h"
+#include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QPainter>
 #include <QPainterPath>
-#include <QRegularExpression>
 
 #include <algorithm>
 #include <cmath>
@@ -14,46 +14,8 @@ namespace muffin::mermaid::state {
 namespace {
 QColor color(const QString& value) { return mermaid::color::toQColor(value); }
 
-QPainterPath svgPath(const QString& source) {
-  static const QRegularExpression token(
-      QStringLiteral("[A-Za-z]|[-+]?(?:\\d*\\.\\d+|\\d+\\.?)(?:[eE][-+]?\\d+)?"));
-  QStringList tokens;
-  auto matches = token.globalMatch(source);
-  while (matches.hasNext()) tokens.append(matches.next().captured());
-  QPainterPath path;
-  qsizetype i = 0;
-  QChar command;
-  QPointF current, start;
-  const auto isCommand = [](const QString& value) {
-    return value.size() == 1 && value.front().isLetter();
-  };
-  const auto number = [&]() { return tokens.value(i++).toDouble(); };
-  const auto point = [&](bool relative) {
-    QPointF value(number(), number());
-    return relative ? value + current : value;
-  };
-  while (i < tokens.size()) {
-    if (isCommand(tokens.at(i))) command = tokens.at(i++).front();
-    if (command.isNull()) break;
-    const bool relative = command.isLower();
-    const QChar upper = command.toUpper();
-    if (upper == QLatin1Char('M')) {
-      current = point(relative); path.moveTo(current); start = current;
-      command = relative ? QLatin1Char('l') : QLatin1Char('L');
-    } else if (upper == QLatin1Char('L')) {
-      current = point(relative); path.lineTo(current);
-    } else if (upper == QLatin1Char('C')) {
-      const QPointF first = point(relative), second = point(relative);
-      current = point(relative); path.cubicTo(first, second, current);
-    } else if (upper == QLatin1Char('Z')) {
-      path.closeSubpath(); current = start; command = {};
-    } else command = {};
-  }
-  return path;
-}
-
 QPainterPath edgePath(const StateSceneEdge& edge) {
-  if (!edge.path.isEmpty()) return svgPath(edge.path);
+  if (!edge.path.isEmpty()) return scene::parseSvgPath(edge.path);
   QPainterPath path;
   const QVector<QPointF> points = !edge.points.isEmpty() ? edge.points
       : edge.segments.isEmpty() ? QVector<QPointF>{} : edge.segments.first();

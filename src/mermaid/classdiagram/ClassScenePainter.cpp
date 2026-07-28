@@ -2,12 +2,12 @@
 
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/rough/RoughPaint.h"
+#include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
 #include <QPainter>
 #include <QPainterPath>
-#include <QRegularExpression>
 
 #include <algorithm>
 #include <cmath>
@@ -17,63 +17,6 @@ namespace {
 
 QColor color(const QString& value) {
   return mermaid::color::toQColor(value);
-}
-
-QPainterPath painterPath(const QString& source) {
-  static const QRegularExpression token(
-      QStringLiteral("[A-Za-z]|[-+]?(?:\\d*\\.\\d+|\\d+\\.?)(?:[eE][-+]?\\d+)?"));
-  QStringList tokens;
-  auto matches = token.globalMatch(source);
-  while (matches.hasNext()) tokens.append(matches.next().captured());
-  QPainterPath path;
-  qsizetype i = 0;
-  QChar command;
-  QPointF current;
-  QPointF subpathStart;
-  const auto isCommand = [](const QString& value) {
-    return value.size() == 1 && value.front().isLetter();
-  };
-  const auto number = [&]() { return tokens.value(i++).toDouble(); };
-  const auto point = [&](bool relative) {
-    const qreal x = number();
-    const qreal y = number();
-    QPointF value(x, y);
-    if (relative) value += current;
-    return value;
-  };
-  while (i < tokens.size()) {
-    if (isCommand(tokens.at(i))) command = tokens.at(i++).front();
-    if (command.isNull()) break;
-    const bool relative = command.isLower();
-    const QChar upper = command.toUpper();
-    if (upper == QLatin1Char('Z')) {
-      path.closeSubpath();
-      current = subpathStart;
-      command = {};
-    } else if (upper == QLatin1Char('M')) {
-      current = point(relative);
-      path.moveTo(current);
-      subpathStart = current;
-      command = relative ? QLatin1Char('l') : QLatin1Char('L');
-    } else if (upper == QLatin1Char('L')) {
-      current = point(relative);
-      path.lineTo(current);
-    } else if (upper == QLatin1Char('H')) {
-      current.setX(number() + (relative ? current.x() : 0.0));
-      path.lineTo(current);
-    } else if (upper == QLatin1Char('V')) {
-      current.setY(number() + (relative ? current.y() : 0.0));
-      path.lineTo(current);
-    } else if (upper == QLatin1Char('C')) {
-      const QPointF first = point(relative);
-      const QPointF second = point(relative);
-      current = point(relative);
-      path.cubicTo(first, second, current);
-    } else {
-      command = {};
-    }
-  }
-  return path;
 }
 
 void drawLabel(QPainter& painter, const ClassSceneLabel& label,
@@ -130,7 +73,7 @@ void drawMarker(QPainter& painter, const ClassScene& scene, const QString& type,
     painter.drawEllipse(QPointF(definition->child.cx, definition->child.cy),
                         definition->child.radius, definition->child.radius);
   else
-    painter.drawPath(painterPath(definition->child.path));
+    painter.drawPath(scene::parseSvgPath(definition->child.path));
   painter.restore();
 }
 
@@ -188,10 +131,10 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
     painter.setBrush(Qt::NoBrush);
     if (mode == ClassPaintMode::Color && scene.handDrawn) {
       for (const QString& path : edge.paths)
-        rough::roughPath(painter, painterPath(path), scene.handDrawnSeed,
+        rough::roughPath(painter, scene::parseSvgPath(path), scene.handDrawnSeed,
                          color(scene.style.lineColor), scene.style.strokeWidth);
     } else {
-      for (const QString& path : edge.paths) painter.drawPath(painterPath(path));
+      for (const QString& path : edge.paths) painter.drawPath(scene::parseSvgPath(path));
     }
     const QVector<QPointF>& startPoints = edge.renderedSegments.isEmpty()
         ? edge.renderedPoints : edge.renderedSegments.first();

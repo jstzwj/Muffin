@@ -12,6 +12,7 @@
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
@@ -20,10 +21,8 @@
 #include <QPainterPath>
 #include <QPointF>
 #include <QRectF>
-#include <QRegularExpression>
 #include <QSizeF>
 #include <QString>
-#include <QStringList>
 #include <QVector>
 
 #include <algorithm>
@@ -31,6 +30,7 @@
 
 namespace er = muffin::mermaid::er;
 namespace flowchart = muffin::mermaid::flowchart;
+namespace scene = muffin::mermaid::scene;
 
 namespace {
 
@@ -38,71 +38,6 @@ constexpr qreal kErPi = 3.14159265358979323846;
 
 QColor resolveColor(const QString& value) {
   return muffin::mermaid::color::toQColor(value);
-}
-
-// SVG path tokenizer mirroring ClassScenePainter::painterPath /
-// StateScenePainter::svgPath. Supports M/L/H/V/C/Q/Z (absolute and relative).
-// The Q (quadTo) command is required by the upstream erDiagram crow's-foot
-// marker `d` strings (see IMPLEMENTATION_SPEC.md §5.3/§5.4).
-QPainterPath painterPath(const QString& source) {
-  static const QRegularExpression token(
-      QStringLiteral("[A-Za-z]|[-+]?(?:\\d*\\.\\d+|\\d+\\.?)(?:[eE][-+]?\\d+)?"));
-  QStringList tokens;
-  auto matches = token.globalMatch(source);
-  while (matches.hasNext()) tokens.append(matches.next().captured());
-  QPainterPath path;
-  qsizetype i = 0;
-  QChar command;
-  QPointF current;
-  QPointF subpathStart;
-  const auto isCommand = [](const QString& value) {
-    return value.size() == 1 && value.front().isLetter();
-  };
-  const auto number = [&]() { return tokens.value(i++).toDouble(); };
-  const auto point = [&](bool relative) {
-    const qreal x = number();
-    const qreal y = number();
-    QPointF value(x, y);
-    if (relative) value += current;
-    return value;
-  };
-  while (i < tokens.size()) {
-    if (isCommand(tokens.at(i))) command = tokens.at(i++).front();
-    if (command.isNull()) break;
-    const bool relative = command.isLower();
-    const QChar upper = command.toUpper();
-    if (upper == QLatin1Char('Z')) {
-      path.closeSubpath();
-      current = subpathStart;
-      command = {};
-    } else if (upper == QLatin1Char('M')) {
-      current = point(relative);
-      path.moveTo(current);
-      subpathStart = current;
-      command = relative ? QLatin1Char('l') : QLatin1Char('L');
-    } else if (upper == QLatin1Char('L')) {
-      current = point(relative);
-      path.lineTo(current);
-    } else if (upper == QLatin1Char('H')) {
-      current.setX(number() + (relative ? current.x() : 0.0));
-      path.lineTo(current);
-    } else if (upper == QLatin1Char('V')) {
-      current.setY(number() + (relative ? current.y() : 0.0));
-      path.lineTo(current);
-    } else if (upper == QLatin1Char('C')) {
-      const QPointF first = point(relative);
-      const QPointF second = point(relative);
-      current = point(relative);
-      path.cubicTo(first, second, current);
-    } else if (upper == QLatin1Char('Q')) {
-      const QPointF control = point(relative);
-      current = point(relative);
-      path.quadTo(control, current);
-    } else {
-      command = {};
-    }
-  }
-  return path;
 }
 
 // Crow's-foot marker geometry (IMPLEMENTATION_SPEC.md §5). `refX`/`refY` is the
@@ -178,12 +113,12 @@ void drawErMarker(QPainter& painter, er::ErCardinality card, bool start,
                         def.circleR, def.circleR);
   }
   painter.setBrush(Qt::NoBrush);
-  if (!def.path.isEmpty()) painter.drawPath(painterPath(def.path));
+  if (!def.path.isEmpty()) painter.drawPath(scene::parseSvgPath(def.path));
   painter.restore();
 }
 
 QPainterPath edgePath(const er::ErSceneRelationship& rel) {
-  if (!rel.path.isEmpty()) return painterPath(rel.path);
+  if (!rel.path.isEmpty()) return scene::parseSvgPath(rel.path);
   QPainterPath path;
   const QVector<QPointF> points = !rel.points.isEmpty()
       ? rel.points

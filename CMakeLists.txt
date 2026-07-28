@@ -523,6 +523,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/scene/FlowSceneCompare.h
   src/mermaid/scene/FlowScenePainter.cpp
   src/mermaid/scene/FlowScenePainter.h
+  src/mermaid/scene/SvgPathParse.cpp
+  src/mermaid/scene/SvgPathParse.h
   src/mermaid/rough/RoughOps.cpp
   src/mermaid/rough/RoughOps.h
   src/mermaid/classdiagram/ClassDiagram.cpp
