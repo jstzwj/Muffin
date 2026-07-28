@@ -120,3 +120,22 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 | **5** | 跨图 golden oracle（mmdc reference + 语义 diff） | 低（仅测试） | 新 oracle 通过 |
 
 每步独立可 commit、可 review。**第 1 步风险最低、是后续的地基**，先做。
+
+---
+
+## 7. 进度（2026-07-28）
+
+落地后探查发现 **par­ity 机器已远比本文初稿以为的多**：11 个 oracle 测试 + 23 个真-mermaid（11.16.0，puppeteer/Chrome 捕获）reference fixture，覆盖 flowchart（dagre/geometry/scene/pixel/svg/config 全套）、class/sequence/state（db/layout/scene/pixel/svg）、ER 仅有 db 级。所以「跨图 oracle」不是从零搭建，而是**统一地基 + 补 ER 唯一空白**。
+
+| 步 | 状态 | 备注 |
+|---|---|---|
+| 1 | ✅ | `MermaidScene` 基类（`sceneBounds` + `paint`）。 |
+| 3 | ✅ | `Diagram` 契约 + `findMermaidDiagram` registry；`renderSource` 瘦编排器。 |
+| 5（地基） | ✅ | **`toJsonObject()` 纯虚 + 5 scene 实现**（commit 3f29e55）；`MermaidSvgExporter` digest 扩展为全 5 图；`ParityDiff.h` 共享语义比对库（header-only）；**ER scene 回归 oracle**（`MermaidErSceneRegressionTest` + `er-scene.json`，commit 5791db8）。FlowScene `toJson()` 字节稳定，53 个 mermaid 测试全绿。 |
+| 2 | ⬜ | L2 共享渲染原语（Label/Marker/Curve/Rough）。 |
+| 4 | ⬜ | 统一 dagre input + 泛化 style cascade。 |
+
+**ER 回归 oracle 是稳定性守卫，非真-mermaid parity**：fixture = Muffin 自身 `ErScene::toJsonObject()` 快照。真-mermaid reference 被阻塞——生成器依赖 sibling `G:\github\mermaid-cli\` checkout（puppeteer + mermaid + dagre-d3-es + Chrome），当前不在盘上。**恢复该 checkout 是 ER 真 parity + `config-effect-matrix.scope.families` 加 `er` 的共同前置**。
+
+**已知 follow-up**：ER dagre 曲线坐标存在 run-to-run FP 抖动（QHash 迭代序），回归 oracle 用 path 0.01 容差吸收；根治需在 dagre 移植层做确定性化。
+
