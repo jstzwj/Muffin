@@ -135,7 +135,9 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 | 2（phase 1） | ✅ | **SvgPathParser** 抽取为首个 L2 原语（commit 788386b）：class/state/er 三 painter 的匿名 SVG path 解析拷贝合并为 `scene::parseSvgPath`（ER 超集，M/L/H/V/C/Q/Z），行为保持（170 测试全绿）。探查发现 Label（`paintFlowLabel`）与 Rough（`rough::`）**已是跨图共享**，无需再抽。NodeBox/Edge 变体纠缠、Marker 形状数据来自 5 源需框架——均暂缓（且只被像素 golden 覆盖、reference 不可重生成）。 |
 | 4 | ⬜ | 统一 dagre input + 泛化 style cascade。 |
 
-**ER 回归 oracle 是稳定性守卫，非真-mermaid parity**：fixture = Muffin 自身 `ErScene::toJsonObject()` 快照。真-mermaid reference 此前被 sibling `G:\github\mermaid-cli\` checkout 缺失阻塞——**该 checkout 现已可一键复现**（`node scripts/setup_mermaid_reference_toolchain.mjs`，见 `docs/mermaid-reference-toolchain.md`；mermaid 11.16.0 + dagre-d3-es 7.0.14 + puppeteer shim + 系统 Chrome，重生成 `flowchart-geometry.json` 字节一致）。**ER 真 parity + `config-effect-matrix.scope.families` 加 `er` 的前置已满足**，是下一步。
+**ER 真-mermaid reference 已捕获**（commits 1d176c6 + 9d0db26）：`scripts/generate_mermaid_er_geometry_fixture.mjs` + `tests/fixtures/mermaid/er-geometry.json`（真 mermaid 11.16.0 ER entity bounds + relationship path + cardinality，首-entity 归一化）+ `MermaidErGeometryOracleTest`（按 id 比 entity bounds、按 cardinality tuple 比 relationship path）。sibling checkout 已一键可复现（`node scripts/setup_mermaid_reference_toolchain.mjs`，见 `docs/mermaid-reference-toolchain.md`）。
+
+**ER geometry oracle 当前是 report-only**：首次比对揭示了 Muffin ER 与 mermaid 的 **3 个真实布局差距**（非字体抖动）：① `measureErLayoutInput` 无 `minEntityWidth/minEntityHeight` 钳制（entity 按文本尺寸，mermaid 强制最小盒）；② `layoutErDiagramDagre` 硬编码 `entitySpacing=60/rankSpacing=80`，不读 `er.nodeSpacing/er.rankSpacing` config（mermaid 默认 140/80）→ 水平位置发散；③ 行/线度量（lineHeight/padding）差异 → entity 高度发散。对齐这些后把 oracle 从 report-only 改为 fail-on-divergence（任务 #15）。`config-effect-matrix.scope.families` 加 `er` 仍待做。
 
 **已知 follow-up**：ER dagre 曲线坐标存在 run-to-run FP 抖动（QHash 迭代序），回归 oracle 用 path 0.01 容差吸收；根治需在 dagre 移植层做确定性化。
 
