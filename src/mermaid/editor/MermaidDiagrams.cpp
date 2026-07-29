@@ -142,8 +142,19 @@ struct StateDiagramImpl : Diagram {
           diagram.data().accDescription, style.textColor, style.fontFamily,
           18.0, configNumber(stateConfig, QStringLiteral("titleTopMargin"),
                              25.0), 8.0);
+      QVector<style::ClassDef> stateStyleDefs;
+      for (const state::StateStyleClass& cls : diagram.data().styleClasses)
+        stateStyleDefs.append({cls.id, cls.styles + cls.textStyles});
+      style::ThemeDefaults stateTheme;
+      stateTheme.mainBkg = themeVars.mainBkg;
+      stateTheme.nodeBorder = themeVars.border1;
+      stateTheme.lineColor = themeVars.lineColor;
+      stateTheme.strokeWidth = themeVars.strokeWidth;
+      stateTheme.textColor = themeVars.primaryTextColor;
+      stateTheme.fontFamily = style.fontFamily;
+      stateTheme.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
       state::StateScene scene = state::buildStateScene(
-          input, placement, std::move(style));
+          input, placement, std::move(style), stateStyleDefs, stateTheme);
       scene.handDrawn = look.compare(
           QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0;
       scene.handDrawnSeed = static_cast<quint32>(

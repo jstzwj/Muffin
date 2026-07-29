@@ -80,7 +80,9 @@ QRectF edgePaintBounds(const QVector<QPointF>& points,
 
 StateScene buildStateScene(const StateLayoutInput& input,
                            const StatePlacementResult& placement,
-                           StateSceneStyle style) {
+                           StateSceneStyle style,
+                           const QVector<style::ClassDef>& classDefs,
+                           const style::ThemeDefaults& themeDefaults) {
   StateScene scene;
   scene.style = std::move(style);
   bool initialized = false;
@@ -138,6 +140,16 @@ StateScene buildStateScene(const StateLayoutInput& input,
     edge.classes = it->classes; edge.points = placed.points;
     edge.segments = placed.segments; edge.labelPosition = placed.labelPosition;
     edge.path = placed.path;
+    // Resolve linkStyle / edge classDef via the shared cascade. State thickness
+    // tokens (normal/dotted/thick/invisible) match MermaidStyleResolve's pattern.
+    QStringList edgeLinkStyles = style::compiledClassStyles(
+        it->classes.split(QLatin1Char(' '), Qt::SkipEmptyParts), classDefs);
+    edgeLinkStyles += it->linkStyles;
+    const style::ResolvedEdgeStyle resolvedEdge = style::resolveEdgeStyle(
+        it->thickness, edgeLinkStyles, false, QString(), themeDefaults);
+    edge.stroke = resolvedEdge.stroke;
+    edge.strokeWidth = resolvedEdge.strokeWidth;
+    edge.strokeDasharray = resolvedEdge.strokeDasharray;
     edge.labelDocument = prepareLabel(edge.label, scene.style.fontSize);
     edge.pathBounds = edgePaintBounds(edge.points, edge.segments);
     if (!edge.label.isEmpty() && edge.labelPosition) {

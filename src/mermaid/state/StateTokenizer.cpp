@@ -23,6 +23,7 @@ const QHash<QString, StateTokenKind>& keywords() {
       {QStringLiteral("classdef"), StateTokenKind::ClassDef},
       {QStringLiteral("class"), StateTokenKind::Class},
       {QStringLiteral("style"), StateTokenKind::Style},
+      {QStringLiteral("linkstyle"), StateTokenKind::LinkStyle},
       {QStringLiteral("click"), StateTokenKind::Click},
       {QStringLiteral("href"), StateTokenKind::Href},
       {QStringLiteral("default"), StateTokenKind::Default},

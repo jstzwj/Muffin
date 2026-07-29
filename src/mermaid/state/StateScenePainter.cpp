@@ -103,14 +103,34 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
             edge.pathBounds.isValid() ? edge.pathBounds : scene.bounds,
             options))
       continue;
-    painter.setPen(QPen(transition, scene.style.strokeWidth));
+    // Resolved edge paint (linkStyle / edge classDef via MermaidStyleResolve);
+    // empty resolved values fall back to the transition colour/width.
+    const QColor edgeColor = edge.stroke.isEmpty() ? transition : color(edge.stroke);
+    qreal edgeWidth = scene.style.strokeWidth;
+    if (!edge.strokeWidth.isEmpty()) {
+      QString widthToken = edge.strokeWidth;
+      if (widthToken.endsWith(QStringLiteral("px"), Qt::CaseInsensitive)) widthToken.chop(2);
+      bool ok = false;
+      const qreal resolved = widthToken.trimmed().toDouble(&ok);
+      if (ok && resolved >= 0.0) edgeWidth = resolved;
+    }
+    QPen pen(edgeColor, edgeWidth);
+    if (!edge.strokeDasharray.isEmpty()) {
+      QVector<qreal> dash;
+      for (const QString& token : edge.strokeDasharray.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
+        bool ok = false;
+        const qreal d = token.trimmed().toDouble(&ok);
+        if (ok && d > 0.0) dash.append(d);
+      }
+      if (!dash.isEmpty()) pen.setDashPattern(dash);
+    }
+    painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
     if (scene.handDrawn)
-      rough::roughPath(painter, edgePath(edge), scene.handDrawnSeed,
-                       transition, scene.style.strokeWidth);
+      rough::roughPath(painter, edgePath(edge), scene.handDrawnSeed, edgeColor, edgeWidth);
     else
       painter.drawPath(edgePath(edge));
-    paintArrow(painter, edge, transition);
+    paintArrow(painter, edge, edgeColor);
   }
   for (const StateSceneEdge& edge : scene.edges) {
     if (edge.label.isEmpty() || !edge.labelPosition) continue;

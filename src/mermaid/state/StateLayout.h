@@ -42,6 +42,7 @@ struct StateLayoutEdgeInput {
   QString labelStyle;
   QString thickness = QStringLiteral("normal");
   QString classes = QStringLiteral("transition");
+  QStringList linkStyles;  // linkStyle declarations (key:value), applied at paint
 };
 struct StateLayoutInput {
   QString direction = QStringLiteral("TB");

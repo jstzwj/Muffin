@@ -98,6 +98,9 @@ private:
         edge.label = item.value(QStringLiteral("description")).toString();
         edge.arrowTypeEnd = look_ == QLatin1String("neo")
             ? QStringLiteral("arrow_barb_neo") : QStringLiteral("arrow_barb");
+        if (relationIndex_ < data_.relations.size())
+          edge.linkStyles = data_.relations.at(relationIndex_).linkStyles;
+        ++relationIndex_;
         result_.edges.append(std::move(edge));
         ++graphItemCount_;
       }
@@ -226,6 +229,11 @@ private:
   QMap<QString, CachedNode> cache_;
   StateLayoutInput result_;
   int graphItemCount_ = 0;
+  // Index into data_.relations for linkStyle attachment. Aligns with
+  // data_.relations for flat diagrams (the common case); compound-state
+  // nesting is a known edge case for index-based linkStyle (same semantics as
+  // upstream). Bounds-checked so out-of-range edges simply get no linkStyle.
+  int relationIndex_ = 0;
 };
 
 QJsonArray strings(const QStringList& values) {

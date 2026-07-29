@@ -5,6 +5,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 #include <stdexcept>
@@ -54,6 +55,7 @@ struct StateRelation {
   QString id1;
   QString id2;
   QJsonValue relationTitle = QJsonValue::Null;
+  QStringList linkStyles;  // linkStyle declarations (key:value), applied at paint
 };
 struct StateStyleClass {
   QString id;

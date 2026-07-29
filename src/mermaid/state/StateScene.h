@@ -3,6 +3,7 @@
 #include "mermaid/MermaidScene.h"
 #include "mermaid/state/StateLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/theme/MermaidStyleResolve.h"
 
 #include <QRectF>
 
@@ -56,6 +57,11 @@ struct StateSceneEdge {
   QSizeF labelSize;
   QRectF pathBounds;
   QRectF labelBounds;
+  // Resolved edge paint (linkStyle / edge classDef via MermaidStyleResolve);
+  // empty when no linkStyle applies — the painter falls back to scene.style.
+  QString stroke;
+  QString strokeWidth;
+  QString strokeDasharray;
 };
 struct StateScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
@@ -81,6 +87,8 @@ struct StateScene : MermaidScene {
 
 StateScene buildStateScene(const StateLayoutInput& input,
                            const StatePlacementResult& placement,
-                           StateSceneStyle style = {});
+                           StateSceneStyle style = {},
+                           const QVector<style::ClassDef>& classDefs = {},
+                           const style::ThemeDefaults& themeDefaults = {});
 
 }  // namespace muffin::mermaid::state

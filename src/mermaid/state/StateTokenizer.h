@@ -9,7 +9,7 @@ namespace muffin::mermaid::state {
 enum class StateTokenKind {
   Eof, Newline, Semi, Header, State, Direction, AccTitle, AccDescr,
   HideEmpty, Scale, Width, Note, End, Left, Right, Of, As,
-  ClassDef, Class, Style, Click, Href, Default, Arrow, Concurrent,
+  ClassDef, Class, Style, LinkStyle, Click, Href, Default, Arrow, Concurrent,
   StyleSeparator, StartEnd, LBrace, RBrace, Colon, Comma, String,
   Identifier, Invalid,
 };

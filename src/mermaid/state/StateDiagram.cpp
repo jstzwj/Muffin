@@ -110,6 +110,7 @@ private:
       case StateTokenKind::ClassDef: return parseClassDef(line);
       case StateTokenKind::Class: return parseApplyClass(line);
       case StateTokenKind::Style: return parseStyle(line);
+      case StateTokenKind::LinkStyle: return parseLinkStyle(line);
       case StateTokenKind::Click: return parseClick(line);
       case StateTokenKind::HideEmpty:
       case StateTokenKind::Scale: return line.raw(source_);
@@ -309,6 +310,17 @@ private:
                        {QStringLiteral("id"), id},
                        {QStringLiteral("styleClass"), line.raw(source_).trimmed()}};
   }
+  // linkStyle <index> <decls> — styles transitions by 0-based source-order index.
+  QJsonValue parseLinkStyle(StateTokenCursor line) {
+    line.consume();
+    if (line.atEnd()) throw unexpected(line, QStringLiteral("linkStyleStatement"));
+    bool ok = false;
+    const int index = line.consume().text.trimmed().toInt(&ok);
+    if (!ok || index < 0) throw unexpected(line, QStringLiteral("linkStyleStatement"));
+    return QJsonObject{{QStringLiteral("stmt"), QStringLiteral("linkStyle")},
+                       {QStringLiteral("index"), index},
+                       {QStringLiteral("styles"), line.raw(source_).trimmed()}};
+  }
   QJsonValue parseClick(StateTokenCursor line) {
     line.consume();
     QJsonObject id = parseEndpoint(line);
@@ -447,6 +459,14 @@ private:
         data_.links.append({item.value(QStringLiteral("id")),
                             item.value(QStringLiteral("url")).toString(),
                             item.value(QStringLiteral("tooltip")).toString()});
+      } else if (kind == QLatin1String("linkStyle")) {
+        const int index = item.value(QStringLiteral("index")).toInt();
+        if (index >= 0 && index < data_.relations.size()) {
+          QStringList styles;
+          for (const QString& s : item.value(QStringLiteral("styles")).toString().split(QLatin1Char(','), Qt::SkipEmptyParts))
+            styles.append(s.trimmed());
+          data_.relations[index].linkStyles = styles;
+        }
       }
     }
   }
