@@ -137,7 +137,7 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 
 **ER 真-mermaid reference 已捕获**（commits 1d176c6 + 9d0db26）：`scripts/generate_mermaid_er_geometry_fixture.mjs` + `tests/fixtures/mermaid/er-geometry.json`（真 mermaid 11.16.0 ER entity bounds + relationship path + cardinality，首-entity 归一化）+ `MermaidErGeometryOracleTest`（按 id 比 entity bounds、按 cardinality tuple 比 relationship path）。sibling checkout 已一键可复现（`node scripts/setup_mermaid_reference_toolchain.mjs`，见 `docs/mermaid-reference-toolchain.md`）。
 
-**ER geometry oracle 当前是 report-only**。**Phase 1 已完成**（commit 62cb888）：`ErDiagramImpl` 读 `er.nodeSpacing/rankSpacing`（默认 140/80）+ `er.minEntityWidth/minEntityHeight`（默认 100/75，钳制）——entity **宽度与水平位置现已匹配** mermaid。**残差 = Phase 2 测量模型**（任务 #16）：mermaid 空属性 entity 高度走 fast-path（`labelPaddingY=diagramPadding*1.5`→~84），Muffin 落到 `minEntityHeight` 地板（75）；attribute-bearing entity 用 mermaid 4 列宽模型 vs Muffin 文本块模型。重写 `measureErLayoutInput` 后把 oracle 翻成 fail-on-divergence。`config-effect-matrix.scope.families` 加 `er` 仍待做。
+**ER geometry oracle 已翻成 fail-on-divergence**（commit 9d26947）。**Phase 2 完成**：`measureErLayoutInput` 重写为 mermaid erBox 模型（空 fast-path + 4 列宽 + 行高 + 重分配，padding diagramPadding=20/entityPadding=15，SVG 模式 ×1.25），entity **高度现精确匹配** mermaid。Oracle 断言 **font 无关 par­ity**（entity 高度 + cardinality + identifying）；宽度/x/y 与 relationship path 是 **Qt-vs-Chrome 字体光栅化耦合**（~5px/文本，与像素 golden 同源），报告不断言；`entity-alias` 跳过（mermaid 按 id 而非 alias 定尺寸，边缘怪癖）。`config-effect-matrix.scope.families` 加 `er` 仍待做。
 
 **已知 follow-up**：ER dagre 曲线坐标存在 run-to-run FP 抖动（QHash 迭代序），回归 oracle 用 path 0.01 容差吸收；根治需在 dagre 移植层做确定性化。
 
