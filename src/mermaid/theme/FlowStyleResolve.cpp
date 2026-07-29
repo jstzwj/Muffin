@@ -1,176 +1,84 @@
 #include "mermaid/theme/FlowStyleResolve.h"
 
-#include <QHash>
-#include <QString>
-#include <QVector>
-
-#include <utility>
+#include "mermaid/theme/MermaidStyleResolve.h"
 
 namespace muffin::mermaid::flowstyle {
 namespace {
 
-// styles2Map (chunk-BNCO5QFQ.mjs:30): a Map preserving insertion order with
-// last-wins values. Qt has no ordered map, so we keep a vector (order) + a
-// hash (key -> index) for O(1) update.
-struct StyleMap {
-  QVector<QPair<QString, QString>> entries;
-  QHash<QString, int> index;
-  void insert(const QString& key, const QString& value) {
-    const auto it = index.constFind(key);
-    if (it == index.constEnd()) {
-      index.insert(key, entries.size());
-      entries.append({key, value});
-    } else {
-      entries[it.value()].second = value;
-    }
-  }
-};
+// Flowchart adapter: map the flowchart-specific inputs onto the family-agnostic
+// style:: API. Behaviour is identical to the previous inline implementation
+// (MermaidStyleResolve is a verbatim lift of it).
 
-// Split a "key:value" style string. mermaid splits on the first ":".
-QPair<QString, QString> splitStyle(const QString& style) {
-  const int colon = style.indexOf(QLatin1Char(':'));
-  if (colon < 0) return {style.trimmed(), QString()};
-  return {style.left(colon).trimmed(), style.mid(colon + 1).trimmed()};
+style::ThemeDefaults themeDefaults(const flowtheme::FlowThemeVariables& theme) {
+  style::ThemeDefaults t;
+  t.mainBkg = theme.mainBkg;
+  t.nodeBorder = theme.nodeBorder;
+  t.lineColor = theme.lineColor;
+  t.strokeWidth = theme.strokeWidth;
+  t.textColor = theme.textColor;
+  t.nodeTextColor = theme.nodeTextColor;
+  t.fontFamily = theme.fontFamily;
+  t.fontSize = theme.fontSize;
+  return t;
 }
 
-// getCompiledStyles (chunk-YI7H2ERT.mjs:934): for each class name, push the
-// class's styles then its textStyles. "default"/"node" built-in classes are
-// empty, so only the user's vertex.classes contribute.
-StyleMap compileClassMap(const QStringList& classNames,
-                         const QVector<flowchart::FlowClass>& classes) {
-  StyleMap map;
-  for (const QString& name : classNames) {
-    for (const flowchart::FlowClass& cls : classes) {
-      if (cls.id != name) continue;
-      for (const QString& s : cls.styles) { const auto [k, v] = splitStyle(s); if (!k.isEmpty()) map.insert(k, v); }
-      for (const QString& s : cls.textStyles) { const auto [k, v] = splitStyle(s); if (!k.isEmpty()) map.insert(k, v); }
-      break;
-    }
+// A flowchart classDef contributes its node styles then its text styles.
+QVector<style::ClassDef> classDefs(const QVector<flowchart::FlowClass>& classes) {
+  QVector<style::ClassDef> out;
+  out.reserve(classes.size());
+  for (const flowchart::FlowClass& cls : classes) {
+    style::ClassDef def;
+    def.id = cls.id;
+    def.declarations = cls.styles + cls.textStyles;
+    out.append(def);
   }
-  return map;
+  return out;
 }
 
-// compileStyles (chunk-YI7H2ERT.mjs): mermaid prepends the built-in "default"
-// and "node" classes to every vertex (mermaid.js:48113 getCompiledStyles(["default",
-// "node", ...vertex.classes])), so a user-authored `classDef default ...` or
-// `classDef node ...` applies to all nodes. They are looked up in the classDef
-// table; when undefined (the common case) they are absent and contribute
-// nothing, preserving prior behaviour. Inline `style` is applied after classDef.
-StyleMap compileStyles(const flowchart::FlowVertex& vertex,
-                       const QVector<flowchart::FlowClass>& classes) {
-  QStringList names;
-  names.reserve(vertex.classes.size() + 2);
-  names.append(QStringLiteral("default"));
-  names.append(QStringLiteral("node"));
-  names.append(vertex.classes);
-  StyleMap map = compileClassMap(names, classes);
-  // inline `style A ...` (cssStyles) — applied after classDef.
-  for (const QString& s : vertex.styles) { const auto [k, v] = splitStyle(s); if (!k.isEmpty()) map.insert(k, v); }
-  return map;
+ResolvedNodeStyle toNodeResult(const style::ResolvedNodeStyle& s) {
+  ResolvedNodeStyle r;
+  r.nodeStyles = s.nodeStyles;
+  r.labelStyles = s.labelStyles;
+  r.fill = s.fill;
+  r.stroke = s.stroke;
+  r.strokeWidth = s.strokeWidth;
+  r.color = s.color;
+  r.fontFamily = s.fontFamily;
+  r.fontSize = s.fontSize;
+  r.fontWeight = s.fontWeight;
+  return r;
+}
+
+ResolvedEdgeStyle toEdgeResult(const style::ResolvedEdgeStyle& s) {
+  ResolvedEdgeStyle r;
+  r.stroke = s.stroke;
+  r.strokeWidth = s.strokeWidth;
+  r.strokeDasharray = s.strokeDasharray;
+  r.fill = s.fill;
+  return r;
 }
 
 }  // namespace
 
-// Merged classDef declarations (key:value strings, last-wins) for the given
-// class names — the edge/subgraph analogue of compileStyles without the inline
-// `style` tail or the vertex-only default/node prepend. Upstream applies edge
-// and subgraph classDef via setClass (mermaid.js:47629), which looks up edges
-// and subgraphs in addition to vertices.
 QStringList compiledClassStyles(const QStringList& classNames,
                                 const QVector<flowchart::FlowClass>& classes) {
-  const StyleMap map = compileClassMap(classNames, classes);
-  QStringList out;
-  out.reserve(map.entries.size());
-  for (const auto& [key, value] : map.entries)
-    out.append(key + QLatin1Char(':') + value);
-  return out;
+  return style::compiledClassStyles(classNames, classDefs(classes));
 }
 
-bool isLabelStyle(const QString& key) {
-  static const QStringList keys = {
-      QStringLiteral("color"), QStringLiteral("font-size"), QStringLiteral("font-family"),
-      QStringLiteral("font-weight"), QStringLiteral("font-style"), QStringLiteral("text-decoration"),
-      QStringLiteral("text-align"), QStringLiteral("text-transform"), QStringLiteral("line-height"),
-      QStringLiteral("letter-spacing"), QStringLiteral("word-spacing"), QStringLiteral("text-shadow"),
-      QStringLiteral("text-overflow"), QStringLiteral("white-space"), QStringLiteral("word-wrap"),
-      QStringLiteral("word-break"), QStringLiteral("overflow-wrap"), QStringLiteral("hyphens"),
-  };
-  return keys.contains(key);
-}
+bool isLabelStyle(const QString& key) { return style::isLabelStyle(key); }
 
 ResolvedNodeStyle resolveNodeStyle(const flowchart::FlowVertex& vertex,
                                    const QVector<flowchart::FlowClass>& classes,
                                    const flowtheme::FlowThemeVariables& theme) {
-  const StyleMap map = compileStyles(vertex, classes);
-
-  // styles2String (chunk-BNCO5QFQ.mjs:41): split into labelStyles/nodeStyles,
-  // each entry suffixed ` !important`, joined with `;`.
-  QStringList labelStyles, nodeStyles;
-  for (const auto& [key, value] : map.entries) {
-    const QString entry = key + QLatin1Char(':') + value + QStringLiteral(" !important");
-    if (isLabelStyle(key)) {
-      labelStyles.append(entry);
-    } else {
-      nodeStyles.append(entry);
-    }
-  }
-
-  ResolvedNodeStyle r;
-  r.nodeStyles = nodeStyles.join(QLatin1Char(';'));
-  r.labelStyles = labelStyles.join(QLatin1Char(';'));
-
-  // Resolved paint: theme defaults, overridden by the cascade map.
-  const auto lookup = [&](const QString& key) -> QString {
-    const auto it = map.index.constFind(key);
-    return it == map.index.constEnd() ? QString() : map.entries.at(it.value()).second;
-  };
-  r.fill = lookup(QStringLiteral("fill"));
-  if (r.fill.isEmpty()) r.fill = theme.mainBkg;
-  r.stroke = lookup(QStringLiteral("stroke"));
-  if (r.stroke.isEmpty()) r.stroke = theme.nodeBorder;
-  r.strokeWidth = lookup(QStringLiteral("stroke-width"));
-  if (r.strokeWidth.isEmpty()) r.strokeWidth = QString::number(theme.strokeWidth) + QStringLiteral("px");
-  r.color = lookup(QStringLiteral("color"));
-  if (r.color.isEmpty()) r.color = theme.nodeTextColor.isEmpty() ? theme.textColor : theme.nodeTextColor;
-  r.fontFamily = lookup(QStringLiteral("font-family"));
-  if (r.fontFamily.isEmpty()) r.fontFamily = theme.fontFamily;
-  r.fontSize = lookup(QStringLiteral("font-size"));
-  if (r.fontSize.isEmpty()) r.fontSize = theme.fontSize;
-  r.fontWeight = lookup(QStringLiteral("font-weight"));
-  return r;
+  return toNodeResult(style::resolveNodeStyle(vertex.classes, vertex.styles,
+                                              classDefs(classes), themeDefaults(theme)));
 }
 
 ResolvedEdgeStyle resolveEdgeStyle(const flowchart::FlowEdge& edge,
                                    const flowtheme::FlowThemeVariables& theme) {
-  ResolvedEdgeStyle r;
-  r.stroke = theme.lineColor;
-  r.strokeWidth = QString::number(theme.strokeWidth) + QStringLiteral("px");
-  r.fill = QStringLiteral("none");
-  // Thickness (edge.stroke = normal/dotted/thick/invisible) is applied via
-  // mermaid CSS classes: edge-pattern-dotted -> stroke-dasharray:2,
-  // edge-thickness-thick -> stroke-width:3.5px, invisible -> no stroke.
-  if (edge.stroke == QStringLiteral("dotted")) {
-    r.strokeDasharray = QStringLiteral("2");
-  } else if (edge.stroke == QStringLiteral("thick")) {
-    r.strokeWidth = QStringLiteral("3.5px");
-  } else if (edge.stroke == QStringLiteral("invisible")) {
-    r.stroke = QStringLiteral("none");
-    r.strokeWidth = QStringLiteral("0px");
-  }
-  // linkStyle (edge.style) overrides: key:value strings with the auto
-  // "fill:none" already appended by the parser. Last-wins per key.
-  for (const QString& s : edge.style) {
-    const auto [key, value] = splitStyle(s);
-    if (key == QStringLiteral("stroke")) r.stroke = value;
-    else if (key == QStringLiteral("stroke-width")) r.strokeWidth = value;
-    else if (key == QStringLiteral("stroke-dasharray")) r.strokeDasharray = value;
-    else if (key == QStringLiteral("fill")) r.fill = value;
-  }
-  // Mermaid's edge-animation-fast/slow CSS applies this with !important, so it
-  // wins over both the edge pattern class and linkStyle stroke-dasharray.
-  if (edge.animate || !edge.animation.isEmpty())
-    r.strokeDasharray = QStringLiteral("9,5");
-  return r;
+  return toEdgeResult(style::resolveEdgeStyle(edge.stroke, edge.style,
+                                              edge.animate, edge.animation,
+                                              themeDefaults(theme)));
 }
 
 }  // namespace muffin::mermaid::flowstyle
