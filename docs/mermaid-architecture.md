@@ -133,7 +133,7 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 | 3 | ✅ | `Diagram` 契约 + `findMermaidDiagram` registry；`renderSource` 瘦编排器。 |
 | 5（地基） | ✅ | **`toJsonObject()` 纯虚 + 5 scene 实现**（commit 3f29e55）；`MermaidSvgExporter` digest 扩展为全 5 图；`ParityDiff.h` 共享语义比对库（header-only）；**ER scene 回归 oracle**（`MermaidErSceneRegressionTest` + `er-scene.json`，commit 5791db8）。FlowScene `toJson()` 字节稳定，53 个 mermaid 测试全绿。 |
 | 2（phase 1） | ✅ | **SvgPathParser** 抽取为首个 L2 原语（commit 788386b）：class/state/er 三 painter 的匿名 SVG path 解析拷贝合并为 `scene::parseSvgPath`（ER 超集，M/L/H/V/C/Q/Z），行为保持（170 测试全绿）。探查发现 Label（`paintFlowLabel`）与 Rough（`rough::`）**已是跨图共享**，无需再抽。NodeBox/Edge 变体纠缠、Marker 形状数据来自 5 源需框架——均暂缓（且只被像素 golden 覆盖、reference 不可重生成）。 |
-| 4 | ⬜ | 统一 dagre input + 泛化 style cascade。 |
+| 4（Phase 1） | ✅ | **MermaidStyleResolve** family-agnostic style cascade module（commit acafb05，从 FlowStyleResolve lift，逻辑逐字、flowchart 行为保持）。dagre input ~75% 已统一（flowchart/state/er/class-compound 共享 `layoutFlowchartNodesDagre`）。**Phase 2 后续**：各图接入 cascade（class 边 linkStyle + state/sequence/er per-element 样式——各图有家族特定 pattern 语义，非一刀切换配）+ dagre 剩余 gap（class flat 分支重路由、投影 helper 抽取）。 |
 
 **ER 真-mermaid reference 已捕获**（commits 1d176c6 + 9d0db26）：`scripts/generate_mermaid_er_geometry_fixture.mjs` + `tests/fixtures/mermaid/er-geometry.json`（真 mermaid 11.16.0 ER entity bounds + relationship path + cardinality，首-entity 归一化）+ `MermaidErGeometryOracleTest`（按 id 比 entity bounds、按 cardinality tuple 比 relationship path）。sibling checkout 已一键可复现（`node scripts/setup_mermaid_reference_toolchain.mjs`，见 `docs/mermaid-reference-toolchain.md`）。
 
