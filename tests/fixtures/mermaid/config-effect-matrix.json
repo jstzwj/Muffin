@@ -18,17 +18,18 @@
       "flowchart",
       "sequence",
       "class",
-      "state"
+      "state",
+      "er"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 40,
+    "parity": 47,
     "partial": 8,
-    "unsupported": 18,
+    "unsupported": 21,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 8,
+    "upstream-inert": 11,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -39,7 +40,8 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er"
       ],
       "status": "parity",
       "upstream": [
@@ -65,7 +67,8 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er"
       ],
       "status": "partial",
       "upstream": [
@@ -92,7 +95,8 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er"
       ],
       "status": "parity",
       "upstream": [
@@ -271,7 +275,8 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -290,7 +295,8 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er"
       ],
       "status": "deferred",
       "upstream": [
@@ -308,7 +314,8 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er"
       ],
       "status": "parity",
       "upstream": [
@@ -326,7 +333,8 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er"
       ],
       "status": "parity",
       "upstream": [
@@ -344,7 +352,8 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er"
       ],
       "status": "unsupported",
       "upstream": [
@@ -2161,7 +2170,269 @@
       ],
       "note": "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
       "default": "dagre-wrapper"
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.titleTopMargin",
+      "field": "titleTopMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 25
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.diagramPadding",
+      "field": "diagramPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 20
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.layoutDirection",
+      "field": "layoutDirection",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Muffin ER always projects TB; the erDiagram grammar exposes no direction keyword.",
+      "default": "TB"
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.minEntityWidth",
+      "field": "minEntityWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 100
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.minEntityHeight",
+      "field": "minEntityHeight",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Present in ErDiagramConfig but unused by mermaid erBox and Muffin.",
+      "default": 75
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.entityPadding",
+      "field": "entityPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 15
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.nodeSpacing",
+      "field": "nodeSpacing",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 140
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.rankSpacing",
+      "field": "rankSpacing",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 80
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.stroke",
+      "field": "stroke",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Muffin ER uses the theme entity stroke, not er.stroke.",
+      "default": "gray"
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.fill",
+      "field": "fill",
+      "hasDefault": true,
+      "status": "unsupported",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Muffin ER uses the theme entity fill, not er.fill.",
+      "default": "honeydew"
+    },
+    {
+      "family": "er",
+      "interface": "ErDiagramConfig",
+      "path": "er.fontSize",
+      "field": "fontSize",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "er.fontSize is dead in mermaid 11.16; the theme fontSize is used.",
+      "default": 12
     }
   ],
-  "fixtureSha256": "11e8b2e9c6157305f03d48dcb8d1be3193bb9bef73d3b6e78ac3d05ead3ee53a"
+  "fixtureSha256": "906b37fd12b566400aaecb63cbff90ade4b3bd6da7e4d740eba648ee76561bbd"
 }

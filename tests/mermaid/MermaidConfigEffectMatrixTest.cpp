@@ -1,4 +1,5 @@
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/erdiagram/ErScene.h"
 
 #include <QByteArray>
 #include <QCryptographicHash>
@@ -106,6 +107,14 @@ QPointF stateCenter(const MermaidRenderEntry& entry, const QString& id) {
   fail(QStringLiteral("Missing state node %1").arg(id));
 }
 
+QPointF erCenter(const MermaidRenderEntry& entry, const QString& id) {
+  require(entry.erScene != nullptr,
+          QStringLiteral("Missing ER scene while looking for %1").arg(id));
+  for (const auto& entity : entry.erScene->entities)
+    if (entity.id == id) return entity.bounds.center();
+  fail(QStringLiteral("Missing ER entity %1").arg(id));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -131,8 +140,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 102,
-          QStringLiteral("Expected 102 classified config rows, found %1")
+  require(entries.size() == 115,
+          QStringLiteral("Expected 115 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -185,6 +194,7 @@ int main(int argc, char** argv) {
     }
   }
   require(familyCounts == QMap<QString, int>{{QStringLiteral("class"), 14},
+                                             {QStringLiteral("er"), 13},
                                              {QStringLiteral("flowchart"), 14},
                                              {QStringLiteral("sequence"), 37},
                                              {QStringLiteral("state"), 22}},
@@ -317,6 +327,33 @@ int main(int argc, char** argv) {
   require(configuredSiblingGap > normalSiblingGap + 50.0 &&
               configuredRankGap > normalRankGap + 80.0,
           QStringLiteral("state nodeSpacing/rankSpacing did not alter placement"));
+
+  // ER forwards both spacing axes to Dagre (Phase 1: er.nodeSpacing/rankSpacing).
+  const QString erSource = QStringLiteral(
+      "erDiagram\nA ||--o{ B : x\nA ||--o{ C : y");
+  const QString spacedEr = QStringLiteral(
+      "%%{init: {\"er\": {\"nodeSpacing\": 220, \"rankSpacing\": 180}}}%%\n") + erSource;
+  const MermaidRenderEntry normalEr = render(erSource);
+  const MermaidRenderEntry configuredEr = render(spacedEr);
+  require(normalEr.status == MermaidRenderStatus::Ready &&
+              configuredEr.status == MermaidRenderStatus::Ready &&
+              normalEr.erScene && configuredEr.erScene,
+          QStringLiteral("ER spacing probes did not render"));
+  const qreal normalErSibling = std::abs(
+      erCenter(normalEr, QStringLiteral("B")).x() -
+      erCenter(normalEr, QStringLiteral("C")).x());
+  const qreal configuredErSibling = std::abs(
+      erCenter(configuredEr, QStringLiteral("B")).x() -
+      erCenter(configuredEr, QStringLiteral("C")).x());
+  const qreal normalErRank = std::abs(
+      erCenter(normalEr, QStringLiteral("A")).y() -
+      erCenter(normalEr, QStringLiteral("B")).y());
+  const qreal configuredErRank = std::abs(
+      erCenter(configuredEr, QStringLiteral("A")).y() -
+      erCenter(configuredEr, QStringLiteral("B")).y());
+  require(configuredErSibling > normalErSibling + 40.0 &&
+              configuredErRank > normalErRank + 40.0,
+          QStringLiteral("er nodeSpacing/rankSpacing did not alter placement"));
 
   // Root %%{wrap}%% and showSequenceNumbers are separate configuration paths.
   const QString wrappedSequence = QStringLiteral(

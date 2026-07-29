@@ -242,17 +242,47 @@ const familyPolicies = {
       "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
     ),
   },
+  er: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    titleTopMargin: parity("paint", "viewport", "export"),
+    // Entity-internal box padding (mermaid erBox PADDING); drives entity size.
+    diagramPadding: parity(...layout),
+    layoutDirection: unsupported(
+      layout,
+      "Muffin ER always projects TB; the erDiagram grammar exposes no direction keyword.",
+    ),
+    // Empty-entity width floor (mermaid clamps only the attribute-less path).
+    minEntityWidth: parity(...layout),
+    minEntityHeight: inert(
+      "Present in ErDiagramConfig but unused by mermaid erBox and Muffin.",
+    ),
+    entityPadding: parity(...layout),
+    nodeSpacing: parity(...interactiveLayout),
+    rankSpacing: parity(...interactiveLayout),
+    stroke: unsupported(
+      ["paint", "export"],
+      "Muffin ER uses the theme entity stroke, not er.stroke.",
+    ),
+    fill: unsupported(
+      ["paint", "export"],
+      "Muffin ER uses the theme entity fill, not er.fill.",
+    ),
+    fontSize: inert(
+      "er.fontSize is dead in mermaid 11.16; the theme fontSize is used.",
+    ),
+  },
 };
 
 const shared = [
   {
     path: "theme",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: ["flowchart", "sequence", "class", "state", "er"],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
   {
     path: "themeVariables.*",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: ["flowchart", "sequence", "class", "state", "er"],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
       ["text", "layout", "paint", "viewport", "export"],
@@ -261,7 +291,7 @@ const shared = [
   },
   {
     path: "fontFamily",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: ["flowchart", "sequence", "class", "state", "er"],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
   {
@@ -320,7 +350,7 @@ const shared = [
   },
   {
     path: "securityLevel",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: ["flowchart", "sequence", "class", "state", "er"],
     ...policy(
       "security-fixed",
       ["interaction", "export"],
@@ -330,22 +360,22 @@ const shared = [
   },
   {
     path: "arrowMarkerAbsolute",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: ["flowchart", "sequence", "class", "state", "er"],
     ...deferred(["export"], "Requires native SVG marker serialization."),
   },
   {
     path: "deterministicIds",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: ["flowchart", "sequence", "class", "state", "er"],
     ...parity("export"),
   },
   {
     path: "deterministicIDSeed",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: ["flowchart", "sequence", "class", "state", "er"],
     ...parity("export"),
   },
   {
     path: "themeCSS",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: ["flowchart", "sequence", "class", "state", "er"],
     ...unsupported(
       ["paint", "export"],
       "Native scenes consume typed theme variables rather than arbitrary browser CSS.",
@@ -388,6 +418,7 @@ const interfaces = {
   sequence: "SequenceDiagramConfig",
   class: "ClassDiagramConfig",
   state: "StateDiagramConfig",
+  er: "ErDiagramConfig",
 };
 
 const entries = [];
