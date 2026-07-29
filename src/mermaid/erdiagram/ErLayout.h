@@ -30,6 +30,8 @@ struct ErLayoutEntityInput {
   // per-column entity sizing (type/name/keys/comment). attributeLines is kept
   // separately because ErScene re-parses it for display.
   QVector<ErAttribute> attributes;
+  QString cssClasses;     // classDef names applied via class/cssClass
+  QStringList styles;     // inline `style` declarations (key:value)
 };
 
 struct ErLayoutRelationshipInput {

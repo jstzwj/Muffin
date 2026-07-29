@@ -3,6 +3,7 @@
 #include "mermaid/MermaidScene.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/theme/MermaidStyleResolve.h"
 
 #include <QPointF>
 #include <QRectF>
@@ -49,6 +50,10 @@ struct ErSceneEntity {
   QVector<ErSceneAttribute> attributes;
   flowchart::FlowLabelDocument nameDocument;
   QVector<flowchart::FlowLabelDocument> attributeDocuments;
+  // Resolved entity paint (classDef / inline style via MermaidStyleResolve);
+  // empty when no classDef/style applies — the painter falls back to scene.style.
+  QString fill;
+  QString stroke;
 };
 
 // `pathBounds` is the bounding rect of the raw edge geometry (for culling);
@@ -91,6 +96,8 @@ struct ErScene : MermaidScene {
 // computed from the style line height. The result is safe to copy and reuse
 // across paint passes.
 ErScene buildErScene(const ErLayoutInput& input, const ErPlacementResult& placement,
-                     ErSceneStyle style = {});
+                     ErSceneStyle style = {},
+                     const QVector<style::ClassDef>& classDefs = {},
+                     const style::ThemeDefaults& themeDefaults = {});
 
 }  // namespace muffin::mermaid::er

@@ -239,8 +239,8 @@ void muffin::mermaid::er::paintErScene(const ErScene& scene, QPainter& painter,
   // (3) Entity tables, drawn last.
   for (const ErSceneEntity& entity : scene.entities) {
     if (!mermaidPrimitiveIsVisible(entity.bounds, options)) continue;
-    const QColor fill = resolveColor(scene.style.entityFill);
-    const QColor stroke = resolveColor(scene.style.entityStroke);
+    const QColor fill = resolveColor(entity.fill.isEmpty() ? scene.style.entityFill : entity.fill);
+    const QColor stroke = resolveColor(entity.stroke.isEmpty() ? scene.style.entityStroke : entity.stroke);
     painter.setPen(QPen(stroke, scene.style.strokeWidth));
     painter.setBrush(fill);
     painter.drawRoundedRect(entity.bounds, 6.0, 6.0);

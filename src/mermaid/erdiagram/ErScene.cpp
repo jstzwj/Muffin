@@ -136,7 +136,9 @@ QString cardName(er::ErCardinality c) {
 
 er::ErScene er::buildErScene(const er::ErLayoutInput& input,
                              const er::ErPlacementResult& placement,
-                             er::ErSceneStyle style) {
+                             er::ErSceneStyle style,
+                             const QVector<muffin::mermaid::style::ClassDef>& classDefs,
+                             const muffin::mermaid::style::ThemeDefaults& themeDefaults) {
   er::ErScene scene;
   scene.style = std::move(style);
 
@@ -154,6 +156,16 @@ er::ErScene er::buildErScene(const er::ErLayoutInput& input,
     const er::ErLayoutEntityInput* source =
         found != entitiesById.end() ? found.value() : nullptr;
     entity.name = source ? source->name : placed.id;
+    // Resolve entity classDef / inline style via the shared cascade. Empty
+    // resolved values fall back to scene.style (the painter checks).
+    if (source) {
+      const QStringList classes = source->cssClasses.split(
+          QLatin1Char(' '), Qt::SkipEmptyParts);
+      const auto resolved = muffin::mermaid::style::resolveNodeStyle(
+          classes, source->styles, classDefs, themeDefaults);
+      entity.fill = resolved.fill;
+      entity.stroke = resolved.stroke;
+    }
     entity.bounds =
         QRectF(placed.center - QPointF(placed.size.width() / 2.0,
                                        placed.size.height() / 2.0),

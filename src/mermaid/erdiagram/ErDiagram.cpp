@@ -121,11 +121,32 @@ QString attributeKeyTypeName(ErAttributeKeyType key) {
 class Parser {
 public:
   Parser(QString source, ErLimits limits) : source_(std::move(source)), limits_(limits) {
+    // Pre-extract classDef/cssClass/style lines: the ER tokenizer is strict and
+    // rejects CSS declaration syntax (#/:/,). Replace them with blank lines of
+    // equal length (preserving offsets) and parse them raw after the main parse.
+    QString cleaned;
+    cleaned.reserve(source_.size());
+    qsizetype lineStart = 0;
+    for (qsizetype i = 0; i <= source_.size(); ++i) {
+      if (i != source_.size() && source_[i] != QLatin1Char('\n')) continue;
+      const QString line = source_.mid(lineStart, i - lineStart);
+      const QString head = line.trimmed();
+      const bool isStyleLine = head.startsWith(QStringLiteral("classDef ")) ||
+                               head.startsWith(QStringLiteral("cssClass ")) ||
+                               head.startsWith(QStringLiteral("style "));
+      if (isStyleLine) {
+        styleLines_.append(line);
+        cleaned += QString(line.size(), QLatin1Char(' '));
+      } else {
+        cleaned += line;
+      }
+      if (i != source_.size()) cleaned += QLatin1Char('\n');
+      lineStart = i + 1;
+    }
     // ErTokenizer emits SPACE tokens so raw() can rebuild source; the parser
     // skips them, so drop them once up front. All token offsets are preserved,
-    // keeping raw()/span diagnostics exact. This makes the cursor behave like
-    // ClassTokenCursor (whose tokenizer skips whitespace silently).
-    QVector<ErToken> raw = ErTokenizer(source_).tokenize();
+    // keeping raw()/span diagnostics exact.
+    QVector<ErToken> raw = ErTokenizer(cleaned).tokenize();
     tokens_.reserve(raw.size());
     for (const ErToken& token : raw)
       if (token.kind != ErTokenKind::Space) tokens_.append(token);
@@ -225,6 +246,8 @@ public:
       raise(source_, source_.size(), ErErrorStage::Parser, ErErrorCode::MissingClosingBrace,
             QStringLiteral("entityStatement"), QStringLiteral("EOF_IN_STRUCT"),
             {QStringLiteral("STRUCT_STOP")});
+    // Apply pre-extracted classDef/cssClass/style lines now that entities exist.
+    for (const QString& raw : styleLines_) parseRawStyleLine(raw);
     return data_;
   }
 
@@ -280,6 +303,31 @@ private:
     }
     unexpected(line, offset, QStringLiteral("statement"),
                {QStringLiteral("entityName"), QStringLiteral("relationship")});
+  }
+
+  // classDef/cssClass/style lines are pre-extracted raw (the ER tokenizer is
+  // strict and rejects CSS declaration syntax); parse them from text.
+  QStringList parseDeclarations(const QString& rest) const {
+    QStringList out;
+    for (const QString& part : rest.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
+      const QString trimmed = part.trimmed();
+      if (!trimmed.isEmpty()) out.append(trimmed);
+    }
+    return out;
+  }
+  void parseRawStyleLine(const QString& raw) {
+    const QString trimmed = raw.trimmed();
+    const QString keyword = trimmed.section(QLatin1Char(' '), 0, 0);
+    const QString name = trimmed.section(QLatin1Char(' '), 1, 1);
+    const QString rest = trimmed.section(QLatin1Char(' '), 2, -1);
+    if (keyword == QLatin1String("classDef")) {
+      if (!name.isEmpty()) data_.classDefs.insert(name, parseDeclarations(rest));
+    } else if (keyword == QLatin1String("cssClass")) {
+      const QString cls = trimmed.section(QLatin1Char(' '), 2, 2);
+      if (ErEntity* entity = findEntity(name)) entity->cssClasses += QLatin1Char(' ') + cls;
+    } else if (keyword == QLatin1String("style")) {
+      if (ErEntity* entity = findEntity(name)) entity->styles += parseDeclarations(rest);
+    }
   }
 
   // Returns true when the line is a (complete) relationship. Returns false only
@@ -511,6 +559,7 @@ private:
   ErLimits limits_;
   QVector<ErToken> tokens_;
   ErDiagramData data_;
+  QStringList styleLines_;  // classDef/cssClass/style lines, pre-extracted raw
   QString openEntityId_;  // non-empty while an entity block is open (no nesting in er)
 };
 

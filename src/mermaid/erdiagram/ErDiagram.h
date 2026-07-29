@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QJsonObject>
 #include <QString>
 #include <QStringList>
@@ -75,6 +76,8 @@ struct ErEntity {
   QString linkTarget;
   QString tooltip;
   bool haveCallback = false;
+  QString cssClasses;     // space-joined classDef names applied via class/cssClass
+  QStringList styles;     // inline `style` declarations (key:value)
 };
 
 // Crow's-foot cardinality. ExactlyOne => "||" (two ticks), ZeroOrOne => "|o"/"o|"
@@ -107,6 +110,8 @@ struct ErDiagramData {
   QString accDescription;
   QVector<ErEntity> entities;
   QVector<ErRelationship> relationships;
+  // classDef table (id -> declarations), exposed for the runtime style cascade.
+  QHash<QString, QStringList> classDefs;
 };
 
 // Resource caps checked during parse, mirroring ClassLimits. Defaults are the

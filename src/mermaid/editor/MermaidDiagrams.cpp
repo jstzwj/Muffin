@@ -545,7 +545,20 @@ struct ErDiagramImpl : Diagram {
         pre, type, diagram.data().title, diagram.data().accTitle,
         diagram.data().accDescription, style.entityTitle1, style.fontFamily,
         18.0, configNumber(erConfig, QStringLiteral("titleTopMargin"), 25.0), 8.0);
-    er::ErScene scene = er::buildErScene(input, placement, std::move(style));
+    QVector<style::ClassDef> erStyleDefs;
+    for (auto it = diagram.data().classDefs.constBegin();
+         it != diagram.data().classDefs.constEnd(); ++it)
+      erStyleDefs.append({it.key(), it.value()});
+    style::ThemeDefaults erTheme;
+    erTheme.mainBkg = themeVars.mainBkg;
+    erTheme.nodeBorder = themeVars.border1;
+    erTheme.lineColor = themeVars.lineColor;
+    erTheme.strokeWidth = themeVars.strokeWidth;
+    erTheme.textColor = themeVars.primaryTextColor;
+    erTheme.fontFamily = style.fontFamily;
+    erTheme.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
+    er::ErScene scene = er::buildErScene(input, placement, std::move(style),
+                                         erStyleDefs, erTheme);
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
