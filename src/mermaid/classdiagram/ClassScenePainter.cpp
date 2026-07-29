@@ -122,17 +122,41 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
             edge.pathBounds.isValid() ? edge.pathBounds : scene.bounds,
             options))
       continue;
-    QPen pen(mode == ClassPaintMode::SemanticMask
-                 ? QColor::fromRgba(kClassMaskEdge)
-                 : color(scene.style.lineColor), scene.style.strokeWidth);
-    if (edge.pattern == QLatin1String("dashed")) pen.setDashPattern({3.0, 3.0});
-    else if (edge.pattern == QLatin1String("dotted")) pen.setDashPattern({2.0, 2.0});
+    // Resolved edge paint (linkStyle / edge classDef via MermaidStyleResolve).
+    // Empty resolved values fall back to scene.style; class pattern dash applies
+    // only when linkStyle did not set stroke-dasharray. SemanticMask keeps the
+    // category colour regardless of linkStyle.
+    const QColor edgeColor = (mode == ClassPaintMode::SemanticMask)
+        ? QColor::fromRgba(kClassMaskEdge)
+        : color(edge.stroke.isEmpty() ? scene.style.lineColor : edge.stroke);
+    qreal edgeWidth = scene.style.strokeWidth;
+    if (!edge.strokeWidth.isEmpty()) {
+      QString widthToken = edge.strokeWidth;
+      if (widthToken.endsWith(QStringLiteral("px"), Qt::CaseInsensitive)) widthToken.chop(2);
+      bool ok = false;
+      const qreal resolved = widthToken.trimmed().toDouble(&ok);
+      if (ok && resolved >= 0.0) edgeWidth = resolved;
+    }
+    QPen pen(edgeColor, edgeWidth);
+    if (!edge.strokeDasharray.isEmpty()) {
+      QVector<qreal> dash;
+      for (const QString& token : edge.strokeDasharray.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
+        bool ok = false;
+        const qreal d = token.trimmed().toDouble(&ok);
+        if (ok && d > 0.0) dash.append(d);
+      }
+      if (!dash.isEmpty()) pen.setDashPattern(dash);
+    } else if (edge.pattern == QLatin1String("dashed")) {
+      pen.setDashPattern({3.0, 3.0});
+    } else if (edge.pattern == QLatin1String("dotted")) {
+      pen.setDashPattern({2.0, 2.0});
+    }
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
     if (mode == ClassPaintMode::Color && scene.handDrawn) {
       for (const QString& path : edge.paths)
         rough::roughPath(painter, scene::parseSvgPath(path), scene.handDrawnSeed,
-                         color(scene.style.lineColor), scene.style.strokeWidth);
+                         edgeColor, edgeWidth);
     } else {
       for (const QString& path : edge.paths) painter.drawPath(scene::parseSvgPath(path));
     }

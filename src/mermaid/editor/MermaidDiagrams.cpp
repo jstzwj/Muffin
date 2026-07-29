@@ -218,8 +218,21 @@ struct ClassDiagramImpl : Diagram {
           diagram.data().accDescription, style.textColor, style.fontFamily,
           18.0, configNumber(classConfig, QStringLiteral("titleTopMargin"),
                              25.0), 8.0);
+      QVector<style::ClassDef> classStyleDefs;
+      for (auto it = diagram.data().classDefs.constBegin();
+           it != diagram.data().classDefs.constEnd(); ++it)
+        classStyleDefs.append({it.key(), it.value()});
+      style::ThemeDefaults classTheme;
+      classTheme.mainBkg = themeVars.mainBkg;
+      classTheme.nodeBorder = themeVars.border1;
+      classTheme.lineColor = themeVars.lineColor;
+      classTheme.strokeWidth = themeVars.strokeWidth;
+      classTheme.textColor = themeVars.primaryTextColor;
+      classTheme.fontFamily = style.fontFamily;
+      classTheme.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
       classdiagram::ClassScene scene = classdiagram::buildClassScene(
-          input, boxes, labelMeasurements, placement, std::move(style));
+          input, boxes, labelMeasurements, placement, std::move(style),
+          classStyleDefs, classTheme);
       scene.handDrawn = options.look.compare(
           QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0;
       scene.handDrawnSeed = static_cast<quint32>(

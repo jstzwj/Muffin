@@ -3,6 +3,7 @@
 #include "mermaid/MermaidScene.h"
 #include "mermaid/classdiagram/ClassLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/theme/MermaidStyleResolve.h"
 
 #include <QMap>
 #include <QRectF>
@@ -85,6 +86,11 @@ struct ClassSceneEdge {
   std::optional<ClassSceneTerminalLabel> endLabelLeft;
   QStringList style;
   QStringList labelStyle;
+  // Resolved edge paint (linkStyle / edge classDef via MermaidStyleResolve);
+  // empty when no linkStyle applies — the painter falls back to scene.style.
+  QString stroke;
+  QString strokeWidth;
+  QString strokeDasharray;
 };
 
 struct ClassSceneCluster {
@@ -143,6 +149,8 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
                            const QVector<ClassBoxGeometry>& boxes,
                            const ClassLayoutMeasurements& measurements,
                            const ClassPlacementResult& placement,
-                           ClassSceneStyle style = {});
+                           ClassSceneStyle style = {},
+                           const QVector<style::ClassDef>& classDefs = {},
+                           const style::ThemeDefaults& themeDefaults = {});
 
 }  // namespace muffin::mermaid::classdiagram

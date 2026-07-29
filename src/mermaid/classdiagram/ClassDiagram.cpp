@@ -361,6 +361,7 @@ private:
     if (line.matchWord(u"style")) { parseStyle(line, offset); return; }
     if (line.matchWord(u"classDef")) { parseClassDef(line, offset); return; }
     if (line.matchWord(u"cssClass")) { parseCssClass(line, offset); return; }
+    if (line.matchWord(u"linkStyle")) { parseLinkStyle(line, offset); return; }
     if (!line.atEnd() && line.peek().kind == ClassTokenKind::Word &&
         (line.peek().text == QLatin1String("link") ||
          line.peek().text == QLatin1String("callback") ||
@@ -611,9 +612,25 @@ private:
     const QStringList styles = cursor.parseList(source_);
     for (const QString& name : names) {
       styleClasses_.insert(name, styles);
+      data_.classDefs.insert(name, styles);
       for (ClassNode& node : data_.classes)
         if (node.cssClasses.contains(name)) node.styles.append(styles);
     }
+  }
+
+  // linkStyle <index> <decls> — mermaid classDiagram styles edges by 0-based
+  // source-order index (matching flowchart). Declarations are key:value strings.
+  void parseLinkStyle(ClassTokenCursor cursor, qsizetype offset) {
+    if (cursor.atEnd() || cursor.peek().kind != ClassTokenKind::Word)
+      unexpected(cursor, offset, QStringLiteral("linkStyleStatement"), {QStringLiteral("ALPHA")});
+    bool ok = false;
+    const int index = cursor.consume().text.toInt(&ok);
+    if (!ok || index < 0)
+      unexpected(cursor, offset, QStringLiteral("linkStyleStatement"), {QStringLiteral("INDEX")});
+    if (cursor.atEnd())
+      unexpected(cursor, offset, QStringLiteral("linkStyleStatement"), {QStringLiteral("stylesOpt")});
+    const QStringList styles = cursor.parseList(source_);
+    if (index < data_.relations.size()) data_.relations[index].style = styles;
   }
 
   void parseCssClass(ClassTokenCursor cursor, qsizetype offset) {

@@ -219,6 +219,7 @@ ClassLayoutInput buildClassLayoutInput(const ClassDiagramData& data,
         ? QString{} : value.relationTitle1;
     edge.endLabelLeft = value.relationTitle2 == QLatin1String("none")
         ? QString{} : value.relationTitle2;
+    edge.style = value.style;  // linkStyle declarations (parse-time)
     edge.look = options.look;
     result.edges.append(std::move(edge));
   }

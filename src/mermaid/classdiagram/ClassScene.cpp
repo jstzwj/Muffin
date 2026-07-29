@@ -295,7 +295,9 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
                            const QVector<ClassBoxGeometry>& boxes,
                            const ClassLayoutMeasurements& measurements,
                            const ClassPlacementResult& placement,
-                           ClassSceneStyle style) {
+                           ClassSceneStyle style,
+                           const QVector<style::ClassDef>& classDefs,
+                           const style::ThemeDefaults& themeDefaults) {
   ClassScene scene;
   scene.style = std::move(style);
   scene.markers = classMarkerDefinitions();
@@ -399,6 +401,16 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     }
     rendered.label = edge.label; rendered.labelPosition = found->labelPosition;
     rendered.style = edge.style; rendered.labelStyle = edge.labelStyle;
+    // Resolve linkStyle / edge classDef via the shared cascade. pattern="normal"
+    // (class relationship pattern dash is applied painter-side; linkStyle wins).
+    QStringList linkStyles = style::compiledClassStyles(
+        edge.classes.split(QLatin1Char(' '), Qt::SkipEmptyParts), classDefs);
+    linkStyles += edge.style;
+    const style::ResolvedEdgeStyle resolvedEdge = style::resolveEdgeStyle(
+        QStringLiteral("normal"), linkStyles, false, QString(), themeDefaults);
+    rendered.stroke = resolvedEdge.stroke;
+    rendered.strokeWidth = resolvedEdge.strokeWidth;
+    rendered.strokeDasharray = resolvedEdge.strokeDasharray;
     rendered.pathBounds = pointsBounds(rendered.renderedPoints,
                                        rendered.renderedSegments);
     if (!rendered.label.isEmpty() && rendered.labelPosition) {

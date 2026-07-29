@@ -2,9 +2,11 @@
 
 #include "mermaid/classdiagram/ClassTokenizer.h"
 
+#include <QHash>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QString>
+#include <QStringList>
 #include <QVector>
 
 #include <stdexcept>
@@ -83,6 +85,7 @@ struct ClassRelation {
   QJsonValue type1 = QStringLiteral("none");
   QJsonValue type2 = QStringLiteral("none");
   int lineType = 0;
+  QStringList style;  // linkStyle declarations (key:value), applied at paint
 };
 
 struct ClassNote {
@@ -119,6 +122,10 @@ struct ClassDiagramData {
   QVector<ClassNote> notes;
   QVector<ClassNamespace> namespaces;
   QVector<ClassInterface> interfaces;
+  // classDef table (id -> declarations), exposed so the runtime style cascade
+  // (MermaidStyleResolve) can resolve edge classDef. Node classDef is also
+  // folded into ClassNode.styles at parse time.
+  QHash<QString, QStringList> classDefs;
 };
 
 struct ClassLimits {
