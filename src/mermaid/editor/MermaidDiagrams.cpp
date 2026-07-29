@@ -499,7 +499,8 @@ struct ErDiagramImpl : Diagram {
     const er::ErLayoutMeasurements measurements = er::measureErLayoutInput(
         input, fontFamily, fontSize,
         configNumber(erConfig, QStringLiteral("minEntityWidth"), 100.0),
-        configNumber(erConfig, QStringLiteral("minEntityHeight"), 75.0));
+        configNumber(erConfig, QStringLiteral("diagramPadding"), 20.0),
+        configNumber(erConfig, QStringLiteral("entityPadding"), 15.0));
     const er::ErPlacementResult placement = er::layoutErDiagramDagre(
         input, measurements,
         configNumber(erConfig, QStringLiteral("nodeSpacing"), 140.0),

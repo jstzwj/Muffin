@@ -17,14 +17,6 @@
 #include <algorithm>
 
 namespace {
-// Entity table sizing constants (spec §4). The entity is laid out as a
-// fixed-row table — a header row (entity name) plus one row per attribute — so
-// the box height is deterministic from the row count and the line height, not
-// derived from the multi-line text block (which would drift from the painter's
-// fixed-row layout in ErScene).
-constexpr qreal kEntityHorizontalPadding = 8.0;
-constexpr qreal kEntityVerticalPadding = 6.0;
-constexpr qreal kHeaderDividerBand = 1.0;
 
 // ErCardinality → enum name string. Spec §3: cardinality serializes as the enum
 // name ("ExactlyOne" etc.), matching ErDiagram::toJson. Used by the layout
@@ -91,6 +83,7 @@ muffin::mermaid::er::buildErLayoutInput(const ErDiagramData& data) {
     ErLayoutEntityInput out;
     out.id = entity.id;
     out.name = entity.name;
+    out.attributes = entity.attributes;
     for (const ErAttribute& attr : entity.attributes) {
       out.attributeLines.append(formatErAttributeLine(attr));
       // Placeholder — upstream populates compiled CSS per row; deferred (spec §9).
@@ -117,36 +110,66 @@ muffin::mermaid::er::buildErLayoutInput(const ErDiagramData& data) {
 muffin::mermaid::er::ErLayoutMeasurements
 muffin::mermaid::er::measureErLayoutInput(const ErLayoutInput& input,
                                           QString fontFamily, qreal fontSize,
-                                          qreal minEntityWidth, qreal minEntityHeight) {
+                                          qreal minEntityWidth, qreal diagramPadding,
+                                          qreal entityPadding) {
   ErLayoutMeasurements result;
   flowchart::FlowTextOptions options;
   options.fontFamily = std::move(fontFamily);
   options.fontPixelSize = fontSize;
   options.lineHeight = fontSize * 1.5;
-  options.horizontalPadding = 16.0;
-  options.verticalPadding = 16.0;
+  const auto textW = [&](const QString& s) {
+    return flowchart::measureLabel(s, QStringLiteral("text"), options).width();
+  };
+  const auto textH = [&](const QString& s) {
+    return flowchart::measureLabel(s, QStringLiteral("text"), options).height();
+  };
   for (const ErLayoutEntityInput& entity : input.entities) {
-    // Multi-line block = name (header) + attribute rows. measureLabel returns
-    // the max per-line advance as the width, i.e. the widest table row.
-    QStringList lines;
-    lines.append(entity.name);
-    lines.append(entity.attributeLines);
-    const QSizeF measured = flowchart::measureLabel(
-        lines.join(QLatin1Char('\n')), QStringLiteral("markdown"), options);
-    const QSizeF nameMeasured = flowchart::measureLabel(
-        entity.name, QStringLiteral("markdown"), options);
-    const qreal width =
-        std::max(measured.width(), nameMeasured.width()) + 2.0 * kEntityHorizontalPadding;
-    // Fixed-row table: header + N attribute rows, each one line tall, plus
-    // vertical padding and the 1px header divider band the painter draws.
-    const int rowCount = 1 + entity.attributeLines.size();
-    const qreal height = static_cast<qreal>(rowCount) * options.lineHeight +
-                         2.0 * kEntityVerticalPadding + kHeaderDividerBand;
-    // mermaid clamps each entity box to er.minEntityWidth/minEntityHeight
-    // (defaults 100/75); a content-sized box would otherwise shrink single
-    // entities below the crow's-foot markers.
-    result.entities.insert(
-        entity.id, QSizeF(std::max(width, minEntityWidth), std::max(height, minEntityHeight)));
+    QSizeF size;
+    if (entity.attributes.isEmpty()) {
+      // Empty-entity fast path (mermaid erBox drawRect branch). PADDING is NOT
+      // scaled by 1.25 on this path - the scaling block is unreachable here.
+      const qreal pad = diagramPadding;              // 20
+      const qreal labelPadY = pad * 1.5;             // 30
+      const qreal width = std::max(textW(entity.name) + 2.0 * pad, minEntityWidth);
+      const qreal height = textH(entity.name) + 2.0 * labelPadY;  // = textH + 3*pad
+      size = QSizeF(width, height);
+    } else {
+      // Attribute-bearing entity (mermaid erBox main path). PADDING/TEXT_PADDING
+      // are scaled by 1.25 (htmlLabels is falsy by default for ER).
+      const qreal pad = diagramPadding * 1.25;       // 25
+      const qreal textPad = entityPadding * 1.25;    // 18.75
+      qreal colType = 0, colName = 0, colKeys = 0, colComment = 0;
+      qreal totalRowHeight = 0;
+      for (const ErAttribute& attr : entity.attributes) {
+        const QString keys = erAttributeKeyShortName(attr.keyType);
+        colType = std::max(colType, textW(attr.attributeType) + pad);
+        colName = std::max(colName, textW(attr.attributeName) + pad);
+        colKeys = std::max(colKeys, textW(keys) + pad);
+        colComment = std::max(colComment, textW(attr.comment) + pad);
+        totalRowHeight += std::max({textH(attr.attributeType), textH(attr.attributeName),
+                                    textH(keys), textH(attr.comment)}) +
+                          textPad;
+      }
+      // Empty-column suppression: a column whose max width never exceeds the
+      // per-column PADDING (no text) is dropped.
+      int sections = 4;
+      if (colKeys <= pad) { colKeys = 0; --sections; }
+      if (colComment <= pad) { colComment = 0; --sections; }
+      qreal colSum = colType + colName + colKeys + colComment;
+      const qreal headerWidth = textW(entity.name);
+      // Header-wider-than-columns redistribution.
+      if (sections > 0 && headerWidth + 2.0 * pad - colSum > 0) {
+        const qreal diff = headerWidth + 2.0 * pad - colSum;
+        colType += diff / sections;
+        colName += diff / sections;
+        if (colKeys > 0) colKeys += diff / sections;
+        if (colComment > 0) colComment += diff / sections;
+        colSum = colType + colName + colKeys + colComment;
+      }
+      const qreal headerHeight = textH(entity.name) + textPad;
+      size = QSizeF(colSum, totalRowHeight + headerHeight);
+    }
+    result.entities.insert(entity.id, size);
   }
   for (const ErLayoutRelationshipInput& rel : input.relationships) {
     if (rel.label.isEmpty()) continue;

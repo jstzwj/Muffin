@@ -26,6 +26,10 @@ struct ErLayoutEntityInput {
   QString name;
   QStringList attributeLines;
   QStringList attributeStyles;
+  // Structured per-attribute fields, used by measureErLayoutInput for mermaid's
+  // per-column entity sizing (type/name/keys/comment). attributeLines is kept
+  // separately because ErScene re-parses it for display.
+  QVector<ErAttribute> attributes;
 };
 
 struct ErLayoutRelationshipInput {
@@ -78,7 +82,8 @@ ErLayoutMeasurements measureErLayoutInput(const ErLayoutInput& input,
                                           QString fontFamily = QStringLiteral("Noto Sans"),
                                           qreal fontSize = 16.0,
                                           qreal minEntityWidth = 100.0,
-                                          qreal minEntityHeight = 75.0);
+                                          qreal diagramPadding = 20.0,
+                                          qreal entityPadding = 15.0);
 ErPlacementResult layoutErDiagramDagre(const ErLayoutInput& input,
                                        const ErLayoutMeasurements& measurements,
                                        qreal entitySpacing = 60.0,
