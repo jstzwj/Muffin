@@ -116,7 +116,8 @@ muffin::mermaid::er::buildErLayoutInput(const ErDiagramData& data) {
 
 muffin::mermaid::er::ErLayoutMeasurements
 muffin::mermaid::er::measureErLayoutInput(const ErLayoutInput& input,
-                                          QString fontFamily, qreal fontSize) {
+                                          QString fontFamily, qreal fontSize,
+                                          qreal minEntityWidth, qreal minEntityHeight) {
   ErLayoutMeasurements result;
   flowchart::FlowTextOptions options;
   options.fontFamily = std::move(fontFamily);
@@ -141,7 +142,11 @@ muffin::mermaid::er::measureErLayoutInput(const ErLayoutInput& input,
     const int rowCount = 1 + entity.attributeLines.size();
     const qreal height = static_cast<qreal>(rowCount) * options.lineHeight +
                          2.0 * kEntityVerticalPadding + kHeaderDividerBand;
-    result.entities.insert(entity.id, QSizeF(width, height));
+    // mermaid clamps each entity box to er.minEntityWidth/minEntityHeight
+    // (defaults 100/75); a content-sized box would otherwise shrink single
+    // entities below the crow's-foot markers.
+    result.entities.insert(
+        entity.id, QSizeF(std::max(width, minEntityWidth), std::max(height, minEntityHeight)));
   }
   for (const ErLayoutRelationshipInput& rel : input.relationships) {
     if (rel.label.isEmpty()) continue;

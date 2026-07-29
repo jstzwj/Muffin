@@ -76,7 +76,9 @@ struct ErPlacementResult {
 ErLayoutInput buildErLayoutInput(const ErDiagramData& data);
 ErLayoutMeasurements measureErLayoutInput(const ErLayoutInput& input,
                                           QString fontFamily = QStringLiteral("Noto Sans"),
-                                          qreal fontSize = 16.0);
+                                          qreal fontSize = 16.0,
+                                          qreal minEntityWidth = 100.0,
+                                          qreal minEntityHeight = 75.0);
 ErPlacementResult layoutErDiagramDagre(const ErLayoutInput& input,
                                        const ErLayoutMeasurements& measurements,
                                        qreal entitySpacing = 60.0,

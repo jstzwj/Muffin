@@ -4,19 +4,16 @@
 // normalized to the first source entity's centre); relationship paths by
 // (cardA, cardB, identifying) tuple match then path-shape compare.
 //
-// STATUS: this is currently a REPORT-ONLY diagnostic. It surfaces the deltas
-// between Muffin's ER and mermaid 11.16.0 and exits 0 (CI-green) so the
-// reference + generator + comparison are committed while the underlying gaps
-// are fixed. The first comparison revealed Muffin's ER diverges from mermaid
-// in three concrete ways (real parity gaps, not font jitter):
-//   1. Muffin applies NO minEntityWidth/minEntityHeight (entities size to text;
-//      mermaid enforces a minimum box, e.g. a 1-letter entity is ~100x84).
-//   2. layoutErDiagramDagre uses hardcoded entitySpacing=60/rankSpacing=80 and
-//      ignores `er.nodeSpacing`/`er.rankSpacing` from config (mermaid defaults
-//      140/80) -> horizontal positions diverge.
-//   3. Row/line metrics (lineHeight, padding) differ -> entity heights differ.
-// Once Muffin's ER layout is aligned to mermaid's config + min sizes, flip the
-// reportOnly() call to fail-on-divergence (the comparison logic is unchanged).
+// STATUS: report-only diagnostic. Phase 1 (honoring er.nodeSpacing/rankSpacing
+// defaults 140/80 + er.minEntityWidth/minEntityHeight clamp 100/75) FIXED entity
+// widths and horizontal positions - they now match mermaid. The remaining
+// delta is the measurement MODEL (Phase 2): mermaid's empty-attribute entity
+// height follows a fast-path formula (labelPaddingY = diagramPadding*1.5) that
+// yields ~84, while Muffin clamps to the minEntityHeight floor (75); and
+// attribute-bearing entities use mermaid's 4-column width model vs Muffin's
+// text-block model. Both are a measurement-rewrite (measureErLayoutInput), not
+// a config fix. Once that lands, flip reportOnly() to fail-on-divergence; the
+// comparison logic here is unchanged.
 //
 // MermaidRenderCache::getSync -> entry.erScene -> ErScene::toJsonObject().
 

@@ -495,10 +495,15 @@ struct ErDiagramImpl : Diagram {
     const er::ErLayoutInput input = er::buildErLayoutInput(diagram.data());
     const QString fontFamily = firstFontFamily(themeVars.fontFamily);
     const qreal fontSize = pixelValue(themeVars.fontSize, 16.0);
-    const er::ErLayoutMeasurements measurements =
-        er::measureErLayoutInput(input, fontFamily, fontSize);
-    const er::ErPlacementResult placement =
-        er::layoutErDiagramDagre(input, measurements);
+    const QJsonObject erConfig = pre.config.value(QStringLiteral("er")).toObject();
+    const er::ErLayoutMeasurements measurements = er::measureErLayoutInput(
+        input, fontFamily, fontSize,
+        configNumber(erConfig, QStringLiteral("minEntityWidth"), 100.0),
+        configNumber(erConfig, QStringLiteral("minEntityHeight"), 75.0));
+    const er::ErPlacementResult placement = er::layoutErDiagramDagre(
+        input, measurements,
+        configNumber(erConfig, QStringLiteral("nodeSpacing"), 140.0),
+        configNumber(erConfig, QStringLiteral("rankSpacing"), 80.0));
     er::ErSceneStyle style;
     style.entityFill = themeVars.mainBkg;
     style.entityStroke = themeVars.border1;
@@ -511,7 +516,6 @@ struct ErDiagramImpl : Diagram {
     style.fontFamily = fontFamily;
     style.fontSize = fontSize;
     style.lineHeight = fontSize * 1.5;
-    const QJsonObject erConfig = pre.config.value(QStringLiteral("er")).toObject();
     MermaidRenderMetadata metadata = renderMetadata(
         pre, type, diagram.data().title, diagram.data().accTitle,
         diagram.data().accDescription, style.entityTitle1, style.fontFamily,
