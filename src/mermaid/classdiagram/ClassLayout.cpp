@@ -405,11 +405,11 @@ ClassDagreMeasurements measureClassDagreInput(
 ClassPlacementResult layoutClassDiagramDagre(
     const ClassLayoutInput& input, const ClassDagreMeasurements& measurements) {
   constexpr qreal kDagreMarginX = 8.0;
-  const bool compound = std::any_of(input.nodes.cbegin(), input.nodes.cend(),
-      [](const ClassLayoutNodeInput& node) { return node.isGroup; });
-  const bool hasSelfEdge = std::any_of(input.edges.cbegin(), input.edges.cend(),
-      [](const ClassLayoutEdgeInput& edge) { return edge.start == edge.end; });
-  if (compound || hasSelfEdge) {
+  // All class layouts (flat + compound + self-edge) route through the shared
+  // flowchart dagre pipeline. The former direct-dagre flat branch produced
+  // identical geometry (class layout/scene/pixel oracles verify), so it was
+  // removed — class now has a single dagre entry point like state/er.
+  {
     flowchart::FlowchartData projected;
     projected.direction = input.direction;
     for (const ClassLayoutNodeInput& node : input.nodes) {
@@ -547,70 +547,6 @@ ClassPlacementResult layoutClassDiagramDagre(
     }
     return result;
   }
-
-  namespace d = muffin::mermaid::dagre;
-  d::DagreGraph graph({.directed = true, .multigraph = true, .compound = true});
-  d::DagreGraphLabel graphLabel;
-  graphLabel.rankdir = input.direction;
-  graphLabel.nodesep = input.nodeSpacing;
-  graphLabel.edgesep = 20.0;
-  graphLabel.ranksep = input.rankSpacing;
-  graphLabel.marginx = kDagreMarginX;
-  graphLabel.marginy = 8.0;
-  graph.setGraph(graphLabel);
-
-  for (const ClassLayoutNodeInput& node : input.nodes) {
-    const QSizeF size = measurements.nodes.value(node.id);
-    d::DagreNodeLabel label;
-    label.width = size.width();
-    label.height = size.height();
-    graph.setNode(node.id, label);
-  }
-  for (const ClassLayoutNodeInput& node : input.nodes) {
-    if (!node.parentId.isEmpty()) graph.setParent(node.id, node.parentId);
-  }
-  for (const ClassLayoutEdgeInput& edge : input.edges) {
-    const QSizeF labelSize = measurements.edgeLabels.value(edge.id);
-    d::DagreEdgeLabel label;
-    label.minlen = 1;
-    label.weight = 1;
-    label.width = labelSize.width();
-    label.height = labelSize.height();
-    label.labelpos = QStringLiteral("c");
-    label.labeloffset = 10;
-    graph.setEdge(edge.start, edge.end, label, edge.id);
-  }
-
-  d::runDagreLayout(graph);
-  QPointF origin;
-  for (const ClassLayoutNodeInput& node : input.nodes) {
-    if (node.isGroup) continue;
-    if (const d::DagreNodeLabel* value = graph.node(node.id))
-      origin = QPointF(value->x.value_or(0.0), value->y.value_or(0.0));
-    break;
-  }
-
-  ClassPlacementResult result;
-  for (const ClassLayoutNodeInput& node : input.nodes) {
-    if (node.isGroup) continue;
-    const d::DagreNodeLabel* value = graph.node(node.id);
-    if (!value) continue;
-    result.nodes.append({node.id, value->x.value_or(0.0) - origin.x(),
-                         value->y.value_or(0.0) - origin.y(), value->width,
-                         value->height, value->rank.value_or(0)});
-  }
-  for (const ClassLayoutEdgeInput& edge : input.edges) {
-    const d::DagreEdgeLabel* value = graph.edge(edge.start, edge.end, edge.id);
-    if (!value) continue;
-    ClassPlacementEdge placed;
-    placed.id = edge.id;
-    placed.points.reserve(value->points.size());
-    for (const QPointF& point : value->points) placed.points.append(point - origin);
-    if (value->x && value->y)
-      placed.labelPosition = QPointF(*value->x - origin.x(), *value->y - origin.y());
-    result.edges.append(std::move(placed));
-  }
-  return result;
 }
 
 }  // namespace muffin::mermaid::classdiagram
