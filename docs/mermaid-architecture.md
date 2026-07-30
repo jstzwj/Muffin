@@ -157,10 +157,12 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 | er | er-geometry + ErGeometryOracleTest | ✅（Phase 2，fail-on-divergence） |
 | **class** | **class-geometry + ClassGeometryOracleTest** | **✅** 断言 topology + edge-tuple multiset（pattern/markerStart/markerEnd）+ node height + dividers；报告 width |
 | **state** | **state-geometry + StateGeometryOracleTest** | **✅** 断言 topology + **transition multiset（from→to）** + node height；报告 width |
-| sequence | — | 待做（legacy flat renderer，需 y-position 端点匹配） |
+| **sequence** | **sequence-geometry + SequenceGeometryOracleTest** | **✅** 纯结构断言：participant multiset + message count + **ordered (from,to,dashed,markerEnd)** 元组列表 |
 
 class oracle 关键设计：edge 的 markerStart/markerEnd 在 mermaid 侧从 `marker-start`/`marker-end` url 提取 bare type 并丢弃 Start/End 后缀（字段位置已编码端侧），与 Muffin `markerName` 输出的 bare type 对齐；`none`/空/absent 三者归一为 null。断言的 edge-tuple multiset 证明 Muffin 对每种 class 关系（继承/实现/组合/聚合/关联/依赖，solid/dashed，单/双端）画出与 mermaid 完全相同的箭头。
 
-state oracle 关键设计：state 边**无** `LS-/LE-` class 编码（区别于 flowchart），from/to 通过匹配每条边的 `data-points`（base64 dagre 路径点，首=源/末=目标）到最近节点中心恢复；节点 id（root_start/root_end/`<name>`）与 Muffin 直接对齐。断言的 transition multiset 覆盖分支/fork-join 扇出收敛/自环/start-end，证明 Muffin 复现 mermaid 的状态机结构。59 mermaid 测试全绿。
+state oracle 关键设计：state 边**无** `LS-/LE-` class 编码（区别于 flowchart），from/to 通过匹配每条边的 `data-points`（base64 dagre 路径点，首=源/末=目标）到最近节点中心恢复；节点 id（root_start/root_end/`<name>`）与 Muffin 直接对齐。断言的 transition multiset 覆盖分支/fork-join 扇出收敛/自环/start-end，证明 Muffin 复现 mermaid 的状态机结构。
+
+sequence oracle 关键设计：sequence 用 legacy flat renderer，**位置**（actor anchorX / message lineY / lifeline Y）全是 font 耦合，故 oracle 是**纯结构**断言（不比几何）。mermaid 的 message `<line>` 带 `data-from`/`data-to`/`data-id`/`marker-end`/`style`，from/to/顺序/箭头/虚线直接读取（无需坐标匹配）。断言 participant multiset + message count + **有序** (from,to,dashed,markerEnd) 列表——顺序即对话流，故用有序列表而非 multiset。覆盖 `->>`/`-->>`/`->`/`-x`/`--x` 箭头种类。自环（`A->>A`）渲染为 loop path 而非 messageLine，暂排除。60 mermaid 测试全绿，**5 图族真-mermaid geometry oracle 全部完成**。
 
 

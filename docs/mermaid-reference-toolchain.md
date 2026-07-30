@@ -67,11 +67,13 @@ references.
 
 - **Real-mermaid geometry oracles** — fail-on-divergence tests that assert
   Muffin's native geometry against captured mermaid 11.16.0 output, splitting
-  font-independent parity (asserted) from font-coupled deltas (reported). ER
+  font-independent parity (asserted) from font-coupled deltas (reported). All
+  five families are covered: flowchart (dagre-snapshots + geometry), ER
   (`er-geometry.json` + `MermaidErGeometryOracleTest`), class
-  (`class-geometry.json` + `MermaidClassGeometryOracleTest`), and state
-  (`state-geometry.json` + `MermaidStateGeometryOracleTest`) are landed;
-  sequence (legacy flat renderer) is the remaining family.
+  (`class-geometry.json` + `MermaidClassGeometryOracleTest`), state
+  (`state-geometry.json` + `MermaidStateGeometryOracleTest`), and sequence
+  (`sequence-geometry.json` + `MermaidSequenceGeometryOracleTest`, a pure
+  structural oracle since the legacy renderer is positionally font-coupled).
 - `config-effect-matrix.json` `scope.families` covers `er`.
 - Regenerating any drifted fixture (e.g. after a mermaid version bump, or when
   extending the case corpus).
@@ -81,7 +83,7 @@ references.
 Flowchart: `geometry`, `scene`, `db`, `label`, `pixel` (`golden-pixel`),
 `dagre-snapshots`, `differential-fuzz`, `style-cascade`, `theme`, `diagnostic-coverage`.
 Class: `db`, `layout`, `label`, `pixel`, `differential-fuzz`, `geometry`.
-Sequence / state: `db`, `layout`, `label`, `pixel`, `differential-fuzz`
-(state also `geometry`; sequence also `mathml-box`). ER: `geometry` (+ Muffin
-self-snapshot `er-scene`).
+Sequence / state: `db`, `layout`, `label`, `pixel`, `differential-fuzz`,
+`geometry` (sequence also `mathml-box`). ER: `geometry` (+ Muffin self-snapshot
+`er-scene`).
 Plus `config-effect-matrix`, `compatibility`, `error`, `rough-ops`, `katex-golden`.

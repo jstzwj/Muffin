@@ -1,0 +1,166 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "Real mermaid 11.16.0 sequenceDiagram geometry via headless Chrome. The legacy sequence renderer emits each message as a <line> carrying data-from/data-to/data-id/marker-end/style, so message topology, order, arrow kind, and dashed are read directly — no coordinate matching. Participants from text.actor-box (id == label; alias-free corpus). Everything here is font-independent; anchorX/lineY/lifeline Y are font-coupled and not captured. Compare against sequence::SequenceScene::toJsonObject (participants id; messages from/to/dashed/markerEnd)."
+  },
+  "mermaidVersion": "11.16.0",
+  "fontMode": "trebuchet-ms",
+  "oracle": "sequenceDiagram.render participants + message topology (from/to/dashed/markerEnd, ordered)",
+  "cases": [
+    {
+      "id": "basic-arrows",
+      "source": "sequenceDiagram\nAlice->>Bob: hello\nBob-->>Alice: hi",
+      "expected": {
+        "participants": [
+          {
+            "id": "Alice"
+          },
+          {
+            "id": "Bob"
+          }
+        ],
+        "messages": [
+          {
+            "from": "Alice",
+            "to": "Bob",
+            "dashed": false,
+            "markerEnd": "arrowhead"
+          },
+          {
+            "from": "Bob",
+            "to": "Alice",
+            "dashed": true,
+            "markerEnd": "arrowhead"
+          }
+        ],
+        "autonumber": false
+      }
+    },
+    {
+      "id": "three-actors",
+      "source": "sequenceDiagram\nA->>B: one\nB->>C: two\nC-->>A: three",
+      "expected": {
+        "participants": [
+          {
+            "id": "A"
+          },
+          {
+            "id": "B"
+          },
+          {
+            "id": "C"
+          }
+        ],
+        "messages": [
+          {
+            "from": "A",
+            "to": "B",
+            "dashed": false,
+            "markerEnd": "arrowhead"
+          },
+          {
+            "from": "B",
+            "to": "C",
+            "dashed": false,
+            "markerEnd": "arrowhead"
+          },
+          {
+            "from": "C",
+            "to": "A",
+            "dashed": true,
+            "markerEnd": "arrowhead"
+          }
+        ],
+        "autonumber": false
+      }
+    },
+    {
+      "id": "no-arrowhead",
+      "source": "sequenceDiagram\nA->B: nudge\nB->A: back",
+      "expected": {
+        "participants": [
+          {
+            "id": "A"
+          },
+          {
+            "id": "B"
+          }
+        ],
+        "messages": [
+          {
+            "from": "A",
+            "to": "B",
+            "dashed": false,
+            "markerEnd": null
+          },
+          {
+            "from": "B",
+            "to": "A",
+            "dashed": false,
+            "markerEnd": null
+          }
+        ],
+        "autonumber": false
+      }
+    },
+    {
+      "id": "cross",
+      "source": "sequenceDiagram\nA--xB: err1\nB-xA: err2",
+      "expected": {
+        "participants": [
+          {
+            "id": "A"
+          },
+          {
+            "id": "B"
+          }
+        ],
+        "messages": [
+          {
+            "from": "A",
+            "to": "B",
+            "dashed": true,
+            "markerEnd": "crosshead"
+          },
+          {
+            "from": "B",
+            "to": "A",
+            "dashed": false,
+            "markerEnd": "crosshead"
+          }
+        ],
+        "autonumber": false
+      }
+    },
+    {
+      "id": "autonumber",
+      "source": "sequenceDiagram\nautonumber\nA->>B: first\nB->>A: second",
+      "expected": {
+        "participants": [
+          {
+            "id": "A"
+          },
+          {
+            "id": "B"
+          }
+        ],
+        "messages": [
+          {
+            "from": "A",
+            "to": "B",
+            "dashed": false,
+            "markerEnd": "arrowhead"
+          },
+          {
+            "from": "B",
+            "to": "A",
+            "dashed": false,
+            "markerEnd": "arrowhead"
+          }
+        ],
+        "autonumber": true
+      }
+    }
+  ]
+}
