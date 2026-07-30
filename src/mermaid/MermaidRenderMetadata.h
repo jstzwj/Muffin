@@ -14,6 +14,7 @@ namespace muffin::mermaid {
 struct MermaidRenderMetadata {
   QString diagramType;
   QString roleDescription;
+  QString cssClass;  // SVG root class suffix (e.g. "flowchart", "erDiagram")
   QString title;
   QString accessibleTitle;
   QString accessibleDescription;

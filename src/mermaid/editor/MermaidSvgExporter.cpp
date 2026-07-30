@@ -44,18 +44,6 @@ QString compactNumber(qreal value) {
   return result;
 }
 
-QString diagramCssClass(const MermaidRenderMetadata& metadata) {
-  if (metadata.diagramType.startsWith(QLatin1String("flowchart")))
-    return QStringLiteral("flowchart");
-  if (metadata.diagramType == QLatin1String("sequence"))
-    return QStringLiteral("sequenceDiagram");
-  if (metadata.diagramType.startsWith(QLatin1String("class")))
-    return QStringLiteral("classDiagram");
-  if (metadata.diagramType == QLatin1String("er"))
-    return QStringLiteral("erDiagram");
-  return QStringLiteral("stateDiagram");
-}
-
 QString svgRootId(const MermaidRenderEntry& entry, qsizetype instanceIndex) {
   const auto& metadata = entry.metadata;
   instanceIndex = std::max<qsizetype>(0, instanceIndex);
@@ -251,7 +239,7 @@ QByteArray normalizeSvg(const QByteArray& generated,
           writer.writeAttribute(QStringLiteral("id"), rootId);
           writer.writeAttribute(QStringLiteral("class"),
                                 QStringLiteral("mfn-mermaid ") +
-                                    diagramCssClass(entry.metadata));
+                                    entry.metadata.cssClass);
           writer.writeAttribute(QStringLiteral("viewBox"),
                                 QStringLiteral("0 0 %1 %2")
                                     .arg(canvas.size.width())

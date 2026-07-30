@@ -91,6 +91,16 @@ MermaidRenderMetadata renderMetadata(
   MermaidRenderMetadata metadata;
   metadata.diagramType = diagramType;
   metadata.roleDescription = diagramType;
+  if (diagramType.startsWith(QLatin1String("flowchart")))
+    metadata.cssClass = QStringLiteral("flowchart");
+  else if (diagramType == QLatin1String("sequence"))
+    metadata.cssClass = QStringLiteral("sequenceDiagram");
+  else if (diagramType.startsWith(QLatin1String("class")))
+    metadata.cssClass = QStringLiteral("classDiagram");
+  else if (diagramType == QLatin1String("er"))
+    metadata.cssClass = QStringLiteral("erDiagram");
+  else
+    metadata.cssClass = QStringLiteral("stateDiagram");
   metadata.title = diagramTitle.trimmed().isEmpty() ? pre.title : diagramTitle;
   metadata.accessibleTitle = accessibleTitle;
   metadata.accessibleDescription = accessibleDescription;
