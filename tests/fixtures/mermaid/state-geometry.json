@@ -1,0 +1,287 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "Real mermaid 11.16.0 stateDiagram-v2 geometry via headless Chrome. State node sizes + transition topology. Transition from/to recovered by matching each edge's data-points endpoints (first=source, last=target) to the nearest node centre — state edges carry no LS-/LE- class encoding. Node ids match Muffin directly (root_start/root_end/<name>). width/height are font-coupled; compare against state::StateScene::toJsonObject (nodes id/height/width, edges start/end/markerEnd)."
+  },
+  "mermaidVersion": "11.16.0",
+  "fontMode": "trebuchet-ms",
+  "oracle": "stateDiagram.render state nodes (size) + transition topology (from/to by endpoint match)",
+  "cases": [
+    {
+      "id": "linear",
+      "source": "stateDiagram-v2\n[*] --> Active\nActive --> Inactive\nInactive --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "Active",
+            "width": 60.828,
+            "height": 40
+          },
+          {
+            "id": "Inactive",
+            "width": 73,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "Active",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Active",
+            "to": "Inactive",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Inactive",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "branching",
+      "source": "stateDiagram-v2\n[*] --> A\nA --> B : yes\nA --> C : no\nB --> [*]\nC --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "A",
+            "width": 25.438,
+            "height": 40
+          },
+          {
+            "id": "B",
+            "width": 25.063,
+            "height": 40
+          },
+          {
+            "id": "C",
+            "width": 25.578,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "A",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
+            "to": "B",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "A",
+            "to": "C",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "B",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "C",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fork-join",
+      "source": "stateDiagram-v2\n[*] --> Active\nstate Fork <<fork>>\nActive --> Fork\nFork --> S1\nFork --> S2\nstate Join <<join>>\nS1 --> Join\nS2 --> Join\nJoin --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "Active",
+            "width": 60.828,
+            "height": 40
+          },
+          {
+            "id": "Fork",
+            "width": 70,
+            "height": 10
+          },
+          {
+            "id": "S1",
+            "width": 32.094,
+            "height": 40
+          },
+          {
+            "id": "S2",
+            "width": 32.094,
+            "height": 40
+          },
+          {
+            "id": "Join",
+            "width": 70,
+            "height": 10
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "Active",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Active",
+            "to": "Fork",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Fork",
+            "to": "S1",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Fork",
+            "to": "S2",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "S1",
+            "to": "Join",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "S2",
+            "to": "Join",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Join",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "self-loop",
+      "source": "stateDiagram-v2\n[*] --> Idle\nIdle --> Idle : retry\nIdle --> [*]",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "Idle",
+            "width": 42.813,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "Idle",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Idle",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Idle",
+            "to": "Idle",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    },
+    {
+      "id": "labeled",
+      "source": "stateDiagram-v2\n[*] --> Off\nOff --> On : power\nOn --> Off : power\nOn --> [*] : timeout",
+      "expected": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "width": 14,
+            "height": 14
+          },
+          {
+            "id": "Off",
+            "width": 38.609,
+            "height": 40
+          },
+          {
+            "id": "On",
+            "width": 35.531,
+            "height": 40
+          },
+          {
+            "id": "root_end",
+            "width": 14.013,
+            "height": 14
+          }
+        ],
+        "edges": [
+          {
+            "from": "root_start",
+            "to": "Off",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "Off",
+            "to": "On",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "On",
+            "to": "Off",
+            "markerEnd": "barbEnd"
+          },
+          {
+            "from": "On",
+            "to": "root_end",
+            "markerEnd": "barbEnd"
+          }
+        ]
+      }
+    }
+  ]
+}

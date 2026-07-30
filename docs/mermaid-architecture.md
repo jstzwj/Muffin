@@ -156,9 +156,11 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 | flowchart | dagre-snapshots + geometry | ✅（既有） |
 | er | er-geometry + ErGeometryOracleTest | ✅（Phase 2，fail-on-divergence） |
 | **class** | **class-geometry + ClassGeometryOracleTest** | **✅** 断言 topology + edge-tuple multiset（pattern/markerStart/markerEnd）+ node height + dividers；报告 width |
-| sequence | — | 待做（actor/lifeline/message，非 dagre） |
-| state | — | 待做（dagre，经共享管线） |
+| **state** | **state-geometry + StateGeometryOracleTest** | **✅** 断言 topology + **transition multiset（from→to）** + node height；报告 width |
+| sequence | — | 待做（legacy flat renderer，需 y-position 端点匹配） |
 
-class oracle 关键设计：edge 的 markerStart/markerEnd 在 mermaid 侧从 `marker-start`/`marker-end` url 提取 bare type 并丢弃 Start/End 后缀（字段位置已编码端侧），与 Muffin `markerName` 输出的 bare type 对齐；`none`/空/absent 三者归一为 null。断言的 edge-tuple multiset 证明 Muffin 对每种 class 关系（继承/实现/组合/聚合/关联/依赖，solid/dashed，单/双端）画出与 mermaid 完全相同的箭头。58 mermaid 测试全绿。
+class oracle 关键设计：edge 的 markerStart/markerEnd 在 mermaid 侧从 `marker-start`/`marker-end` url 提取 bare type 并丢弃 Start/End 后缀（字段位置已编码端侧），与 Muffin `markerName` 输出的 bare type 对齐；`none`/空/absent 三者归一为 null。断言的 edge-tuple multiset 证明 Muffin 对每种 class 关系（继承/实现/组合/聚合/关联/依赖，solid/dashed，单/双端）画出与 mermaid 完全相同的箭头。
+
+state oracle 关键设计：state 边**无** `LS-/LE-` class 编码（区别于 flowchart），from/to 通过匹配每条边的 `data-points`（base64 dagre 路径点，首=源/末=目标）到最近节点中心恢复；节点 id（root_start/root_end/`<name>`）与 Muffin 直接对齐。断言的 transition multiset 覆盖分支/fork-join 扇出收敛/自环/start-end，证明 Muffin 复现 mermaid 的状态机结构。59 mermaid 测试全绿。
 
 
