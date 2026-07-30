@@ -141,3 +141,24 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 
 **已知 follow-up**：ER dagre 曲线坐标存在 run-to-run FP 抖动（QHash 迭代序），回归 oracle 用 path 0.01 容差吸收；根治需在 dagre 移植层做确定性化。
 
+---
+
+## 8. Oracle 深度跨图（2026-07-30 起）
+
+5 步架构落地后，parity 的剩余工作不是「更多架构」，而是**把 ER 的「真-mermaid geometry oracle + fail-on-divergence」模式上提到其余图族**——parity 证据真正沉淀的地方。每族：generator（headless Chrome 捕获真 mermaid 11.16.0 几何）+ fixture（冻结）+ oracle test（断言 font 无关 parity，报告 font 耦合 delta）。
+
+**canonical reference 已升级**：`C:\Users\jstzw\Documents\github\mermaid-cli` 是上游 mermaid-cli 源码 clone（自带 `node_modules/mermaid@11.16.0`、`dagre-d3-es`、puppeteer shim、`#container` index.html），生成器开箱即用，无需 setup 脚本。三个 geometry 生成器（flowchart/er/class）支持 `MERMAID_REFERENCE_ROOT` 环境变量覆盖路径。
+
+**font 无关 vs 耦合的判定**（class oracle 实测确认）：**高度**依赖字体 ascent/descent，Qt 与 Chrome 间稳定（≤0.5px）→ 可断言；**宽度**依赖 per-glyph advance，差 ~1px/文本 → 仅报告。这与 ER 的宽度耦合是同一面墙的较温和形式。
+
+| 图族 | 真几何 oracle | 状态 |
+|---|---|---|
+| flowchart | dagre-snapshots + geometry | ✅（既有） |
+| er | er-geometry + ErGeometryOracleTest | ✅（Phase 2，fail-on-divergence） |
+| **class** | **class-geometry + ClassGeometryOracleTest** | **✅** 断言 topology + edge-tuple multiset（pattern/markerStart/markerEnd）+ node height + dividers；报告 width |
+| sequence | — | 待做（actor/lifeline/message，非 dagre） |
+| state | — | 待做（dagre，经共享管线） |
+
+class oracle 关键设计：edge 的 markerStart/markerEnd 在 mermaid 侧从 `marker-start`/`marker-end` url 提取 bare type 并丢弃 Start/End 后缀（字段位置已编码端侧），与 Muffin `markerName` 输出的 bare type 对齐；`none`/空/absent 三者归一为 null。断言的 edge-tuple multiset 证明 Muffin 对每种 class 关系（继承/实现/组合/聚合/关联/依赖，solid/dashed，单/双端）画出与 mermaid 完全相同的箭头。58 mermaid 测试全绿。
+
+

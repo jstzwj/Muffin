@@ -11,6 +11,13 @@ CI). They depend on a sibling checkout at `<repo>/../mermaid-cli` whose
 `node_modules` provides `mermaid`, `dagre-d3-es`, and `puppeteer`, and they launch
 the system Chrome.
 
+The sibling default is overridable two ways: pass the mermaid package root as the
+script's first argument, or set `MERMAID_REFERENCE_ROOT` (the geometry generators —
+flowchart, er, class — check the env var first). This lets a single canonical
+checkout live anywhere, e.g. an upstream `mermaid-cli` source clone (which already
+ships `node_modules/mermaid@11.16.0`, `dagre-d3-es`, the puppeteer shim, and the
+`#container` `index.html` the generators need — no setup script required).
+
 ## One-command setup
 
 ```bash
@@ -58,11 +65,13 @@ references.
 
 ## What it unlocks
 
-- **ER real-mermaid parity** — ER currently has only a Muffin self-snapshot
-  (`er-scene.json` + `MermaidErSceneRegressionTest`). With this toolchain, an ER
-  geometry generator + oracle can capture real mermaid ER output (the only
-  diagram family without a real reference). This is the next step.
-- `config-effect-matrix.json` `scope.families` += `er`.
+- **Real-mermaid geometry oracles** — fail-on-divergence tests that assert
+  Muffin's native geometry against captured mermaid 11.16.0 output, splitting
+  font-independent parity (asserted) from font-coupled deltas (reported). ER
+  (`er-geometry.json` + `MermaidErGeometryOracleTest`) and class
+  (`class-geometry.json` + `MermaidClassGeometryOracleTest`) are landed; sequence
+  and state are the remaining families (same generator+oracle pattern).
+- `config-effect-matrix.json` `scope.families` covers `er`.
 - Regenerating any drifted fixture (e.g. after a mermaid version bump, or when
   extending the case corpus).
 
@@ -70,6 +79,7 @@ references.
 
 Flowchart: `geometry`, `scene`, `db`, `label`, `pixel` (`golden-pixel`),
 `dagre-snapshots`, `differential-fuzz`, `style-cascade`, `theme`, `diagnostic-coverage`.
-Class / sequence / state: `db`, `layout`, `label`, `pixel`, `differential-fuzz`
-(sequence also `mathml-box`). Plus `config-effect-matrix`, `compatibility`,
-`error`, `rough-ops`, `katex-golden`. **ER: none yet.**
+Class: `db`, `layout`, `label`, `pixel`, `differential-fuzz`, `geometry`.
+Sequence / state: `db`, `layout`, `label`, `pixel`, `differential-fuzz`
+(sequence also `mathml-box`). ER: `geometry` (+ Muffin self-snapshot `er-scene`).
+Plus `config-effect-matrix`, `compatibility`, `error`, `rough-ops`, `katex-golden`.

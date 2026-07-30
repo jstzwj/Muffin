@@ -1,0 +1,318 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "Real mermaid 11.16.0 classDiagram geometry captured via headless Chrome. Per class node: compartment divider count + width/height (origin-independent, font-coupled diagnostic). Per relationship edge: line pattern + start/end marker kinds. Marker kinds are bare types (Start/End suffix dropped; field position encodes the side) to line up with ClassScene's markerStart/markerEnd. Positions are not captured (doubly font-coupled via dagre). Compare against classdiagram::ClassScene::toJsonObject."
+  },
+  "mermaidVersion": "11.16.0",
+  "fontMode": "trebuchet-ms",
+  "oracle": "classDiagram.render class nodes (bounds+dividers) + relationship edges (pattern+markers)",
+  "cases": [
+    {
+      "id": "inheritance",
+      "source": "classDiagram\nAnimal <|-- Duck",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Animal",
+            "dividers": 2,
+            "width": 75.344,
+            "height": 84
+          },
+          {
+            "id": "Duck",
+            "dividers": 2,
+            "width": 60.688,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "extension",
+            "markerEnd": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "realization",
+      "source": "classDiagram\nShape <|.. Shape2",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Shape",
+            "dividers": 2,
+            "width": 68.703,
+            "height": 84
+          },
+          {
+            "id": "Shape2",
+            "dividers": 2,
+            "width": 78.078,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "dashed",
+            "markerStart": "extension",
+            "markerEnd": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "composition",
+      "source": "classDiagram\nCar *-- Wheel",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Car",
+            "dividers": 2,
+            "width": 49.156,
+            "height": 84
+          },
+          {
+            "id": "Wheel",
+            "dividers": 2,
+            "width": 70.734,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "composition",
+            "markerEnd": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "aggregation",
+      "source": "classDiagram\nCompany o-- Employee",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Company",
+            "dividers": 2,
+            "width": 92.422,
+            "height": 84
+          },
+          {
+            "id": "Employee",
+            "dividers": 2,
+            "width": 96.875,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "aggregation",
+            "markerEnd": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "association",
+      "source": "classDiagram\nA --> B",
+      "expected": {
+        "nodes": [
+          {
+            "id": "A",
+            "dividers": 2,
+            "width": 34.141,
+            "height": 84
+          },
+          {
+            "id": "B",
+            "dividers": 2,
+            "width": 33.531,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dependency-dashed",
+      "source": "classDiagram\nC ..> D",
+      "expected": {
+        "nodes": [
+          {
+            "id": "C",
+            "dividers": 2,
+            "width": 33.797,
+            "height": 84
+          },
+          {
+            "id": "D",
+            "dividers": 2,
+            "width": 34.281,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "dependency"
+          }
+        ]
+      }
+    },
+    {
+      "id": "solid-link",
+      "source": "classDiagram\nE -- F",
+      "expected": {
+        "nodes": [
+          {
+            "id": "E",
+            "dividers": 2,
+            "width": 33.109,
+            "height": 84
+          },
+          {
+            "id": "F",
+            "dividers": 2,
+            "width": 33.344,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "composition-both-ends",
+      "source": "classDiagram\nP *--* Q",
+      "expected": {
+        "nodes": [
+          {
+            "id": "P",
+            "dividers": 2,
+            "width": 33.391,
+            "height": 84
+          },
+          {
+            "id": "Q",
+            "dividers": 2,
+            "width": 35.344,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "composition",
+            "markerEnd": "composition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "aggregation-both-ends",
+      "source": "classDiagram\nR o--o S",
+      "expected": {
+        "nodes": [
+          {
+            "id": "R",
+            "dividers": 2,
+            "width": 33.781,
+            "height": 84
+          },
+          {
+            "id": "S",
+            "dividers": 2,
+            "width": 32.188,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "aggregation",
+            "markerEnd": "aggregation"
+          }
+        ]
+      }
+    },
+    {
+      "id": "labeled-edge",
+      "source": "classDiagram\nOwner --> Pet : owns",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Owner",
+            "dividers": 2,
+            "width": 73.266,
+            "height": 84
+          },
+          {
+            "id": "Pet",
+            "dividers": 2,
+            "width": 48.188,
+            "height": 84
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": null,
+            "markerEnd": "dependency"
+          }
+        ]
+      }
+    },
+    {
+      "id": "compartments",
+      "source": "classDiagram\nclass Duck {\n  +String beakColor\n  +swim()\n  +quack()\n}",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Duck",
+            "dividers": 2,
+            "width": 168.953,
+            "height": 168
+          }
+        ],
+        "edges": []
+      }
+    },
+    {
+      "id": "bare-classes",
+      "source": "classDiagram\nclass X\nclass Y",
+      "expected": {
+        "nodes": [
+          {
+            "id": "X",
+            "dividers": 2,
+            "width": 33.609,
+            "height": 84
+          },
+          {
+            "id": "Y",
+            "dividers": 2,
+            "width": 33.813,
+            "height": 84
+          }
+        ],
+        "edges": []
+      }
+    }
+  ]
+}

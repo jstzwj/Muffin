@@ -3,7 +3,9 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const mermaidRoot = path.resolve(
-  process.argv[2] ?? path.join("..", "mermaid-cli", "node_modules", "mermaid"),
+  process.env.MERMAID_REFERENCE_ROOT ??
+    process.argv[2] ??
+    path.join("..", "mermaid-cli", "node_modules", "mermaid"),
 );
 const output = path.resolve(
   process.argv[3] ?? path.join("tests", "fixtures", "mermaid", "flowchart-geometry.json"),
