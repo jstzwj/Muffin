@@ -98,6 +98,8 @@ int main(int argc, char** argv) {
                       "Client --> Service : uses")},
       {QStringLiteral("state"), QStringLiteral("stateDiagram"),
        QStringLiteral("stateDiagram-v2\n[*] --> Idle\nIdle --> Active")},
+      {QStringLiteral("er"), QStringLiteral("erDiagram"),
+       QStringLiteral("erDiagram\nCUSTOMER ||--o{ ORDER : places\n")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);

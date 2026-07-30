@@ -7,6 +7,7 @@
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/erdiagram/ErScene.h"
 #include "render/BlockLayout.h"
 #include "render/DocumentLayout.h"
 #include "theme/RenderTheme.h"
@@ -458,6 +459,32 @@ int main(int argc, char** argv) {
             QStringLiteral("state diagram fence should render through BlockLayout"));
     require(block->rect().height() > 10.0 && opaquePixels(block, theme) > 50,
             QStringLiteral("state diagram block must have geometry and painted pixels"));
+  }
+
+  // --- erDiagram renders natively through the same pipeline (regression for
+  //     the on-screen gate that used to enumerate four families and omit ER) ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\nerDiagram\n"
+        "CUSTOMER ||--o{ ORDER : places\n"
+        "ORDER ||--o{ ITEM : contains\n```\n"), false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && block->isMermaidRendered(),
+            QStringLiteral("erDiagram fence should render through BlockLayout"));
+    require(block->mermaidScene() != nullptr,
+            QStringLiteral("rendered ER block must carry a native scene"));
+    const auto* erScene =
+        dynamic_cast<const mermaid::er::ErScene*>(block->mermaidScene());
+    require(erScene != nullptr && !erScene->entities.isEmpty(),
+            QStringLiteral("ER block must hold an ErScene with entities"));
+    require(block->rect().height() > 10.0 && opaquePixels(block, theme) > 50,
+            QStringLiteral("ER block must have geometry and painted pixels"));
   }
 
   // --- the Markdown diagrams setting disables rendering ---

@@ -51,6 +51,8 @@ QString diagramCssClass(const MermaidRenderMetadata& metadata) {
     return QStringLiteral("sequenceDiagram");
   if (metadata.diagramType.startsWith(QLatin1String("class")))
     return QStringLiteral("classDiagram");
+  if (metadata.diagramType == QLatin1String("er"))
+    return QStringLiteral("erDiagram");
   return QStringLiteral("stateDiagram");
 }
 

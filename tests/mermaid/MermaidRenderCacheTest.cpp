@@ -3,6 +3,7 @@
 // key stability.
 
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
