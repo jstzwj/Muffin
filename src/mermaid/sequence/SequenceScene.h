@@ -61,9 +61,14 @@ struct SequenceScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
+  // The resolved viewport rect (logicalBounds + configured margins), computed
+  // once at build time. renderBounds returns it so the generic image/canvas
+  // paths treat sequence like any other family without a dispatch branch.
+  QRectF renderBounds(qreal /*padding*/) const override { return viewportRect; }
 
   QRectF bounds;
   QRectF logicalBounds;
+  QRectF viewportRect;
   QVector<SequenceLayoutBox> boxes;
   QVector<SequenceLabelDocument> boxLabels;
   QVector<SequenceLayoutParticipant> participants;

@@ -38,6 +38,15 @@ struct MermaidScene {
   // style/label), with numbers rounded to 0.001 — mirrors FlowScene::toJson.
   virtual QJsonObject toJsonObject() const = 0;
 
+  // The full scene rect a raster image should cover, given a symmetric padding
+  // hint. The generic image/SVG-canvas paths use this so they need not know the
+  // family. Default: scene bounds expanded by padding on every side; SequenceScene
+  // overrides (its margins are asymmetric and already baked into its viewport).
+  virtual QRectF renderBounds(qreal padding) const {
+    const QRectF b = sceneBounds();
+    return b.adjusted(-padding, -padding, padding, padding);
+  }
+
   // True if the scene has time-animated elements (e.g. animated flowchart edges).
   // Default false; FlowScene overrides. Drives the editor's repaint timer.
   virtual bool hasAnimation() const { return false; }

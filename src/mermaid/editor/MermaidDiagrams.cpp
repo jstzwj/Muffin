@@ -427,10 +427,10 @@ struct SequenceDiagramImpl : Diagram {
           sequenceConfig, QStringLiteral("bottomMarginAdj"), 1.0);
       viewportOptions.mirrorActors = layoutOptions.mirrorActors;
       const QRectF viewport = sequence::sequenceViewportRect(scene, viewportOptions);
+      scene.viewportRect = viewport;
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(viewport.width()), qCeil(viewport.height()));
-      entry.sequenceViewport = viewportOptions;
       entry.scene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;

@@ -50,24 +50,24 @@ namespace muffin::mermaid::editor {
 namespace {
 
 // Rasterizes any family's scene to a DPR-aware QImage through the uniform
-// MermaidScene pointer. The family image renderers differ (sequence carries its
-// viewport options), so dispatch by dynamic_cast; behavior is identical to the
-// former per-family if/else in renderMermaidSourceToPng.
+// MermaidScene pointer — no family dispatch. The scene supplies its render
+// extent via renderBounds(); painting goes through the virtual paint().
 QImage renderMermaidSceneToImage(const std::shared_ptr<const MermaidScene>& scene,
-                                 qreal dpr, qreal padding,
-                                 const sequence::SequenceViewportOptions& viewport) {
-  if (auto* flow = dynamic_cast<const flowscene::FlowScene*>(scene.get()))
-    return flowscene::renderFlowSceneToImage(
-        *flow, dpr, padding, MermaidFontRegistry::primaryFamily());
-  if (auto* seq = dynamic_cast<const sequence::SequenceScene*>(scene.get()))
-    return sequence::renderSequenceSceneToImage(*seq, dpr, viewport);
-  if (auto* cls = dynamic_cast<const classdiagram::ClassScene*>(scene.get()))
-    return classdiagram::renderClassSceneToImage(*cls, dpr, padding);
-  if (auto* st = dynamic_cast<const state::StateScene*>(scene.get()))
-    return state::renderStateSceneToImage(*st, dpr, padding);
-  if (auto* er = dynamic_cast<const er::ErScene*>(scene.get()))
-    return er::renderErSceneToImage(*er, dpr, padding);
-  return {};
+                                 qreal dpr, qreal padding) {
+  const QRectF extent = scene->renderBounds(padding);
+  const qreal w = std::max<qreal>(1.0, extent.width());
+  const qreal h = std::max<qreal>(1.0, extent.height());
+  QImage image(qCeil(w * dpr), qCeil(h * dpr), QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
+  painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+  painter.scale(dpr, dpr);
+  painter.translate(-extent.left(), -extent.top());
+  scene->paint(painter, MermaidPaintOptions{});
+  painter.end();
+  return image;
 }
 
 QPair<int, int> lineColumnForOffset(const QString& source, qsizetype offset) {
@@ -405,8 +405,7 @@ MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(
   result.metadata = entry.metadata;
   dpr = qMax<qreal>(0.25, dpr);
   QImage image = renderMermaidSceneToImage(
-      entry.scene, dpr, entry.metadata.diagramPadding,
-      entry.sequenceViewport);
+      entry.scene, dpr, entry.metadata.diagramPadding);
   if (entry.metadata.hasVisibleTitle()) {
     const qreal contentWidth = image.width() / dpr;
     const qreal contentHeight = image.height() / dpr;

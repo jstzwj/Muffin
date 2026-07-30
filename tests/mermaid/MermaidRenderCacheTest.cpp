@@ -544,18 +544,22 @@ int main(int argc, char** argv) {
     require(sequenceScene->boxes.first().label == QLatin1String("Services") &&
                 sequenceScene->boxes.first().labelRect.height() > 0.0,
             QStringLiteral("sequence box title must be measured and retained"));
+    // The custom viewport margins are digested at build time into the scene's
+    // resolved viewportRect (the entry no longer carries SequenceViewportOptions).
+    muffin::mermaid::sequence::SequenceViewportOptions viewportOptions;
+    viewportOptions.diagramMarginX = 31.0;
+    viewportOptions.diagramMarginY = 23.0;
+    viewportOptions.boxMargin = 14.0;
+    viewportOptions.bottomMarginAdj = 7.0;
+    viewportOptions.mirrorActors = false;
     const QRectF viewport = muffin::mermaid::sequence::sequenceViewportRect(
-        *sequenceScene, e.sequenceViewport);
+        *sequenceScene, viewportOptions);
     const QImage viewportImage = muffin::mermaid::sequence::renderSequenceSceneToImage(
-        *sequenceScene, 1.0, e.sequenceViewport);
-    require(e.sequenceViewport.diagramMarginX == 31.0 &&
-                e.sequenceViewport.diagramMarginY == 23.0 &&
-                e.sequenceViewport.boxMargin == 14.0 &&
-                e.sequenceViewport.bottomMarginAdj == 7.0 &&
-                !e.sequenceViewport.mirrorActors &&
+        *sequenceScene, 1.0, viewportOptions);
+    require(sequenceScene->viewportRect == viewport &&
                 e.naturalSize == QSize(qCeil(viewport.width()), qCeil(viewport.height())) &&
                 viewportImage.size() == e.naturalSize,
-            QStringLiteral("sequence viewport config must determine cache/image dimensions"));
+            QStringLiteral("sequence viewport config must be digested into the scene's viewport rect"));
   }
 
   // --- async request: Loading → renderReady → Ready ---
@@ -907,6 +911,47 @@ int main(int argc, char** argv) {
     require(e.naturalSize.width() > 0 && e.naturalSize.height() > 0,
             QStringLiteral("compound graph must have a non-degenerate size (got %1x%2)").arg(e.naturalSize.width()).arg(e.naturalSize.height()));
     require(e.scene != nullptr, QStringLiteral("Ready entry must carry a scene"));
+  }
+
+  // --- PNG export is family-neutral: the generic renderBounds+paint path must
+  //     rasterize every family, scale with DPR, and honor sequence margins. ---
+  {
+    const auto decodePng = [](const QString& dataUrl) {
+      const qsizetype comma = dataUrl.indexOf(QLatin1Char(','));
+      QImage img;
+      img.loadFromData(QByteArray::fromBase64(dataUrl.mid(comma + 1).toLatin1()), "PNG");
+      return img;
+    };
+    struct FamilyCase { QString name; QString source; };
+    const FamilyCase families[] = {
+        {QStringLiteral("flowchart"), QStringLiteral("flowchart TB\nA[Start] --> B[Done]")},
+        {QStringLiteral("sequence"), QStringLiteral("sequenceDiagram\nAlice->>Bob: Hello")},
+        {QStringLiteral("class"), QStringLiteral("classDiagram\nclass A\nclass B\nA --> B")},
+        {QStringLiteral("state"), QStringLiteral("stateDiagram-v2\n[*] --> S\nS --> [*]")},
+        {QStringLiteral("er"), QStringLiteral("erDiagram\nCUSTOMER ||--o{ ORDER : places")},
+    };
+    for (const FamilyCase& f : families) {
+      const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);
+      const QString url2 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 2.0);
+      require(url1.startsWith(QStringLiteral("data:image/png;base64,")) &&
+                  url2.startsWith(QStringLiteral("data:image/png;base64,")),
+              f.name + QStringLiteral(" PNG export must populate a data URL"));
+      const QImage img1 = decodePng(url1);
+      const QImage img2 = decodePng(url2);
+      require(!img1.isNull() && img1.width() > 10 && img1.height() > 10,
+              f.name + QStringLiteral(" PNG must decode to a real image"));
+      require(qAbs(img2.width() - 2 * img1.width()) <= 2 &&
+                  qAbs(img2.height() - 2 * img1.height()) <= 2,
+              f.name + QStringLiteral(" DPR-2 PNG must be ~2x the DPR-1 dimensions"));
+    }
+    // A large sequence diagramMarginX widens the rasterized PNG via the same path.
+    const QImage wide = decodePng(MermaidRenderCache::renderMermaidSourceToPngDataUrl(
+        QStringLiteral("%%{init: {\"sequence\": {\"diagramMarginX\": 300}}}%%\n"
+                       "sequenceDiagram\nA->>B: x\n"), 1.0));
+    const QImage narrow = decodePng(MermaidRenderCache::renderMermaidSourceToPngDataUrl(
+        QStringLiteral("sequenceDiagram\nA->>B: x\n"), 1.0));
+    require(wide.width() > narrow.width() + 200,
+            QStringLiteral("sequence diagramMarginX must widen the PNG via the generic path"));
   }
 
   qDebug().noquote() << "MermaidRenderCacheTest: sync ready/error/unsupported + async/debounced rendering + LRU + key stability";

@@ -87,22 +87,13 @@ SvgCanvas svgCanvas(const MermaidRenderEntry& entry) {
   SvgCanvas canvas;
   canvas.size = entry.naturalSize.expandedTo(QSize(1, 1));
   const qreal titleHeight = entry.metadata.titleHeight;
-  // Sequence positions via its viewport rect; every other family centers its
-  // scene bounds with the diagram padding.
-  if (const auto* sequence =
-          dynamic_cast<const sequence::SequenceScene*>(entry.scene.get())) {
-    const QRectF viewport =
-        sequence::sequenceViewportRect(*sequence, entry.sequenceViewport);
+  if (entry.scene) {
+    // Every family exposes one render extent (bounds ± padding, or sequence's
+    // resolved viewport); center it below the title strip.
+    const QRectF extent = entry.scene->renderBounds(entry.metadata.diagramPadding);
     canvas.sceneOffset = QPointF(
-        (canvas.size.width() - viewport.width()) / 2.0 - viewport.left(),
-        titleHeight - viewport.top());
-  } else if (entry.scene) {
-    const qreal padding = entry.metadata.diagramPadding;
-    const QRectF bounds = entry.scene->sceneBounds();
-    const qreal contentWidth = bounds.width() + 2.0 * padding;
-    canvas.sceneOffset = QPointF(
-        (canvas.size.width() - contentWidth) / 2.0 + padding - bounds.left(),
-        titleHeight + padding - bounds.top());
+        (canvas.size.width() - extent.width()) / 2.0 - extent.left(),
+        titleHeight - extent.top());
   }
   return canvas;
 }

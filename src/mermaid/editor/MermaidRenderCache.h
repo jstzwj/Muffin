@@ -53,7 +53,6 @@ struct MermaidRenderEntry {
   // callers needing a typed view (e.g. tests inspecting family geometry)
   // dynamic_cast from this pointer.
   std::shared_ptr<const MermaidScene> scene;  // set when Ready
-  sequence::SequenceViewportOptions sequenceViewport;
   MermaidRenderMetadata metadata;
   QSize naturalSize;                                   // scene.bounds size (logical px)
   QString errorMessage;                                // set for Error/Unsupported
