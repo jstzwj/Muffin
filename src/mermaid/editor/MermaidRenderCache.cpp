@@ -49,6 +49,27 @@
 namespace muffin::mermaid::editor {
 namespace {
 
+// Rasterizes any family's scene to a DPR-aware QImage through the uniform
+// MermaidScene pointer. The family image renderers differ (sequence carries its
+// viewport options), so dispatch by dynamic_cast; behavior is identical to the
+// former per-family if/else in renderMermaidSourceToPng.
+QImage renderMermaidSceneToImage(const std::shared_ptr<const MermaidScene>& scene,
+                                 qreal dpr, qreal padding,
+                                 const sequence::SequenceViewportOptions& viewport) {
+  if (auto* flow = dynamic_cast<const flowscene::FlowScene*>(scene.get()))
+    return flowscene::renderFlowSceneToImage(
+        *flow, dpr, padding, MermaidFontRegistry::primaryFamily());
+  if (auto* seq = dynamic_cast<const sequence::SequenceScene*>(scene.get()))
+    return sequence::renderSequenceSceneToImage(*seq, dpr, viewport);
+  if (auto* cls = dynamic_cast<const classdiagram::ClassScene*>(scene.get()))
+    return classdiagram::renderClassSceneToImage(*cls, dpr, padding);
+  if (auto* st = dynamic_cast<const state::StateScene*>(scene.get()))
+    return state::renderStateSceneToImage(*st, dpr, padding);
+  if (auto* er = dynamic_cast<const er::ErScene*>(scene.get()))
+    return er::renderErSceneToImage(*er, dpr, padding);
+  return {};
+}
+
 QPair<int, int> lineColumnForOffset(const QString& source, qsizetype offset) {
   offset = qBound<qsizetype>(0, offset, source.size());
   int line = 1;
@@ -379,27 +400,13 @@ MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(
   MermaidPngRenderResult result;
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
-  if (entry.status != MermaidRenderStatus::Ready ||
-      (!entry.scene && !entry.sequenceScene && !entry.classScene &&
-       !entry.stateScene && !entry.erScene)) return result;
+  if (entry.status != MermaidRenderStatus::Ready || !entry.diagramScene)
+    return result;
   result.metadata = entry.metadata;
   dpr = qMax<qreal>(0.25, dpr);
-  QImage image;
-  if (entry.scene)
-    image = flowscene::renderFlowSceneToImage(
-        *entry.scene, dpr, entry.metadata.diagramPadding,
-        MermaidFontRegistry::primaryFamily());
-  else if (entry.sequenceScene)
-    image = sequence::renderSequenceSceneToImage(
-        *entry.sequenceScene, dpr, entry.sequenceViewport);
-  else if (entry.classScene)
-    image = classdiagram::renderClassSceneToImage(
-        *entry.classScene, dpr, entry.metadata.diagramPadding);
-  else if (entry.erScene)
-    image = er::renderErSceneToImage(
-        *entry.erScene, dpr, entry.metadata.diagramPadding);
-  else image = state::renderStateSceneToImage(
-      *entry.stateScene, dpr, entry.metadata.diagramPadding);
+  QImage image = renderMermaidSceneToImage(
+      entry.diagramScene, dpr, entry.metadata.diagramPadding,
+      entry.sequenceViewport);
   if (entry.metadata.hasVisibleTitle()) {
     const qreal contentWidth = image.width() / dpr;
     const qreal contentHeight = image.height() / dpr;

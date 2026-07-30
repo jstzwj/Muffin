@@ -17,6 +17,7 @@
 #include "mermaid/erdiagram/ErScenePainter.h"
 #include "mermaid/MermaidDiagnostic.h"
 #include "mermaid/MermaidRenderMetadata.h"
+#include "mermaid/MermaidScene.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 #include "mermaid/state/StateScenePainter.h"
@@ -52,6 +53,10 @@ struct MermaidRenderEntry {
   std::shared_ptr<const classdiagram::ClassScene> classScene;
   std::shared_ptr<const state::StateScene> stateScene;
   std::shared_ptr<const er::ErScene> erScene;
+  // Uniform scene pointer (any family) — the convergence target. Export backends
+  // paint/digest through the MermaidScene virtuals; the typed pointers above
+  // remain for family-specific canvas/interaction logic during the migration.
+  std::shared_ptr<const MermaidScene> diagramScene;
   sequence::SequenceViewportOptions sequenceViewport;
   MermaidRenderMetadata metadata;
   QSize naturalSize;                                   // scene.bounds size (logical px)

@@ -71,11 +71,7 @@ QString svgRootId(const MermaidRenderEntry& entry, qsizetype instanceIndex) {
   // content-unique (previously only flowchart contributed; same-sized
   // class/sequence/state/er diagrams collided on the SVG root id).
   QJsonObject sceneJson;
-  if (entry.scene)               sceneJson = entry.scene->toJsonObject();
-  else if (entry.classScene)     sceneJson = entry.classScene->toJsonObject();
-  else if (entry.sequenceScene)  sceneJson = entry.sequenceScene->toJsonObject();
-  else if (entry.stateScene)     sceneJson = entry.stateScene->toJsonObject();
-  else if (entry.erScene)        sceneJson = entry.erScene->toJsonObject();
+  if (entry.diagramScene) sceneJson = entry.diagramScene->toJsonObject();
   if (!sceneJson.isEmpty())
     identity += QJsonDocument(sceneJson).toJson(QJsonDocument::Compact);
   const QByteArray digest = QCryptographicHash::hash(
@@ -131,18 +127,8 @@ void paintEntry(const MermaidRenderEntry& entry, const SvgCanvas& canvas,
                 QPainter& painter) {
   painter.save();
   painter.translate(canvas.sceneOffset);
-  if (entry.scene) {
-    flowscene::paintFlowScene(*entry.scene, painter,
-                              MermaidFontRegistry::primaryFamily());
-  } else if (entry.sequenceScene) {
-    sequence::paintSequenceScene(*entry.sequenceScene, painter);
-  } else if (entry.classScene) {
-    classdiagram::paintClassScene(*entry.classScene, painter);
-  } else if (entry.stateScene) {
-    state::paintStateScene(*entry.stateScene, painter);
-  } else if (entry.erScene) {
-    er::paintErScene(*entry.erScene, painter);
-  }
+  if (entry.diagramScene)
+    entry.diagramScene->paint(painter, MermaidPaintOptions{});
   painter.restore();
   paintMermaidTitle(entry.metadata, painter,
                     QRectF(0.0, 0.0, canvas.size.width(),
@@ -363,9 +349,7 @@ QByteArray normalizeSvg(const QByteArray& generated,
 
 QByteArray renderMermaidEntryToSvg(const MermaidRenderEntry& entry,
                                    qsizetype instanceIndex) {
-  if (entry.status != MermaidRenderStatus::Ready ||
-      (!entry.scene && !entry.sequenceScene && !entry.classScene &&
-       !entry.stateScene && !entry.erScene))
+  if (entry.status != MermaidRenderStatus::Ready || !entry.diagramScene)
     return {};
 
   const SvgCanvas canvas = svgCanvas(entry);
