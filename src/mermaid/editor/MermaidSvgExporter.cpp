@@ -71,7 +71,7 @@ QString svgRootId(const MermaidRenderEntry& entry, qsizetype instanceIndex) {
   // content-unique (previously only flowchart contributed; same-sized
   // class/sequence/state/er diagrams collided on the SVG root id).
   QJsonObject sceneJson;
-  if (entry.diagramScene) sceneJson = entry.diagramScene->toJsonObject();
+  if (entry.scene) sceneJson = entry.scene->toJsonObject();
   if (!sceneJson.isEmpty())
     identity += QJsonDocument(sceneJson).toJson(QJsonDocument::Compact);
   const QByteArray digest = QCryptographicHash::hash(
@@ -85,40 +85,22 @@ SvgCanvas svgCanvas(const MermaidRenderEntry& entry) {
   SvgCanvas canvas;
   canvas.size = entry.naturalSize.expandedTo(QSize(1, 1));
   const qreal titleHeight = entry.metadata.titleHeight;
-  if (entry.scene) {
-    const qreal padding = entry.metadata.diagramPadding;
-    const qreal contentWidth = entry.scene->bounds.width() + 2.0 * padding;
-    canvas.sceneOffset = QPointF(
-        (canvas.size.width() - contentWidth) / 2.0 + padding -
-            entry.scene->bounds.left(),
-        titleHeight + padding - entry.scene->bounds.top());
-  } else if (entry.sequenceScene) {
-    const QRectF viewport = sequence::sequenceViewportRect(
-        *entry.sequenceScene, entry.sequenceViewport);
+  // Sequence positions via its viewport rect; every other family centers its
+  // scene bounds with the diagram padding.
+  if (const auto* sequence =
+          dynamic_cast<const sequence::SequenceScene*>(entry.scene.get())) {
+    const QRectF viewport =
+        sequence::sequenceViewportRect(*sequence, entry.sequenceViewport);
     canvas.sceneOffset = QPointF(
         (canvas.size.width() - viewport.width()) / 2.0 - viewport.left(),
         titleHeight - viewport.top());
-  } else if (entry.classScene) {
+  } else if (entry.scene) {
     const qreal padding = entry.metadata.diagramPadding;
-    const qreal contentWidth = entry.classScene->bounds.width() + 2.0 * padding;
+    const QRectF bounds = entry.scene->sceneBounds();
+    const qreal contentWidth = bounds.width() + 2.0 * padding;
     canvas.sceneOffset = QPointF(
-        (canvas.size.width() - contentWidth) / 2.0 + padding -
-            entry.classScene->bounds.left(),
-        titleHeight + padding - entry.classScene->bounds.top());
-  } else if (entry.stateScene) {
-    const qreal padding = entry.metadata.diagramPadding;
-    const qreal contentWidth = entry.stateScene->bounds.width() + 2.0 * padding;
-    canvas.sceneOffset = QPointF(
-        (canvas.size.width() - contentWidth) / 2.0 + padding -
-            entry.stateScene->bounds.left(),
-        titleHeight + padding - entry.stateScene->bounds.top());
-  } else if (entry.erScene) {
-    const qreal padding = entry.metadata.diagramPadding;
-    const qreal contentWidth = entry.erScene->bounds.width() + 2.0 * padding;
-    canvas.sceneOffset = QPointF(
-        (canvas.size.width() - contentWidth) / 2.0 + padding -
-            entry.erScene->bounds.left(),
-        titleHeight + padding - entry.erScene->bounds.top());
+        (canvas.size.width() - contentWidth) / 2.0 + padding - bounds.left(),
+        titleHeight + padding - bounds.top());
   }
   return canvas;
 }
@@ -127,8 +109,8 @@ void paintEntry(const MermaidRenderEntry& entry, const SvgCanvas& canvas,
                 QPainter& painter) {
   painter.save();
   painter.translate(canvas.sceneOffset);
-  if (entry.diagramScene)
-    entry.diagramScene->paint(painter, MermaidPaintOptions{});
+  if (entry.scene)
+    entry.scene->paint(painter, MermaidPaintOptions{});
   painter.restore();
   paintMermaidTitle(entry.metadata, painter,
                     QRectF(0.0, 0.0, canvas.size.width(),
@@ -138,8 +120,8 @@ void paintEntry(const MermaidRenderEntry& entry, const SvgCanvas& canvas,
 QVector<SvgInteraction> interactions(const MermaidRenderEntry& entry,
                                      const SvgCanvas& canvas) {
   QVector<SvgInteraction> result;
-  if (entry.scene) {
-    for (const flowscene::FlowSceneNode& node : entry.scene->nodes) {
+  if (const auto* flow = dynamic_cast<const flowscene::FlowScene*>(entry.scene.get())) {
+    for (const flowscene::FlowSceneNode& node : flow->nodes) {
       const QString href = isSafeUrl(node.link, false) ? node.link : QString();
       if (href.isEmpty() && node.tooltip.isEmpty()) continue;
       result.append({QRectF(node.cx - node.width / 2.0,
@@ -148,8 +130,10 @@ QVector<SvgInteraction> interactions(const MermaidRenderEntry& entry,
                          .translated(canvas.sceneOffset),
                      href, node.tooltip});
     }
-  } else if (entry.sequenceScene && entry.sequenceScene->forceMenus) {
-    for (const sequence::SequenceSceneMenu& menu : entry.sequenceScene->menus) {
+  } else if (const auto* sequence =
+                 dynamic_cast<const sequence::SequenceScene*>(entry.scene.get());
+             sequence && sequence->forceMenus) {
+    for (const sequence::SequenceSceneMenu& menu : sequence->menus) {
       for (const sequence::SequenceSceneMenuItem& item : menu.items) {
         if (!isSafeUrl(item.link, false)) continue;
         result.append({item.hitRect.translated(canvas.sceneOffset), item.link,
@@ -349,7 +333,7 @@ QByteArray normalizeSvg(const QByteArray& generated,
 
 QByteArray renderMermaidEntryToSvg(const MermaidRenderEntry& entry,
                                    qsizetype instanceIndex) {
-  if (entry.status != MermaidRenderStatus::Ready || !entry.diagramScene)
+  if (entry.status != MermaidRenderStatus::Ready || !entry.scene)
     return {};
 
   const SvgCanvas canvas = svgCanvas(entry);

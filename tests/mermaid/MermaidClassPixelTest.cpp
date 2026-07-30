@@ -251,7 +251,8 @@ int main(int argc, char** argv) {
     const QString id = fixture.value(QStringLiteral("id")).toString();
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const auto entry = cache.getSync(cache.makeKey(source), source);
-    require(entry.status == editor::MermaidRenderStatus::Ready && entry.classScene,
+    const auto* classScene = dynamic_cast<const classdiagram::ClassScene*>(entry.scene.get());
+    require(entry.status == editor::MermaidRenderStatus::Ready && classScene != nullptr,
             id + QStringLiteral(": native class scene failed: ") +
                 entry.errorMessage);
     const qreal dpr = fixture.value(QStringLiteral("dpr")).toDouble(1.0);
@@ -275,7 +276,7 @@ int main(int argc, char** argv) {
                   source.contains(QLatin1String("$$")),
               id + QStringLiteral(": browser MathML classification drifted"));
       const QImage nativeCrop = renderLabelCrop(
-          *entry.classScene, fixture.value(QStringLiteral("cropTarget")).toString(),
+          *classScene, fixture.value(QStringLiteral("cropTarget")).toString(),
           browserCrop.size(), cssSize, dpr);
       require(!browserCrop.isNull() && nativeCrop.size() == browserCrop.size(),
               id + QStringLiteral(": label crop viewport differs"));
@@ -339,7 +340,7 @@ int main(int argc, char** argv) {
             id + QStringLiteral(": browser PNG hash drifted"));
     const QImage browser = alphaTrimmed(QImage(filePath));
     const QImage native = alphaTrimmed(
-        classdiagram::renderClassSceneToImage(*entry.classScene, dpr));
+        classdiagram::renderClassSceneToImage(*classScene, dpr));
     require(!native.isNull() && !browser.isNull(), id + QStringLiteral(": empty pixel image"));
     require(std::abs(native.width() - browser.width()) <= 1 &&
                 std::abs(native.height() - browser.height()) <= 1,
@@ -352,10 +353,10 @@ int main(int argc, char** argv) {
     const qreal mae = colorMae(native, browser);
     const QJsonObject structure = fixture.value(QStringLiteral("structure")).toObject();
     const QJsonArray expectedNodes = structure.value(QStringLiteral("nodes")).toArray();
-    require(entry.classScene->nodes.size() == expectedNodes.size(),
+    require(classScene->nodes.size() == expectedNodes.size(),
             id + QStringLiteral(": painted node count differs"));
-    for (qsizetype index = 0; index < entry.classScene->nodes.size(); ++index) {
-      const auto& node = entry.classScene->nodes.at(index);
+    for (qsizetype index = 0; index < classScene->nodes.size(); ++index) {
+      const auto& node = classScene->nodes.at(index);
       const QJsonObject expected = expectedNodes.at(index).toObject();
       const QSizeF browserOuter = jsonSize(expected.value(QStringLiteral("outer")).toObject());
       const qreal outerTolerance = fixture.value(QStringLiteral("htmlLabels")).toBool(true)
@@ -380,7 +381,7 @@ int main(int argc, char** argv) {
                     expectedLabelStyle.value(labelColorProperty).toString(),
                     id + QLatin1Char('/') + node.id + QStringLiteral(" label"));
     }
-    require(entry.classScene->edges.size() ==
+    require(classScene->edges.size() ==
                 structure.value(QStringLiteral("edgePaths")).toArray().size(),
             id + QStringLiteral(": painted edge count differs"));
     if (id == QLatin1String("marker-matrix")) {
@@ -391,7 +392,7 @@ int main(int argc, char** argv) {
               id + QStringLiteral(": semantic mask hash drifted"));
       const QImage browserMask(maskPath);
       const QImage nativeMask = classdiagram::renderClassSceneToImage(
-          *entry.classScene, dpr, 8.0,
+          *classScene, dpr, 8.0,
           classdiagram::ClassPaintMode::SemanticMask);
       require(!browserMask.isNull() && nativeMask.size() == browserMask.size(),
               id + QStringLiteral(": semantic mask viewport differs"));
@@ -428,7 +429,7 @@ int main(int argc, char** argv) {
               id + QStringLiteral(": text mask hash drifted"));
       const QImage browserTextMask(textMaskPath);
       const QImage nativeTextMask = classdiagram::renderClassSceneToImage(
-          *entry.classScene, dpr, 8.0, classdiagram::ClassPaintMode::TextMask);
+          *classScene, dpr, 8.0, classdiagram::ClassPaintMode::TextMask);
       require(!browserTextMask.isNull() && nativeTextMask.size() == browserTextMask.size(),
               id + QStringLiteral(": text mask viewport differs"));
       const qreal textIou = categoryIou(

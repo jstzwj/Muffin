@@ -24,8 +24,9 @@ void require(bool condition, const QString& message) {
   if (!condition) fail(message);
 }
 const er::ErSceneEntity* entityById(const editor::MermaidRenderEntry& e, const QString& id) {
-  require(e.erScene != nullptr, QStringLiteral("missing ER scene"));
-  for (const auto& entity : e.erScene->entities)
+  const auto* erScene = dynamic_cast<const er::ErScene*>(e.scene.get());
+  require(erScene != nullptr, QStringLiteral("missing ER scene"));
+  for (const auto& entity : erScene->entities)
     if (entity.id == id) return &entity;
   return nullptr;
 }

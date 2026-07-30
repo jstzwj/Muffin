@@ -22,7 +22,7 @@
 // Self-loops (A->>A) render as a loop path, not a messageLine, so are excluded
 // from the corpus.
 //
-// editor::MermaidRenderCache::getSync -> entry.sequenceScene -> SequenceScene::toJsonObject().
+// editor::MermaidRenderCache::getSync -> entry.scene (dynamic_cast<SequenceScene>) -> SequenceScene::toJsonObject().
 
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
@@ -97,9 +97,10 @@ int main(int argc, char** argv) {
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
     const auto entry = cache.getSync(cache.makeKey(source), source);
-    require(entry.status == editor::MermaidRenderStatus::Ready && entry.sequenceScene,
+    const auto* sequenceScene = dynamic_cast<const sequence::SequenceScene*>(entry.scene.get());
+    require(entry.status == editor::MermaidRenderStatus::Ready && sequenceScene != nullptr,
             id + QStringLiteral(": native sequence render failed: ") + entry.errorMessage);
-    const QJsonObject actual = entry.sequenceScene->toJsonObject();
+    const QJsonObject actual = sequenceScene->toJsonObject();
 
     QStringList assertErrors;
 

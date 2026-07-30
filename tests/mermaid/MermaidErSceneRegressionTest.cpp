@@ -76,9 +76,10 @@ void require(bool condition, const QString& message) {
 QJsonObject renderEr(editor::MermaidRenderCache& cache, const QString& source,
                      const QString& id) {
   const auto entry = cache.getSync(cache.makeKey(source), source);
-  require(entry.status == editor::MermaidRenderStatus::Ready && entry.erScene,
+  const auto* erScene = dynamic_cast<const er::ErScene*>(entry.scene.get());
+  require(entry.status == editor::MermaidRenderStatus::Ready && erScene != nullptr,
           id + QStringLiteral(": native ER scene failed: ") + entry.errorMessage);
-  return entry.erScene->toJsonObject();
+  return erScene->toJsonObject();
 }
 
 // MUFFIN_GENERATE_ER_FIXTURE=1 path: write the full manifest (indented JSON) to

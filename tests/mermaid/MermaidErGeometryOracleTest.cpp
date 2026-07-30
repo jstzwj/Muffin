@@ -18,7 +18,7 @@
 // and mermaid's alias+attribute rendering has its own quirks - a documented
 // edge-case divergence, not a model bug.
 //
-// MermaidRenderCache::getSync -> entry.erScene -> ErScene::toJsonObject().
+// MermaidRenderCache::getSync -> entry.scene (cast to ErScene) -> ErScene::toJsonObject().
 
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
@@ -91,9 +91,10 @@ int main(int argc, char** argv) {
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
     const auto entry = cache.getSync(cache.makeKey(source), source);
-    require(entry.status == editor::MermaidRenderStatus::Ready && entry.erScene,
+    const auto* erScene = dynamic_cast<const er::ErScene*>(entry.scene.get());
+    require(entry.status == editor::MermaidRenderStatus::Ready && erScene != nullptr,
             id + QStringLiteral(": native ER render failed: ") + entry.errorMessage);
-    const QJsonObject actual = entry.erScene->toJsonObject();
+    const QJsonObject actual = erScene->toJsonObject();
 
     QStringList assertErrors;   // font-independent parity (heights, cardinality)
     QStringList reportNotes;    // font-coupled (widths, positions, paths)

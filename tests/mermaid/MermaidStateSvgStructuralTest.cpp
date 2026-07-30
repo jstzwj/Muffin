@@ -62,9 +62,10 @@ int main(int argc, char** argv) {
     const QString id = fixture.value(QStringLiteral("id")).toString();
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const auto entry = cache.getSync(cache.makeKey(source), source);
-    require(entry.status == editor::MermaidRenderStatus::Ready && entry.stateScene,
+    const auto* stateScene = dynamic_cast<const state::StateScene*>(entry.scene.get());
+    require(entry.status == editor::MermaidRenderStatus::Ready && stateScene != nullptr,
             id + QStringLiteral(": native state scene failed: ") + entry.errorMessage);
-    const state::StateScene& scene = *entry.stateScene;
+    const state::StateScene& scene = *stateScene;
     const QJsonObject structure = fixture.value(QStringLiteral("structure")).toObject();
     const QJsonObject browserRoot = structure.value(QStringLiteral("root")).toObject();
     require(scene.role == browserRoot.value(QStringLiteral("role")).toString() &&

@@ -162,8 +162,7 @@ struct StateDiagramImpl : Diagram {
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
-      entry.stateScene = std::make_shared<const state::StateScene>(std::move(scene));
-      entry.diagramScene = entry.stateScene;
+      entry.scene = std::make_shared<const state::StateScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
   }
@@ -252,8 +251,7 @@ struct ClassDiagramImpl : Diagram {
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
-      entry.classScene = std::make_shared<const classdiagram::ClassScene>(std::move(scene));
-      entry.diagramScene = entry.classScene;
+      entry.scene = std::make_shared<const classdiagram::ClassScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
   }
@@ -433,8 +431,7 @@ struct SequenceDiagramImpl : Diagram {
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(viewport.width()), qCeil(viewport.height()));
       entry.sequenceViewport = viewportOptions;
-      entry.sequenceScene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
-      entry.diagramScene = entry.sequenceScene;
+      entry.scene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
   }
@@ -502,7 +499,6 @@ struct FlowchartDiagramImpl : Diagram {
     entry.naturalSize = QSize(qCeil(scene.bounds.width()),
                               qCeil(scene.bounds.height()));
     entry.scene = std::make_shared<const flowscene::FlowScene>(std::move(scene));
-    entry.diagramScene = entry.scene;
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;
   }
@@ -566,8 +562,7 @@ struct ErDiagramImpl : Diagram {
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
-    entry.erScene = std::make_shared<const er::ErScene>(std::move(scene));
-    entry.diagramScene = entry.erScene;
+    entry.scene = std::make_shared<const er::ErScene>(std::move(scene));
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;
   }

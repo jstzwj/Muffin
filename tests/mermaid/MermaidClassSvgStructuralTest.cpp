@@ -91,10 +91,11 @@ int main(int argc, char** argv) {
     ids.insert(id);
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const auto entry = cache.getSync(cache.makeKey(source), source);
-    require(entry.status == editor::MermaidRenderStatus::Ready && entry.classScene,
+    const auto* classScene = dynamic_cast<const classdiagram::ClassScene*>(entry.scene.get());
+    require(entry.status == editor::MermaidRenderStatus::Ready && classScene != nullptr,
             QStringLiteral("%1 native class scene failed: %2")
                 .arg(id, entry.errorMessage));
-    const auto& scene = *entry.classScene;
+    const auto& scene = *classScene;
     const QJsonObject structure = fixture.value(QStringLiteral("svgStructure")).toObject();
     const QJsonObject rootAttributes = structure.value(QStringLiteral("root")).toObject();
     require(rootAttributes.value(QStringLiteral("xmlns")).toString() ==

@@ -48,15 +48,11 @@ enum class MermaidRenderStatus { Absent, Loading, Ready, Error, Unsupported };
 
 struct MermaidRenderEntry {
   MermaidRenderStatus status = MermaidRenderStatus::Absent;
-  std::shared_ptr<const flowscene::FlowScene> scene;  // set when Ready
-  std::shared_ptr<const sequence::SequenceScene> sequenceScene;
-  std::shared_ptr<const classdiagram::ClassScene> classScene;
-  std::shared_ptr<const state::StateScene> stateScene;
-  std::shared_ptr<const er::ErScene> erScene;
-  // Uniform scene pointer (any family) — the convergence target. Export backends
-  // paint/digest through the MermaidScene virtuals; the typed pointers above
-  // remain for family-specific canvas/interaction logic during the migration.
-  std::shared_ptr<const MermaidScene> diagramScene;
+  // Uniform scene pointer (any family). Export and the on-screen editor consume
+  // it through the MermaidScene virtuals (paint/sceneBounds/toJsonObject);
+  // callers needing a typed view (e.g. tests inspecting family geometry)
+  // dynamic_cast from this pointer.
+  std::shared_ptr<const MermaidScene> scene;  // set when Ready
   sequence::SequenceViewportOptions sequenceViewport;
   MermaidRenderMetadata metadata;
   QSize naturalSize;                                   // scene.bounds size (logical px)

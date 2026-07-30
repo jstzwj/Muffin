@@ -400,12 +400,12 @@ MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(
   MermaidPngRenderResult result;
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
-  if (entry.status != MermaidRenderStatus::Ready || !entry.diagramScene)
+  if (entry.status != MermaidRenderStatus::Ready || !entry.scene)
     return result;
   result.metadata = entry.metadata;
   dpr = qMax<qreal>(0.25, dpr);
   QImage image = renderMermaidSceneToImage(
-      entry.diagramScene, dpr, entry.metadata.diagramPadding,
+      entry.scene, dpr, entry.metadata.diagramPadding,
       entry.sequenceViewport);
   if (entry.metadata.hasVisibleTitle()) {
     const qreal contentWidth = image.width() / dpr;

@@ -19,7 +19,7 @@
 // advance, Qt-vs-Chrome). Node positions and edge paths are doubly font-coupled
 // via dagre and are not captured.
 //
-// editor::MermaidRenderCache::getSync -> entry.stateScene -> StateScene::toJsonObject().
+// editor::MermaidRenderCache::getSync -> entry.scene (dynamic_cast to StateScene) -> StateScene::toJsonObject().
 
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
@@ -96,9 +96,10 @@ int main(int argc, char** argv) {
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
     const auto entry = cache.getSync(cache.makeKey(source), source);
-    require(entry.status == editor::MermaidRenderStatus::Ready && entry.stateScene,
+    const auto* stateScene = dynamic_cast<const state::StateScene*>(entry.scene.get());
+    require(entry.status == editor::MermaidRenderStatus::Ready && stateScene != nullptr,
             id + QStringLiteral(": native state render failed: ") + entry.errorMessage);
-    const QJsonObject actual = entry.stateScene->toJsonObject();
+    const QJsonObject actual = stateScene->toJsonObject();
 
     QStringList assertErrors;
     QStringList reportNotes;

@@ -49,20 +49,21 @@ int main(int argc, char** argv) {
   buildTimer.start();
   const editor::MermaidRenderEntry entry = cache.getSync(key, source);
   const qint64 buildMs = buildTimer.elapsed();
+  const auto* sequenceScene = dynamic_cast<const sequence::SequenceScene*>(entry.scene.get());
   require(entry.status == editor::MermaidRenderStatus::Ready &&
-              entry.sequenceScene,
+              sequenceScene != nullptr,
           QStringLiteral("sequence Math cache stress scene failed: %1")
               .arg(entry.errorMessage));
   require(buildMs < kTimeLimitMs,
           QStringLiteral("sequence Math first build exceeded %1 ms: %2 ms")
               .arg(kTimeLimitMs)
               .arg(buildMs));
-  require(entry.sequenceScene->messageLabels.size() == kMessageCount,
+  require(sequenceScene->messageLabels.size() == kMessageCount,
           QStringLiteral("sequence Math stress message count drifted"));
 
   QVector<const flowchart::FlowLabelPreparedMath*> prepared;
   prepared.reserve(kMessageCount);
-  for (const auto& label : entry.sequenceScene->messageLabels) {
+  for (const auto& label : sequenceScene->messageLabels) {
     require(label.richText.math.size() == 1 &&
                 label.richText.math.front().prepared,
             QStringLiteral("stress label is missing its prepared operation"));
@@ -72,11 +73,11 @@ int main(int argc, char** argv) {
   QElapsedTimer repaintTimer;
   repaintTimer.start();
   const QImage first = sequence::renderSequenceSceneToImage(
-      *entry.sequenceScene, 1.0, 0.0);
+      *sequenceScene, 1.0, 0.0);
   const QImage second = sequence::renderSequenceSceneToImage(
-      *entry.sequenceScene, 1.0, 0.0);
+      *sequenceScene, 1.0, 0.0);
   const QImage third = sequence::renderSequenceSceneToImage(
-      *entry.sequenceScene, 1.0, 0.0);
+      *sequenceScene, 1.0, 0.0);
   const qint64 repaintMs = repaintTimer.elapsed();
   require(repaintMs < kTimeLimitMs,
           QStringLiteral("three sequence Math repaints exceeded %1 ms: %2 ms")
@@ -86,14 +87,14 @@ int main(int argc, char** argv) {
           QStringLiteral("prepared sequence Math repaint is not deterministic"));
 
   const auto cached = cache.getSync(key, source);
-  require(cached.sequenceScene == entry.sequenceScene,
+  require(cached.scene == entry.scene,
           QStringLiteral("sequence Math cache hit replaced the scene"));
   const QImage highDpr = sequence::renderSequenceSceneToImage(
-      *entry.sequenceScene, 1.5, 0.0);
+      *sequenceScene, 1.5, 0.0);
   require(!highDpr.isNull(),
           QStringLiteral("prepared sequence Math failed at 1.5x DPR"));
   for (qsizetype index = 0; index < prepared.size(); ++index) {
-    require(entry.sequenceScene->messageLabels.at(index)
+    require(sequenceScene->messageLabels.at(index)
                     .richText.math.front().prepared.get() == prepared.at(index),
             QStringLiteral("paint or DPR change rebuilt operation %1").arg(index));
   }

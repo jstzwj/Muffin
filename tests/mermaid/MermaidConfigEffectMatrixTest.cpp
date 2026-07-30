@@ -100,17 +100,19 @@ QImage pngImage(const QString& source) {
 }
 
 QPointF stateCenter(const MermaidRenderEntry& entry, const QString& id) {
-  require(entry.stateScene != nullptr,
+  const auto* stateScene = dynamic_cast<const muffin::mermaid::state::StateScene*>(entry.scene.get());
+  require(stateScene != nullptr,
           QStringLiteral("Missing state scene while looking for %1").arg(id));
-  for (const auto& node : entry.stateScene->nodes)
+  for (const auto& node : stateScene->nodes)
     if (node.id == id) return node.bounds.center();
   fail(QStringLiteral("Missing state node %1").arg(id));
 }
 
 QPointF erCenter(const MermaidRenderEntry& entry, const QString& id) {
-  require(entry.erScene != nullptr,
+  const auto* erScene = dynamic_cast<const muffin::mermaid::er::ErScene*>(entry.scene.get());
+  require(erScene != nullptr,
           QStringLiteral("Missing ER scene while looking for %1").arg(id));
-  for (const auto& entity : entry.erScene->entities)
+  for (const auto& entity : erScene->entities)
     if (entity.id == id) return entity.bounds.center();
   fail(QStringLiteral("Missing ER entity %1").arg(id));
 }
@@ -272,10 +274,11 @@ int main(int argc, char** argv) {
       "flowchart TB\nA[Start] --> B[Left]\nA --> C[Right]\n"
       "B --> D[End]\nC --> D\nA --> D");
   const MermaidRenderEntry rounded = render(roundedFlow);
-  require(rounded.status == MermaidRenderStatus::Ready && rounded.scene,
+  const auto* roundedScene = dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(rounded.scene.get());
+  require(rounded.status == MermaidRenderStatus::Ready && rounded.scene && roundedScene,
           QStringLiteral("flowchart.curve rounded did not render"));
   bool sawRoundedCorner = false;
-  for (const auto& edge : rounded.scene->edges)
+  for (const auto& edge : roundedScene->edges)
     sawRoundedCorner = sawRoundedCorner || edge.path.contains(QLatin1Char('Q'));
   require(sawRoundedCorner && !pngImage(roundedFlow).isNull(),
           QStringLiteral("flowchart.curve rounded did not reach scene/PNG paint"));
@@ -284,16 +287,17 @@ int main(int argc, char** argv) {
       "flowchart LR\nA[Start] roundedEdge@--> B[Middle] --> C[End]\n"
       "roundedEdge@{ curve: rounded }");
   const MermaidRenderEntry edgeRounded = render(edgeRoundedFlow);
+  const auto* edgeRoundedScene = dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(edgeRounded.scene.get());
   require(edgeRounded.status == MermaidRenderStatus::Ready &&
-              edgeRounded.scene && edgeRounded.scene->edges.size() == 2,
+              edgeRounded.scene && edgeRoundedScene && edgeRoundedScene->edges.size() == 2,
           QStringLiteral("Per-edge rounded flow did not render"));
   const auto roundedEdge = std::find_if(
-      edgeRounded.scene->edges.cbegin(), edgeRounded.scene->edges.cend(),
+      edgeRoundedScene->edges.cbegin(), edgeRoundedScene->edges.cend(),
       [](const auto& edge) { return edge.id == QLatin1String("roundedEdge"); });
-  require(roundedEdge != edgeRounded.scene->edges.cend() &&
+  require(roundedEdge != edgeRoundedScene->edges.cend() &&
               !roundedEdge->path.contains(QLatin1Char('C')) &&
-              std::any_of(edgeRounded.scene->edges.cbegin(),
-                          edgeRounded.scene->edges.cend(),
+              std::any_of(edgeRoundedScene->edges.cbegin(),
+                          edgeRoundedScene->edges.cend(),
                           [](const auto& edge) {
                             return edge.id != QLatin1String("roundedEdge") &&
                                    edge.path.contains(QLatin1Char('C'));
@@ -335,9 +339,11 @@ int main(int argc, char** argv) {
       "%%{init: {\"er\": {\"nodeSpacing\": 220, \"rankSpacing\": 180}}}%%\n") + erSource;
   const MermaidRenderEntry normalEr = render(erSource);
   const MermaidRenderEntry configuredEr = render(spacedEr);
+  const auto* normalErScene = dynamic_cast<const muffin::mermaid::er::ErScene*>(normalEr.scene.get());
+  const auto* configuredErScene = dynamic_cast<const muffin::mermaid::er::ErScene*>(configuredEr.scene.get());
   require(normalEr.status == MermaidRenderStatus::Ready &&
               configuredEr.status == MermaidRenderStatus::Ready &&
-              normalEr.erScene && configuredEr.erScene,
+              normalErScene && configuredErScene,
           QStringLiteral("ER spacing probes did not render"));
   const qreal normalErSibling = std::abs(
       erCenter(normalEr, QStringLiteral("B")).x() -
@@ -361,18 +367,20 @@ int main(int argc, char** argv) {
       "participant A as A deliberately long participant label for wrapping\n"
       "participant B as Worker\nA->>B: a deliberately long message for wrapping");
   const MermaidRenderEntry wrapped = render(wrappedSequence);
-  require(wrapped.status == MermaidRenderStatus::Ready && wrapped.sequenceScene &&
-              !wrapped.sequenceScene->participantLabels.isEmpty() &&
-              wrapped.sequenceScene->participantLabels.first().richText.text
+  const auto* wrappedScene = dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(wrapped.scene.get());
+  require(wrapped.status == MermaidRenderStatus::Ready && wrappedScene &&
+              !wrappedScene->participantLabels.isEmpty() &&
+              wrappedScene->participantLabels.first().richText.text
                   .contains(QLatin1Char('\n')),
           QStringLiteral("Root wrap directive did not reach sequence text/layout"));
   const QString numberedSequence = QStringLiteral(
       "%%{init: {\"sequence\": {\"showSequenceNumbers\": true}}}%%\n"
       "sequenceDiagram\nA->>B: first\nB-->>A: second");
   const MermaidRenderEntry numbered = render(numberedSequence);
+  const auto* numberedScene = dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(numbered.scene.get());
   require(numbered.status == MermaidRenderStatus::Ready &&
-              numbered.sequenceScene &&
-              numbered.sequenceScene->sequenceNumbers.size() == 2,
+              numberedScene &&
+              numberedScene->sequenceNumbers.size() == 2,
           QStringLiteral("sequence.showSequenceNumbers did not reach text/paint"));
 
   const QString sequenceWithMenu = QStringLiteral(
@@ -384,13 +392,15 @@ int main(int argc, char** argv) {
       sequenceWithMenu;
   const MermaidRenderEntry closedMenu = render(sequenceWithMenu);
   const MermaidRenderEntry forcedMenu = render(forcedSequence);
+  const auto* closedMenuScene = dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(closedMenu.scene.get());
+  const auto* forcedMenuScene = dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(forcedMenu.scene.get());
   require(closedMenu.status == MermaidRenderStatus::Ready &&
               forcedMenu.status == MermaidRenderStatus::Ready &&
-              closedMenu.sequenceScene && forcedMenu.sequenceScene &&
-              !closedMenu.sequenceScene->forceMenus &&
-              forcedMenu.sequenceScene->forceMenus &&
-              closedMenu.sequenceScene->menus.size() == 1 &&
-              forcedMenu.sequenceScene->menus.size() == 1 &&
+              closedMenuScene && forcedMenuScene &&
+              !closedMenuScene->forceMenus &&
+              forcedMenuScene->forceMenus &&
+              closedMenuScene->menus.size() == 1 &&
+              forcedMenuScene->menus.size() == 1 &&
               closedMenu.naturalSize == forcedMenu.naturalSize,
           QStringLiteral("sequence.forceMenus lost scene or stable viewport semantics"));
   const QImage closedMenuPng = pngImage(sequenceWithMenu);

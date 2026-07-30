@@ -23,7 +23,7 @@
 // Marker normalization: Muffin emits markerStart="none" for marker-less ends;
 // mermaid emits null. Both normalize to empty for the tuple comparison.
 //
-// editor::MermaidRenderCache::getSync -> entry.classScene -> ClassScene::toJsonObject().
+// editor::MermaidRenderCache::getSync -> entry.scene -> dynamic_cast to ClassScene -> toJsonObject().
 
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/classdiagram/ClassScene.h"
@@ -103,9 +103,10 @@ int main(int argc, char** argv) {
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
     const auto entry = cache.getSync(cache.makeKey(source), source);
-    require(entry.status == editor::MermaidRenderStatus::Ready && entry.classScene,
+    const auto* classScene = dynamic_cast<const classdiagram::ClassScene*>(entry.scene.get());
+    require(entry.status == editor::MermaidRenderStatus::Ready && classScene != nullptr,
             id + QStringLiteral(": native class render failed: ") + entry.errorMessage);
-    const QJsonObject actual = entry.classScene->toJsonObject();
+    const QJsonObject actual = classScene->toJsonObject();
 
     QStringList assertErrors;
     QStringList reportNotes;

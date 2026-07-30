@@ -24,9 +24,10 @@ void require(bool condition, const QString& message) {
   if (!condition) fail(message);
 }
 const classdiagram::ClassSceneEdge& firstEdge(const editor::MermaidRenderEntry& e) {
-  require(e.classScene && !e.classScene->edges.isEmpty(),
+  const auto* classScene = dynamic_cast<const classdiagram::ClassScene*>(e.scene.get());
+  require(classScene && !classScene->edges.isEmpty(),
           QStringLiteral("class scene has no edges"));
-  return e.classScene->edges.constFirst();
+  return classScene->edges.constFirst();
 }
 }  // namespace
 

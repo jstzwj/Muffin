@@ -157,10 +157,11 @@ int main(int argc,char** argv) {
     }
 
     const auto entry=cache.getSync(cache.makeKey(source),source);
-    require(entry.status==editor::MermaidRenderStatus::Ready&&entry.sequenceScene,
+    const auto* sequenceScene=dynamic_cast<const sequence::SequenceScene*>(entry.scene.get());
+    require(entry.status==editor::MermaidRenderStatus::Ready&&sequenceScene!=nullptr,
             QStringLiteral("%1 native structural scene failed: %2")
                 .arg(id,entry.errorMessage));
-    const auto& scene=*entry.sequenceScene;
+    const auto& scene=*sequenceScene;
     require(scene.participantLabels.size()==scene.participants.size()&&
                 scene.messageLabels.size()==scene.messages.size()&&
                 scene.noteLabels.size()==scene.notes.size()&&

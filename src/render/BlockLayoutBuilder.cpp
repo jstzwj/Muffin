@@ -1007,9 +1007,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
     layout->setMermaidState(static_cast<BlockLayout::MermaidState>(
         static_cast<int>(entry.status)));  // MermaidRenderStatus ↔ BlockLayout::MermaidState are ordered identically
     if (!keepSource && entry.status == MermaidRenderStatus::Ready &&
-        entry.diagramScene) {
+        entry.scene) {
       layout->setMermaidViewportCullingEnabled(!mermaidSyncMode_);
-      layout->setMermaidScene(entry.diagramScene, entry.naturalSize, entry.metadata);
+      layout->setMermaidScene(entry.scene, entry.naturalSize, entry.metadata);
       const int contentWidth = static_cast<int>(qMax<qreal>(1.0, width - theme.codePadding().left() - theme.codePadding().right()));
       const qreal natW = entry.naturalSize.width();
       const qreal scale = natW > 0.0 ? qMin<qreal>(1.0, contentWidth / natW) : 1.0;

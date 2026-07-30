@@ -24,8 +24,9 @@ void require(bool condition, const QString& message) {
   if (!condition) fail(message);
 }
 const state::StateSceneEdge* edgeFrom(const editor::MermaidRenderEntry& e, const QString& start) {
-  require(e.stateScene != nullptr, QStringLiteral("missing state scene"));
-  for (const auto& edge : e.stateScene->edges)
+  const auto* stateScene = dynamic_cast<const state::StateScene*>(e.scene.get());
+  require(stateScene != nullptr, QStringLiteral("missing state scene"));
+  for (const auto& edge : stateScene->edges)
     if (edge.start == start) return &edge;
   return nullptr;
 }

@@ -106,10 +106,11 @@ int main(int argc, char** argv) {
                 browser.height() == fixture.value(QStringLiteral("height")).toInt(),
             id + QStringLiteral(": browser PNG dimensions drifted"));
     const auto entry = cache.getSync(cache.makeKey(source), source);
-    require(entry.status == editor::MermaidRenderStatus::Ready && entry.stateScene,
+    const auto* stateScene = dynamic_cast<const state::StateScene*>(entry.scene.get());
+    require(entry.status == editor::MermaidRenderStatus::Ready && stateScene != nullptr,
             id + QStringLiteral(": native render failed: ") + entry.errorMessage);
     const qreal dpr = fixture.value(QStringLiteral("dpr")).toDouble(1.0);
-    const QImage native = state::renderStateSceneToImage(*entry.stateScene, dpr, 0.0);
+    const QImage native = state::renderStateSceneToImage(*stateScene, dpr, 0.0);
     const qreal widthDifference = relativeDifference(native.width(), browser.width());
     const qreal heightDifference = relativeDifference(native.height(), browser.height());
     const qreal iou = alphaIou(native, browser);
@@ -127,8 +128,8 @@ int main(int argc, char** argv) {
     minimumIou = std::min(minimumIou, iou);
     dprVariants += dpr != 1.0;
     darkCases += fixture.value(QStringLiteral("theme")).toString() == QLatin1String("dark");
-    clusterCases += !entry.stateScene->clusters.isEmpty();
-    const QImage repeated = state::renderStateSceneToImage(*entry.stateScene, dpr, 0.0);
+    clusterCases += !stateScene->clusters.isEmpty();
+    const QImage repeated = state::renderStateSceneToImage(*stateScene, dpr, 0.0);
     require(native == repeated, id + QStringLiteral(": native raster is non-deterministic"));
   }
   require(dprVariants >= 3 && darkCases >= 1 && clusterCases >= 2,

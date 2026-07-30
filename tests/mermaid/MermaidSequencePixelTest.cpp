@@ -432,17 +432,18 @@ int main(int argc,char** argv) {
         fixture.value(QStringLiteral("verticalDelimiter")).toString();
     if (!verticalDelimiter.isEmpty()) verticalDelimiters.insert(verticalDelimiter);
     const auto entry=cache.getSync(cache.makeKey(fixture.value(QStringLiteral("source")).toString()),fixture.value(QStringLiteral("source")).toString());
-    require(entry.status==editor::MermaidRenderStatus::Ready&&entry.sequenceScene,
+    const auto* sequenceScene=dynamic_cast<const sequence::SequenceScene*>(entry.scene.get());
+    require(entry.status==editor::MermaidRenderStatus::Ready&&sequenceScene!=nullptr,
             QStringLiteral("%1 native scene failed: %2").arg(id,entry.errorMessage));
     if(id.startsWith(QLatin1String("label-math-root-index-"))) {
-      require(!entry.sequenceScene->noteLabels.isEmpty()&&
-                  !entry.sequenceScene->noteLabels.first().richText.math.isEmpty()&&
-                  entry.sequenceScene->noteLabels.first()
+      require(!sequenceScene->noteLabels.isEmpty()&&
+                  !sequenceScene->noteLabels.first().richText.math.isEmpty()&&
+                  sequenceScene->noteLabels.first()
                       .richText.math.first().prepared,
               QStringLiteral("%1 must use a prepared MathML operation").arg(id));
-      const auto& label=entry.sequenceScene->noteLabels.first();
+      const auto& label=sequenceScene->noteLabels.first();
       muffin::math::MathRenderer renderer;
-      const qreal renderFontPixelSize=entry.sequenceScene->style.fontSize*1.21;
+      const qreal renderFontPixelSize=sequenceScene->style.fontSize*1.21;
       const auto layout=renderer.render(label.richText.math.first().source,
                                         renderFontPixelSize,Qt::white,true);
       const auto build=muffin::math::buildMathMlPaintOperations(
@@ -470,7 +471,7 @@ int main(int argc,char** argv) {
     const QString sceneFile=fixture.value(QStringLiteral("file")).toString();
     if(!sceneFile.isEmpty()) {
       ++scenePixelCases;
-      const QImage native=sequence::renderSequenceSceneToImage(*entry.sequenceScene,dpr,0.0);
+      const QImage native=sequence::renderSequenceSceneToImage(*sequenceScene,dpr,0.0);
       const QImage golden(dir.filePath(sceneFile));
       require(fileSha256(dir.filePath(sceneFile))==
                   fixture.value(QStringLiteral("sha256")).toString().toLatin1(),
@@ -481,7 +482,7 @@ int main(int argc,char** argv) {
       const qreal iou=alphaIou(native,golden);
       qDebug().noquote() << id << "native" << native.size() << alphaBounds(native)
                          << "golden" << golden.size() << alphaBounds(golden)
-                         << "scene" << entry.sequenceScene->bounds
+                         << "scene" << sequenceScene->bounds
                          << "ratio-drift" << ratioDrift << "alpha-IoU" << iou;
       require(ratioDrift<=0.05,
               QStringLiteral("%1 canvas ratio mismatch: %2 vs %3").arg(id).arg(nativeRatio).arg(goldenRatio));
@@ -498,7 +499,7 @@ int main(int argc,char** argv) {
     const QString cropFile=fixture.value(QStringLiteral("cropFile")).toString();
     if(!cropFile.isEmpty()) {
       ++labelPixelCases;
-      const QImage nativeLabel=renderLabel(*entry.sequenceScene,
+      const QImage nativeLabel=renderLabel(*sequenceScene,
           fixture.value(QStringLiteral("cropKind")).toString(),dpr);
       const QImage browserLabel=alphaTrimmed(QImage(dir.filePath(cropFile)));
       require(fileSha256(dir.filePath(cropFile))==
@@ -519,11 +520,11 @@ int main(int argc,char** argv) {
       const QJsonArray browserDelimiters=fixture.value(
           QStringLiteral("mathDelimiters")).toArray();
       if(!browserDelimiters.isEmpty()) {
-        require(!entry.sequenceScene->noteLabels.isEmpty(),
+        require(!sequenceScene->noteLabels.isEmpty(),
                 QStringLiteral("%1 delimiter label is missing").arg(id));
         const QVector<NativeDelimiterRaster> nativeDelimiters=
-            renderDelimiterGlyphs(entry.sequenceScene->noteLabels.first(),
-                                  entry.sequenceScene->style.fontSize,dpr);
+            renderDelimiterGlyphs(sequenceScene->noteLabels.first(),
+                                  sequenceScene->style.fontSize,dpr);
         require(nativeDelimiters.size()==browserDelimiters.size(),
                 QStringLiteral("%1 delimiter operation count drifted: native=%2 browser=%3")
                     .arg(id).arg(nativeDelimiters.size())
@@ -617,11 +618,11 @@ int main(int argc,char** argv) {
       const QString mathGlyphFile=fixture.value(
           QStringLiteral("mathGlyphFile")).toString();
       if(!mathGlyphFile.isEmpty()) {
-        require(!entry.sequenceScene->noteLabels.isEmpty(),
+        require(!sequenceScene->noteLabels.isEmpty(),
                 QStringLiteral("%1 large-operator label is missing").arg(id));
         const LargeOperatorRaster nativeGlyph=renderLargeOperatorGlyph(
-            entry.sequenceScene->noteLabels.first(),
-            entry.sequenceScene->style.fontSize,dpr);
+            sequenceScene->noteLabels.first(),
+            sequenceScene->style.fontSize,dpr);
         const QImage browserGlyph=alphaTrimmed(
             QImage(dir.filePath(mathGlyphFile)));
         require(fileSha256(dir.filePath(mathGlyphFile))==
@@ -684,8 +685,8 @@ int main(int argc,char** argv) {
                     group.value(QStringLiteral("sha256")).toString().toLatin1(),
                 QStringLiteral("%1 %2 token-group hash drifted").arg(id,role));
         const QImage nativeGroupRaw=renderMathPrimitiveRole(
-            entry.sequenceScene->noteLabels.first(),
-            entry.sequenceScene->style.fontSize,dpr,nativeRole,false);
+            sequenceScene->noteLabels.first(),
+            sequenceScene->style.fontSize,dpr,nativeRole,false);
         const QImage browserGroupRaw=QImage(dir.filePath(groupFile));
         const QImage nativeGroup=alphaTrimmed(nativeGroupRaw);
         const QImage browserGroup=alphaTrimmed(browserGroupRaw);
@@ -754,11 +755,11 @@ int main(int argc,char** argv) {
         require(fileSha256(dir.filePath(phaseFile))==
                     phaseFixture.value(QStringLiteral("sha256")).toString().toLatin1(),
                 QStringLiteral("%1 phase %2 hash drifted").arg(id).arg(phase));
-        require(!entry.sequenceScene->noteLabels.isEmpty(),
+        require(!sequenceScene->noteLabels.isEmpty(),
                 QStringLiteral("%1 phase oracle label is missing").arg(id));
         const QImage nativePhase=renderMathAtPhase(
-            entry.sequenceScene->noteLabels.first(),
-            entry.sequenceScene->style.fontSize,dpr,phase);
+            sequenceScene->noteLabels.first(),
+            sequenceScene->style.fontSize,dpr,phase);
         const QImage browserPhase=alphaTrimmed(QImage(dir.filePath(phaseFile)));
         require(!nativePhase.isNull()&&!browserPhase.isNull(),
                 QStringLiteral("%1 phase %2 image missing").arg(id).arg(phase));
@@ -799,8 +800,8 @@ int main(int argc,char** argv) {
                       ? muffin::math::MathMlPaintPrimitiveRole::ScriptSuperscript
                       : muffin::math::MathMlPaintPrimitiveRole::Row;
           const QImage nativeComponent=renderMathPrimitiveRole(
-              entry.sequenceScene->noteLabels.first(),
-              entry.sequenceScene->style.fontSize,dpr,nativeRole,true,
+              sequenceScene->noteLabels.first(),
+              sequenceScene->style.fontSize,dpr,nativeRole,true,
               QPointF(phase,phase));
           const QImage browserComponent=alphaTrimmed(
               QImage(dir.filePath(componentFile)));
@@ -854,8 +855,8 @@ int main(int argc,char** argv) {
           QStringLiteral("mathTokens")).toArray();
       if(!browserTokens.isEmpty()) {
         const QVector<NativeMathToken> nativeTokens=nativeMathTokens(
-            entry.sequenceScene->noteLabels.first(),
-            entry.sequenceScene->style.fontSize);
+            sequenceScene->noteLabels.first(),
+            sequenceScene->style.fontSize);
         const QJsonObject mathBox=fixture.value(QStringLiteral("structure"))
             .toObject().value(QStringLiteral("mathMlBox")).toObject();
         QHash<int,qsizetype> roleCursor;
@@ -916,13 +917,13 @@ int main(int argc,char** argv) {
                     fixture.value(QStringLiteral("mathAccentSha256")).toString().toLatin1(),
                 QStringLiteral("%1 MathML component hashes drifted").arg(id));
         require(fixture.value(QStringLiteral("cropKind")).toString()==
-                    QLatin1String("note")&&!entry.sequenceScene->noteLabels.isEmpty(),
+                    QLatin1String("note")&&!sequenceScene->noteLabels.isEmpty(),
                 QStringLiteral("%1 MathML component label is unavailable").arg(id));
         const sequence::SequenceLabelDocument& componentLabel=
-            entry.sequenceScene->noteLabels.front();
-        const QColor componentColor(entry.sequenceScene->style.noteTextColor);
+            sequenceScene->noteLabels.front();
+        const QColor componentColor(sequenceScene->style.noteTextColor);
         muffin::math::MathRenderer componentRenderer;
-        const qreal componentFontSize=entry.sequenceScene->style.fontSize*1.21;
+        const qreal componentFontSize=sequenceScene->style.fontSize*1.21;
         const auto componentLayout=componentRenderer.render(
             componentLabel.richText.math.front().source,componentFontSize,
             componentColor,true);
@@ -949,10 +950,10 @@ int main(int argc,char** argv) {
                   QStringLiteral("%1 horizontal assembly lost its parts").arg(id));
         }
         const QImage nativeBody=renderMathLayer(
-            componentLabel,entry.sequenceScene->style.fontSize,dpr,
+            componentLabel,sequenceScene->style.fontSize,dpr,
             muffin::math::MathMlPaintLayer::Body,componentColor);
         const QImage nativeAccent=renderMathLayer(
-            componentLabel,entry.sequenceScene->style.fontSize,dpr,
+            componentLabel,sequenceScene->style.fontSize,dpr,
             muffin::math::MathMlPaintLayer::Accent,componentColor);
         const QImage browserBody=alphaTrimmed(QImage(dir.filePath(bodyFile)));
         const QImage browserAccent=alphaTrimmed(QImage(dir.filePath(accentFile)));
@@ -1029,12 +1030,12 @@ int main(int argc,char** argv) {
           QStringLiteral("label-math-accent-accent-recursive"),
       };
       if(recursiveLayerCases.contains(id)) {
-        require(!entry.sequenceScene->noteLabels.isEmpty(),
+        require(!sequenceScene->noteLabels.isEmpty(),
                 QStringLiteral("%1 recursive MathML label is unavailable").arg(id));
         const sequence::SequenceLabelDocument& recursiveLabel=
-            entry.sequenceScene->noteLabels.front();
-        const QColor recursiveColor(entry.sequenceScene->style.noteTextColor);
-        const qreal recursiveFontSize=entry.sequenceScene->style.fontSize;
+            sequenceScene->noteLabels.front();
+        const QColor recursiveColor(sequenceScene->style.noteTextColor);
+        const qreal recursiveFontSize=sequenceScene->style.fontSize;
         const QImage all=renderMathLayer(
             recursiveLabel,recursiveFontSize,dpr,
             muffin::math::MathMlPaintLayer::All,recursiveColor,false);
@@ -1055,13 +1056,13 @@ int main(int argc,char** argv) {
                     .arg(id));
       }
       if(id==QLatin1String("label-math-accent-accent-recursive")) {
-        require(!entry.sequenceScene->noteLabels.isEmpty(),
+        require(!sequenceScene->noteLabels.isEmpty(),
                 QStringLiteral("nested accent label is unavailable"));
         const QImage nestedAccent=renderMathLayer(
-            entry.sequenceScene->noteLabels.front(),
-            entry.sequenceScene->style.fontSize,dpr,
+            sequenceScene->noteLabels.front(),
+            sequenceScene->style.fontSize,dpr,
             muffin::math::MathMlPaintLayer::Accent,
-            QColor(entry.sequenceScene->style.noteTextColor));
+            QColor(sequenceScene->style.noteTextColor));
         const QRect nestedAccentInk=alphaBounds(nestedAccent);
         require(!nestedAccentInk.isNull()&&nestedAccentInk.height()>=40,
                 QStringLiteral("nested accent layer traversal regressed"));
