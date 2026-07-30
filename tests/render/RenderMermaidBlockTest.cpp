@@ -330,18 +330,21 @@ int main(int argc, char** argv) {
                 QColor(QStringLiteral("#ff00ff")), 80) > 2,
             QStringLiteral("shared Mermaid title painter produced no title pixels"));
 
-    const auto& scene = *block->mermaidScene();
+    const auto* flowScene =
+        dynamic_cast<const mermaid::flowscene::FlowScene*>(block->mermaidScene());
+    require(flowScene != nullptr,
+            QStringLiteral("titled Mermaid block must hold a flowchart scene"));
     const auto node = std::find_if(
-        scene.nodes.cbegin(), scene.nodes.cend(),
+        flowScene->nodes.cbegin(), flowScene->nodes.cend(),
         [](const auto& value) { return value.id == QLatin1String("A"); });
-    require(node != scene.nodes.cend(),
+    require(node != flowScene->nodes.cend(),
             QStringLiteral("linked flowchart node A must exist"));
     const qreal contentOffsetX = qMax<qreal>(
         0.0, (natural.width() - metadata.contentSize.width()) / 2.0);
     const QPointF nodePoint(
-        dx + scale * (contentOffsetX + node->cx - scene.bounds.left()),
+        dx + scale * (contentOffsetX + node->cx - flowScene->bounds.left()),
         dy + scale * (metadata.titleHeight + metadata.diagramPadding +
-                      node->cy - scene.bounds.top()));
+                      node->cy - flowScene->bounds.top()));
     const HitTestResult nodeHit = block->hitTest(nodePoint, theme, nullptr);
     require(nodeHit.mermaidRendered &&
                 nodeHit.linkHref == QLatin1String("https://example.com/start") &&
@@ -379,11 +382,12 @@ int main(int argc, char** argv) {
             "%%{init: {\"sequence\": {\"forceMenus\": true}}}%%\n") +
             body,
         forcedSession, forcedCache, forcedLayout);
-    require(forced && forced->mermaidSequenceScene() &&
-                forced->mermaidSequenceScene()->forceMenus &&
-                forced->mermaidSequenceScene()->menus.size() == 1,
+    const auto* forcedSeq =
+        dynamic_cast<const mermaid::sequence::SequenceScene*>(forced->mermaidScene());
+    require(forced && forcedSeq && forcedSeq->forceMenus &&
+                forcedSeq->menus.size() == 1,
             QStringLiteral("forceMenus sequence scene did not expose one menu"));
-    const auto& forcedScene = *forced->mermaidSequenceScene();
+    const auto& forcedScene = *forcedSeq;
     const auto& forcedMenu = forcedScene.menus.first();
     const auto docs = std::find_if(
         forcedMenu.items.cbegin(), forcedMenu.items.cend(),
@@ -408,10 +412,11 @@ int main(int argc, char** argv) {
     DocumentLayout toggleLayout;
     const BlockLayout* toggle =
         build(body, toggleSession, toggleCache, toggleLayout);
-    require(toggle && toggle->mermaidSequenceScene() &&
-                !toggle->mermaidSequenceScene()->forceMenus,
+    const auto* toggleSeq =
+        dynamic_cast<const mermaid::sequence::SequenceScene*>(toggle->mermaidScene());
+    require(toggle && toggleSeq && !toggleSeq->forceMenus,
             QStringLiteral("default sequence menu must start closed"));
-    const auto& toggleScene = *toggle->mermaidSequenceScene();
+    const auto& toggleScene = *toggleSeq;
     const auto actor = std::find_if(
         toggleScene.participants.cbegin(), toggleScene.participants.cend(),
         [](const auto& value) { return value.id == QLatin1String("A"); });

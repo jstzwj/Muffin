@@ -37,6 +37,10 @@ struct MermaidScene {
   // Each concrete scene serializes bounds + its element arrays (id/geometry/
   // style/label), with numbers rounded to 0.001 — mirrors FlowScene::toJson.
   virtual QJsonObject toJsonObject() const = 0;
+
+  // True if the scene has time-animated elements (e.g. animated flowchart edges).
+  // Default false; FlowScene overrides. Drives the editor's repaint timer.
+  virtual bool hasAnimation() const { return false; }
 };
 
 }  // namespace muffin::mermaid

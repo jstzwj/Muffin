@@ -105,6 +105,11 @@ struct FlowSceneCluster {
 struct FlowScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
+  bool hasAnimation() const override {
+    for (const auto& edge : edges)
+      if (edge.animated) return true;
+    return false;
+  }
 
   QRectF bounds;          // diagram bounds (scene coords)
   QString background;     // theme.background

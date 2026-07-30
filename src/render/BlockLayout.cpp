@@ -627,33 +627,9 @@ const html::HtmlLayoutResult* BlockLayout::htmlLayout() const {
 }
 
 void BlockLayout::setMermaidScene(
-    std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene,
+    std::shared_ptr<const muffin::mermaid::MermaidScene> scene,
     QSizeF naturalSize, mermaid::MermaidRenderMetadata metadata) {
   mermaidScene_ = std::move(scene);
-  mermaidNaturalSize_ = naturalSize;
-  mermaidMetadata_ = std::move(metadata);
-}
-
-void BlockLayout::setMermaidSequenceScene(
-    std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene,
-    QSizeF naturalSize, mermaid::MermaidRenderMetadata metadata) {
-  mermaidSequenceScene_ = std::move(scene);
-  mermaidNaturalSize_ = naturalSize;
-  mermaidMetadata_ = std::move(metadata);
-}
-
-void BlockLayout::setMermaidClassScene(
-    std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> scene,
-    QSizeF naturalSize, mermaid::MermaidRenderMetadata metadata) {
-  mermaidClassScene_ = std::move(scene);
-  mermaidNaturalSize_ = naturalSize;
-  mermaidMetadata_ = std::move(metadata);
-}
-
-void BlockLayout::setMermaidStateScene(
-    std::shared_ptr<const muffin::mermaid::state::StateScene> scene,
-    QSizeF naturalSize, mermaid::MermaidRenderMetadata metadata) {
-  mermaidStateScene_ = std::move(scene);
   mermaidNaturalSize_ = naturalSize;
   mermaidMetadata_ = std::move(metadata);
 }
@@ -666,13 +642,8 @@ bool BlockLayout::mermaidViewportCullingEnabled() const {
   return mermaidViewportCullingEnabled_;
 }
 
-const muffin::mermaid::flowscene::FlowScene* BlockLayout::mermaidScene() const {
+const muffin::mermaid::MermaidScene* BlockLayout::mermaidScene() const {
   return mermaidScene_.get();
-}
-
-const muffin::mermaid::sequence::SequenceScene*
-BlockLayout::mermaidSequenceScene() const {
-  return mermaidSequenceScene_.get();
 }
 
 QSizeF BlockLayout::mermaidNaturalSize() const {
@@ -684,11 +655,7 @@ const mermaid::MermaidRenderMetadata& BlockLayout::mermaidMetadata() const {
 }
 
 bool BlockLayout::hasAnimatedMermaid() const {
-  if (mermaidScene_ &&
-      std::any_of(mermaidScene_->edges.cbegin(), mermaidScene_->edges.cend(),
-                  [](const auto& edge) { return edge.animated; })) {
-    return true;
-  }
+  if (mermaidScene_ && mermaidScene_->hasAnimation()) return true;
   return std::any_of(children_.cbegin(), children_.cend(),
                      [](const auto& child) {
                        return child && child->hasAnimatedMermaid();
@@ -768,9 +735,7 @@ QVector<QRectF> BlockLayout::mermaidDiagnosticSourceRects(
 }
 
 bool BlockLayout::isMermaidRendered() const {
-  return mermaidState_ == MermaidState::Ready &&
-         (mermaidScene_ != nullptr || mermaidSequenceScene_ != nullptr ||
-          mermaidClassScene_ != nullptr || mermaidStateScene_ != nullptr);
+  return mermaidState_ == MermaidState::Ready && mermaidScene_ != nullptr;
 }
 
 void BlockLayout::setLiteralEditing(bool editing) {
@@ -1467,8 +1432,7 @@ void BlockLayout::paintMathBlock(QPainter& painter, const RenderTheme& theme, QR
 void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& theme,
                                       QRectF viewRect,
                                       BlockPaintState state) const {
-  if (!mermaidScene_ && !mermaidSequenceScene_ && !mermaidClassScene_ &&
-      !mermaidStateScene_) return;
+  if (!mermaidScene_) return;
   painter.save();
   painter.setPen(theme.codeBorderColor());
   painter.setBrush(theme.codeBackgroundColor());
@@ -1494,10 +1458,7 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
         mermaidMetadata_.titleHeight + mermaidMetadata_.diagramPadding;
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
-    const QRectF sceneBounds = mermaidScene_ ? mermaidScene_->bounds
-        : mermaidSequenceScene_ ? mermaidSequenceScene_->bounds
-        : mermaidClassScene_ ? mermaidClassScene_->bounds
-                             : mermaidStateScene_->bounds;
+    const QRectF sceneBounds = mermaidScene_->sceneBounds();
     muffin::mermaid::MermaidPaintOptions paintOptions;
     paintOptions.animationTimeSeconds = state.mermaidAnimationTimeSeconds;
     paintOptions.openSequenceMenus = state.openSequenceMenus;
@@ -1522,21 +1483,7 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
     }
     painter.translate(contentOffsetX - sceneBounds.left(),
                       contentOffsetY - sceneBounds.top());
-    if (mermaidScene_)
-      muffin::mermaid::flowscene::paintFlowScene(
-          *mermaidScene_, painter, QStringLiteral("Arial"),
-          muffin::mermaid::flowscene::PaintMode::Color, paintOptions);
-    else if (mermaidSequenceScene_)
-      muffin::mermaid::sequence::paintSequenceScene(
-          *mermaidSequenceScene_, painter, paintOptions);
-    else if (mermaidClassScene_)
-      muffin::mermaid::classdiagram::paintClassScene(
-          *mermaidClassScene_, painter,
-          muffin::mermaid::classdiagram::ClassPaintMode::Color,
-          paintOptions);
-    else
-      muffin::mermaid::state::paintStateScene(
-          *mermaidStateScene_, painter, paintOptions);
+    mermaidScene_->paint(painter, paintOptions);
   }
   painter.restore();
 }
@@ -1644,15 +1591,15 @@ BlockLayout::MermaidInteractionHit BlockLayout::mermaidInteractionAt(
     QPointF documentPos, const RenderTheme& theme,
     const QSet<QString>* openSequenceMenus) const {
   MermaidInteractionHit result;
-  if (mermaidSequenceScene_) {
+  if (const auto* sequence =
+          dynamic_cast<const mermaid::sequence::SequenceScene*>(mermaidScene_.get())) {
     QPointF scenePos;
-    if (!mermaidScenePointAt(documentPos, theme,
-                             mermaidSequenceScene_->bounds, scenePos)) {
+    if (!mermaidScenePointAt(documentPos, theme, sequence->bounds, scenePos)) {
       return result;
     }
-    for (auto menuIt = mermaidSequenceScene_->menus.crbegin();
-         menuIt != mermaidSequenceScene_->menus.crend(); ++menuIt) {
-      const bool visible = mermaidSequenceScene_->forceMenus ||
+    for (auto menuIt = sequence->menus.crbegin();
+         menuIt != sequence->menus.crend(); ++menuIt) {
+      const bool visible = sequence->forceMenus ||
           (openSequenceMenus &&
            openSequenceMenus->contains(menuIt->actorId));
       if (!visible) continue;
@@ -1663,14 +1610,14 @@ BlockLayout::MermaidInteractionHit BlockLayout::mermaidInteractionAt(
         return result;
       }
     }
-    if (!mermaidSequenceScene_->forceMenus) {
-      for (auto menuIt = mermaidSequenceScene_->menus.crbegin();
-           menuIt != mermaidSequenceScene_->menus.crend(); ++menuIt) {
+    if (!sequence->forceMenus) {
+      for (auto menuIt = sequence->menus.crbegin();
+           menuIt != sequence->menus.crend(); ++menuIt) {
         const auto actorIt = std::find_if(
-            mermaidSequenceScene_->participants.cbegin(),
-            mermaidSequenceScene_->participants.cend(),
+            sequence->participants.cbegin(),
+            sequence->participants.cend(),
             [&](const auto& actor) { return actor.id == menuIt->actorId; });
-        if (actorIt == mermaidSequenceScene_->participants.cend()) continue;
+        if (actorIt == sequence->participants.cend()) continue;
         const QRectF actorHit = actorIt->topPaintedBounds
             .united(actorIt->topLabelRect)
             .united(QRectF(actorIt->logicalRect.x(), actorIt->topY,
@@ -1684,23 +1631,24 @@ BlockLayout::MermaidInteractionHit BlockLayout::mermaidInteractionAt(
     }
     return result;
   }
-  if (!mermaidScene_) return result;
-  QPointF scenePos;
-  if (!mermaidScenePointAt(documentPos, theme, mermaidScene_->bounds,
-                           scenePos)) {
-    return result;
-  }
-  for (auto it = mermaidScene_->nodes.crbegin();
-       it != mermaidScene_->nodes.crend(); ++it) {
-    const QRectF nodeRect(it->cx - it->width / 2.0,
-                          it->cy - it->height / 2.0,
-                          it->width, it->height);
-    if (!nodeRect.contains(scenePos)) continue;
-    result.toolTip = it->tooltip;
-    if (!it->link.isEmpty() && isSafeUrl(it->link, false)) {
-      result.linkHref = it->link;
+  if (const auto* flow =
+          dynamic_cast<const mermaid::flowscene::FlowScene*>(mermaidScene_.get())) {
+    QPointF scenePos;
+    if (!mermaidScenePointAt(documentPos, theme, flow->bounds, scenePos)) {
+      return result;
     }
-    return result;
+    for (auto it = flow->nodes.crbegin();
+         it != flow->nodes.crend(); ++it) {
+      const QRectF nodeRect(it->cx - it->width / 2.0,
+                            it->cy - it->height / 2.0,
+                            it->width, it->height);
+      if (!nodeRect.contains(scenePos)) continue;
+      result.toolTip = it->tooltip;
+      if (!it->link.isEmpty() && isSafeUrl(it->link, false)) {
+        result.linkHref = it->link;
+      }
+      return result;
+    }
   }
   return result;
 }

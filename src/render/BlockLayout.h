@@ -162,23 +162,12 @@ public:
   // cached immutable scene scaled to fit the content width instead of the source code.
   enum class MermaidState { None, Loading, Ready, Error, Unsupported };
   void setMermaidScene(
-      std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> scene,
+      std::shared_ptr<const muffin::mermaid::MermaidScene> scene,
       QSizeF naturalSize,
       muffin::mermaid::MermaidRenderMetadata metadata = {});
-  void setMermaidSequenceScene(std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> scene,
-                               QSizeF naturalSize,
-                               muffin::mermaid::MermaidRenderMetadata metadata = {});
-  void setMermaidClassScene(std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> scene,
-                            QSizeF naturalSize,
-                            muffin::mermaid::MermaidRenderMetadata metadata = {});
-  void setMermaidStateScene(std::shared_ptr<const muffin::mermaid::state::StateScene> scene,
-                            QSizeF naturalSize,
-                            muffin::mermaid::MermaidRenderMetadata metadata = {});
   void setMermaidViewportCullingEnabled(bool enabled);
   bool mermaidViewportCullingEnabled() const;
-  const muffin::mermaid::flowscene::FlowScene* mermaidScene() const;
-  const muffin::mermaid::sequence::SequenceScene*
-  mermaidSequenceScene() const;
+  const muffin::mermaid::MermaidScene* mermaidScene() const;
   QSizeF mermaidNaturalSize() const;
   const muffin::mermaid::MermaidRenderMetadata& mermaidMetadata() const;
   bool hasAnimatedMermaid() const;
@@ -371,10 +360,7 @@ private:
   std::shared_ptr<math::MathLayoutResult> mathLayout_;
   MathDelimiter mathDelimiter_ = MathDelimiter::Dollar;
   std::shared_ptr<html::HtmlLayoutResult> htmlLayout_;
-  std::shared_ptr<const muffin::mermaid::flowscene::FlowScene> mermaidScene_;
-  std::shared_ptr<const muffin::mermaid::sequence::SequenceScene> mermaidSequenceScene_;
-  std::shared_ptr<const muffin::mermaid::classdiagram::ClassScene> mermaidClassScene_;
-  std::shared_ptr<const muffin::mermaid::state::StateScene> mermaidStateScene_;
+  std::shared_ptr<const muffin::mermaid::MermaidScene> mermaidScene_;
   bool mermaidViewportCullingEnabled_ = false;
   QSizeF mermaidNaturalSize_;
   muffin::mermaid::MermaidRenderMetadata mermaidMetadata_;
