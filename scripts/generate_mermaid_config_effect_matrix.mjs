@@ -260,13 +260,11 @@ const familyPolicies = {
     entityPadding: parity(...layout),
     nodeSpacing: parity(...interactiveLayout),
     rankSpacing: parity(...interactiveLayout),
-    stroke: unsupported(
-      ["paint", "export"],
-      "Muffin ER uses the theme entity stroke, not er.stroke.",
+    stroke: inert(
+      "Dead config in mermaid 11.16.0 — er.stroke is never consumed; the ER entity stroke resolves to theme nodeBorder (or classDef/inline), exactly like er.fontSize.",
     ),
-    fill: unsupported(
-      ["paint", "export"],
-      "Muffin ER uses the theme entity fill, not er.fill.",
+    fill: inert(
+      "Dead config in mermaid 11.16.0 — er.fill is never consumed; the ER entity fill resolves to theme mainBkg (or classDef/inline), exactly like er.fontSize.",
     ),
     fontSize: inert(
       "er.fontSize is dead in mermaid 11.16; the theme fontSize is used.",

@@ -26,10 +26,10 @@
   "summary": {
     "parity": 47,
     "partial": 8,
-    "unsupported": 21,
+    "unsupported": 19,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 11,
+    "upstream-inert": 13,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -2387,16 +2387,14 @@
       "path": "er.stroke",
       "field": "stroke",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "paint",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Muffin ER uses the theme entity stroke, not er.stroke.",
+      "note": "Dead config in mermaid 11.16.0 — er.stroke is never consumed; the ER entity stroke resolves to theme nodeBorder (or classDef/inline), exactly like er.fontSize.",
       "default": "gray"
     },
     {
@@ -2405,16 +2403,14 @@
       "path": "er.fill",
       "field": "fill",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "paint",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Muffin ER uses the theme entity fill, not er.fill.",
+      "note": "Dead config in mermaid 11.16.0 — er.fill is never consumed; the ER entity fill resolves to theme mainBkg (or classDef/inline), exactly like er.fontSize.",
       "default": "honeydew"
     },
     {
@@ -2434,5 +2430,5 @@
       "default": 12
     }
   ],
-  "fixtureSha256": "906b37fd12b566400aaecb63cbff90ade4b3bd6da7e4d740eba648ee76561bbd"
+  "fixtureSha256": "c46cdb3b8bd8c40a8de00d2b7f8d01dcb74af6553925b75faa348dd859b268c4"
 }
