@@ -954,6 +954,39 @@ int main(int argc, char** argv) {
             QStringLiteral("sequence diagramMarginX must widen the PNG via the generic path"));
   }
 
+  // --- titled PNG at high DPR renders content at FULL device resolution. The
+  //     old per-family state/er rasterizer set image devicePixelRatio, which
+  //     made Qt downscale the content during title compositing; the generic
+  //     path fixes it. Pin the fix per family: a titled diagram must scale ~2x
+  //     from DPR 1 to DPR 2 — content downscaled by DPR would scale less. ---
+  {
+    const auto decodePng = [](const QString& dataUrl) {
+      const qsizetype comma = dataUrl.indexOf(QLatin1Char(','));
+      QImage img;
+      img.loadFromData(QByteArray::fromBase64(dataUrl.mid(comma + 1).toLatin1()), "PNG");
+      return img;
+    };
+    struct FamilyCase { QString name; QString body; };
+    const FamilyCase families[] = {
+        {QStringLiteral("flowchart"), QStringLiteral("flowchart TB\nA[Start] --> B[Done]")},
+        {QStringLiteral("sequence"), QStringLiteral("sequenceDiagram\nAlice->>Bob: Hello")},
+        {QStringLiteral("class"), QStringLiteral("classDiagram\nclass A\nclass B\nA --> B")},
+        {QStringLiteral("state"), QStringLiteral("stateDiagram-v2\n[*] --> S\nS --> [*]")},
+        {QStringLiteral("er"), QStringLiteral("erDiagram\nCUSTOMER ||--o{ ORDER : places")},
+    };
+    for (const FamilyCase& f : families) {
+      const QString titled = QStringLiteral("---\ntitle: T\n---\n") + f.body;
+      const QImage t1 = decodePng(MermaidRenderCache::renderMermaidSourceToPngDataUrl(titled, 1.0));
+      const QImage t2 = decodePng(MermaidRenderCache::renderMermaidSourceToPngDataUrl(titled, 2.0));
+      require(!t1.isNull() && !t2.isNull(),
+              f.name + QStringLiteral(" titled PNG must decode at DPR 1 and 2"));
+      require(qAbs(t2.width() - 2 * t1.width()) <= 2 &&
+                  qAbs(t2.height() - 2 * t1.height()) <= 2,
+              f.name + QStringLiteral(" titled PNG must scale ~2x DPR1->DPR2 (full-res content); got %1x%2 -> %3x%4")
+                  .arg(t1.width()).arg(t1.height()).arg(t2.width()).arg(t2.height()));
+    }
+  }
+
   qDebug().noquote() << "MermaidRenderCacheTest: sync ready/error/unsupported + async/debounced rendering + LRU + key stability";
   return 0;
 }

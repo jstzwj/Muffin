@@ -54,7 +54,8 @@ namespace {
 // extent via renderBounds(); painting goes through the virtual paint().
 QImage renderMermaidSceneToImage(const std::shared_ptr<const MermaidScene>& scene,
                                  qreal dpr, qreal padding) {
-  const QRectF extent = scene->renderBounds(padding);
+  const QRectF extent =
+      scene->renderBounds().adjusted(-padding, -padding, padding, padding);
   const qreal w = std::max<qreal>(1.0, extent.width());
   const qreal h = std::max<qreal>(1.0, extent.height());
   QImage image(qCeil(w * dpr), qCeil(h * dpr), QImage::Format_ARGB32_Premultiplied);

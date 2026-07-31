@@ -64,7 +64,9 @@ struct SequenceScene : MermaidScene {
   // The resolved viewport rect (logicalBounds + configured margins), computed
   // once at build time. renderBounds returns it so the generic image/canvas
   // paths treat sequence like any other family without a dispatch branch.
-  QRectF renderBounds(qreal /*padding*/) const override { return viewportRect; }
+  QRectF renderBounds() const override {
+    return viewportRect.isValid() ? viewportRect : sceneBounds();
+  }
 
   QRectF bounds;
   QRectF logicalBounds;

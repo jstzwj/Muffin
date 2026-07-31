@@ -100,6 +100,7 @@ struct StateDiagramImpl : Diagram {
   QStringList ids() const override {
     return {QStringLiteral("state"), QStringLiteral("stateDiagram")};
   }
+  QString cssClass() const override { return QStringLiteral("stateDiagram"); }
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
                             const QString& theme) const override {
       const state::StateDiagram diagram = state::StateDiagram::parse(pre.code);
@@ -163,6 +164,7 @@ struct StateDiagramImpl : Diagram {
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
       entry.scene = std::make_shared<const state::StateScene>(std::move(scene));
+      metadata.cssClass = cssClass();
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
   }
@@ -174,6 +176,7 @@ struct ClassDiagramImpl : Diagram {
   QStringList ids() const override {
     return {QStringLiteral("class"), QStringLiteral("classDiagram")};
   }
+  QString cssClass() const override { return QStringLiteral("classDiagram"); }
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
                             const QString& theme) const override {
       const classdiagram::ClassDiagram diagram =
@@ -252,6 +255,7 @@ struct ClassDiagramImpl : Diagram {
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
       entry.scene = std::make_shared<const classdiagram::ClassScene>(std::move(scene));
+      metadata.cssClass = cssClass();
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
   }
@@ -261,6 +265,7 @@ struct ClassDiagramImpl : Diagram {
 // renderSource() sequence branch, verbatim.
 struct SequenceDiagramImpl : Diagram {
   QStringList ids() const override { return {QStringLiteral("sequence")}; }
+  QString cssClass() const override { return QStringLiteral("sequenceDiagram"); }
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
                             const QString& theme) const override {
       (void)theme;  // sequence theme is resolved from config, not the requested theme
@@ -432,6 +437,7 @@ struct SequenceDiagramImpl : Diagram {
       entry.status = MermaidRenderStatus::Ready;
       entry.naturalSize = QSize(qCeil(viewport.width()), qCeil(viewport.height()));
       entry.scene = std::make_shared<const sequence::SequenceScene>(std::move(scene));
+      metadata.cssClass = cssClass();
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;
   }
@@ -443,6 +449,7 @@ struct FlowchartDiagramImpl : Diagram {
   QStringList ids() const override {
     return {QStringLiteral("flowchart"), QStringLiteral("flowchart-v2")};
   }
+  QString cssClass() const override { return QStringLiteral("flowchart"); }
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
                             const QString& theme) const override {
     const flowchart::Flowchart chart = flowchart::Flowchart::parse(pre.code);
@@ -499,6 +506,7 @@ struct FlowchartDiagramImpl : Diagram {
     entry.naturalSize = QSize(qCeil(scene.bounds.width()),
                               qCeil(scene.bounds.height()));
     entry.scene = std::make_shared<const flowscene::FlowScene>(std::move(scene));
+    metadata.cssClass = cssClass();
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;
   }
@@ -508,6 +516,7 @@ struct FlowchartDiagramImpl : Diagram {
 // er branch, verbatim.
 struct ErDiagramImpl : Diagram {
   QStringList ids() const override { return {QStringLiteral("er")}; }
+  QString cssClass() const override { return QStringLiteral("erDiagram"); }
 
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
                             const QString& theme) const override {
@@ -563,6 +572,7 @@ struct ErDiagramImpl : Diagram {
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
     entry.scene = std::make_shared<const er::ErScene>(std::move(scene));
+    metadata.cssClass = cssClass();
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;
   }

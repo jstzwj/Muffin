@@ -26,6 +26,11 @@ struct Diagram {
   // {"state", "stateDiagram"}.
   virtual QStringList ids() const = 0;
 
+  // SVG root class suffix for this family (e.g. "flowchart", "erDiagram").
+  // Declared per Diagram so a new family needs no shared-core edit and there is
+  // no default fallthrough to "stateDiagram".
+  virtual QString cssClass() const = 0;
+
   // Run the full pipeline (parse -> measure -> layout -> scene) and return a
   // Ready entry, or throw a diagram-specific parse error (caught centrally by
   // the orchestrator).
