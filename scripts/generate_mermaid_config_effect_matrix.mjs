@@ -248,9 +248,8 @@ const familyPolicies = {
     titleTopMargin: parity("paint", "viewport", "export"),
     // Entity-internal box padding (mermaid erBox PADDING); drives entity size.
     diagramPadding: parity(...layout),
-    layoutDirection: unsupported(
-      layout,
-      "Muffin ER always projects TB; the erDiagram grammar exposes no direction keyword.",
+    layoutDirection: inert(
+      "Dead config in mermaid 11.16.0 — er.layoutDirection is never read; ER direction is always the parser `direction` keyword (default TB), like er.fill/er.fontSize.",
     ),
     // Empty-entity width floor (mermaid clamps only the attribute-less path).
     minEntityWidth: parity(...layout),

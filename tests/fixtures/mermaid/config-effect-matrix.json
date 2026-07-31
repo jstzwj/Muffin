@@ -26,10 +26,10 @@
   "summary": {
     "parity": 47,
     "partial": 8,
-    "unsupported": 19,
+    "unsupported": 18,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 13,
+    "upstream-inert": 14,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -2255,18 +2255,14 @@
       "path": "er.layoutDirection",
       "field": "layoutDirection",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "layout",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Muffin ER always projects TB; the erDiagram grammar exposes no direction keyword.",
+      "note": "Dead config in mermaid 11.16.0 — er.layoutDirection is never read; ER direction is always the parser `direction` keyword (default TB), like er.fill/er.fontSize.",
       "default": "TB"
     },
     {
@@ -2430,5 +2426,5 @@
       "default": 12
     }
   ],
-  "fixtureSha256": "c46cdb3b8bd8c40a8de00d2b7f8d01dcb74af6553925b75faa348dd859b268c4"
+  "fixtureSha256": "7e2a5b42b26da98e2d24cddfb0c70679c4b07a2812f86154ccabac5db03908eb"
 }
