@@ -26,10 +26,10 @@
   "summary": {
     "parity": 47,
     "partial": 8,
-    "unsupported": 18,
+    "unsupported": 12,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 14,
+    "upstream-inert": 20,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -1093,19 +1093,14 @@
       "path": "sequence.actorFontSize",
       "field": "actorFontSize",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "text",
-        "layout",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Dead config in mermaid 11.16.0 — setConf() unconditionally mirrors the truthy global fontSize into actorFontSize/noteFontSize/messageFontSize, so the per-label value is never the user's.",
       "default": 14
     },
     {
@@ -1114,19 +1109,14 @@
       "path": "sequence.actorFontFamily",
       "field": "actorFontFamily",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "text",
-        "layout",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Dead config in mermaid 11.16.0 — setConf() unconditionally mirrors the truthy global fontFamily into all three per-label families, so the per-label value is never the user's.",
       "default": "\"Open Sans\", sans-serif"
     },
     {
@@ -1147,7 +1137,7 @@
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Conditionally consumed in mermaid 11.16.0: effective only when global fontWeight is unset, because setConf() mirrors a truthy global fontWeight into all three per-label weights. Native ignores it.",
       "default": 400
     },
     {
@@ -1156,19 +1146,14 @@
       "path": "sequence.noteFontSize",
       "field": "noteFontSize",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "text",
-        "layout",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Dead config — setConf() mirrors the global fontSize; see actorFontSize.",
       "default": 14
     },
     {
@@ -1177,19 +1162,14 @@
       "path": "sequence.noteFontFamily",
       "field": "noteFontFamily",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "text",
-        "layout",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Dead config — setConf() mirrors the global fontFamily; see actorFontFamily.",
       "default": "\"trebuchet ms\", verdana, arial, sans-serif"
     },
     {
@@ -1210,7 +1190,7 @@
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
       "default": 400
     },
     {
@@ -1238,19 +1218,14 @@
       "path": "sequence.messageFontSize",
       "field": "messageFontSize",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "text",
-        "layout",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Dead config — setConf() mirrors the global fontSize; see actorFontSize.",
       "default": 16
     },
     {
@@ -1259,19 +1234,14 @@
       "path": "sequence.messageFontFamily",
       "field": "messageFontFamily",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "text",
-        "layout",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Dead config — setConf() mirrors the global fontFamily; see actorFontFamily.",
       "default": "\"trebuchet ms\", verdana, arial, sans-serif"
     },
     {
@@ -1292,7 +1262,7 @@
       "native": [
         "parsed"
       ],
-      "note": "Per-label sequence fonts are not split yet.",
+      "note": "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
       "default": 400
     },
     {
@@ -2426,5 +2396,5 @@
       "default": 12
     }
   ],
-  "fixtureSha256": "7e2a5b42b26da98e2d24cddfb0c70679c4b07a2812f86154ccabac5db03908eb"
+  "fixtureSha256": "9cf238d089e206ab591a01cb8a88566446d384a7d54fc4cab96441297c612397"
 }

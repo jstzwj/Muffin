@@ -136,19 +136,51 @@ const familyPolicies = {
     bottomMarginAdj: parity("viewport", "export"),
     rightAngles: parity("layout", "paint", "export"),
     showSequenceNumbers: parity("text", ...layout),
-    actorFontSize: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
-    actorFontFamily: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
-    actorFontWeight: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
-    noteFontSize: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
-    noteFontFamily: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
-    noteFontWeight: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    // Mermaid 11.16.0 sequence per-label fonts are governed by setConf()
+    // (sequenceDiagram-DXCB7GA4.mjs), called as setConf(getConfig2()) in the
+    // sequence DB init. It deep-merges the resolved config, then mirrors the
+    // GLOBAL fontFamily/fontSize/fontWeight into all three per-label fields
+    // whenever the global value is truthy:
+    //     if (cnf.fontFamily) conf.actorFontFamily=conf.noteFontFamily=conf.messageFontFamily=cnf.fontFamily;
+    //     (likewise fontSize, fontWeight)
+    // The global fontFamily ("trebuchet ms, ...") and fontSize (16) defaults are
+    // non-empty, so those mirrors fire unconditionally -> the six per-label
+    // Family/Size keys are DEAD config: the renderer reads conf.actorFontSize
+    // etc., but the value is always the global, never the user's per-label
+    // setting. Verified via an 11-key headless-Chrome probe (mermaid 11.16.0):
+    // actorFontSize:8 leaves the actor at 16px; actorFontFamily:"Courier New"
+    // leaves trebuchet; same for note/message Size/Family; and setting the
+    // global always propagates to all three. The global fontWeight default is
+    // undefined, so its mirror is skipped and the three per-label FontWeight
+    // keys are CONDITIONALLY consumed (effective only when global fontWeight is
+    // unset; a truthy global fontWeight overrides all three — verified).
+    // messageAlign/noteAlign are direct text-anchor consumption.
+    actorFontSize: inert(
+      "Dead config in mermaid 11.16.0 — setConf() unconditionally mirrors the truthy global fontSize into actorFontSize/noteFontSize/messageFontSize, so the per-label value is never the user's.",
+    ),
+    actorFontFamily: inert(
+      "Dead config in mermaid 11.16.0 — setConf() unconditionally mirrors the truthy global fontFamily into all three per-label families, so the per-label value is never the user's.",
+    ),
+    actorFontWeight: unsupported(
+      textLayout,
+      "Conditionally consumed in mermaid 11.16.0: effective only when global fontWeight is unset, because setConf() mirrors a truthy global fontWeight into all three per-label weights. Native ignores it.",
+    ),
+    noteFontSize: inert("Dead config — setConf() mirrors the global fontSize; see actorFontSize."),
+    noteFontFamily: inert("Dead config — setConf() mirrors the global fontFamily; see actorFontFamily."),
+    noteFontWeight: unsupported(
+      textLayout,
+      "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
+    ),
     noteAlign: unsupported(
       ["text", "paint", "export"],
       "Native note labels are currently centered.",
     ),
-    messageFontSize: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
-    messageFontFamily: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
-    messageFontWeight: unsupported(textLayout, "Per-label sequence fonts are not split yet."),
+    messageFontSize: inert("Dead config — setConf() mirrors the global fontSize; see actorFontSize."),
+    messageFontFamily: inert("Dead config — setConf() mirrors the global fontFamily; see actorFontFamily."),
+    messageFontWeight: unsupported(
+      textLayout,
+      "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
+    ),
     wrap: parity(...textLayout),
     wrapPadding: parity(...textLayout),
     labelBoxWidth: parity(...layout),
