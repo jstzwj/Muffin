@@ -127,10 +127,10 @@ const familyPolicies = {
     messageMargin: inert(
       "Mermaid 11.16.0 resolves this value but does not consume it in sequence layout.",
     ),
-    messageAlign: unsupported(
-      ["text", "paint", "export"],
-      "Native message labels are currently centered.",
-    ),
+    messageAlign: {
+      ...parity("text", "paint", "export"),
+      note: "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the message labelRect.",
+    },
     mirrorActors: parity(...layout),
     forceMenus: parity("paint", "interaction", "export"),
     bottomMarginAdj: parity("viewport", "export"),
@@ -171,10 +171,10 @@ const familyPolicies = {
       textLayout,
       "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
     ),
-    noteAlign: unsupported(
-      ["text", "paint", "export"],
-      "Native note labels are currently centered.",
-    ),
+    noteAlign: {
+      ...parity("text", "paint", "export"),
+      note: "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the note rect.",
+    },
     messageFontSize: inert("Dead config — setConf() mirrors the global fontSize; see actorFontSize."),
     messageFontFamily: inert("Dead config — setConf() mirrors the global fontFamily; see actorFontFamily."),
     messageFontWeight: unsupported(

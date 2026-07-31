@@ -161,9 +161,10 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
 void paintSequenceLabel(QPainter& painter, const SequenceLabelDocument& label,
                         const QRectF& rect, const QString& fontFamily,
                         qreal fontPixelSize, qreal lineHeight,
-                        const QColor& color, bool centerVertically) {
+                        const QColor& color, bool centerVertically,
+                        flowchart::FlowLabelAlign align, qreal alignMargin) {
   flowchart::paintFlowLabel(painter, label.richText, rect, fontFamily, fontPixelSize,
-                            lineHeight, color, centerVertically);
+                            lineHeight, color, centerVertically, align, alignMargin);
 }
 
 }  // namespace muffin::mermaid::sequence

@@ -1235,7 +1235,8 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
 void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     const QRectF& rect, const QString& fontFamily,
                     qreal fontPixelSize, qreal lineHeight,
-                    const QColor& color, bool centerVertically) {
+                    const QColor& color, bool centerVertically,
+                    FlowLabelAlign align, qreal alignMargin) {
   QFont font(fontFamily);
   MermaidFontRegistry::configureFont(font, fontFamily);
   font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
@@ -1261,7 +1262,16 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
       if (math.start >= offset && math.start < offset + line.size()) mathSpans.push_back(math);
 
     const qreal lineWidth = measuredLine.width;
+    // Align mirrors mermaid drawText() anchor semantics within the label rect,
+    // with textMargin inset on the aligned edge: start -> text left edge at
+    // rect.left + margin, middle -> centered, end -> text right edge at
+    // rect.right - margin. Align only moves the line origin, so wrapping and
+    // per-line metrics are unaffected.
     qreal x = rect.left() + (rect.width() - lineWidth) / 2.0;
+    if (align == FlowLabelAlign::Left)
+      x = rect.left() + alignMargin;
+    else if (align == FlowLabelAlign::Right)
+      x = rect.right() - alignMargin - lineWidth;
     const qreal lineOrigin = x;
     const bool mathFlexLine = std::any_of(
         measuredLine.runs.cbegin(), measuredLine.runs.cend(),

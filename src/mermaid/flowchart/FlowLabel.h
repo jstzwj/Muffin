@@ -16,6 +16,12 @@ namespace muffin::mermaid::flowchart {
 
 struct FlowLabelPreparedMath;
 
+// Horizontal placement of a laid-out label inside its target rect. Flowchart
+// labels are always Center; sequence message/note labels honor the upstream
+// messageAlign/noteAlign (start/middle/end -> Left/Center/Right). Align is
+// paint-only: it shifts the line origin, so it never affects wrap or metrics.
+enum class FlowLabelAlign { Left, Center, Right };
+
 struct FlowLabelMathSpan {
   qsizetype start = 0;
   qsizetype length = 1;
@@ -204,6 +210,8 @@ qreal flowSvgFormattedTextBlockHeight(const QString& fontFamily,
 void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     const QRectF& rect, const QString& fontFamily,
                     qreal fontPixelSize, qreal lineHeight,
-                    const QColor& color, bool centerVertically);
+                    const QColor& color, bool centerVertically,
+                    FlowLabelAlign align = FlowLabelAlign::Center,
+                    qreal alignMargin = 0.0);
 
 }  // namespace muffin::mermaid::flowchart

@@ -154,6 +154,13 @@ struct SequenceLayoutMessage {
   qreal stopX = 0.0;
   qreal lineY = 0.0;
   QRectF labelRect;
+  // Horizontal alignment span for messageAlign (start/middle/end). Mermaid
+  // places the message text across the full message span min(startx,stopx)..
+  // max(startx,stopx); labelRect itself is only the text-width box (centered on
+  // that span), so left/right align need this wider rect to have room. Its
+  // vertical extent matches labelRect; center align is byte-identical to before
+  // because both share the span midpoint (startX+stopX)/2.
+  QRectF alignRect;
   QString path;
   QString markerStart;
   QString markerEnd;

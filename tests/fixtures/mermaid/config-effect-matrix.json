@@ -24,9 +24,9 @@
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 47,
+    "parity": 49,
     "partial": 8,
-    "unsupported": 12,
+    "unsupported": 10,
     "security-fixed": 1,
     "deferred": 5,
     "upstream-inert": 20,
@@ -965,7 +965,7 @@
       "path": "sequence.messageAlign",
       "field": "messageAlign",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -973,9 +973,12 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "text",
+        "paint",
+        "export"
       ],
-      "note": "Native message labels are currently centered.",
+      "note": "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the message labelRect.",
       "default": "center"
     },
     {
@@ -1199,7 +1202,7 @@
       "path": "sequence.noteAlign",
       "field": "noteAlign",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -1207,9 +1210,12 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "text",
+        "paint",
+        "export"
       ],
-      "note": "Native note labels are currently centered.",
+      "note": "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the note rect.",
       "default": "center"
     },
     {
@@ -2396,5 +2402,5 @@
       "default": 12
     }
   ],
-  "fixtureSha256": "9cf238d089e206ab591a01cb8a88566446d384a7d54fc4cab96441297c612397"
+  "fixtureSha256": "bb0d693c55f90d6a4abdd60eee3a2c8a606fffa7d0e8bf78fedf4d99f258f343"
 }

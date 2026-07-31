@@ -80,6 +80,22 @@ sequence::SequenceSceneStyle sequenceStyleFromConfig(const QJsonObject& config) 
   if (theme.contains(QStringLiteral("fontSize")))
     style.fontSize = pixelValue(
         theme.value(QStringLiteral("fontSize")), style.fontSize);
+  // sequence.messageAlign / sequence.noteAlign (start/middle/end). Defaults are
+  // Center, so an absent or unrecognized value leaves rendering unchanged.
+  const QJsonObject sequenceSection =
+      config.value(QStringLiteral("sequence")).toObject();
+  const auto readAlign = [&sequenceSection](const QString& key) {
+    const QString value = sequenceSection.value(key).toString();
+    if (value == QLatin1String("left")) return flowchart::FlowLabelAlign::Left;
+    if (value == QLatin1String("right")) return flowchart::FlowLabelAlign::Right;
+    return flowchart::FlowLabelAlign::Center;
+  };
+  style.messageAlign = readAlign(QStringLiteral("messageAlign"));
+  style.noteAlign = readAlign(QStringLiteral("noteAlign"));
+  // Margins that drawText insets left/right alignment by (noteMargin for notes,
+  // wrapPadding for messages). Absent keys keep the 10 px defaults.
+  style.noteMargin = configNumber(sequenceSection, QStringLiteral("noteMargin"), 10.0);
+  style.wrapPadding = configNumber(sequenceSection, QStringLiteral("wrapPadding"), 10.0);
   return style;
 }
 

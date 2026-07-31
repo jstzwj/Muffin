@@ -75,10 +75,12 @@ QRectF messageBounds(const SequenceLayoutMessage& message,
 }
 
 void centeredText(QPainter& painter, const SequenceLabelDocument& label, const QRectF& rect,
-                  const SequenceSceneStyle& style, const QString& textColor) {
+                  const SequenceSceneStyle& style, const QString& textColor,
+                  flowchart::FlowLabelAlign align = flowchart::FlowLabelAlign::Center,
+                  qreal alignMargin = 0.0) {
   paintSequenceLabel(painter, label, rect, style.fontFamily,
                      style.fontSize, style.fontSize * 1.375,
-                     color(textColor), true);
+                     color(textColor), true, align, alignMargin);
 }
 
 void participantShape(QPainter& painter, const SequenceLayoutParticipant& actor,
@@ -234,7 +236,7 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     else
       painter.drawRect(note.rect);
     centeredText(painter, scene.noteLabels[index], note.rect, scene.style,
-                 scene.style.noteTextColor);
+                 scene.style.noteTextColor, scene.style.noteAlign, scene.style.noteMargin);
   }
   for (qsizetype index = 0; index < scene.messages.size(); ++index) {
     const auto& message = scene.messages[index];
@@ -271,8 +273,9 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
            color(scene.style.signalColor));
     marker(painter, message.markerStart, QPointF(message.startX, message.lineY),
            message.markerStartDirection, color(scene.style.signalColor));
-    centeredText(painter, scene.messageLabels[index], message.labelRect, scene.style,
-                 scene.style.signalTextColor);
+    centeredText(painter, scene.messageLabels[index], message.alignRect, scene.style,
+                 scene.style.signalTextColor, scene.style.messageAlign,
+                 scene.style.wrapPadding);
     if (number) {
       painter.setPen(QPen(color(scene.style.signalColor), 1.0));
       painter.setBrush(color(scene.style.actorFill));

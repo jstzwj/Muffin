@@ -36,6 +36,8 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
 void paintSequenceLabel(QPainter& painter, const SequenceLabelDocument& label,
                         const QRectF& rect, const QString& fontFamily,
                         qreal fontPixelSize, qreal lineHeight,
-                        const QColor& color, bool centerVertically = true);
+                        const QColor& color, bool centerVertically = true,
+                        flowchart::FlowLabelAlign align = flowchart::FlowLabelAlign::Center,
+                        qreal alignMargin = 0.0);
 
 }  // namespace muffin::mermaid::sequence

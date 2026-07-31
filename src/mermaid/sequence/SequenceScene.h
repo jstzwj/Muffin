@@ -29,6 +29,16 @@ struct SequenceSceneStyle {
   QString boxStroke = QStringLiteral("rgba(0,0,0,0.5)");
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontSize = 16.0;
+  // Upstream sequence.messageAlign / sequence.noteAlign (start/middle/end).
+  // Defaults are Center, matching mermaid, so default rendering is unchanged.
+  // Only notes and messages read these; participants, boxes and fragments stay
+  // centered (mermaid drawLoop hard-codes anchor "middle").
+  flowchart::FlowLabelAlign messageAlign = flowchart::FlowLabelAlign::Center;
+  flowchart::FlowLabelAlign noteAlign = flowchart::FlowLabelAlign::Center;
+  // Mermaid drawText insets left/right alignment by textMargin: noteMargin for
+  // notes, wrapPadding for messages. Defaults match the sequence config (10).
+  qreal noteMargin = 10.0;
+  qreal wrapPadding = 10.0;
 };
 
 struct SequencePreparedLabels {

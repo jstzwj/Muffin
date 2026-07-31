@@ -754,6 +754,8 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     placed.lineY = lineY;
     placed.labelRect = QRectF((labelStartX + labelStopX - measured.width()) / 2.0,
                               startY + 10.0, measured.width(), measured.height());
+    placed.alignRect = QRectF(qMin(labelStartX, labelStopX), startY + 10.0,
+                              qAbs(labelStopX - labelStartX), measured.height());
     if (qFuzzyCompare(labelStartX + 1.0, labelStopX + 1.0)) {
       const qreal pathStartX = labelStartX +
           (sequenceNumbersVisible && (reverse || bidirectional) ? 10.0 : 0.0);
