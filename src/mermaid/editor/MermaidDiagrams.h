@@ -7,8 +7,10 @@
 namespace muffin::mermaid::editor {
 
 // Each family's render adapter lives in its own TU (<Family>DiagramAdapter.cpp)
-// and is exposed as a lazy singleton; findMermaidDiagram() composes the registry
-// from these so no TU needs to know all five families.
+// and is exposed as a lazy singleton. findMermaidDiagram() is the single TU that
+// composes them; every consumer (renderSource) goes through findMermaidDiagram(type)
+// and stays family-agnostic — so adding a family touches one adapter TU + this
+// registry + CMake + the accessor declaration, but no consumer code.
 const Diagram& flowchartDiagramAdapter();
 const Diagram& sequenceDiagramAdapter();
 const Diagram& classDiagramAdapter();
