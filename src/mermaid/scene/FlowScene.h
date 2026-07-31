@@ -110,6 +110,7 @@ struct FlowScene : MermaidScene {
       if (edge.animated) return true;
     return false;
   }
+  QVector<InteractionRegion> interactionRegions() const override;
 
   QRectF bounds;          // diagram bounds (scene coords)
   QString background;     // theme.background

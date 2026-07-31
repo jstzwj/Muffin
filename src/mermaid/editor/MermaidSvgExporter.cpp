@@ -104,26 +104,15 @@ void paintEntry(const MermaidRenderEntry& entry, const SvgCanvas& canvas,
 QVector<SvgInteraction> interactions(const MermaidRenderEntry& entry,
                                      const SvgCanvas& canvas) {
   QVector<SvgInteraction> result;
-  if (const auto* flow = dynamic_cast<const flowscene::FlowScene*>(entry.scene.get())) {
-    for (const flowscene::FlowSceneNode& node : flow->nodes) {
-      const QString href = isSafeUrl(node.link, false) ? node.link : QString();
-      if (href.isEmpty() && node.tooltip.isEmpty()) continue;
-      result.append({QRectF(node.cx - node.width / 2.0,
-                            node.cy - node.height / 2.0,
-                            node.width, node.height)
-                         .translated(canvas.sceneOffset),
-                     href, node.tooltip});
-    }
-  } else if (const auto* sequence =
-                 dynamic_cast<const sequence::SequenceScene*>(entry.scene.get());
-             sequence && sequence->forceMenus) {
-    for (const sequence::SequenceSceneMenu& menu : sequence->menus) {
-      for (const sequence::SequenceSceneMenuItem& item : menu.items) {
-        if (!isSafeUrl(item.link, false)) continue;
-        result.append({item.hitRect.translated(canvas.sceneOffset), item.link,
-                       item.label});
-      }
-    }
+  if (!entry.scene) return result;
+  const bool force = entry.scene->menusAlwaysOpen();
+  for (const auto& r : entry.scene->interactionRegions()) {
+    if (!r.togglesMenu.isEmpty()) continue;                       // actor toggles are editor-only
+    if (!r.requiresOpenMenu.isEmpty() && !force) continue;         // seq item only under forceMenus
+    const QString href = isSafeUrl(r.href, false) ? r.href : QString();
+    if (!r.requiresOpenMenu.isEmpty() && href.isEmpty()) continue; // seq item w/o safe link -> no region
+    if (href.isEmpty() && r.toolTip.isEmpty()) continue;           // flow node w/o link+tooltip -> skip
+    result.append({r.bounds.translated(canvas.sceneOffset), href, r.toolTip});
   }
   return result;
 }

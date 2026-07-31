@@ -497,4 +497,17 @@ void FlowScene::paint(QPainter& painter, const MermaidPaintOptions& options) con
                  PaintMode::Color, options);
 }
 
+QVector<InteractionRegion> FlowScene::interactionRegions() const {
+  QVector<InteractionRegion> regions;
+  for (const FlowSceneNode& node : nodes) {
+    InteractionRegion region;
+    region.bounds = QRectF(node.cx - node.width / 2.0, node.cy - node.height / 2.0,
+                           node.width, node.height);
+    region.href = node.link;
+    region.toolTip = node.tooltip;
+    regions.append(region);
+  }
+  return regions;
+}
+
 }  // namespace muffin::mermaid::flowscene

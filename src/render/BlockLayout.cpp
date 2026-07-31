@@ -1591,64 +1591,26 @@ BlockLayout::MermaidInteractionHit BlockLayout::mermaidInteractionAt(
     QPointF documentPos, const RenderTheme& theme,
     const QSet<QString>* openSequenceMenus) const {
   MermaidInteractionHit result;
-  if (const auto* sequence =
-          dynamic_cast<const mermaid::sequence::SequenceScene*>(mermaidScene_.get())) {
-    QPointF scenePos;
-    if (!mermaidScenePointAt(documentPos, theme, sequence->bounds, scenePos)) {
-      return result;
-    }
-    for (auto menuIt = sequence->menus.crbegin();
-         menuIt != sequence->menus.crend(); ++menuIt) {
-      const bool visible = sequence->forceMenus ||
-          (openSequenceMenus &&
-           openSequenceMenus->contains(menuIt->actorId));
-      if (!visible) continue;
-      for (auto itemIt = menuIt->items.crbegin();
-           itemIt != menuIt->items.crend(); ++itemIt) {
-        if (!itemIt->hitRect.contains(scenePos)) continue;
-        if (isSafeUrl(itemIt->link, false)) result.linkHref = itemIt->link;
-        return result;
-      }
-    }
-    if (!sequence->forceMenus) {
-      for (auto menuIt = sequence->menus.crbegin();
-           menuIt != sequence->menus.crend(); ++menuIt) {
-        const auto actorIt = std::find_if(
-            sequence->participants.cbegin(),
-            sequence->participants.cend(),
-            [&](const auto& actor) { return actor.id == menuIt->actorId; });
-        if (actorIt == sequence->participants.cend()) continue;
-        const QRectF actorHit = actorIt->topPaintedBounds
-            .united(actorIt->topLabelRect)
-            .united(QRectF(actorIt->logicalRect.x(), actorIt->topY,
-                           actorIt->logicalRect.width(),
-                           actorIt->logicalRect.height()));
-        if (actorHit.contains(scenePos)) {
-          result.menuActorId = menuIt->actorId;
-          return result;
-        }
-      }
-    }
+  if (!mermaidScene_) return result;
+  QPointF scenePos;
+  if (!mermaidScenePointAt(documentPos, theme, mermaidScene_->sceneBounds(), scenePos)) {
     return result;
   }
-  if (const auto* flow =
-          dynamic_cast<const mermaid::flowscene::FlowScene*>(mermaidScene_.get())) {
-    QPointF scenePos;
-    if (!mermaidScenePointAt(documentPos, theme, flow->bounds, scenePos)) {
-      return result;
-    }
-    for (auto it = flow->nodes.crbegin();
-         it != flow->nodes.crend(); ++it) {
-      const QRectF nodeRect(it->cx - it->width / 2.0,
-                            it->cy - it->height / 2.0,
-                            it->width, it->height);
-      if (!nodeRect.contains(scenePos)) continue;
-      result.toolTip = it->tooltip;
-      if (!it->link.isEmpty() && isSafeUrl(it->link, false)) {
-        result.linkHref = it->link;
-      }
-      return result;
-    }
+  // Iterate regions in reverse (topmost wins). Sequence scenes append actors
+  // before items, so items win over actor-toggles at the same point.
+  const bool force = mermaidScene_->menusAlwaysOpen();
+  const auto regions = mermaidScene_->interactionRegions();
+  for (auto it = regions.crbegin(); it != regions.crend(); ++it) {
+    const auto& r = *it;
+    if (!r.requiresOpenMenu.isEmpty() && !force &&
+        !(openSequenceMenus && openSequenceMenus->contains(r.requiresOpenMenu)))
+      continue;  // sequence menu item whose menu is closed
+    if (!r.togglesMenu.isEmpty() && force) continue;  // actor toggle inactive under forceMenus
+    if (!r.bounds.contains(scenePos)) continue;
+    result.toolTip = r.toolTip;  // empty for sequence items/actors (matches prior behavior)
+    if (!r.href.isEmpty() && isSafeUrl(r.href, false)) result.linkHref = r.href;
+    result.menuActorId = r.togglesMenu;
+    return result;
   }
   return result;
 }

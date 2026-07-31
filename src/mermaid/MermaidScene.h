@@ -15,10 +15,27 @@
 
 #include <QJsonObject>
 #include <QRectF>
+#include <QString>
+#include <QVector>
 
 class QPainter;
 
 namespace muffin::mermaid {
+
+// A hit/interaction region in scene coordinates. Consumers (SVG export, editor
+// hit-test) iterate these without knowing the diagram family. Each region is
+// exactly one role:
+//   - flow node: href/toolTip set (requiresOpenMenu/togglesMenu empty)
+//   - sequence menu item: requiresOpenMenu = the actor whose menu must be open
+//   - sequence actor toggle: togglesMenu = the actor id to toggle on click
+// href is RAW — consumers apply isSafeUrl themselves so the policy is single-sourced.
+struct InteractionRegion {
+  QRectF bounds;
+  QString href;
+  QString toolTip;
+  QString requiresOpenMenu;
+  QString togglesMenu;
+};
 
 struct MermaidScene {
   virtual ~MermaidScene() = default;
@@ -46,6 +63,15 @@ struct MermaidScene {
   // True if the scene has time-animated elements (e.g. animated flowchart edges).
   // Default false; FlowScene overrides. Drives the editor's repaint timer.
   virtual bool hasAnimation() const { return false; }
+
+  // Hit/interaction regions in scene coordinates (empty by default; FlowScene
+  // and SequenceScene override). Class/state/er inherit the empty default at no
+  // cost. Consumers apply their own visibility/safe-URL rules.
+  virtual QVector<InteractionRegion> interactionRegions() const { return {}; }
+
+  // Sequence forceMenus: when true, menus are rendered open and their item links
+  // are always active (no actor-toggle). Default false.
+  virtual bool menusAlwaysOpen() const { return false; }
 };
 
 }  // namespace muffin::mermaid

@@ -67,6 +67,8 @@ struct SequenceScene : MermaidScene {
   QRectF renderBounds() const override {
     return viewportRect.isValid() ? viewportRect : sceneBounds();
   }
+  bool menusAlwaysOpen() const override { return forceMenus; }
+  QVector<InteractionRegion> interactionRegions() const override;
 
   QRectF bounds;
   QRectF logicalBounds;

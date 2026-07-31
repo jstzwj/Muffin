@@ -150,6 +150,8 @@ int main(int argc, char** argv) {
               accessible.svg.contains("rel=\"noopener noreferrer\"") &&
               !accessible.svg.contains("javascript:"),
           QStringLiteral("SVG accessibility or safe-link contract drifted"));
+  require(accessible.svg.contains("<title>Open docs</title>"),
+          QStringLiteral("SVG link tooltip must be serialized as a <title>"));
 
   const QString deterministicSource = QStringLiteral(
       "%%{init: {\"deterministicIds\": true, "
