@@ -954,17 +954,32 @@ int main(int argc, char** argv) {
             QStringLiteral("sequence diagramMarginX must widen the PNG via the generic path"));
   }
 
-  // --- titled PNG at high DPR renders content at FULL device resolution. The
-  //     old per-family state/er rasterizer set image devicePixelRatio, which
-  //     made Qt downscale the content during title compositing; the generic
-  //     path fixes it. Pin the fix per family: a titled diagram must scale ~2x
-  //     from DPR 1 to DPR 2 — content downscaled by DPR would scale less. ---
+  // --- titled PNG at high DPR: the CONTENT below the title strip must render
+  //     at full device resolution. The old per-family state/er rasterizer set
+  //     image devicePixelRatio, so Qt drew the content into the (already-2x)
+  //     canvas at half resolution — the final PNG dimensions are unchanged
+  //     either way, so only the content's alpha bounding box reveals it. Pin
+  //     the fix per family: the DPR-2 content bbox must be ~2x the DPR-1 bbox. ---
   {
     const auto decodePng = [](const QString& dataUrl) {
       const qsizetype comma = dataUrl.indexOf(QLatin1Char(','));
       QImage img;
       img.loadFromData(QByteArray::fromBase64(dataUrl.mid(comma + 1).toLatin1()), "PNG");
       return img;
+    };
+    // Alpha bounding box of non-transparent content at/after yStart (skips the
+    // title strip). Uses pixelColor() — no scanLine/reinterpret_cast/copy.
+    const auto contentBBox = [](const QImage& img, int yStart) -> QSize {
+      int minX = img.width(), minY = img.height(), maxX = -1, maxY = -1;
+      for (int y = yStart; y < img.height(); ++y)
+        for (int x = 0; x < img.width(); ++x)
+          if (img.pixelColor(x, y).alpha() > 32) {
+            if (x < minX) minX = x;
+            if (y < minY) minY = y;
+            if (x > maxX) maxX = x;
+            if (y > maxY) maxY = y;
+          }
+      return maxX < 0 ? QSize(0, 0) : QSize(maxX - minX + 1, maxY - minY + 1);
     };
     struct FamilyCase { QString name; QString body; };
     const FamilyCase families[] = {
@@ -976,15 +991,34 @@ int main(int argc, char** argv) {
     };
     for (const FamilyCase& f : families) {
       const QString titled = QStringLiteral("---\ntitle: T\n---\n") + f.body;
-      const QImage t1 = decodePng(MermaidRenderCache::renderMermaidSourceToPngDataUrl(titled, 1.0));
-      const QImage t2 = decodePng(MermaidRenderCache::renderMermaidSourceToPngDataUrl(titled, 2.0));
+      const MermaidPngRenderResult r1 = MermaidRenderCache::renderMermaidSourceToPng(titled, 1.0);
+      const MermaidPngRenderResult r2 = MermaidRenderCache::renderMermaidSourceToPng(titled, 2.0);
+      const QImage t1 = decodePng(r1.dataUrl);
+      const QImage t2 = decodePng(r2.dataUrl);
       require(!t1.isNull() && !t2.isNull(),
               f.name + QStringLiteral(" titled PNG must decode at DPR 1 and 2"));
-      require(qAbs(t2.width() - 2 * t1.width()) <= 2 &&
-                  qAbs(t2.height() - 2 * t1.height()) <= 2,
-              f.name + QStringLiteral(" titled PNG must scale ~2x DPR1->DPR2 (full-res content); got %1x%2 -> %3x%4")
-                  .arg(t1.width()).arg(t1.height()).arg(t2.width()).arg(t2.height()));
+      // metadata.titleHeight is logical px; the title strip is titleHeight*dpr
+      // device px tall, so start scanning the content below it.
+      const QSize b1 = contentBBox(t1, qCeil(r1.metadata.titleHeight));
+      const QSize b2 = contentBBox(t2, qCeil(r2.metadata.titleHeight * 2.0));
+      require(b1.width() > 10 && b1.height() > 10,
+              f.name + QStringLiteral(" titled content bbox must be non-trivial"));
+      require(qAbs(b2.width() - 2 * b1.width()) <= 3 &&
+                  qAbs(b2.height() - 2 * b1.height()) <= 3,
+              f.name + QStringLiteral(" titled DPR-2 content bbox must be ~2x DPR-1 (full-res content); got %1x%2 -> %3x%4")
+                  .arg(b1.width()).arg(b1.height()).arg(b2.width()).arg(b2.height()));
     }
+  }
+
+  // --- SequenceScene with an unset viewportRect falls back to sceneBounds(),
+  //     so a directly-constructed scene does not degrade the generic rasterizer
+  //     to a 1x1 canvas. ---
+  {
+    muffin::mermaid::sequence::SequenceScene scene;
+    scene.bounds = QRectF(10.0, 20.0, 100.0, 50.0);  // viewportRect intentionally null
+    require(scene.renderBounds() == scene.sceneBounds() &&
+                scene.renderBounds() == QRectF(10.0, 20.0, 100.0, 50.0),
+            QStringLiteral("SequenceScene with unset viewportRect must fall back to sceneBounds"));
   }
 
   qDebug().noquote() << "MermaidRenderCacheTest: sync ready/error/unsupported + async/debounced rendering + LRU + key stability";

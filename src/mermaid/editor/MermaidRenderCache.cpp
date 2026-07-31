@@ -500,7 +500,11 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   }
 
   try {
-    return diagram->render(pre, type, theme);
+    MermaidRenderEntry entry = diagram->render(pre, type, theme);
+    // cssClass is a Diagram-contract value (not renderMetadata's job), so write
+    // it at the single dispatch site — a new family cannot forget it.
+    entry.metadata.cssClass = diagram->cssClass();
+    return entry;
   } catch (const math::MathMlPaintError& error) {
     MermaidDiagnostic diagnostic;
     diagnostic.diagramType = type;
