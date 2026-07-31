@@ -352,32 +352,4 @@ void SequenceScene::paint(QPainter& painter, const MermaidPaintOptions& options)
   paintSequenceScene(*this, painter, options);
 }
 
-QVector<InteractionRegion> SequenceScene::interactionRegions() const {
-  QVector<InteractionRegion> regions;
-  // Actors first, then items: reverse iteration in the editor gives items priority.
-  for (const SequenceSceneMenu& menu : menus) {
-    for (const SequenceLayoutParticipant& p : participants) {
-      if (p.id != menu.actorId) continue;
-      InteractionRegion actor;
-      actor.bounds = p.topPaintedBounds
-          .united(p.topLabelRect)
-          .united(QRectF(p.logicalRect.x(), p.topY,
-                         p.logicalRect.width(), p.logicalRect.height()));
-      actor.togglesMenu = menu.actorId;
-      regions.append(actor);
-      break;
-    }
-  }
-  for (const SequenceSceneMenu& menu : menus) {
-    for (const SequenceSceneMenuItem& item : menu.items) {
-      InteractionRegion region;
-      region.bounds = item.hitRect;
-      region.href = item.link;
-      region.requiresOpenMenu = menu.actorId;
-      regions.append(region);
-    }
-  }
-  return regions;
-}
-
 }  // namespace muffin::mermaid::sequence

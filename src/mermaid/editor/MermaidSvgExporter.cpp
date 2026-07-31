@@ -111,8 +111,8 @@ QVector<SvgInteraction> interactions(const MermaidRenderEntry& entry,
     if (!r.requiresOpenMenu.isEmpty() && !force) continue;         // seq item only under forceMenus
     const QString href = isSafeUrl(r.href, false) ? r.href : QString();
     if (!r.requiresOpenMenu.isEmpty() && href.isEmpty()) continue; // seq item w/o safe link -> no region
-    if (href.isEmpty() && r.toolTip.isEmpty()) continue;           // flow node w/o link+tooltip -> skip
-    result.append({r.bounds.translated(canvas.sceneOffset), href, r.toolTip});
+    if (href.isEmpty() && r.accessibleLabel.isEmpty()) continue;   // flow node w/o link+label -> skip
+    result.append({r.bounds.translated(canvas.sceneOffset), href, r.accessibleLabel});
   }
   return result;
 }

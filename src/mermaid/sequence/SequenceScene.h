@@ -68,7 +68,7 @@ struct SequenceScene : MermaidScene {
     return viewportRect.isValid() ? viewportRect : sceneBounds();
   }
   bool menusAlwaysOpen() const override { return forceMenus; }
-  QVector<InteractionRegion> interactionRegions() const override;
+  const QVector<InteractionRegion>& interactionRegions() const override { return interactionRegions_; }
 
   QRectF bounds;
   QRectF logicalBounds;
@@ -88,6 +88,7 @@ struct SequenceScene : MermaidScene {
   QVector<SequenceLayoutNumber> sequenceNumbers;
   QVector<SequenceSceneMenu> menus;
   bool forceMenus = false;
+  QVector<InteractionRegion> interactionRegions_;  // precomputed at build
   SequenceSceneStyle style;
   // handDrawn (rough) look — gated in the painter, only set when the diagram
   // config requests `look: handDrawn`. Default rendering is unaffected.

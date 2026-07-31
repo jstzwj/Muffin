@@ -110,7 +110,7 @@ struct FlowScene : MermaidScene {
       if (edge.animated) return true;
     return false;
   }
-  QVector<InteractionRegion> interactionRegions() const override;
+  const QVector<InteractionRegion>& interactionRegions() const override { return interactionRegions_; }
 
   QRectF bounds;          // diagram bounds (scene coords)
   QString background;     // theme.background
@@ -128,6 +128,7 @@ struct FlowScene : MermaidScene {
   QVector<FlowSceneCluster> clusters;
   QVector<FlowSceneEdge> edges;
   QVector<FlowSceneNode> nodes;
+  QVector<InteractionRegion> interactionRegions_;  // precomputed at build
 
   QJsonObject toJsonObject() const override;
   // Compact-string wrapper retained for callers that want the serialized form

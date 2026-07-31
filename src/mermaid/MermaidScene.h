@@ -32,7 +32,8 @@ namespace muffin::mermaid {
 struct InteractionRegion {
   QRectF bounds;
   QString href;
-  QString toolTip;
+  QString toolTip;          // editor hover tooltip (flow node tooltip; empty for sequence items)
+  QString accessibleLabel;  // SVG <title>/aria-label (flow node tooltip; sequence item label)
   QString requiresOpenMenu;
   QString togglesMenu;
 };
@@ -65,9 +66,14 @@ struct MermaidScene {
   virtual bool hasAnimation() const { return false; }
 
   // Hit/interaction regions in scene coordinates (empty by default; FlowScene
-  // and SequenceScene override). Class/state/er inherit the empty default at no
-  // cost. Consumers apply their own visibility/safe-URL rules.
-  virtual QVector<InteractionRegion> interactionRegions() const { return {}; }
+  // and SequenceScene precompute and return a reference). Class/state/er inherit
+  // the empty default at no cost. Consumers apply their own visibility/safe-URL
+  // rules. Returns a reference so the editor hot path (mouse-move hit-test) does
+  // not reallocate.
+  virtual const QVector<InteractionRegion>& interactionRegions() const {
+    static const QVector<InteractionRegion> kEmpty;
+    return kEmpty;
+  }
 
   // Sequence forceMenus: when true, menus are rendered open and their item links
   // are always active (no actor-toggle). Default false.

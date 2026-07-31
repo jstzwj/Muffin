@@ -1599,7 +1599,7 @@ BlockLayout::MermaidInteractionHit BlockLayout::mermaidInteractionAt(
   // Iterate regions in reverse (topmost wins). Sequence scenes append actors
   // before items, so items win over actor-toggles at the same point.
   const bool force = mermaidScene_->menusAlwaysOpen();
-  const auto regions = mermaidScene_->interactionRegions();
+  const auto& regions = mermaidScene_->interactionRegions();
   for (auto it = regions.crbegin(); it != regions.crend(); ++it) {
     const auto& r = *it;
     if (!r.requiresOpenMenu.isEmpty() && !force &&

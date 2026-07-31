@@ -578,6 +578,16 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     else { minX = std::min(minX, left); maxX = std::max(maxX, right); minY = std::min(minY, top); maxY = std::max(maxY, bottom); }
   }
   scene.bounds = QRectF(minX, minY, maxX - minX, maxY - minY);
+  scene.interactionRegions_.reserve(scene.nodes.size());
+  for (const FlowSceneNode& node : scene.nodes) {
+    InteractionRegion region;
+    region.bounds = QRectF(node.cx - node.width / 2.0, node.cy - node.height / 2.0,
+                           node.width, node.height);
+    region.href = node.link;
+    region.toolTip = node.tooltip;
+    region.accessibleLabel = node.tooltip;
+    scene.interactionRegions_.append(region);
+  }
   return scene;
 }
 

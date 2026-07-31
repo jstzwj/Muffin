@@ -208,8 +208,9 @@ int main(int argc, char** argv) {
       "\"Blocked\":\"javascript:alert(1)\"}\nA->>B: request");
   const QByteArray menuSvg = renderSvg(sequenceMenu).svg;
   require(menuSvg.contains("href=\"https://example.com/docs\"") &&
+              menuSvg.contains("<title>Docs</title>") &&
               !menuSvg.contains("javascript:"),
-          QStringLiteral("Sequence SVG menu link sanitization drifted"));
+          QStringLiteral("Sequence SVG menu link + accessible label sanitization drifted"));
 
   require(MermaidRenderCache::renderMermaidSourceToSvg(
               QStringLiteral("flowchart TB\nA -->"))

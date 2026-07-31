@@ -81,6 +81,31 @@ SequenceScene buildSequenceScene(const SequenceLayoutResult& layout,
     }
     scene.menus.append(std::move(menu));
   }
+  // Interaction regions: actors first, then items (reverse iteration in the
+  // editor gives items priority). Precomputed once at build, returned by ref.
+  for (const SequenceSceneMenu& menu : scene.menus) {
+    for (const SequenceLayoutParticipant& p : scene.participants) {
+      if (p.id != menu.actorId) continue;
+      InteractionRegion actor;
+      actor.bounds = p.topPaintedBounds
+          .united(p.topLabelRect)
+          .united(QRectF(p.logicalRect.x(), p.topY,
+                         p.logicalRect.width(), p.logicalRect.height()));
+      actor.togglesMenu = menu.actorId;
+      scene.interactionRegions_.append(actor);
+      break;
+    }
+  }
+  for (const SequenceSceneMenu& menu : scene.menus) {
+    for (const SequenceSceneMenuItem& item : menu.items) {
+      InteractionRegion region;
+      region.bounds = item.hitRect;
+      region.href = item.link;
+      region.accessibleLabel = item.label;
+      region.requiresOpenMenu = menu.actorId;
+      scene.interactionRegions_.append(region);
+    }
+  }
   return scene;
 }
 
