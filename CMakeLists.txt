@@ -472,6 +472,11 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/MermaidRenderSupport.h
   src/mermaid/editor/MermaidDiagrams.cpp
   src/mermaid/editor/MermaidDiagrams.h
+  src/mermaid/editor/FlowchartDiagramAdapter.cpp
+  src/mermaid/editor/SequenceDiagramAdapter.cpp
+  src/mermaid/editor/ClassDiagramAdapter.cpp
+  src/mermaid/editor/StateDiagramAdapter.cpp
+  src/mermaid/editor/ErDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
