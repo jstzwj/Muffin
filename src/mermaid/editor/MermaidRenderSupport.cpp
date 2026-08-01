@@ -87,16 +87,26 @@ qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback
 
 QFont::Weight cssFontWeightToQt(const QJsonValue& value, QFont::Weight fallback) {
   if (value.isDouble()) {
-    const int weight = qBound(1, static_cast<int>(std::round(value.toDouble())), 1000);
-    return static_cast<QFont::Weight>(weight);
+    const double raw = value.toDouble();
+    // CSS font-weight only has meaning in 1..1000; anything outside (0, 1001,
+    // negative) is invalid and a browser falls back to normal — like mermaid.
+    if (raw < 1.0 || raw > 1000.0) return fallback;
+    return static_cast<QFont::Weight>(static_cast<int>(std::round(raw)));
   }
   if (value.isString()) {
     const QString text = value.toString().trimmed().toLower();
     if (text == QLatin1String("normal")) return QFont::Normal;
     if (text == QLatin1String("bold")) return QFont::Bold;
+    // bolder/lighter resolve relative to the inherited weight. Sequence labels
+    // inherit the default normal (400), so bolder -> 700 and lighter -> 100
+    // (matching mermaid 11.16.0 / Chromium).
+    if (text == QLatin1String("bolder")) return QFont::Bold;
+    if (text == QLatin1String("lighter")) return QFont::Thin;
     bool ok = false;
     const int weight = text.toInt(&ok);
-    if (ok) return static_cast<QFont::Weight>(qBound(1, weight, 1000));
+    if (ok && weight >= 1 && weight <= 1000)
+      return static_cast<QFont::Weight>(weight);
+    return fallback;
   }
   return fallback;
 }
@@ -105,8 +115,13 @@ bool truthyConfigValue(const QJsonValue& value) {
   switch (value.type()) {
     case QJsonValue::Bool: return value.toBool();
     case QJsonValue::Double: return value.toDouble() != 0.0;
-    case QJsonValue::String: return !value.toString().trimmed().isEmpty();
-    default: return false;  // Null, Array, Object, Undefined
+    // JS truthiness: any non-empty string is truthy (including " ", "0", and
+    // "false") — do not trim. mermaid setConf() gates the global mirror on this.
+    case QJsonValue::String: return !value.toString().isEmpty();
+    // JS: objects and arrays are always truthy.
+    case QJsonValue::Array:
+    case QJsonValue::Object: return true;
+    default: return false;  // Null, Undefined
   }
 }
 

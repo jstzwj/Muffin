@@ -10,7 +10,9 @@
 // bold changes ink/stroke but not advance, layout or advance-based wrap. So for
 // the production font we prove ink-measure + paint change and advances stay
 // equal (the Chromium-matching invariant). Wrap is then proven separately with a
-// font that has a real Bold face (Segoe UI), whose advances differ with weight.
+// bundled font that ships a real Bold face (KaTeX_Main, via MathFontRegistry),
+// whose advances differ with weight — portable across CI platforms.
+#include "math/MathFontRegistry.h"
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
@@ -68,6 +70,8 @@ qint64 inkPixelCount(const flowchart::FlowLabelDocument& doc, const QString& fam
 
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
+  MermaidFontRegistry::ensureLoaded();
+  muffin::math::MathFontRegistry::ensureLoaded();
   const qreal size = 16.0;
   const qreal lineHeight = 22.0;
   const QString text = QStringLiteral("testing wrapping here");
@@ -115,11 +119,12 @@ int main(int argc, char** argv) {
           QStringLiteral("prod bold ink pixels %1 must exceed normal %2")
               .arg(prodBoldPx).arg(prodNormalPx));
 
-  // --- Real-bold font (Segoe UI) ------------------------------------------
+  // --- Real-bold bundled font (KaTeX_Main) --------------------------------
   // Proves wrapFlowLabel consumes baseWeight: with a real Bold face, bold
   // advances exceed normal, so at a width between them normal stays one line
-  // while bold wraps.
-  const QString realFamily = QStringLiteral("Segoe UI");
+  // while bold wraps. KaTeX_Main ships Regular+Bold and is bundled, so this is
+  // deterministic across Windows/macOS/Linux/ASan CI.
+  const QString realFamily = QStringLiteral("KaTeX_Main");
   const qreal realNormalAdv = flowchart::measureFlowTextAdvanceWidth(
       normalDoc, 0, normalDoc.text.size(), realFamily, size);
   const qreal realBoldAdv = flowchart::measureFlowTextAdvanceWidth(

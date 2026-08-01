@@ -30,11 +30,13 @@ qreal pixelValue(const QString& value, qreal fallback);
 QString firstFontFamily(QString cssFamily);
 qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback);
 
-// Parses a CSS font-weight value (number 1..1000, "normal", "bold", or a numeric
-// string) into Qt's QFont::Weight. Qt 6 uses the standard CSS 100..900 scale
-// (Normal=400, Bold=700), so the value maps near-identity; Qt snaps it to the
-// nearest available face, like a browser resolving CSS font-weight. Anything
-// absent/null/unparseable yields the fallback.
+// Parses a CSS font-weight value into Qt's QFont::Weight. Qt 6 uses the standard
+// CSS 100..900 scale (Normal=400, Bold=700), so the value maps near-identity.
+// Accepts "normal" (400), "bold" (700), "bolder" (700) and "lighter" (100) —
+// bolder/lighter resolve against the inherited normal — and a number or numeric
+// string in the valid CSS range 1..1000. Anything absent/null/out-of-range
+// (0, 1001) or unparseable yields the fallback, matching a browser's fall-back
+// to normal. Qt snaps the value to the nearest available face.
 QFont::Weight cssFontWeightToQt(const QJsonValue& value, QFont::Weight fallback);
 
 // JS-style truthiness for a config value. Mirrors mermaid setConf()'s

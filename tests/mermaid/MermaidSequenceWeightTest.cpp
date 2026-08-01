@@ -173,6 +173,26 @@ int main(int argc, char** argv) {
     require(allHaveWeight(scene->messageLabels, QFont::Bold),
             QStringLiteral("global fontWeight:700 overrides messageFontWeight:900"));
   }
+  // Truthy semantics of the global gate: a truthy-but-invalid global (a
+  // whitespace string is JS-truthy) fires the mirror and overrides per-kind to
+  // Normal; 0 is JS-falsy so the mirror is skipped and per-kind stands.
+  {
+    const auto wsScene = sequenceScene(withInit(
+        QStringLiteral("{\"fontWeight\":\"   \",\"sequence\":{"
+                       "\"actorFontWeight\":900,\"messageFontWeight\":900}}"),
+        kBody));
+    require(allHaveWeight(wsScene->participantLabels, QFont::Normal),
+            QStringLiteral("truthy whitespace global overrides per-kind to Normal"));
+    require(allHaveWeight(wsScene->messageLabels, QFont::Normal),
+            QStringLiteral("truthy whitespace global overrides per-kind to Normal"));
+  }
+  {
+    const auto zeroScene = sequenceScene(withInit(
+        QStringLiteral("{\"fontWeight\":0,\"sequence\":{\"actorFontWeight\":700}}"),
+        kBody));
+    require(allHaveWeight(zeroScene->participantLabels, QFont::Bold),
+            QStringLiteral("global fontWeight:0 is falsy -> per-kind actorFontWeight stands"));
+  }
 
   // 3. Value mapping: numeric 400/500/700/900 and "normal"/"bold".
   {
@@ -190,6 +210,11 @@ int main(int argc, char** argv) {
     check(QStringLiteral("{\"messageFontWeight\":700}"), QFont::Bold);            // 700 -> Bold
     check(QStringLiteral("{\"messageFontWeight\":500}"), QFont::Weight(500));     // numeric passthrough
     check(QStringLiteral("{\"messageFontWeight\":900}"), QFont::Weight(900));     // numeric passthrough
+    check(QStringLiteral("{\"messageFontWeight\":\"bolder\"}"), QFont::Bold);     // bolder -> 700
+    check(QStringLiteral("{\"messageFontWeight\":\"lighter\"}"), QFont::Weight(100));  // lighter -> 100
+    check(QStringLiteral("{\"messageFontWeight\":0}"), QFont::Normal);            // 0 invalid -> Normal
+    check(QStringLiteral("{\"messageFontWeight\":1001}"), QFont::Normal);         // 1001 invalid -> Normal
+    check(QStringLiteral("{\"messageFontWeight\":\"0\"}"), QFont::Normal);        // "0" invalid -> Normal
   }
 
   // 4. Math labels render Normal regardless of the per-kind weight (drawKatex
@@ -241,6 +266,26 @@ int main(int argc, char** argv) {
         QStringLiteral("{\"sequence\":{\"actorFontWeight\":700}}"), kBody));
     require(rgbaDiffPixels(normal, bold) > 0,
             QStringLiteral("actorFontWeight:700 must change the rendered output"));
+  }
+
+  // 7. Menu item attribution (direct): popup menu items are built as Participant
+  //    kind, so they track actorFontWeight. (Verified directly on scene.menus,
+  //    not just transitively via the participant assertion.)
+  {
+    const QString menuBody = QStringLiteral(
+        "sequenceDiagram\nparticipant A as Browser\nparticipant B as API\n"
+        "links A: {\"Documentation\": \"https://example.com/docs\"}\n"
+        "A->>B: request");
+    const auto scene = sequenceScene(withInit(
+        QStringLiteral("{\"sequence\":{\"actorFontWeight\":700,\"forceMenus\":true}}"),
+        menuBody));
+    require(!scene->menus.isEmpty() && !scene->menus.first().items.isEmpty(),
+            QStringLiteral("expected at least one sequence menu item"));
+    const QFont::Weight menuWeight =
+        scene->menus.first().items.first().labelDocument.richText.baseWeight;
+    require(menuWeight == QFont::Bold,
+            QStringLiteral("menu item label tracks actorFontWeight (-> Bold), got %1")
+                .arg(menuWeight));
   }
 
   return 0;
