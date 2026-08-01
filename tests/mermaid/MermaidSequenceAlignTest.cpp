@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 
 using namespace muffin::mermaid;
 
@@ -69,17 +70,14 @@ QRect alignedLabelInk(flowchart::FlowLabelAlign align, qreal margin) {
   return alphaBounds(image);
 }
 
-editor::MermaidRenderEntry renderEntry(const QString& source) {
-  // A persistent cache keeps the returned entry's shared_ptr<scene> alive after
-  // this function returns; otherwise sequenceScene() would return a dangling
-  // pointer into freed memory (use-after-free).
-  static editor::MermaidRenderCache cache;
-  return cache.getSync(editor::MermaidRenderCache::makeKey(source), source);
-}
-
-const sequence::SequenceScene* sequenceScene(const QString& source) {
-  const auto entry = renderEntry(source);
-  return dynamic_cast<const sequence::SequenceScene*>(entry.scene.get());
+// Returns the scene with shared ownership, so the caller keeps it alive for as
+// long as needed (a bare pointer would dangle once the local cache entry is
+// destroyed, and a static cache only delays that until LRU eviction).
+std::shared_ptr<const sequence::SequenceScene> sequenceScene(const QString& source) {
+  editor::MermaidRenderCache cache;
+  editor::MermaidRenderEntry entry =
+      cache.getSync(editor::MermaidRenderCache::makeKey(source), source);
+  return std::dynamic_pointer_cast<const sequence::SequenceScene>(entry.scene);
 }
 
 QImage renderPng(const QString& source) {
@@ -185,7 +183,7 @@ int main(int argc, char** argv) {
 
   // --- 2. Config reaches the scene; default + invalid -> Center ---
   {
-    const auto* scene = sequenceScene(
+    const auto scene = sequenceScene(
         QStringLiteral("sequenceDiagram\nAlice->>Bob: hi\nNote over Bob: n"));
     require(scene != nullptr, QStringLiteral("Default sequence yielded no SequenceScene"));
     require(scene->style.messageAlign == flowchart::FlowLabelAlign::Center,
@@ -194,7 +192,7 @@ int main(int argc, char** argv) {
             QStringLiteral("Default noteAlign is not Center"));
   }
   {
-    const auto* scene = sequenceScene(QStringLiteral(
+    const auto scene = sequenceScene(QStringLiteral(
         "%%{init: {\"sequence\": {\"messageAlign\": \"left\", "
         "\"noteAlign\": \"right\"}}}%%\n"
         "sequenceDiagram\nAlice->>Bob: hi\nNote over Bob: n"));
@@ -205,7 +203,7 @@ int main(int argc, char** argv) {
             QStringLiteral("noteAlign:right did not reach the scene"));
   }
   {
-    const auto* scene = sequenceScene(QStringLiteral(
+    const auto scene = sequenceScene(QStringLiteral(
         "%%{init: {\"sequence\": {\"messageAlign\": \"diagonal\"}}}%%\n"
         "sequenceDiagram\nAlice->>Bob: hi"));
     require(scene != nullptr && scene->style.messageAlign == flowchart::FlowLabelAlign::Center,
@@ -218,7 +216,7 @@ int main(int argc, char** argv) {
   // The reverse case uses a single reverse message so index 0 IS the reverse.
   {
     const auto check = [](const QString& src, int idx, const char* tag, bool self) {
-      const auto* scene = sequenceScene(src);
+      const auto scene = sequenceScene(src);
       require(scene != nullptr && scene->messages.size() > idx,
               QStringLiteral("%1: no scene/message at idx %2").arg(QLatin1String(tag)).arg(idx));
       const auto& msg = scene->messages.at(idx);
@@ -264,7 +262,7 @@ int main(int argc, char** argv) {
       const QImage leftImg = renderPng(leftSrc);
       const QImage centerImg = renderPng(centerSrc);
       const QImage rightImg = renderPng(rightSrc);
-      const auto* scene = sequenceScene(leftSrc);
+      const auto scene = sequenceScene(leftSrc);
       require(scene != nullptr && scene->messages.size() > idx,
               QStringLiteral("%1: no message").arg(QLatin1String(tag)));
       const auto& msg = scene->messages.at(idx);
@@ -299,7 +297,7 @@ int main(int argc, char** argv) {
       const QString sl = msgSrc(selfBody, "left");
       const QString sc = msgSrc(selfBody, "center");
       const QString sr = msgSrc(selfBody, "right");
-      const auto* scene = sequenceScene(sl);
+      const auto scene = sequenceScene(sl);
       require(scene != nullptr && !scene->messages.isEmpty(),
               QStringLiteral("self: no message"));
       const auto& msg = scene->messages.at(0);
