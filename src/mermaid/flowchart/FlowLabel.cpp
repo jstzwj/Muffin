@@ -34,6 +34,20 @@ struct FlowLabelPreparedMath {
 
 namespace {
 
+// Single source of truth for the QFont used across the FlowLabel measurement
+// chain (ink/advance, wrap, layout, bounding metrics, paint). Every QFont in
+// this TU is built here so baseWeight is applied consistently and nowhere is
+// forgotten. Mermaid bold Markdown still overrides per run via format ranges.
+QFont makeFlowLabelFont(const QString& fontFamily, qreal fontPixelSize,
+                        QFont::Weight weight = QFont::Normal) {
+  QFont font(fontFamily);
+  MermaidFontRegistry::configureFont(font, fontFamily);
+  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
+  font.setHintingPreference(QFont::PreferNoHinting);
+  font.setWeight(weight);
+  return font;
+}
+
 struct Marker {
   QString token;
   QTextCharFormat format;
@@ -825,10 +839,7 @@ qreal measureFlowTextInkWidth(const FlowLabelDocument& label,
                               qsizetype start, qsizetype length,
                               const QString& fontFamily,
                               qreal fontPixelSize) {
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
-  font.setHintingPreference(QFont::PreferNoHinting);
+  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
   return shapeTextRange(label, start, length, font).inkWidth;
 }
 
@@ -836,19 +847,13 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
                                   qsizetype start, qsizetype length,
                                   const QString& fontFamily,
                                   qreal fontPixelSize) {
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
-  font.setHintingPreference(QFont::PreferNoHinting);
+  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
   return shapeTextRange(label, start, length, font).width;
 }
 
 FlowLabelFontMetrics flowLabelFontBoundingMetrics(
-    const QString& fontFamily, qreal fontPixelSize) {
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
-  font.setHintingPreference(QFont::PreferNoHinting);
+    const QString& fontFamily, qreal fontPixelSize, QFont::Weight weight) {
+  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, weight);
   const QRawFont raw = QRawFont::fromFont(font);
   const FlowLabelFontMetrics metrics =
       openTypeFontBoundingMetrics(raw, fontPixelSize);
@@ -896,10 +901,7 @@ QVector<FlowLabelLineRange> flowLabelLineRanges(
 QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
                                 const QString& fontFamily,
                                 qreal fontPixelSize) {
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
-  font.setHintingPreference(QFont::PreferNoHinting);
+  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
 
   const QVector<FlowLabelLineRange> lines = flowLabelLineRanges(label);
   qreal left = std::numeric_limits<qreal>::max();
@@ -961,7 +963,7 @@ QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
   if (left == std::numeric_limits<qreal>::max()) left = right = 0.0;
 
   const FlowLabelFontMetrics vertical =
-      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize);
+      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize, label.baseWeight);
   const qsizetype lineCount = std::max<qsizetype>(1, lines.size());
   const qreal top = fontPixelSize - vertical.ascent;
   const qreal height = vertical.height() +
@@ -979,10 +981,7 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
   if (maximumLineWidth <= 0.0 || label.text.contains(QLatin1Char('\n')))
     return wrapped;
 
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
-  font.setHintingPreference(QFont::PreferNoHinting);
+  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
   QTextLayout layout(label.text, font);
   QTextOption option;
   option.setUseDesignMetrics(true);
@@ -1009,10 +1008,7 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
 FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        const QString& fontFamily,
                                        qreal fontPixelSize, qreal lineHeight) {
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
-  font.setHintingPreference(QFont::PreferNoHinting);
+  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
   const QFontMetricsF metrics(font);
   const QRectF inkMetrics = metrics.tightBoundingRect(QStringLiteral("Mg"));
   // Canvas TextMetrics reports the pixel-aligned ink box used by Chromium's
@@ -1021,7 +1017,7 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
   const qreal cssAscent = std::ceil(std::max<qreal>(0.0, -inkMetrics.top()));
   const qreal cssDescent = std::floor(std::max<qreal>(0.0, inkMetrics.bottom()));
   const FlowLabelFontMetrics fontBoundingMetrics =
-      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize);
+      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize, label.baseWeight);
   const bool flowForeignObject =
       label.formattingContext ==
       FlowLabelFormattingContext::FlowForeignObjectFlex;
@@ -1237,10 +1233,7 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     qreal fontPixelSize, qreal lineHeight,
                     const QColor& color, bool centerVertically,
                     FlowLabelAlign align, qreal alignMargin) {
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
-  font.setHintingPreference(QFont::PreferNoHinting);
+  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
   FlowLabelDocument paintedLabel = label;
   prepareFlowLabelMath(paintedLabel, fontPixelSize);
   const FlowLabelLayoutMetrics layoutMetrics =

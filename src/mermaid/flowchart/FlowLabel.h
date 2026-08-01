@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QFont>
 #include <QGlyphRun>
 #include <QSizeF>
 #include <QString>
@@ -78,6 +79,13 @@ struct FlowLabelDocument {
   // SVG text and foreignObject content inherit CSS direction:ltr unless the
   // diagram explicitly supplies another direction.
   Qt::LayoutDirection direction = Qt::LeftToRight;
+  // Base CSS font weight (Qt 6 uses the standard 100..900 scale, same as CSS:
+  // Normal=400, Bold=700) applied at every QFont construction in FlowLabel —
+  // ink/advance measure, wrap, layout, font bounding metrics and paint — so the
+  // whole measurement chain agrees with the drawn font. Defaults to Normal, so
+  // default rendering is byte-identical; sequence sets it per kind. Per-run
+  // Markdown bold still overrides this via the format range.
+  QFont::Weight baseWeight = QFont::Normal;
 };
 
 enum class FlowLabelMathStructure {
@@ -197,7 +205,8 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
 // Chromium Canvas fontBoundingBox metrics are the pixel-rounded OpenType
 // hhea ascent/descent used to position text inside a CSS normal line box.
 FlowLabelFontMetrics flowLabelFontBoundingMetrics(
-    const QString& fontFamily, qreal fontPixelSize);
+    const QString& fontFamily, qreal fontPixelSize,
+    QFont::Weight weight = QFont::Normal);
 
 // Mermaid createFormattedText() advances SVG tspans by 1.1em. Its background
 // rect is the union of the font cell boxes plus two CSS pixels per side.

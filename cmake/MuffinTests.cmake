@@ -83,6 +83,7 @@ set_tests_properties(MuffinMermaidMathFontContractTest MuffinMermaidMathMlCssBox
 muffin_add_test(NAME MuffinMermaidSequencePixelTest SOURCE tests/mermaid/MermaidSequencePixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/sequence-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidSequenceSvgStructuralTest SOURCE tests/mermaid/MermaidSequenceSvgStructuralTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/sequence-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidSequenceAlignTest SOURCE tests/mermaid/MermaidSequenceAlignTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidFlowLabelWeightTest SOURCE tests/mermaid/MermaidFlowLabelWeightTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidSequenceCoverageMatrixTest SOURCE tests/mermaid/MermaidSequenceCoverageMatrixTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/sequence-db.json)
 muffin_add_test(NAME MuffinMermaidDagreCompoundTest SOURCE tests/mermaid/MermaidDagreCompoundTest.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinParserBasicTest      SOURCE tests/parser/ParserBasicTest.cpp      LINK MuffinCore)
