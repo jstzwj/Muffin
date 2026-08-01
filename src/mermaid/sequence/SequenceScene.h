@@ -4,6 +4,8 @@
 #include "mermaid/sequence/SequenceLayout.h"
 #include "mermaid/sequence/SequenceLabel.h"
 
+#include <QFont>
+
 namespace muffin::mermaid::sequence {
 
 struct SequenceSceneStyle {
@@ -39,6 +41,17 @@ struct SequenceSceneStyle {
   // notes, wrapPadding for messages. Defaults match the sequence config (10).
   qreal noteMargin = 10.0;
   qreal wrapPadding = 10.0;
+  // Per-kind CSS font weights (Qt 6 100..900 scale; Normal=400, Bold=700).
+  // Resolved in sequenceStyleFromConfig: each defaults to Normal, then a truthy
+  // GLOBAL fontWeight overrides all three — mirroring mermaid setConf()'s mirror
+  // (sequenceDiagram): if (cnf.fontWeight) mirror to all three. Attribution
+  // (verified vs mermaid 11.16.0): participant/box/menu -> actor, note -> note,
+  // message/fragment -> message. The weight is written into each prepared
+  // label's FlowLabelDocument::baseWeight before wrap/measure/paint; labels
+  // containing Math render Normal (drawKatex ignores font-weight).
+  QFont::Weight actorFontWeight = QFont::Normal;
+  QFont::Weight noteFontWeight = QFont::Normal;
+  QFont::Weight messageFontWeight = QFont::Normal;
 };
 
 struct SequencePreparedLabels {

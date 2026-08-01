@@ -51,6 +51,7 @@ SequenceLabelDocument wrapSequenceLabel(SequenceLabelDocument label,
     flowchart::FlowLabelDocument candidate;
     candidate.text = text;
     candidate.direction = Qt::LeftToRight;
+    candidate.baseWeight = label.richText.baseWeight;
     return std::round(flowchart::measureFlowTextInkWidth(
         candidate, fontFamily, fontPixelSize));
   };
@@ -102,7 +103,7 @@ SequenceLabelLayoutMetrics layoutSequenceLabel(const SequenceLabelDocument& labe
   SequenceLabelLayoutMetrics result =
       flowchart::layoutFlowLabel(label.richText, fontFamily, fontPixelSize, lineHeight);
   const flowchart::FlowLabelFontMetrics cssFontMetrics =
-      flowchart::flowLabelFontBoundingMetrics(fontFamily, fontPixelSize);
+      flowchart::flowLabelFontBoundingMetrics(fontFamily, fontPixelSize, label.richText.baseWeight);
   const qreal containerWidth = result.size.width();
   qreal maximumWidth = 0.0;
   for (auto& line : result.lines) {

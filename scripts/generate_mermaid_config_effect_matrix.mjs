@@ -152,35 +152,40 @@ const familyPolicies = {
     // leaves trebuchet; same for note/message Size/Family; and setting the
     // global always propagates to all three. The global fontWeight default is
     // undefined, so its mirror is skipped and the three per-label FontWeight
-    // keys are CONDITIONALLY consumed (effective only when global fontWeight is
-    // unset; a truthy global fontWeight overrides all three — verified).
-    // messageAlign/noteAlign are direct text-anchor consumption.
+    // keys are CONDITIONALLY live (effective only when global fontWeight is
+    // unset; a truthy global fontWeight overrides all three — verified). Native
+    // honors each per-kind weight: participant/box/menu -> actor, note -> note,
+    // message/fragment -> message (fragment kind tag included); "normal"->400,
+    // "bold"->700, numerics pass through on the CSS 1..1000 scale (Qt 6 uses the
+    // same scale). Math note/message labels render Normal regardless, because
+    // mermaid drawKatex() ignores font-weight (verified). messageAlign/noteAlign
+    // are direct text-anchor consumption.
     actorFontSize: inert(
       "Dead config in mermaid 11.16.0 — setConf() unconditionally mirrors the truthy global fontSize into actorFontSize/noteFontSize/messageFontSize, so the per-label value is never the user's.",
     ),
     actorFontFamily: inert(
       "Dead config in mermaid 11.16.0 — setConf() unconditionally mirrors the truthy global fontFamily into all three per-label families, so the per-label value is never the user's.",
     ),
-    actorFontWeight: unsupported(
-      textLayout,
-      "Conditionally consumed in mermaid 11.16.0: effective only when global fontWeight is unset, because setConf() mirrors a truthy global fontWeight into all three per-label weights. Native ignores it.",
-    ),
+    actorFontWeight: {
+      ...parity(...textLayout),
+      note: "Conditionally live: effective only when global fontWeight is unset (setConf mirrors a truthy global into all three). Native honors it for participant/box/menu labels. Math labels render Normal (drawKatex ignores weight).",
+    },
     noteFontSize: inert("Dead config — setConf() mirrors the global fontSize; see actorFontSize."),
     noteFontFamily: inert("Dead config — setConf() mirrors the global fontFamily; see actorFontFamily."),
-    noteFontWeight: unsupported(
-      textLayout,
-      "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
-    ),
+    noteFontWeight: {
+      ...parity(...textLayout),
+      note: "Conditionally live when global fontWeight is unset (a truthy global overrides it). Native honors it for note labels. Math labels render Normal (drawKatex ignores weight).",
+    },
     noteAlign: {
       ...parity("text", "paint", "export"),
       note: "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the note rect, inset by noteMargin. Plain-text labels only — Math labels stay centered (drawKatex ignores the anchor).",
     },
     messageFontSize: inert("Dead config — setConf() mirrors the global fontSize; see actorFontSize."),
     messageFontFamily: inert("Dead config — setConf() mirrors the global fontFamily; see actorFontFamily."),
-    messageFontWeight: unsupported(
-      textLayout,
-      "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
-    ),
+    messageFontWeight: {
+      ...parity(...textLayout),
+      note: "Conditionally live when global fontWeight is unset (a truthy global overrides it). Native honors it for message and fragment labels (the fragment kind tag included). Math labels render Normal (drawKatex ignores weight).",
+    },
     wrap: parity(...textLayout),
     wrapPadding: parity(...textLayout),
     labelBoxWidth: parity(...layout),

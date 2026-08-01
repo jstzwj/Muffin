@@ -5,6 +5,7 @@
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QFile>
+#include <QFont>
 #include <QGuiApplication>
 #include <QImage>
 #include <QJsonArray>
@@ -409,6 +410,22 @@ int main(int argc, char** argv) {
               closedMenuPng.size() == forcedMenuPng.size() &&
               closedMenuPng != forcedMenuPng,
           QStringLiteral("sequence.forceMenus did not affect deterministic PNG paint"));
+
+  // sequence per-label font weights reach the scene and paint (matrix parity
+  // evidence for actor/note/message FontWeight).
+  const QString weightedSequence = QStringLiteral(
+      "%%{init: {\"sequence\": {\"messageFontWeight\": 700}}}%%\n"
+      "sequenceDiagram\nAlice->>Bob: hello");
+  const MermaidRenderEntry weighted = render(weightedSequence);
+  const auto* weightedScene =
+      dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(weighted.scene.get());
+  require(weighted.status == MermaidRenderStatus::Ready && weightedScene &&
+              !weightedScene->messageLabels.isEmpty() &&
+              weightedScene->messageLabels.first().richText.baseWeight == QFont::Bold,
+          QStringLiteral("sequence.messageFontWeight did not reach the scene"));
+  require(pngImage(weightedSequence) !=
+              pngImage(QStringLiteral("sequenceDiagram\nAlice->>Bob: hello")),
+          QStringLiteral("sequence.messageFontWeight did not affect PNG paint"));
 
   // Unsupported engines must not silently produce a Dagre scene.
   for (const QString& source : {

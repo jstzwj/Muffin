@@ -10,6 +10,7 @@
 #include "mermaid/sequence/SequenceScene.h"
 #include "mermaid/theme/FlowTheme.h"
 
+#include <QFont>
 #include <QHash>
 #include <QJsonObject>
 #include <QRectF>
@@ -96,6 +97,21 @@ sequence::SequenceSceneStyle sequenceStyleFromConfig(const QJsonObject& config) 
   // wrapPadding for messages). Absent keys keep the 10 px defaults.
   style.noteMargin = configNumber(sequenceSection, QStringLiteral("noteMargin"), 10.0);
   style.wrapPadding = configNumber(sequenceSection, QStringLiteral("wrapPadding"), 10.0);
+  // Per-kind CSS font weights, each defaulting to Normal. A truthy GLOBAL
+  // fontWeight overrides all three — mirroring mermaid setConf()'s mirror
+  // (sequenceDiagram): if (cnf.fontWeight) the global is copied into all three
+  // per-label weights, so a set global wins over any per-kind value.
+  const QJsonValue globalWeight = config.value(QStringLiteral("fontWeight"));
+  style.actorFontWeight =
+      cssFontWeightToQt(sequenceSection.value(QStringLiteral("actorFontWeight")), QFont::Normal);
+  style.noteFontWeight =
+      cssFontWeightToQt(sequenceSection.value(QStringLiteral("noteFontWeight")), QFont::Normal);
+  style.messageFontWeight =
+      cssFontWeightToQt(sequenceSection.value(QStringLiteral("messageFontWeight")), QFont::Normal);
+  if (truthyConfigValue(globalWeight)) {
+    const QFont::Weight resolved = cssFontWeightToQt(globalWeight, QFont::Normal);
+    style.actorFontWeight = style.noteFontWeight = style.messageFontWeight = resolved;
+  }
   return style;
 }
 
@@ -124,7 +140,20 @@ struct SequenceDiagramImpl : Diagram {
           ? sequenceConfig.value(QStringLiteral("wrap")).toBool(false)
           : pre.config.value(QStringLiteral("wrap")).toBool(false);
       const auto labelDocument = [&](const QString& text, sequence::SequenceLabelKind kind) {
-        return sequence::parseSequenceLabel(text, kind);
+        auto document = sequence::parseSequenceLabel(text, kind);
+        QFont::Weight weight = QFont::Normal;
+        switch (kind) {
+          case sequence::SequenceLabelKind::Participant:
+          case sequence::SequenceLabelKind::Box: weight = style.actorFontWeight; break;
+          case sequence::SequenceLabelKind::Note: weight = style.noteFontWeight; break;
+          case sequence::SequenceLabelKind::Message:
+          case sequence::SequenceLabelKind::Fragment: weight = style.messageFontWeight; break;
+        }
+        // Math labels render Normal: mermaid drawKatex() ignores font-weight, so
+        // a note/message containing $$ keeps Normal regardless of the weight.
+        document.richText.baseWeight =
+            document.richText.math.isEmpty() ? weight : QFont::Normal;
+        return document;
       };
       const auto prepare = [&](sequence::SequenceLabelDocument label) {
         return sequence::prepareSequenceLabel(std::move(label), style.fontSize);
@@ -250,9 +279,14 @@ struct SequenceDiagramImpl : Diagram {
       const sequence::SequenceLayoutResult layout =
           sequence::layoutSequence(diagram.data(), measurements, layoutOptions);
       for (const auto& fragment : layout.fragments) {
+        // The fragment kind tag ("loop"/"alt"/...) uses Box layout (centered
+        // baseline) but mermaid draws it with the MESSAGE font weight, so build
+        // it directly instead of through the kind-based labelDocument mapping.
+        auto kindDocument = sequence::parseSequenceLabel(
+            fragment.kind, sequence::SequenceLabelKind::Box);
+        kindDocument.richText.baseWeight = style.messageFontWeight;
         preparedLabels.fragmentKindsByIndex.insert(
-            fragment.messageIndex,
-            prepare(labelDocument(fragment.kind, sequence::SequenceLabelKind::Box)));
+            fragment.messageIndex, prepare(std::move(kindDocument)));
       }
       sequence::SequenceScene scene = sequence::buildSequenceScene(
           layout, std::move(style), preparedLabels, true);

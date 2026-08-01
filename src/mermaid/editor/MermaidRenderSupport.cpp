@@ -8,6 +8,9 @@
 #include <QJsonValue>
 #include <QRegularExpression>
 
+#include <algorithm>
+#include <cmath>
+
 namespace muffin::mermaid::editor {
 namespace {
 
@@ -80,6 +83,31 @@ QString firstFontFamily(QString cssFamily) {
 qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback) {
   const QJsonValue value = object.value(key);
   return value.isDouble() && value.toDouble() >= 0.0 ? value.toDouble() : fallback;
+}
+
+QFont::Weight cssFontWeightToQt(const QJsonValue& value, QFont::Weight fallback) {
+  if (value.isDouble()) {
+    const int weight = qBound(1, static_cast<int>(std::round(value.toDouble())), 1000);
+    return static_cast<QFont::Weight>(weight);
+  }
+  if (value.isString()) {
+    const QString text = value.toString().trimmed().toLower();
+    if (text == QLatin1String("normal")) return QFont::Normal;
+    if (text == QLatin1String("bold")) return QFont::Bold;
+    bool ok = false;
+    const int weight = text.toInt(&ok);
+    if (ok) return static_cast<QFont::Weight>(qBound(1, weight, 1000));
+  }
+  return fallback;
+}
+
+bool truthyConfigValue(const QJsonValue& value) {
+  switch (value.type()) {
+    case QJsonValue::Bool: return value.toBool();
+    case QJsonValue::Double: return value.toDouble() != 0.0;
+    case QJsonValue::String: return !value.toString().trimmed().isEmpty();
+    default: return false;  // Null, Array, Object, Undefined
+  }
 }
 
 MermaidRenderMetadata renderMetadata(

@@ -24,9 +24,9 @@
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 49,
+    "parity": 52,
     "partial": 8,
-    "unsupported": 10,
+    "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
     "upstream-inert": 20,
@@ -1128,7 +1128,7 @@
       "path": "sequence.actorFontWeight",
       "field": "actorFontWeight",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -1138,9 +1138,14 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
       ],
-      "note": "Conditionally consumed in mermaid 11.16.0: effective only when global fontWeight is unset, because setConf() mirrors a truthy global fontWeight into all three per-label weights. Native ignores it.",
+      "note": "Conditionally live: effective only when global fontWeight is unset (setConf mirrors a truthy global into all three). Native honors it for participant/box/menu labels. Math labels render Normal (drawKatex ignores weight).",
       "default": 400
     },
     {
@@ -1181,7 +1186,7 @@
       "path": "sequence.noteFontWeight",
       "field": "noteFontWeight",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -1191,9 +1196,14 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
       ],
-      "note": "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
+      "note": "Conditionally live when global fontWeight is unset (a truthy global overrides it). Native honors it for note labels. Math labels render Normal (drawKatex ignores weight).",
       "default": 400
     },
     {
@@ -1256,7 +1266,7 @@
       "path": "sequence.messageFontWeight",
       "field": "messageFontWeight",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -1266,9 +1276,14 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
       ],
-      "note": "Conditionally consumed when global fontWeight is unset; a truthy global overrides it (see actorFontWeight). Native ignores it.",
+      "note": "Conditionally live when global fontWeight is unset (a truthy global overrides it). Native honors it for message and fragment labels (the fragment kind tag included). Math labels render Normal (drawKatex ignores weight).",
       "default": 400
     },
     {
@@ -2402,5 +2417,5 @@
       "default": 12
     }
   ],
-  "fixtureSha256": "b515cfcab696f3dd1e357dbdeac220d76e477c270f8a15f365b198343d00fa87"
+  "fixtureSha256": "870315e80dd221d3196dfcea6147f8744809eb492e1ea6b99470f3bae412aed6"
 }
