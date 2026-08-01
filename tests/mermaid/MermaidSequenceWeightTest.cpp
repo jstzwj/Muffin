@@ -215,6 +215,10 @@ int main(int argc, char** argv) {
     check(QStringLiteral("{\"messageFontWeight\":0}"), QFont::Normal);            // 0 invalid -> Normal
     check(QStringLiteral("{\"messageFontWeight\":1001}"), QFont::Normal);         // 1001 invalid -> Normal
     check(QStringLiteral("{\"messageFontWeight\":\"0\"}"), QFont::Normal);        // "0" invalid -> Normal
+    check(QStringLiteral("{\"messageFontWeight\":\"500.5\"}"), QFont::Weight(501));  // decimal string -> 501
+    check(QStringLiteral("{\"messageFontWeight\":\"1e2\"}"), QFont::Weight(100));    // scientific string -> 100
+    check(QStringLiteral("{\"messageFontWeight\":\"+500\"}"), QFont::Weight(500));   // signed string -> 500
+    check(QStringLiteral("{\"messageFontWeight\":\"0500\"}"), QFont::Weight(500));   // leading-zero string -> 500
   }
 
   // 4. Math labels render Normal regardless of the per-kind weight (drawKatex

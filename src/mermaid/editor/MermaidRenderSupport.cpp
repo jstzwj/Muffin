@@ -102,10 +102,14 @@ QFont::Weight cssFontWeightToQt(const QJsonValue& value, QFont::Weight fallback)
     // (matching mermaid 11.16.0 / Chromium).
     if (text == QLatin1String("bolder")) return QFont::Bold;
     if (text == QLatin1String("lighter")) return QFont::Thin;
+    // Parse with toDouble, not toInt: a CSS font-weight string may be a decimal
+    // ("500.5"), scientific ("1e2"), or carry a sign/leading zeros ("+500",
+    // "0500"). Qt's toDouble requires the whole string to be a valid number, and
+    // we apply the same 1..1000 range gate + rounding as the number branch.
     bool ok = false;
-    const int weight = text.toInt(&ok);
-    if (ok && weight >= 1 && weight <= 1000)
-      return static_cast<QFont::Weight>(weight);
+    const double weight = text.toDouble(&ok);
+    if (ok && weight >= 1.0 && weight <= 1000.0)
+      return static_cast<QFont::Weight>(static_cast<int>(std::round(weight)));
     return fallback;
   }
   return fallback;
