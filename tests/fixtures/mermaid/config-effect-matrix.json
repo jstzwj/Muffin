@@ -1215,7 +1215,7 @@
         "paint",
         "export"
       ],
-      "note": "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the note rect.",
+      "note": "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the note rect, inset by noteMargin. Plain-text labels only — Math labels stay centered (drawKatex ignores the anchor).",
       "default": "center"
     },
     {
@@ -2402,5 +2402,5 @@
       "default": 12
     }
   ],
-  "fixtureSha256": "81ac713b803d59b2357079a082b34db030eecc9ab4ac7fabc736391e87002f4d"
+  "fixtureSha256": "b515cfcab696f3dd1e357dbdeac220d76e477c270f8a15f365b198343d00fa87"
 }

@@ -70,7 +70,10 @@ QRect alignedLabelInk(flowchart::FlowLabelAlign align, qreal margin) {
 }
 
 editor::MermaidRenderEntry renderEntry(const QString& source) {
-  editor::MermaidRenderCache cache;
+  // A persistent cache keeps the returned entry's shared_ptr<scene> alive after
+  // this function returns; otherwise sequenceScene() would return a dangling
+  // pointer into freed memory (use-after-free).
+  static editor::MermaidRenderCache cache;
   return cache.getSync(editor::MermaidRenderCache::makeKey(source), source);
 }
 
@@ -108,25 +111,42 @@ int rgbaDiffPixels(const QImage& a, const QImage& b) {
 }
 
 // Message text ink x-range in SCENE coords, scanned across the message's text
-// vertical band ([alignRect.top, alignRect.bottom], which is above the message
-// line) and excluding a small zone at the span edges so the dashed actor
-// lifelines do not pollute the left/right edges. Returns false if no text ink.
+// vertical band ([alignRect.top, alignRect.bottom], above the message line).
+// For a normal span the dashed actor lifelines at the span edges are excluded.
+// For a zero-width self span, a window around the anchor is scanned with the
+// lifeline column at the anchor excluded. Returns false if no text ink found.
 bool messageTextRange(const QImage& img, const sequence::SequenceScene& scene,
                       int msgIdx, qreal dpr, qreal& outLeft, qreal& outRight) {
   const auto& msg = scene.messages.at(msgIdx);
   const QRectF vp = scene.viewportRect;
-  const qreal sceneEdgeExclude = 5.0;  // drop lifeline columns at span edges
+  const qreal excl = 5.0;
   const int y0 = qMax(0, qRound((msg.alignRect.top() - vp.top()) * dpr));
   const int y1 = qMin(img.height() - 1, qRound((msg.alignRect.bottom() - vp.top()) * dpr));
-  const int xMin = qRound((msg.alignRect.left() - vp.left() + sceneEdgeExclude) * dpr);
-  const int xMax = qRound((msg.alignRect.right() - vp.left() - sceneEdgeExclude) * dpr);
+  qreal scanL, scanR;
+  bool excludeCenter = false;
+  qreal centerScene = 0.0;
+  if (msg.alignRect.width() > 2.0 * excl) {
+    scanL = msg.alignRect.left() + excl;
+    scanR = msg.alignRect.right() - excl;
+  } else {
+    centerScene = msg.alignRect.center().x();
+    scanL = centerScene - 220.0;
+    scanR = centerScene + 220.0;
+    excludeCenter = true;
+  }
+  const int xMin = qMax(0, qRound((scanL - vp.left()) * dpr));
+  const int xMax = qMin(img.width() - 1, qRound((scanR - vp.left()) * dpr));
+  const int exclImg = qRound(excl * dpr);
+  const int centerImg = qRound((centerScene - vp.left()) * dpr);
   int xmin = img.width(), xmax = -1;
   for (int y = y0; y <= y1; ++y)
-    for (int x = xMin; x <= xMax; ++x)
+    for (int x = xMin; x <= xMax; ++x) {
+      if (excludeCenter && std::abs(x - centerImg) <= exclImg) continue;
       if (img.pixelColor(x, y).alpha() >= 32) {
         if (x < xmin) xmin = x;
         if (x > xmax) xmax = x;
       }
+    }
   if (xmax < 0) return false;
   outLeft = xmin / dpr + vp.left();
   outRight = xmax / dpr + vp.left();
@@ -193,14 +213,15 @@ int main(int argc, char** argv) {
   }
 
   // --- 3. Structural: alignRect is the full span, wider than the text box ---
-  // Forward (Alice left -> Bob right) and reverse (Bob -> Alice) both span the
-  // full message extent; a self message has a zero-width span.
+  // Forward (Alice->>Bob) and reverse (Bob->>Alice, actors ordered so Bob is
+  // right) both span the full message extent; a self message has zero width.
+  // The reverse case uses a single reverse message so index 0 IS the reverse.
   {
-    const auto check = [](const QString& src, const char* tag, bool self) {
+    const auto check = [](const QString& src, int idx, const char* tag, bool self) {
       const auto* scene = sequenceScene(src);
-      require(scene != nullptr && !scene->messages.isEmpty(),
-              QStringLiteral("%1: no scene/messages").arg(QLatin1String(tag)));
-      const auto& msg = scene->messages.at(0);
+      require(scene != nullptr && scene->messages.size() > idx,
+              QStringLiteral("%1: no scene/message at idx %2").arg(QLatin1String(tag)).arg(idx));
+      const auto& msg = scene->messages.at(idx);
       const qreal spanLeft = std::min(msg.startX, msg.stopX) - 6.0;  // arrow offset slack
       const qreal spanRight = std::max(msg.startX, msg.stopX) + 6.0;
       require(qAbs(msg.alignRect.center().x() - (std::min(msg.startX, msg.stopX) +
@@ -218,72 +239,116 @@ int main(int argc, char** argv) {
                     .arg(QLatin1String(tag)).arg(msg.alignRect.width()).arg(msg.labelRect.width()));
       }
     };
-    check(QStringLiteral("sequenceDiagram\nAlice->>Bob: hello message"), "forward", false);
-    check(QStringLiteral("sequenceDiagram\nAlice->>Bob: hi\nBob->>Alice: reply"), "reverse", false);
-    check(QStringLiteral("sequenceDiagram\nAlice->>Alice: hello message"), "self", true);
+    check(QStringLiteral("sequenceDiagram\nAlice->>Bob: hello message"), 0, "forward", false);
+    check(QStringLiteral("sequenceDiagram\nparticipant Alice\nparticipant Bob\nBob->>Alice: reply"),
+          0, "reverse", false);
+    check(QStringLiteral("sequenceDiagram\nAlice->>Alice: hello message"), 0, "self", true);
   }
 
-  // --- 4. End-to-end pixel extraction: message text ink at span edges + margin ---
+  // --- 4. End-to-end pixel extraction across message kinds ---
+  // Forward and reverse: text left edge ~= alignRect.left + wrapPadding (left),
+  // centered (center), right edge ~= alignRect.right - wrapPadding (right).
+  // Self (zero-width span): left -> anchor + margin, center -> anchor,
+  // right -> anchor - margin.
   {
-    const QString body = QStringLiteral(
-        "sequenceDiagram\nAlice->>Bob: hello message\nNote over Alice,Bob: a note");
-    const auto renderSeq = [&body](const QString& sequenceJson) {
-      return QStringLiteral("%%{init: {\"sequence\": ") + sequenceJson +
-             QStringLiteral("}}%%\n") + body;
+    const auto msgSrc = [](const QString& body, const QString& align) {
+      return QStringLiteral(
+          "%%{init: {\"sequence\": {\"actorMargin\": 200, \"messageAlign\": \"") +
+             align + QStringLiteral("\"}}}%%\n") + body;
     };
-    const QString wide = QStringLiteral("{\"actorMargin\": 200}");
-    const QString leftSrc = renderSeq(
-        QStringLiteral("{\"actorMargin\": 200, \"messageAlign\": \"left\"}"));
-    const QString centerSrc = renderSeq(
-        QStringLiteral("{\"actorMargin\": 200, \"messageAlign\": \"center\"}"));
-    const QString rightSrc = renderSeq(
-        QStringLiteral("{\"actorMargin\": 200, \"messageAlign\": \"right\"}"));
-
-    const QImage leftImg = renderPng(leftSrc);
-    const QImage centerImg = renderPng(centerSrc);
-    const QImage rightImg = renderPng(rightSrc);
-    const QImage defaultImg = renderPng(renderSeq(wide));
-
-    require(!alphaBounds(leftImg).isNull(), QStringLiteral("message render produced no ink"));
-
-    const auto* scene = sequenceScene(leftSrc);
-    require(scene != nullptr && !scene->messages.isEmpty(), QStringLiteral("no scene"));
-    const auto& msg = scene->messages.at(0);
-    const qreal margin = scene->style.wrapPadding;
     const qreal tol = 5.0;
+    const auto checkSpanBbox = [&](const QString& body, int idx, const char* tag) {
+      const QString leftSrc = msgSrc(body, "left");
+      const QString centerSrc = msgSrc(body, "center");
+      const QString rightSrc = msgSrc(body, "right");
+      const QImage leftImg = renderPng(leftSrc);
+      const QImage centerImg = renderPng(centerSrc);
+      const QImage rightImg = renderPng(rightSrc);
+      const auto* scene = sequenceScene(leftSrc);
+      require(scene != nullptr && scene->messages.size() > idx,
+              QStringLiteral("%1: no message").arg(QLatin1String(tag)));
+      const auto& msg = scene->messages.at(idx);
+      const qreal margin = scene->style.wrapPadding;
+      qreal lL = 0, lR = 0, cL = 0, cR = 0, rL = 0, rR = 0;
+      require(messageTextRange(leftImg, *scene, idx, 2.0, lL, lR),
+              QStringLiteral("%1: could not extract left text").arg(QLatin1String(tag)));
+      require(messageTextRange(centerImg, *sequenceScene(centerSrc), idx, 2.0, cL, cR),
+              QStringLiteral("%1: could not extract center text").arg(QLatin1String(tag)));
+      require(messageTextRange(rightImg, *sequenceScene(rightSrc), idx, 2.0, rL, rR),
+              QStringLiteral("%1: could not extract right text").arg(QLatin1String(tag)));
+      require(std::abs(lL - (msg.alignRect.left() + margin)) <= tol,
+              QStringLiteral("%1: left text %2 != alignRect.left+margin %3")
+                  .arg(QLatin1String(tag)).arg(lL).arg(msg.alignRect.left() + margin));
+      require(std::abs(rR - (msg.alignRect.right() - margin)) <= tol,
+              QStringLiteral("%1: right text %2 != alignRect.right-margin %3")
+                  .arg(QLatin1String(tag)).arg(rR).arg(msg.alignRect.right() - margin));
+      require(std::abs((cL + cR) / 2.0 - msg.alignRect.center().x()) <= tol,
+              QStringLiteral("%1: center midpoint %2 != alignRect center %3")
+                  .arg(QLatin1String(tag)).arg((cL + cR) / 2.0).arg(msg.alignRect.center().x()));
+      require(lL < cL - 5.0 && cL < rL - 5.0,
+              QStringLiteral("%1: placements not distinct L%2 C%3 R%4")
+                  .arg(QLatin1String(tag)).arg(lL).arg(cL).arg(rL));
+    };
+    checkSpanBbox(QStringLiteral("sequenceDiagram\nAlice->>Bob: hello message"), 0, "forward");
+    checkSpanBbox(QStringLiteral(
+        "sequenceDiagram\nparticipant Alice\nparticipant Bob\nBob->>Alice: reply"), 0, "reverse");
 
-    qreal lLeft = 0, lRight = 0, cLeft = 0, cRight = 0, rLeft = 0, rRight = 0;
-    require(messageTextRange(leftImg, *scene, 0, 2.0, lLeft, lRight),
-            QStringLiteral("could not extract left-aligned message text"));
-    require(messageTextRange(centerImg, *sequenceScene(centerSrc), 0, 2.0, cLeft, cRight),
-            QStringLiteral("could not extract center-aligned message text"));
-    require(messageTextRange(rightImg, *sequenceScene(rightSrc), 0, 2.0, rLeft, rRight),
-            QStringLiteral("could not extract right-aligned message text"));
+    // Self message: zero-width span -> text at anchor +/- margin.
+    {
+      const QString selfBody = QStringLiteral("sequenceDiagram\nAlice->>Alice: hello message");
+      const QString sl = msgSrc(selfBody, "left");
+      const QString sc = msgSrc(selfBody, "center");
+      const QString sr = msgSrc(selfBody, "right");
+      const auto* scene = sequenceScene(sl);
+      require(scene != nullptr && !scene->messages.isEmpty(),
+              QStringLiteral("self: no message"));
+      const auto& msg = scene->messages.at(0);
+      require(msg.alignRect.width() <= 1.0,
+              QStringLiteral("self: alignRect not zero-width (%1)").arg(msg.alignRect.width()));
+      const qreal anchor = msg.alignRect.center().x();
+      const qreal margin = scene->style.wrapPadding;
+      qreal lL = 0, lR = 0, cL = 0, cR = 0, rL = 0, rR = 0;
+      require(messageTextRange(renderPng(sl), *scene, 0, 2.0, lL, lR),
+              QStringLiteral("self: could not extract left text"));
+      require(messageTextRange(renderPng(sc), *sequenceScene(sc), 0, 2.0, cL, cR),
+              QStringLiteral("self: could not extract center text"));
+      require(messageTextRange(renderPng(sr), *sequenceScene(sr), 0, 2.0, rL, rR),
+              QStringLiteral("self: could not extract right text"));
+      require(lL > anchor + margin - 6.0,
+              QStringLiteral("self left text %1 not right of anchor+margin %2")
+                  .arg(lL).arg(anchor + margin));
+      require(rR < anchor - margin + 6.0,
+              QStringLiteral("self right text %1 not left of anchor-margin %2")
+                  .arg(rR).arg(anchor - margin));
+      require(std::abs((cL + cR) / 2.0 - anchor) <= 7.0,
+              QStringLiteral("self center %1 not on anchor %2").arg((cL + cR) / 2.0).arg(anchor));
+    }
 
-    // Left align: text left edge ~= alignRect.left + margin.
-    require(std::abs(lLeft - (msg.alignRect.left() + margin)) <= tol,
-            QStringLiteral("left render: text left %1 != alignRect.left+margin %2")
-                .arg(lLeft).arg(msg.alignRect.left() + margin));
-    // Right align: text right edge ~= alignRect.right - margin.
-    require(std::abs(rRight - (msg.alignRect.right() - margin)) <= tol,
-            QStringLiteral("right render: text right %1 != alignRect.right-margin %2")
-                .arg(rRight).arg(msg.alignRect.right() - margin));
-    // Center: text midpoint ~= alignRect center, and left/right edges symmetric.
-    require(std::abs((cLeft + cRight) / 2.0 - msg.alignRect.center().x()) <= tol,
-            QStringLiteral("center render: text midpoint %1 != alignRect center %2")
-                .arg((cLeft + cRight) / 2.0).arg(msg.alignRect.center().x()));
-    // Distinct placements (not a sub-pixel rounding artifact).
-    require(lLeft < cLeft - 5.0 && cLeft < rLeft - 5.0,
-            QStringLiteral("message placements not distinct: L%1 C%2 R%3")
-                .arg(lLeft).arg(cLeft).arg(rLeft));
-    // Default (center) must be byte-identical to explicit center.
-    require(rgbaDiffPixels(defaultImg, centerImg) == 0,
-            QStringLiteral("Default render differs from explicit center"));
-    // noteAlign still moves the note text (RGBA, opaque yellow bg).
-    const QImage noteLeft = renderPng(renderSeq(
-        QStringLiteral("{\"actorMargin\": 200, \"noteAlign\": \"left\"}")));
-    require(rgbaDiffPixels(noteLeft, defaultImg) > 20,
+    // Default (center) byte-identical to explicit center.
+    const QString fwdBody = QStringLiteral("sequenceDiagram\nAlice->>Bob: hello message");
+    const QImage defaultImg = renderPng(
+        QStringLiteral("%%{init: {\"sequence\": {\"actorMargin\": 200}}}%%\n") + fwdBody);
+    require(rgbaDiffPixels(defaultImg, renderPng(msgSrc(fwdBody, "center"))) == 0,
+            QStringLiteral("Default render differs from explicit messageAlign:center"));
+
+    // noteAlign left/right move the note text (RGBA over opaque yellow bg).
+    const QString noteBody = QStringLiteral(
+        "sequenceDiagram\nAlice->>Bob: hi\nNote over Alice,Bob: a note");
+    const auto noteSrc = [&noteBody](const QString& align) {
+      return QStringLiteral(
+          "%%{init: {\"sequence\": {\"actorMargin\": 200, \"noteAlign\": \"") +
+             align + QStringLiteral("\"}}}%%\n") + noteBody;
+    };
+    const QImage noteDefault = renderPng(
+        QStringLiteral("%%{init: {\"sequence\": {\"actorMargin\": 200}}}%%\n") + noteBody);
+    const QImage noteLeft = renderPng(noteSrc("left"));
+    const QImage noteRight = renderPng(noteSrc("right"));
+    require(rgbaDiffPixels(noteLeft, noteDefault) > 20,
             QStringLiteral("noteAlign:left did not move the note text"));
+    require(rgbaDiffPixels(noteRight, noteDefault) > 20,
+            QStringLiteral("noteAlign:right did not move the note text"));
+    require(rgbaDiffPixels(noteLeft, noteRight) > 20,
+            QStringLiteral("noteAlign:left and :right rendered identically"));
   }
 
   // --- 5. Math labels stay centered regardless of align (drawKatex) ---

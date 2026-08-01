@@ -173,7 +173,7 @@ const familyPolicies = {
     ),
     noteAlign: {
       ...parity("text", "paint", "export"),
-      note: "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the note rect.",
+      note: "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the note rect, inset by noteMargin. Plain-text labels only — Math labels stay centered (drawKatex ignores the anchor).",
     },
     messageFontSize: inert("Dead config — setConf() mirrors the global fontSize; see actorFontSize."),
     messageFontFamily: inert("Dead config — setConf() mirrors the global fontFamily; see actorFontFamily."),
