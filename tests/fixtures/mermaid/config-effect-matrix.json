@@ -978,7 +978,7 @@
         "paint",
         "export"
       ],
-      "note": "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the message labelRect.",
+      "note": "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the full message span [min(startx,stopx), max(startx,stopx)], inset by wrapPadding. Plain-text labels only — Math labels stay centered (drawKatex ignores the anchor).",
       "default": "center"
     },
     {
@@ -2402,5 +2402,5 @@
       "default": 12
     }
   ],
-  "fixtureSha256": "bb0d693c55f90d6a4abdd60eee3a2c8a606fffa7d0e8bf78fedf4d99f258f343"
+  "fixtureSha256": "81ac713b803d59b2357079a082b34db030eecc9ab4ac7fabc736391e87002f4d"
 }

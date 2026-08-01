@@ -129,7 +129,7 @@ const familyPolicies = {
     ),
     messageAlign: {
       ...parity("text", "paint", "export"),
-      note: "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the message labelRect.",
+      note: "Upstream start/middle/end maps to Left/Center/Right; paint-only horizontal placement within the full message span [min(startx,stopx), max(startx,stopx)], inset by wrapPadding. Plain-text labels only — Math labels stay centered (drawKatex ignores the anchor).",
     },
     mirrorActors: parity(...layout),
     forceMenus: parity("paint", "interaction", "export"),

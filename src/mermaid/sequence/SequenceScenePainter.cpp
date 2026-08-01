@@ -83,6 +83,15 @@ void centeredText(QPainter& painter, const SequenceLabelDocument& label, const Q
                      color(textColor), true, align, alignMargin);
 }
 
+// Mermaid drawKatex() centers Math labels directly (noteText: rect center;
+// message: span center) and never reads noteAlign/messageAlign. So a label
+// containing Math must ignore the configured align and stay centered regardless.
+flowchart::FlowLabelAlign effectiveAlign(const SequenceLabelDocument& label,
+                                         flowchart::FlowLabelAlign configured) {
+  return label.richText.math.isEmpty() ? configured
+                                       : flowchart::FlowLabelAlign::Center;
+}
+
 void participantShape(QPainter& painter, const SequenceLayoutParticipant& actor,
                       const SequenceLabelDocument& label, bool footer,
                       const SequenceSceneStyle& style) {
@@ -236,7 +245,9 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     else
       painter.drawRect(note.rect);
     centeredText(painter, scene.noteLabels[index], note.rect, scene.style,
-                 scene.style.noteTextColor, scene.style.noteAlign, scene.style.noteMargin);
+                 scene.style.noteTextColor,
+                 effectiveAlign(scene.noteLabels[index], scene.style.noteAlign),
+                 scene.style.noteMargin);
   }
   for (qsizetype index = 0; index < scene.messages.size(); ++index) {
     const auto& message = scene.messages[index];
@@ -274,7 +285,8 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     marker(painter, message.markerStart, QPointF(message.startX, message.lineY),
            message.markerStartDirection, color(scene.style.signalColor));
     centeredText(painter, scene.messageLabels[index], message.alignRect, scene.style,
-                 scene.style.signalTextColor, scene.style.messageAlign,
+                 scene.style.signalTextColor,
+                 effectiveAlign(scene.messageLabels[index], scene.style.messageAlign),
                  scene.style.wrapPadding);
     if (number) {
       painter.setPen(QPen(color(scene.style.signalColor), 1.0));
