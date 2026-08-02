@@ -94,22 +94,24 @@ QString RequirementEnumDisplay::verifyMethod(const QString& keyword) {
 namespace {
 
 // Body-opener classification for a declaration tail. Mermaid 11.16.0 requires a
-// body that spans multiple lines: `requirement X` (no body) and
-// `requirement X { id: 1 }` (single-line) are both Parse errors; only
-// `requirement X {\n id: 1\n}` is valid.
-enum class BodyKind { None, MultiLine, SingleLine };
+// body that spans multiple lines: `requirement X` (no body), `requirement X {}`
+// (single-line) and `requirement X { junk` (content after `{`) are all Parse
+// errors; only `requirement X {\n id: 1\n}` is valid.
+enum class BodyKind { None, MultiLine, SingleLine, Invalid };
 
 struct NameAndClass {
   QString name;
-  QString styleClass;
+  QStringList styleClasses;  // `::: <idList>` — comma-separated classes
   BodyKind body = BodyKind::None;
 };
 
-// Parses `<name> [::: <class>] [{ ...]` from a declaration tail. The name may be
-// a bareword or a double-quoted string (content between quotes; `:::`/`{` inside
-// quotes are literal). The class after `:::` is a bareword terminated by
-// whitespace or `{`. Body: MultiLine = `{` with no same-line `}` (valid);
-// SingleLine = `{ ... }` on one line (rejected); None = no `{` (rejected).
+// Parses `<name> [::: <idList>] [{]` from a declaration tail, matching mermaid's
+// lexer. The name may be a double-quoted string or an UNQUOTED bareword that
+// runs to the first `:::` or `{` (multi-word names like `My Requirement` are
+// valid). The `:::` idList is comma-separated and whitespace-tolerant
+// (`red,blue` and `red, blue` both yield [red, blue]). Body: MultiLine = `{` as
+// the last token on the line (valid); SingleLine = `{ ... }` on one line;
+// Invalid = content after `{`; None = no `{`.
 NameAndClass parseNameTail(QString tail) {
   NameAndClass result;
   tail = tail.trimmed();
@@ -124,51 +126,67 @@ NameAndClass parseNameTail(QString tail) {
       rest.clear();
     }
   } else {
-    // Bareword name: up to the first whitespace, `:::`, or `{`.
+    // Unquoted name: up to the first `:::` or `{` (NOT whitespace — multi-word
+    // names are valid). Mermaid trims.
     int nameEnd = tail.size();
-    for (int i = 0; i < tail.size(); ++i) {
-      const QChar c = tail.at(i);
-      if (c.isSpace() || c == QLatin1Char('{') ||
-          (c == QLatin1Char(':') && i + 2 < tail.size() &&
-           tail.at(i + 1) == QLatin1Char(':') && tail.at(i + 2) == QLatin1Char(':'))) {
-        nameEnd = i;
-        break;
-      }
-    }
-    result.name = tail.left(nameEnd);
+    const int brace = tail.indexOf(QLatin1Char('{'));
+    const int sep = tail.indexOf(QStringLiteral(":::"));
+    if (sep >= 0) nameEnd = std::min(nameEnd, sep);
+    if (brace >= 0) nameEnd = std::min(nameEnd, brace);
+    result.name = tail.left(nameEnd).trimmed();
     rest = tail.mid(nameEnd);
   }
   rest = rest.trimmed();
-  // `::: <class>` — the class is a bareword up to whitespace or `{`.
+  // `::: <idList>` up to `{` — comma-separated classes, whitespace-tolerant.
   const int sep = rest.indexOf(QStringLiteral(":::"));
   if (sep >= 0) {
-    QString after = rest.mid(sep + 3).trimmed();
-    int classEnd = after.size();
-    for (int i = 0; i < after.size(); ++i) {
-      const QChar c = after.at(i);
-      if (c.isSpace() || c == QLatin1Char('{')) { classEnd = i; break; }
-    }
-    result.styleClass = after.left(classEnd);
-    rest = after.mid(classEnd).trimmed();
+    QString after = rest.mid(sep + 3);
+    const int brace = after.indexOf(QLatin1Char('{'));
+    const QString classList = (brace >= 0) ? after.left(brace) : after;
+    for (const QString& token : classList.split(QLatin1Char(','), Qt::SkipEmptyParts))
+      result.styleClasses.append(token.trimmed());
+    rest = (brace >= 0) ? after.mid(brace) : QString();
   }
-  // Body opener `{`. A same-line `}` is a single-line body (rejected); otherwise
-  // the `{` opens a multi-line body.
+  rest = rest.trimmed();
+  // Body opener `{`. Valid only when it is the last token on the line; a same-
+  // line `}` (single-line) or any other trailing content is a Parse error.
   const int brace = rest.indexOf(QLatin1Char('{'));
   if (brace >= 0) {
-    const int close = rest.indexOf(QLatin1Char('}'), brace + 1);
-    result.body = (close >= 0) ? BodyKind::SingleLine : BodyKind::MultiLine;
+    const QString afterBrace = rest.mid(brace + 1).trimmed();
+    if (afterBrace.isEmpty())
+      result.body = BodyKind::MultiLine;
+    else if (afterBrace.startsWith(QLatin1Char('}')))
+      result.body = BodyKind::SingleLine;
+    else
+      result.body = BodyKind::Invalid;
   }
   return result;
 }
 
 // Parses `field: value` from a body line. Returns true if the line has a
-// recognized `key:` prefix; the value is the remainder (unwrapped).
+// recognized `key:` prefix; valueOut is the RAW (trimmed, not unwrapped) value —
+// parseFieldValue validates + unwraps it.
 bool parseFieldLine(const QString& line, QString& keyOut, QString& valueOut) {
   const int colon = line.indexOf(QLatin1Char(':'));
   if (colon <= 0) return false;
   keyOut = line.left(colon).trimmed().toLower();
-  valueOut = unwrapValue(line.mid(colon + 1));
+  valueOut = line.mid(colon + 1).trimmed();
   return true;
+}
+
+// Validates + unwraps a body field value. Mermaid requires a non-empty value,
+// and an unquoted value may not contain ':' or ',' (those need a quoted
+// "qString" — `id: "a:b"` is valid, `id: a:b` is a Parse error).
+QString parseFieldValue(const QString& raw, int lineNo) {
+  const bool quoted = raw.size() >= 2 && raw.startsWith(QLatin1Char('"')) &&
+                      raw.endsWith(QLatin1Char('"'));
+  const QString value = quoted ? raw.mid(1, raw.size() - 2) : raw;
+  if (value.isEmpty())
+    throw RequirementParseError(QStringLiteral("empty field value"), lineNo);
+  if (!quoted && (value.contains(QLatin1Char(':')) || value.contains(QLatin1Char(','))))
+    throw RequirementParseError(
+        QStringLiteral("unquoted value '%1' contains ':' or ',' — quote it").arg(value), lineNo);
+  return value;
 }
 
 bool isValidRisk(const QString& value) {
@@ -316,13 +334,17 @@ public:
                line.at(keyword.size()).isSpace() ||
                line.at(keyword.size()) == QLatin1Char('{'))) {
             const NameAndClass nc = parseNameTail(line.mid(keyword.size()));
-            // Mermaid requires a multi-line body; no-body and single-line are
-            // Parse errors.
+            if (nc.name.isEmpty())
+              throw RequirementParseError(
+                  QStringLiteral("requirement declaration requires a name"), i + 1);
+            if (nc.body == BodyKind::None)
+              throw RequirementParseError(
+                  QStringLiteral("requirement '%1' requires a multi-line body { ... }").arg(nc.name),
+                  i + 1);
             if (nc.body != BodyKind::MultiLine)
               throw RequirementParseError(
-                  nc.body == BodyKind::None
-                      ? QStringLiteral("requirement '%1' requires a multi-line body { ... }").arg(nc.name)
-                      : QStringLiteral("requirement body must span multiple lines ({ and } on separate lines)"),
+                  QStringLiteral(
+                      "requirement body opener `{` must be the last token on its line"),
                   i + 1);
             // Map semantics: one node per name; the FIRST definition wins. A
             // duplicate declaration's body is still validated but not stored.
@@ -331,7 +353,7 @@ public:
               RequirementNode node;
               node.name = nc.name;
               node.type = it.value();
-              if (!nc.styleClass.isEmpty()) node.cssClasses.append(nc.styleClass);
+              node.cssClasses.append(nc.styleClasses);
               data_.requirements.append(std::move(node));
             }
             inBody = true;
@@ -351,17 +373,20 @@ public:
           line.left(7).compare(QStringLiteral("element"), Qt::CaseInsensitive) == 0 &&
           (line.size() == 7 || line.at(7).isSpace() || line.at(7) == QLatin1Char('{'))) {
         const NameAndClass nc = parseNameTail(line.mid(7));
+        if (nc.name.isEmpty())
+          throw RequirementParseError(
+              QStringLiteral("element declaration requires a name"), i + 1);
+        if (nc.body == BodyKind::None)
+          throw RequirementParseError(
+              QStringLiteral("element '%1' requires a multi-line body { ... }").arg(nc.name), i + 1);
         if (nc.body != BodyKind::MultiLine)
           throw RequirementParseError(
-              nc.body == BodyKind::None
-                  ? QStringLiteral("element '%1' requires a multi-line body { ... }").arg(nc.name)
-                  : QStringLiteral("element body must span multiple lines ({ and } on separate lines)"),
-              i + 1);
+              QStringLiteral("element body opener `{` must be the last token on its line"), i + 1);
         const bool duplicate = findElement(nc.name) != nullptr;
         if (!duplicate) {
           ElementNode node;
           node.name = nc.name;
-          if (!nc.styleClass.isEmpty()) node.cssClasses.append(nc.styleClass);
+          node.cssClasses.append(nc.styleClasses);
           data_.elements.append(std::move(node));
         }
         inBody = true;
@@ -441,10 +466,11 @@ private:
     for (int idx = 0; idx < body.size(); ++idx) {
       const QString& raw = body.at(idx);
       const int lineNo = bodyStartLine + 1 + idx;
-      QString key, value;
-      if (!parseFieldLine(raw, key, value))
+      QString key, rawValue;
+      if (!parseFieldLine(raw, key, rawValue))
         throw RequirementParseError(
             QStringLiteral("invalid requirement body line: %1").arg(raw), lineNo);
+      const QString value = parseFieldValue(rawValue, lineNo);
       if (key == QLatin1String("id")) node.requirementId = value;
       else if (key == QLatin1String("text")) node.text = value;
       else if (key == QLatin1String("risk")) {
@@ -470,10 +496,11 @@ private:
     for (int idx = 0; idx < body.size(); ++idx) {
       const QString& raw = body.at(idx);
       const int lineNo = bodyStartLine + 1 + idx;
-      QString key, value;
-      if (!parseFieldLine(raw, key, value))
+      QString key, rawValue;
+      if (!parseFieldLine(raw, key, rawValue))
         throw RequirementParseError(
             QStringLiteral("invalid element body line: %1").arg(raw), lineNo);
+      const QString value = parseFieldValue(rawValue, lineNo);
       if (key == QLatin1String("type")) node.type = value;
       else if (key == QLatin1String("docref")) node.docRef = value;
       else
