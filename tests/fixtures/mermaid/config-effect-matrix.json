@@ -19,7 +19,8 @@
       "sequence",
       "class",
       "state",
-      "er"
+      "er",
+      "requirement"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
@@ -29,7 +30,7 @@
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 20,
+    "upstream-inert": 31,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -41,7 +42,8 @@
         "sequence",
         "class",
         "state",
-        "er"
+        "er",
+        "requirement"
       ],
       "status": "parity",
       "upstream": [
@@ -68,7 +70,8 @@
         "sequence",
         "class",
         "state",
-        "er"
+        "er",
+        "requirement"
       ],
       "status": "partial",
       "upstream": [
@@ -96,7 +99,8 @@
         "sequence",
         "class",
         "state",
-        "er"
+        "er",
+        "requirement"
       ],
       "status": "parity",
       "upstream": [
@@ -276,7 +280,8 @@
         "sequence",
         "class",
         "state",
-        "er"
+        "er",
+        "requirement"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -296,7 +301,8 @@
         "sequence",
         "class",
         "state",
-        "er"
+        "er",
+        "requirement"
       ],
       "status": "deferred",
       "upstream": [
@@ -315,7 +321,8 @@
         "sequence",
         "class",
         "state",
-        "er"
+        "er",
+        "requirement"
       ],
       "status": "parity",
       "upstream": [
@@ -334,7 +341,8 @@
         "sequence",
         "class",
         "state",
-        "er"
+        "er",
+        "requirement"
       ],
       "status": "parity",
       "upstream": [
@@ -353,7 +361,8 @@
         "sequence",
         "class",
         "state",
-        "er"
+        "er",
+        "requirement"
       ],
       "status": "unsupported",
       "upstream": [
@@ -2415,7 +2424,182 @@
       ],
       "note": "er.fontSize is dead in mermaid 11.16; the theme fontSize is used.",
       "default": 12
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.useWidth",
+      "field": "useWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The 11.16 requirement renderer reads config.state.useMaxWidth (setupViewPortForSVG conf=state), never config.requirement.useMaxWidth — setting requirement.useMaxWidth has no observable effect. The viewport-sizing effect is real but sourced from state.",
+      "default": true
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.rect_fill",
+      "field": "rect_fill",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.rect_fill is never consumed; the requirementBox fill resolves to theme mainBkg (or inline style/classDef).",
+      "default": "#f9f9f9"
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.text_color",
+      "field": "text_color",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.text_color is never consumed; the requirementBox text color resolves to theme primaryTextColor.",
+      "default": "#333"
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.rect_border_size",
+      "field": "rect_border_size",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.rect_border_size is never consumed; the box stroke-width resolves to theme strokeWidth.",
+      "default": "0.5px"
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.rect_border_color",
+      "field": "rect_border_color",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.rect_border_color is never consumed; the box stroke resolves to theme border1 (or borderColorArray[colorIndex]).",
+      "default": "#bbb"
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.rect_min_width",
+      "field": "rect_min_width",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.rect_min_width is never consumed; the box width is measured from text bbox + padding(20).",
+      "default": 200
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.rect_min_height",
+      "field": "rect_min_height",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.rect_min_height is never consumed; the box height is measured from text bbox + padding(20).",
+      "default": 200
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.fontSize",
+      "field": "fontSize",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.fontSize is never consumed; the theme fontSize is used (same as er.fontSize / class.fontSize).",
+      "default": 14
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.rect_padding",
+      "field": "rect_padding",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.rect_padding is never consumed; the box padding is hardcoded to 20 in requirementBox.ts.",
+      "default": 10
+    },
+    {
+      "family": "requirement",
+      "interface": "RequirementDiagramConfig",
+      "path": "requirement.line_height",
+      "field": "line_height",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — requirement.line_height is never consumed; the row height is measured from text bbox (addText3 return value).",
+      "default": 20
     }
   ],
-  "fixtureSha256": "870315e80dd221d3196dfcea6147f8744809eb492e1ea6b99470f3bae412aed6"
+  "fixtureSha256": "90006a63f34d28a6c8b0add407115967a5c5297b99f66a5def78c5da60719e96"
 }

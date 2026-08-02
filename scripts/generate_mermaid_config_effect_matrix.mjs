@@ -306,17 +306,61 @@ const familyPolicies = {
       "er.fontSize is dead in mermaid 11.16; the theme fontSize is used.",
     ),
   },
+  requirement: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: inert(
+      "The 11.16 requirement renderer reads config.state.useMaxWidth (setupViewPortForSVG " +
+      "conf=state), never config.requirement.useMaxWidth — setting requirement.useMaxWidth " +
+      "has no observable effect. The viewport-sizing effect is real but sourced from state.",
+    ),
+    rect_fill: inert(
+      "Dead config in mermaid 11.16.0 — requirement.rect_fill is never consumed; the " +
+      "requirementBox fill resolves to theme mainBkg (or inline style/classDef).",
+    ),
+    text_color: inert(
+      "Dead config in mermaid 11.16.0 — requirement.text_color is never consumed; the " +
+      "requirementBox text color resolves to theme primaryTextColor.",
+    ),
+    rect_border_size: inert(
+      "Dead config in mermaid 11.16.0 — requirement.rect_border_size is never consumed; " +
+      "the box stroke-width resolves to theme strokeWidth.",
+    ),
+    rect_border_color: inert(
+      "Dead config in mermaid 11.16.0 — requirement.rect_border_color is never consumed; " +
+      "the box stroke resolves to theme border1 (or borderColorArray[colorIndex]).",
+    ),
+    rect_min_width: inert(
+      "Dead config in mermaid 11.16.0 — requirement.rect_min_width is never consumed; " +
+      "the box width is measured from text bbox + padding(20).",
+    ),
+    rect_min_height: inert(
+      "Dead config in mermaid 11.16.0 — requirement.rect_min_height is never consumed; " +
+      "the box height is measured from text bbox + padding(20).",
+    ),
+    fontSize: inert(
+      "Dead config in mermaid 11.16.0 — requirement.fontSize is never consumed; the theme " +
+      "fontSize is used (same as er.fontSize / class.fontSize).",
+    ),
+    rect_padding: inert(
+      "Dead config in mermaid 11.16.0 — requirement.rect_padding is never consumed; the " +
+      "box padding is hardcoded to 20 in requirementBox.ts.",
+    ),
+    line_height: inert(
+      "Dead config in mermaid 11.16.0 — requirement.line_height is never consumed; the " +
+      "row height is measured from text bbox (addText3 return value).",
+    ),
+  },
 };
 
 const shared = [
   {
     path: "theme",
-    families: ["flowchart", "sequence", "class", "state", "er"],
+    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
   {
     path: "themeVariables.*",
-    families: ["flowchart", "sequence", "class", "state", "er"],
+    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
       ["text", "layout", "paint", "viewport", "export"],
@@ -325,7 +369,7 @@ const shared = [
   },
   {
     path: "fontFamily",
-    families: ["flowchart", "sequence", "class", "state", "er"],
+    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
   {
@@ -384,7 +428,7 @@ const shared = [
   },
   {
     path: "securityLevel",
-    families: ["flowchart", "sequence", "class", "state", "er"],
+    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
     ...policy(
       "security-fixed",
       ["interaction", "export"],
@@ -394,22 +438,22 @@ const shared = [
   },
   {
     path: "arrowMarkerAbsolute",
-    families: ["flowchart", "sequence", "class", "state", "er"],
+    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
     ...deferred(["export"], "Requires native SVG marker serialization."),
   },
   {
     path: "deterministicIds",
-    families: ["flowchart", "sequence", "class", "state", "er"],
+    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
     ...parity("export"),
   },
   {
     path: "deterministicIDSeed",
-    families: ["flowchart", "sequence", "class", "state", "er"],
+    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
     ...parity("export"),
   },
   {
     path: "themeCSS",
-    families: ["flowchart", "sequence", "class", "state", "er"],
+    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
     ...unsupported(
       ["paint", "export"],
       "Native scenes consume typed theme variables rather than arbitrary browser CSS.",
@@ -453,6 +497,7 @@ const interfaces = {
   class: "ClassDiagramConfig",
   state: "StateDiagramConfig",
   er: "ErDiagramConfig",
+  requirement: "RequirementDiagramConfig",
 };
 
 const entries = [];

@@ -1,0 +1,325 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "Real mermaid 11.16.0 requirementDiagram geometry captured via headless Chrome with htmlLabels:false (deterministic SVG <text>). Per requirementBox node: body-row count (.label groups minus 2) + divider presence + width/height (origin-independent, font-coupled). Per relationship edge: line pattern + start/end marker kinds + relationship type (extracted from the <<type>> label). Marker kinds are bare types (Start/End suffix dropped). Positions are not captured (doubly font-coupled via dagre). Compare against requirement::RequirementScene::toJsonObject."
+  },
+  "mermaidVersion": "11.16.0",
+  "fontMode": "trebuchet-ms",
+  "oracle": "requirementDiagram.render requirementBox nodes (bounds+bodyRows+dividers) + relationship edges (pattern+markers+type)",
+  "cases": [
+    {
+      "id": "basic-requirement",
+      "source": "requirementDiagram\nrequirement TestReq {\n  id: 1\n  text: the test text\n  risk: high\n  verifyMethod: inspection\n}",
+      "expected": {
+        "nodes": [
+          {
+            "id": "TestReq",
+            "type": "Requirement",
+            "bodyRows": 4,
+            "dividers": 1,
+            "width": 188.344,
+            "height": 184
+          }
+        ],
+        "edges": []
+      }
+    },
+    {
+      "id": "all-types",
+      "source": "requirementDiagram\nrequirement R1 {\n  id: 1\n}\nfunctionalRequirement R2 {\n  id: 2\n}\ninterfaceRequirement R3 {\n  id: 3\n}\nperformanceRequirement R4 {\n  id: 4\n}\nphysicalRequirement R5 {\n  id: 5\n}\ndesignConstraint R6 {\n  id: 6\n}",
+      "expected": {
+        "nodes": [
+          {
+            "id": "R1",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "R2",
+            "type": "Functional Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 225.203,
+            "height": 109
+          },
+          {
+            "id": "R3",
+            "type": "Interface Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 215.484,
+            "height": 109
+          },
+          {
+            "id": "R4",
+            "type": "Performance Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 240.953,
+            "height": 109
+          },
+          {
+            "id": "R5",
+            "type": "Physical Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 206.922,
+            "height": 109
+          },
+          {
+            "id": "R6",
+            "type": "Design Constraint",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 178.734,
+            "height": 109
+          }
+        ],
+        "edges": []
+      }
+    },
+    {
+      "id": "element",
+      "source": "requirementDiagram\nelement TestElement {\n  type: Model\n  docref: spec001\n}",
+      "expected": {
+        "nodes": [
+          {
+            "id": "TestElement",
+            "type": "Element",
+            "bodyRows": 2,
+            "dividers": 1,
+            "width": 142.359,
+            "height": 134
+          }
+        ],
+        "edges": []
+      }
+    },
+    {
+      "id": "contains",
+      "source": "requirementDiagram\nrequirement Parent {\n  id: 1\n}\nrequirement Child {\n  id: 2\n}\nParent -contains-> Child",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Parent",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "Child",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "requirement_contains",
+            "markerEnd": null,
+            "type": "contains",
+            "label": "<<contains>>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dashed-relations",
+      "source": "requirementDiagram\nrequirement A {\n  id: 1\n}\nrequirement B {\n  id: 2\n}\nrequirement C {\n  id: 3\n}\nrequirement D {\n  id: 4\n}\nrequirement E {\n  id: 5\n}\nrequirement F {\n  id: 6\n}\nrequirement G {\n  id: 7\n}\nA -copies-> B\nB -derives-> C\nC -satisfies-> D\nD -verifies-> E\nE -refines-> F\nF -traces-> G",
+      "expected": {
+        "nodes": [
+          {
+            "id": "A",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "B",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "C",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "D",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "E",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "F",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "G",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "copies",
+            "label": "<<copies>>"
+          },
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "derives",
+            "label": "<<derives>>"
+          },
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "satisfies",
+            "label": "<<satisfies>>"
+          },
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "verifies",
+            "label": "<<verifies>>"
+          },
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "refines",
+            "label": "<<refines>>"
+          },
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "traces",
+            "label": "<<traces>>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mixed",
+      "source": "requirementDiagram\nrequirement Req1 {\n  id: REQ001\n  text: The system shall do X\n  risk: medium\n  verifyMethod: test\n}\nfunctionalRequirement Req2 {\n  id: REQ002\n  text: The system shall do Y\n  risk: low\n  verifyMethod: analysis\n}\nelement Mod {\n  type: Module\n  docref: DOC1\n}\nReq1 -contains-> Req2\nMod -satisfies-> Req1\nReq2 <-verifies- Req1",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Req1",
+            "type": "Requirement",
+            "bodyRows": 4,
+            "dividers": 1,
+            "width": 217.617,
+            "height": 184
+          },
+          {
+            "id": "Req2",
+            "type": "Functional Requirement",
+            "bodyRows": 4,
+            "dividers": 1,
+            "width": 225.203,
+            "height": 184
+          },
+          {
+            "id": "Mod",
+            "type": "Element",
+            "bodyRows": 2,
+            "dividers": 1,
+            "width": 123.703,
+            "height": 134
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "verifies",
+            "label": "<<verifies>>"
+          },
+          {
+            "pattern": "dashed",
+            "markerStart": null,
+            "markerEnd": "requirement_arrow",
+            "type": "satisfies",
+            "label": "<<satisfies>>"
+          }
+        ]
+      }
+    },
+    {
+      "id": "direction-lr",
+      "source": "requirementDiagram\ndirection LR\nrequirement Left {\n  id: 1\n}\nrequirement Right {\n  id: 2\n}\nLeft -contains-> Right",
+      "expected": {
+        "nodes": [
+          {
+            "id": "Left",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          },
+          {
+            "id": "Right",
+            "type": "Requirement",
+            "bodyRows": 1,
+            "dividers": 1,
+            "width": 145.219,
+            "height": 109
+          }
+        ],
+        "edges": [
+          {
+            "pattern": "solid",
+            "markerStart": "requirement_contains",
+            "markerEnd": null,
+            "type": "contains",
+            "label": "<<contains>>"
+          }
+        ]
+      }
+    }
+  ]
+}

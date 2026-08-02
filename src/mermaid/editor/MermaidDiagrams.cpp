@@ -14,7 +14,7 @@ namespace muffin::mermaid::editor {
 const Diagram* findMermaidDiagram(const QString& type) {
   static const QVector<const Diagram*> kAll = {
       &stateDiagramAdapter(), &classDiagramAdapter(), &sequenceDiagramAdapter(),
-      &flowchartDiagramAdapter(), &erDiagramAdapter()};
+      &flowchartDiagramAdapter(), &erDiagramAdapter(), &requirementDiagramAdapter()};
   static const QHash<QString, const Diagram*> kByType = [] {
     QHash<QString, const Diagram*> registry;
     for (const Diagram* diagram : kAll)

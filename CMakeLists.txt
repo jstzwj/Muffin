@@ -477,6 +477,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/ClassDiagramAdapter.cpp
   src/mermaid/editor/StateDiagramAdapter.cpp
   src/mermaid/editor/ErDiagramAdapter.cpp
+  src/mermaid/editor/RequirementDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -544,6 +545,14 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/classdiagram/ClassScenePainter.h
   src/mermaid/classdiagram/ClassTokenizer.cpp
   src/mermaid/classdiagram/ClassTokenizer.h
+  src/mermaid/requirement/RequirementDiagram.cpp
+  src/mermaid/requirement/RequirementDiagram.h
+  src/mermaid/requirement/RequirementLayout.cpp
+  src/mermaid/requirement/RequirementLayout.h
+  src/mermaid/requirement/RequirementScene.cpp
+  src/mermaid/requirement/RequirementScene.h
+  src/mermaid/requirement/RequirementScenePainter.cpp
+  src/mermaid/requirement/RequirementScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp
