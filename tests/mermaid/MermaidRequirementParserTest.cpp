@@ -255,5 +255,66 @@ int main(int argc, char** argv) {
             QStringLiteral("quoted special chars preserved, got '%1'").arg(d.requirements.at(2).text));
   }
 
+  // 7. Data-driven token-contract table (valid / invalid / decoded value) — a
+  //    concentrated acceptance fixture for the unified lexer, covering names,
+  //    body values, relationship endpoints, idList, and comment handling in one
+  //    place. `ok`=expected to parse; expectName/expectText assert the decoded
+  //    value. All entries verified against real mermaid 11.16.0.
+  struct TokenCase {
+    const char* id;
+    const char* src;
+    bool ok;
+    const char* expectName;  // nullptr = don't check
+    const char* expectText;
+  };
+  const TokenCase tokenCases[] = {
+      // Names: first char \w; } # % allowed; . / ; - = : rejected.
+      {"name-hash", "requirementDiagram\nrequirement X#Y {\n id: 1\n}", true, "X#Y", nullptr},
+      {"name-brace", "requirementDiagram\nrequirement X}Y {\n id: 1\n}", true, "X}Y", nullptr},
+      {"name-dot", "requirementDiagram\nrequirement .abc {\n id: 1\n}", false, nullptr, nullptr},
+      {"name-dash", "requirementDiagram\nrequirement A-B {\n id: 1\n}", false, nullptr, nullptr},
+      {"name-colon", "requirementDiagram\nrequirement A:B {\n id: 1\n}", false, nullptr, nullptr},
+      // Values: same rule; %/#/} allowed; special chars rejected unquoted, quoted OK.
+      {"value-percent", "requirementDiagram\nrequirement X {\n text: 50% complete\n}", true, "X", "50% complete"},
+      {"value-hash", "requirementDiagram\nrequirement X {\n text: abc # def\n}", true, "X", "abc # def"},
+      {"value-brace", "requirementDiagram\nrequirement X {\n text: a}b\n}", true, "X", "a}b"},
+      {"value-dash", "requirementDiagram\nrequirement X {\n text: a-b\n}", false, nullptr, nullptr},
+      {"value-equals", "requirementDiagram\nrequirement X {\n text: a=b\n}", false, nullptr, nullptr},
+      {"value-quoted-special", "requirementDiagram\nrequirement X {\n text: \"a:b,c-d=e\"\n}", true, "X", "a:b,c-d=e"},
+      {"value-qstring-junk", "requirementDiagram\nrequirement X {\n text: \"a\" junk\n}", false, nullptr, nullptr},
+      // Relationship endpoint validated via the same token API.
+      {"endpoint-hash", "requirementDiagram\nrequirement A#B {\n id: 1\n}\nrequirement C {\n id: 2\n}\nA#B -contains-> C", true, "A#B", nullptr},
+      {"endpoint-dash", "requirementDiagram\nrequirement A {\n id: 1\n}\nrequirement C {\n id: 2\n}\nA-B -contains-> C", false, nullptr, nullptr},
+      // idList: comma outside quotes; quoted comma is one class; empty/malformed rejected.
+      {"idlist-quoted-comma", "requirementDiagram\nrequirement X ::: \"red,blue\" {\n id: 1\n}", true, "X", nullptr},
+      {"idlist-empty", "requirementDiagram\nrequirement X ::: {\n id: 1\n}", false, nullptr, nullptr},
+      {"idlist-double-comma", "requirementDiagram\nrequirement X ::: red,,blue {\n id: 1\n}", false, nullptr, nullptr},
+      // Comments: whole-line only (and a header trailing comment); # inside a
+      // name/value is literal.
+      {"header-trailing-comment", "requirementDiagram # c\nrequirement X {\n id: 1\n}", true, "X", nullptr},
+      {"name-internal-hash", "requirementDiagram\nrequirement X # c {\n id: 1\n}", true, "X # c", nullptr},
+      {"body-comment-line", "requirementDiagram\nrequirement X {\n id: 1\n # a body comment\n text: v\n}", true, "X", "v"},
+  };
+  for (const TokenCase& tc : tokenCases) {
+    bool threw = false;
+    RequirementDiagramData d;
+    try {
+      d = RequirementDiagram::parse(QLatin1String(tc.src)).data();
+    } catch (const RequirementParseError&) {
+      threw = true;
+    }
+    require(threw == !tc.ok,
+            QStringLiteral("%1: expected %2").arg(QLatin1String(tc.id), tc.ok ? "OK" : "throw"));
+    if (tc.ok) {
+      require(!d.requirements.isEmpty(), QStringLiteral("%1: expected a requirement").arg(QLatin1String(tc.id)));
+      if (tc.expectName)
+        require(d.requirements.at(0).name == QLatin1String(tc.expectName),
+                QStringLiteral("%1: name '%2'").arg(QLatin1String(tc.id), d.requirements.at(0).name));
+      if (tc.expectText)
+        require(d.requirements.at(0).text == QLatin1String(tc.expectText),
+                QStringLiteral("%1: text '%2'").arg(QLatin1String(tc.id), d.requirements.at(0).text));
+    }
+  }
+
   return 0;
 }

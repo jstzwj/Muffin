@@ -17,20 +17,9 @@
 
 namespace {
 
-// Strips a `#` or `%` line comment, honoring double-quoted strings (a `#` or `%`
-// inside quotes is literal). Mermaid's lexer treats both as line comments.
-QString stripComment(const QString& line) {
-  bool inQuote = false;
-  for (qsizetype i = 0; i < line.size(); ++i) {
-    const QChar c = line.at(i);
-    if (c == QLatin1Char('"')) inQuote = !inQuote;
-    else if (!inQuote && (c == QLatin1Char('#') || c == QLatin1Char('%')))
-      return line.left(i);
-  }
-  return line;
-}
-
 // Strips surrounding double-quotes from a bareword/quoted value and trims.
+// (Used only by the deferred title/accTitle/accDescription directives; names,
+// body values, endpoints and idList use the unified consumeToken API.)
 QString unwrapValue(const QString& raw) {
   QString v = raw.trimmed();
   if (v.size() >= 2 && v.startsWith(QLatin1Char('"')) && v.endsWith(QLatin1Char('"')))
@@ -105,7 +94,14 @@ struct NameAndClass {
   BodyKind body = BodyKind::None;
 };
 
-// Forward declaration: parseIdList is defined with the other token helpers below.
+// Token + consumeToken are defined in full with the other token helpers below;
+// declared here so parseNameTail (and parseIdList) can use them.
+struct Token {
+  QString value;
+  bool quoted = false;
+  int end = 0;  // index just past the consumed token
+};
+Token consumeToken(const QString& s, int pos, int lineNo);
 QStringList parseIdList(const QString& raw, int lineNo);
 
 // Parses `<name> [::: <idList>] [{]` from a declaration tail, matching mermaid's
@@ -118,29 +114,15 @@ QStringList parseIdList(const QString& raw, int lineNo);
 NameAndClass parseNameTail(QString tail, int lineNo) {
   NameAndClass result;
   tail = tail.trimmed();
-  QString rest;
-  if (tail.startsWith(QLatin1Char('"'))) {
-    const int end = tail.indexOf(QLatin1Char('"'), 1);
-    if (end > 0) {
-      result.name = tail.mid(1, end - 1);
-      rest = tail.mid(end + 1);
-    } else {
-      result.name = tail.mid(1);  // unterminated quote
-      rest.clear();
-    }
-  } else {
-    // Unquoted name: up to the first `:::` or `{` (NOT whitespace — multi-word
-    // names are valid). Mermaid trims.
-    int nameEnd = tail.size();
-    const int brace = tail.indexOf(QLatin1Char('{'));
-    const int sep = tail.indexOf(QStringLiteral(":::"));
-    if (sep >= 0) nameEnd = std::min(nameEnd, sep);
-    if (brace >= 0) nameEnd = std::min(nameEnd, brace);
-    result.name = tail.left(nameEnd).trimmed();
-    rest = tail.mid(nameEnd);
-  }
-  rest = rest.trimmed();
-  // `::: <idList>` up to `{` — parseIdList rejects empty/malformed lists.
+  // Name = one token (qString or unqString) at the start. consumeToken enforces
+  // the lexer rule (first char \w; an unqString stops at : { < > - =), so an
+  // invalid name (`.abc`, or `A-B`/`A:B` leaving trailing junk) is rejected here
+  // or via the junk-before-brace check below. `}`/`#`/`%` are part of the name.
+  const Token nameTok = consumeToken(tail, 0, lineNo);
+  result.name = nameTok.value.trimmed();
+  QString rest = tail.mid(nameTok.end).trimmed();
+  // `::: <idList>` up to `{` — parseIdList rejects empty/malformed lists and
+  // only splits on commas OUTSIDE quotes.
   const int sep = rest.indexOf(QStringLiteral(":::"));
   if (sep >= 0) {
     QString after = rest.mid(sep + 3);
@@ -184,69 +166,94 @@ bool parseFieldLine(const QString& line, QString& keyOut, QString& valueOut) {
 // These replace the earlier scattered contains() checks, which kept missing
 // edge cases (malformed qString, junk between tokens, comment-in-value).
 
-// unqString may not contain any of these structural/special chars (verified vs
-// mermaid 11.16.0: `- = < > { } : ,` are rejected; letters/digits/space/. _ / %
-// # ; etc. are accepted). Only a quoted qString may contain them.
-bool isUnqStringSpecial(QChar c) {
-  return c == QLatin1Char('-') || c == QLatin1Char('=') || c == QLatin1Char('<') ||
-         c == QLatin1Char('>') || c == QLatin1Char('{') || c == QLatin1Char('}') ||
-         c == QLatin1Char(':') || c == QLatin1Char(',');
+// Unified token API — a direct port of mermaid's lexer rule, reused by every
+// token consumer (declaration name, body value, relationship endpoint, idList)
+// so the contract is consistent and edge cases can't slip through one path.
+//
+//   unqString = [\w][^:,\r\n{}<>\-=]*   (first char a word char; then any char
+//                                        except : , { < > - = and newlines)
+//   qString   = "..."                    (decoded; must be fully consumed)
+//
+// Note `}` IS allowed in an unqString (verified: `text: a}b`, name `X}Y`).
+// `#`/`%`/space/`.`/`/`/`;` are allowed, so comments are NOT stripped mid-token.
+bool isWordChar(QChar c) { return c.isLetterOrNumber() || c == QLatin1Char('_'); }
+bool isUnqStopChar(QChar c) {
+  return c == QLatin1Char(':') || c == QLatin1Char(',') || c == QLatin1Char('{') ||
+         c == QLatin1Char('<') || c == QLatin1Char('>') || c == QLatin1Char('-') ||
+         c == QLatin1Char('=') || c == QLatin1Char('\r') || c == QLatin1Char('\n');
 }
 
-// Parses a single string token: either a quoted qString ("...") that must span
-// the WHOLE raw text (a closing quote with anything after — `"a" junk`,
-// `"a" "b"` — is malformed), or an unquoted bareword.
-struct ParsedString {
-  QString value;
-  bool quoted = false;
-};
-ParsedString parseStringToken(const QString& raw, int lineNo) {
-  ParsedString result;
-  if (!raw.startsWith(QLatin1Char('"'))) {
-    result.value = raw;
-    return result;
+// Consumes one token (qString or unqString) starting at `pos`. Throws on an
+// unquoted token whose first char is not \w, or an unterminated qString.
+Token consumeToken(const QString& s, int pos, int lineNo) {
+  Token t;
+  if (pos >= s.size())
+    throw RequirementParseError(QStringLiteral("expected a value"), lineNo);
+  if (s.at(pos) == QLatin1Char('"')) {
+    const int close = s.indexOf(QLatin1Char('"'), pos + 1);
+    if (close < 0)
+      throw RequirementParseError(QStringLiteral("unterminated quoted string"), lineNo);
+    t.value = s.mid(pos + 1, close - pos - 1);
+    t.quoted = true;
+    t.end = close + 1;
+    return t;
   }
-  result.quoted = true;
-  const int close = raw.indexOf(QLatin1Char('"'), 1);
-  if (close < 0)
-    throw RequirementParseError(QStringLiteral("unterminated quoted string"), lineNo);
-  if (close != raw.size() - 1)
+  if (!isWordChar(s.at(pos)))
     throw RequirementParseError(
-        QStringLiteral("unexpected text after quoted string"), lineNo);
-  result.value = raw.mid(1, close - 1);
-  return result;
+        QStringLiteral("value must start with a word character or be quoted"), lineNo);
+  int end = pos + 1;
+  while (end < s.size() && !isUnqStopChar(s.at(end))) ++end;
+  t.value = s.mid(pos, end - pos);
+  t.end = end;
+  return t;
 }
 
-// Validates + unwraps a body field value. Non-empty; unquoted values may not
-// contain a special char (quote them instead). Multi-word unquoted values
-// (`text: hello world`) and `%`/`#` (`text: 50% complete`) stay valid.
+// A body field value: one token that must consume the WHOLE raw text (trailing
+// text, or a special char that stops an unqString mid-value, is rejected).
 QString parseValue(const QString& raw, int lineNo) {
-  const ParsedString token = parseStringToken(raw, lineNo);
-  if (token.value.isEmpty())
+  const Token t = consumeToken(raw, 0, lineNo);
+  if (t.end != raw.size())
+    throw RequirementParseError(
+        QStringLiteral("invalid value '%1' (trailing text or a special char outside quotes)").arg(raw),
+        lineNo);
+  if (t.value.isEmpty())
     throw RequirementParseError(QStringLiteral("empty field value"), lineNo);
-  if (!token.quoted) {
-    for (const QChar c : token.value)
-      if (isUnqStringSpecial(c))
-        throw RequirementParseError(
-            QStringLiteral("unquoted value '%1' contains a special char — quote it").arg(token.value),
-            lineNo);
-  }
-  return token.value;
+  return t.value;
 }
 
-// Parses a `::: <idList>`: comma-separated, whitespace-tolerant class tokens.
-// Empty (no classes), leading/trailing comma, and double comma are all rejected
-// (mermaid's STR list does not allow empty tokens).
+// A `::: <idList>`: comma-separated tokens, splitting ONLY on commas outside
+// quotes (`::: "red,blue"` is one class "red,blue"). Empty tokens (empty list,
+// leading/trailing/double comma) are rejected.
 QStringList parseIdList(const QString& raw, int lineNo) {
   if (raw.trimmed().isEmpty())
     throw RequirementParseError(QStringLiteral("empty class list after ':::'"), lineNo);
+  QStringList parts;
+  QString current;
+  bool inQuote = false;
+  for (int i = 0; i < raw.size(); ++i) {
+    const QChar c = raw.at(i);
+    if (c == QLatin1Char('"')) {
+      inQuote = !inQuote;
+      current += c;
+    } else if (c == QLatin1Char(',') && !inQuote) {
+      parts.append(current);
+      current.clear();
+    } else {
+      current += c;
+    }
+  }
+  parts.append(current);
   QStringList result;
-  for (const QString& token : raw.split(QLatin1Char(','))) {
-    const QString trimmed = token.trimmed();
+  for (const QString& part : parts) {
+    const QString trimmed = part.trimmed();
     if (trimmed.isEmpty())
       throw RequirementParseError(
           QStringLiteral("malformed class list (empty/leading/trailing/double comma)"), lineNo);
-    result.append(trimmed);
+    const Token t = consumeToken(trimmed, 0, lineNo);
+    if (t.end != trimmed.size())
+      throw RequirementParseError(
+          QStringLiteral("malformed class list token '%1'").arg(trimmed), lineNo);
+    result.append(t.value);
   }
   return result;
 }
@@ -298,18 +305,13 @@ public:
         }
         continue;
       }
-      QString line;
-      if (inBody) {
-        // Inside a body, `#`/`%` are part of values (NOT comments) — do not
-        // strip mid-line. A whole comment line (first char `#`/`%`) is skipped.
-        line = rawLine.trimmed();
-        if (line.startsWith(QLatin1Char('#')) || line.startsWith(QLatin1Char('%')))
-          continue;
-      } else {
-        // Top-level: strip a trailing `#`/`%` comment (a token-boundary comment),
-        // then trim. (Body value lines preserve `#`/`%` — see parseValue.)
-        line = stripComment(rawLine).trimmed();
-      }
+      // Comments are lexer-state: a `#`/`%` starts a comment only at a token
+      // boundary (a whole comment line), never inside a name/value/endpoint
+      // token — `X#Y`, `text: 50% complete`, `requirement X # c {` (name "X # c")
+      // are all preserved. So do NOT strip mid-line; only skip whole comment lines.
+      QString line = rawLine.trimmed();
+      if (line.startsWith(QLatin1Char('#')) || line.startsWith(QLatin1Char('%')))
+        continue;
       if (line.isEmpty()) continue;
 
       if (inBody) {
@@ -339,11 +341,14 @@ public:
         continue;
       }
 
-      // The first meaningful line must be the `requirementDiagram` header
-      // (exactly — mermaid's grammar requires the RD token; `requirement` alone
-      // or any other opener is a Parse error).
+      // The first meaningful line must be the `requirementDiagram` header keyword
+      // (mermaid's RD token), optionally followed by whitespace and/or a `#`/`%`
+      // comment. `requirement` alone or any other opener is a Parse error.
       if (!headerSeen) {
-        if (line.toLower() == QStringLiteral("requirementdiagram")) {
+        const QString lower = line.toLower();
+        if (lower.startsWith(QStringLiteral("requirementdiagram")) &&
+            (lower.size() == 18 || lower.at(18).isSpace() ||
+             lower.at(18) == QLatin1Char('#') || lower.at(18) == QLatin1Char('%'))) {
           headerSeen = true;
           continue;
         }
@@ -478,7 +483,7 @@ public:
       // Relationship: `<name> <- <type> - <name>` or `<name> - <type> -> <name>`.
       {
         Relationship rel;
-        if (parseRelationship(line, rel)) {
+        if (parseRelationship(line, rel, i + 1)) {
           data_.relations.append(std::move(rel));
           continue;
         }
@@ -615,19 +620,26 @@ private:
   }
 
   // Matches `src <- type - dst` (← form, src=right) or `src - type -> dst`
-  // (→ form, src=left). Returns true and fills `rel` on match.
-  bool parseRelationship(const QString& line, Relationship& rel) const {
+  // (→ form, src=left). Returns true and fills `rel` on match. Each endpoint is
+  // validated through the unified token API (consumeToken must fully consume it),
+  // so an endpoint like `A-B` or `.x` is rejected like any other token.
+  bool parseRelationship(const QString& line, Relationship& rel, int lineNo) const {
     static const QRegularExpression re(
         QStringLiteral(
             R"((.+?)\s*(<-|->|-)\s*(contains|copies|derives|satisfies|verifies|refines|traces)\s*(<-|->|-)\s*(.+))"),
         QRegularExpression::CaseInsensitiveOption);
     const QRegularExpressionMatch m = re.match(line);
     if (!m.hasMatch()) return false;
-    const QString left = unwrapValue(m.captured(1));
     const QString connectorBefore = m.captured(2);
     const QString type = m.captured(3).toLower();
     const QString connectorAfter = m.captured(4);
-    const QString right = unwrapValue(m.captured(5));
+    // Endpoints: one token each, fully consumed (decode quoted, validate unquoted).
+    const Token leftTok = consumeToken(m.captured(1).trimmed(), 0, lineNo);
+    if (leftTok.end != m.captured(1).trimmed().size()) return false;
+    const Token rightTok = consumeToken(m.captured(5).trimmed(), 0, lineNo);
+    if (rightTok.end != m.captured(5).trimmed().size()) return false;
+    const QString left = leftTok.value;
+    const QString right = rightTok.value;
     // Validate the connector pairing: only `<- ... -` and `- ... ->` are legal.
     const bool formArrowRight =
         connectorBefore == QLatin1String("-") && connectorAfter == QLatin1String("->");
