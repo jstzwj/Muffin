@@ -97,4 +97,11 @@ QString rgba(const QString& color, double alpha);
 // comparison (which is exact-string against stringify()).
 QColor toQColor(const QString& color);
 
+// True iff `color` is a recognized CSS color (hex / rgb() / hsl() / named
+// keyword). Mirrors what parse() accepts before falling back to the opaque
+// original-string round-trip. Used by diagram style resolution to detect
+// invalid inline values that mermaid's SVG would drop (so Muffin can apply the
+// upstream fallback: invalid fill → inherited foreground, invalid stroke → none).
+bool isParsableColor(const QString& color);
+
 }  // namespace muffin::mermaid::color

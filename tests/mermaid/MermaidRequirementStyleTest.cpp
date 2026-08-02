@@ -1,0 +1,348 @@
+// requirementDiagram advanced styling — classDef/class/style cascade + box paint.
+//
+// Two layers:
+//  1. Parser-level: the event-ordered cssStyles/cssClasses model that mirrors
+//     RequirementDB (setCssStyle return-abort, setClass skip-missing, defineClass
+//     append+retroactive), the style-state tokenizer (lexical errors + dasharray
+//     /semicolon mangling), verified directly against RequirementDiagramData.
+//  2. Scene-level: resolved box paint (compileStyles last-wins → fill/stroke/
+//     stroke-width/dash, invalid fallbacks, divider follows stroke) verified via
+//     the production render path (MermaidRenderCache → RequirementScene).
+//
+// All expectations verified against real mermaid 11.16.0 (G:/github/req-probe
+// probe{,2}-report.json): cascade is event-order last-wins (requirement bakes
+// class styles into node.cssStyles at setClass time — it does NOT use
+// cssCompiledStyles like flowchart), setCssStyle `return` aborts the whole id
+// list, defineClass appends + retroactively updates bound nodes, and the style
+// lexer rejects rgb()/hsl()/opacity/decimal-em/'%'/'"'-in-value as Parse errors.
+#include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/requirement/RequirementDiagram.h"
+#include "mermaid/requirement/RequirementScene.h"
+
+#include <QGuiApplication>
+#include <QString>
+#include <QStringList>
+
+#include <cstdio>
+#include <cstdlib>
+
+using namespace muffin::mermaid;
+
+namespace {
+[[noreturn]] void fail(const QString& message) {
+  std::fprintf(stderr, "FAIL: %s\n", qPrintable(message));
+  std::fflush(stderr);
+  std::exit(1);
+}
+void require(bool condition, const QString& message) {
+  if (!condition) fail(message);
+}
+
+requirement::RequirementDiagramData parseData(const QString& source) {
+  return requirement::RequirementDiagram::parse(source).data();
+}
+
+template <typename Fn>
+bool throwsParseError(Fn fn) {
+  try {
+    fn();
+    return false;
+  } catch (const requirement::RequirementParseError&) {
+    return true;
+  }
+}
+
+const requirement::RequirementSceneNode* nodeOf(const editor::MermaidRenderEntry& e,
+                                                 const QString& id) {
+  const auto* scene = dynamic_cast<const requirement::RequirementScene*>(e.scene.get());
+  require(scene != nullptr, QStringLiteral("missing Requirement scene"));
+  for (const auto& n : scene->nodes)
+    if (n.id == id) return &n;
+  return nullptr;
+}
+
+// Renders `source` (a styled requirementDiagram) and returns the resolved node
+// `id` plus the scene (for base/fallback color comparisons).
+struct Rendered {
+  const requirement::RequirementScene* scene;
+  const requirement::RequirementSceneNode* node;
+};
+Rendered renderNode(editor::MermaidRenderCache& cache, const QString& source, const QString& id) {
+  Rendered out{nullptr, nullptr};
+  const auto entry = cache.getSync(cache.makeKey(source), source);
+  require(entry.status == editor::MermaidRenderStatus::Ready,
+          QStringLiteral("styled requirement did not render: ") + entry.errorMessage);
+  out.scene = dynamic_cast<const requirement::RequirementScene*>(entry.scene.get());
+  require(out.scene != nullptr, QStringLiteral("missing Requirement scene"));
+  out.node = nodeOf(entry, id);
+  require(out.node != nullptr, QStringLiteral("node '%1' not found").arg(id));
+  return out;
+}
+
+const requirement::RequirementNode* reqNode(const requirement::RequirementDiagramData& d,
+                                            const QString& name) {
+  for (const auto& n : d.requirements)
+    if (n.name == name) return &n;
+  return nullptr;
+}
+}  // namespace
+
+int main(int argc, char** argv) {
+  qputenv("QT_QPA_PLATFORM", "offscreen");
+  QGuiApplication app(argc, argv);
+  MermaidFontRegistry::ensureLoaded();
+  editor::MermaidRenderCache cache;
+
+  const QString head = QStringLiteral("requirementDiagram\n");
+
+  // ===== 1. Event-order cascade (last-wins), mirroring the probe's area1 =====
+  {
+    // classDef + class then inline style -> inline wins (event order).
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\n"
+        "classDef C fill:#aaaaaa\nclass A C\nstyle A fill:#bbbbbb");
+    require(reqNode(d, "A")->cssStyles ==
+                QStringList{QStringLiteral("fill:#aaaaaa"), QStringLiteral("fill:#bbbbbb")},
+            QStringLiteral("class then style -> [aaaaaa, bbbbbb]; got %1")
+                .arg(reqNode(d, "A")->cssStyles.join(QLatin1String(" | "))));
+  }
+  {
+    // inline style then classDef+class -> class wins (class styles pushed later).
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\n"
+        "style A fill:#bbbbbb\nclassDef C fill:#aaaaaa\nclass A C");
+    require(reqNode(d, "A")->cssStyles ==
+                QStringList{QStringLiteral("fill:#bbbbbb"), QStringLiteral("fill:#aaaaaa")},
+            QStringLiteral("style then class -> [bbbbbb, aaaaaa]"));
+  }
+  {
+    // retroactive: bind to C before C is defined, then define C -> C applies.
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\n"
+        "class A C\nclassDef C fill:#aaaaaa");
+    require(reqNode(d, "A")->cssStyles == QStringList{QStringLiteral("fill:#aaaaaa")},
+            QStringLiteral("retroactive classDef -> [aaaaaa]; got %1")
+                .arg(reqNode(d, "A")->cssStyles.join(QLatin1String(" | "))));
+    require(reqNode(d, "A")->cssClasses.contains(QStringLiteral("C")),
+            QStringLiteral("retroactive: A bound to C"));
+  }
+  {
+    // duplicate classDef APPENDS; a later `class` folds in the full list.
+    const auto d = parseData(head +
+        "classDef C fill:#aaaaaa\nclassDef C fill:#bbbbbb\n"
+        "requirement A {\n id: 1\n}\nclass A C");
+    require(reqNode(d, "A")->cssStyles ==
+                QStringList{QStringLiteral("fill:#aaaaaa"), QStringLiteral("fill:#bbbbbb")},
+            QStringLiteral("dup classDef appends -> [aaaaaa, bbbbbb]; got %1")
+                .arg(reqNode(d, "A")->cssStyles.join(QLatin1String(" | "))));
+  }
+  {
+    // multi-class conflict: A then B -> B wins (pushed second).
+    const auto d = parseData(head +
+        "classDef A fill:#aaaaaa\nclassDef B fill:#bbbbbb\n"
+        "requirement N {\n id: 1\n}\nclass N A,B");
+    require(reqNode(d, "N")->cssStyles ==
+                QStringList{QStringLiteral("fill:#aaaaaa"), QStringLiteral("fill:#bbbbbb")},
+            QStringLiteral("multi-class A,B -> [aaaaaa, bbbbbb]"));
+    require(reqNode(d, "N")->cssClasses.contains(QStringLiteral("A")) &&
+                reqNode(d, "N")->cssClasses.contains(QStringLiteral("B")),
+            QStringLiteral("multi-class binds both class names"));
+  }
+
+  // ===== 2. Multi-node idList (style + class) =====
+  {
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\nrequirement B {\n id: 2\n}\n"
+        "style A,B fill:#aaaaaa");
+    require(reqNode(d, "A")->cssStyles == QStringList{QStringLiteral("fill:#aaaaaa")},
+            QStringLiteral("style A,B -> A styled"));
+    require(reqNode(d, "B")->cssStyles == QStringList{QStringLiteral("fill:#aaaaaa")},
+            QStringLiteral("style A,B -> B styled"));
+  }
+  {
+    const auto d = parseData(head +
+        "classDef C fill:#aaaaaa\n"
+        "requirement A {\n id: 1\n}\nrequirement B {\n id: 2\n}\n"
+        "class A,B C");
+    require(reqNode(d, "A")->cssStyles == QStringList{QStringLiteral("fill:#aaaaaa")},
+            QStringLiteral("class A,B C -> A bound"));
+    require(reqNode(d, "B")->cssStyles == QStringList{QStringLiteral("fill:#aaaaaa")},
+            QStringLiteral("class A,B C -> B bound"));
+  }
+
+  // ===== 3. setCssStyle return-abort vs setClass skip-missing =====
+  {
+    // Missing node FIRST -> return aborts the whole list; A is untouched.
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\nstyle Missing,A fill:#ff0000");
+    require(reqNode(d, "A")->cssStyles.isEmpty(),
+            QStringLiteral("style Missing,A -> A untouched (return-abort)"));
+  }
+  {
+    // Missing node in the MIDDLE -> nodes before it are styled, after are not.
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\nrequirement B {\n id: 2\n}\n"
+        "style A,Missing,B fill:#ff0000");
+    require(reqNode(d, "A")->cssStyles == QStringList{QStringLiteral("fill:#ff0000")},
+            QStringLiteral("style A,Missing,B -> A styled (before the abort)"));
+    require(reqNode(d, "B")->cssStyles.isEmpty(),
+            QStringLiteral("style A,Missing,B -> B untouched (after the abort)"));
+  }
+  {
+    // setClass SKIPS a missing node and continues (no abort).
+    const auto d = parseData(head +
+        "classDef C fill:#ff0000\n"
+        "requirement A {\n id: 1\n}\nrequirement B {\n id: 2\n}\n"
+        "class A,Missing,B C");
+    require(reqNode(d, "A")->cssStyles == QStringList{QStringLiteral("fill:#ff0000")},
+            QStringLiteral("class A,Missing,B C -> A styled (skip-missing)"));
+    require(reqNode(d, "B")->cssStyles == QStringList{QStringLiteral("fill:#ff0000")},
+            QStringLiteral("class A,Missing,B C -> B styled (continues past missing)"));
+  }
+
+  // ===== 4. `:::` declaration binding (folds current class styles) =====
+  {
+    const auto d = parseData(head +
+        "classDef C fill:#aaaaaa\n"
+        "requirement A ::: C {\n id: 1\n}");
+    require(reqNode(d, "A")->cssStyles == QStringList{QStringLiteral("fill:#aaaaaa")},
+            QStringLiteral("::: C at declaration folds C's styles"));
+    require(reqNode(d, "A")->cssClasses.contains(QStringLiteral("C")),
+            QStringLiteral("::: binds the class name"));
+  }
+
+  // ===== 5. Style-state lexical errors (Parse error) =====
+  {
+    const QList<QPair<QString, QString>> bad = {
+        {QStringLiteral("rgb"),     QStringLiteral("style A fill:rgb(255,0,0)")},
+        {QStringLiteral("rgba"),    QStringLiteral("style A fill:rgba(255,0,0,0.5)")},
+        {QStringLiteral("hsl"),     QStringLiteral("style A fill:hsl(0,100%,50%)")},
+        {QStringLiteral("opacity"), QStringLiteral("style A fill-opacity:0.2")},
+        {QStringLiteral("percent"), QStringLiteral("style A stroke-width:4%")},
+        {QStringLiteral("decimalem"), QStringLiteral("style A letter-spacing:0.2em")},
+        {QStringLiteral("quotedfont"), QStringLiteral("style A font-family:\"Courier New\"")},
+        {QStringLiteral("trailcomma"), QStringLiteral("style A fill:#ff0000,")},
+        {QStringLiteral("dblcomma"), QStringLiteral("style A fill:#ff0000,,stroke:blue")},
+        {QStringLiteral("leadcomma"), QStringLiteral("style ,A fill:#ff0000")},
+        {QStringLiteral("class-trailcomma"), QStringLiteral("class A C,")},
+        {QStringLiteral("class-noname"), QStringLiteral("class A")},
+    };
+    for (const auto& kv : bad) {
+      const QString src = head + "requirement A {\n id: 1\n}\n" + kv.second;
+      require(throwsParseError([&] { requirement::RequirementDiagram::parse(src); }),
+              QStringLiteral("'%1' must be a Parse error: %2").arg(kv.first, kv.second));
+    }
+    // Quoted node id in the idList is ACCEPTED (style state opens a qString).
+    bool quotedThrew = false;
+    try {
+      parseData(head + "requirement A {\n id: 1\n}\nclass \"A\" C");
+    } catch (const requirement::RequirementParseError&) { quotedThrew = true; }
+    require(!quotedThrew, QStringLiteral("quoted node id in class idList is valid"));
+  }
+
+  // ===== 6. dasharray / semicolon mangling (accepted-but-mangled) =====
+  {
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\nstyle A stroke-dasharray:5,2");
+    require(reqNode(d, "A")->cssStyles ==
+                QStringList{QStringLiteral("stroke-dasharray:5"), QStringLiteral("2")},
+            QStringLiteral("dasharray 5,2 -> comma-split ['stroke-dasharray:5','2']; got %1")
+                .arg(reqNode(d, "A")->cssStyles.join(QLatin1String(" | "))));
+  }
+  {
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\nstyle A stroke-dasharray:5 2");
+    require(reqNode(d, "A")->cssStyles == QStringList{QStringLiteral("stroke-dasharray:52")},
+            QStringLiteral("dasharray '5 2' -> space eaten ['stroke-dasharray:52']; got %1")
+                .arg(reqNode(d, "A")->cssStyles.join(QLatin1String(" | "))));
+  }
+  {
+    const auto d = parseData(head +
+        "requirement A {\n id: 1\n}\nstyle A fill:#ff0000;stroke:blue");
+    require(reqNode(d, "A")->cssStyles ==
+                QStringList{QStringLiteral("fill:#ff0000;stroke:blue")},
+            QStringLiteral("semicolon stays in the component; got %1")
+                .arg(reqNode(d, "A")->cssStyles.join(QLatin1String(" | "))));
+  }
+
+  // ===== 7. Scene-level box resolution (compileStyles last-wins) =====
+  {
+    // Default (no styles) -> theme base, 1.3 border, no dash, valid stroke.
+    const auto r = renderNode(cache, head + "requirement A {\n id: 1\n}", QStringLiteral("A"));
+    require(r.node->fill == r.scene->style.boxFill,
+            QStringLiteral("default fill = theme boxFill; got %1").arg(r.node->fill));
+    require(r.node->stroke == r.scene->style.boxStroke,
+            QStringLiteral("default stroke = theme boxStroke"));
+    require(r.node->dividerStroke == r.scene->style.dividerColor,
+            QStringLiteral("default divider = theme dividerColor"));
+    require(r.node->strokeValid, QStringLiteral("default stroke valid"));
+    require(qAbs(r.node->strokeWidth - 1.3) < 1e-6,
+            QStringLiteral("default strokeWidth = 1.3; got %1").arg(r.node->strokeWidth));
+    require(r.node->dashArray.size() == 2 && r.node->dashArray.at(0) == 0.0 &&
+                r.node->dashArray.at(1) == 0.0,
+            QStringLiteral("default dashArray = {0,0}"));
+  }
+  {
+    // fill + stroke + stroke-width + dash all applied (last-wins over base).
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\n"
+        "style A fill:#ff0000,stroke:#00aa00,stroke-width:4,stroke-dasharray:5,2",
+        QStringLiteral("A"));
+    require(r.node->fill == QStringLiteral("#ff0000"),
+            QStringLiteral("inline fill; got %1").arg(r.node->fill));
+    require(r.node->stroke == QStringLiteral("#00aa00"),
+            QStringLiteral("inline stroke; got %1").arg(r.node->stroke));
+    require(r.node->dividerStroke == QStringLiteral("#00aa00"),
+            QStringLiteral("explicit stroke applies to the divider too"));
+    require(qAbs(r.node->strokeWidth - 4.0) < 1e-6,
+            QStringLiteral("inline stroke-width 4; got %1").arg(r.node->strokeWidth));
+    // stroke-dasharray:5,2 -> comma-split -> getStrokeDashArray("5") -> {5,5}.
+    require(r.node->dashArray.size() == 2 && qAbs(r.node->dashArray.at(0) - 5.0) < 1e-6 &&
+                qAbs(r.node->dashArray.at(1) - 5.0) < 1e-6,
+            QStringLiteral("dash 5,2 -> {5,5} (comma-split, '2' lost)"));
+  }
+  {
+    // Invalid fill -> inherited foreground; box unaffected otherwise.
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nstyle A fill:notacolor", QStringLiteral("A"));
+    require(r.node->fill == r.scene->style.foregroundFallback,
+            QStringLiteral("invalid fill -> foreground fallback; got %1").arg(r.node->fill));
+    require(r.node->strokeValid, QStringLiteral("invalid fill leaves stroke valid"));
+    require(r.node->stroke == r.scene->style.boxStroke,
+            QStringLiteral("invalid fill leaves stroke at theme base"));
+  }
+  {
+    // Invalid stroke -> none (strokeValid false); divider follows (also none).
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nstyle A stroke:notacolor", QStringLiteral("A"));
+    require(!r.node->strokeValid,
+            QStringLiteral("invalid stroke -> strokeValid false (paints no outline/divider)"));
+    require(r.node->fill == r.scene->style.boxFill,
+            QStringLiteral("invalid stroke leaves fill at theme base"));
+  }
+  {
+    // stroke-width:4em -> 4 * root font (16) = 64.
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nstyle A stroke-width:4em", QStringLiteral("A"));
+    require(qAbs(r.node->strokeWidth - 64.0) < 1e-6,
+            QStringLiteral("stroke-width:4em -> 4*16=64; got %1").arg(r.node->strokeWidth));
+  }
+  {
+    // stroke-width bare number '4' -> 4 (no px suffix).
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nstyle A stroke-width:4", QStringLiteral("A"));
+    require(qAbs(r.node->strokeWidth - 4.0) < 1e-6,
+            QStringLiteral("stroke-width:4 -> 4; got %1").arg(r.node->strokeWidth));
+  }
+  {
+    // classDef + class reaches the resolved box (cascade through the DB path).
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nclassDef C fill:#ff0000\nclass A C", QStringLiteral("A"));
+    require(r.node->fill == QStringLiteral("#ff0000"),
+            QStringLiteral("classDef+class fill; got %1").arg(r.node->fill));
+  }
+
+  qDebug() << "MermaidRequirementStyleTest: passed";
+  return 0;
+}

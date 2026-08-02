@@ -60,7 +60,13 @@ struct RequirementDiagramImpl : Diagram {
                               ? themeVars.mainBkg : themeVars.edgeLabelBackground;
     style.edgeLabelColor = themeVars.textColor;
     style.titleColor = themeVars.titleColor;
-    style.strokeWidth = themeVars.strokeWidth;
+    // requirementBox default border size is 1.3 (userNodeOverrides:
+    // strokeWidth = stylesMap["stroke-width"]?.replace("px","") || 1.3) — it is
+    // NOT the theme's generic strokeWidth (which defaults to 1), so hardcode the
+    // family default. foregroundFallback = the svg-inherited color used when an
+    // inline fill/color is invalid (#333 default / #ccc dark = theme textColor).
+    style.foregroundFallback = themeVars.textColor;
+    style.strokeWidth = 1.3;
     style.fontFamily = fontFamily;
     style.fontSize = fontSize;
     style.lineHeight = fontSize * 1.5;

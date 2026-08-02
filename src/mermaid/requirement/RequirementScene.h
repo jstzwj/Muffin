@@ -35,10 +35,16 @@ struct RequirementSceneStyle {
   QString edgeLabelFill = QStringLiteral("#ECECFF");  // theme edgeLabelBackground
   QString edgeLabelColor = QStringLiteral("#333333"); // theme textColor
   QString titleColor = QStringLiteral("#333333");
+  // The SVG-inherited foreground used when an inline fill/color value is
+  // invalid (mermaid drops the declaration; the path inherits the svg `color`).
+  // = theme textColor (#333 default / #ccc dark). Used by invalid-value fallback.
+  QString foregroundFallback = QStringLiteral("#333333");
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontSize = 16.0;
   qreal lineHeight = 24.0;
-  qreal strokeWidth = 1.0;
+  // requirementBox default border size (userNodeOverrides: strokeWidth = sw || 1.3);
+  // the box outline AND the divider both render at this width unless overridden.
+  qreal strokeWidth = 1.3;
 };
 
 // One text row in a requirementBox. `document` is pre-shaped so the painter
@@ -62,9 +68,16 @@ struct RequirementSceneNode {
   bool hasDivider = false;   // body rows present → divider under the name
   qreal dividerY = 0.0;      // divider line Y relative to node center (body top)
   int bodyRowCount = 0;      // count of body rows (font-independent)
-  // Resolved paint (inline style / classDef — deferred for the pilot).
+  // Resolved box paint (compileStyles last-wins over the theme base). The
+  // divider shares strokeWidth/dashArray with the box outline and follows the
+  // explicit stroke when one is set (upstream applies nodeStyles to every path
+  // via selectAll("path")); otherwise it keeps the theme divider color.
   QString fill;
   QString stroke;
+  QString dividerStroke;
+  bool strokeValid = true;        // false => invalid stroke -> paint no outline/divider
+  qreal strokeWidth = 1.3;
+  QVector<qreal> dashArray = {0.0, 0.0};
 };
 
 struct RequirementSceneEdge {

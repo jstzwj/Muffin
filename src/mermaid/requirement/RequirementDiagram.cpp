@@ -282,6 +282,122 @@ bool isValidVerifyMethod(const QString& value) {
          l == QLatin1String("inspection") || l == QLatin1String("test");
 }
 
+// --- mermaid `style` lexer condition (style-state tokenizer) ---------------
+//
+// `style`, `class` and `classDef` each push the lexer into the `style`
+// condition (requirementDiagram-R3ZQC5DG.mjs: case 49 `style`, 59 `classDef`,
+// 60 `class` all call begin("style")). The WHOLE rest of the directive line is
+// then tokenized under that condition, whose rules (the `style` entry in the
+// lexer's conditions table) are:
+//     \w+ -> Word        ':' -> Colon       ';' -> Semicolon
+//     '-' -> Minus       '#' -> Hash        ',' -> Comma
+//     ' ' (single space) -> eaten (no token, case 56)
+//     '"' -> opens a qString      '\n' -> pops the state
+//     '%' -> PERCENT (rejected by the grammar -> Parse error)
+// Any other char ('(', ')', '.', '/', '+' tab, ...) has no matching rule and is
+// a Lexical error — this is exactly how mermaid surfaces rgb()/hsl()/
+// opacity/fill-opacity/decimal-em/'%' as Parse errors. The grammar accepts
+// Word/qString as ids, a run of Word/COLON/SEMICOLON/MINUS/HASH as one
+// `styleComponent` (concatenated, spaces eaten), and COMMA as the only
+// separator. qString is NOT a styleComponent, so a quoted value inside
+// stylesOpt (e.g. font-family:"Courier New") is a Parse error.
+enum class StyleTok { Word, Colon, Semicolon, Minus, Hash, Comma, QString };
+struct StyleToken { StyleTok type; QString text; };
+
+// Tokenizes `s` under the style condition. Throws RequirementParseError on any
+// char with no matching style-state rule. Single spaces (0x20) are eaten.
+QVector<StyleToken> tokenizeStyleState(const QString& s, int lineNo) {
+  QVector<StyleToken> out;
+  for (int i = 0; i < s.size(); ++i) {
+    const QChar c = s.at(i);
+    if (c == QLatin1Char(' ')) continue;  // eaten (style rule 56, case 56)
+    if (c == QLatin1Char(',')) { out.append({StyleTok::Comma, c}); continue; }
+    if (c == QLatin1Char(':')) { out.append({StyleTok::Colon, c}); continue; }
+    if (c == QLatin1Char(';')) { out.append({StyleTok::Semicolon, c}); continue; }
+    if (c == QLatin1Char('-')) { out.append({StyleTok::Minus, c}); continue; }
+    if (c == QLatin1Char('#')) { out.append({StyleTok::Hash, c}); continue; }
+    if (isWordChar(c)) {
+      int j = i + 1;
+      while (j < s.size() && isWordChar(s.at(j))) ++j;
+      out.append({StyleTok::Word, s.mid(i, j - i)});
+      i = j - 1;
+      continue;
+    }
+    if (c == QLatin1Char('"')) {
+      const int close = s.indexOf(QLatin1Char('"'), i + 1);
+      if (close < 0)
+        throw RequirementParseError(
+            QStringLiteral("unterminated quoted string in style"), lineNo);
+      out.append({StyleTok::QString, s.mid(i + 1, close - i - 1)});
+      i = close;
+      continue;
+    }
+    // '%', '(', ')', '.', '/', tab, etc. — no style-state rule -> Lexical error.
+    throw RequirementParseError(
+        QStringLiteral("invalid character '%1' in style/class/classDef").arg(c), lineNo);
+  }
+  return out;
+}
+
+// Reads a greedy idList `id (',' id)*` from `toks` starting at `pos`; an id is
+// a Word or qString token. Stops at the first non-Comma token after an id (the
+// style state eats the separating space, so the idList/stylesOpt boundary is
+// grammatical, not a delimiter token). Throws on a trailing comma. Returns the
+// (possibly empty) ids and advances `pos`.
+QStringList extractStyleIdList(const QVector<StyleToken>& toks, int& pos, int lineNo) {
+  QStringList ids;
+  const auto isIdTok = [](const StyleToken& t) {
+    return t.type == StyleTok::Word || t.type == StyleTok::QString;
+  };
+  if (pos >= toks.size() || !isIdTok(toks.at(pos))) return ids;
+  ids.append(toks.at(pos).text);
+  ++pos;
+  while (pos < toks.size() && toks.at(pos).type == StyleTok::Comma) {
+    if (pos + 1 >= toks.size() || !isIdTok(toks.at(pos + 1)))
+      throw RequirementParseError(
+          QStringLiteral("malformed id list (trailing/empty comma)"), lineNo);
+    ids.append(toks.at(pos + 1).text);
+    pos += 2;
+  }
+  return ids;
+}
+
+// Reads stylesOpt `component (',' component)*` from `toks` starting at `pos`.
+// A component is the concatenated text of a run of Word/Colon/Semicolon/Minus/
+// Hash tokens (spaces already eaten). A qString anywhere, or an empty component
+// (leading/trailing/double comma), is a Parse error. Returns the (possibly
+// empty) component strings and advances `pos`.
+QStringList extractStylesOpt(const QVector<StyleToken>& toks, int& pos, int lineNo) {
+  QStringList comps;
+  const auto isCompTok = [](const StyleToken& t) {
+    return t.type == StyleTok::Word || t.type == StyleTok::Colon ||
+           t.type == StyleTok::Semicolon || t.type == StyleTok::Minus ||
+           t.type == StyleTok::Hash;
+  };
+  while (pos < toks.size()) {
+    if (toks.at(pos).type == StyleTok::QString)
+      throw RequirementParseError(
+          QStringLiteral("quoted string is not valid in a style value"), lineNo);
+    if (!isCompTok(toks.at(pos)))
+      throw RequirementParseError(
+          QStringLiteral("malformed style list (leading/empty comma)"), lineNo);
+    QString comp;
+    while (pos < toks.size() && isCompTok(toks.at(pos))) {
+      comp += toks.at(pos).text;
+      ++pos;
+    }
+    comps.append(comp);
+    if (pos >= toks.size()) break;  // end of stream
+    if (toks.at(pos).type != StyleTok::Comma)
+      throw RequirementParseError(QStringLiteral("malformed style list"), lineNo);
+    ++pos;  // consume the comma
+    if (pos >= toks.size())
+      throw RequirementParseError(
+          QStringLiteral("malformed style list (trailing comma)"), lineNo);
+  }
+  return comps;
+}
+
 class Parser {
 public:
   explicit Parser(QString source) : source_(std::move(source)) {}
@@ -466,7 +582,14 @@ public:
               RequirementNode node;
               node.name = nc.name;
               node.type = it.value();
-              node.cssClasses.append(nc.styleClasses);
+              // `:::` binds classes at declaration time (same path as `class`):
+              // the class name is recorded and its currently-defined styles are
+              // folded in. A class defined later still applies via defineClass's
+              // retroactive update (it pushes to every node already bound).
+              for (const QString& cid : nc.styleClasses) {
+                node.cssClasses.append(cid);
+                node.cssStyles.append(data_.classDefs.value(cid));
+              }
               data_.requirements.append(std::move(node));
             }
             inBody = true;
@@ -502,7 +625,10 @@ public:
         if (!duplicate) {
           ElementNode node;
           node.name = nc.name;
-          node.cssClasses.append(nc.styleClasses);
+          for (const QString& cid : nc.styleClasses) {
+            node.cssClasses.append(cid);
+            node.cssStyles.append(data_.classDefs.value(cid));
+          }
           data_.elements.append(std::move(node));
         }
         inBody = true;
@@ -522,39 +648,41 @@ public:
         }
       }
 
-      // classDef / class / style — parsed minimally (stored, not fully applied).
-      if (line.startsWith(QStringLiteral("classDef"), Qt::CaseInsensitive)) {
-        const QString rest = line.mid(8).trimmed();
-        const int space = rest.indexOf(QLatin1Char(' '));
-        if (space > 0) {
-          const QString id = rest.left(space).trimmed();
-          const QString style = rest.mid(space + 1).trimmed();
-          data_.classDefs[id] = style.split(QLatin1Char(','), Qt::SkipEmptyParts);
-        }
+      // classDef / class / style — tokenized under the style lexer condition
+      // (the keyword switches the lexer to `style` state for the rest of the
+      // line). Each is resolved into the node/event model at parse time:
+      //   classDef <classList> <styles> — append styles per class + retroactive.
+      //   class <nodeIdList> <classList> — bind nodes to classes (skip missing).
+      //   style <nodeIdList> <styles>    — fold styles (return-abort on missing).
+      // See applyClasses / applyStyles / defineClasses for the DB semantics.
+      if (line.startsWith(QStringLiteral("classDef"), Qt::CaseInsensitive) &&
+          (line.size() == 8 || line.at(8).isSpace())) {
+        const QVector<StyleToken> toks = tokenizeStyleState(line.mid(8), i + 1);
+        int pos = 0;
+        const QStringList classIds = extractStyleIdList(toks, pos, i + 1);
+        const QStringList styles = extractStylesOpt(toks, pos, i + 1);
+        defineClasses(classIds, styles);
         continue;
       }
       if (line.startsWith(QStringLiteral("class"), Qt::CaseInsensitive) &&
           (line.size() == 5 || line.at(5).isSpace())) {
-        // class <node> <classname> — record the class on the node.
-        const QStringList parts = line.mid(5).trimmed().split(
-            QRegularExpression(QStringLiteral("\\s+")));
-        if (parts.size() >= 2) {
-          const QString nodeId = parts.at(0);
-          const QString className = parts.at(1);
-          applyClassToNode(nodeId, className);
-        }
+        const QVector<StyleToken> toks = tokenizeStyleState(line.mid(5), i + 1);
+        int pos = 0;
+        const QStringList nodeIds = extractStyleIdList(toks, pos, i + 1);
+        const QStringList classIds = extractStyleIdList(toks, pos, i + 1);
+        if (classIds.isEmpty())
+          throw RequirementParseError(
+              QStringLiteral("class requires at least one class name"), i + 1);
+        applyClasses(nodeIds, classIds);
         continue;
       }
       if (line.startsWith(QStringLiteral("style"), Qt::CaseInsensitive) &&
           (line.size() == 5 || line.at(5).isSpace())) {
-        // style <node> <css> — fold declarations into the node's cssStyles.
-        const QString rest = line.mid(5).trimmed();
-        const int space = rest.indexOf(QLatin1Char(' '));
-        if (space > 0) {
-          const QString nodeId = rest.left(space).trimmed();
-          const QString css = rest.mid(space + 1).trimmed();
-          applyStyleToNode(nodeId, css);
-        }
+        const QVector<StyleToken> toks = tokenizeStyleState(line.mid(5), i + 1);
+        int pos = 0;
+        const QStringList nodeIds = extractStyleIdList(toks, pos, i + 1);
+        const QStringList styles = extractStylesOpt(toks, pos, i + 1);
+        applyStyles(nodeIds, styles);
         continue;
       }
 
@@ -625,19 +753,55 @@ private:
     }
   }
 
-  void applyClassToNode(const QString& nodeId, const QString& className) {
-    for (RequirementNode& n : data_.requirements)
-      if (n.name == nodeId) n.cssClasses.append(className);
-    for (ElementNode& n : data_.elements)
-      if (n.name == nodeId) n.cssClasses.append(className);
+  // defineClass (RequirementDB.defineClass): for each named class, APPEND the
+  // styles to that class's accumulated declarations, then RETROACTIVELY push
+  // the same styles onto every node already bound to the class (so a classDef
+  // after a `class`/`:::` binding still applies). `styles` is the stylesOpt
+  // component list (already comma-split by the style tokenizer).
+  void defineClasses(const QStringList& classIds, const QStringList& styles) {
+    for (const QString& cid : classIds) {
+      data_.classDefs[cid].append(styles);
+      for (RequirementNode& n : data_.requirements)
+        if (n.cssClasses.contains(cid)) n.cssStyles.append(styles);
+      for (ElementNode& n : data_.elements)
+        if (n.cssClasses.contains(cid)) n.cssStyles.append(styles);
+    }
   }
 
-  void applyStyleToNode(const QString& nodeId, const QString& css) {
-    const QStringList decls = css.split(QLatin1Char(','), Qt::SkipEmptyParts);
-    for (RequirementNode& n : data_.requirements)
-      if (n.name == nodeId) n.cssStyles.append(decls);
-    for (ElementNode& n : data_.elements)
-      if (n.name == nodeId) n.cssStyles.append(decls);
+  // setClass (RequirementDB.setClass): for each node id, if the node exists,
+  // record each class name on it and fold in that class's CURRENT accumulated
+  // declarations. A missing node is SKIPPED (upstream `if (node) {…}`), so the
+  // remaining ids are still processed.
+  void applyClasses(const QStringList& nodeIds, const QStringList& classIds) {
+    for (const QString& nid : nodeIds) {
+      RequirementNode* rn = findRequirement(nid);
+      ElementNode* en = rn ? nullptr : findElement(nid);
+      if (!rn && !en) continue;  // missing node — skip (setClass keeps going)
+      for (const QString& cid : classIds) {
+        const QStringList decls = data_.classDefs.value(cid);
+        if (rn) {
+          rn->cssClasses.append(cid);
+          rn->cssStyles.append(decls);
+        } else {
+          en->cssClasses.append(cid);
+          en->cssStyles.append(decls);
+        }
+      }
+    }
+  }
+
+  // setCssStyle (RequirementDB.setCssStyle): for each node id in order, look it
+  // up; if it does not exist, RETURN immediately — aborting the WHOLE id list
+  // (upstream `if (!styles || !node) return`, evaluated per id). Nodes processed
+  // before the first missing id are still styled.
+  void applyStyles(const QStringList& nodeIds, const QStringList& styles) {
+    for (const QString& nid : nodeIds) {
+      RequirementNode* rn = findRequirement(nid);
+      ElementNode* en = rn ? nullptr : findElement(nid);
+      if (!rn && !en) return;  // missing node — abort the whole list
+      if (rn) rn->cssStyles.append(styles);
+      else en->cssStyles.append(styles);
+    }
   }
 
   RequirementNode* findRequirement(const QString& name) {

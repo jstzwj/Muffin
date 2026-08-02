@@ -9,15 +9,21 @@
 
 #include "mermaid/flowchart/D3Curves.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/theme/MermaidColor.h"
 
+#include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QSet>
+#include <QStringList>
 
 #include <algorithm>
 #include <cmath>
 
 namespace flowchart = muffin::mermaid::flowchart;
+namespace color = muffin::mermaid::color;
+namespace req = muffin::mermaid::requirement;
 
 namespace {
 
@@ -66,6 +72,80 @@ QRectF edgePointsBounds(const QVector<QPointF>& points,
   for (const QVector<QPointF>& segment : segments)
     for (const QPointF& point : segment) includePoint(point);
   return initialized ? bounds.adjusted(-18.0, -18.0, 18.0, 18.0) : QRectF{};
+}
+
+// getStrokeDashArray (chunk-BNCO5QFQ.mjs): split on \s+, single value ->
+// [v, v], two values -> [a, b], NaN -> 0. Returns {0,0} for an empty value.
+QVector<qreal> getStrokeDashArray(const QString& strokeDasharrayStyle) {
+  if (strokeDasharrayStyle.trimmed().isEmpty()) return {0.0, 0.0};
+  static const QRegularExpression ws(QStringLiteral("\\s+"));
+  const QStringList raw = strokeDasharrayStyle.trimmed().split(ws, Qt::SkipEmptyParts);
+  QVector<qreal> arr;
+  for (const QString& p : raw) {
+    bool ok = false;
+    const qreal v = p.trimmed().toDouble(&ok);
+    arr.append(ok ? v : 0.0);  // NaN -> 0
+  }
+  if (arr.size() == 1) return {arr.first(), arr.first()};
+  if (arr.size() >= 2) return {arr.at(0), arr.at(1)};
+  return {0.0, 0.0};
+}
+
+// compileStyles (chunk-BNCO5QFQ.mjs) for the box: build a Map (last value per
+// key wins) from the node's event-ordered declaration list — styles2Map splits
+// each "key:value" on the FIRST ':' — then userNodeOverrides reads fill/stroke/
+// stroke-width/stroke-dasharray. Box-outline and divider share strokeWidth and
+// dashArray; the divider follows an explicit stroke, else keeps the theme
+// divider color. labelStyle keys (color/font-*/...) are split out by isLabelStyle
+// upstream and do not affect the box — they are ignored here (text phase).
+void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneStyle& base,
+                     req::RequirementSceneNode& node) {
+  node.fill = base.boxFill;
+  node.stroke = base.boxStroke;
+  node.dividerStroke = base.dividerColor;
+  node.strokeValid = true;
+  node.strokeWidth = base.strokeWidth;
+  node.dashArray = {0.0, 0.0};
+
+  if (cssStyles.isEmpty()) return;
+
+  QHash<QString, QString> map;  // styles2Map: last value per key wins
+  for (const QString& decl : cssStyles) {
+    const int colon = decl.indexOf(QLatin1Char(':'));
+    if (colon <= 0) continue;  // stray token (e.g. the "2" lost from "5,2")
+    map.insert(decl.left(colon).trimmed(), decl.mid(colon + 1).trimmed());
+  }
+
+  // fill: invalid -> inherited foreground (mermaid drops the declaration).
+  if (map.contains(QStringLiteral("fill"))) {
+    const QString v = map.value(QStringLiteral("fill"));
+    node.fill = color::isParsableColor(v) ? v : base.foregroundFallback;
+  }
+  // stroke: invalid -> none (applies to box outline AND divider).
+  if (map.contains(QStringLiteral("stroke"))) {
+    const QString v = map.value(QStringLiteral("stroke"));
+    if (color::isParsableColor(v))
+      node.stroke = node.dividerStroke = v;
+    else
+      node.strokeValid = false;
+  }
+  // stroke-width: userNodeOverrides `sw.replace("px","") || default`; em is
+  // resolved against the root font (themeVariables.fontSize = style.fontSize).
+  if (map.contains(QStringLiteral("stroke-width"))) {
+    QString s = map.value(QStringLiteral("stroke-width"));
+    s.remove(QStringLiteral("px"));  // userNodeOverrides: replace("px","") (case-sensitive)
+    bool ok = false;
+    if (s.endsWith(QLatin1String("em"), Qt::CaseInsensitive)) {
+      const qreal n = s.left(s.size() - 2).toDouble(&ok);
+      node.strokeWidth = ok ? n * base.fontSize : base.strokeWidth;
+    } else {
+      const qreal n = s.toDouble(&ok);
+      node.strokeWidth = ok ? n : base.strokeWidth;
+    }
+  }
+  // stroke-dasharray.
+  if (map.contains(QStringLiteral("stroke-dasharray")))
+    node.dashArray = getStrokeDashArray(map.value(QStringLiteral("stroke-dasharray")));
 }
 
 }  // namespace
@@ -135,8 +215,11 @@ RequirementScene buildRequirementScene(
       rendered.dividerY = -totalHeight / 2.0 +
                           measured.typeHeight + measured.nameHeight + kGap;
     }
-    rendered.fill = scene.style.boxFill;
-    rendered.stroke = scene.style.boxStroke;
+    // Resolve the box paint (fill/stroke/stroke-width/dash) from the node's
+    // event-ordered cssStyles, last-wins over the theme base. The divider
+    // follows the explicit stroke/stroke-width and otherwise keeps the theme
+    // divider color; both default to the 1.3 requirement border size.
+    resolveBoxStyle(node.cssStyles, scene.style, rendered);
 
     // Row positions (relative to node center). Mermaid positions rows at
     // sequential y-offsets, then shifts so the box is centered. Row i's text
@@ -276,6 +359,16 @@ QJsonObject RequirementScene::toJsonObject() const {
       n[QStringLiteral("fill")] = node.fill;
     if (!node.stroke.isEmpty())
       n[QStringLiteral("stroke")] = node.stroke;
+    if (!node.strokeValid)
+      n[QStringLiteral("strokeValid")] = false;
+    n[QStringLiteral("strokeWidth")] = r3(node.strokeWidth);
+    if (!node.dashArray.isEmpty() &&
+        (node.dashArray.at(0) != 0.0 || node.dashArray.at(1) != 0.0)) {
+      QJsonArray dash;
+      dash.append(r3(node.dashArray.at(0)));
+      dash.append(r3(node.dashArray.at(1)));
+      n[QStringLiteral("dashArray")] = dash;
+    }
     nodesArray.append(n);
   }
   o[QStringLiteral("nodes")] = nodesArray;

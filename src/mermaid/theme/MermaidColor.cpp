@@ -604,4 +604,13 @@ QColor toQColor(const QString& color) {
   return q;
 }
 
+bool isParsableColor(const QString& color) {
+  // parseHex/parseRgb/parseHsl/parseKeyword are file-local (anonymous
+  // namespace) but visible anywhere in this TU. A recognized color matches at
+  // least one; parse()'s fallback (opaque original-string round-trip) matches
+  // none.
+  return parseHex(color).has_value() || parseRgb(color).has_value() ||
+         parseHsl(color).has_value() || parseKeyword(color).has_value();
+}
+
 }  // namespace muffin::mermaid::color
