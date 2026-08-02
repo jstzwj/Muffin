@@ -8,7 +8,9 @@
 // Grammar (requirementDiagram-TGXJPOKE.mjs, simplified to the productions that
 // affect geometry):
 //   - Opener `requirementDiagram`. Optional `direction TB|BT|RL|LR`.
-//   - `title`, `accTitle:`, `accDescr:` / `accDescr { ... }`.
+//   - `accTitle:`, `accDescr:` / `accDescr { ... }`. (There is NO inline `title`
+//     token — it is a Parse error. Diagram titles come from frontmatter
+//     `title:`, handled by the preprocessor's metadata path, not the grammar.)
 //   - `#` / `%` line comments.
 //   - 6 requirement type keywords → display type strings:
 //       requirement→"Requirement", functionalRequirement→"Functional Requirement",
@@ -80,7 +82,6 @@ struct Relationship {
 };
 
 struct RequirementDiagramData {
-  QString title;
   QString accTitle;
   QString accDescription;
   QString direction = QStringLiteral("TB");

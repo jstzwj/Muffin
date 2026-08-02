@@ -64,8 +64,10 @@ struct RequirementDiagramImpl : Diagram {
     style.fontFamily = fontFamily;
     style.fontSize = fontSize;
     style.lineHeight = fontSize * 1.5;
+    // No inline `title` token in requirementDiagram grammar — pass empty so
+    // renderMetadata falls back to the frontmatter title (pre.title).
     MermaidRenderMetadata metadata = renderMetadata(
-        pre, type, diagram.data().title, diagram.data().accTitle,
+        pre, type, QString(), diagram.data().accTitle,
         diagram.data().accDescription, style.titleColor, style.fontFamily, 18.0,
         configNumber(stateConfig, QStringLiteral("titleTopMargin"), 25.0), 8.0);
     requirement::RequirementScene scene =

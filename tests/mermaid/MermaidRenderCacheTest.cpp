@@ -167,6 +167,14 @@ int main(int argc, char** argv) {
          QStringLiteral("State overview"),
          QStringLiteral("State accessible"),
          QStringLiteral("State description")},
+        {QStringLiteral("requirement"),
+         QStringLiteral(
+             "---\ntitle: Requirement overview\n---\nrequirementDiagram\n"
+             "accTitle: Requirement accessible\naccDescr: Requirement description\n"
+             "requirement A {\n id: 1\n}\nrequirement B {\n id: 2\n}\nA -contains-> B"),
+         QStringLiteral("Requirement overview"),
+         QStringLiteral("Requirement accessible"),
+         QStringLiteral("Requirement description")},
     };
     MermaidRenderCache cache;
     for (const MetadataCase& value : cases) {
@@ -991,6 +999,8 @@ int main(int argc, char** argv) {
         {QStringLiteral("class"), QStringLiteral("classDiagram\nclass A\nclass B\nA --> B")},
         {QStringLiteral("state"), QStringLiteral("stateDiagram-v2\n[*] --> S\nS --> [*]")},
         {QStringLiteral("er"), QStringLiteral("erDiagram\nCUSTOMER ||--o{ ORDER : places")},
+        {QStringLiteral("requirement"),
+         QStringLiteral("requirementDiagram\nrequirement A {\n id: 1\n}\nrequirement B {\n id: 2\n}\nA -contains-> B")},
     };
     for (const FamilyCase& f : families) {
       const QString titled = QStringLiteral("---\ntitle: T\n---\n") + f.body;

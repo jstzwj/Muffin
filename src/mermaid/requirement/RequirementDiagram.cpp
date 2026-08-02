@@ -404,13 +404,10 @@ public:
         }
       }
 
-      // title (rest-of-line).
-      if (line.startsWith(QStringLiteral("title"), Qt::CaseInsensitive) &&
-          (line.size() == 5 || line.at(5).isSpace())) {
-        data_.title = unwrapValue(line.mid(5));
-        continue;
-      }
       // accTitle: value
+      // (There is intentionally NO `title:` handler — `title` is not a
+      // requirementDiagram token; mermaid Parse-errors it. Requirement titles
+      // come only from frontmatter, handled by the preprocessor.)
       if (line.startsWith(QStringLiteral("accTitle"), Qt::CaseInsensitive)) {
         const int colon = line.indexOf(QLatin1Char(':'));
         if (colon >= 0) {

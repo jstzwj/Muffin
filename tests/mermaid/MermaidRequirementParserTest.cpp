@@ -305,6 +305,10 @@ int main(int argc, char** argv) {
       {.id = "header-percent-comment", .src = "requirementDiagram % c\nrequirement X {\n id: 1\n}", .expectName = "X"},
       {.id = "header-trailing-space", .src = "requirementDiagram \nrequirement X {\n id: 1\n}", .ok = false},
       {.id = "header-junk", .src = "requirementDiagram junk\nrequirement X {\n id: 1\n}", .ok = false},
+      // `title:` is not a requirementDiagram token — it is a Parse error (titles
+      // come only from frontmatter).
+      {.id = "title-directive", .src = "requirementDiagram\ntitle X\nrequirement A {\n id: 1\n}", .ok = false},
+      {.id = "title-colon-directive", .src = "requirementDiagram\ntitle: X\nrequirement A {\n id: 1\n}", .ok = false},
       // Comments: whole-line only; # inside a name/value is literal.
       {.id = "name-internal-hash", .src = "requirementDiagram\nrequirement X # c {\n id: 1\n}", .expectName = "X # c"},
       {.id = "body-comment-line", .src = "requirementDiagram\nrequirement X {\n id: 1\n # a body comment\n text: v\n}", .expectName = "X", .expectText = "v"},
