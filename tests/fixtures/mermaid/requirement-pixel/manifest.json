@@ -1,0 +1,19 @@
+{
+  "upstream": {
+    "version": "11.16.0"
+  },
+  "fontMode": "bundled-noto-2.13b171",
+  "cases": [
+    {
+      "id": "default",
+      "dpr": 1,
+      "theme": "default",
+      "source": "requirementDiagram\nrequirement TheSystem {\n  id: \"REQ-001\"\n  text: shall do the thing\n  risk: high\n  verifyMethod: test\n}\nfunctionalRequirement SubFunc {\n  id: \"REQ-002\"\n  text: sub function\n  risk: medium\n  verifyMethod: analysis\n}\nelement HardwareModule {\n  type: Hardware\n  docref: \"DOC-1\"\n}\nTheSystem -contains-> SubFunc\nSubFunc -copies-> HardwareModule",
+      "file": "default.png",
+      "width": 253,
+      "height": 668,
+      "sha256": "ff0ce8afb651d1e51018683db45aa63212fc4d1797e8bcf06667cc20b8f0a35d"
+    }
+  ],
+  "fixtureSha256": "39e821622ad80c9c599aa99ad55fa72b626b50cda8b056039c03f3c6e1169ffd"
+}

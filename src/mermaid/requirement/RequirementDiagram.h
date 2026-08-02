@@ -8,9 +8,11 @@
 // Grammar (requirementDiagram-TGXJPOKE.mjs, simplified to the productions that
 // affect geometry):
 //   - Opener `requirementDiagram`. Optional `direction TB|BT|RL|LR`.
-//   - `accTitle:`, `accDescr:` / `accDescr { ... }`. (There is NO inline `title`
-//     token — it is a Parse error. Diagram titles come from frontmatter
-//     `title:`, handled by the preprocessor's metadata path, not the grammar.)
+//   - `accTitle:`, `accDescr:` / `accDescr { ... }`. (An inline `title` line is
+//     rejected by the Requirement parser — mermaid's lexer does return a `title`
+//     token, but the grammar's productions do not accept it, so it Parse-errors.
+//     Diagram titles come from frontmatter `title:`, handled by the
+//     preprocessor's metadata path.)
 //   - `#` / `%` line comments.
 //   - 6 requirement type keywords → display type strings:
 //       requirement→"Requirement", functionalRequirement→"Functional Requirement",

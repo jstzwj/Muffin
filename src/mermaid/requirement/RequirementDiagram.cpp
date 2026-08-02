@@ -405,9 +405,10 @@ public:
       }
 
       // accTitle: value
-      // (There is intentionally NO `title:` handler — `title` is not a
-      // requirementDiagram token; mermaid Parse-errors it. Requirement titles
-      // come only from frontmatter, handled by the preprocessor.)
+      // (There is intentionally NO `title:` handler — an inline `title` line is
+      // rejected by the Requirement parser: mermaid's lexer returns a `title`
+      // token but the grammar does not accept it, so it Parse-errors. Requirement
+      // titles come only from frontmatter, handled by the preprocessor.)
       if (line.startsWith(QStringLiteral("accTitle"), Qt::CaseInsensitive)) {
         const int colon = line.indexOf(QLatin1Char(':'));
         if (colon >= 0) {

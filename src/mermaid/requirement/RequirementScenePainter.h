@@ -3,7 +3,7 @@
 // Painter for the requirementDiagram family. Renders requirementBox nodes
 // (rounded rect + <<Type>> + bold name + divider + body rows), relationship
 // edges (solid/dashed + 2 markers), and centered edge labels. Mirrors the
-// classdiagram::ClassScenePainter / er::ErScenePainter idiom.
+// classdiagram::classScenePainter / er::ErScenePainter idiom.
 
 class QPainter;
 
