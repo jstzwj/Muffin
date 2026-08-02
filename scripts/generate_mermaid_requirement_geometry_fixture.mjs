@@ -233,6 +233,16 @@ try {
               const m = firstText.match(/^<<(.+)>>$/);
               type = m ? m[1] : firstText;
             }
+            // Divider Y relative to the node center (mermaid draws it at the body
+            // top: boxTop + typeHeight + nameHeight + gap). Captured so the oracle
+            // can assert the exact divider position, not just its presence.
+            const nodeCenterY = box ? box.y + box.height / 2 : null;
+            let dividerY = null;
+            const dividerEl = node.querySelector(".divider");
+            if (dividerEl && nodeCenterY != null) {
+              const dbox = absoluteBox(dividerEl, rootInverse);
+              if (dbox) dividerY = number(dbox.y + dbox.height / 2 - nodeCenterY);
+            }
             return {
               id,
               type,
@@ -240,6 +250,7 @@ try {
               dividers,
               width: box ? number(box.width) : null,
               height: box ? number(box.height) : null,
+              dividerY,
             };
           });
 

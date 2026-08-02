@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
        QStringLiteral("erDiagram\nCUSTOMER ||--o{ ORDER : places\n")},
       {QStringLiteral("requirement"), QStringLiteral("requirementDiagram"),
        QStringLiteral("requirementDiagram\nrequirement R {\n id: 1\n text: hello\n}\n"
-                      "element E { type: hw }\nR -contains-> E")},
+                      "element E {\n type: hw\n}\nR -contains-> E")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);

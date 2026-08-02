@@ -11,6 +11,7 @@
 // round-trip, then maps the result back to RequirementPlacement* structs.
 
 #include "mermaid/requirement/RequirementDiagram.h"
+#include "mermaid/flowchart/FlowLabel.h"
 
 #include <QMap>
 #include <QPointF>
@@ -91,6 +92,12 @@ struct RequirementPlacementResult {
 };
 
 RequirementLayoutInput buildRequirementLayoutInput(const RequirementDiagramData& data);
+
+// Prepared row document (markdown mode, FlowForeignObjectFlex context, optional
+// bold) shared by layout measurement and scene paint so the measured width
+// matches the drawn ink — markdown markers like **bold** are measured as their
+// rendered form, not literal asterisks.
+flowchart::FlowLabelDocument requirementRowDocument(const QString& text, qreal fontSize, bool bold);
 
 // Measures each node's box + row heights. Mirrors the requirementBox geometry:
 // padding = 20, gap = 20 between name and the first body row. Each row height =

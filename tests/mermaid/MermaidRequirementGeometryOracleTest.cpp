@@ -42,6 +42,9 @@ namespace {
 // across Qt/Chrome for the same font — asserted within a tolerance that
 // accounts for sub-pixel glyph-height differences.
 constexpr qreal kHeight = 5.0;
+// Divider Y is font-coupled (typeHeight/nameHeight come from the row model);
+// the formula is exact, the residual is the row-height model's sub-pixel gap.
+constexpr qreal kDividerY = 4.0;
 // Reported (font-coupled) — printed, not failed.
 constexpr qreal kReport = 0.5;
 
@@ -169,6 +172,15 @@ int main(int argc, char** argv) {
       assertErrors += parity::compareNumber(node.value(QStringLiteral("height")).toDouble(),
                                             exp.value(QStringLiteral("height")).toDouble(),
                                             heightTier, prefix + "/height");
+      // Divider Y (font-coupled — exact formula, asserted within tolerance) for
+      // nodes that have a divider.
+      if (exp.value(QStringLiteral("dividerY")).isDouble() &&
+          node.contains(QStringLiteral("dividerY"))) {
+        const parity::Tier dividerTier{kDividerY};
+        assertErrors += parity::compareNumber(node.value(QStringLiteral("dividerY")).toDouble(),
+                                              exp.value(QStringLiteral("dividerY")).toDouble(),
+                                              dividerTier, prefix + "/dividerY");
+      }
       // Width is font-coupled (reported only).
       reportNotes += parity::compareNumber(node.value(QStringLiteral("width")).toDouble(),
                                            exp.value(QStringLiteral("width")).toDouble(),

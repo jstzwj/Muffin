@@ -931,7 +931,7 @@ int main(int argc, char** argv) {
         {QStringLiteral("er"), QStringLiteral("erDiagram\nCUSTOMER ||--o{ ORDER : places")},
         {QStringLiteral("requirement"),
          QStringLiteral("requirementDiagram\nrequirement R {\n id: 1\n text: hello\n}\n"
-                        "element E { type: hw }\nR -contains-> E")},
+                        "element E {\n type: hw\n}\nR -contains-> E")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

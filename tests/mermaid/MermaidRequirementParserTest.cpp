@@ -1,9 +1,10 @@
 // requirementDiagram parser unit tests. Parser-only (no Qt GUI), so
 // QCoreApplication suffices. Asserts the parsed RequirementDiagramData directly:
-// quoted-identifier decoding, Map dedup (first definition wins), body fields +
-// the 6 requirement types / element / 7 relationship types, and that invalid
-// syntax throws RequirementParseError (matching mermaid's Parse error) instead of
-// silently producing a Ready scene.
+// quoted-identifier decoding, `::: class` + body, Map dedup (first definition
+// wins), body fields + the 6 requirement types / element / 7 relationship types,
+// and that invalid syntax throws RequirementParseError (matching mermaid 11.16.0,
+// which requires a multi-line body and errors on no-body/single-line/unknown
+// field/invalid enum/missing header) instead of silently producing a Ready scene.
 #include "mermaid/requirement/RequirementDiagram.h"
 
 #include <QCoreApplication>
@@ -47,35 +48,45 @@ int main(int argc, char** argv) {
   {
     const auto d = parse(
         "requirementDiagram\n"
-        "requirement \"My Requirement\" {\nid: 1\ntext: hello world\n}\n"
-        "element \"My Element\" { type: Hardware }\n"
+        "requirement \"My Requirement\" {\n id: 1\n text: hello world\n}\n"
+        "element \"My Element\" {\n type: Hardware\n}\n"
         "\"My Requirement\" -contains-> \"My Element\"");
     require(d.requirements.size() == 1, QStringLiteral("one requirement"));
     require(d.requirements[0].name == QStringLiteral("My Requirement"),
             QStringLiteral("quoted requirement name decoded, got '%1'").arg(d.requirements[0].name));
-    require(d.requirements[0].requirementId == QStringLiteral("1"),
-            QStringLiteral("body id field"));
-    require(d.requirements[0].text == QStringLiteral("hello world"),
-            QStringLiteral("body text field"));
+    require(d.requirements[0].requirementId == QStringLiteral("1"), QStringLiteral("body id field"));
+    require(d.requirements[0].text == QStringLiteral("hello world"), QStringLiteral("body text field"));
     require(d.elements.size() == 1, QStringLiteral("one element"));
     require(d.elements[0].name == QStringLiteral("My Element"),
             QStringLiteral("quoted element name decoded"));
-    require(d.elements[0].type == QStringLiteral("Hardware"),
-            QStringLiteral("inline single-line body { type: ... } applied"));
+    require(d.elements[0].type == QStringLiteral("Hardware"), QStringLiteral("element type field"));
     require(d.relations.size() == 1, QStringLiteral("one relationship"));
     require(d.relations[0].src == QStringLiteral("My Requirement") &&
                 d.relations[0].dst == QStringLiteral("My Element"),
             QStringLiteral("quoted relationship endpoints decoded"));
   }
 
-  // 2. Map dedup: a repeated name yields ONE node and the FIRST definition wins.
+  // 2. `::: class` + multi-line body (mermaid accepts this form).
   {
     const auto d = parse(
         "requirementDiagram\n"
-        "requirement Dup { id: first }\n"
-        "requirement Dup { id: second }\n"
-        "element E { type: a }\n"
-        "element E { type: b }");
+        "requirement X ::: red {\n id: 1\n}\n"
+        "element Y ::: blue {\n type: t\n}\n"
+        "X -contains-> Y");
+    require(d.requirements.at(0).cssClasses.contains(QStringLiteral("red")),
+            QStringLiteral("requirement ::: class recorded"));
+    require(d.elements.at(0).cssClasses.contains(QStringLiteral("blue")),
+            QStringLiteral("element ::: class recorded"));
+  }
+
+  // 3. Map dedup: a repeated name yields ONE node and the FIRST definition wins.
+  {
+    const auto d = parse(
+        "requirementDiagram\n"
+        "requirement Dup {\n id: first\n}\n"
+        "requirement Dup {\n id: second\n}\n"
+        "element E {\n type: a\n}\n"
+        "element E {\n type: b\n}");
     require(d.requirements.size() == 1, QStringLiteral("dedup: one requirement node"));
     require(d.requirements[0].name == QStringLiteral("Dup"), QStringLiteral("dedup name"));
     require(d.requirements[0].requirementId == QStringLiteral("first"),
@@ -86,7 +97,7 @@ int main(int argc, char** argv) {
             QStringLiteral("dedup keeps the FIRST element definition"));
   }
 
-  // 3. All 6 requirement types + 7 relationship types + enum fields.
+  // 4. All 6 requirement types + 7 relationship types + enum fields.
   {
     const auto d = parse(
         "requirementDiagram\n"
@@ -94,8 +105,8 @@ int main(int argc, char** argv) {
         "functionalRequirement R2 {\n risk: medium\n verifyMethod: demonstration\n}\n"
         "interfaceRequirement R3 {\n risk: high\n verifyMethod: inspection\n}\n"
         "performanceRequirement R4 {\n verifyMethod: test\n}\n"
-        "physicalRequirement R5\n"
-        "designConstraint R6\n"
+        "physicalRequirement R5 {\n text: p\n}\n"
+        "designConstraint R6 {\n text: d\n}\n"
         "R1 -contains-> R2\nR1 -copies-> R2\nR1 -derives-> R2\n"
         "R1 -satisfies-> R2\nR1 -verifies-> R2\nR1 -refines-> R2\nR1 -traces-> R2\n"
         "R2 <-contains- R1");
@@ -112,25 +123,48 @@ int main(int argc, char** argv) {
     require(d.requirements[0].verifyMethod == QStringLiteral("Analysis"), QStringLiteral("verify Analysis"));
     require(d.requirements[3].verifyMethod == QStringLiteral("Test"), QStringLiteral("verify Test"));
     require(d.relations.size() == 8, QStringLiteral("eight relationships (7 right + 1 left form)"));
-    // Left form `R2 <-contains- R1`: src=R1, dst=R2.
     const auto& left = d.relations.last();
     require(left.type == QStringLiteral("contains") && left.src == QStringLiteral("R1") &&
                 left.dst == QStringLiteral("R2"),
             QStringLiteral("left-form relationship src/dst"));
   }
 
-  // 4. Strict syntax errors throw RequirementParseError (no silent Ready).
+  // 5. Strict syntax errors throw RequirementParseError (no silent Ready). All
+  //    verified against real mermaid 11.16.0 (Parse error).
   {
     require(throwsParseError([] {
-      RequirementDiagram::parse("requirementDiagram\nthis is not valid syntax");
-    }), QStringLiteral("unrecognized line throws RequirementParseError"));
+      RequirementDiagram::parse("requirementDiagram\nrequirement X");  // no body
+    }), QStringLiteral("no-body declaration throws"));
     require(throwsParseError([] {
-      RequirementDiagram::parse("requirementDiagram\nrequirement X {\nid: 1\n");  // no closing }
-    }), QStringLiteral("unclosed body throws RequirementParseError"));
+      RequirementDiagram::parse("requirementDiagram\nrequirement X { id: 1 }");  // single-line body
+    }), QStringLiteral("single-line body throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n foo: bar\n}");  // unknown field
+    }), QStringLiteral("unknown body field throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n risk: critical\n}");  // bad enum
+    }), QStringLiteral("invalid risk enum throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirement X {\n id: 1\n}");  // missing header
+    }), QStringLiteral("missing header throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirement\nrequirement X {\n id: 1\n}");  // wrong header
+    }), QStringLiteral("wrong header (requirement, not requirementDiagram) throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n id: 1");  // unclosed body
+    }), QStringLiteral("unclosed body throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n id: 1\n}\nfoo bar baz");  // stray line
+    }), QStringLiteral("unrecognized line throws"));
+    // Duplicate with an invalid body must still throw (validation runs even when
+    // the first definition wins).
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n id: 1\n}\nrequirement X {\n risk: nope\n}");
+    }), QStringLiteral("duplicate with invalid body throws"));
     // Valid source must NOT throw.
     bool validThrew = false;
     try {
-      parse("requirementDiagram\nrequirement X { id: 1 }");
+      parse("requirementDiagram\nrequirement X {\n id: 1\n}");
     } catch (const RequirementParseError&) { validThrew = true; }
     require(!validThrew, QStringLiteral("valid source must not throw"));
   }

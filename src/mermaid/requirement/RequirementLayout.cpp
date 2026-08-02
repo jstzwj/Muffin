@@ -26,6 +26,18 @@ constexpr qreal kGap = 20.0;      // gap between name and body (upstream hardcod
 
 namespace muffin::mermaid::requirement {
 
+flowchart::FlowLabelDocument requirementRowDocument(const QString& text, qreal fontSize, bool bold) {
+  auto document = flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
+  document.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
+  if (bold && !document.text.isEmpty()) {
+    QTextCharFormat format;
+    format.setFontWeight(QFont::Bold);
+    document.formats.append({0, static_cast<int>(document.text.size()), format});
+  }
+  flowchart::prepareFlowLabelMath(document, fontSize);
+  return document;
+}
+
 RequirementLayoutInput
 buildRequirementLayoutInput(const RequirementDiagramData& data) {
   RequirementLayoutInput input;
@@ -116,11 +128,11 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
     qreal maxRowWidth = 0.0;
     for (const RequirementLayoutRow& row : node.rows) {
       m.rowHeights.append(rowHeight);
-      // Measure the bold name row with bold weight so dagre reserves space
-      // matching the drawn ink (real Bold faces have wider advances than Normal).
-      flowchart::FlowLabelDocument doc =
-          flowchart::parseFlowLabel(row.text, QStringLiteral("text"));
-      if (row.bold) doc.baseWeight = QFont::Bold;
+      // Measure with the same prepared markdown document the painter draws, so
+      // the box width matches the rendered ink (markdown markers like **bold**
+      // render; the bold name row measures bold).
+      const flowchart::FlowLabelDocument doc =
+          requirementRowDocument(row.text, fontSize, row.bold);
       const QRectF ink = flowchart::measureFlowSvgTextBounds(doc, fontFamily, fontSize);
       maxRowWidth = std::max(maxRowWidth, ink.width());
     }

@@ -68,18 +68,6 @@ QRectF edgePointsBounds(const QVector<QPointF>& points,
   return initialized ? bounds.adjusted(-18.0, -18.0, 18.0, 18.0) : QRectF{};
 }
 
-flowchart::FlowLabelDocument prepareRowDocument(const QString& text, qreal fontSize, bool bold) {
-  auto document = flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
-  document.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
-  if (bold && !document.text.isEmpty()) {
-    QTextCharFormat format;
-    format.setFontWeight(QFont::Bold);
-    document.formats.append({0, static_cast<int>(document.text.size()), format});
-  }
-  flowchart::prepareFlowLabelMath(document, fontSize);
-  return document;
-}
-
 }  // namespace
 
 namespace muffin::mermaid::requirement {
@@ -139,12 +127,12 @@ RequirementScene buildRequirementScene(
     const qreal totalHeight = placed.height;
     const qreal totalWidth = placed.width;
     rendered.hasDivider = node.hasBody;
-    // Mermaid draws the divider at the body top: y + typeHeight + nameHeight +
-    // gap (chunk-ZGVPDNZ5.mjs), i.e. boxTop + padding + typeHeight + nameHeight +
-    // gap, relative to the box center. Computed once here from the measurements
-    // so the painter does not re-derive it from row centers.
+    // Mermaid draws the divider at the body top: lineY = y + typeHeight +
+    // nameHeight + gap where y = -totalHeight/2 is the box top (no padding) —
+    // chunk-ZGVPDNZ5.mjs / chunk-65BZPYT2.mjs. Computed once here from the
+    // measurements so the painter does not re-derive it from row centers.
     if (node.hasBody) {
-      rendered.dividerY = -totalHeight / 2.0 + kPadding +
+      rendered.dividerY = -totalHeight / 2.0 +
                           measured.typeHeight + measured.nameHeight + kGap;
     }
     rendered.fill = scene.style.boxFill;
@@ -170,20 +158,20 @@ RequirementScene buildRequirementScene(
       if (i >= 2) {
         // Measure this row's width to center the label rect on its left-anchored
         // position.
-        const auto doc = prepareRowDocument(row.text, scene.style.fontSize, row.bold);
+        const auto doc = requirementRowDocument(row.text, scene.style.fontSize, row.bold);
         const QRectF ink = flowchart::measureFlowSvgTextBounds(
             doc, scene.style.fontFamily, scene.style.fontSize);
         sceneRow.size.setWidth(ink.width());
         centerX = -totalWidth / 2.0 + kPadding / 2.0 + ink.width() / 2.0;
       } else {
-        const auto doc = prepareRowDocument(row.text, scene.style.fontSize, row.bold);
+        const auto doc = requirementRowDocument(row.text, scene.style.fontSize, row.bold);
         const QRectF ink = flowchart::measureFlowSvgTextBounds(
             doc, scene.style.fontFamily, scene.style.fontSize);
         sceneRow.size.setWidth(ink.width());
       }
       const qreal centerY = yoffset - totalHeight / 2.0 + kPadding;
       sceneRow.center = QPointF(centerX, centerY);
-      sceneRow.document = prepareRowDocument(row.text, scene.style.fontSize, row.bold);
+      sceneRow.document = requirementRowDocument(row.text, scene.style.fontSize, row.bold);
       rendered.rows.append(std::move(sceneRow));
       yoffset += rowHeight;
       if (i == 1 && node.hasBody) yoffset += kGap;
@@ -283,6 +271,7 @@ QJsonObject RequirementScene::toJsonObject() const {
     n[QStringLiteral("height")] = r3(node.size.height());
     n[QStringLiteral("bodyRows")] = node.bodyRowCount;
     n[QStringLiteral("dividers")] = node.hasDivider ? 1 : 0;
+    if (node.hasDivider) n[QStringLiteral("dividerY")] = r3(node.dividerY);
     if (!node.fill.isEmpty())
       n[QStringLiteral("fill")] = node.fill;
     if (!node.stroke.isEmpty())
