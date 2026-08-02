@@ -119,7 +119,10 @@ NameAndClass parseNameTail(QString tail, int lineNo) {
   // invalid name (`.abc`, or `A-B`/`A:B` leaving trailing junk) is rejected here
   // or via the junk-before-brace check below. `}`/`#`/`%` are part of the name.
   const Token nameTok = consumeToken(tail, 0, lineNo);
-  result.name = nameTok.value.trimmed();
+  // An unqString is trimmed (mermaid's unqString rule); a qString keeps its
+  // exact content, including leading/trailing spaces (`" X "` stays " X "), so
+  // the node id matches a relationship endpoint decoded the same way.
+  result.name = nameTok.quoted ? nameTok.value : nameTok.value.trimmed();
   QString rest = tail.mid(nameTok.end).trimmed();
   // `::: <idList>` up to `{` — parseIdList rejects empty/malformed lists and
   // only splits on commas OUTSIDE quotes.
@@ -170,13 +173,21 @@ bool parseFieldLine(const QString& line, QString& keyOut, QString& valueOut) {
 // token consumer (declaration name, body value, relationship endpoint, idList)
 // so the contract is consistent and edge cases can't slip through one path.
 //
-//   unqString = [\w][^:,\r\n{}<>\-=]*   (first char a word char; then any char
-//                                        except : , { < > - = and newlines)
+//   unqString = [\w][^:,\r\n{<>\-=]*    (first char an ASCII word char; then any
+//                                        char except : , { < > - = and newlines.
+//                                        Note: `}` IS allowed.)
 //   qString   = "..."                    (decoded; must be fully consumed)
 //
 // Note `}` IS allowed in an unqString (verified: `text: a}b`, name `X}Y`).
 // `#`/`%`/space/`.`/`/`/`;` are allowed, so comments are NOT stripped mid-token.
-bool isWordChar(QChar c) { return c.isLetterOrNumber() || c == QLatin1Char('_'); }
+bool isWordChar(QChar c) {
+  // Upstream JS \w is ASCII-only [A-Za-z0-9_] — a Unicode first char (e.g. a
+  // CJK identifier) is a Lexical error, so do not use Unicode isLetterOrNumber.
+  return (c >= QLatin1Char('A') && c <= QLatin1Char('Z')) ||
+         (c >= QLatin1Char('a') && c <= QLatin1Char('z')) ||
+         (c >= QLatin1Char('0') && c <= QLatin1Char('9')) ||
+         c == QLatin1Char('_');
+}
 bool isUnqStopChar(QChar c) {
   return c == QLatin1Char(':') || c == QLatin1Char(',') || c == QLatin1Char('{') ||
          c == QLatin1Char('<') || c == QLatin1Char('>') || c == QLatin1Char('-') ||
@@ -253,6 +264,8 @@ QStringList parseIdList(const QString& raw, int lineNo) {
     if (t.end != trimmed.size())
       throw RequirementParseError(
           QStringLiteral("malformed class list token '%1'").arg(trimmed), lineNo);
+    if (t.value.isEmpty())
+      throw RequirementParseError(QStringLiteral("empty class name"), lineNo);
     result.append(t.value);
   }
   return result;
@@ -341,14 +354,36 @@ public:
         continue;
       }
 
-      // The first meaningful line must be the `requirementDiagram` header keyword
-      // (mermaid's RD token), optionally followed by whitespace and/or a `#`/`%`
-      // comment. `requirement` alone or any other opener is a Parse error.
+      // The first meaningful line must be exactly the `requirementDiagram` header
+      // keyword (mermaid's RD token), optionally followed by whitespace and a
+      // `#`/`%` comment. A bare trailing space, or any non-comment text after the
+      // keyword, is a Parse error (only `requirementDiagram`,
+      // `requirementDiagram # c`, `requirementDiagram % c` are valid).
       if (!headerSeen) {
-        const QString lower = line.toLower();
-        if (lower.startsWith(QStringLiteral("requirementdiagram")) &&
-            (lower.size() == 18 || lower.at(18).isSpace() ||
-             lower.at(18) == QLatin1Char('#') || lower.at(18) == QLatin1Char('%'))) {
+        // Examine the RAW line (left-trimmed, trailing \r stripped) so a trailing
+        // space or non-comment text after the keyword is detected — the loop's
+        // full trim would hide it. Only `requirementDiagram`, or the keyword plus
+        // whitespace and a `#`/`%` comment, is valid; trailing whitespace alone or
+        // any non-comment text is a Parse error.
+        QString raw = rawLine;
+        while (!raw.isEmpty() && raw.at(0).isSpace()) raw.remove(0, 1);
+        if (raw.endsWith(QLatin1Char('\r'))) raw.chop(1);
+        const QString lower = raw.toLower();
+        bool validHeader = false;
+        if (lower.startsWith(QStringLiteral("requirementdiagram"))) {
+          const QString suffix = lower.mid(18);
+          if (suffix.isEmpty()) {
+            validHeader = true;
+          } else {
+            int j = 0;
+            while (j < suffix.size() && suffix.at(j).isSpace()) ++j;
+            if (j < suffix.size() &&
+                (suffix.at(j) == QLatin1Char('#') || suffix.at(j) == QLatin1Char('%')))
+              validHeader = true;  // whitespace then a comment
+            // else: whitespace-only, or non-comment text -> rejected
+          }
+        }
+        if (validHeader) {
           headerSeen = true;
           continue;
         }
@@ -633,11 +668,14 @@ private:
     const QString connectorBefore = m.captured(2);
     const QString type = m.captured(3).toLower();
     const QString connectorAfter = m.captured(4);
-    // Endpoints: one token each, fully consumed (decode quoted, validate unquoted).
-    const Token leftTok = consumeToken(m.captured(1).trimmed(), 0, lineNo);
-    if (leftTok.end != m.captured(1).trimmed().size()) return false;
-    const Token rightTok = consumeToken(m.captured(5).trimmed(), 0, lineNo);
-    if (rightTok.end != m.captured(5).trimmed().size()) return false;
+    // Endpoints: one token each, fully consumed + non-empty (decode quoted,
+    // validate unquoted). An empty quoted endpoint is rejected like any other.
+    const QString leftRaw = m.captured(1).trimmed();
+    const Token leftTok = consumeToken(leftRaw, 0, lineNo);
+    if (leftTok.end != leftRaw.size() || leftTok.value.isEmpty()) return false;
+    const QString rightRaw = m.captured(5).trimmed();
+    const Token rightTok = consumeToken(rightRaw, 0, lineNo);
+    if (rightTok.end != rightRaw.size() || rightTok.value.isEmpty()) return false;
     const QString left = leftTok.value;
     const QString right = rightTok.value;
     // Validate the connector pairing: only `<- ... -` and `- ... ->` are legal.

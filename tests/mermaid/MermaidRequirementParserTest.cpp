@@ -9,6 +9,7 @@
 
 #include <QCoreApplication>
 #include <QString>
+#include <QStringList>
 
 #include <cstdio>
 #include <cstdlib>
@@ -257,62 +258,89 @@ int main(int argc, char** argv) {
 
   // 7. Data-driven token-contract table (valid / invalid / decoded value) — a
   //    concentrated acceptance fixture for the unified lexer, covering names,
-  //    body values, relationship endpoints, idList, and comment handling in one
-  //    place. `ok`=expected to parse; expectName/expectText assert the decoded
-  //    value. All entries verified against real mermaid 11.16.0.
+  //    body values, relationship endpoints, idList, comment handling, header
+  //    suffix, ASCII-\w, and qString-space preservation. All entries verified
+  //    against real mermaid 11.16.0.
   struct TokenCase {
     const char* id;
     const char* src;
-    bool ok;
-    const char* expectName;  // nullptr = don't check
-    const char* expectText;
+    bool ok = true;
+    const char* expectName = nullptr;
+    const char* expectText = nullptr;
+    const char* expectClasses = nullptr;  // comma-separated expected user classes
+    const char* expectRelSrc = nullptr;   // expected first relationship src
+    const char* expectRelDst = nullptr;   // expected first relationship dst
   };
   const TokenCase tokenCases[] = {
-      // Names: first char \w; } # % allowed; . / ; - = : rejected.
-      {"name-hash", "requirementDiagram\nrequirement X#Y {\n id: 1\n}", true, "X#Y", nullptr},
-      {"name-brace", "requirementDiagram\nrequirement X}Y {\n id: 1\n}", true, "X}Y", nullptr},
-      {"name-dot", "requirementDiagram\nrequirement .abc {\n id: 1\n}", false, nullptr, nullptr},
-      {"name-dash", "requirementDiagram\nrequirement A-B {\n id: 1\n}", false, nullptr, nullptr},
-      {"name-colon", "requirementDiagram\nrequirement A:B {\n id: 1\n}", false, nullptr, nullptr},
-      // Values: same rule; %/#/} allowed; special chars rejected unquoted, quoted OK.
-      {"value-percent", "requirementDiagram\nrequirement X {\n text: 50% complete\n}", true, "X", "50% complete"},
-      {"value-hash", "requirementDiagram\nrequirement X {\n text: abc # def\n}", true, "X", "abc # def"},
-      {"value-brace", "requirementDiagram\nrequirement X {\n text: a}b\n}", true, "X", "a}b"},
-      {"value-dash", "requirementDiagram\nrequirement X {\n text: a-b\n}", false, nullptr, nullptr},
-      {"value-equals", "requirementDiagram\nrequirement X {\n text: a=b\n}", false, nullptr, nullptr},
-      {"value-quoted-special", "requirementDiagram\nrequirement X {\n text: \"a:b,c-d=e\"\n}", true, "X", "a:b,c-d=e"},
-      {"value-qstring-junk", "requirementDiagram\nrequirement X {\n text: \"a\" junk\n}", false, nullptr, nullptr},
-      // Relationship endpoint validated via the same token API.
-      {"endpoint-hash", "requirementDiagram\nrequirement A#B {\n id: 1\n}\nrequirement C {\n id: 2\n}\nA#B -contains-> C", true, "A#B", nullptr},
-      {"endpoint-dash", "requirementDiagram\nrequirement A {\n id: 1\n}\nrequirement C {\n id: 2\n}\nA-B -contains-> C", false, nullptr, nullptr},
+      // Names: ASCII-\w first char; } # % allowed; . / ; - = : and Unicode rejected.
+      {.id = "name-hash", .src = "requirementDiagram\nrequirement X#Y {\n id: 1\n}", .expectName = "X#Y"},
+      {.id = "name-brace", .src = "requirementDiagram\nrequirement X}Y {\n id: 1\n}", .expectName = "X}Y"},
+      {.id = "name-dot", .src = "requirementDiagram\nrequirement .abc {\n id: 1\n}", .ok = false},
+      {.id = "name-dash", .src = "requirementDiagram\nrequirement A-B {\n id: 1\n}", .ok = false},
+      {.id = "name-colon", .src = "requirementDiagram\nrequirement A:B {\n id: 1\n}", .ok = false},
+      {.id = "name-unicode", .src = "requirementDiagram\nrequirement 中文 {\n id: 1\n}", .ok = false},
+      // Quoted name keeps its exact content (no trim) so the id matches endpoints.
+      {.id = "quoted-name-spaces", .src = "requirementDiagram\nrequirement \" X \" {\n id: 1\n}", .expectName = " X "},
+      // Values: %/#/} allowed; special chars rejected unquoted, quoted OK.
+      {.id = "value-percent", .src = "requirementDiagram\nrequirement X {\n text: 50% complete\n}", .expectName = "X", .expectText = "50% complete"},
+      {.id = "value-hash", .src = "requirementDiagram\nrequirement X {\n text: abc # def\n}", .expectName = "X", .expectText = "abc # def"},
+      {.id = "value-brace", .src = "requirementDiagram\nrequirement X {\n text: a}b\n}", .expectName = "X", .expectText = "a}b"},
+      {.id = "value-dash", .src = "requirementDiagram\nrequirement X {\n text: a-b\n}", .ok = false},
+      {.id = "value-equals", .src = "requirementDiagram\nrequirement X {\n text: a=b\n}", .ok = false},
+      {.id = "value-quoted-special", .src = "requirementDiagram\nrequirement X {\n text: \"a:b,c-d=e\"\n}", .expectName = "X", .expectText = "a:b,c-d=e"},
+      {.id = "value-qstring-junk", .src = "requirementDiagram\nrequirement X {\n text: \"a\" junk\n}", .ok = false},
+      // Relationship endpoint validated + decoded via the same token API.
+      {.id = "endpoint-hash", .src = "requirementDiagram\nrequirement A#B {\n id: 1\n}\nrequirement C {\n id: 2\n}\nA#B -contains-> C", .expectName = "A#B", .expectRelSrc = "A#B", .expectRelDst = "C"},
+      {.id = "endpoint-dash", .src = "requirementDiagram\nrequirement A {\n id: 1\n}\nrequirement C {\n id: 2\n}\nA-B -contains-> C", .ok = false},
       // idList: comma outside quotes; quoted comma is one class; empty/malformed rejected.
-      {"idlist-quoted-comma", "requirementDiagram\nrequirement X ::: \"red,blue\" {\n id: 1\n}", true, "X", nullptr},
-      {"idlist-empty", "requirementDiagram\nrequirement X ::: {\n id: 1\n}", false, nullptr, nullptr},
-      {"idlist-double-comma", "requirementDiagram\nrequirement X ::: red,,blue {\n id: 1\n}", false, nullptr, nullptr},
-      // Comments: whole-line only (and a header trailing comment); # inside a
-      // name/value is literal.
-      {"header-trailing-comment", "requirementDiagram # c\nrequirement X {\n id: 1\n}", true, "X", nullptr},
-      {"name-internal-hash", "requirementDiagram\nrequirement X # c {\n id: 1\n}", true, "X # c", nullptr},
-      {"body-comment-line", "requirementDiagram\nrequirement X {\n id: 1\n # a body comment\n text: v\n}", true, "X", "v"},
+      {.id = "idlist-quoted-comma", .src = "requirementDiagram\nrequirement X ::: \"red,blue\" {\n id: 1\n}", .expectName = "X", .expectClasses = "red,blue"},
+      {.id = "idlist-mixed", .src = "requirementDiagram\nrequirement X ::: red,\"a,b\" {\n id: 1\n}", .expectName = "X", .expectClasses = "red;a,b"},
+      {.id = "idlist-empty", .src = "requirementDiagram\nrequirement X ::: {\n id: 1\n}", .ok = false},
+      {.id = "idlist-double-comma", .src = "requirementDiagram\nrequirement X ::: red,,blue {\n id: 1\n}", .ok = false},
+      {.id = "idlist-empty-qstring", .src = "requirementDiagram\nrequirement X ::: \"\" {\n id: 1\n}", .ok = false},
+      // Header: exactly the keyword, or keyword + whitespace + #/% comment. A bare
+      // trailing space or non-comment text is a Parse error.
+      {.id = "header-exact", .src = "requirementDiagram\nrequirement X {\n id: 1\n}", .expectName = "X"},
+      {.id = "header-hash-comment", .src = "requirementDiagram # c\nrequirement X {\n id: 1\n}", .expectName = "X"},
+      {.id = "header-percent-comment", .src = "requirementDiagram % c\nrequirement X {\n id: 1\n}", .expectName = "X"},
+      {.id = "header-trailing-space", .src = "requirementDiagram \nrequirement X {\n id: 1\n}", .ok = false},
+      {.id = "header-junk", .src = "requirementDiagram junk\nrequirement X {\n id: 1\n}", .ok = false},
+      // Comments: whole-line only; # inside a name/value is literal.
+      {.id = "name-internal-hash", .src = "requirementDiagram\nrequirement X # c {\n id: 1\n}", .expectName = "X # c"},
+      {.id = "body-comment-line", .src = "requirementDiagram\nrequirement X {\n id: 1\n # a body comment\n text: v\n}", .expectName = "X", .expectText = "v"},
   };
   for (const TokenCase& tc : tokenCases) {
     bool threw = false;
     RequirementDiagramData d;
     try {
-      d = RequirementDiagram::parse(QLatin1String(tc.src)).data();
+      d = RequirementDiagram::parse(QString::fromUtf8(tc.src)).data();
     } catch (const RequirementParseError&) {
       threw = true;
     }
     require(threw == !tc.ok,
             QStringLiteral("%1: expected %2").arg(QLatin1String(tc.id), tc.ok ? "OK" : "throw"));
     if (tc.ok) {
-      require(!d.requirements.isEmpty(), QStringLiteral("%1: expected a requirement").arg(QLatin1String(tc.id)));
+      require(!d.requirements.isEmpty(),
+              QStringLiteral("%1: expected a requirement").arg(QLatin1String(tc.id)));
       if (tc.expectName)
         require(d.requirements.at(0).name == QLatin1String(tc.expectName),
                 QStringLiteral("%1: name '%2'").arg(QLatin1String(tc.id), d.requirements.at(0).name));
       if (tc.expectText)
         require(d.requirements.at(0).text == QLatin1String(tc.expectText),
                 QStringLiteral("%1: text '%2'").arg(QLatin1String(tc.id), d.requirements.at(0).text));
+      if (tc.expectClasses) {
+        // ';' separates expected classes so a class name may itself contain ','.
+        const QStringList expected = QString::fromLatin1(tc.expectClasses).split(QLatin1Char(';'));
+        for (const QString& cls : expected)
+          require(d.requirements.at(0).cssClasses.contains(cls),
+                  QStringLiteral("%1: expected class '%2' in [%3]")
+                      .arg(QLatin1String(tc.id), cls, d.requirements.at(0).cssClasses.join(QLatin1Char(','))));
+      }
+      if (tc.expectRelSrc)
+        require(!d.relations.isEmpty() &&
+                    d.relations.at(0).src == QLatin1String(tc.expectRelSrc) &&
+                    d.relations.at(0).dst == QLatin1String(tc.expectRelDst),
+                QStringLiteral("%1: relationship src/dst mismatch").arg(QLatin1String(tc.id)));
     }
   }
 
