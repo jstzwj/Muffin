@@ -69,6 +69,9 @@ QString requirementTypeDisplay(const QString& keyword) {
   return typeKeywordMap().value(keyword);
 }
 
+RequirementParseError::RequirementParseError(const QString& message, int line)
+    : std::runtime_error(message.toUtf8().toStdString()), line(line) {}
+
 QString RequirementEnumDisplay::risk(const QString& keyword) {
   static const QHash<QString, QString> kMap = {
       {QStringLiteral("low"), QStringLiteral("Low")},
@@ -96,25 +99,50 @@ namespace {
 struct NameAndClass {
   QString name;
   QString styleClass;
-  bool opensBody = false;  // a `{` was present on this line
+  bool opensBody = false;   // a `{` opened a multi-line body (no same-line `}`)
+  QString inlineBody;       // text between a same-line `{ ... }`, else empty
 };
 
 NameAndClass parseNameTail(QString tail) {
   NameAndClass result;
-  // Detect inline body opener `{`.
-  const int brace = tail.indexOf(QLatin1Char('{'));
-  if (brace >= 0) {
-    result.opensBody = true;
-    tail = tail.left(brace) + tail.mid(brace + 1);
-  }
   tail = tail.trimmed();
-  // `:::` style separator.
-  const int sep = tail.indexOf(QStringLiteral(":::"));
-  if (sep >= 0) {
-    result.name = tail.left(sep).trimmed();
-    result.styleClass = tail.mid(sep + 3).trimmed();
+  QString rest;
+  if (tail.startsWith(QLatin1Char('"'))) {
+    // Quoted name: content between the first and the next double-quote. A `{`
+    // or `:::` inside the quotes is part of the name, not a separator.
+    const int end = tail.indexOf(QLatin1Char('"'), 1);
+    if (end > 0) {
+      result.name = tail.mid(1, end - 1);
+      rest = tail.mid(end + 1);
+    } else {
+      result.name = tail.mid(1);  // unterminated quote
+      rest.clear();
+    }
   } else {
-    result.name = tail;
+    // Bareword: name runs to the first whitespace, `:::`, or `{`.
+    int nameEnd = tail.size();
+    const int brace = tail.indexOf(QLatin1Char('{'));
+    const int sep = tail.indexOf(QStringLiteral(":::"));
+    if (sep >= 0) nameEnd = std::min(nameEnd, sep);
+    if (brace >= 0) nameEnd = std::min(nameEnd, brace);
+    result.name = tail.left(nameEnd).trimmed();
+    rest = tail.mid(nameEnd);
+  }
+  rest = rest.trimmed();
+  // `:::` style separator (after the name).
+  const int sep = rest.indexOf(QStringLiteral(":::"));
+  if (sep >= 0) {
+    result.styleClass = rest.mid(sep + 3).trimmed();
+    rest = rest.left(sep).trimmed();
+  }
+  // Body opener `{`. If a matching `}` is on the same line, the body is inline
+  // (`{ type: y }`); otherwise it opens a multi-line body.
+  const int brace = rest.indexOf(QLatin1Char('{'));
+  if (brace >= 0) {
+    const QString after = rest.mid(brace + 1);
+    const int close = after.indexOf(QLatin1Char('}'));
+    if (close >= 0) result.inlineBody = after.left(close).trimmed();
+    else result.opensBody = true;
   }
   return result;
 }
@@ -143,7 +171,7 @@ public:
     bool inMultilineAccDescr = false;
     // The body's owner is identified by name (not a raw pointer into a QVector,
     // which would dangle if the vector reallocates while the body is open).
-    enum class BodyOwner { None, Requirement, Element };
+    enum class BodyOwner { None, Requirement, Element, Discard };
     BodyOwner bodyOwner = BodyOwner::None;
     QString bodyOwnerName;
     QStringList bodyBuffer;
@@ -174,6 +202,8 @@ public:
             ElementNode* target = findElement(bodyOwnerName);
             if (target) applyElementBody(*target, bodyBuffer);
           }
+          // BodyOwner::Discard: a duplicate declaration's body is consumed but
+          // not applied — mermaid's Map keeps the FIRST definition's fields.
           inBody = false;
           bodyOwner = BodyOwner::None;
           bodyOwnerName.clear();
@@ -254,16 +284,26 @@ public:
                line.at(keyword.size()).isSpace() ||
                line.at(keyword.size()) == QLatin1Char('{'))) {
             const NameAndClass nc = parseNameTail(line.mid(keyword.size()));
-            RequirementNode node;
-            node.name = nc.name;
-            node.type = it.value();
-            if (!nc.styleClass.isEmpty()) node.cssClasses.append(nc.styleClass);
-            data_.requirements.append(std::move(node));
+            // Map semantics: one node per name; the FIRST definition wins. A
+            // duplicate declaration is consumed (and any body discarded) but
+            // does not create a second node or overwrite the first.
+            const bool duplicate = findRequirement(nc.name) != nullptr;
+            if (!duplicate) {
+              RequirementNode node;
+              node.name = nc.name;
+              node.type = it.value();
+              if (!nc.styleClass.isEmpty()) node.cssClasses.append(nc.styleClass);
+              data_.requirements.append(std::move(node));
+            }
             if (nc.opensBody) {
               inBody = true;
-              bodyOwner = BodyOwner::Requirement;
+              bodyOwner = duplicate ? BodyOwner::Discard : BodyOwner::Requirement;
               bodyOwnerName = nc.name;
               bodyBuffer.clear();
+            } else if (!nc.inlineBody.isEmpty() && !duplicate) {
+              // Inline-closed body on one line (`{ id: 1 }`).
+              RequirementNode* target = findRequirement(nc.name);
+              if (target) applyRequirementBody(*target, QStringList{nc.inlineBody});
             }
             matched = true;
             break;
@@ -277,15 +317,21 @@ public:
           line.left(7).compare(QStringLiteral("element"), Qt::CaseInsensitive) == 0 &&
           (line.size() == 7 || line.at(7).isSpace() || line.at(7) == QLatin1Char('{'))) {
         const NameAndClass nc = parseNameTail(line.mid(7));
-        ElementNode node;
-        node.name = nc.name;
-        if (!nc.styleClass.isEmpty()) node.cssClasses.append(nc.styleClass);
-        data_.elements.append(std::move(node));
+        const bool duplicate = findElement(nc.name) != nullptr;
+        if (!duplicate) {
+          ElementNode node;
+          node.name = nc.name;
+          if (!nc.styleClass.isEmpty()) node.cssClasses.append(nc.styleClass);
+          data_.elements.append(std::move(node));
+        }
         if (nc.opensBody) {
           inBody = true;
-          bodyOwner = BodyOwner::Element;
+          bodyOwner = duplicate ? BodyOwner::Discard : BodyOwner::Element;
           bodyOwnerName = nc.name;
           bodyBuffer.clear();
+        } else if (!nc.inlineBody.isEmpty() && !duplicate) {
+          ElementNode* target = findElement(nc.name);
+          if (target) applyElementBody(*target, QStringList{nc.inlineBody});
         }
         continue;
       }
@@ -335,9 +381,15 @@ public:
         continue;
       }
 
-      // Unrecognized line — skip leniently (the upstream parser would error,
-      // but for the pilot we tolerate stray content).
+      // Unrecognized line — mermaid returns a Parse error rather than silently
+      // producing a (wrong) Ready scene. Report the 1-based source line.
+      throw RequirementParseError(
+          QStringLiteral("Unrecognized requirementDiagram syntax: %1").arg(line), i + 1);
     }
+    // An open body at end-of-source is an unclosed block — also a parse error.
+    if (inBody)
+      throw RequirementParseError(
+          QStringLiteral("Unclosed requirement/element body"), lines_.size());
     return std::move(data_);
   }
 
@@ -403,11 +455,11 @@ private:
         QRegularExpression::CaseInsensitiveOption);
     const QRegularExpressionMatch m = re.match(line);
     if (!m.hasMatch()) return false;
-    const QString left = m.captured(1).trimmed();
+    const QString left = unwrapValue(m.captured(1));
     const QString connectorBefore = m.captured(2);
     const QString type = m.captured(3).toLower();
     const QString connectorAfter = m.captured(4);
-    const QString right = m.captured(5).trimmed();
+    const QString right = unwrapValue(m.captured(5));
     // Validate the connector pairing: only `<- ... -` and `- ... ->` are legal.
     const bool formArrowRight =
         connectorBefore == QLatin1String("-") && connectorAfter == QLatin1String("->");

@@ -33,6 +33,8 @@
 #include <QStringList>
 #include <QVector>
 
+#include <stdexcept>
+
 namespace muffin::mermaid::requirement {
 
 // Display-type strings emitted by the parser, matching RequirementDB's
@@ -98,6 +100,16 @@ public:
 
 private:
   RequirementDiagramData data_;
+};
+
+// Thrown by parse() on invalid requirementDiagram syntax — an unrecognized
+// line, a duplicate declaration that breaks Map semantics is tolerated, but a
+// missing/unclosed body or a stray token surfaces as a parse error (matching
+// mermaid's "Parse error" instead of silently producing a Ready scene). Carries
+// the 1-based source line for the diagnostic.
+struct RequirementParseError : std::runtime_error {
+  int line = 0;
+  RequirementParseError(const QString& message, int line);
 };
 
 // Returns the display type string for a requirement keyword, or empty if the

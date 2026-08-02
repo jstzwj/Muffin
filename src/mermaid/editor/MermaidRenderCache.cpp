@@ -27,6 +27,7 @@
 #include "mermaid/state/StateLayout.h"
 #include "mermaid/state/StateScene.h"
 #include "mermaid/state/StateScenePainter.h"
+#include "mermaid/requirement/RequirementDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -559,6 +560,13 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         value.span.offset, length, value.span.line,
         value.span.column + 1, value.production, value.actual,
         value.expected));
+  } catch (const requirement::RequirementParseError& error) {
+    MermaidDiagnostic diagnostic;
+    diagnostic.diagramType = type;
+    diagnostic.stage = QStringLiteral("parse");
+    diagnostic.code = QStringLiteral("requirement-parse-error");
+    diagnostic.message = QString::fromUtf8(error.what());
+    return errorEntry(std::move(diagnostic));
   } catch (const std::exception& error) {
     MermaidDiagnostic diagnostic;
     diagnostic.diagramType = type;
