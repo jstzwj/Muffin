@@ -48,7 +48,8 @@ struct RequirementDiagramImpl : Diagram {
     const requirement::RequirementLayoutMeasurements measurements =
         requirement::measureRequirementLayoutInput(input, fontFamily, fontSize);
     const requirement::RequirementPlacementResult placement =
-        requirement::layoutRequirementDiagramDagre(input, measurements, nodeSpacing, rankSpacing);
+        requirement::layoutRequirementDiagramDagre(input, measurements, nodeSpacing, rankSpacing,
+                                                   fontFamily, fontSize);
     requirement::RequirementSceneStyle style;
     style.boxFill = themeVars.mainBkg;
     style.boxStroke = themeVars.border1;

@@ -102,6 +102,7 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
 
 RequirementPlacementResult layoutRequirementDiagramDagre(
     const RequirementLayoutInput& input, const RequirementLayoutMeasurements& measurements,
-    qreal nodeSpacing = 50.0, qreal rankSpacing = 50.0);
+    qreal nodeSpacing = 50.0, qreal rankSpacing = 50.0,
+    const QString& fontFamily = QStringLiteral("Noto Sans"), qreal fontSize = 16.0);
 
 }  // namespace muffin::mermaid::requirement

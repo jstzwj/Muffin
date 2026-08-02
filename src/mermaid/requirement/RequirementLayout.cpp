@@ -116,8 +116,11 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
     qreal maxRowWidth = 0.0;
     for (const RequirementLayoutRow& row : node.rows) {
       m.rowHeights.append(rowHeight);
-      const flowchart::FlowLabelDocument doc =
+      // Measure the bold name row with bold weight so dagre reserves space
+      // matching the drawn ink (real Bold faces have wider advances than Normal).
+      flowchart::FlowLabelDocument doc =
           flowchart::parseFlowLabel(row.text, QStringLiteral("text"));
+      if (row.bold) doc.baseWeight = QFont::Bold;
       const QRectF ink = flowchart::measureFlowSvgTextBounds(doc, fontFamily, fontSize);
       maxRowWidth = std::max(maxRowWidth, ink.width());
     }
@@ -138,7 +141,7 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
 
 RequirementPlacementResult layoutRequirementDiagramDagre(
     const RequirementLayoutInput& input, const RequirementLayoutMeasurements& measurements,
-    qreal nodeSpacing, qreal rankSpacing) {
+    qreal nodeSpacing, qreal rankSpacing, const QString& fontFamily, qreal fontSize) {
   RequirementPlacementResult result;
   if (input.nodes.isEmpty()) return result;
   flowchart::FlowchartData projected;
@@ -157,8 +160,9 @@ RequirementPlacementResult layoutRequirementDiagramDagre(
   }
   QMap<QString, QSizeF> measuredEdgeLabels;
   flowchart::FlowTextOptions textOptions;
-  textOptions.fontPixelSize = 16.0;
-  textOptions.lineHeight = 16.0 * 1.5;
+  textOptions.fontFamily = fontFamily;
+  textOptions.fontPixelSize = fontSize;
+  textOptions.lineHeight = fontSize * 1.5;
   for (const RequirementLayoutEdgeInput& edge : input.edges) {
     flowchart::FlowEdge projectedEdge;
     projectedEdge.id = edge.id;

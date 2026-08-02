@@ -60,6 +60,7 @@ struct RequirementSceneNode {
   // Rows: type line, name (bold), body rows (only non-empty fields).
   QVector<RequirementSceneRow> rows;
   bool hasDivider = false;   // body rows present → divider under the name
+  qreal dividerY = 0.0;      // divider line Y relative to node center (body top)
   int bodyRowCount = 0;      // count of body rows (font-independent)
   // Resolved paint (inline style / classDef — deferred for the pilot).
   QString fill;

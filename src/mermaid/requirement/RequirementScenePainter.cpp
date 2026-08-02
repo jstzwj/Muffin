@@ -195,23 +195,16 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
     painter.setBrush(boxFill);
     painter.drawRoundedRect(box, 5.0, 5.0);
 
-    // Divider line under the name (only if body rows present).
+    // Divider line under the name (only if body rows present). Its Y is
+    // precomputed on the node (mermaid's body-top: top + typeHeight + nameHeight
+    // + gap) — see buildRequirementScene.
     if (node.hasDivider) {
-      // Divider Y = top + typeHeight + nameHeight + gap (relative). We don't
-      // have the exact row heights here, but the divider sits between row 1
-      // (name) and row 2 (first body) — i.e. at the midpoint of their gap.
-      // Use the average of row[1].center and row[2].center (relative Y).
-      if (node.rows.size() >= 3) {
-        const qreal divYrel =
-            (node.rows.at(1).center.y() + node.rows.at(2).center.y()) / 2.0;
-        const QPointF p1(node.center.x() - node.size.width() / 2.0,
-                         node.center.y() + divYrel);
-        const QPointF p2(node.center.x() + node.size.width() / 2.0,
-                         node.center.y() + divYrel);
-        painter.setPen(QPen(dividerColor, 1.0));
-        painter.setBrush(Qt::NoBrush);
-        painter.drawLine(p1, p2);
-      }
+      const qreal divY = node.center.y() + node.dividerY;
+      const QPointF p1(node.center.x() - node.size.width() / 2.0, divY);
+      const QPointF p2(node.center.x() + node.size.width() / 2.0, divY);
+      painter.setPen(QPen(dividerColor, 1.0));
+      painter.setBrush(Qt::NoBrush);
+      painter.drawLine(p1, p2);
     }
 
     // Rows: type line, name (bold), body rows.

@@ -136,7 +136,17 @@ RequirementScene buildRequirementScene(
     rendered.center = QPointF(placed.x, placed.y);
     rendered.size = QSizeF(placed.width, placed.height);
     rendered.bodyRowCount = static_cast<int>(std::max<qsizetype>(0, node.rows.size() - 2));
+    const qreal totalHeight = placed.height;
+    const qreal totalWidth = placed.width;
     rendered.hasDivider = node.hasBody;
+    // Mermaid draws the divider at the body top: y + typeHeight + nameHeight +
+    // gap (chunk-ZGVPDNZ5.mjs), i.e. boxTop + padding + typeHeight + nameHeight +
+    // gap, relative to the box center. Computed once here from the measurements
+    // so the painter does not re-derive it from row centers.
+    if (node.hasBody) {
+      rendered.dividerY = -totalHeight / 2.0 + kPadding +
+                          measured.typeHeight + measured.nameHeight + kGap;
+    }
     rendered.fill = scene.style.boxFill;
     rendered.stroke = scene.style.boxStroke;
 
@@ -144,8 +154,6 @@ RequirementScene buildRequirementScene(
     // sequential y-offsets, then shifts so the box is centered. Row i's text
     // center Y (relative) = yoffset_i - totalHeight/2 + padding, where
     // totalHeight = the dagre box height.
-    const qreal totalHeight = placed.height;
-    const qreal totalWidth = placed.width;
     qreal yoffset = 0.0;
     for (qsizetype i = 0; i < node.rows.size(); ++i) {
       const RequirementLayoutRow& row = node.rows.at(i);
