@@ -181,6 +181,43 @@ int main(int argc, char** argv) {
     require(throwsParseError([] {
       RequirementDiagram::parse("requirementDiagram\nrequirement X {\n id: a,b\n}");
     }), QStringLiteral("unquoted value with ',' throws"));
+    // Unquoted special chars -, =, <, > rejected (only quoted qString allows them).
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n text: a-b\n}");
+    }), QStringLiteral("unquoted '-' throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n text: a=b\n}");
+    }), QStringLiteral("unquoted '=' throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n text: a<b\n}");
+    }), QStringLiteral("unquoted '<' throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n text: a>b\n}");
+    }), QStringLiteral("unquoted '>' throws"));
+    // Malformed qString (trailing/concatenated) rejected.
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n text: \"a\" junk\n}");
+    }), QStringLiteral("malformed qString (trailing junk) throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X {\n text: \"a\" \"b\"\n}");
+    }), QStringLiteral("malformed qString (concatenated) throws"));
+    // Malformed idList (empty / leading / trailing / double comma) rejected.
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X ::: ,red {\n id: 1\n}");
+    }), QStringLiteral("idList leading comma throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X ::: red, {\n id: 1\n}");
+    }), QStringLiteral("idList trailing comma throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X ::: red,,blue {\n id: 1\n}");
+    }), QStringLiteral("idList double comma throws"));
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement X ::: {\n id: 1\n}");
+    }), QStringLiteral("empty idList throws"));
+    // Junk between the name and the body opener rejected.
+    require(throwsParseError([] {
+      RequirementDiagram::parse("requirementDiagram\nrequirement \"X\" junk {\n id: 1\n}");
+    }), QStringLiteral("junk before body opener throws"));
     // Declaration opener / name validation.
     require(throwsParseError([] {
       RequirementDiagram::parse("requirementDiagram\nrequirement X { junk\n}");
@@ -200,6 +237,22 @@ int main(int argc, char** argv) {
       parse("requirementDiagram\nrequirement X {\n id: 1\n}");
     } catch (const RequirementParseError&) { validThrew = true; }
     require(!validThrew, QStringLiteral("valid source must not throw"));
+  }
+
+  // 6. Token contract positives: %/# preserved in body values (assert the EXACT
+  //    parsed value, not just non-throw), and quoted special chars preserved.
+  {
+    const auto d = parse(
+        "requirementDiagram\n"
+        "requirement X {\n text: 50% complete\n}\n"
+        "requirement Y {\n text: abc # def\n}\n"
+        "requirement Z {\n text: \"a:b,c-d=e\"\n}");
+    require(d.requirements.at(0).text == QStringLiteral("50% complete"),
+            QStringLiteral("percent preserved in value, got '%1'").arg(d.requirements.at(0).text));
+    require(d.requirements.at(1).text == QStringLiteral("abc # def"),
+            QStringLiteral("hash preserved in value, got '%1'").arg(d.requirements.at(1).text));
+    require(d.requirements.at(2).text == QStringLiteral("a:b,c-d=e"),
+            QStringLiteral("quoted special chars preserved, got '%1'").arg(d.requirements.at(2).text));
   }
 
   return 0;

@@ -97,13 +97,16 @@ namespace {
 // body that spans multiple lines: `requirement X` (no body), `requirement X {}`
 // (single-line) and `requirement X { junk` (content after `{`) are all Parse
 // errors; only `requirement X {\n id: 1\n}` is valid.
-enum class BodyKind { None, MultiLine, SingleLine, Invalid };
+enum class BodyKind { None, MultiLine, SingleLine, Invalid, JunkBeforeBrace };
 
 struct NameAndClass {
   QString name;
   QStringList styleClasses;  // `::: <idList>` — comma-separated classes
   BodyKind body = BodyKind::None;
 };
+
+// Forward declaration: parseIdList is defined with the other token helpers below.
+QStringList parseIdList(const QString& raw, int lineNo);
 
 // Parses `<name> [::: <idList>] [{]` from a declaration tail, matching mermaid's
 // lexer. The name may be a double-quoted string or an UNQUOTED bareword that
@@ -112,7 +115,7 @@ struct NameAndClass {
 // (`red,blue` and `red, blue` both yield [red, blue]). Body: MultiLine = `{` as
 // the last token on the line (valid); SingleLine = `{ ... }` on one line;
 // Invalid = content after `{`; None = no `{`.
-NameAndClass parseNameTail(QString tail) {
+NameAndClass parseNameTail(QString tail, int lineNo) {
   NameAndClass result;
   tail = tail.trimmed();
   QString rest;
@@ -137,35 +140,38 @@ NameAndClass parseNameTail(QString tail) {
     rest = tail.mid(nameEnd);
   }
   rest = rest.trimmed();
-  // `::: <idList>` up to `{` — comma-separated classes, whitespace-tolerant.
+  // `::: <idList>` up to `{` — parseIdList rejects empty/malformed lists.
   const int sep = rest.indexOf(QStringLiteral(":::"));
   if (sep >= 0) {
     QString after = rest.mid(sep + 3);
-    const int brace = after.indexOf(QLatin1Char('{'));
-    const QString classList = (brace >= 0) ? after.left(brace) : after;
-    for (const QString& token : classList.split(QLatin1Char(','), Qt::SkipEmptyParts))
-      result.styleClasses.append(token.trimmed());
-    rest = (brace >= 0) ? after.mid(brace) : QString();
+    const int braceInAfter = after.indexOf(QLatin1Char('{'));
+    const QString classList = (braceInAfter >= 0) ? after.left(braceInAfter) : after;
+    result.styleClasses = parseIdList(classList, lineNo);
+    rest = (braceInAfter >= 0) ? after.mid(braceInAfter) : QString();
   }
   rest = rest.trimmed();
-  // Body opener `{`. Valid only when it is the last token on the line; a same-
-  // line `}` (single-line) or any other trailing content is a Parse error.
+  // Body opener `{`. It must be the first token of the remaining rest (no junk
+  // between the name/`:::` idList and `{`) and the last token on the line.
   const int brace = rest.indexOf(QLatin1Char('{'));
-  if (brace >= 0) {
-    const QString afterBrace = rest.mid(brace + 1).trimmed();
+  if (brace < 0)
+    result.body = BodyKind::None;
+  else if (brace > 0)
+    result.body = BodyKind::JunkBeforeBrace;  // e.g. `"X" junk {`
+  else {
+    const QString afterBrace = rest.mid(1).trimmed();
     if (afterBrace.isEmpty())
       result.body = BodyKind::MultiLine;
     else if (afterBrace.startsWith(QLatin1Char('}')))
-      result.body = BodyKind::SingleLine;
+      result.body = BodyKind::SingleLine;  // `{ ... }` on one line
     else
-      result.body = BodyKind::Invalid;
+      result.body = BodyKind::Invalid;  // `{ junk`
   }
   return result;
 }
 
 // Parses `field: value` from a body line. Returns true if the line has a
 // recognized `key:` prefix; valueOut is the RAW (trimmed, not unwrapped) value —
-// parseFieldValue validates + unwraps it.
+// parseValue validates + unwraps it.
 bool parseFieldLine(const QString& line, QString& keyOut, QString& valueOut) {
   const int colon = line.indexOf(QLatin1Char(':'));
   if (colon <= 0) return false;
@@ -174,19 +180,75 @@ bool parseFieldLine(const QString& line, QString& keyOut, QString& valueOut) {
   return true;
 }
 
-// Validates + unwraps a body field value. Mermaid requires a non-empty value,
-// and an unquoted value may not contain ':' or ',' (those need a quoted
-// "qString" — `id: "a:b"` is valid, `id: a:b` is a Parse error).
-QString parseFieldValue(const QString& raw, int lineNo) {
-  const bool quoted = raw.size() >= 2 && raw.startsWith(QLatin1Char('"')) &&
-                      raw.endsWith(QLatin1Char('"'));
-  const QString value = quoted ? raw.mid(1, raw.size() - 2) : raw;
-  if (value.isEmpty())
-    throw RequirementParseError(QStringLiteral("empty field value"), lineNo);
-  if (!quoted && (value.contains(QLatin1Char(':')) || value.contains(QLatin1Char(','))))
+// A small stateful tokenizer for mermaid's qString/unqString/idList contract.
+// These replace the earlier scattered contains() checks, which kept missing
+// edge cases (malformed qString, junk between tokens, comment-in-value).
+
+// unqString may not contain any of these structural/special chars (verified vs
+// mermaid 11.16.0: `- = < > { } : ,` are rejected; letters/digits/space/. _ / %
+// # ; etc. are accepted). Only a quoted qString may contain them.
+bool isUnqStringSpecial(QChar c) {
+  return c == QLatin1Char('-') || c == QLatin1Char('=') || c == QLatin1Char('<') ||
+         c == QLatin1Char('>') || c == QLatin1Char('{') || c == QLatin1Char('}') ||
+         c == QLatin1Char(':') || c == QLatin1Char(',');
+}
+
+// Parses a single string token: either a quoted qString ("...") that must span
+// the WHOLE raw text (a closing quote with anything after — `"a" junk`,
+// `"a" "b"` — is malformed), or an unquoted bareword.
+struct ParsedString {
+  QString value;
+  bool quoted = false;
+};
+ParsedString parseStringToken(const QString& raw, int lineNo) {
+  ParsedString result;
+  if (!raw.startsWith(QLatin1Char('"'))) {
+    result.value = raw;
+    return result;
+  }
+  result.quoted = true;
+  const int close = raw.indexOf(QLatin1Char('"'), 1);
+  if (close < 0)
+    throw RequirementParseError(QStringLiteral("unterminated quoted string"), lineNo);
+  if (close != raw.size() - 1)
     throw RequirementParseError(
-        QStringLiteral("unquoted value '%1' contains ':' or ',' — quote it").arg(value), lineNo);
-  return value;
+        QStringLiteral("unexpected text after quoted string"), lineNo);
+  result.value = raw.mid(1, close - 1);
+  return result;
+}
+
+// Validates + unwraps a body field value. Non-empty; unquoted values may not
+// contain a special char (quote them instead). Multi-word unquoted values
+// (`text: hello world`) and `%`/`#` (`text: 50% complete`) stay valid.
+QString parseValue(const QString& raw, int lineNo) {
+  const ParsedString token = parseStringToken(raw, lineNo);
+  if (token.value.isEmpty())
+    throw RequirementParseError(QStringLiteral("empty field value"), lineNo);
+  if (!token.quoted) {
+    for (const QChar c : token.value)
+      if (isUnqStringSpecial(c))
+        throw RequirementParseError(
+            QStringLiteral("unquoted value '%1' contains a special char — quote it").arg(token.value),
+            lineNo);
+  }
+  return token.value;
+}
+
+// Parses a `::: <idList>`: comma-separated, whitespace-tolerant class tokens.
+// Empty (no classes), leading/trailing comma, and double comma are all rejected
+// (mermaid's STR list does not allow empty tokens).
+QStringList parseIdList(const QString& raw, int lineNo) {
+  if (raw.trimmed().isEmpty())
+    throw RequirementParseError(QStringLiteral("empty class list after ':::'"), lineNo);
+  QStringList result;
+  for (const QString& token : raw.split(QLatin1Char(','))) {
+    const QString trimmed = token.trimmed();
+    if (trimmed.isEmpty())
+      throw RequirementParseError(
+          QStringLiteral("malformed class list (empty/leading/trailing/double comma)"), lineNo);
+    result.append(trimmed);
+  }
+  return result;
 }
 
 bool isValidRisk(const QString& value) {
@@ -224,18 +286,30 @@ public:
     QStringList bodyBuffer;
 
     for (qsizetype i = 0; i < lines_.size(); ++i) {
-      QString line = stripComment(lines_.at(i));
+      const QString rawLine = lines_.at(i);
       // In multiline accDescr, raw text (minus the closing brace) is captured.
       if (inMultilineAccDescr) {
-        if (line.trimmed() == QLatin1String("}")) {
+        const QString accLine = rawLine.trimmed();
+        if (accLine == QLatin1String("}")) {
           inMultilineAccDescr = false;
         } else {
           if (!data_.accDescription.isEmpty()) data_.accDescription += QLatin1Char('\n');
-          data_.accDescription += line.trimmed();
+          data_.accDescription += accLine;
         }
         continue;
       }
-      line = line.trimmed();
+      QString line;
+      if (inBody) {
+        // Inside a body, `#`/`%` are part of values (NOT comments) — do not
+        // strip mid-line. A whole comment line (first char `#`/`%`) is skipped.
+        line = rawLine.trimmed();
+        if (line.startsWith(QLatin1Char('#')) || line.startsWith(QLatin1Char('%')))
+          continue;
+      } else {
+        // Top-level: strip a trailing `#`/`%` comment (a token-boundary comment),
+        // then trim. (Body value lines preserve `#`/`%` — see parseValue.)
+        line = stripComment(rawLine).trimmed();
+      }
       if (line.isEmpty()) continue;
 
       if (inBody) {
@@ -333,7 +407,7 @@ public:
               (line.size() == keyword.size() ||
                line.at(keyword.size()).isSpace() ||
                line.at(keyword.size()) == QLatin1Char('{'))) {
-            const NameAndClass nc = parseNameTail(line.mid(keyword.size()));
+            const NameAndClass nc = parseNameTail(line.mid(keyword.size()), i + 1);
             if (nc.name.isEmpty())
               throw RequirementParseError(
                   QStringLiteral("requirement declaration requires a name"), i + 1);
@@ -344,7 +418,8 @@ public:
             if (nc.body != BodyKind::MultiLine)
               throw RequirementParseError(
                   QStringLiteral(
-                      "requirement body opener `{` must be the last token on its line"),
+                      "requirement declaration is malformed — the body opener `{` must "
+                      "immediately follow the name / `:::` idList and be the last token on its line"),
                   i + 1);
             // Map semantics: one node per name; the FIRST definition wins. A
             // duplicate declaration's body is still validated but not stored.
@@ -372,7 +447,7 @@ public:
       if (line.size() >= 7 &&
           line.left(7).compare(QStringLiteral("element"), Qt::CaseInsensitive) == 0 &&
           (line.size() == 7 || line.at(7).isSpace() || line.at(7) == QLatin1Char('{'))) {
-        const NameAndClass nc = parseNameTail(line.mid(7));
+        const NameAndClass nc = parseNameTail(line.mid(7), i + 1);
         if (nc.name.isEmpty())
           throw RequirementParseError(
               QStringLiteral("element declaration requires a name"), i + 1);
@@ -381,7 +456,10 @@ public:
               QStringLiteral("element '%1' requires a multi-line body { ... }").arg(nc.name), i + 1);
         if (nc.body != BodyKind::MultiLine)
           throw RequirementParseError(
-              QStringLiteral("element body opener `{` must be the last token on its line"), i + 1);
+              QStringLiteral(
+                  "element declaration is malformed — the body opener `{` must "
+                  "immediately follow the name / `:::` idList and be the last token on its line"),
+              i + 1);
         const bool duplicate = findElement(nc.name) != nullptr;
         if (!duplicate) {
           ElementNode node;
@@ -470,7 +548,7 @@ private:
       if (!parseFieldLine(raw, key, rawValue))
         throw RequirementParseError(
             QStringLiteral("invalid requirement body line: %1").arg(raw), lineNo);
-      const QString value = parseFieldValue(rawValue, lineNo);
+      const QString value = parseValue(rawValue, lineNo);
       if (key == QLatin1String("id")) node.requirementId = value;
       else if (key == QLatin1String("text")) node.text = value;
       else if (key == QLatin1String("risk")) {
@@ -500,7 +578,7 @@ private:
       if (!parseFieldLine(raw, key, rawValue))
         throw RequirementParseError(
             QStringLiteral("invalid element body line: %1").arg(raw), lineNo);
-      const QString value = parseFieldValue(rawValue, lineNo);
+      const QString value = parseValue(rawValue, lineNo);
       if (key == QLatin1String("type")) node.type = value;
       else if (key == QLatin1String("docref")) node.docRef = value;
       else
