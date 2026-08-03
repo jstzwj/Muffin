@@ -71,6 +71,21 @@ QFont::Weight resolveWeightOne(const QString& text, QFont::Weight parentWeight) 
   return parentWeight;  // invalid -> inherit (probe: inert)
 }
 
+// A VALID font-weight declaration (normal/bold/bolder/lighter or a 1..1000
+// numeric). Used to decide whether the name row's default bold still applies: a
+// declared weight wins on every row, so the default bold is suppressed only when
+// this is true (unset/invalid -> inherit the reqTitle default bold).
+bool isValidFontWeight(const QString& text) {
+  const QString t = text.trimmed().toLower();
+  if (t.isEmpty()) return false;
+  if (t == QLatin1String("normal") || t == QLatin1String("bold") ||
+      t == QLatin1String("bolder") || t == QLatin1String("lighter"))
+    return true;
+  bool ok = false;
+  const double w = t.toDouble(&ok);
+  return ok && w >= 1.0 && w <= 1000.0;
+}
+
 // A CssLengthContext for a length property resolved against `emPx` + the
 // font-metric ex/ch of `metricFont` (the layer's actual font). viewport/rem are
 // layer-invariant; emPx/exPx/chPx are parent-coupled in the font-size loop.
@@ -78,6 +93,40 @@ CssLengthContext layerCtx(qreal emPx, const QFont& metricFont) {
   const QFontMetricsF m(metricFont);
   return CssLengthContext{emPx, 16.0, m.xHeight(), m.horizontalAdvance(QChar('0')),
                           kMmdcViewport};
+}
+
+// True iff the ENTIRE trimmed string is a CSS <number> with NO unit — i.e. a
+// bare multiplier for line-height (line-height:1e1 == 10 x font-size, distinct
+// from the length line-height:1e1px == 10px). Mirrors resolveCssLengthToPx's
+// number scan ([+-]? (\d+ | \d*\.\d+) ([eE] [+-]? \d+)?), but requires the WHOLE
+// string to be consumed: a trailing unit run (em/px/...) or a stray letter
+// ("1e" with no exponent digits) makes this false so the caller falls back to
+// the length resolver. Replaces a naive "contains no letter" check that mistook
+// the exponent 'e' (1e1) for a unit and parsed both 1e1 and 1e1px as 10px.
+bool isUnitlessCssNumber(const QString& raw) {
+  const QString t = raw.trimmed();
+  if (t.isEmpty()) return false;
+  int i = 0;
+  const int n = t.size();
+  if (i < n && (t.at(i) == QLatin1Char('+') || t.at(i) == QLatin1Char('-'))) ++i;
+  bool anyDigit = false;
+  while (i < n && t.at(i).isDigit()) { ++i; anyDigit = true; }
+  if (i < n && t.at(i) == QLatin1Char('.')) {
+    ++i;
+    while (i < n && t.at(i).isDigit()) { ++i; anyDigit = true; }
+  }
+  if (!anyDigit) return false;
+  if (i < n && (t.at(i) == QLatin1Char('e') || t.at(i) == QLatin1Char('E'))) {
+    int k = i + 1;
+    if (k < n && (t.at(k) == QLatin1Char('+') || t.at(k) == QLatin1Char('-'))) ++k;
+    if (k < n && t.at(k).isDigit()) {
+      i = k;
+      while (i < n && t.at(i).isDigit()) ++i;
+    } else {
+      return false;  // 'e' with no exponent digits -> not a pure number
+    }
+  }
+  return i == n;  // whole string consumed -> no unit
 }
 
 // Case-convert (upper/lower) a source string while preserving `$$...$$` block-math
@@ -200,6 +249,10 @@ RequirementTextStyle resolveRequirementTextStyle(
   const QString weightValue = map.value(QStringLiteral("font-weight"));
   const bool hasWeight =
       map.contains(QStringLiteral("font-weight")) && !weightValue.isEmpty();
+  // A valid font-weight declaration wins over the name row's default bold on
+  // every row (see isValidFontWeight / the struct comment).
+  const bool fontWeightResolved = hasWeight && isValidFontWeight(weightValue);
+  s.fontWeightResolved = fontWeightResolved;
 
   // Validate font-size once at the root layer: negative/invalid -> inert (theme).
   bool sizeActive = false;
@@ -242,10 +295,9 @@ RequirementTextStyle resolveRequirementTextStyle(
     if (tl == QLatin1String("normal")) {
       s.lineHeightNormal = true;
     } else if (!tl.isEmpty()) {
-      bool numberOnly = true;
-      for (const QChar ch : tl)
-        if (ch.isLetter() || ch == QLatin1Char('%')) { numberOnly = false; break; }
-      if (numberOnly) {
+      // A unitless <number> (incl. scientific: 1e1, 1e-1) is a multiplier of the
+      // compounded font-size; anything else (2em, 20px, 1e1px, 120%) is a length.
+      if (isUnitlessCssNumber(tl)) {
         bool ok = false;
         const double n = tl.toDouble(&ok);
         if (ok) s.lineHeightPx = (n < 0.0) ? -1.0 : n * emBasis;

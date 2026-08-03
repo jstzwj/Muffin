@@ -329,41 +329,54 @@ RequirementScene buildRequirementScene(
     // totalHeight = the dagre box height.
     const qreal effSize = requirementEffectiveFontSize(rendered.text, scene.style.fontSize);
     const QString effFamily = requirementEffectiveFontFamily(rendered.text, scene.style.fontFamily);
-    qreal effLineHeight;
-    if (rendered.text.lineHeightNormal) {
-      effLineHeight =
-          QFontMetricsF(flowchart::makeFlowLabelFont(effFamily, effSize,
-                                                      rendered.text.fontWeight, rendered.text.fontStyle))
-              .height();
-    } else {
-      // Unset line-height -> 1.5x the RESOLVED font-size (matches the measure
-      // path; default config: effSize == theme fontSize -> 24, byte-identical).
-      effLineHeight = rendered.text.lineHeightPx >= 0.0 ? rendered.text.lineHeightPx
-                                                         : effSize * 1.5;
+    // font-size:0 / line-height:0 -> the node collapses to mermaid's 20x20 min box
+    // with no text ink (STEP0F §2). Mirror the measure path: skip font/measure
+    // work entirely (a 0px QFont violates Qt's positive pixel-size contract, and
+    // upstream likewise skips font build/measure/paint). effLineHeight is left at
+    // its sentinel when the font is absent so the natural-height branch below
+    // never constructs a 0px font; the zero row heights already came back from
+    // measure, so the emitted rows are zero-size and paintRow skips them.
+    qreal effLineHeight = -1.0;
+    if (effSize != 0.0) {
+      if (rendered.text.lineHeightNormal) {
+        effLineHeight =
+            QFontMetricsF(flowchart::makeFlowLabelFont(effFamily, effSize,
+                                                        rendered.text.fontWeight, rendered.text.fontStyle))
+                .height();
+      } else {
+        // Unset line-height -> 1.5x the RESOLVED font-size (matches the measure
+        // path; default config: effSize == theme fontSize -> 24, byte-identical).
+        effLineHeight = rendered.text.lineHeightPx >= 0.0 ? rendered.text.lineHeightPx
+                                                           : effSize * 1.5;
+      }
     }
+    const bool noText = (effSize == 0.0 || effLineHeight == 0.0);
     qreal yoffset = 0.0;
     for (qsizetype i = 0; i < node.rows.size(); ++i) {
       const RequirementLayoutRow& row = node.rows.at(i);
       const qreal rowHeight = measured.rowHeights.value(i, 0.0);
-      // Build the row document once (text-transform + Commit-2 fields applied) and
-      // reuse it for the width measure and the stored paint document.
-      const flowchart::FlowLabelDocument doc =
-          requirementRowDocument(row.text, row.bold, rendered.text, scene.style.fontSize);
-      const QRectF ink = flowchart::measureFlowSvgTextBounds(doc, effFamily, effSize);
       RequirementSceneRow sceneRow;
       sceneRow.text = row.text;
       sceneRow.bold = row.bold;
-      sceneRow.size = QSizeF(ink.width(), rowHeight);
-      sceneRow.document = doc;
       sceneRow.fontPixelSize = effSize;
       sceneRow.fontFamily = effFamily;
       sceneRow.lineHeight = effLineHeight;
       sceneRow.color = rendered.text.color;
+      qreal rowWidth = 0.0;  // ink width (0 when text is collapsed -> no paint)
+      if (!noText) {
+        // Build the row document once (text-transform + Commit-2 fields applied)
+        // and reuse it for the width measure and the stored paint document.
+        const flowchart::FlowLabelDocument doc =
+            requirementRowDocument(row.text, row.bold, rendered.text, scene.style.fontSize);
+        rowWidth = flowchart::measureFlowSvgTextBounds(doc, effFamily, effSize).width();
+        sceneRow.document = doc;
+      }
+      sceneRow.size = QSizeF(rowWidth, rowHeight);
       // Horizontal: type(0) + name(1) are centered (x=0); body rows are
       // left-aligned at -totalWidth/2 + padding/2 (mermaid's translateX for i>=2).
       qreal centerX = 0.0;
       if (i >= 2)
-        centerX = -totalWidth / 2.0 + kPadding / 2.0 + ink.width() / 2.0;
+        centerX = -totalWidth / 2.0 + kPadding / 2.0 + rowWidth / 2.0;
       const qreal centerY = yoffset - totalHeight / 2.0 + kPadding;
       sceneRow.center = QPointF(centerX, centerY);
       rendered.rows.append(std::move(sceneRow));

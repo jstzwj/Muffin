@@ -35,6 +35,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
@@ -100,6 +102,92 @@ qint64 inkTotal(const QImage& img) {
     for (int x = 0; x < img.width(); ++x)
       if (qAlpha(img.pixel(x, y)) > 32) ++n;
   return n;
+}
+
+// Paint a single FlowLabel — the production decoration path
+// (RequirementScenePainter::paintRow -> flowchart::paintFlowLabel) — into a
+// transparent image at a KNOWN rect, for geometric inspection of the painted
+// text-decoration band (Y, thickness, horizontal span).
+QImage paintLabelImage(const flowchart::FlowLabelDocument& doc, const QRectF& rect,
+                       const QString& family, qreal size, qreal lineH) {
+  QImage img(QSize(static_cast<int>(std::ceil(rect.width())) + 2,
+                   static_cast<int>(std::ceil(rect.height())) + 2),
+             QImage::Format_ARGB32);
+  img.fill(Qt::transparent);
+  QPainter p(&img);
+  p.setRenderHint(QPainter::Antialiasing, true);
+  p.setRenderHint(QPainter::TextAntialiasing, true);
+  flowchart::paintFlowLabel(p, doc, rect, family, size, lineH, QColor(Qt::black), true);
+  p.end();
+  return img;
+}
+
+inline bool isInk(QRgb pixel) { return qAlpha(pixel) > 32; }
+
+// A detected horizontal decoration band: the rows where `decorated` has ink that
+// `base` does not. Because the text glyphs are identical between the two, the
+// diff isolates the decoration-only pixels (the parts of the line not hidden
+// under existing glyph ink), exposing its Y, thickness and horizontal extent so
+// a wrong Y, wrong thickness, or a line drawn on the wrong visual line fails.
+struct DecoBand {
+  bool found = false;
+  int yMin = 0, yMax = 0;  // band row range (thickness = yMax - yMin + 1)
+  int xMin = 0, xMax = 0;  // horizontal extent across the band rows
+  qreal centerY() const { return (yMin + yMax) / 2.0; }
+};
+DecoBand decorationBand(const QImage& base, const QImage& decorated) {
+  DecoBand band;
+  const int h = std::min(base.height(), decorated.height());
+  const int w = std::min(base.width(), decorated.width());
+  QVector<qint64> perRow(h, 0);
+  for (int y = 0; y < h; ++y) {
+    const QRgb* b = reinterpret_cast<const QRgb*>(base.constScanLine(y));
+    const QRgb* d = reinterpret_cast<const QRgb*>(decorated.constScanLine(y));
+    qint64 c = 0;
+    for (int x = 0; x < w; ++x)
+      if (isInk(d[x]) && !isInk(b[x])) ++c;
+    perRow[y] = c;
+  }
+  qint64 maxCount = 0;
+  for (qint64 c : perRow) maxCount = std::max(maxCount, c);
+  if (maxCount < 8) return band;  // no substantial decoration ink
+  band.found = true;
+  band.yMin = h;
+  band.yMax = 0;
+  band.xMin = w;
+  band.xMax = 0;
+  for (int y = 0; y < h; ++y) {
+    if (perRow[y] * 2 < maxCount) continue;  // not a dense band row
+    band.yMin = std::min(band.yMin, y);
+    band.yMax = std::max(band.yMax, y);
+    const QRgb* b = reinterpret_cast<const QRgb*>(base.constScanLine(y));
+    const QRgb* d = reinterpret_cast<const QRgb*>(decorated.constScanLine(y));
+    for (int x = 0; x < w; ++x)
+      if (isInk(d[x]) && !isInk(b[x])) {
+        band.xMin = std::min(band.xMin, x);
+        band.xMax = std::max(band.xMax, x);
+      }
+  }
+  return band;
+}
+
+// Longest continuous inked run in a single image row (used to prove a painted
+// decoration fillRect is one solid line across the full advance, including an
+// inline Math region — the diff-based band can't see decoration painted OVER
+// glyphs, so continuity is checked on the painted row directly).
+int longestInkRun(const QImage& img, int y) {
+  if (y < 0 || y >= img.height()) return 0;
+  const QRgb* row = reinterpret_cast<const QRgb*>(img.constScanLine(y));
+  int best = 0, run = 0;
+  for (int x = 0; x < img.width(); ++x) {
+    if (isInk(row[x])) {
+      ++run;
+      best = std::max(best, run);
+    } else {
+      run = 0;
+    }
+  }
+  return best;
 }
 }  // namespace
 
@@ -191,6 +279,58 @@ int main(int argc, char** argv) {
     require(resolve({"font-weight:bold"}).fontWeight == QFont::Bold, QStringLiteral("bold -> 700"));
     require(resolve({"font-weight:normal"}).fontWeight == QFont::Normal, QStringLiteral("normal -> 400"));
     require(resolve({"font-weight:300"}).fontWeight == QFont::Light, QStringLiteral("300 -> Light"));
+    // fontWeightResolved distinguishes a VALID declaration (suppresses the name
+    // row's default bold) from unset/invalid. A present-but-invalid value (e.g.
+    // "foo") is inert upstream -> inherit the reqTitle default bold, so it is NOT
+    // "resolved" even though the key is present.
+    require(resolve({"font-weight:100"}).fontWeightResolved, QStringLiteral("100 -> resolved"));
+    require(resolve({"font-weight:bolder"}).fontWeightResolved, QStringLiteral("bolder -> resolved"));
+    require(resolve({"font-weight:normal"}).fontWeightResolved, QStringLiteral("normal -> resolved"));
+    require(!resolve({"font-weight:foo"}).fontWeightResolved,
+            QStringLiteral("invalid font-weight -> not resolved (inert)"));
+    require(!resolve({}).fontWeightResolved, QStringLiteral("no font-weight -> not resolved"));
+  }
+
+  // ===== 4b. name-row default bold vs declared font-weight (probe: font-weight
+  //       wins on BOTH name and body rows; default bold only when unset/invalid) =====
+  {
+    using Doc = flowchart::FlowLabelDocument;
+    const auto hasBoldRange = [](const Doc& d) {
+      for (const auto& f : d.formats)
+        if (f.format.fontWeight() >= QFont::Bold) return true;
+      return false;
+    };
+    // Default (no font-weight): name row (bold=true) gets the reqTitle bold range.
+    const Doc nameDefault =
+        requirement::requirementRowDocument(QStringLiteral("A"), true,
+                                            requirement::RequirementTextStyle{}, kSize);
+    require(nameDefault.baseWeight == QFont::Normal,
+            QStringLiteral("default name row baseWeight Normal"));
+    require(hasBoldRange(nameDefault),
+            QStringLiteral("default name row applies the reqTitle bold range"));
+    // Declared valid font-weight (100): the name row uses it; NO default-bold range.
+    requirement::RequirementTextStyle s100;
+    s100.fontWeight = QFont::Thin;
+    s100.fontWeightResolved = true;
+    const Doc name100 =
+        requirement::requirementRowDocument(QStringLiteral("A"), true, s100, kSize);
+    require(name100.baseWeight == QFont::Thin,
+            QStringLiteral("font-weight:100 -> name row baseWeight Thin(100)"));
+    require(!hasBoldRange(name100),
+            QStringLiteral("font-weight:100 suppresses the name-row default bold"));
+    // bolder (->900): same — the resolved weight stands, no bold override to 700.
+    requirement::RequirementTextStyle sBolder;
+    sBolder.fontWeight = QFont::Black;
+    sBolder.fontWeightResolved = true;
+    const Doc nameBolder =
+        requirement::requirementRowDocument(QStringLiteral("A"), true, sBolder, kSize);
+    require(nameBolder.baseWeight == QFont::Black && !hasBoldRange(nameBolder),
+            QStringLiteral("font-weight:bolder -> name row Black, no default-bold override"));
+    // A body row (bold=false) never gets the range regardless.
+    const Doc bodyDefault =
+        requirement::requirementRowDocument(QStringLiteral("Text: hi"), false,
+                                            requirement::RequirementTextStyle{}, kSize);
+    require(!hasBoldRange(bodyDefault), QStringLiteral("body row never bold by default"));
   }
 
   // ===== 5. font-style / font-family / color / decoration / transform =====
@@ -236,6 +376,21 @@ int main(int argc, char** argv) {
     // em basis is the COMPOUNDED font-size: font-size:2em(128) + line-height:2em -> 256.
     require(qAbs(resolve({"font-size:2em", "line-height:2em"}).lineHeightPx - 256.0) < 1e-6,
             QStringLiteral("line-height:2em with font-size:2em -> 2*128 = 256"));
+    // Scientific-notation unitless values are MULTIPLIERS (the exponent 'e' is
+    // NOT a unit): 1e1 == 10 x fs, 1e-1 == 0.1 x fs; with a unit they are lengths.
+    // (A naive "contains no letter" check mistook the 'e' for a unit and parsed
+    // both 1e1 and 1e1px as 10px.)
+    require(qAbs(resolve({"line-height:1e1"}).lineHeightPx - 160.0) < 1e-6,
+            QStringLiteral("line-height:1e1 -> 10*16 = 160 (unitless multiplier); got %1")
+                .arg(resolve({"line-height:1e1"}).lineHeightPx));
+    require(qAbs(resolve({"line-height:1e-1"}).lineHeightPx - 1.6) < 1e-6,
+            QStringLiteral("line-height:1e-1 -> 0.1*16 = 1.6; got %1")
+                .arg(resolve({"line-height:1e-1"}).lineHeightPx));
+    require(qAbs(resolve({"line-height:2e0"}).lineHeightPx - 32.0) < 1e-6,
+            QStringLiteral("line-height:2e0 -> 2*16 = 32"));
+    require(qAbs(resolve({"line-height:1e1px"}).lineHeightPx - 10.0) < 1e-6,
+            QStringLiteral("line-height:1e1px -> 10 (length, NOT multiplier); got %1")
+                .arg(resolve({"line-height:1e1px"}).lineHeightPx));
   }
 
   // ===== 7. letter-spacing / word-spacing: negatives live; em basis = compounded fs =====
@@ -366,9 +521,33 @@ int main(int argc, char** argv) {
     for (const auto& row : r5.node->rows)
       if (row.document.underline) foundUnderline = true;
     require(foundUnderline, QStringLiteral("text-decoration:underline reaches a row document"));
+    // font-size:0 / line-height:0 -> the node collapses to the 20x20 min box and
+    // every scene row is ZERO-size with NO document (a 0px QFont is never built,
+    // matching upstream's skip-font/measure/paint — STEP0F §2).
+    const auto rFs0 = renderNode(cache,
+        head + "requirement A {\n id: \"1\"\n text: hello\n}\nstyle A font-size:0", "A");
+    require(qAbs(rFs0.node->size.width() - 20.0) < 1e-6 &&
+                qAbs(rFs0.node->size.height() - 20.0) < 1e-6,
+            QStringLiteral("font-size:0 -> 20x20 box; got %1x%2")
+                .arg(rFs0.node->size.width()).arg(rFs0.node->size.height()));
+    require(!rFs0.node->rows.isEmpty(), QStringLiteral("font-size:0 node still has rows"));
+    for (const auto& row : rFs0.node->rows) {
+      require(row.size.width() == 0.0 && row.size.height() == 0.0,
+              QStringLiteral("font-size:0 -> row zero-size; got %1x%2")
+                  .arg(row.size.width()).arg(row.size.height()));
+      require(row.document.text.isEmpty(),
+              QStringLiteral("font-size:0 -> no document built (no 0px QFont)"));
+    }
+    const auto rLh0 = renderNode(cache,
+        head + "requirement A {\n id: \"1\"\n text: hello\n}\nstyle A line-height:0", "A");
+    require(!rLh0.node->rows.isEmpty(), QStringLiteral("line-height:0 node still has rows"));
+    for (const auto& row : rLh0.node->rows)
+      require(row.size.width() == 0.0 && row.size.height() == 0.0,
+              QStringLiteral("line-height:0 -> row zero-size; got %1x%2")
+                  .arg(row.size.width()).arg(row.size.height()));
   }
 
-  // ===== 12. Painter ink: decoration adds pixels; color paints blue =====
+  // ===== 12. Painter ink: font-size:0 collapses text end-to-end =====
   {
     auto render = [&cache, &head](const QString& styleLine) {
       const QString src = head + "requirement A {\n id: \"1\"\n text: hello\n}\n" + styleLine;
@@ -379,32 +558,115 @@ int main(int argc, char** argv) {
       require(sc != nullptr, QStringLiteral("scene missing"));
       return paintScene(*sc);
     };
-    const QImage baseImg = render("");
-    const qint64 base = inkTotal(baseImg);
-    const QImage underImg = render("style A text-decoration:underline");
-    // Decoration is paint-only (no layout change), so its effect is a changed
-    // raster, not necessarily a net ink gain (anti-aliasing can balance). Assert
-    // the flag is set on the rendered rows AND the painted pixels differ.
-    bool anyUnder = false;
-    {
-      const QString usrc = head + "requirement A {\n id: \"1\"\n text: hello\n}\nstyle A text-decoration:underline";
-      const auto ue = cache.getSync(cache.makeKey(usrc), usrc);
-      if (const auto* usc = dynamic_cast<const requirement::RequirementScene*>(ue.scene.get()))
-        for (const auto& n : usc->nodes)
-          for (const auto& rw : n.rows) if (rw.document.underline) anyUnder = true;
-    }
-    qint64 diffPx = 0;
-    if (baseImg.size() == underImg.size())
-      for (int y = 0; y < baseImg.height(); ++y)
-        for (int x = 0; x < baseImg.width(); ++x)
-          if (baseImg.pixel(x, y) != underImg.pixel(x, y)) ++diffPx;
-    require(anyUnder, QStringLiteral("underline scene carries document.underline on a row"));
-    require(diffPx > 100,
-            QStringLiteral("underline changes the painted raster (diffPx=%1); decoration paints")
-                .arg(diffPx));
+    const qint64 base = inkTotal(render(""));
     // font-size:0 -> text absent: strictly less ink than baseline (box outline only).
     const qint64 fs0 = inkTotal(render("style A font-size:0"));
     require(fs0 < base, QStringLiteral("font-size:0 collapses text (less ink); %1 < %2").arg(fs0).arg(base));
+  }
+
+  // ===== 13. Decoration geometry: Y (font-metric), thickness, span, Math continuity =====
+  //   Replaces a weak "decoration changes >100 pixels" check. Each decoration is
+  //   painted via the production path (paintFlowLabel) at a known rect; diffing
+  //   against the no-decoration render isolates the decoration-only ink, then we
+  //   constrain its Y (== QFontMetricsF underlinePos/overlinePos/strikeOutPos),
+  //   thickness (== lineWidth), horizontal span (== text advance, centered), and
+  //   prove the three decorations sit at distinct, ordered Y bands. A wrong Y, a
+  //   wrong thickness, or a line drawn on the wrong visual line fails here.
+  {
+    using flowchart::FlowLabelDocument;
+    const QString family = kFamily;
+    constexpr qreal size = 16.0;
+    constexpr qreal lineH = 24.0;
+    const QRectF rect(0.0, 0.0, 160.0, lineH);
+
+    auto makeDoc = [&](const QString& text) {
+      FlowLabelDocument d = flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
+      d.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
+      return d;
+    };
+    auto paint = [&](const FlowLabelDocument& d) {
+      return paintLabelImage(d, rect, family, size, lineH);
+    };
+
+    const QFont font = flowchart::makeFlowLabelFont(family, size);
+    const QFontMetricsF fm(font);
+    const QString word = QStringLiteral("hello hello");  // no descenders -> clean bands
+    const FlowLabelDocument baseDoc = makeDoc(word);
+    const QImage baseImg = paint(baseDoc);
+    // Predicted baseline from the SAME layout paintFlowLabel uses internally; the
+    // single centered line has lineTop == rect.top() (== 0), so each decoration's
+    // center Y == baseline +/- the QFontMetricsF position.
+    const qreal baseline =
+        flowchart::layoutFlowLabel(baseDoc, family, size, lineH).lines.at(0).baseline;
+    const qreal textWidth =
+        flowchart::layoutFlowLabel(baseDoc, family, size, lineH).lines.at(0).width;
+    const int expectedThick = std::max(1, static_cast<int>(std::round(fm.lineWidth())));
+
+    struct Kind {
+      QString name;
+      bool FlowLabelDocument::* flag;
+      qreal predictedY;
+    };
+    const Kind kinds[] = {
+        {QStringLiteral("underline"), &FlowLabelDocument::underline, baseline + fm.underlinePos()},
+        {QStringLiteral("overline"), &FlowLabelDocument::overline, baseline - fm.overlinePos()},
+        {QStringLiteral("strikeOut"), &FlowLabelDocument::strikeOut, baseline - fm.strikeOutPos()},
+    };
+
+    DecoBand bands[3];
+    int thicknesses[3];
+    for (int k = 0; k < 3; ++k) {
+      FlowLabelDocument d = makeDoc(word);
+      (d.*kinds[k].flag) = true;
+      const DecoBand band = decorationBand(baseImg, paint(d));
+      require(band.found,
+              QStringLiteral("%1: decoration paints a band").arg(kinds[k].name));
+      const int thickness = band.yMax - band.yMin + 1;
+      require(thickness >= expectedThick && thickness <= expectedThick + 1,
+              QStringLiteral("%1: thickness %2 ~ lineWidth(%3); got [%4,%5]")
+                  .arg(kinds[k].name).arg(thickness).arg(expectedThick).arg(band.yMin).arg(band.yMax));
+      require(std::abs(band.centerY() - kinds[k].predictedY) < 2.0,
+              QStringLiteral("%1: center Y %2 ~ predicted %3").arg(kinds[k].name)
+                  .arg(band.centerY()).arg(kinds[k].predictedY));
+      bands[k] = band;
+      thicknesses[k] = thickness;
+    }
+    // Distinct, ordered bands: overline (top) < strikeOut (mid) < underline (bottom).
+    require(bands[1].centerY() < bands[2].centerY() && bands[2].centerY() < bands[0].centerY(),
+            QStringLiteral("overline(%1) < strikeOut(%2) < underline(%3) Y")
+                .arg(bands[1].centerY()).arg(bands[2].centerY()).arg(bands[0].centerY()));
+    // Horizontal span ~= the full text advance (the underline is one line over
+    // the whole row, not a truncated/wrong width), centered in the rect.
+    const qreal span = bands[0].xMax - bands[0].xMin + 1;
+    require(span >= textWidth - 14.0 && span <= textWidth + 2.0,
+            QStringLiteral("underline span %1 ~ text advance %2").arg(span).arg(textWidth));
+    const qreal mid = (bands[0].xMin + bands[0].xMax) / 2.0;
+    require(std::abs(mid - (rect.left() + rect.width() / 2.0)) < 6.0,
+            QStringLiteral("underline centered in rect (mid %1 ~ %2)")
+                .arg(mid).arg(rect.left() + rect.width() / 2.0));
+
+    // Math continuity: the underline is one continuous fillRect across the inline
+    // Math region. The decoration is painted AFTER the glyphs (on top of them), so
+    // a diff can't see the portion over a Math glyph — instead check the PAINTED
+    // row directly: at the decoration's Y the fillRect makes the whole advance
+    // (text + Math) one solid inked run. A per-run decoration (broken at the Math
+    // span) would fragment that run.
+    {
+      const QString math = QStringLiteral("a $$x$$ b");
+      const FlowLabelDocument mathBase = makeDoc(math);
+      const QImage mathBaseImg = paint(mathBase);
+      FlowLabelDocument d = makeDoc(math);
+      d.underline = true;
+      const QImage painted = paint(d);
+      const DecoBand band = decorationBand(mathBaseImg, painted);
+      require(band.found, QStringLiteral("underline paints over the Math line"));
+      const qreal mathAdvance =
+          flowchart::layoutFlowLabel(mathBase, family, size, lineH).lines.at(0).width;
+      const int bestRun = longestInkRun(painted, (band.yMin + band.yMax) / 2);
+      require(bestRun >= mathAdvance - 6.0,
+              QStringLiteral("underline continuous across Math (run %1 >= advance %2)")
+                  .arg(bestRun).arg(mathAdvance));
+    }
   }
 
   qDebug() << "MermaidRequirementTextStyleTest: passed";

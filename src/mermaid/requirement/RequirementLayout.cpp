@@ -54,7 +54,12 @@ flowchart::FlowLabelDocument requirementRowDocument(const QString& text, bool bo
   document.underline = style.underline;
   document.overline = style.overline;
   document.strikeOut = style.strikeOut;
-  if (bold && !document.text.isEmpty()) {
+  // The name row is font-weight:bold by default (reqTitle), but a DECLARED node
+  // font-weight wins on both name and body rows (probe: font-weight:100 -> name
+  // AND body both 100; bolder -> both 900). So apply the default-bold override
+  // ONLY when no valid font-weight was declared; otherwise the resolved
+  // baseWeight (already set above) stands for the name row too.
+  if (bold && !document.text.isEmpty() && !style.fontWeightResolved) {
     QTextCharFormat format;
     format.setFontWeight(QFont::Bold);
     document.formats.append({0, static_cast<int>(document.text.size()), format});
