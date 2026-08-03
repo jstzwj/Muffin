@@ -555,6 +555,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/requirement/RequirementScene.h
   src/mermaid/requirement/RequirementScenePainter.cpp
   src/mermaid/requirement/RequirementScenePainter.h
+  src/mermaid/requirement/RequirementTextStyle.cpp
+  src/mermaid/requirement/RequirementTextStyle.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

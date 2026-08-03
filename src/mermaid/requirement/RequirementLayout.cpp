@@ -12,8 +12,10 @@
 #include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
+#include <QFontMetricsF>
 #include <QSizeF>
 #include <QString>
+#include <QTextCharFormat>
 
 #include <algorithm>
 
@@ -26,15 +28,38 @@ constexpr qreal kGap = 20.0;      // gap between name and body (upstream hardcod
 
 namespace muffin::mermaid::requirement {
 
-flowchart::FlowLabelDocument requirementRowDocument(const QString& text, qreal fontSize, bool bold) {
-  auto document = flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
+qreal requirementEffectiveFontSize(const RequirementTextStyle& style, qreal themeFontSize) {
+  return style.fontSizePx >= 0.0 ? style.fontSizePx : themeFontSize;
+}
+
+QString requirementEffectiveFontFamily(const RequirementTextStyle& style,
+                                       const QString& themeFontFamily) {
+  return style.fontFamily.isEmpty() ? themeFontFamily : style.fontFamily;
+}
+
+flowchart::FlowLabelDocument requirementRowDocument(const QString& text, bool bold,
+    const RequirementTextStyle& style, qreal themeFontSize) {
+  // Commit 3: apply the node's text-transform to the source BEFORE parseFlowLabel
+  // (so offsets are consistent with the transformed string; ß->SS expands here).
+  const QString transformed = applyRequirementTextTransform(text, style.transform);
+  auto document = flowchart::parseFlowLabel(transformed, QStringLiteral("markdown"), true);
   document.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
+  // Commit-2 FlowLabelDocument fields (applied across the whole measure/wrap/layout/
+  // paint chain via makeFlowLabelFont). The name row's bold is an absolute override
+  // (mermaid reqTitle is font-weight:bold regardless of the label's font-weight).
+  document.baseWeight = style.fontWeight;
+  document.baseStyle = style.fontStyle;
+  document.letterSpacingPx = style.letterSpacingPx;
+  document.wordSpacingPx = style.wordSpacingPx;
+  document.underline = style.underline;
+  document.overline = style.overline;
+  document.strikeOut = style.strikeOut;
   if (bold && !document.text.isEmpty()) {
     QTextCharFormat format;
     format.setFontWeight(QFont::Bold);
     document.formats.append({0, static_cast<int>(document.text.size()), format});
   }
-  flowchart::prepareFlowLabelMath(document, fontSize);
+  flowchart::prepareFlowLabelMath(document, requirementEffectiveFontSize(style, themeFontSize));
   return document;
 }
 
@@ -110,30 +135,52 @@ buildRequirementLayoutInput(const RequirementDiagramData& data) {
 }
 
 RequirementLayoutMeasurements measureRequirementLayoutInput(
-    const RequirementLayoutInput& input, const QString& fontFamily, qreal fontSize) {
+    const RequirementLayoutInput& input, const QString& fontFamily, qreal fontSize,
+    QFont::Weight themeFontWeight) {
   RequirementLayoutMeasurements result;
-  // Per-row height model: the mermaid requirementBox with htmlLabels:false
-  // measures each row as SVG-text getBBox().height + 6. Empirically (trebuchet
-  // ms @ 16px) this averages ~fontSize × 1.5, matching the standard mermaid
-  // line-height. Using fontSize × 1.5 gives stable cross-platform heights that
-  // match Chrome's average within sub-pixel; per-row ink-height measurement via
-  // measureFlowSvgTextBounds differs from Chrome by ~4px/row (Qt/Chromium SVG
-  // bbox discrepancy), so the deterministic lineHeight is the safer oracle
-  // contract. The per-row WIDTH is still measured (for box width, reported).
-  const qreal rowHeight = fontSize * 1.5;
+  // Per-row height model: the mermaid requirementBox measures each row at the
+  // standard mermaid line-height (fontSize × 1.5) by default. Commit 3 resolves a
+  // per-node text style (line-height / font-size) from the node's labelStyle:
+  //   - line-height:normal -> the font's natural height (QFontMetricsF::height()).
+  //   - line-height:<length>/<number> -> the resolved px (number is a multiplier).
+  //   - unset/invalid -> fontSize × 1.5 (the deterministic oracle default).
+  // The per-row WIDTH is measured with the same prepared markdown document the
+  // painter draws (text-transform + font applied) so the box width matches ink.
+  const qreal themeLineHeight = fontSize * 1.5;
   for (const RequirementLayoutNodeInput& node : input.nodes) {
     RequirementNodeMeasurement m;
     m.hasBody = node.hasBody;
+    const RequirementTextStyle style = resolveRequirementTextStyle(
+        node.cssStyles, fontFamily, fontSize, themeFontWeight, themeLineHeight);
+    const qreal effSize = requirementEffectiveFontSize(style, fontSize);
+    const QString effFamily = requirementEffectiveFontFamily(style, fontFamily);
+    qreal effLineHeight;
+    if (style.lineHeightNormal) {
+      const QFont f = flowchart::makeFlowLabelFont(effFamily, effSize, style.fontWeight, style.fontStyle);
+      effLineHeight = QFontMetricsF(f).height();
+    } else {
+      // Unset line-height -> the resolved font's 1.5x default (mermaid's DIV
+      // line-height:1.5 applies to the actual font-size). Default config has
+      // effSize == theme fontSize, so this stays 24 (byte-identical).
+      effLineHeight = style.lineHeightPx >= 0.0 ? style.lineHeightPx : effSize * 1.5;
+    }
+    // font-size:0 or line-height:0 -> the node collapses to mermaid's 20x20 min
+    // box with no text ink (probed: gNode 20x20, ink=0). See STEP0F §2.
+    if (effSize == 0.0 || effLineHeight == 0.0) {
+      for (int i = 0; i < node.rows.size(); ++i) m.rowHeights.append(0.0);
+      m.typeHeight = 0.0;
+      m.nameHeight = 0.0;
+      m.boxSize = QSizeF(20.0, 20.0);
+      result.insert(node.id, m);
+      continue;
+    }
     m.rowHeights.reserve(node.rows.size());
     qreal maxRowWidth = 0.0;
     for (const RequirementLayoutRow& row : node.rows) {
-      m.rowHeights.append(rowHeight);
-      // Measure with the same prepared markdown document the painter draws, so
-      // the box width matches the rendered ink (markdown markers like **bold**
-      // render; the bold name row measures bold).
+      m.rowHeights.append(effLineHeight);
       const flowchart::FlowLabelDocument doc =
-          requirementRowDocument(row.text, fontSize, row.bold);
-      const QRectF ink = flowchart::measureFlowSvgTextBounds(doc, fontFamily, fontSize);
+          requirementRowDocument(row.text, row.bold, style, fontSize);
+      const QRectF ink = flowchart::measureFlowSvgTextBounds(doc, effFamily, effSize);
       maxRowWidth = std::max(maxRowWidth, ink.width());
     }
     if (!m.rowHeights.isEmpty()) {
@@ -143,9 +190,7 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
     qreal bboxHeight = 0.0;
     for (qreal h : m.rowHeights) bboxHeight += h;
     if (node.hasBody) bboxHeight += kGap;
-    const qreal totalWidth = maxRowWidth + kPadding;
-    const qreal totalHeight = bboxHeight + kPadding;
-    m.boxSize = QSizeF(totalWidth, totalHeight);
+    m.boxSize = QSizeF(maxRowWidth + kPadding, bboxHeight + kPadding);
     result.insert(node.id, m);
   }
   return result;

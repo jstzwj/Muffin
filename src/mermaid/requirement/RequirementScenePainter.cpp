@@ -32,20 +32,27 @@ QColor resolveColor(const QString& value) {
   return muffin::mermaid::color::toQColor(value);
 }
 
-// Draws a row's text at its center (relative to the node center).
+// Draws a row's text at its center (relative to the node center). Commit 3: the
+// per-node resolved font/color live on the row (font-size/family/line-height/color
+// fall back to the scene base when the node has no labelStyle for them); the
+// weight/style/spacing/decoration ride on row.document (FlowLabel Commit-2 fields).
 void paintRow(QPainter& painter, const muffin::mermaid::requirement::RequirementSceneRow& row,
               const QPointF& nodeCenter,
               const muffin::mermaid::requirement::RequirementSceneStyle& style) {
   if (row.text.isEmpty() || row.size.width() <= 0.0) return;
+  if (row.fontPixelSize == 0.0) return;  // font-size:0 -> text absent (no paint)
+  const qreal fontSize = row.fontPixelSize >= 0.0 ? row.fontPixelSize : style.fontSize;
+  const QString fontFamily = row.fontFamily.isEmpty() ? style.fontFamily : row.fontFamily;
+  const qreal lineHeight = row.lineHeight >= 0.0 ? row.lineHeight : style.lineHeight;
+  const QColor color = row.color.isValid() ? row.color : resolveColor(style.textColor);
   const QPointF center = nodeCenter + row.center;
   const QRectF rect(center.x() - row.size.width() / 2.0,
                     center.y() - row.size.height() / 2.0,
                     row.size.width(), row.size.height());
   painter.save();
   painter.setClipRect(rect);
-  flowchart::paintFlowLabel(painter, row.document, rect, style.fontFamily,
-                            style.fontSize, style.lineHeight,
-                            resolveColor(style.textColor), true);
+  flowchart::paintFlowLabel(painter, row.document, rect, fontFamily, fontSize, lineHeight,
+                            color, true);
   painter.restore();
 }
 

@@ -317,41 +317,55 @@ RequirementScene buildRequirementScene(
     // follows the explicit stroke/stroke-width and otherwise keeps the theme
     // divider color; both default to the 1.3 requirement border size.
     resolveBoxStyle(node.cssStyles, scene.style, lengthCtx, rendered);
+    // Resolve the text style (Commit 3) from the same event-ordered cssStyles.
+    // Pure like resolveBoxStyle; the measure path resolves it again identically.
+    rendered.text = resolveRequirementTextStyle(
+        node.cssStyles, scene.style.fontFamily, scene.style.fontSize,
+        scene.style.fontWeight, scene.style.lineHeight);
 
     // Row positions (relative to node center). Mermaid positions rows at
     // sequential y-offsets, then shifts so the box is centered. Row i's text
     // center Y (relative) = yoffset_i - totalHeight/2 + padding, where
     // totalHeight = the dagre box height.
+    const qreal effSize = requirementEffectiveFontSize(rendered.text, scene.style.fontSize);
+    const QString effFamily = requirementEffectiveFontFamily(rendered.text, scene.style.fontFamily);
+    qreal effLineHeight;
+    if (rendered.text.lineHeightNormal) {
+      effLineHeight =
+          QFontMetricsF(flowchart::makeFlowLabelFont(effFamily, effSize,
+                                                      rendered.text.fontWeight, rendered.text.fontStyle))
+              .height();
+    } else {
+      // Unset line-height -> 1.5x the RESOLVED font-size (matches the measure
+      // path; default config: effSize == theme fontSize -> 24, byte-identical).
+      effLineHeight = rendered.text.lineHeightPx >= 0.0 ? rendered.text.lineHeightPx
+                                                         : effSize * 1.5;
+    }
     qreal yoffset = 0.0;
     for (qsizetype i = 0; i < node.rows.size(); ++i) {
       const RequirementLayoutRow& row = node.rows.at(i);
       const qreal rowHeight = measured.rowHeights.value(i, 0.0);
-      // After the name row (i==1), insert the gap before body rows.
-      // The gap is already baked into totalHeight; here we advance yoffset.
+      // Build the row document once (text-transform + Commit-2 fields applied) and
+      // reuse it for the width measure and the stored paint document.
+      const flowchart::FlowLabelDocument doc =
+          requirementRowDocument(row.text, row.bold, rendered.text, scene.style.fontSize);
+      const QRectF ink = flowchart::measureFlowSvgTextBounds(doc, effFamily, effSize);
       RequirementSceneRow sceneRow;
       sceneRow.text = row.text;
       sceneRow.bold = row.bold;
-      sceneRow.size = QSizeF(0.0, rowHeight);  // width filled by measuring the doc below
+      sceneRow.size = QSizeF(ink.width(), rowHeight);
+      sceneRow.document = doc;
+      sceneRow.fontPixelSize = effSize;
+      sceneRow.fontFamily = effFamily;
+      sceneRow.lineHeight = effLineHeight;
+      sceneRow.color = rendered.text.color;
       // Horizontal: type(0) + name(1) are centered (x=0); body rows are
       // left-aligned at -totalWidth/2 + padding/2 (mermaid's translateX for i>=2).
       qreal centerX = 0.0;
-      if (i >= 2) {
-        // Measure this row's width to center the label rect on its left-anchored
-        // position.
-        const auto doc = requirementRowDocument(row.text, scene.style.fontSize, row.bold);
-        const QRectF ink = flowchart::measureFlowSvgTextBounds(
-            doc, scene.style.fontFamily, scene.style.fontSize);
-        sceneRow.size.setWidth(ink.width());
+      if (i >= 2)
         centerX = -totalWidth / 2.0 + kPadding / 2.0 + ink.width() / 2.0;
-      } else {
-        const auto doc = requirementRowDocument(row.text, scene.style.fontSize, row.bold);
-        const QRectF ink = flowchart::measureFlowSvgTextBounds(
-            doc, scene.style.fontFamily, scene.style.fontSize);
-        sceneRow.size.setWidth(ink.width());
-      }
       const qreal centerY = yoffset - totalHeight / 2.0 + kPadding;
       sceneRow.center = QPointF(centerX, centerY);
-      sceneRow.document = requirementRowDocument(row.text, scene.style.fontSize, row.bold);
       rendered.rows.append(std::move(sceneRow));
       yoffset += rowHeight;
       if (i == 1 && node.hasBody) yoffset += kGap;

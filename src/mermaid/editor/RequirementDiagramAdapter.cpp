@@ -46,7 +46,7 @@ struct RequirementDiagramImpl : Diagram {
     const qreal nodeSpacing = configNumber(stateConfig, QStringLiteral("nodeSpacing"), 50.0);
     const qreal rankSpacing = configNumber(stateConfig, QStringLiteral("rankSpacing"), 50.0);
     const requirement::RequirementLayoutMeasurements measurements =
-        requirement::measureRequirementLayoutInput(input, fontFamily, fontSize);
+        requirement::measureRequirementLayoutInput(input, fontFamily, fontSize, QFont::Normal);
     const requirement::RequirementPlacementResult placement =
         requirement::layoutRequirementDiagramDagre(input, measurements, nodeSpacing, rankSpacing,
                                                    fontFamily, fontSize);
@@ -70,6 +70,10 @@ struct RequirementDiagramImpl : Diagram {
     style.fontFamily = fontFamily;
     style.fontSize = fontSize;
     style.lineHeight = fontSize * 1.5;
+    // SVG-root base font-weight (the weight bolder/lighter resolve against at the
+    // first cascade layer). mermaid's theme does not expose a font-weight variable,
+    // so it is the browser default 400 (Normal).
+    style.fontWeight = QFont::Normal;
     // No inline `title` token in requirementDiagram grammar — pass empty so
     // renderMetadata falls back to the frontmatter title (pre.title).
     MermaidRenderMetadata metadata = renderMetadata(

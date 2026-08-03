@@ -13,7 +13,10 @@
 #include "mermaid/MermaidScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/requirement/RequirementLayout.h"
+#include "mermaid/requirement/RequirementTextStyle.h"
 
+#include <QColor>
+#include <QFont>
 #include <QPointF>
 #include <QRectF>
 #include <QSizeF>
@@ -42,6 +45,8 @@ struct RequirementSceneStyle {
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontSize = 16.0;
   qreal lineHeight = 24.0;
+  // SVG-root base font-weight (the weight bolder/lighter resolve against at L1).
+  QFont::Weight fontWeight = QFont::Normal;
   // requirementBox default border size (userNodeOverrides: strokeWidth = sw || 1.3);
   // the box outline AND the divider both render at this width unless overridden.
   qreal strokeWidth = 1.3;
@@ -55,6 +60,11 @@ struct RequirementSceneRow {
   QSizeF size;
   bool bold = false;
   flowchart::FlowLabelDocument document;
+  // Resolved per-node font/color (Commit 3); -1 / empty => use scene.style.
+  qreal fontPixelSize = -1.0;
+  QString fontFamily;
+  qreal lineHeight = -1.0;
+  QColor color;  // invalid => scene.style.textColor
 };
 
 struct RequirementSceneNode {
@@ -81,6 +91,10 @@ struct RequirementSceneNode {
   bool dividerVisible = true;     // false => NoPen divider (stroke none or width<=0)
   qreal strokeWidth = 1.3;
   QVector<qreal> dashArray = {0.0, 0.0};
+  // Resolved text style (Commit 3): font-size/weight/style/family/line-height/
+  // spacing/decoration/transform/color from the node's labelStyle, last-wins over
+  // the theme base. Sentinel defaults mean "use the scene base".
+  RequirementTextStyle text;
 };
 
 struct RequirementSceneEdge {

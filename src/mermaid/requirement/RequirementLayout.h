@@ -12,6 +12,7 @@
 
 #include "mermaid/requirement/RequirementDiagram.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/requirement/RequirementTextStyle.h"
 
 #include <QMap>
 #include <QPointF>
@@ -93,19 +94,28 @@ struct RequirementPlacementResult {
 
 RequirementLayoutInput buildRequirementLayoutInput(const RequirementDiagramData& data);
 
-// Prepared row document (markdown mode, FlowForeignObjectFlex context, optional
-// bold) shared by layout measurement and scene paint so the measured width
-// matches the drawn ink — markdown markers like **bold** are measured as their
-// rendered form, not literal asterisks.
-flowchart::FlowLabelDocument requirementRowDocument(const QString& text, qreal fontSize, bool bold);
+// Effective resolved font-size/family for a node: the style override, else the
+// theme base. (style.fontSizePx < 0 / fontFamily empty => theme.)
+qreal requirementEffectiveFontSize(const RequirementTextStyle& style, qreal themeFontSize);
+QString requirementEffectiveFontFamily(const RequirementTextStyle& style,
+                                       const QString& themeFontFamily);
+
+// Prepared row document shared by layout measurement and scene paint so the
+// measured width matches the drawn ink. Commit 3: applies the node's text-transform
+// to `text` BEFORE parseFlowLabel, and sets the Commit-2 FlowLabelDocument fields
+// (baseWeight/baseStyle/letter-spacing/word-spacing/decoration) from `style`; the
+// name row's bold is layered on top of the base weight. effectiveFontSizePx is the
+// style override (or themeFontSize) used for math preparation.
+flowchart::FlowLabelDocument requirementRowDocument(const QString& text, bool bold,
+    const RequirementTextStyle& style, qreal themeFontSize);
 
 // Measures each node's box + row heights. Mirrors the requirementBox geometry:
-// padding = 20, gap = 20 between name and the first body row. Each row height =
-// ink height + 6 (matching mermaid addText3's htmlLabels:false path, which the
-// oracle fixture uses for determinism).
+// padding = 20, gap = 20 between name and the first body row. Commit 3: resolves
+// each node's text style and measures with the effective font + applies the node's
+// text-transform; font-size:0 / line-height:0 collapse the node to 20x20 (no ink).
 RequirementLayoutMeasurements measureRequirementLayoutInput(
     const RequirementLayoutInput& input, const QString& fontFamily = QStringLiteral("Noto Sans"),
-    qreal fontSize = 16.0);
+    qreal fontSize = 16.0, QFont::Weight themeFontWeight = QFont::Normal);
 
 RequirementPlacementResult layoutRequirementDiagramDagre(
     const RequirementLayoutInput& input, const RequirementLayoutMeasurements& measurements,
