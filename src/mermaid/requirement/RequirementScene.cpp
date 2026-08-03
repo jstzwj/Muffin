@@ -168,24 +168,31 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
     }
   }
   // stroke-width — mirrors the upstream cascade (probed vs mermaid 11.16.0 +
-  // Chrome). userNodeOverrides passes the value through after a case-sensitive
-  // `replace("px","")`; `|| default` only fills an EMPTY/missing value. The SVG
-  // CSS engine then accepts or rejects the (possibly garbage) length:
-  //   missing / empty value         -> mermaid family default (base.strokeWidth).
-  //   valid >= 0 (bare/px/em)       -> the parsed width (em = n * root font).
-  //   valid zero (0/00/000px/0em)   -> 0 -> outline + divider both invisible.
+  // Chrome). userNodeOverrides passes the value through (`replace("px","")` then
+  // `|| default`, which only fills an EMPTY/missing value); the SVG CSS engine
+  // then accepts or rejects the (possibly garbage) length, parsing CSS units
+  // case-insensitively (4PX -> 4px). Net behavior:
+  //   missing / empty value           -> mermaid family default (base.strokeWidth).
+  //   valid >= 0 (bare/px/em)         -> the parsed width (em = n * root font).
+  //   valid zero (0/00/000px/0em/0PX) -> 0 -> outline + divider both invisible.
   //   negative (-1/-1em) or a non-empty invalid token (foo) -> the CSS INITIAL
   //     1.0px (the malformed inline declaration is dropped), which leaves the
   //     stroke-decided outline/divider visibility untouched.
+  // Commit 1 scope: bare/px/em only. Other CSS lengths (rem/pt/pc/in/cm/mm/q/
+  // ex/ch and the viewport units vw/vh/vmin/vmax) are ALSO valid upstream but
+  // are deferred to Step 0D (fixed conversions + a virtual-viewport contract);
+  // until then they fall back to 1.0 here as a KNOWN GAP.
   if (map.contains(QStringLiteral("stroke-width"))) {
     const QString raw = map.value(QStringLiteral("stroke-width")).trimmed();
     if (raw.isEmpty()) {
       node.strokeWidth = base.strokeWidth;  // empty value -> family default
     } else {
-      QString s = raw;
-      const bool isEm = s.endsWith(QLatin1String("em"), Qt::CaseInsensitive);
+      // CSS length units are ASCII case-insensitive; lowercase once so px/em
+      // match regardless of case (4PX -> 4px -> 4).
+      QString s = raw.toLower();
+      const bool isEm = s.endsWith(QLatin1String("em"));
       if (isEm) s = s.left(s.size() - 2);
-      s.remove(QStringLiteral("px"));  // userNodeOverrides: replace("px","") (case-sensitive)
+      s.remove(QStringLiteral("px"));
       bool ok = false;
       const qreal n = s.trimmed().toDouble(&ok);
       if (!ok || n < 0.0)

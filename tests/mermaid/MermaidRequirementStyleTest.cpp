@@ -485,6 +485,29 @@ int main(int argc, char** argv) {
             QStringLiteral("stroke-width:4 -> 4; got %1").arg(r.node->strokeWidth));
   }
   {
+    // px unit is ASCII case-insensitive (4PX/4Px -> 4; 0PX -> 0 invisible): the
+    // CSS engine parses units regardless of case.
+    for (const QString& w : {QStringLiteral("4PX"), QStringLiteral("4Px")}) {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A stroke-width:" + w, QStringLiteral("A"));
+      require(qAbs(r.node->strokeWidth - 4.0) < 1e-6,
+              QStringLiteral("stroke-width:%1 -> 4.0 (case-insensitive px); got %2")
+                  .arg(w).arg(r.node->strokeWidth));
+    }
+    {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A stroke-width:0PX", QStringLiteral("A"));
+      require(qAbs(r.node->strokeWidth - 0.0) < 1e-6,
+              QStringLiteral("stroke-width:0PX -> 0.0; got %1").arg(r.node->strokeWidth));
+      require(!r.node->outlineVisible && !r.node->dividerVisible,
+              QStringLiteral("stroke-width:0PX -> outline + divider both hidden"));
+    }
+    // Commit 1 strict scope: bare / px / em. Other CSS lengths (rem/pt/pc/in/cm/
+    // mm/q/ex/ch and viewport units) ARE valid upstream but are deferred to
+    // Step 0D — until then they resolve to the CSS initial 1.0 (known gap, not
+    // asserted here to avoid locking in the fallback).
+  }
+  {
     // classDef + class reaches the resolved box (cascade through the DB path).
     const auto r = renderNode(cache, head +
         "requirement A {\n id: 1\n}\nclassDef C fill:#ff0000\nclass A C", QStringLiteral("A"));
@@ -687,7 +710,8 @@ int main(int argc, char** argv) {
               QStringLiteral("stroke:NONE -> no divider ink; got %1").arg(dividerInk(r.img, *r.sc)));
     }
     // stroke-width valid zero -> no ink on either path.
-    for (const QString& w : {QStringLiteral("0"), QStringLiteral("00")}) {
+    for (const QString& w : {QStringLiteral("0"), QStringLiteral("00"),
+                             QStringLiteral("0PX")}) {
       const auto r = paintCase(QStringLiteral("style A stroke-width:") + w);
       const int oi = outlineInk(r.img, *r.sc);
       const int di = dividerInk(r.img, *r.sc);
