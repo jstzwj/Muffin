@@ -28,16 +28,25 @@ namespace muffin::mermaid::flowchart {
 // Single source of truth for the QFont used across the FlowLabel measurement
 // chain (ink/advance, wrap, layout, bounding metrics, paint) and by other scene
 // builders that need font-relative CSS metrics (e.g. Requirement ex/ch). Every
-// QFont in this TU is built here so baseWeight is applied consistently and
-// nowhere is forgotten. Mermaid bold Markdown still overrides per run via format
-// ranges.
+// QFont in this TU is built here so baseWeight/baseStyle and letter/word spacing
+// are applied consistently and nowhere is forgotten. Mermaid bold/italic
+// Markdown still overrides weight/style per run via format ranges.
 QFont makeFlowLabelFont(const QString& fontFamily, qreal fontPixelSize,
-                        QFont::Weight weight) {
+                        QFont::Weight weight, QFont::Style style,
+                        qreal letterSpacingPx, qreal wordSpacingPx) {
   QFont font(fontFamily);
   MermaidFontRegistry::configureFont(font, fontFamily);
   font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
   font.setHintingPreference(QFont::PreferNoHinting);
   font.setWeight(weight);
+  font.setStyle(style);
+  // Guard the spacing setters so the default (0) path is untouched — default
+  // rendering must stay byte-identical, and an explicit AbsoluteSpacing(0) could
+  // in principle differ from Qt's unset state on some platforms.
+  if (letterSpacingPx != 0.0)
+    font.setLetterSpacing(QFont::AbsoluteSpacing, letterSpacingPx);
+  if (wordSpacingPx != 0.0)
+    font.setWordSpacing(wordSpacingPx);
   return font;
 }
 
@@ -823,6 +832,21 @@ ShapedTextMetrics shapeDomTextRange(const FlowLabelDocument& label,
   return result;
 }
 
+namespace {
+
+// The single QFont every label measurement/paint path shares: baseWeight +
+// baseStyle + letter/word spacing all flow through makeFlowLabelFont, so the
+// whole chain (ink/advance, wrap, layout, bounding metrics, paint) agrees with
+// the drawn font. Neutral document defaults keep default rendering byte-ident.
+QFont flowLabelDocumentFont(const FlowLabelDocument& label,
+                            const QString& fontFamily, qreal fontPixelSize) {
+  return makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight,
+                           label.baseStyle, label.letterSpacingPx,
+                           label.wordSpacingPx);
+}
+
+}  // namespace
+
 QSizeF measureFlowLabel(const FlowLabelDocument& label, const QString& fontFamily,
                         qreal fontPixelSize, qreal lineHeight) {
   FlowLabelDocument prepared = label;
@@ -841,7 +865,7 @@ qreal measureFlowTextInkWidth(const FlowLabelDocument& label,
                               qsizetype start, qsizetype length,
                               const QString& fontFamily,
                               qreal fontPixelSize) {
-  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
+  QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
   return shapeTextRange(label, start, length, font).inkWidth;
 }
 
@@ -849,13 +873,14 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
                                   qsizetype start, qsizetype length,
                                   const QString& fontFamily,
                                   qreal fontPixelSize) {
-  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
+  QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
   return shapeTextRange(label, start, length, font).width;
 }
 
 FlowLabelFontMetrics flowLabelFontBoundingMetrics(
-    const QString& fontFamily, qreal fontPixelSize, QFont::Weight weight) {
-  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, weight);
+    const QString& fontFamily, qreal fontPixelSize, QFont::Weight weight,
+    QFont::Style style) {
+  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, weight, style);
   const QRawFont raw = QRawFont::fromFont(font);
   const FlowLabelFontMetrics metrics =
       openTypeFontBoundingMetrics(raw, fontPixelSize);
@@ -903,7 +928,7 @@ QVector<FlowLabelLineRange> flowLabelLineRanges(
 QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
                                 const QString& fontFamily,
                                 qreal fontPixelSize) {
-  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
+  QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
 
   const QVector<FlowLabelLineRange> lines = flowLabelLineRanges(label);
   qreal left = std::numeric_limits<qreal>::max();
@@ -965,7 +990,7 @@ QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
   if (left == std::numeric_limits<qreal>::max()) left = right = 0.0;
 
   const FlowLabelFontMetrics vertical =
-      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize, label.baseWeight);
+      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize, label.baseWeight, label.baseStyle);
   const qsizetype lineCount = std::max<qsizetype>(1, lines.size());
   const qreal top = fontPixelSize - vertical.ascent;
   const qreal height = vertical.height() +
@@ -983,7 +1008,7 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
   if (maximumLineWidth <= 0.0 || label.text.contains(QLatin1Char('\n')))
     return wrapped;
 
-  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
+  QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
   QTextLayout layout(label.text, font);
   QTextOption option;
   option.setUseDesignMetrics(true);
@@ -1010,7 +1035,7 @@ FlowLabelDocument wrapFlowLabel(const FlowLabelDocument& label,
 FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
                                        const QString& fontFamily,
                                        qreal fontPixelSize, qreal lineHeight) {
-  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
+  QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
   const QFontMetricsF metrics(font);
   const QRectF inkMetrics = metrics.tightBoundingRect(QStringLiteral("Mg"));
   // Canvas TextMetrics reports the pixel-aligned ink box used by Chromium's
@@ -1019,7 +1044,7 @@ FlowLabelLayoutMetrics layoutFlowLabel(const FlowLabelDocument& label,
   const qreal cssAscent = std::ceil(std::max<qreal>(0.0, -inkMetrics.top()));
   const qreal cssDescent = std::floor(std::max<qreal>(0.0, inkMetrics.bottom()));
   const FlowLabelFontMetrics fontBoundingMetrics =
-      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize, label.baseWeight);
+      flowLabelFontBoundingMetrics(fontFamily, fontPixelSize, label.baseWeight, label.baseStyle);
   const bool flowForeignObject =
       label.formattingContext ==
       FlowLabelFormattingContext::FlowForeignObjectFlex;
@@ -1235,13 +1260,14 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
                     qreal fontPixelSize, qreal lineHeight,
                     const QColor& color, bool centerVertically,
                     FlowLabelAlign align, qreal alignMargin) {
-  QFont font = makeFlowLabelFont(fontFamily, fontPixelSize, label.baseWeight);
+  QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
   FlowLabelDocument paintedLabel = label;
   prepareFlowLabelMath(paintedLabel, fontPixelSize);
   const FlowLabelLayoutMetrics layoutMetrics =
       layoutFlowLabel(paintedLabel, fontFamily, fontPixelSize, lineHeight);
   const QSizeF measured = layoutMetrics.size;
-  const qreal fallbackAscent = QFontMetricsF(font).ascent();
+  const QFontMetricsF fontMetrics(font);
+  const qreal fallbackAscent = fontMetrics.ascent();
   qreal lineTop = centerVertically
                       ? rect.top() + std::max<qreal>(0.0, (rect.height() - measured.height()) / 2.0)
                       : rect.top();
@@ -1354,6 +1380,28 @@ void paintFlowLabel(QPainter& painter, const FlowLabelDocument& label,
         if (!measuredLine.runs.at(runIndex).math)
           drawVisualTextRun(measuredLine.runs.at(runIndex));
         ++runIndex;
+      }
+    }
+    if (label.underline || label.strikeOut || label.overline) {
+      // CSS text-decoration: drawn explicitly (drawGlyphRun does not reliably
+      // paint it) over each visual line, spanning the whole inline line width
+      // (text + inline Math). It uses the current text color and the font's
+      // underline/overline/strikeout metrics + line thickness, so it never
+      // changes layout/measure size and never touches the Math paint. Default
+      // false skips this block entirely (default rendering byte-identical).
+      const qreal thickness = fontMetrics.lineWidth();
+      const qreal baselineY = lineTop + measuredLine.baseline;
+      if (label.underline) {
+        const qreal y = baselineY + fontMetrics.underlinePos();
+        painter.fillRect(QRectF(lineOrigin, y - thickness / 2.0, lineWidth, thickness), color);
+      }
+      if (label.overline) {
+        const qreal y = baselineY - fontMetrics.overlinePos();
+        painter.fillRect(QRectF(lineOrigin, y - thickness / 2.0, lineWidth, thickness), color);
+      }
+      if (label.strikeOut) {
+        const qreal y = baselineY - fontMetrics.strikeOutPos();
+        painter.fillRect(QRectF(lineOrigin, y - thickness / 2.0, lineWidth, thickness), color);
       }
     }
     lineTop += measuredLine.blockHeight;

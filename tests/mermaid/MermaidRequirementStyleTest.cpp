@@ -562,6 +562,22 @@ int main(int argc, char** argv) {
               QStringLiteral("4ch == 4*advance('0') of configured font; got %1 exp %2")
                   .arg(r.node->strokeWidth).arg(exp));
     }
+    // CSS exponent <number> grammar through the PRODUCTION scene path (style
+    // directive -> stroke-width), not only the direct resolver unit tests.
+    {
+      const auto r = renderNode(cache,
+          head + "requirement A {\n id: 1\n}\nstyle A stroke-width:1e2px",
+          QStringLiteral("A"));
+      require(qAbs(r.node->strokeWidth - 100.0) < 1e-6,
+              QStringLiteral("stroke-width:1e2px -> 100 (1e2 px); got %1").arg(r.node->strokeWidth));
+    }
+    {
+      const auto r = renderNode(cache,
+          head + "requirement A {\n id: 1\n}\nstyle A stroke-width:1e-1in",
+          QStringLiteral("A"));
+      require(qAbs(r.node->strokeWidth - 9.6) < 1e-6,
+              QStringLiteral("stroke-width:1e-1in -> 9.6 (0.1*96); got %1").arg(r.node->strokeWidth));
+    }
   }
   {
     // classDef + class reaches the resolved box (cascade through the DB path).

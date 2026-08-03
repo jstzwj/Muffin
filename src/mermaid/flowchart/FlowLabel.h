@@ -86,6 +86,21 @@ struct FlowLabelDocument {
   // default rendering is byte-identical; sequence sets it per kind. Per-run
   // Markdown bold still overrides this via the format range.
   QFont::Weight baseWeight = QFont::Normal;
+  // Base CSS font style + spacing, applied at every QFont construction in
+  // FlowLabel alongside baseWeight (see makeFlowLabelFont) so the whole
+  // measurement chain agrees with the drawn font. Neutral defaults keep default
+  // rendering byte-identical; Requirement sets them from resolved CSS. Per-run
+  // Markdown italic still overrides baseStyle via the format range.
+  QFont::Style baseStyle = QFont::StyleNormal;
+  qreal letterSpacingPx = 0.0;  // QFont::AbsoluteSpacing, added to every advance
+  qreal wordSpacingPx = 0.0;    // added to every space advance
+  // CSS text-decoration. PAINT-ONLY: drawGlyphRun does not reliably paint
+  // these, so paintFlowLabel draws them explicitly over each visual line. They
+  // never feed makeFlowLabelFont, so measure/wrap/layout are unaffected; default
+  // false produces no extra painter operations (default rendering unchanged).
+  bool underline = false;
+  bool strikeOut = false;
+  bool overline = false;
 };
 
 enum class FlowLabelMathStructure {
@@ -203,18 +218,25 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
                                   qreal fontPixelSize);
 
 // The font used for every text metric/advance/paint in FlowLabel: the
-// MermaidFontRegistry family stack, pixel-rounded size, PreferNoHinting, and the
-// base weight. Exposed so other scene builders resolve font-relative CSS units
-// (ex/ch) against the EXACT font the text is measured/painted with — never
-// construct a QFont ad hoc for those metrics or xHeight / '0'-advance will drift.
+// MermaidFontRegistry family stack, pixel-rounded size, PreferNoHinting, the
+// base weight and style, and letter/word spacing — all applied at once. Exposed
+// so other scene builders resolve font-relative CSS units (ex/ch) against the
+// EXACT font the text is measured/painted with — never construct a QFont ad hoc
+// for those metrics or xHeight / '0'-advance will drift.
 QFont makeFlowLabelFont(const QString& fontFamily, qreal fontPixelSize,
-                        QFont::Weight weight = QFont::Normal);
+                        QFont::Weight weight = QFont::Normal,
+                        QFont::Style style = QFont::StyleNormal,
+                        qreal letterSpacingPx = 0.0,
+                        qreal wordSpacingPx = 0.0);
 
 // Chromium Canvas fontBoundingBox metrics are the pixel-rounded OpenType
-// hhea ascent/descent used to position text inside a CSS normal line box.
+// hhea ascent/descent used to position text inside a CSS normal line box. Only
+// the vertical-metric-affecting fields (weight, style) are taken; letter/word
+// spacing are horizontal and inert here.
 FlowLabelFontMetrics flowLabelFontBoundingMetrics(
     const QString& fontFamily, qreal fontPixelSize,
-    QFont::Weight weight = QFont::Normal);
+    QFont::Weight weight = QFont::Normal,
+    QFont::Style style = QFont::StyleNormal);
 
 // Mermaid createFormattedText() advances SVG tspans by 1.1em. Its background
 // rect is the union of the font cell boxes plus two CSS pixels per side.
