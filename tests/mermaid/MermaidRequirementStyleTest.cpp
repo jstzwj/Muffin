@@ -18,10 +18,13 @@
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/requirement/RequirementDiagram.h"
 #include "mermaid/requirement/RequirementScene.h"
 #include "theme/CssCalc.h"
 
+#include <QFont>
+#include <QFontMetricsF>
 #include <QGuiApplication>
 #include <QImage>
 #include <QPainter>
@@ -458,9 +461,9 @@ int main(int argc, char** argv) {
     }
   }
   {
-    // stroke-width negative / non-empty invalid (-1/-1em/foo) -> CSS INITIAL
-    // 1.0px (the malformed declaration is dropped), visibility unchanged: both
-    // paths still visible at the default theme stroke.
+    // stroke-width Valid-negative (-1/-1em) or non-empty invalid (foo) -> CSS
+    // INITIAL 1.0px (stroke-width rejects <0 / drops malformed), visibility
+    // unchanged: both paths still visible at the default theme stroke.
     for (const QString& w : {QStringLiteral("-1"), QStringLiteral("-1em"),
                              QStringLiteral("foo")}) {
       const auto r = renderNode(cache, head +
@@ -511,7 +514,7 @@ int main(int argc, char** argv) {
   }
 
   // Newly-supported CSS length units (Commit 1 follow-up: full resolver). Scene
-  // path at the default root font (16) and kMmdcDefaultCssViewport (800x600).
+  // path at the default root font (16) and the mmdc default raster profile (800x600).
   {
     // Fixed units (1px = 1/96in) — independent of root font and viewport.
     const auto r1 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4rem", QStringLiteral("A"));
@@ -539,14 +542,26 @@ int main(int argc, char** argv) {
     const auto r8 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4vmax", QStringLiteral("A"));
     require(qAbs(r8.node->strokeWidth - 32.0) < 1e-6,
             QStringLiteral("stroke-width:4vmax -> 32 (max 800); got %1").arg(r8.node->strokeWidth));
-    // Font-metric units (ex/ch): parsed as Valid (not the 1.0 fallback). The
-    // exact px is the configured font's metric — asserted precisely in §9.
-    const auto r9 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4ex", QStringLiteral("A"));
-    require(r9.node->strokeWidth > 10.0,
-            QStringLiteral("stroke-width:4ex -> font metric (not 1.0 fallback); got %1").arg(r9.node->strokeWidth));
-    const auto r10 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4ch", QStringLiteral("A"));
-    require(r10.node->strokeWidth > 10.0,
-            QStringLiteral("stroke-width:4ch -> font metric (not 1.0 fallback); got %1").arg(r10.node->strokeWidth));
+    // Font-metric units (ex/ch): parsed as Valid and equal to 4× the metric of
+    // the SAME configured font FlowLabel measures/paints with (makeFlowLabelFont:
+    // registry stack + rounded px + PreferNoHinting) — not a >10 heuristic, so a
+    // different fallback font or hinting would actually be caught here.
+    {
+      const auto r = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4ex", QStringLiteral("A"));
+      const QFont f = flowchart::makeFlowLabelFont(r.scene->style.fontFamily, r.scene->style.fontSize);
+      const qreal exp = 4.0 * QFontMetricsF(f).xHeight();
+      require(qAbs(r.node->strokeWidth - exp) < 1e-3,
+              QStringLiteral("4ex == 4*xHeight of configured font; got %1 exp %2")
+                  .arg(r.node->strokeWidth).arg(exp));
+    }
+    {
+      const auto r = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4ch", QStringLiteral("A"));
+      const QFont f = flowchart::makeFlowLabelFont(r.scene->style.fontFamily, r.scene->style.fontSize);
+      const qreal exp = 4.0 * QFontMetricsF(f).horizontalAdvance(QChar('0'));
+      require(qAbs(r.node->strokeWidth - exp) < 1e-3,
+              QStringLiteral("4ch == 4*advance('0') of configured font; got %1 exp %2")
+                  .arg(r.node->strokeWidth).arg(exp));
+    }
   }
   {
     // classDef + class reaches the resolved box (cascade through the DB path).
@@ -759,8 +774,8 @@ int main(int argc, char** argv) {
       require(oi == 0, QStringLiteral("stroke-width:%1 -> no outline ink; got %2").arg(w).arg(oi));
       require(di == 0, QStringLiteral("stroke-width:%1 -> no divider ink; got %2").arg(w).arg(di));
     }
-    // stroke-width negative / non-empty invalid -> CSS initial 1px, both paths
-    // still carry theme ink (visibility unchanged by the width fallback).
+    // stroke-width Valid-negative / non-empty invalid -> CSS initial 1px, both
+    // paths still carry theme ink (visibility unchanged by the width fallback).
     for (const QString& w : {QStringLiteral("-1"), QStringLiteral("-1em"), QStringLiteral("foo")}) {
       const auto r = paintCase(QStringLiteral("style A stroke-width:") + w);
       const int oi = outlineInk(r.img, *r.sc);
@@ -781,8 +796,8 @@ int main(int argc, char** argv) {
 
   // ===== 9. Direct CSS length resolver (theme/CssCalc.h) — full data table =====
   // Property-agnostic tri-state; the stroke-width caller (§7) maps Missing->1.3,
-  // Invalid->1.0, Valid-zero->NoPen. Here we assert the resolver itself, with a
-  // controlled context (so ex/ch assertions are exact, not font-dependent).
+  // Invalid->1.0, Valid-negative->1.0, Valid-zero->NoPen. Here we assert the
+  // resolver itself, with a controlled context (so ex/ch assertions are exact).
   {
     using muffin::CssLengthContext;
     using muffin::CssLengthResult;
@@ -791,7 +806,7 @@ int main(int argc, char** argv) {
     const auto ctx = [](qreal em, qreal ex, qreal ch) {
       CssLengthContext c;
       c.emPx = em; c.remPx = 16.0; c.exPx = ex; c.chPx = ch;
-      c.viewportPx = QSizeF(800.0, 600.0);  // = kMmdcDefaultCssViewport
+      c.viewportPx = QSizeF(800.0, 600.0);  // = Requirement's mmdc default raster profile
       return c;
     };
     const CssLengthContext c16 = ctx(16.0, 8.36, 8.39);
@@ -801,6 +816,13 @@ int main(int argc, char** argv) {
       const CssLengthResult r = resolveCssLengthToPx(s, c);
       require(r.status == CssLengthStatus::Valid,
               QStringLiteral("'%1' should be Valid").arg(s));
+      require(qAbs(r.px - px) < 1e-3,
+              QStringLiteral("'%1' px=%2 exp=%3").arg(s).arg(r.px).arg(px));
+    };
+    const auto neg = [&](const QString& s, const CssLengthContext& c, qreal px) {
+      const CssLengthResult r = resolveCssLengthToPx(s, c);
+      require(r.status == CssLengthStatus::Valid,
+              QStringLiteral("'%1' should be Valid(negative)").arg(s));
       require(qAbs(r.px - px) < 1e-3,
               QStringLiteral("'%1' px=%2 exp=%3").arg(s).arg(r.px).arg(px));
     };
@@ -817,10 +839,24 @@ int main(int argc, char** argv) {
     valid("4vmax", c16, 32.0);
     // Zero (Valid 0 -> caller applies NoPen).
     valid("0", c16, 0.0); valid("0px", c16, 0.0); valid("0em", c16, 0.0); valid("0vw", c16, 0.0);
-    // Negative / invalid -> Invalid.
-    for (const QString& s : {QStringLiteral("-1"), QStringLiteral("-1em"),
-                             QStringLiteral("-1rem"), QStringLiteral("-1px"),
-                             QStringLiteral("foo"), QStringLiteral("4xyz"),
+    // CSS <number> exponents (ASCII case-insensitive). "1em" must NOT read 'e'
+    // as an exponent marker — it is the unit start, not a (bogus) exponent.
+    valid("1e2px", c16, 100.0); valid("1E2PX", c16, 100.0); valid("1e-1in", c16, 9.6);
+    valid("1em", c16, 16.0); valid("1.5e1px", c16, 15.0);
+    // Full mantissa grammar (leading-dot / decimal) is Valid; the mermaid style
+    // tokenizer is the upstream gate that rejects these for requirement — the
+    // resolver itself is grammar-complete.
+    valid(".5px", c16, 0.5); valid("4.5px", c16, 4.5);
+    // Overflow -> non-finite -> Invalid.
+    require(resolveCssLengthToPx(QStringLiteral("1e999"), c16).status == CssLengthStatus::Invalid,
+            QStringLiteral("'1e999' overflow -> Invalid"));
+    // Negatives are Valid(negative px): the resolver is property-agnostic; the
+    // stroke-width caller (§7) maps Valid<0 to its CSS initial. em/rem/fixed/
+    // viewport all carry their sign through.
+    neg("-1", c16, -1.0); neg("-1px", c16, -1.0); neg("-1em", c16, -16.0);
+    neg("-1rem", c16, -16.0); neg("-4vw", c16, -32.0); neg("-4vh", c16, -24.0);
+    // Non-numeric / unknown-unit / trailing-junk -> Invalid.
+    for (const QString& s : {QStringLiteral("foo"), QStringLiteral("4xyz"),
                              QStringLiteral("4em5"), QStringLiteral("--1")})
       require(resolveCssLengthToPx(s, c16).status == CssLengthStatus::Invalid,
               QStringLiteral("'%1' should be Invalid").arg(s));

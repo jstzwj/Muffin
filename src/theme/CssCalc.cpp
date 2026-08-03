@@ -6,6 +6,7 @@
 #include <QStringView>
 
 #include <algorithm>  // std::min/std::max for vmin/vmax
+#include <cmath>      // std::isfinite (overflow guard)
 
 namespace muffin {
 
@@ -25,8 +26,12 @@ qreal absoluteCssLengthToPx(qreal value, const QString& unit, bool* recognised) 
 }
 
 CssLengthResult resolveCssLengthToPx(QStringView raw, const CssLengthContext& ctx) {
-  const QString s = raw.toString().trimmed().toLower();  // ASCII case-insensitive units
+  // ASCII case-insensitive units and exponent marker (the whole value is lower-cased).
+  const QString s = raw.toString().trimmed().toLower();
   if (s.isEmpty()) return {CssLengthStatus::Missing, 0.0};
+  // CSS <number> magnitude: [+-]? ( digits ('.' digits?)? | '.' digits ), then an
+  // optional exponent. At least one mantissa digit is required, else this is not a
+  // number ("foo", ".", "+").
   int i = 0;
   if (i < s.size() && (s.at(i) == QLatin1Char('+') || s.at(i) == QLatin1Char('-'))) ++i;
   bool anyDigit = false;
@@ -35,12 +40,25 @@ CssLengthResult resolveCssLengthToPx(QStringView raw, const CssLengthContext& ct
     ++i;
     while (i < s.size() && s.at(i).isDigit()) { ++i; anyDigit = true; }
   }
-  if (!anyDigit) return {CssLengthStatus::Invalid, 0.0};  // e.g. "foo"
+  if (!anyDigit) return {CssLengthStatus::Invalid, 0.0};
+  // Exponent: 'e' then an optional sign and >=1 digit. If 'e' is NOT followed by
+  // [+-]?digit it is the START OF THE UNIT (e.g. "1em"), so the magnitude ends
+  // here and 'e' is left for the unit scan below — "1em" must NOT parse as a
+  // (bogus) exponent. The value is already lower-cased, so only 'e' can appear.
+  if (i < s.size() && s.at(i) == QLatin1Char('e')) {
+    int k = i + 1;
+    if (k < s.size() && (s.at(k) == QLatin1Char('+') || s.at(k) == QLatin1Char('-'))) ++k;
+    if (k < s.size() && s.at(k).isDigit()) {
+      i = k;
+      while (i < s.size() && s.at(i).isDigit()) ++i;
+    }
+  }
   bool ok = false;
   const qreal n = s.left(i).toDouble(&ok);
-  if (!ok) return {CssLengthStatus::Invalid, 0.0};
-  // CSS rejects negative lengths (the declaration is dropped -> initial).
-  if (n < 0.0) return {CssLengthStatus::Invalid, 0.0};
+  if (!ok || !std::isfinite(n)) return {CssLengthStatus::Invalid, 0.0};  // overflow -> inf
+  // Negatives are returned as Valid(negative px): the resolver is property-
+  // agnostic. stroke-width (which rejects negatives) maps Valid<0 to its CSS
+  // initial; letter-spacing/word-spacing accept negatives directly.
   // Unit = the run of letters after the magnitude; any trailing char is junk.
   int u = i;
   while (u < s.size() && s.at(u).isLetter()) ++u;

@@ -25,6 +25,22 @@
 
 namespace muffin::mermaid::flowchart {
 
+// Single source of truth for the QFont used across the FlowLabel measurement
+// chain (ink/advance, wrap, layout, bounding metrics, paint) and by other scene
+// builders that need font-relative CSS metrics (e.g. Requirement ex/ch). Every
+// QFont in this TU is built here so baseWeight is applied consistently and
+// nowhere is forgotten. Mermaid bold Markdown still overrides per run via format
+// ranges.
+QFont makeFlowLabelFont(const QString& fontFamily, qreal fontPixelSize,
+                        QFont::Weight weight) {
+  QFont font(fontFamily);
+  MermaidFontRegistry::configureFont(font, fontFamily);
+  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
+  font.setHintingPreference(QFont::PreferNoHinting);
+  font.setWeight(weight);
+  return font;
+}
+
 struct FlowLabelPreparedMath {
   qreal fontPixelSize = 0.0;
   qreal operationScale = 1.0;
@@ -33,20 +49,6 @@ struct FlowLabelPreparedMath {
 };
 
 namespace {
-
-// Single source of truth for the QFont used across the FlowLabel measurement
-// chain (ink/advance, wrap, layout, bounding metrics, paint). Every QFont in
-// this TU is built here so baseWeight is applied consistently and nowhere is
-// forgotten. Mermaid bold Markdown still overrides per run via format ranges.
-QFont makeFlowLabelFont(const QString& fontFamily, qreal fontPixelSize,
-                        QFont::Weight weight = QFont::Normal) {
-  QFont font(fontFamily);
-  MermaidFontRegistry::configureFont(font, fontFamily);
-  font.setPixelSize(static_cast<int>(std::round(fontPixelSize)));
-  font.setHintingPreference(QFont::PreferNoHinting);
-  font.setWeight(weight);
-  return font;
-}
 
 struct Marker {
   QString token;

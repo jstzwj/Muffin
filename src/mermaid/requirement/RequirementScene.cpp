@@ -37,6 +37,14 @@ namespace {
 constexpr qreal kPadding = 20.0;
 constexpr qreal kGap = 20.0;
 
+// mermaid-cli's default Puppeteer viewport (src/index.js: --width 800, --height
+// 600, --scale unset -> deviceScaleFactor 1). Requirement resolves viewport-
+// relative CSS units (vw/vh/vmin/vmax) against this so its raster output matches
+// the DEFAULT mmdc raster profile; it is NOT a claim of dynamic-SVG or custom
+// --width/--height parity. Lives in this Mermaid layer (not generic theme/CSS)
+// and is passed explicitly to CssLengthContext.
+const QSizeF kMmdcDefaultCssViewport{800.0, 600.0};
+
 qreal r3(qreal v) { return std::round(v * 1000.0) / 1000.0; }
 
 QJsonObject rectJson(const QRectF& r) {
@@ -183,10 +191,11 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
   // passes the value through (`replace("px","")` then `|| default`, which only
   // fills an EMPTY/missing value); the SVG CSS engine then accepts or rejects
   // the (possibly garbage) length, parsing CSS units case-insensitively. The
-  // resolver is property-agnostic (no baked-in 1px); this caller applies the
-  // stroke-width fallbacks:
+  // resolver is property-agnostic (no baked-in 1px, negatives returned as
+  // Valid(negative px)); this caller applies the stroke-width fallbacks:
   //   missing / empty              -> mermaid family default (base.strokeWidth).
-  //   negative / non-empty invalid -> CSS INITIAL 1.0 (declaration dropped).
+  //   valid negative               -> CSS INITIAL 1.0 (stroke-width rejects <0).
+  //   non-empty invalid            -> CSS INITIAL 1.0 (malformed, dropped).
   //   valid >= 0                   -> parsed px (em/rem/ex/ch relative to lengthCtx;
   //                                  vw/vh/vmin/vmax against kMmdcDefaultCssViewport).
   //   valid zero (0/0px/0em/0vw..) -> 0 -> outline + divider NoPen (see below).
@@ -198,10 +207,12 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
         node.strokeWidth = base.strokeWidth;  // empty/missing -> family default 1.3
         break;
       case CssLengthStatus::Invalid:
-        node.strokeWidth = 1.0;  // negative / non-empty invalid -> CSS initial
+        node.strokeWidth = 1.0;  // non-empty invalid -> CSS initial
         break;
       case CssLengthStatus::Valid:
-        node.strokeWidth = r.px;  // valid zero handled by the NoPen check below
+        // negative -> CSS initial (stroke-width rejects negatives); zero handled
+        // by the NoPen check below; positive -> parsed px.
+        node.strokeWidth = (r.px < 0.0) ? 1.0 : r.px;
         break;
     }
   }
@@ -265,12 +276,15 @@ RequirementScene buildRequirementScene(
   QHash<QString, RequirementPlacementNode> placedNodes;
   for (const auto& node : placement.nodes) placedNodes.insert(node.id, node);
 
-  // CSS length context for stroke-width resolution. exPx/chPx come from
-  // QFontMetricsF of the actually-rendered font (x-height / '0' advance) — they
-  // are font-specific. emPx = SVG root font (themeVariables.fontSize); remPx =
-  // <html> root (16; mermaid leaves it); viewportPx = mmdc default raster profile.
-  QFont lengthFont(scene.style.fontFamily);
-  lengthFont.setPixelSize(static_cast<int>(std::round(scene.style.fontSize)));
+  // CSS length context for stroke-width resolution. exPx/chPx must come from the
+  // SAME configured font the label text is measured/painted with (FlowLabel's
+  // makeFlowLabelFont: MermaidFontRegistry family stack + rounded pixel size +
+  // PreferNoHinting) — xHeight / '0' advance are font- and hinting-specific, so
+  // reusing that construction avoids drift. emPx = SVG root font
+  // (themeVariables.fontSize); remPx = <html> root (16; mermaid leaves it);
+  // viewportPx = mmdc default raster profile (passed explicitly — see above).
+  const QFont lengthFont =
+      flowchart::makeFlowLabelFont(scene.style.fontFamily, scene.style.fontSize);
   const QFontMetricsF lengthMetrics(lengthFont);
   const CssLengthContext lengthCtx{scene.style.fontSize, 16.0, lengthMetrics.xHeight(),
                                    lengthMetrics.horizontalAdvance(QChar('0')),

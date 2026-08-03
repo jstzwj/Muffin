@@ -10,25 +10,21 @@ namespace muffin {
 // Recognises px, pt, pc, in, cm, mm and Q (passed lower-cased as "q").
 qreal absoluteCssLengthToPx(qreal value, const QString& unit, bool* recognised = nullptr);
 
-// mermaid-cli's default Puppeteer viewport (src/index.js: --width 800, --height
-// 600, --scale unset -> deviceScaleFactor 1). Muffin resolves viewport-relative
-// CSS units (vw/vh/vmin/vmax) against this so its raster output matches the
-// DEFAULT mmdc raster profile; it is NOT a claim of dynamic-SVG or custom
-// --width/--height parity.
-inline const QSizeF kMmdcDefaultCssViewport{800.0, 600.0};
-
 // Resolved physical context for CSS length units that depend on font metrics or
 // the rendering viewport. emPx is the SVG root font-size (themeVariables.fontSize);
 // remPx is the <html> root font-size (mermaid leaves it at the browser default 16);
 // exPx/chPx must come from QFontMetricsF of the actually-configured font (xHeight
 // / advance of '0') — they are font-specific and must NOT be hardcoded. viewportPx
-// is the CSS layout viewport (default = mmdc default raster profile).
+// is the CSS layout viewport; its default is a neutral placeholder, so a real
+// caller passes its own (e.g. the Mermaid requirement layer passes mmdc's default
+// raster profile, kept in THAT layer — not here — so this generic helper carries
+// no Mermaid dependency).
 struct CssLengthContext {
   qreal emPx = 16.0;
   qreal remPx = 16.0;
   qreal exPx = 8.0;
   qreal chPx = 8.0;
-  QSizeF viewportPx = kMmdcDefaultCssViewport;
+  QSizeF viewportPx{1.0, 1.0};  // neutral placeholder; callers override it
 };
 
 // Tri-state result so the caller applies its OWN fallback semantics: stroke-width
@@ -40,15 +36,18 @@ struct CssLengthResult {
   qreal px = 0.0;  // meaningful only when status == Valid
 };
 
-// Resolve a single CSS length value (e.g. "4", "1.5px", "2em", "1in", "4vw") to
-// pixels against `ctx`. Units are ASCII case-insensitive. Absolute units reuse
-// absoluteCssLengthToPx.
+// Resolve a single CSS length value (e.g. "4", "1.5px", "2em", "1in", "1e2px",
+// "4vw") to pixels against `ctx`. The magnitude follows the full CSS <number>
+// grammar (optional sign, integer/decimal mantissa, optional exponent), units
+// are ASCII case-insensitive, and absolute units reuse absoluteCssLengthToPx.
 //   Missing  -> empty/whitespace value.
 //   Invalid  -> non-numeric token, unknown unit, trailing junk after the unit,
-//               or a negative magnitude (CSS rejects negative lengths -> the
-//               declaration is dropped, caller maps to the property's initial).
-//   Valid(px)-> a recognised non-negative length (0 included; the caller decides
-//               what 0 means, e.g. stroke-width:0 -> NoPen).
+//               or a non-finite magnitude (overflow such as 1e999).
+//   Valid(px)-> a recognised length. px may be NEGATIVE: the resolver is
+//               property-agnostic, so each caller applies its own sign policy
+//               (stroke-width treats Valid<0 as its CSS initial; letter-spacing
+//               and word-spacing accept negatives). 0 included — the caller
+//               decides what it means (e.g. stroke-width:0 -> NoPen).
 CssLengthResult resolveCssLengthToPx(QStringView value, const CssLengthContext& ctx);
 
 // Evaluate a CSS `calc(<expr>)` expression to pixels. Supports `+ - * /`, nested

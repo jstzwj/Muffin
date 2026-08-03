@@ -202,6 +202,14 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
                                   const QString& fontFamily,
                                   qreal fontPixelSize);
 
+// The font used for every text metric/advance/paint in FlowLabel: the
+// MermaidFontRegistry family stack, pixel-rounded size, PreferNoHinting, and the
+// base weight. Exposed so other scene builders resolve font-relative CSS units
+// (ex/ch) against the EXACT font the text is measured/painted with — never
+// construct a QFont ad hoc for those metrics or xHeight / '0'-advance will drift.
+QFont makeFlowLabelFont(const QString& fontFamily, qreal fontPixelSize,
+                        QFont::Weight weight = QFont::Normal);
+
 // Chromium Canvas fontBoundingBox metrics are the pixel-rounded OpenType
 // hhea ascent/descent used to position text inside a CSS normal line box.
 FlowLabelFontMetrics flowLabelFontBoundingMetrics(
