@@ -522,6 +522,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/theme/FlowStyleResolve.h
   src/mermaid/theme/MermaidStyleResolve.cpp
   src/mermaid/theme/MermaidStyleResolve.h
+  src/theme/CssCalc.cpp
+  src/theme/CssCalc.h
   src/mermaid/security/MermaidSecurityPolicy.h
   src/mermaid/scene/FlowMarkers.cpp
   src/mermaid/scene/FlowMarkers.h
@@ -990,8 +992,6 @@ set(MUFFIN_UI_SOURCES
   src/theme/CssValueParser.h
   src/theme/NodeCssElement.cpp
   src/theme/NodeCssElement.h
-  src/theme/CssCalc.cpp
-  src/theme/CssCalc.h
   src/theme/CssContent.cpp
   src/theme/CssContent.h
 )

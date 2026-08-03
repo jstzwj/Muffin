@@ -3,6 +3,9 @@
 #include <QtGlobal>
 
 #include <QString>
+#include <QStringView>
+
+#include <algorithm>  // std::min/std::max for vmin/vmax
 
 namespace muffin {
 
@@ -19,6 +22,46 @@ qreal absoluteCssLengthToPx(qreal value, const QString& unit, bool* recognised) 
   else ok = false;
   if (recognised) *recognised = ok;
   return ok ? value * scale : 0.0;
+}
+
+CssLengthResult resolveCssLengthToPx(QStringView raw, const CssLengthContext& ctx) {
+  const QString s = raw.toString().trimmed().toLower();  // ASCII case-insensitive units
+  if (s.isEmpty()) return {CssLengthStatus::Missing, 0.0};
+  int i = 0;
+  if (i < s.size() && (s.at(i) == QLatin1Char('+') || s.at(i) == QLatin1Char('-'))) ++i;
+  bool anyDigit = false;
+  while (i < s.size() && s.at(i).isDigit()) { ++i; anyDigit = true; }
+  if (i < s.size() && s.at(i) == QLatin1Char('.')) {
+    ++i;
+    while (i < s.size() && s.at(i).isDigit()) { ++i; anyDigit = true; }
+  }
+  if (!anyDigit) return {CssLengthStatus::Invalid, 0.0};  // e.g. "foo"
+  bool ok = false;
+  const qreal n = s.left(i).toDouble(&ok);
+  if (!ok) return {CssLengthStatus::Invalid, 0.0};
+  // CSS rejects negative lengths (the declaration is dropped -> initial).
+  if (n < 0.0) return {CssLengthStatus::Invalid, 0.0};
+  // Unit = the run of letters after the magnitude; any trailing char is junk.
+  int u = i;
+  while (u < s.size() && s.at(u).isLetter()) ++u;
+  if (u != s.size()) return {CssLengthStatus::Invalid, 0.0};  // trailing junk
+  const QString unit = s.mid(i, u - i);
+  bool absolute = false;
+  const qreal absPx = absoluteCssLengthToPx(n, unit, &absolute);  // px/pt/pc/in/cm/mm/q/bare
+  if (absolute) return {CssLengthStatus::Valid, absPx};
+  qreal px = 0.0;
+  if (unit == QLatin1String("em")) px = n * ctx.emPx;
+  else if (unit == QLatin1String("rem")) px = n * ctx.remPx;
+  else if (unit == QLatin1String("ex")) px = n * ctx.exPx;
+  else if (unit == QLatin1String("ch")) px = n * ctx.chPx;
+  else if (unit == QLatin1String("vw")) px = n / 100.0 * ctx.viewportPx.width();
+  else if (unit == QLatin1String("vh")) px = n / 100.0 * ctx.viewportPx.height();
+  else if (unit == QLatin1String("vmin"))
+    px = n / 100.0 * std::min(ctx.viewportPx.width(), ctx.viewportPx.height());
+  else if (unit == QLatin1String("vmax"))
+    px = n / 100.0 * std::max(ctx.viewportPx.width(), ctx.viewportPx.height());
+  else return {CssLengthStatus::Invalid, 0.0};  // unknown unit
+  return {CssLengthStatus::Valid, px};
 }
 
 namespace {

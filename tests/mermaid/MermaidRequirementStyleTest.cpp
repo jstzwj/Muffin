@@ -20,12 +20,14 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/requirement/RequirementDiagram.h"
 #include "mermaid/requirement/RequirementScene.h"
+#include "theme/CssCalc.h"
 
 #include <QGuiApplication>
 #include <QImage>
 #include <QPainter>
 #include <QPointF>
 #include <QRectF>
+#include <QSizeF>
 #include <QString>
 #include <QStringList>
 
@@ -507,6 +509,45 @@ int main(int argc, char** argv) {
     // Step 0D — until then they resolve to the CSS initial 1.0 (known gap, not
     // asserted here to avoid locking in the fallback).
   }
+
+  // Newly-supported CSS length units (Commit 1 follow-up: full resolver). Scene
+  // path at the default root font (16) and kMmdcDefaultCssViewport (800x600).
+  {
+    // Fixed units (1px = 1/96in) — independent of root font and viewport.
+    const auto r1 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4rem", QStringLiteral("A"));
+    require(qAbs(r1.node->strokeWidth - 64.0) < 1e-6,
+            QStringLiteral("stroke-width:4rem -> 64 (rem=16); got %1").arg(r1.node->strokeWidth));
+    const auto r2 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:1in", QStringLiteral("A"));
+    require(qAbs(r2.node->strokeWidth - 96.0) < 1e-6,
+            QStringLiteral("stroke-width:1in -> 96; got %1").arg(r2.node->strokeWidth));
+    const auto r3 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4pt", QStringLiteral("A"));
+    require(qAbs(r3.node->strokeWidth - 4.0 * 96.0 / 72.0) < 1e-6,
+            QStringLiteral("stroke-width:4pt -> 5.333; got %1").arg(r3.node->strokeWidth));
+    const auto r4 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:1cm", QStringLiteral("A"));
+    require(qAbs(r4.node->strokeWidth - 96.0 / 2.54) < 1e-4,
+            QStringLiteral("stroke-width:1cm -> 37.795; got %1").arg(r4.node->strokeWidth));
+    // Viewport units against the 800x600 default raster profile.
+    const auto r5 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4vw", QStringLiteral("A"));
+    require(qAbs(r5.node->strokeWidth - 32.0) < 1e-6,
+            QStringLiteral("stroke-width:4vw -> 32 (vw of 800); got %1").arg(r5.node->strokeWidth));
+    const auto r6 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4vh", QStringLiteral("A"));
+    require(qAbs(r6.node->strokeWidth - 24.0) < 1e-6,
+            QStringLiteral("stroke-width:4vh -> 24 (vh of 600); got %1").arg(r6.node->strokeWidth));
+    const auto r7 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4vmin", QStringLiteral("A"));
+    require(qAbs(r7.node->strokeWidth - 24.0) < 1e-6,
+            QStringLiteral("stroke-width:4vmin -> 24 (min 600); got %1").arg(r7.node->strokeWidth));
+    const auto r8 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4vmax", QStringLiteral("A"));
+    require(qAbs(r8.node->strokeWidth - 32.0) < 1e-6,
+            QStringLiteral("stroke-width:4vmax -> 32 (max 800); got %1").arg(r8.node->strokeWidth));
+    // Font-metric units (ex/ch): parsed as Valid (not the 1.0 fallback). The
+    // exact px is the configured font's metric — asserted precisely in §9.
+    const auto r9 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4ex", QStringLiteral("A"));
+    require(r9.node->strokeWidth > 10.0,
+            QStringLiteral("stroke-width:4ex -> font metric (not 1.0 fallback); got %1").arg(r9.node->strokeWidth));
+    const auto r10 = renderNode(cache, head + "requirement A {\n id: 1\n}\nstyle A stroke-width:4ch", QStringLiteral("A"));
+    require(r10.node->strokeWidth > 10.0,
+            QStringLiteral("stroke-width:4ch -> font metric (not 1.0 fallback); got %1").arg(r10.node->strokeWidth));
+  }
   {
     // classDef + class reaches the resolved box (cascade through the DB path).
     const auto r = renderNode(cache, head +
@@ -736,6 +777,72 @@ int main(int argc, char** argv) {
       require(oi == 0, QStringLiteral("inherit + width:-1 -> outline hidden; got %1").arg(oi));
       require(di > 20, QStringLiteral("inherit + width:-1 -> divider 1px visible; got %1").arg(di));
     }
+  }
+
+  // ===== 9. Direct CSS length resolver (theme/CssCalc.h) — full data table =====
+  // Property-agnostic tri-state; the stroke-width caller (§7) maps Missing->1.3,
+  // Invalid->1.0, Valid-zero->NoPen. Here we assert the resolver itself, with a
+  // controlled context (so ex/ch assertions are exact, not font-dependent).
+  {
+    using muffin::CssLengthContext;
+    using muffin::CssLengthResult;
+    using muffin::CssLengthStatus;
+    using muffin::resolveCssLengthToPx;
+    const auto ctx = [](qreal em, qreal ex, qreal ch) {
+      CssLengthContext c;
+      c.emPx = em; c.remPx = 16.0; c.exPx = ex; c.chPx = ch;
+      c.viewportPx = QSizeF(800.0, 600.0);  // = kMmdcDefaultCssViewport
+      return c;
+    };
+    const CssLengthContext c16 = ctx(16.0, 8.36, 8.39);
+    // QString-routed helper so string literals convert (QStringView won't).
+    const auto R = [&](const QString& s, const CssLengthContext& c) { return resolveCssLengthToPx(s, c); };
+    const auto valid = [&](const QString& s, const CssLengthContext& c, qreal px) {
+      const CssLengthResult r = resolveCssLengthToPx(s, c);
+      require(r.status == CssLengthStatus::Valid,
+              QStringLiteral("'%1' should be Valid").arg(s));
+      require(qAbs(r.px - px) < 1e-3,
+              QStringLiteral("'%1' px=%2 exp=%3").arg(s).arg(r.px).arg(px));
+    };
+    // Fixed units (1px = 1/96in), ASCII case-insensitive.
+    valid("4", c16, 4.0); valid("4px", c16, 4.0); valid("4PX", c16, 4.0); valid("4Px", c16, 4.0);
+    valid("4pt", c16, 4.0 * 96.0 / 72.0); valid("4pc", c16, 64.0); valid("1in", c16, 96.0);
+    valid("1IN", c16, 96.0); valid("1cm", c16, 96.0 / 2.54);
+    valid("10mm", c16, 10.0 * 96.0 / 25.4); valid("40Q", c16, 40.0 * 96.0 / 101.6);
+    // Font-relative.
+    valid("4em", c16, 64.0); valid("4EM", c16, 64.0); valid("4rem", c16, 64.0);
+    valid("4ex", c16, 4.0 * 8.36); valid("4ch", c16, 4.0 * 8.39);
+    // Viewport @ 800x600.
+    valid("4vw", c16, 32.0); valid("4vh", c16, 24.0); valid("4vmin", c16, 24.0);
+    valid("4vmax", c16, 32.0);
+    // Zero (Valid 0 -> caller applies NoPen).
+    valid("0", c16, 0.0); valid("0px", c16, 0.0); valid("0em", c16, 0.0); valid("0vw", c16, 0.0);
+    // Negative / invalid -> Invalid.
+    for (const QString& s : {QStringLiteral("-1"), QStringLiteral("-1em"),
+                             QStringLiteral("-1rem"), QStringLiteral("-1px"),
+                             QStringLiteral("foo"), QStringLiteral("4xyz"),
+                             QStringLiteral("4em5"), QStringLiteral("--1")})
+      require(resolveCssLengthToPx(s, c16).status == CssLengthStatus::Invalid,
+              QStringLiteral("'%1' should be Invalid").arg(s));
+    // Missing / empty.
+    require(R("", c16).status == CssLengthStatus::Missing,
+            QStringLiteral("empty -> Missing"));
+    require(R("   ", c16).status == CssLengthStatus::Missing,
+            QStringLiteral("whitespace -> Missing"));
+
+    // Root font 16 vs 20: em/ex/ch scale; rem + fixed units do NOT.
+    const CssLengthContext c20 = ctx(20.0, 10.45, 10.49);  // ex/ch scale with font
+    require(qAbs(R("4em", c16).px - 64.0) < 1e-3 && qAbs(R("4em", c20).px - 80.0) < 1e-3,
+            QStringLiteral("em scales with root font (16->64, 20->80)"));
+    require(qAbs(R("4rem", c16).px - 64.0) < 1e-3 && qAbs(R("4rem", c20).px - 64.0) < 1e-3,
+            QStringLiteral("rem does NOT scale with root font (16 fixed)"));
+    require(qAbs(R("4ex", c16).px - 4.0 * 8.36) < 1e-3 && qAbs(R("4ex", c20).px - 4.0 * 10.45) < 1e-3,
+            QStringLiteral("ex scales with font metric"));
+    require(qAbs(R("4ch", c16).px - 4.0 * 8.39) < 1e-3 && qAbs(R("4ch", c20).px - 4.0 * 10.49) < 1e-3,
+            QStringLiteral("ch scales with font metric"));
+    require(qAbs(R("4pt", c16).px - 4.0 * 96.0 / 72.0) < 1e-3 &&
+                qAbs(R("4pt", c20).px - 4.0 * 96.0 / 72.0) < 1e-3,
+            QStringLiteral("fixed unit independent of root font"));
   }
 
   qDebug() << "MermaidRequirementStyleTest: passed";

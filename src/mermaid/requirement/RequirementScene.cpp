@@ -10,7 +10,10 @@
 #include "mermaid/flowchart/D3Curves.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/theme/MermaidColor.h"
+#include "theme/CssCalc.h"
 
+#include <QFont>
+#include <QFontMetricsF>
 #include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -24,6 +27,10 @@
 namespace flowchart = muffin::mermaid::flowchart;
 namespace color = muffin::mermaid::color;
 namespace req = muffin::mermaid::requirement;
+using muffin::CssLengthContext;
+using muffin::CssLengthResult;
+using muffin::CssLengthStatus;
+using muffin::resolveCssLengthToPx;
 
 namespace {
 
@@ -100,25 +107,29 @@ QVector<qreal> getStrokeDashArray(const QString& strokeDasharrayStyle) {
 // (color/font-*/...) are split out by isLabelStyle upstream and do not affect
 // the box — they are ignored here (text phase).
 //
-// SVG <paint> keywords, probed against mermaid 11.16.0 (probe5-report.json).
-// CSS/SVG keywords are ASCII case-insensitive, so NONE / CurrentColor / INHERIT
-// match their lowercase forms.
+// SVG <paint> keywords, probed against mermaid 11.16.0 (probe5-report.json +
+// step0d-e-report.json). CSS/SVG keywords are ASCII case-insensitive, so NONE /
+// CurrentColor / INHERIT match their lowercase forms.
 //   fill:
 //     none          -> NoBrush
-//     currentColor  -> the `color` property; Muffin sets no color on the box
-//                      yet, so it resolves to black here (color-aware resolution
-//                      lands with the text/color phase).
+//     currentColor  -> the path's OWN `color`. `color` is a labelStyle upstream
+//                      (text-only), so the box path never inherits a user color —
+//                      its `color` is the SVG-root default black, regardless of
+//                      any `color:<x>` on the label and regardless of declaration
+//                      order. So box currentColor ALWAYS resolves to black (this
+//                      is final parity, not a deferral; the text/color phase only
+//                      paints label text, it cannot change the box's color).
 //     inherit/invalid -> the SVG-inherited foreground (#333/#ccc).
 //   stroke (outline and divider diverge!):
 //     none          -> outline AND divider both hidden (NoPen).
-//     currentColor  -> black on outline AND divider.
+//     currentColor  -> black on outline AND divider (same color-scope reason).
 //     <valid color> -> that color on outline AND divider.
 //     inherit/invalid -> OUTLINE hidden, divider KEEPS the theme color. The
 //                      outline path's stroke inherits/defaults to none; the
 //                      divider path carries the theme stroke attribute, so an
 //                      unset-style stroke value drops only the outline.
 void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneStyle& base,
-                     req::RequirementSceneNode& node) {
+                     const CssLengthContext& lengthCtx, req::RequirementSceneNode& node) {
   node.fill = base.boxFill;
   node.fillNone = false;
   node.outlineStroke = base.boxStroke;
@@ -168,37 +179,30 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
     }
   }
   // stroke-width — mirrors the upstream cascade (probed vs mermaid 11.16.0 +
-  // Chrome). userNodeOverrides passes the value through (`replace("px","")` then
-  // `|| default`, which only fills an EMPTY/missing value); the SVG CSS engine
-  // then accepts or rejects the (possibly garbage) length, parsing CSS units
-  // case-insensitively (4PX -> 4px). Net behavior:
-  //   missing / empty value           -> mermaid family default (base.strokeWidth).
-  //   valid >= 0 (bare/px/em)         -> the parsed width (em = n * root font).
-  //   valid zero (0/00/000px/0em/0PX) -> 0 -> outline + divider both invisible.
-  //   negative (-1/-1em) or a non-empty invalid token (foo) -> the CSS INITIAL
-  //     1.0px (the malformed inline declaration is dropped), which leaves the
-  //     stroke-decided outline/divider visibility untouched.
-  // Commit 1 scope: bare/px/em only. Other CSS lengths (rem/pt/pc/in/cm/mm/q/
-  // ex/ch and the viewport units vw/vh/vmin/vmax) are ALSO valid upstream but
-  // are deferred to Step 0D (fixed conversions + a virtual-viewport contract);
-  // until then they fall back to 1.0 here as a KNOWN GAP.
+  // Chrome; see G:/github/req-probe/step0d-a-report.json). userNodeOverrides
+  // passes the value through (`replace("px","")` then `|| default`, which only
+  // fills an EMPTY/missing value); the SVG CSS engine then accepts or rejects
+  // the (possibly garbage) length, parsing CSS units case-insensitively. The
+  // resolver is property-agnostic (no baked-in 1px); this caller applies the
+  // stroke-width fallbacks:
+  //   missing / empty              -> mermaid family default (base.strokeWidth).
+  //   negative / non-empty invalid -> CSS INITIAL 1.0 (declaration dropped).
+  //   valid >= 0                   -> parsed px (em/rem/ex/ch relative to lengthCtx;
+  //                                  vw/vh/vmin/vmax against kMmdcDefaultCssViewport).
+  //   valid zero (0/0px/0em/0vw..) -> 0 -> outline + divider NoPen (see below).
   if (map.contains(QStringLiteral("stroke-width"))) {
-    const QString raw = map.value(QStringLiteral("stroke-width")).trimmed();
-    if (raw.isEmpty()) {
-      node.strokeWidth = base.strokeWidth;  // empty value -> family default
-    } else {
-      // CSS length units are ASCII case-insensitive; lowercase once so px/em
-      // match regardless of case (4PX -> 4px -> 4).
-      QString s = raw.toLower();
-      const bool isEm = s.endsWith(QLatin1String("em"));
-      if (isEm) s = s.left(s.size() - 2);
-      s.remove(QStringLiteral("px"));
-      bool ok = false;
-      const qreal n = s.trimmed().toDouble(&ok);
-      if (!ok || n < 0.0)
-        node.strokeWidth = 1.0;  // non-empty invalid / negative -> CSS initial
-      else
-        node.strokeWidth = isEm ? n * base.fontSize : n;
+    const CssLengthResult r =
+        resolveCssLengthToPx(map.value(QStringLiteral("stroke-width")), lengthCtx);
+    switch (r.status) {
+      case CssLengthStatus::Missing:
+        node.strokeWidth = base.strokeWidth;  // empty/missing -> family default 1.3
+        break;
+      case CssLengthStatus::Invalid:
+        node.strokeWidth = 1.0;  // negative / non-empty invalid -> CSS initial
+        break;
+      case CssLengthStatus::Valid:
+        node.strokeWidth = r.px;  // valid zero handled by the NoPen check below
+        break;
     }
   }
   // stroke-dasharray.
@@ -261,6 +265,17 @@ RequirementScene buildRequirementScene(
   QHash<QString, RequirementPlacementNode> placedNodes;
   for (const auto& node : placement.nodes) placedNodes.insert(node.id, node);
 
+  // CSS length context for stroke-width resolution. exPx/chPx come from
+  // QFontMetricsF of the actually-rendered font (x-height / '0' advance) — they
+  // are font-specific. emPx = SVG root font (themeVariables.fontSize); remPx =
+  // <html> root (16; mermaid leaves it); viewportPx = mmdc default raster profile.
+  QFont lengthFont(scene.style.fontFamily);
+  lengthFont.setPixelSize(static_cast<int>(std::round(scene.style.fontSize)));
+  const QFontMetricsF lengthMetrics(lengthFont);
+  const CssLengthContext lengthCtx{scene.style.fontSize, 16.0, lengthMetrics.xHeight(),
+                                   lengthMetrics.horizontalAdvance(QChar('0')),
+                                   kMmdcDefaultCssViewport};
+
   for (const RequirementLayoutNodeInput& node : input.nodes) {
     if (!placedNodes.contains(node.id)) continue;
     const RequirementPlacementNode placed = placedNodes.value(node.id);
@@ -287,7 +302,7 @@ RequirementScene buildRequirementScene(
     // event-ordered cssStyles, last-wins over the theme base. The divider
     // follows the explicit stroke/stroke-width and otherwise keeps the theme
     // divider color; both default to the 1.3 requirement border size.
-    resolveBoxStyle(node.cssStyles, scene.style, rendered);
+    resolveBoxStyle(node.cssStyles, scene.style, lengthCtx, rendered);
 
     // Row positions (relative to node center). Mermaid positions rows at
     // sequential y-offsets, then shifts so the box is centered. Row i's text
