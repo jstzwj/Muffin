@@ -36,11 +36,14 @@ struct RequirementTextStyle {
   QString fontFamily;
   qreal fontSizePx = -1.0;
   QFont::Weight fontWeight = QFont::Normal;  // resolved (bolder/lighter compounded)
-  // True iff a VALID font-weight was declared (normal/bold/bolder/lighter or a
-  // 1..1000 numeric). The requirementBox name row is font-weight:bold by DEFAULT
-  // (reqTitle), but a declared node font-weight wins on BOTH name and body rows
-  // (probe: font-weight:100 -> name AND body both 100). So the name-row default
-  // bold is applied ONLY when this is false (unset/invalid -> inherit reqTitle).
+  // True iff a VALID font-weight was declared: normal/bold/bolder/lighter, a
+  // 1..1000 numeric, or a CSS-wide keyword (inherit/initial/unset/revert/
+  // revert-layer — probe: all five resolve to 400 and suppress the default bold).
+  // The requirementBox name row is font-weight:bold by DEFAULT (reqTitle), but a
+  // declared node font-weight wins on BOTH name and body rows (probe:
+  // font-weight:100 -> name AND body both 100). So the name-row default bold is
+  // applied ONLY when this is false (unset, or a truly garbage value e.g. "foo"
+  // -> inert -> inherit reqTitle).
   bool fontWeightResolved = false;
   QFont::Style fontStyle = QFont::StyleNormal;
   qreal lineHeightPx = -1.0;

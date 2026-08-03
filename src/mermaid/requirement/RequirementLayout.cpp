@@ -45,8 +45,10 @@ flowchart::FlowLabelDocument requirementRowDocument(const QString& text, bool bo
   auto document = flowchart::parseFlowLabel(transformed, QStringLiteral("markdown"), true);
   document.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
   // Commit-2 FlowLabelDocument fields (applied across the whole measure/wrap/layout/
-  // paint chain via makeFlowLabelFont). The name row's bold is an absolute override
-  // (mermaid reqTitle is font-weight:bold regardless of the label's font-weight).
+  // paint chain via makeFlowLabelFont). The name row's default bold (reqTitle is
+  // font-weight:bold) is NOT absolute: a DECLARED node font-weight wins on every
+  // row, so the default-bold format range is added only when fontWeightResolved is
+  // false (see the guard below). baseWeight carries the resolved weight either way.
   document.baseWeight = style.fontWeight;
   document.baseStyle = style.fontStyle;
   document.letterSpacingPx = style.letterSpacingPx;
