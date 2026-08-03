@@ -68,15 +68,17 @@ struct RequirementSceneNode {
   bool hasDivider = false;   // body rows present → divider under the name
   qreal dividerY = 0.0;      // divider line Y relative to node center (body top)
   int bodyRowCount = 0;      // count of body rows (font-independent)
-  // Resolved box paint (compileStyles last-wins over the theme base). The
-  // divider shares strokeWidth/dashArray with the box outline and follows the
-  // explicit stroke when one is set (upstream applies nodeStyles to every path
-  // via selectAll("path")); otherwise it keeps the theme divider color.
+  // Resolved box paint (compileStyles last-wins over the theme base). The box
+  // OUTLINE and the DIVIDER are tracked independently — they share strokeWidth
+  // and dashArray, but a `stroke` value of none/inherit/invalid hides only the
+  // outline path (the divider keeps the theme color) EXCEPT `none`, which hides
+  // both (probed against mermaid 11.16.0; see resolveBoxStyle).
   QString fill;
   bool fillNone = false;          // explicit fill:none -> paint no fill (NoBrush)
-  QString stroke;
-  QString dividerStroke;
-  bool strokeValid = true;        // false => no outline/divider (none / inherit / invalid stroke)
+  QString outlineStroke;          // resolved box-outline color (theme / explicit / black for currentColor)
+  bool outlineVisible = true;     // false => NoPen outline (stroke none/inherit/invalid or width<=0)
+  QString dividerStroke;          // resolved divider color (theme divider / explicit / black)
+  bool dividerVisible = true;     // false => NoPen divider (stroke none or width<=0)
   qreal strokeWidth = 1.3;
   QVector<qreal> dashArray = {0.0, 0.0};
 };

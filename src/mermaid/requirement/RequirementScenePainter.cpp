@@ -186,23 +186,25 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
                      node.size.width(), node.size.height());
     if (!mermaidPrimitiveIsVisible(box, options)) continue;
     // Resolved box paint (compileStyles last-wins over the theme base). The box
-    // outline and the divider share strokeWidth/dashArray; an invalid/none stroke
-    // paints no outline. fill:none paints no fill. Rounded rect (requirementBox
-    // uses roughjs rectangle with roughness=0 → a plain rect; mermaid applies rx
-    // via the label-container CSS; a small rounding matches).
+    // outline and the divider are INDEPENDENT: an unset-style stroke value
+    // (none/inherit/invalid) hides the outline but the divider may still paint
+    // in the theme color; only `none` (or stroke-width<=0) hides both.
+    // fill:none paints no fill. Rounded rect (requirementBox uses roughjs
+    // rectangle with roughness=0 → a plain rect; mermaid applies rx via the
+    // label-container CSS; a small rounding matches).
     //
     // Qt dash units are pen-width multiples (a non-cosmetic pen); SVG/rough
     // dashes are in px. Scale by 1/strokeWidth so `stroke-dasharray:5` renders a
-    // 5px period regardless of stroke-width (sw=0 -> cosmetic pen, device units).
+    // 5px period regardless of stroke-width.
     const qreal dashInv = node.strokeWidth > 0.0 ? 1.0 / node.strokeWidth : 1.0;
     const bool hasDash = node.dashArray.size() >= 2 &&
                          (node.dashArray.at(0) != 0.0 || node.dashArray.at(1) != 0.0);
     QPen boxPen;
-    if (!node.strokeValid) {
-      boxPen = Qt::NoPen;
+    if (!node.outlineVisible) {
+      boxPen = Qt::NoPen;  // outline hidden (stroke none/inherit/invalid or width<=0)
     } else {
-      boxPen.setColor(resolveColor(node.stroke));
-      boxPen.setWidthF(node.strokeWidth);
+      boxPen.setColor(resolveColor(node.outlineStroke));
+      boxPen.setWidthF(node.strokeWidth);  // > 0: outlineVisible is false when width<=0
       if (hasDash) {
         boxPen.setStyle(Qt::CustomDashLine);
         boxPen.setDashPattern({node.dashArray.at(0) * dashInv, node.dashArray.at(1) * dashInv});
@@ -220,18 +222,20 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
 
     // Divider line under the name (only if body rows present). Its Y is
     // precomputed on the node (mermaid's body-top: top + typeHeight + nameHeight
-    // + gap) — see buildRequirementScene. The divider follows the box's
-    // stroke/strokeWidth/dashArray (upstream applies nodeStyles to every path).
+    // + gap) — see buildRequirementScene. The divider is INDEPENDENT of the
+    // outline: an inherit/invalid stroke hides the outline but the divider keeps
+    // the theme color (dividerVisible stays true); only `none` or stroke-width<=0
+    // hide the divider. Both share strokeWidth/dashArray.
     if (node.hasDivider) {
       const qreal divY = node.center.y() + node.dividerY;
       const QPointF p1(node.center.x() - node.size.width() / 2.0, divY);
       const QPointF p2(node.center.x() + node.size.width() / 2.0, divY);
       QPen divPen;
-      if (!node.strokeValid) {
+      if (!node.dividerVisible) {
         divPen = Qt::NoPen;
       } else {
         divPen.setColor(resolveColor(node.dividerStroke));
-        divPen.setWidthF(node.strokeWidth);
+        divPen.setWidthF(node.strokeWidth);  // > 0: dividerVisible is false when width<=0
         if (hasDash) {
           divPen.setStyle(Qt::CustomDashLine);
           divPen.setDashPattern({node.dashArray.at(0) * dashInv, node.dashArray.at(1) * dashInv});

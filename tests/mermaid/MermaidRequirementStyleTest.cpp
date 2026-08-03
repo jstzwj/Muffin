@@ -131,6 +131,35 @@ int countInterior(const QImage& img, const requirement::RequirementScene& scene,
       if (pred(img.pixel(x, y))) ++count;
   return count;
 }
+
+// Theme boxStroke/dividerColor = #9370DB = rgb(147,112,219) (blue-dominant).
+// The box fill #ECECFF (236,236,255) is excluded (B-R = 19 < 30). Used by the
+// outline/divider visibility painter tests.
+bool isThemePurple(QRgb px) {
+  return qAlpha(px) >= 100 && qBlue(px) > 160 &&
+         qBlue(px) - qRed(px) > 30 && qBlue(px) - qGreen(px) > 30;
+}
+
+// Image-pixel Y of node 0's divider line (body top), translated into the
+// painted image's coordinate space.
+int dividerImageY(const requirement::RequirementScene& scene) {
+  const auto& n = scene.nodes.at(0);
+  return qRound(n.center.y() + n.dividerY - scene.bounds.y());
+}
+
+// Counts theme-purple pixels in a horizontal strip [y0, y1] across node 0's box
+// width (minus `xMargin` each side to avoid the rounded corners). Used to detect
+// the outline (sampled at the top edge) vs the divider (sampled at dividerY)
+// independently — proving the outline can be hidden while the divider paints.
+int countPurpleStrip(const QImage& img, const requirement::RequirementScene& scene,
+                     int y0, int y1, int xMargin) {
+  const QRectF r = nodeImageRect(scene);
+  int count = 0;
+  for (int y = y0; y <= y1; ++y)
+    for (int x = qRound(r.left()) + xMargin; x < qRound(r.right()) - xMargin; ++x)
+      if (isThemePurple(img.pixel(x, y))) ++count;
+  return count;
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -317,11 +346,12 @@ int main(int argc, char** argv) {
     const auto r = renderNode(cache, head + "requirement A {\n id: 1\n}", QStringLiteral("A"));
     require(r.node->fill == r.scene->style.boxFill,
             QStringLiteral("default fill = theme boxFill; got %1").arg(r.node->fill));
-    require(r.node->stroke == r.scene->style.boxStroke,
-            QStringLiteral("default stroke = theme boxStroke"));
+    require(r.node->outlineStroke == r.scene->style.boxStroke,
+            QStringLiteral("default outline = theme boxStroke"));
     require(r.node->dividerStroke == r.scene->style.dividerColor,
             QStringLiteral("default divider = theme dividerColor"));
-    require(r.node->strokeValid, QStringLiteral("default stroke valid"));
+    require(r.node->outlineVisible && r.node->dividerVisible,
+            QStringLiteral("default outline + divider both visible"));
     require(qAbs(r.node->strokeWidth - 1.3) < 1e-6,
             QStringLiteral("default strokeWidth = 1.3; got %1").arg(r.node->strokeWidth));
     require(r.node->dashArray.size() == 2 && r.node->dashArray.at(0) == 0.0 &&
@@ -336,8 +366,8 @@ int main(int argc, char** argv) {
         QStringLiteral("A"));
     require(r.node->fill == QStringLiteral("#ff0000"),
             QStringLiteral("inline fill; got %1").arg(r.node->fill));
-    require(r.node->stroke == QStringLiteral("#00aa00"),
-            QStringLiteral("inline stroke; got %1").arg(r.node->stroke));
+    require(r.node->outlineStroke == QStringLiteral("#00aa00"),
+            QStringLiteral("inline outline stroke; got %1").arg(r.node->outlineStroke));
     require(r.node->dividerStroke == QStringLiteral("#00aa00"),
             QStringLiteral("explicit stroke applies to the divider too"));
     require(qAbs(r.node->strokeWidth - 4.0) < 1e-6,
@@ -353,18 +383,72 @@ int main(int argc, char** argv) {
         "requirement A {\n id: 1\n}\nstyle A fill:notacolor", QStringLiteral("A"));
     require(r.node->fill == r.scene->style.foregroundFallback,
             QStringLiteral("invalid fill -> foreground fallback; got %1").arg(r.node->fill));
-    require(r.node->strokeValid, QStringLiteral("invalid fill leaves stroke valid"));
-    require(r.node->stroke == r.scene->style.boxStroke,
-            QStringLiteral("invalid fill leaves stroke at theme base"));
+    require(r.node->outlineVisible, QStringLiteral("invalid fill leaves outline visible"));
+    require(r.node->outlineStroke == r.scene->style.boxStroke,
+            QStringLiteral("invalid fill leaves outline at theme base"));
   }
   {
-    // Invalid stroke -> none (strokeValid false); divider follows (also none).
+    // Invalid stroke -> OUTLINE hidden (NoPen) but the DIVIDER keeps the theme
+    // color (probe5-report.json: the divider path carries the theme stroke
+    // attribute; only the outline inherits/defaults to none).
     const auto r = renderNode(cache, head +
         "requirement A {\n id: 1\n}\nstyle A stroke:notacolor", QStringLiteral("A"));
-    require(!r.node->strokeValid,
-            QStringLiteral("invalid stroke -> strokeValid false (paints no outline/divider)"));
+    require(!r.node->outlineVisible,
+            QStringLiteral("invalid stroke -> outline hidden"));
+    require(r.node->dividerVisible,
+            QStringLiteral("invalid stroke -> divider still visible"));
+    require(r.node->dividerStroke == r.scene->style.dividerColor,
+            QStringLiteral("invalid stroke -> divider keeps theme color"));
     require(r.node->fill == r.scene->style.boxFill,
             QStringLiteral("invalid stroke leaves fill at theme base"));
+  }
+  {
+    // stroke:inherit -> same as invalid: outline hidden, divider keeps theme.
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nstyle A stroke:inherit", QStringLiteral("A"));
+    require(!r.node->outlineVisible, QStringLiteral("stroke:inherit -> outline hidden"));
+    require(r.node->dividerVisible, QStringLiteral("stroke:inherit -> divider visible"));
+    require(r.node->dividerStroke == r.scene->style.dividerColor,
+            QStringLiteral("stroke:inherit -> divider keeps theme color"));
+  }
+  {
+    // stroke:currentColor -> black on outline AND divider.
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nstyle A stroke:currentColor", QStringLiteral("A"));
+    require(r.node->outlineStroke == QStringLiteral("#000000"),
+            QStringLiteral("stroke:currentColor -> black outline; got %1").arg(r.node->outlineStroke));
+    require(r.node->dividerStroke == QStringLiteral("#000000"),
+            QStringLiteral("stroke:currentColor -> black divider"));
+    require(r.node->outlineVisible && r.node->dividerVisible,
+            QStringLiteral("currentColor keeps both visible"));
+  }
+  {
+    // ASCII case-insensitive paint keywords (CSS/SVG keywords are case-insensitive).
+    {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A fill:NONE", QStringLiteral("A"));
+      require(r.node->fillNone, QStringLiteral("fill:NONE -> fillNone (case-insensitive)"));
+    }
+    {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A stroke:CurrentColor", QStringLiteral("A"));
+      require(r.node->outlineStroke == QStringLiteral("#000000"),
+              QStringLiteral("stroke:CurrentColor -> black (case-insensitive)"));
+    }
+    {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A stroke:NONE", QStringLiteral("A"));
+      require(!r.node->outlineVisible && !r.node->dividerVisible,
+              QStringLiteral("stroke:NONE -> outline + divider both hidden (case-insensitive)"));
+    }
+  }
+  {
+    // stroke-width:0 -> both NoPen (Qt would otherwise draw a 1px cosmetic
+    // hairline at width 0; SVG stroke-width:0 is invisible).
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nstyle A stroke-width:0", QStringLiteral("A"));
+    require(!r.node->outlineVisible && !r.node->dividerVisible,
+            QStringLiteral("stroke-width:0 -> outline + divider both hidden"));
   }
   {
     // stroke-width:4em -> 4 * root font (16) = 64.
@@ -396,17 +480,19 @@ int main(int argc, char** argv) {
             QStringLiteral("fill:red:blue -> fill=red (colon truncation); got %1").arg(r.node->fill));
   }
   {
-    // SVG paint:none — fill:none paints NoBrush; stroke:none paints NoPen.
+    // SVG paint:none — fill:none paints NoBrush; stroke:none hides BOTH the
+    // outline and the divider (NoPen).
     {
       const auto r = renderNode(cache, head +
           "requirement A {\n id: 1\n}\nstyle A fill:none", QStringLiteral("A"));
       require(r.node->fillNone, QStringLiteral("fill:none -> fillNone flag"));
-      require(r.node->strokeValid, QStringLiteral("fill:none leaves stroke valid"));
+      require(r.node->outlineVisible, QStringLiteral("fill:none leaves outline visible"));
     }
     {
       const auto r = renderNode(cache, head +
           "requirement A {\n id: 1\n}\nstyle A stroke:none", QStringLiteral("A"));
-      require(!r.node->strokeValid, QStringLiteral("stroke:none -> strokeValid false (NoPen)"));
+      require(!r.node->outlineVisible && !r.node->dividerVisible,
+              QStringLiteral("stroke:none -> outline + divider both hidden"));
       require(!r.node->fillNone, QStringLiteral("stroke:none leaves fill painted"));
     }
     {
@@ -510,6 +596,76 @@ int main(int argc, char** argv) {
             QStringLiteral("dash sw:4+dash:5 -> <=12px ink runs (Qt pen-width scaling); "
                            "maxRun=%1 (unscaled bug would be ~20)")
                 .arg(maxRun));
+  }
+
+  // ===== 8b. Painter outline-vs-divider visibility (the REAL painter) =====
+  // The outline (box border) and the divider are independent: an
+  // inherit/invalid stroke hides the outline but the divider still paints in
+  // the theme color (#9370DB); `none` (or stroke-width<=0) hides both. Sample
+  // the top edge (outline only) and the divider row (divider only) for
+  // theme-purple ink — proves the painter honors the split visibility flags.
+  {
+    const auto outlineInk = [](const QImage& img, const requirement::RequirementScene& scene) {
+      const int topY = qRound(nodeImageRect(scene).top());
+      return countPurpleStrip(img, scene, topY - 1, topY + 1, 10);
+    };
+    const auto dividerInk = [](const QImage& img, const requirement::RequirementScene& scene) {
+      return countPurpleStrip(img, scene, dividerImageY(scene) - 1, dividerImageY(scene) + 1, 10);
+    };
+    auto paintCase = [&cache, &head](const QString& styleLine) {
+      const QString src = head + "requirement A {\n id: 1\n}\n" + styleLine;
+      const auto entry = cache.getSync(cache.makeKey(src), src);
+      require(entry.status == editor::MermaidRenderStatus::Ready,
+              QStringLiteral("painter case did not render (%1): ").arg(styleLine) +
+                  entry.errorMessage);
+      const auto* sc = dynamic_cast<const requirement::RequirementScene*>(entry.scene.get());
+      require(sc != nullptr && !sc->nodes.isEmpty(),
+              QStringLiteral("scene/node missing for %1").arg(styleLine));
+      struct Result { QImage img; const requirement::RequirementScene* sc; };
+      return Result{paintScene(*sc), sc};
+    };
+    {
+      // invalid stroke -> no outline ink, but divider keeps theme purple.
+      const auto r = paintCase(QStringLiteral("style A stroke:notacolor"));
+      require(outlineInk(r.img, *r.sc) == 0,
+              QStringLiteral("invalid stroke -> no outline ink on top edge; got %1")
+                  .arg(outlineInk(r.img, *r.sc)));
+      require(dividerInk(r.img, *r.sc) > 30,
+              QStringLiteral("invalid stroke -> divider still paints theme color; got %1")
+                  .arg(dividerInk(r.img, *r.sc)));
+    }
+    {
+      // stroke:inherit -> same: no outline ink, divider theme purple.
+      const auto r = paintCase(QStringLiteral("style A stroke:inherit"));
+      require(outlineInk(r.img, *r.sc) == 0,
+              QStringLiteral("stroke:inherit -> no outline ink; got %1").arg(outlineInk(r.img, *r.sc)));
+      require(dividerInk(r.img, *r.sc) > 30,
+              QStringLiteral("stroke:inherit -> divider theme ink; got %1").arg(dividerInk(r.img, *r.sc)));
+    }
+    {
+      // stroke:none -> no outline ink AND no divider ink.
+      const auto r = paintCase(QStringLiteral("style A stroke:none"));
+      require(outlineInk(r.img, *r.sc) == 0,
+              QStringLiteral("stroke:none -> no outline ink; got %1").arg(outlineInk(r.img, *r.sc)));
+      require(dividerInk(r.img, *r.sc) == 0,
+              QStringLiteral("stroke:none -> no divider ink; got %1").arg(dividerInk(r.img, *r.sc)));
+    }
+    {
+      // stroke-width:0 -> both NoPen (Qt cosmetic-hairline guard).
+      const auto r = paintCase(QStringLiteral("style A stroke-width:0"));
+      require(outlineInk(r.img, *r.sc) == 0,
+              QStringLiteral("stroke-width:0 -> no outline ink; got %1").arg(outlineInk(r.img, *r.sc)));
+      require(dividerInk(r.img, *r.sc) == 0,
+              QStringLiteral("stroke-width:0 -> no divider ink; got %1").arg(dividerInk(r.img, *r.sc)));
+    }
+    {
+      // stroke:NONE (case-insensitive) -> both hidden.
+      const auto r = paintCase(QStringLiteral("style A stroke:NONE"));
+      require(outlineInk(r.img, *r.sc) == 0,
+              QStringLiteral("stroke:NONE -> no outline ink; got %1").arg(outlineInk(r.img, *r.sc)));
+      require(dividerInk(r.img, *r.sc) == 0,
+              QStringLiteral("stroke:NONE -> no divider ink; got %1").arg(dividerInk(r.img, *r.sc)));
+    }
   }
 
   qDebug() << "MermaidRequirementStyleTest: passed";

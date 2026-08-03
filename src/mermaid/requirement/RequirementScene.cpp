@@ -96,26 +96,35 @@ QVector<qreal> getStrokeDashArray(const QString& strokeDasharrayStyle) {
 // `const [key, value] = style.split(":")`, i.e. split on ':' and keep ONLY the
 // first two segments (a second ':' is discarded, so "fill:red:blue" -> fill=red)
 // — then userNodeOverrides reads fill/stroke/stroke-width/stroke-dasharray.
-// Box-outline and divider share strokeWidth and dashArray; the divider follows
-// an explicit stroke, else keeps the theme divider color. labelStyle keys
+// Box-outline and divider share strokeWidth and dashArray. labelStyle keys
 // (color/font-*/...) are split out by isLabelStyle upstream and do not affect
 // the box — they are ignored here (text phase).
 //
-// SVG <paint> keywords (probed against mermaid 11.16.0, probe5-report.json):
-//   none         -> fill: NoBrush / stroke: NoPen (box + divider)
-//   currentColor -> the `color` property; Muffin sets no color on the box yet,
-//                   so it resolves to black here. (color-aware resolution lands
-//                   with the text/color phase.)
-//   inherit      -> the SVG-inherited value; for fill that is the foreground
-//                   (#333/#ccc) and for stroke it is none — both coincide with
-//                   the invalid-value fallback, so inherit needs no special case.
+// SVG <paint> keywords, probed against mermaid 11.16.0 (probe5-report.json).
+// CSS/SVG keywords are ASCII case-insensitive, so NONE / CurrentColor / INHERIT
+// match their lowercase forms.
+//   fill:
+//     none          -> NoBrush
+//     currentColor  -> the `color` property; Muffin sets no color on the box
+//                      yet, so it resolves to black here (color-aware resolution
+//                      lands with the text/color phase).
+//     inherit/invalid -> the SVG-inherited foreground (#333/#ccc).
+//   stroke (outline and divider diverge!):
+//     none          -> outline AND divider both hidden (NoPen).
+//     currentColor  -> black on outline AND divider.
+//     <valid color> -> that color on outline AND divider.
+//     inherit/invalid -> OUTLINE hidden, divider KEEPS the theme color. The
+//                      outline path's stroke inherits/defaults to none; the
+//                      divider path carries the theme stroke attribute, so an
+//                      unset-style stroke value drops only the outline.
 void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneStyle& base,
                      req::RequirementSceneNode& node) {
   node.fill = base.boxFill;
   node.fillNone = false;
-  node.stroke = base.boxStroke;
+  node.outlineStroke = base.boxStroke;
+  node.outlineVisible = true;
   node.dividerStroke = base.dividerColor;
-  node.strokeValid = true;
+  node.dividerVisible = true;
   node.strokeWidth = base.strokeWidth;
   node.dashArray = {0.0, 0.0};
 
@@ -133,24 +142,30 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
   // fill: none -> NoBrush; currentColor -> black; invalid/inherit -> foreground.
   if (map.contains(QStringLiteral("fill"))) {
     const QString v = map.value(QStringLiteral("fill"));
-    if (v == QLatin1String("none"))
+    if (v.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0)
       node.fillNone = true;
-    else if (v == QLatin1String("currentColor"))
+    else if (v.compare(QLatin1String("currentColor"), Qt::CaseInsensitive) == 0)
       node.fill = QStringLiteral("#000000");
     else if (color::isParsableColor(v))
       node.fill = v;
     else
-      node.fill = base.foregroundFallback;
+      node.fill = base.foregroundFallback;  // inherit / invalid
   }
-  // stroke: none/inherit/invalid -> NoPen (box + divider); currentColor -> black.
+  // stroke: see the divergence table above. none hides both; currentColor and a
+  // valid color apply to both; inherit/invalid hide the outline only.
   if (map.contains(QStringLiteral("stroke"))) {
     const QString v = map.value(QStringLiteral("stroke"));
-    if (v == QLatin1String("currentColor"))
-      node.stroke = node.dividerStroke = QStringLiteral("#000000");
-    else if (color::isParsableColor(v))
-      node.stroke = node.dividerStroke = v;
-    else
-      node.strokeValid = false;  // none / inherit / invalid
+    if (v.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0) {
+      node.outlineVisible = false;
+      node.dividerVisible = false;
+    } else if (v.compare(QLatin1String("currentColor"), Qt::CaseInsensitive) == 0) {
+      node.outlineStroke = node.dividerStroke = QStringLiteral("#000000");
+    } else if (color::isParsableColor(v)) {
+      node.outlineStroke = node.dividerStroke = v;
+    } else {
+      // inherit / invalid: outline inherits/defaults to none; divider keeps theme.
+      node.outlineVisible = false;
+    }
   }
   // stroke-width: userNodeOverrides `sw.replace("px","") || default`; em is
   // resolved against the root font (themeVariables.fontSize = style.fontSize).
@@ -169,6 +184,14 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
   // stroke-dasharray.
   if (map.contains(QStringLiteral("stroke-dasharray")))
     node.dashArray = getStrokeDashArray(map.value(QStringLiteral("stroke-dasharray")));
+
+  // stroke-width <= 0 -> NoPen for both. SVG stroke-width:0 is invisible, but Qt
+  // would otherwise draw a 1px cosmetic pen at width 0 (setWidthF(0) is treated
+  // as a device-space hairline), so drop both paths explicitly.
+  if (node.strokeWidth <= 0.0) {
+    node.outlineVisible = false;
+    node.dividerVisible = false;
+  }
 }
 
 }  // namespace
@@ -380,10 +403,14 @@ QJsonObject RequirementScene::toJsonObject() const {
     if (node.hasDivider) n[QStringLiteral("dividerY")] = r3(node.dividerY);
     if (!node.fill.isEmpty())
       n[QStringLiteral("fill")] = node.fill;
-    if (!node.stroke.isEmpty())
-      n[QStringLiteral("stroke")] = node.stroke;
-    if (!node.strokeValid)
-      n[QStringLiteral("strokeValid")] = false;
+    if (!node.outlineStroke.isEmpty())
+      n[QStringLiteral("outlineStroke")] = node.outlineStroke;
+    if (!node.outlineVisible)
+      n[QStringLiteral("outlineVisible")] = false;
+    if (!node.dividerStroke.isEmpty())
+      n[QStringLiteral("dividerStroke")] = node.dividerStroke;
+    if (!node.dividerVisible)
+      n[QStringLiteral("dividerVisible")] = false;
     n[QStringLiteral("strokeWidth")] = r3(node.strokeWidth);
     if (!node.dashArray.isEmpty() &&
         (node.dashArray.at(0) != 0.0 || node.dashArray.at(1) != 0.0)) {
