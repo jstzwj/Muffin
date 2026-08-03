@@ -159,6 +159,21 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
         node.cssStyles, fontFamily, fontSize, themeFontWeight, themeLineHeight);
     const qreal effSize = requirementEffectiveFontSize(style, fontSize);
     const QString effFamily = requirementEffectiveFontFamily(style, fontFamily);
+    // font-size:0 or line-height:0 -> the node collapses to mermaid's 20x20 min
+    // box with no text ink (probed: gNode 20x20, ink=0). See STEP0F §2. Check
+    // BEFORE building the natural-height QFont so a 0px font (font-size:0 with
+    // line-height:normal) never reaches Qt's positive-pixel-size contract;
+    // line-height:0 collapses via lineHeightPx==0 here (it never reaches the
+    // normal branch). Equivalent to the prior effLineHeight==0 check because the
+    // only way effLineHeight could be 0 was an explicit line-height:0.
+    if (effSize == 0.0 || style.lineHeightPx == 0.0) {
+      for (int i = 0; i < node.rows.size(); ++i) m.rowHeights.append(0.0);
+      m.typeHeight = 0.0;
+      m.nameHeight = 0.0;
+      m.boxSize = QSizeF(20.0, 20.0);
+      result.insert(node.id, m);
+      continue;
+    }
     qreal effLineHeight;
     if (style.lineHeightNormal) {
       const QFont f = flowchart::makeFlowLabelFont(effFamily, effSize, style.fontWeight, style.fontStyle);
@@ -168,16 +183,6 @@ RequirementLayoutMeasurements measureRequirementLayoutInput(
       // line-height:1.5 applies to the actual font-size). Default config has
       // effSize == theme fontSize, so this stays 24 (byte-identical).
       effLineHeight = style.lineHeightPx >= 0.0 ? style.lineHeightPx : effSize * 1.5;
-    }
-    // font-size:0 or line-height:0 -> the node collapses to mermaid's 20x20 min
-    // box with no text ink (probed: gNode 20x20, ink=0). See STEP0F §2.
-    if (effSize == 0.0 || effLineHeight == 0.0) {
-      for (int i = 0; i < node.rows.size(); ++i) m.rowHeights.append(0.0);
-      m.typeHeight = 0.0;
-      m.nameHeight = 0.0;
-      m.boxSize = QSizeF(20.0, 20.0);
-      result.insert(node.id, m);
-      continue;
     }
     m.rowHeights.reserve(node.rows.size());
     qreal maxRowWidth = 0.0;

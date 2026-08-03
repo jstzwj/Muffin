@@ -28,6 +28,7 @@
 #include <QFontMetricsF>
 #include <QGuiApplication>
 #include <QImage>
+#include <QMessageLogContext>
 #include <QPainter>
 #include <QPointF>
 #include <QRectF>
@@ -189,6 +190,37 @@ int longestInkRun(const QImage& img, int y) {
   }
   return best;
 }
+
+// Vertical extent of the text ink in an image (first/last row holding any ink).
+// Used to anchor a decoration's Y to the TEXT INK center: the same glyphs render
+// in both Muffin and the Chrome oracle, so the ink center is a common reference
+// that cancels per-renderer vertical centering. Only referenced by the Windows
+// Chrome-oracle section, hence [[maybe_unused]] (compiled out elsewhere).
+struct InkExtent { int yMin; int yMax; bool any; };
+[[maybe_unused]] InkExtent inkExtentOf(const QImage& img) {
+  InkExtent e{img.height(), -1, false};
+  for (int y = 0; y < img.height(); ++y) {
+    const QRgb* row = reinterpret_cast<const QRgb*>(img.constScanLine(y));
+    for (int x = 0; x < img.width(); ++x)
+      if (isInk(row[x])) {
+        e.any = true;
+        e.yMin = std::min(e.yMin, y);
+        e.yMax = std::max(e.yMax, y);
+        break;
+      }
+  }
+  return e;
+}
+
+// Captures Qt "Pixel size <= 0" warnings while installed: a zero-font resolution
+// path must never reach QFont::setPixelSize(0) (Qt rejects non-positive pixel
+// sizes; upstream likewise skips font build/measure/paint for font-size:0).
+QVector<QString> g_pixelSizeWarnings;
+void pixelSizeCatcher(QtMsgType type, const QMessageLogContext&, const QString& msg) {
+  if ((type == QtWarningMsg || type == QtCriticalMsg || type == QtFatalMsg) &&
+      msg.contains(QStringLiteral("Pixel size")))
+    g_pixelSizeWarnings.append(msg);
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -289,6 +321,26 @@ int main(int argc, char** argv) {
     require(!resolve({"font-weight:foo"}).fontWeightResolved,
             QStringLiteral("invalid font-weight -> not resolved (inert)"));
     require(!resolve({}).fontWeightResolved, QStringLiteral("no font-weight -> not resolved"));
+    // CSS-wide keywords are VALID declarations (probed vs mermaid 11.16.0:
+    // inherit/initial/unset/revert/revert-layer all resolve to 400 in the default
+    // theme and suppress the name row's default bold). Only a garbage value stays
+    // unresolved. resolveWeightOne: inherit/unset take the parent (Normal here);
+    // initial/revert/revert-layer -> Normal. 1e2 == 100 (scientific numeric).
+    require(resolve({"font-weight:inherit"}).fontWeightResolved, QStringLiteral("inherit -> resolved"));
+    require(resolve({"font-weight:initial"}).fontWeightResolved, QStringLiteral("initial -> resolved"));
+    require(resolve({"font-weight:unset"}).fontWeightResolved, QStringLiteral("unset -> resolved"));
+    require(resolve({"font-weight:revert"}).fontWeightResolved, QStringLiteral("revert -> resolved"));
+    require(resolve({"font-weight:revert-layer"}).fontWeightResolved,
+            QStringLiteral("revert-layer -> resolved"));
+    require(resolve({"font-weight:inherit"}).fontWeight == QFont::Normal,
+            QStringLiteral("inherit -> Normal (parent is Normal)"));
+    require(resolve({"font-weight:initial"}).fontWeight == QFont::Normal,
+            QStringLiteral("initial -> Normal"));
+    require(resolve({"font-weight:revert-layer"}).fontWeight == QFont::Normal,
+            QStringLiteral("revert-layer -> Normal"));
+    require(resolve({"font-weight:1e2"}).fontWeight == QFont::Thin,
+            QStringLiteral("1e2 -> 100 (Thin)"));
+    require(resolve({"font-weight:1e2"}).fontWeightResolved, QStringLiteral("1e2 -> resolved"));
   }
 
   // ===== 4b. name-row default bold vs declared font-weight (probe: font-weight
@@ -331,6 +383,36 @@ int main(int argc, char** argv) {
         requirement::requirementRowDocument(QStringLiteral("Text: hi"), false,
                                             requirement::RequirementTextStyle{}, kSize);
     require(!hasBoldRange(bodyDefault), QStringLiteral("body row never bold by default"));
+    // Production path (resolveRequirementTextStyle -> requirementRowDocument), not
+    // hand-built styles: a VALID font-weight declaration — including the CSS-wide
+    // keywords (probe: inherit/initial/unset/revert/revert-layer all -> 400) and a
+    // numeric — suppresses the name row's default bold on BOTH rows; only a truly
+    // invalid value ("foo") or an unset keeps the reqTitle default bold.
+    const auto checkNameBold = [&](const QStringList& css, bool expectBoldRange,
+                                   QFont::Weight expectWeight, const QString& label) {
+      const requirement::RequirementTextStyle s = requirement::resolveRequirementTextStyle(
+          css, kFamily, kSize, QFont::Normal, kLine);
+      require(s.fontWeight == expectWeight,
+              QStringLiteral("%1: resolved weight %2 == %3").arg(label).arg(s.fontWeight).arg(expectWeight));
+      require(s.fontWeightResolved == !expectBoldRange,
+              QStringLiteral("%1: fontWeightResolved matches bold expectation").arg(label));
+      const Doc nameDoc = requirement::requirementRowDocument(QStringLiteral("A"), true, s, kSize);
+      require(nameDoc.baseWeight == expectWeight,
+              QStringLiteral("%1: name row baseWeight %2 == %3").arg(label).arg(nameDoc.baseWeight).arg(expectWeight));
+      if (expectBoldRange)
+        require(hasBoldRange(nameDoc), QStringLiteral("%1: name row keeps default bold").arg(label));
+      else
+        require(!hasBoldRange(nameDoc), QStringLiteral("%1: name row suppresses default bold").arg(label));
+      const Doc bodyDoc = requirement::requirementRowDocument(QStringLiteral("x"), false, s, kSize);
+      require(!hasBoldRange(bodyDoc), QStringLiteral("%1: body row never bold").arg(label));
+    };
+    checkNameBold({}, true, QFont::Normal, QStringLiteral("unset"));
+    checkNameBold({"font-weight:foo"}, true, QFont::Normal, QStringLiteral("foo"));
+    checkNameBold({"font-weight:inherit"}, false, QFont::Normal, QStringLiteral("inherit"));
+    checkNameBold({"font-weight:initial"}, false, QFont::Normal, QStringLiteral("initial"));
+    checkNameBold({"font-weight:revert-layer"}, false, QFont::Normal, QStringLiteral("revert-layer"));
+    checkNameBold({"font-weight:100"}, false, QFont::Thin, QStringLiteral("100"));
+    checkNameBold({"font-weight:1e2"}, false, QFont::Thin, QStringLiteral("1e2"));
   }
 
   // ===== 5. font-style / font-family / color / decoration / transform =====
@@ -668,6 +750,107 @@ int main(int argc, char** argv) {
                   .arg(bestRun).arg(mathAdvance));
     }
   }
+
+  // ===== 14. Zero-font never builds a 0px QFont (Qt rejects Pixel size <= 0) =====
+  //   font-size:0 / line-height:0 collapse the node (STEP0F §2). The resolver and
+  //   the measure path must short-circuit BEFORE any QFont construction, so Qt never
+  //   warns "Pixel size <= 0 (0)" — Codex observed 12 such warnings leaking through
+  //   the prior code. Covers font-size:0 alone / with line-height:normal / with a
+  //   length line-height / with spacing / with font-weight, plus the measure path.
+  {
+    g_pixelSizeWarnings.clear();
+    QtMessageHandler prev = qInstallMessageHandler(pixelSizeCatcher);
+    resolve({"font-size:0"});
+    resolve({"font-size:0", "line-height:normal"});
+    resolve({"font-size:0", "line-height:1em"});
+    resolve({"font-size:0", "line-height:2em", "letter-spacing:1em", "word-spacing:1em"});
+    resolve({"font-size:0", "font-weight:bolder"});
+    resolve({"line-height:0"});
+    // The measure path builds a natural-height QFont for line-height:normal; it
+    // must short-circuit on font-size:0 before that, and collapse on line-height:0.
+    const QString src = head + "requirement A {\n id: \"1\"\n text: hello\n}\n";
+    const auto baseInput = requirement::buildRequirementLayoutInput(
+        requirement::RequirementDiagram::parse(src).data());
+    auto measureWith = [&](const QStringList& css) {
+      auto in = baseInput;
+      for (auto& n : in.nodes) n.cssStyles = css;
+      requirement::measureRequirementLayoutInput(in, kFamily, kSize, QFont::Normal);
+    };
+    measureWith({QStringLiteral("font-size:0"), QStringLiteral("line-height:normal")});
+    measureWith({QStringLiteral("line-height:0")});
+    qInstallMessageHandler(prev);
+    require(g_pixelSizeWarnings.isEmpty(),
+            QStringLiteral("zero-font path emitted a Pixel-size warning: %1")
+                .arg(g_pixelSizeWarnings.isEmpty() ? QString() : g_pixelSizeWarnings.first()));
+  }
+
+  // ===== 15. Decoration geometry vs a CHROME-derived oracle (not QFontMetricsF) =====
+  //   The prior geometric check (section 13) predicted Y from QFontMetricsF — the
+  //   same API the painter uses — so it was self-proving (Codex review #3). These
+  //   expectations come instead from headless Chrome rendering the SAME "hello
+  //   hello" in the SAME bundled Noto Sans at 16px, no hinting
+  //   (G:/github/req-probe/step0f-decoration-geometry.mjs ->
+  //   step0f-decoration-geometry-report.json):
+  //     underline   thickness 1.00px,  +7.50px from the text ink center
+  //     overline    thickness 1.00px, -11.50px from the text ink center
+  //     line-through thickness 1.00px,  +0.50px from the text ink center
+  //   Y is anchored to the TEXT INK center (identical glyphs in both renderers) so
+  //   vertical-centering differences cancel, making Muffin's image-px delta directly
+  //   comparable to Chrome's CSS-px delta.
+  //
+  //   Platform scope: Muffin paints the decoration at QFontMetricsF positions, which
+  //   Qt derives per font backend (DirectWrite on Windows, FreeType on Linux,
+  //   CoreText on macOS). The probe ran Chrome on Windows, so both renderers share
+  //   the DirectWrite backend there and agree to <=0.5px. On Linux/macOS the font
+  //   backend differs, so the Windows-Chrome constants are not asserted there;
+  //   cross-platform self-consistency (painter == QFontMetricsF) is still covered by
+  //   section 13. Extending the Chrome oracle to CI's Linux leg needs a Linux-Chrome
+  //   probe (future work). Verified on Windows: diffs 0.50/0.50/0.00px.
+#if defined(Q_OS_WIN)
+  {
+    using flowchart::FlowLabelDocument;
+    const QString family = kFamily;
+    constexpr qreal size = 16.0;
+    constexpr qreal lineH = 24.0;
+    const QRectF rect(0.0, 0.0, 200.0, lineH);
+    auto makeDoc = [&](const QString& text) {
+      FlowLabelDocument d = flowchart::parseFlowLabel(text, QStringLiteral("markdown"), true);
+      d.formattingContext = flowchart::FlowLabelFormattingContext::FlowForeignObjectFlex;
+      return d;
+    };
+    auto paint = [&](const FlowLabelDocument& d) {
+      return paintLabelImage(d, rect, family, size, lineH);
+    };
+    const QString word = QStringLiteral("hello hello");
+    const QImage baseImg = paint(makeDoc(word));
+    const InkExtent ink = inkExtentOf(baseImg);
+    require(ink.any, QStringLiteral("baseline 'hello hello' has text ink"));
+    const qreal inkCenter = (ink.yMin + ink.yMax) / 2.0;
+
+    struct ChromeOracle { QString name; bool FlowLabelDocument::* flag; qreal thickness; qreal delta; };
+    const ChromeOracle oracle[] = {
+        {QStringLiteral("underline"), &FlowLabelDocument::underline, 1.0, 7.5},
+        {QStringLiteral("overline"), &FlowLabelDocument::overline, 1.0, -11.5},
+        {QStringLiteral("line-through"), &FlowLabelDocument::strikeOut, 1.0, 0.5},
+    };
+    for (const ChromeOracle& o : oracle) {
+      FlowLabelDocument d = makeDoc(word);
+      (d.*o.flag) = true;
+      const DecoBand band = decorationBand(baseImg, paint(d));
+      require(band.found, QStringLiteral("%1: Chrome-oracle decoration band present").arg(o.name));
+      const qreal thickness = band.yMax - band.yMin + 1;
+      const qreal delta = band.centerY() - inkCenter;
+      // Thickness: Chrome draws a 1px line; Muffin's dense band is 1 (exact) to 2
+      // (anti-aliasing fuzz) image-px at 1:1.
+      require(thickness >= o.thickness && thickness <= o.thickness + 1.0,
+              QStringLiteral("%1: thickness %2 ~ Chrome %3").arg(o.name).arg(thickness).arg(o.thickness));
+      // Y offset from the text ink center, within an anti-aliasing/sub-pixel budget.
+      require(std::abs(delta - o.delta) <= 2.5,
+              QStringLiteral("%1: delta-from-ink-center %2 ~ Chrome %3 (diff %4)")
+                  .arg(o.name).arg(delta).arg(o.delta).arg(delta - o.delta));
+    }
+  }
+#endif  // Q_OS_WIN (Chrome-oracle section 15)
 
   qDebug() << "MermaidRequirementTextStyleTest: passed";
   return 0;

@@ -64,6 +64,15 @@ QFont::Weight resolveWeightOne(const QString& text, QFont::Weight parentWeight) 
   if (t == QLatin1String("bold")) return QFont::Bold;
   if (t == QLatin1String("bolder")) return bolderStep(parentWeight);
   if (t == QLatin1String("lighter")) return lighterStep(parentWeight);
+  // CSS-wide keywords (probed vs mermaid 11.16.0: inherit/initial/unset/revert/
+  // revert-layer all resolve to 400 in the default theme). font-weight is an
+  // INHERITED property, so inherit/unset take the parent weight; initial/revert/
+  // revert-layer fall back to the property's initial value (Normal = 400).
+  if (t == QLatin1String("inherit") || t == QLatin1String("unset"))
+    return parentWeight;
+  if (t == QLatin1String("initial") || t == QLatin1String("revert") ||
+      t == QLatin1String("revert-layer"))
+    return QFont::Normal;
   bool ok = false;
   const double w = t.toDouble(&ok);
   if (ok && w >= 1.0 && w <= 1000.0)
@@ -71,15 +80,21 @@ QFont::Weight resolveWeightOne(const QString& text, QFont::Weight parentWeight) 
   return parentWeight;  // invalid -> inherit (probe: inert)
 }
 
-// A VALID font-weight declaration (normal/bold/bolder/lighter or a 1..1000
-// numeric). Used to decide whether the name row's default bold still applies: a
-// declared weight wins on every row, so the default bold is suppressed only when
-// this is true (unset/invalid -> inherit the reqTitle default bold).
+// A VALID font-weight declaration. Used to decide whether the name row's default
+// bold still applies: a declared weight wins on every row, so the default bold is
+// suppressed only when this is true (unset/invalid -> inherit reqTitle bold).
+// Per the probe (mermaid 11.16.0), the CSS-wide keywords inherit/initial/unset/
+// revert/revert-layer are VALID declarations too (they all resolve to 400 and
+// suppress the default bold); only a truly garbage value (e.g. "foo") is inert.
 bool isValidFontWeight(const QString& text) {
   const QString t = text.trimmed().toLower();
   if (t.isEmpty()) return false;
   if (t == QLatin1String("normal") || t == QLatin1String("bold") ||
       t == QLatin1String("bolder") || t == QLatin1String("lighter"))
+    return true;
+  if (t == QLatin1String("inherit") || t == QLatin1String("initial") ||
+      t == QLatin1String("unset") || t == QLatin1String("revert") ||
+      t == QLatin1String("revert-layer"))
     return true;
   bool ok = false;
   const double w = t.toDouble(&ok);
@@ -275,6 +290,14 @@ RequirementTextStyle resolveRequirementTextStyle(
         if (r.status == CssLengthStatus::Valid)
           size = std::min(r.px, kChromeFontCapPx);
       }
+      // Once font-size collapses to 0 the node has no text (STEP0F §2: skip font
+      // build/measure/paint). Stop the cascade so we never construct a 0px QFont
+      // for a later layer (Qt rejects non-positive pixel sizes). The collapsed
+      // node paints nothing, so its resolved weight is irrelevant.
+      if (sizeActive && size == 0.0) {
+        parentSize = 0.0;
+        break;
+      }
       const QFont::Weight weight = resolveWeightOne(weightValue, parentWeight);
       parentSize = size;
       parentWeight = weight;
@@ -288,13 +311,19 @@ RequirementTextStyle resolveRequirementTextStyle(
   // line-height (AFTER font-size so em uses the compounded px). bare <number> is a
   // unitless multiplier x fontSize (line-height:2 -> 2x fs); a length uses the
   // resolver; normal -> natural font height; negative/invalid -> theme default.
+  // noFont: font-size:0 collapses the node (no text ink, STEP0F §2), so line-height
+  // and spacing are irrelevant AND must skip their makeFlowLabelFont call — emBasis
+  // is 0 there, so building a metric QFont would violate Qt's positive-pixel-size
+  // contract. (line-height:0 WITHOUT font-size:0 still resolves normally: emBasis
+  // is positive and the layout collapses via effLineHeight == 0.)
+  const bool noFont = (s.fontSizePx == 0.0);
   const qreal emBasis = (s.fontSizePx >= 0.0) ? s.fontSizePx : themeFontSize;
   if (map.contains(QStringLiteral("line-height"))) {
     const QString v = map.value(QStringLiteral("line-height"));
     const QString tl = v.trimmed().toLower();
     if (tl == QLatin1String("normal")) {
       s.lineHeightNormal = true;
-    } else if (!tl.isEmpty()) {
+    } else if (!tl.isEmpty() && !noFont) {
       // A unitless <number> (incl. scientific: 1e1, 1e-1) is a multiplier of the
       // compounded font-size; anything else (2em, 20px, 1e1px, 120%) is a length.
       if (isUnitlessCssNumber(tl)) {
@@ -321,6 +350,7 @@ RequirementTextStyle resolveRequirementTextStyle(
       out = 0.0;
       return;
     }
+    if (noFont) return;  // collapsed node: spacing irrelevant, no 0px QFont
     const QFont mf = flowchart::makeFlowLabelFont(nodeFamily, emBasis, s.fontWeight, s.fontStyle);
     const CssLengthResult r = resolveCssLengthToPx(v, layerCtx(emBasis, mf));
     if (r.status == CssLengthStatus::Valid) out = r.px;  // negatives kept
