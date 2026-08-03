@@ -73,9 +73,10 @@ struct RequirementSceneNode {
   // explicit stroke when one is set (upstream applies nodeStyles to every path
   // via selectAll("path")); otherwise it keeps the theme divider color.
   QString fill;
+  bool fillNone = false;          // explicit fill:none -> paint no fill (NoBrush)
   QString stroke;
   QString dividerStroke;
-  bool strokeValid = true;        // false => invalid stroke -> paint no outline/divider
+  bool strokeValid = true;        // false => no outline/divider (none / inherit / invalid stroke)
   qreal strokeWidth = 1.3;
   QVector<qreal> dashArray = {0.0, 0.0};
 };

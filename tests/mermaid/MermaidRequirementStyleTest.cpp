@@ -16,14 +16,21 @@
 // list, defineClass appends + retroactively updates bound nodes, and the style
 // lexer rejects rgb()/hsl()/opacity/decimal-em/'%'/'"'-in-value as Parse errors.
 #include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/requirement/RequirementDiagram.h"
 #include "mermaid/requirement/RequirementScene.h"
 
 #include <QGuiApplication>
+#include <QImage>
+#include <QPainter>
+#include <QPointF>
+#include <QRectF>
 #include <QString>
 #include <QStringList>
 
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 
@@ -85,6 +92,44 @@ const requirement::RequirementNode* reqNode(const requirement::RequirementDiagra
   for (const auto& n : d.requirements)
     if (n.name == name) return &n;
   return nullptr;
+}
+
+// Paints `scene` into a fresh transparent QImage at 1:1 scene coordinates
+// (translated so the scene's bounding-box origin maps to pixel (0,0)). Used by
+// the painter RGBA/ink tests below — these exercise the REAL painter, not just
+// the resolved scene fields.
+QImage paintScene(const requirement::RequirementScene& scene) {
+  QImage img(scene.bounds.size().toSize(), QImage::Format_ARGB32);
+  img.fill(Qt::transparent);
+  QPainter p(&img);
+  p.setRenderHint(QPainter::Antialiasing, true);
+  p.setRenderHint(QPainter::TextAntialiasing, true);
+  p.translate(-scene.bounds.topLeft());
+  MermaidPaintOptions opts;  // cullToVisibleRect=false -> paint everything
+  scene.paint(p, opts);
+  p.end();
+  return img;
+}
+
+// Box rect of node 0 in image (pixel) coordinates.
+QRectF nodeImageRect(const requirement::RequirementScene& scene) {
+  const auto& n = scene.nodes.at(0);
+  return QRectF(n.center.x() - n.size.width() / 2.0 - scene.bounds.x(),
+                n.center.y() - n.size.height() / 2.0 - scene.bounds.y(),
+                n.size.width(), n.size.height());
+}
+
+// Counts interior pixels of node 0 matching `pred` (3px inset skips the outline
+// stroke). Used by the painter fill tests so a stray text/divider pixel can't
+// flip a single-point sample.
+template <typename Pred>
+int countInterior(const QImage& img, const requirement::RequirementScene& scene, Pred pred) {
+  const QRectF r = nodeImageRect(scene);
+  int count = 0;
+  for (int y = qRound(r.top()) + 3; y < qRound(r.bottom()) - 3; ++y)
+    for (int x = qRound(r.left()) + 3; x < qRound(r.right()) - 3; ++x)
+      if (pred(img.pixel(x, y))) ++count;
+  return count;
 }
 }  // namespace
 
@@ -341,6 +386,130 @@ int main(int argc, char** argv) {
         "requirement A {\n id: 1\n}\nclassDef C fill:#ff0000\nclass A C", QStringLiteral("A"));
     require(r.node->fill == QStringLiteral("#ff0000"),
             QStringLiteral("classDef+class fill; got %1").arg(r.node->fill));
+  }
+  {
+    // styles2Map colon truncation: `fill:red:blue` -> key=fill, value=red (JS
+    // `const [k,v] = s.split(":")` keeps only the first two segments).
+    const auto r = renderNode(cache, head +
+        "requirement A {\n id: 1\n}\nstyle A fill:red:blue", QStringLiteral("A"));
+    require(r.node->fill == QStringLiteral("red"),
+            QStringLiteral("fill:red:blue -> fill=red (colon truncation); got %1").arg(r.node->fill));
+  }
+  {
+    // SVG paint:none — fill:none paints NoBrush; stroke:none paints NoPen.
+    {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A fill:none", QStringLiteral("A"));
+      require(r.node->fillNone, QStringLiteral("fill:none -> fillNone flag"));
+      require(r.node->strokeValid, QStringLiteral("fill:none leaves stroke valid"));
+    }
+    {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A stroke:none", QStringLiteral("A"));
+      require(!r.node->strokeValid, QStringLiteral("stroke:none -> strokeValid false (NoPen)"));
+      require(!r.node->fillNone, QStringLiteral("stroke:none leaves fill painted"));
+    }
+    {
+      // currentColor resolves to the default `color` property (black) until the
+      // text/color phase wires `color`.
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A fill:currentColor", QStringLiteral("A"));
+      require(r.node->fill == QStringLiteral("#000000"),
+              QStringLiteral("fill:currentColor -> black; got %1").arg(r.node->fill));
+    }
+  }
+  {
+    // Empty quoted ids are a Parse error in every style-state idList position.
+    const QList<QString> bad = {
+        head + "requirement A {\n id: 1\n}\nclass A \"\"",
+        head + "requirement A {\n id: 1\n}\nclass \"\" C",
+        head + "requirement A {\n id: 1\n}\nclassDef \"\" fill:#ff0000",
+        head + "requirement A {\n id: 1\n}\nstyle \"\" fill:#ff0000",
+    };
+    for (const QString& src : bad)
+      require(throwsParseError([&] { requirement::RequirementDiagram::parse(src); }),
+              QStringLiteral("empty quoted id must be a Parse error: %1").arg(src));
+  }
+
+  // ===== 8. Painter RGBA/ink (the REAL painter, not just resolved fields) =====
+  {
+    // fill:#ff0000 -> the box interior is overwhelmingly red (count, not a
+    // single sample, so a text/divider pixel can't flip it).
+    const QString src = head + "requirement A {\n id: 1\n}\nstyle A fill:#ff0000";
+    const auto entry = cache.getSync(cache.makeKey(src), src);
+    require(entry.status == editor::MermaidRenderStatus::Ready,
+            QStringLiteral("fill:red did not render: ") + entry.errorMessage);
+    const auto* sc = dynamic_cast<const requirement::RequirementScene*>(entry.scene.get());
+    require(sc != nullptr && !sc->nodes.isEmpty(), QStringLiteral("scene/node missing"));
+    const QImage img = paintScene(*sc);
+    const int red = countInterior(img, *sc, [](QRgb px) {
+      return qAlpha(px) >= 200 && qRed(px) > 180 && qGreen(px) < 80 && qBlue(px) < 80;
+    });
+    require(red > 200, QStringLiteral("fill:#ff0000 -> many red interior pixels; got %1").arg(red));
+  }
+  {
+    // fill:none -> NoBrush: no red fill AND the interior is mostly transparent.
+    const QString src = head + "requirement A {\n id: 1\n}\nstyle A fill:none";
+    const auto entry = cache.getSync(cache.makeKey(src), src);
+    require(entry.status == editor::MermaidRenderStatus::Ready,
+            QStringLiteral("fill:none did not render: ") + entry.errorMessage);
+    const auto* sc = dynamic_cast<const requirement::RequirementScene*>(entry.scene.get());
+    const QImage img = paintScene(*sc);
+    const int red = countInterior(img, *sc, [](QRgb px) {
+      return qAlpha(px) >= 200 && qRed(px) > 180 && qGreen(px) < 80 && qBlue(px) < 80;
+    });
+    const int transparent = countInterior(img, *sc, [](QRgb px) { return qAlpha(px) < 32; });
+    require(red == 0, QStringLiteral("fill:none -> no red fill pixels; got %1").arg(red));
+    require(transparent > 200,
+            QStringLiteral("fill:none -> mostly transparent interior; got %1 transparent").arg(transparent));
+  }
+  {
+    // invalid fill -> the interior takes the foreground fallback (#333/#ccc =
+    // grey). Text (#131300) is greenish-dark (G-B large) so it is excluded.
+    const QString src = head + "requirement A {\n id: 1\n}\nstyle A fill:notacolor";
+    const auto entry = cache.getSync(cache.makeKey(src), src);
+    require(entry.status == editor::MermaidRenderStatus::Ready,
+            QStringLiteral("invalid fill did not render: ") + entry.errorMessage);
+    const auto* sc = dynamic_cast<const requirement::RequirementScene*>(entry.scene.get());
+    const QImage img = paintScene(*sc);
+    const int grey = countInterior(img, *sc, [](QRgb px) {
+      return qAlpha(px) >= 200 && std::abs(qRed(px) - qGreen(px)) < 15 &&
+             std::abs(qGreen(px) - qBlue(px)) < 15;
+    });
+    require(grey > 200, QStringLiteral("invalid fill -> grey foreground pixels; got %1").arg(grey));
+  }
+  {
+    // stroke-width:4 + stroke-dasharray:5 -> top-edge ink runs ~5px (Qt dash
+    // units are pen-width multiples; without the /strokeWidth fix this renders
+    // ~20px runs). Scan the straight part of the top edge for green ink runs.
+    const QString src = head +
+        "requirement A {\n id: 1\n}\nstyle A stroke:#00aa00,stroke-width:4,stroke-dasharray:5";
+    const auto entry = cache.getSync(cache.makeKey(src), src);
+    require(entry.status == editor::MermaidRenderStatus::Ready,
+            QStringLiteral("dash case did not render: ") + entry.errorMessage);
+    const auto* sc = dynamic_cast<const requirement::RequirementScene*>(entry.scene.get());
+    const QImage img = paintScene(*sc);
+    const QRectF r = nodeImageRect(*sc);
+    const int y = qRound(r.top());        // top edge = stroke center (4px wide)
+    const int x0 = qRound(r.left()) + 10;  // past the rounded corner
+    const int x1 = qRound(r.right()) - 10;
+    int maxRun = 0, run = 0, inkPixels = 0;
+    for (int x = x0; x < x1; ++x) {
+      const QRgb px = img.pixel(x, y);
+      const bool ink = qAlpha(px) >= 100 && qGreen(px) > 100 && qRed(px) < 90 && qBlue(px) < 90;
+      if (ink) {
+        ++run; ++inkPixels;
+        if (run > maxRun) maxRun = run;
+      } else {
+        run = 0;
+      }
+    }
+    require(inkPixels > 0, QStringLiteral("dash case: expected green ink on the top edge"));
+    // Fixed: 5px ink runs (<=12 with antialiasing). Unscaled bug: ~20px runs.
+    require(maxRun <= 12,
+            QStringLiteral("dash sw:4+dash:5 -> <=12px ink runs (Qt pen-width scaling); "
+                           "maxRun=%1 (unscaled bug would be ~20)")
+                .arg(maxRun));
   }
 
   qDebug() << "MermaidRequirementStyleTest: passed";

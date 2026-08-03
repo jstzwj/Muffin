@@ -349,14 +349,22 @@ QStringList extractStyleIdList(const QVector<StyleToken>& toks, int& pos, int li
   const auto isIdTok = [](const StyleToken& t) {
     return t.type == StyleTok::Word || t.type == StyleTok::QString;
   };
+  // An empty qString ("") is not a valid id — mermaid rejects `class A ""` etc.
+  // as a Parse error, in every idList position (node / class / classDef).
+  const auto takeId = [&lineNo](const StyleToken& t) -> QString {
+    if (t.type == StyleTok::QString && t.text.isEmpty())
+      throw RequirementParseError(
+          QStringLiteral("empty quoted id is not allowed"), lineNo);
+    return t.text;
+  };
   if (pos >= toks.size() || !isIdTok(toks.at(pos))) return ids;
-  ids.append(toks.at(pos).text);
+  ids.append(takeId(toks.at(pos)));
   ++pos;
   while (pos < toks.size() && toks.at(pos).type == StyleTok::Comma) {
     if (pos + 1 >= toks.size() || !isIdTok(toks.at(pos + 1)))
       throw RequirementParseError(
           QStringLiteral("malformed id list (trailing/empty comma)"), lineNo);
-    ids.append(toks.at(pos + 1).text);
+    ids.append(takeId(toks.at(pos + 1)));
     pos += 2;
   }
   return ids;

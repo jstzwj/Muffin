@@ -92,15 +92,27 @@ QVector<qreal> getStrokeDashArray(const QString& strokeDasharrayStyle) {
 }
 
 // compileStyles (chunk-BNCO5QFQ.mjs) for the box: build a Map (last value per
-// key wins) from the node's event-ordered declaration list — styles2Map splits
-// each "key:value" on the FIRST ':' — then userNodeOverrides reads fill/stroke/
-// stroke-width/stroke-dasharray. Box-outline and divider share strokeWidth and
-// dashArray; the divider follows an explicit stroke, else keeps the theme
-// divider color. labelStyle keys (color/font-*/...) are split out by isLabelStyle
-// upstream and do not affect the box — they are ignored here (text phase).
+// key wins) from the node's event-ordered declaration list — styles2Map mirrors
+// `const [key, value] = style.split(":")`, i.e. split on ':' and keep ONLY the
+// first two segments (a second ':' is discarded, so "fill:red:blue" -> fill=red)
+// — then userNodeOverrides reads fill/stroke/stroke-width/stroke-dasharray.
+// Box-outline and divider share strokeWidth and dashArray; the divider follows
+// an explicit stroke, else keeps the theme divider color. labelStyle keys
+// (color/font-*/...) are split out by isLabelStyle upstream and do not affect
+// the box — they are ignored here (text phase).
+//
+// SVG <paint> keywords (probed against mermaid 11.16.0, probe5-report.json):
+//   none         -> fill: NoBrush / stroke: NoPen (box + divider)
+//   currentColor -> the `color` property; Muffin sets no color on the box yet,
+//                   so it resolves to black here. (color-aware resolution lands
+//                   with the text/color phase.)
+//   inherit      -> the SVG-inherited value; for fill that is the foreground
+//                   (#333/#ccc) and for stroke it is none — both coincide with
+//                   the invalid-value fallback, so inherit needs no special case.
 void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneStyle& base,
                      req::RequirementSceneNode& node) {
   node.fill = base.boxFill;
+  node.fillNone = false;
   node.stroke = base.boxStroke;
   node.dividerStroke = base.dividerColor;
   node.strokeValid = true;
@@ -111,23 +123,34 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
 
   QHash<QString, QString> map;  // styles2Map: last value per key wins
   for (const QString& decl : cssStyles) {
-    const int colon = decl.indexOf(QLatin1Char(':'));
-    if (colon <= 0) continue;  // stray token (e.g. the "2" lost from "5,2")
-    map.insert(decl.left(colon).trimmed(), decl.mid(colon + 1).trimmed());
+    const QStringList parts = decl.split(QLatin1Char(':'));
+    if (parts.isEmpty() || parts.first().trimmed().isEmpty()) continue;  // stray token
+    const QString key = parts.first().trimmed();
+    const QString value = parts.size() >= 2 ? parts.at(1).trimmed() : QString();
+    map.insert(key, value);
   }
 
-  // fill: invalid -> inherited foreground (mermaid drops the declaration).
+  // fill: none -> NoBrush; currentColor -> black; invalid/inherit -> foreground.
   if (map.contains(QStringLiteral("fill"))) {
     const QString v = map.value(QStringLiteral("fill"));
-    node.fill = color::isParsableColor(v) ? v : base.foregroundFallback;
+    if (v == QLatin1String("none"))
+      node.fillNone = true;
+    else if (v == QLatin1String("currentColor"))
+      node.fill = QStringLiteral("#000000");
+    else if (color::isParsableColor(v))
+      node.fill = v;
+    else
+      node.fill = base.foregroundFallback;
   }
-  // stroke: invalid -> none (applies to box outline AND divider).
+  // stroke: none/inherit/invalid -> NoPen (box + divider); currentColor -> black.
   if (map.contains(QStringLiteral("stroke"))) {
     const QString v = map.value(QStringLiteral("stroke"));
-    if (color::isParsableColor(v))
+    if (v == QLatin1String("currentColor"))
+      node.stroke = node.dividerStroke = QStringLiteral("#000000");
+    else if (color::isParsableColor(v))
       node.stroke = node.dividerStroke = v;
     else
-      node.strokeValid = false;
+      node.strokeValid = false;  // none / inherit / invalid
   }
   // stroke-width: userNodeOverrides `sw.replace("px","") || default`; em is
   // resolved against the root font (themeVariables.fontSize = style.fontSize).

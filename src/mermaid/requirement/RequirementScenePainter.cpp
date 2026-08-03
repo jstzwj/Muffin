@@ -127,7 +127,6 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
   painter.setRenderHint(QPainter::TextAntialiasing, true);
 
   const QColor lineColor = resolveColor(scene.style.lineColor);
-  const QColor boxFill = resolveColor(scene.style.boxFill);  // fallback only
 
   // (1) Relationship edges + markers + labels. Drawn before nodes so node boxes
   // paint over line ends where they meet the box outline.
@@ -187,24 +186,36 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
                      node.size.width(), node.size.height());
     if (!mermaidPrimitiveIsVisible(box, options)) continue;
     // Resolved box paint (compileStyles last-wins over the theme base). The box
-    // outline and the divider share strokeWidth/dashArray; an invalid stroke
-    // paints no outline (mermaid drops the declaration). Rounded rect
-    // (requirementBox uses roughjs rectangle with roughness=0 → a plain rect;
-    // mermaid applies rx via the label-container CSS; a small rounding matches).
+    // outline and the divider share strokeWidth/dashArray; an invalid/none stroke
+    // paints no outline. fill:none paints no fill. Rounded rect (requirementBox
+    // uses roughjs rectangle with roughness=0 → a plain rect; mermaid applies rx
+    // via the label-container CSS; a small rounding matches).
+    //
+    // Qt dash units are pen-width multiples (a non-cosmetic pen); SVG/rough
+    // dashes are in px. Scale by 1/strokeWidth so `stroke-dasharray:5` renders a
+    // 5px period regardless of stroke-width (sw=0 -> cosmetic pen, device units).
+    const qreal dashInv = node.strokeWidth > 0.0 ? 1.0 / node.strokeWidth : 1.0;
+    const bool hasDash = node.dashArray.size() >= 2 &&
+                         (node.dashArray.at(0) != 0.0 || node.dashArray.at(1) != 0.0);
     QPen boxPen;
     if (!node.strokeValid) {
       boxPen = Qt::NoPen;
     } else {
       boxPen.setColor(resolveColor(node.stroke));
       boxPen.setWidthF(node.strokeWidth);
-      if (node.dashArray.size() >= 2 &&
-          (node.dashArray.at(0) != 0.0 || node.dashArray.at(1) != 0.0)) {
+      if (hasDash) {
         boxPen.setStyle(Qt::CustomDashLine);
-        boxPen.setDashPattern({node.dashArray.at(0), node.dashArray.at(1)});
+        boxPen.setDashPattern({node.dashArray.at(0) * dashInv, node.dashArray.at(1) * dashInv});
       }
     }
     painter.setPen(boxPen);
-    painter.setBrush(node.fill.isEmpty() ? boxFill : resolveColor(node.fill));
+    // Explicit if/else: a ternary here resolves Qt::NoBrush through the
+    // QColor(Qt::GlobalColor) ctor (Qt::NoBrush == 0 == Qt::color0 -> black),
+    // painting a black fill instead of none.
+    if (node.fillNone)
+      painter.setBrush(Qt::NoBrush);
+    else
+      painter.setBrush(resolveColor(node.fill));
     painter.drawRoundedRect(box, 5.0, 5.0);
 
     // Divider line under the name (only if body rows present). Its Y is
@@ -221,10 +232,9 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
       } else {
         divPen.setColor(resolveColor(node.dividerStroke));
         divPen.setWidthF(node.strokeWidth);
-        if (node.dashArray.size() >= 2 &&
-            (node.dashArray.at(0) != 0.0 || node.dashArray.at(1) != 0.0)) {
+        if (hasDash) {
           divPen.setStyle(Qt::CustomDashLine);
-          divPen.setDashPattern({node.dashArray.at(0), node.dashArray.at(1)});
+          divPen.setDashPattern({node.dashArray.at(0) * dashInv, node.dashArray.at(1) * dashInv});
         }
       }
       painter.setPen(divPen);
