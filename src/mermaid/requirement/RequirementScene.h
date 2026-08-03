@@ -50,6 +50,16 @@ struct RequirementSceneStyle {
   // requirementBox default border size (userNodeOverrides: strokeWidth = sw || 1.3);
   // the box outline AND the divider both render at this width unless overridden.
   qreal strokeWidth = 1.3;
+  // colorIndex palette (Commit 4). When borderColorArray is non-empty, each node's
+  // box outline + divider stroke default to borderColorArray[idx % size] and its
+  // fill defaults to bkgColorArray[idx % size] (or mainBkg when bkgColorArray is
+  // empty, e.g. redux-dark-color), where idx is the node's insertion-order index
+  // (requirements then elements — matches RequirementDB.getData colorIndex). User
+  // `style`/`classDef` still wins (resolveBoxStyle overrides these defaults). Only
+  // redux-color/redux-dark-color populate these; empty => no cycling (all 9 other
+  // themes already parity). Text color never cycles.
+  QStringList borderColorArray;
+  QStringList bkgColorArray;
 };
 
 // One text row in a requirementBox. `document` is pre-shaped so the painter

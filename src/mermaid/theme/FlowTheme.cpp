@@ -237,6 +237,20 @@ void applyReduxDark(FlowThemeVariables& t) {
   t.clusterBorder = QStringLiteral("#BDBCCC");
 }
 
+// The 12-entry Tailwind *-400 border palette shared by redux-color and
+// redux-dark-color (chunk-CHAKFXHA.mjs:3936-3961). Both *-color variants define
+// the identical borderColorArray; only redux-color adds the matching *-50 bkg
+// palette (applyReduxColor). requirementDiagram/er/rect cycle node stroke by
+// `colorIndex % borderColorArray.size()` when this is non-empty.
+void applyReduxColorBorderPalette(FlowThemeVariables& t) {
+  t.borderColorArray = {
+      QStringLiteral("#E879F9"), QStringLiteral("#2DD4BF"), QStringLiteral("#FB923C"),
+      QStringLiteral("#22D3EE"), QStringLiteral("#4ADE80"), QStringLiteral("#A78BFA"),
+      QStringLiteral("#F87171"), QStringLiteral("#FACC15"), QStringLiteral("#818CF8"),
+      QStringLiteral("#A3E635"),  // upstream literal is "#A3E635 " (trailing space; benign)
+      QStringLiteral("#38BDF8"), QStringLiteral("#FB7185")};
+}
+
 void applyReduxColor(FlowThemeVariables& t) {
   t.useGradient = false;
   t.background = QStringLiteral("#ffffff");
@@ -248,12 +262,22 @@ void applyReduxColor(FlowThemeVariables& t) {
   t.fontSize = QStringLiteral("14px");
   t.nodeBorder = QStringLiteral("#28253D");
   t.tertiaryColor = QStringLiteral("#ffffff");
+  // colorIndex palette (chunk-CHAKFXHA.mjs:3936-3987): 12 Tailwind *-400 border
+  // + 12 Tailwind *-50 bkg. requirement nodes cycle both by insertion order.
+  applyReduxColorBorderPalette(t);
+  t.bkgColorArray = {
+      QStringLiteral("#FDF4FF"), QStringLiteral("#F0FDFA"), QStringLiteral("#FFF7ED"),
+      QStringLiteral("#ECFEFF"), QStringLiteral("#F0FDF4"), QStringLiteral("#F5F3FF"),
+      QStringLiteral("#FEF2F2"), QStringLiteral("#FEFCE8"), QStringLiteral("#EEF2FF"),
+      QStringLiteral("#F7FEE7"), QStringLiteral("#F0F9FF"), QStringLiteral("#FFF1F2")};
 }
 
 void applyReduxDarkColor(FlowThemeVariables& t) {
-  // Mirrors redux-dark's constructor (the *-color variants add a borderColorArray
-  // for ER diagrams; not flowchart-relevant, so the base fields match redux-dark).
+  // Mirrors redux-dark's constructor (the *-color variant adds the border palette
+  // for colorIndex cycling). bkgColorArray is intentionally LEFT EMPTY upstream
+  // (chunk-CHAKFXHA.mjs:4327): nodes cycle stroke only; fill falls back to mainBkg.
   applyReduxDark(t);
+  applyReduxColorBorderPalette(t);
 }
 
 void applyRawConstructor(FlowThemeId id, FlowThemeVariables& t) {

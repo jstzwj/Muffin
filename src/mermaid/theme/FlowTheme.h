@@ -18,6 +18,7 @@
 // this per-theme single-vs-double distinction.
 
 #include <QString>
+#include <QStringList>
 
 #include <QHash>
 #include <optional>
@@ -80,6 +81,16 @@ struct FlowThemeVariables {
   QString cScaleInv[12];
   QString cScalePeer[12];
   QString cScaleLabel[12];
+
+  // requirementDiagram / er / rect `colorIndex` palette (chunk-CHAKFXHA.mjs:
+  // only redux-color defines both; redux-dark-color defines borderColorArray
+  // only with bkgColorArray = []). When borderColorArray is non-empty, the
+  // requirement scene cycles node stroke/fill by `colorIndex % size`. Theme-
+  // internal: populated by the constructors only, NOT exposed via get()/set()
+  // (string-keyed override of an array is out of scope; the theme golden only
+  // checks a fixed scalar/cScale field list).
+  QStringList borderColorArray;
+  QStringList bkgColorArray;
 
   // Generic field access by themeVariable name (for override application +
   // golden comparison). Returns empty for unknown/unset fields.

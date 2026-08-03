@@ -74,6 +74,11 @@ struct RequirementDiagramImpl : Diagram {
     // first cascade layer). mermaid's theme does not expose a font-weight variable,
     // so it is the browser default 400 (Normal).
     style.fontWeight = QFont::Normal;
+    // Commit 4 colorIndex palette (empty for the 9 standard themes; populated by
+    // redux-color / redux-dark-color). The scene cycles node colors by insertion
+    // order only when borderColorArray is non-empty.
+    style.borderColorArray = themeVars.borderColorArray;
+    style.bkgColorArray = themeVars.bkgColorArray;
     // No inline `title` token in requirementDiagram grammar — pass empty so
     // renderMetadata falls back to the frontmatter title (pre.title).
     MermaidRenderMetadata metadata = renderMetadata(

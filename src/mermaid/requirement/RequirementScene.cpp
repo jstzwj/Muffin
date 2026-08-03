@@ -290,7 +290,8 @@ RequirementScene buildRequirementScene(
                                    lengthMetrics.horizontalAdvance(QChar('0')),
                                    kMmdcDefaultCssViewport};
 
-  for (const RequirementLayoutNodeInput& node : input.nodes) {
+  for (int idx = 0; idx < input.nodes.size(); ++idx) {
+    const RequirementLayoutNodeInput& node = input.nodes.at(idx);
     if (!placedNodes.contains(node.id)) continue;
     const RequirementPlacementNode placed = placedNodes.value(node.id);
     const RequirementNodeMeasurement measured = measurements.value(node.id);
@@ -316,7 +317,26 @@ RequirementScene buildRequirementScene(
     // event-ordered cssStyles, last-wins over the theme base. The divider
     // follows the explicit stroke/stroke-width and otherwise keeps the theme
     // divider color; both default to the 1.3 requirement border size.
-    resolveBoxStyle(node.cssStyles, scene.style, lengthCtx, rendered);
+    //
+    // Commit 4 colorIndex: when the theme carries a palette (redux-color /
+    // redux-dark-color), the box outline + divider + fill DEFAULT colors cycle
+    // by the node's insertion-order index. buildRequirementLayoutInput appends
+    // requirements then elements, so idx here == upstream colorIndex
+    // (RequirementDB.getData stamps colorIndex = nodes.length before each push).
+    // User styles still win — resolveBoxStyle overrides these defaults. An empty
+    // bkgColorArray (redux-dark-color) leaves fill on mainBkg. Text color is
+    // resolved separately below (Commit 3) and never cycles. The divider takes
+    // the border color because upstream's genColor `.node path` CSS rule
+    // (specificity 0,3,1) beats `.divider` (0,1,0) under the palette.
+    RequirementSceneStyle nodeBase = scene.style;
+    if (!scene.style.borderColorArray.isEmpty()) {
+      const int k = idx % scene.style.borderColorArray.size();
+      nodeBase.boxStroke = scene.style.borderColorArray.at(k);
+      nodeBase.dividerColor = nodeBase.boxStroke;
+      if (k < scene.style.bkgColorArray.size())
+        nodeBase.boxFill = scene.style.bkgColorArray.at(k);
+    }
+    resolveBoxStyle(node.cssStyles, nodeBase, lengthCtx, rendered);
     // Resolve the text style (Commit 3) from the same event-ordered cssStyles.
     // Pure like resolveBoxStyle; the measure path resolves it again identically.
     rendered.text = resolveRequirementTextStyle(
