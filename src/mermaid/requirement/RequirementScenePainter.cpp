@@ -204,7 +204,7 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
       boxPen = Qt::NoPen;  // outline hidden (stroke none/inherit/invalid or width<=0)
     } else {
       boxPen.setColor(resolveColor(node.outlineStroke));
-      boxPen.setWidthF(node.strokeWidth);  // > 0: outlineVisible is false when width<=0
+      boxPen.setWidthF(node.strokeWidth);  // > 0: outlineVisible is false when width==0
       if (hasDash) {
         boxPen.setStyle(Qt::CustomDashLine);
         boxPen.setDashPattern({node.dashArray.at(0) * dashInv, node.dashArray.at(1) * dashInv});
@@ -235,7 +235,7 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
         divPen = Qt::NoPen;
       } else {
         divPen.setColor(resolveColor(node.dividerStroke));
-        divPen.setWidthF(node.strokeWidth);  // > 0: dividerVisible is false when width<=0
+        divPen.setWidthF(node.strokeWidth);  // > 0: dividerVisible is false when width==0
         if (hasDash) {
           divPen.setStyle(Qt::CustomDashLine);
           divPen.setDashPattern({node.dashArray.at(0) * dashInv, node.dashArray.at(1) * dashInv});

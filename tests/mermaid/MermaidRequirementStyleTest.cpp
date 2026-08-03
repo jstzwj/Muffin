@@ -443,12 +443,32 @@ int main(int argc, char** argv) {
     }
   }
   {
-    // stroke-width:0 -> both NoPen (Qt would otherwise draw a 1px cosmetic
-    // hairline at width 0; SVG stroke-width:0 is invisible).
-    const auto r = renderNode(cache, head +
-        "requirement A {\n id: 1\n}\nstyle A stroke-width:0", QStringLiteral("A"));
-    require(!r.node->outlineVisible && !r.node->dividerVisible,
-            QStringLiteral("stroke-width:0 -> outline + divider both hidden"));
+    // stroke-width valid zero (0/00/000px/0em) -> outline + divider both hidden
+    // (SVG stroke-width:0 is invisible; Qt would else draw a 1px hairline).
+    for (const QString& w : {QStringLiteral("0"), QStringLiteral("00"),
+                             QStringLiteral("000px"), QStringLiteral("0em")}) {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A stroke-width:" + w, QStringLiteral("A"));
+      require(qAbs(r.node->strokeWidth - 0.0) < 1e-6,
+              QStringLiteral("stroke-width:%1 -> 0.0; got %2").arg(w).arg(r.node->strokeWidth));
+      require(!r.node->outlineVisible && !r.node->dividerVisible,
+              QStringLiteral("stroke-width:%1 -> outline + divider both hidden").arg(w));
+    }
+  }
+  {
+    // stroke-width negative / non-empty invalid (-1/-1em/foo) -> CSS INITIAL
+    // 1.0px (the malformed declaration is dropped), visibility unchanged: both
+    // paths still visible at the default theme stroke.
+    for (const QString& w : {QStringLiteral("-1"), QStringLiteral("-1em"),
+                             QStringLiteral("foo")}) {
+      const auto r = renderNode(cache, head +
+          "requirement A {\n id: 1\n}\nstyle A stroke-width:" + w, QStringLiteral("A"));
+      require(qAbs(r.node->strokeWidth - 1.0) < 1e-6,
+              QStringLiteral("stroke-width:%1 -> CSS initial 1.0; got %2")
+                  .arg(w).arg(r.node->strokeWidth));
+      require(r.node->outlineVisible && r.node->dividerVisible,
+              QStringLiteral("stroke-width:%1 keeps both visible").arg(w));
+    }
   }
   {
     // stroke-width:4em -> 4 * root font (16) = 64.
@@ -665,6 +685,32 @@ int main(int argc, char** argv) {
               QStringLiteral("stroke:NONE -> no outline ink; got %1").arg(outlineInk(r.img, *r.sc)));
       require(dividerInk(r.img, *r.sc) == 0,
               QStringLiteral("stroke:NONE -> no divider ink; got %1").arg(dividerInk(r.img, *r.sc)));
+    }
+    // stroke-width valid zero -> no ink on either path.
+    for (const QString& w : {QStringLiteral("0"), QStringLiteral("00")}) {
+      const auto r = paintCase(QStringLiteral("style A stroke-width:") + w);
+      const int oi = outlineInk(r.img, *r.sc);
+      const int di = dividerInk(r.img, *r.sc);
+      require(oi == 0, QStringLiteral("stroke-width:%1 -> no outline ink; got %2").arg(w).arg(oi));
+      require(di == 0, QStringLiteral("stroke-width:%1 -> no divider ink; got %2").arg(w).arg(di));
+    }
+    // stroke-width negative / non-empty invalid -> CSS initial 1px, both paths
+    // still carry theme ink (visibility unchanged by the width fallback).
+    for (const QString& w : {QStringLiteral("-1"), QStringLiteral("-1em"), QStringLiteral("foo")}) {
+      const auto r = paintCase(QStringLiteral("style A stroke-width:") + w);
+      const int oi = outlineInk(r.img, *r.sc);
+      const int di = dividerInk(r.img, *r.sc);
+      require(oi > 20, QStringLiteral("stroke-width:%1 -> 1px outline ink; got %2").arg(w).arg(oi));
+      require(di > 20, QStringLiteral("stroke-width:%1 -> 1px divider ink; got %2").arg(w).arg(di));
+    }
+    {
+      // stroke:inherit + stroke-width:-1 -> outline hidden, divider 1px visible
+      // (the width fallback to 1.0 must not undo the stroke-decided visibility).
+      const auto r = paintCase(QStringLiteral("style A stroke:inherit,stroke-width:-1"));
+      const int oi = outlineInk(r.img, *r.sc);
+      const int di = dividerInk(r.img, *r.sc);
+      require(oi == 0, QStringLiteral("inherit + width:-1 -> outline hidden; got %1").arg(oi));
+      require(di > 20, QStringLiteral("inherit + width:-1 -> divider 1px visible; got %1").arg(di));
     }
   }
 

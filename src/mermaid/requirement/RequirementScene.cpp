@@ -167,28 +167,43 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
       node.outlineVisible = false;
     }
   }
-  // stroke-width: userNodeOverrides `sw.replace("px","") || default`; em is
-  // resolved against the root font (themeVariables.fontSize = style.fontSize).
+  // stroke-width — mirrors the upstream cascade (probed vs mermaid 11.16.0 +
+  // Chrome). userNodeOverrides passes the value through after a case-sensitive
+  // `replace("px","")`; `|| default` only fills an EMPTY/missing value. The SVG
+  // CSS engine then accepts or rejects the (possibly garbage) length:
+  //   missing / empty value         -> mermaid family default (base.strokeWidth).
+  //   valid >= 0 (bare/px/em)       -> the parsed width (em = n * root font).
+  //   valid zero (0/00/000px/0em)   -> 0 -> outline + divider both invisible.
+  //   negative (-1/-1em) or a non-empty invalid token (foo) -> the CSS INITIAL
+  //     1.0px (the malformed inline declaration is dropped), which leaves the
+  //     stroke-decided outline/divider visibility untouched.
   if (map.contains(QStringLiteral("stroke-width"))) {
-    QString s = map.value(QStringLiteral("stroke-width"));
-    s.remove(QStringLiteral("px"));  // userNodeOverrides: replace("px","") (case-sensitive)
-    bool ok = false;
-    if (s.endsWith(QLatin1String("em"), Qt::CaseInsensitive)) {
-      const qreal n = s.left(s.size() - 2).toDouble(&ok);
-      node.strokeWidth = ok ? n * base.fontSize : base.strokeWidth;
+    const QString raw = map.value(QStringLiteral("stroke-width")).trimmed();
+    if (raw.isEmpty()) {
+      node.strokeWidth = base.strokeWidth;  // empty value -> family default
     } else {
-      const qreal n = s.toDouble(&ok);
-      node.strokeWidth = ok ? n : base.strokeWidth;
+      QString s = raw;
+      const bool isEm = s.endsWith(QLatin1String("em"), Qt::CaseInsensitive);
+      if (isEm) s = s.left(s.size() - 2);
+      s.remove(QStringLiteral("px"));  // userNodeOverrides: replace("px","") (case-sensitive)
+      bool ok = false;
+      const qreal n = s.trimmed().toDouble(&ok);
+      if (!ok || n < 0.0)
+        node.strokeWidth = 1.0;  // non-empty invalid / negative -> CSS initial
+      else
+        node.strokeWidth = isEm ? n * base.fontSize : n;
     }
   }
   // stroke-dasharray.
   if (map.contains(QStringLiteral("stroke-dasharray")))
     node.dashArray = getStrokeDashArray(map.value(QStringLiteral("stroke-dasharray")));
 
-  // stroke-width <= 0 -> NoPen for both. SVG stroke-width:0 is invisible, but Qt
-  // would otherwise draw a 1px cosmetic pen at width 0 (setWidthF(0) is treated
-  // as a device-space hairline), so drop both paths explicitly.
-  if (node.strokeWidth <= 0.0) {
+  // A VALID zero width (0/00/000px/0em) -> NoPen for both. SVG stroke-width:0 is
+  // invisible, but Qt would otherwise draw a 1px cosmetic hairline at width 0
+  // (setWidthF(0) is a device-space hairline). Negatives/invalids already fell
+  // back to 1.0 above, so this fires only for an explicit valid zero and does
+  // not disturb the stroke-decided visibility.
+  if (node.strokeWidth == 0.0) {
     node.outlineVisible = false;
     node.dividerVisible = false;
   }
