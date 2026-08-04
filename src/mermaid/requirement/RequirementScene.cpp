@@ -125,7 +125,10 @@ enum class PaintCat {
 };
 PaintCat categorizePaint(const QString& v) {
   if (v.isEmpty()) return PaintCat::Absent;
-  const QString l = v.trimmed().toLower();
+  // CSS <paint> values may carry surrounding whitespace (probed vs mermaid 11.16.0:
+  // "  #ff0000  " renders red); trim before matching keywords / parsing colors.
+  const QString t = v.trimmed();
+  const QString l = t.toLower();
   if (l == QLatin1String("none")) return PaintCat::NoneKw;
   if (l == QLatin1String("currentcolor")) return PaintCat::CurrentColor;
   if (l == QLatin1String("inherit")) return PaintCat::Inherit;
@@ -133,7 +136,7 @@ PaintCat categorizePaint(const QString& v) {
   if (l == QLatin1String("unset")) return PaintCat::Unset;
   if (l == QLatin1String("revert")) return PaintCat::Revert;
   if (l == QLatin1String("revert-layer")) return PaintCat::RevertLayer;
-  if (color::isParsableColor(v)) return PaintCat::Color;
+  if (color::isParsableColor(t)) return PaintCat::Color;
   return PaintCat::Garbage;
 }
 // A resolved paint: `none` <=> NoBrush (fill) / hidden (stroke); else a color.
@@ -145,7 +148,7 @@ struct Paint { bool none = false; QString color; };
 std::optional<Paint> resolveAtLayer(const QString& v, PaintCat cat, const Paint& initial,
                                     const Paint& inherited) {
   switch (cat) {
-    case PaintCat::Color:        return Paint{false, v};
+    case PaintCat::Color:        return Paint{false, v.trimmed()};  // store trimmed (see categorizePaint)
     case PaintCat::NoneKw:       return Paint{true, {}};
     case PaintCat::CurrentColor: return Paint{false, QStringLiteral("#000000")};
     case PaintCat::Initial:      return initial;

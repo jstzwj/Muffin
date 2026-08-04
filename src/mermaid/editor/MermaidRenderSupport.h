@@ -39,6 +39,16 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config);
 // fail the color-parse gate at consumption, matching the browser dropping it).
 std::optional<QStringList> arrayThemeOverride(const QJsonObject& config, const QString& key);
 
+// genColor rule count for THEME_COLOR_LIMIT, replicating upstream's JS
+// `for (let i = 0; i < THEME_COLOR_LIMIT; i++)`: the count of non-negative
+// integers < Number(TCL), i.e. ceil of a positive finite Number() of the RAW
+// themeVariables value. Returns nullopt when the key is absent (caller uses the
+// theme default); 0 for NaN / non-positive / unconvertible (incl. Number(null)=0,
+// Number("abc")=NaN). Number(bool): true->1, false->0; the bool vs string-"true"
+// distinction needs the raw JSON type, so this reads pre.config directly rather
+// than the string-flattened themeOverrides.
+std::optional<int> jsThemeColorLimit(const QJsonObject& config);
+
 qreal pixelValue(const QString& value, qreal fallback);
 QString firstFontFamily(QString cssFamily);
 qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback);

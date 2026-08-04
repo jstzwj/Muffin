@@ -76,6 +76,28 @@ std::optional<QStringList> arrayThemeOverride(const QJsonObject& config, const Q
   return out;  // Some({}) for an explicit empty array -> caller clears the built-in
 }
 
+std::optional<int> jsThemeColorLimit(const QJsonObject& config) {
+  const QJsonValue v = config.value(QStringLiteral("themeVariables")).toObject()
+                           .value(QStringLiteral("THEME_COLOR_LIMIT"));
+  if (v.isUndefined()) return std::nullopt;  // absent -> caller uses the theme default
+  // JS Number() of the raw value. Number(null)=0; Number(bool)=1/0; Number(string)
+  // = parsed double or NaN; Number(number) = itself.
+  double n = 0.0;
+  if (v.isDouble()) {
+    n = v.toDouble();
+  } else if (v.isBool()) {
+    n = v.toBool() ? 1.0 : 0.0;
+  } else if (v.isString()) {
+    bool ok = false;
+    n = v.toString().trimmed().toDouble(&ok);  // JS Number() trims a numeric string
+    if (!ok) return 0;                          // NaN -> no rules
+  }
+  // null (and any other type) leaves n = 0.0 (Number(null) = 0).
+  if (!std::isfinite(n) || n <= 0.0) return 0;
+  // genColor iterates i = 0..ceil(n)-1: count of non-negative integers < n.
+  return static_cast<int>(std::ceil(n));
+}
+
 qreal pixelValue(const QString& value, qreal fallback) {
   static const QRegularExpression number(QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))px\s*$)"),
                                           QRegularExpression::CaseInsensitiveOption);

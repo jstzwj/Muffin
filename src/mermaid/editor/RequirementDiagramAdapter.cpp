@@ -89,7 +89,9 @@ struct RequirementDiagramImpl : Diagram {
     // genColor emits palette rules for color-0..color-(THEME_COLOR_LIMIT-1). The
     // limit defaults to 12 and is user-configurable via themeVariables
     // .THEME_COLOR_LIMIT (top-level init.THEME_COLOR_LIMIT is upstream-ignored).
-    style.themeColorLimit = themeVars.themeColorLimit;
+    // Read the RAW config value with JS Number()+ceil semantics (2.5->3, true->1,
+    // false/"abc"->0); fall back to the theme default when absent.
+    style.themeColorLimit = jsThemeColorLimit(pre.config).value_or(themeVars.themeColorLimit);
     // No inline `title` token in requirementDiagram grammar — pass empty so
     // renderMetadata falls back to the frontmatter title (pre.title).
     MermaidRenderMetadata metadata = renderMetadata(

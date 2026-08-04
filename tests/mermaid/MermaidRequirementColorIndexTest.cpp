@@ -22,7 +22,8 @@
 // -> RequirementScene) under frontmatter-declared themes, asserting resolved node
 // fill/outline/divider. §1-7 Commit-4 cycling; §8-18 review-fix-1 (array pathway +
 // palette invalid fallback); §19-22 review-fix-2 (paint-keyword cascade, array-entry
-// keywords, THEME_COLOR_LIMIT=2, non-string items).
+// keywords, THEME_COLOR_LIMIT=2, non-string items); §23-24 review-fix-3 (paint-value
+// whitespace trimming, THEME_COLOR_LIMIT JS Number()+ceil semantics).
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/requirement/RequirementScene.h"
@@ -621,6 +622,57 @@ int main(int argc, char** argv) {
     requireNodeColors(sc, QStringLiteral("E"), QStringLiteral("#000010"), QStringLiteral("#0000ff"), QStringLiteral("#0000ff"), true, true);  // k4 valid
     requireNodeColors(sc, QStringLiteral("F"), QStringLiteral("#100000"), QStringLiteral("#ff0000"), QStringLiteral("#ff0000"), true, true);  // k5%5=0
     requireNodeColors(sc, QStringLiteral("G"), mainBkg, nodeBorder, divCol, true, true);  // k6%5=1 -> base
+  }
+
+  // ===== 23. Paint values with surrounding whitespace are trimmed (CSS <paint>) =====
+  // Array entries arrive verbatim from JSON; "  #ff0000  " must render red, not base.
+  {
+    const QString tv = QStringLiteral(
+        "{\"borderColorArray\":[\"  #ff0000  \",\"  rebeccapurple  \"],"
+        "\"bkgColorArray\":[\"  rgb(0,255,0)  \",\" transparent \"]}");
+    const auto e = renderThemeTvEntry(cache, QStringLiteral("default"), tv, reqsBody(2));
+    const auto* sc = sceneOf(e);
+    requireNodeColors(sc, QStringLiteral("A"), QStringLiteral("rgb(0,255,0)"),
+                      QStringLiteral("#ff0000"), QStringLiteral("#ff0000"), true, true);  // k0
+    requireNodeColors(sc, QStringLiteral("B"), QStringLiteral("transparent"),
+                      QStringLiteral("rebeccapurple"), QStringLiteral("rebeccapurple"), true, true);  // k1
+  }
+
+  // ===== 24. THEME_COLOR_LIMIT JS Number()+ceil semantics =====
+  // genColor iterates i<Number(TCL): 2.5->3 rules, "2.5"->3, true->1, false/"abc"->0.
+  {
+    auto col = [](int i) { return QStringLiteral("#%1").arg(i + 1, 6, 16, QLatin1Char('0')); };
+    QStringList b5, k5;
+    for (int i = 0; i < 5; ++i) { b5 << col(i + 1); k5 << col(i + 16); }
+    const QString arrs = b5.join("\",\""), kgs = k5.join("\",\"");
+    auto renderTcl = [&](const QString& tclLit) {
+      const QString tv = QStringLiteral(
+          "{\"THEME_COLOR_LIMIT\":%1,\"borderColorArray\":[\"%2\"],\"bkgColorArray\":[\"%3\"]}")
+          .arg(tclLit, arrs, kgs);
+      return renderThemeTvEntry(cache, QStringLiteral("default"), tv, reqsBody(6));
+    };
+    const auto base0 = renderTcl(QStringLiteral("0"));  // 0 rules -> all base
+    const auto* bsc = sceneOf(base0);
+    const QString mainBkg = bsc->style.boxFill, nodeBorder = bsc->style.boxStroke, divCol = bsc->style.dividerColor;
+    // 2.5 (number) -> 3 rules: A(k0) palette, D(k3) base, F(k5%5=0) palette.
+    { const auto e = renderTcl(QStringLiteral("2.5")); const auto* sc = sceneOf(e);
+      requireNodeColors(sc, QStringLiteral("A"), k5.at(0), b5.at(0), b5.at(0), true, true);
+      requireNodeColors(sc, QStringLiteral("D"), mainBkg, nodeBorder, divCol, true, true);
+      requireNodeColors(sc, QStringLiteral("F"), k5.at(0), b5.at(0), b5.at(0), true, true); }
+    // "2.5" (string) -> 3 rules.
+    { const auto e = renderTcl(QStringLiteral("\"2.5\"")); const auto* sc = sceneOf(e);
+      requireNodeColors(sc, QStringLiteral("A"), k5.at(0), b5.at(0), b5.at(0), true, true);
+      requireNodeColors(sc, QStringLiteral("D"), mainBkg, nodeBorder, divCol, true, true); }
+    // true (bool) -> 1 rule: A(k0) palette, B(k1) base.
+    { const auto e = renderTcl(QStringLiteral("true")); const auto* sc = sceneOf(e);
+      requireNodeColors(sc, QStringLiteral("A"), k5.at(0), b5.at(0), b5.at(0), true, true);
+      requireNodeColors(sc, QStringLiteral("B"), mainBkg, nodeBorder, divCol, true, true); }
+    // false (bool) -> 0 rules: A base.
+    { const auto e = renderTcl(QStringLiteral("false")); const auto* sc = sceneOf(e);
+      requireNodeColors(sc, QStringLiteral("A"), mainBkg, nodeBorder, divCol, true, true); }
+    // "abc" (unconvertible string) -> 0 rules: A base.
+    { const auto e = renderTcl(QStringLiteral("\"abc\"")); const auto* sc = sceneOf(e);
+      requireNodeColors(sc, QStringLiteral("A"), mainBkg, nodeBorder, divCol, true, true); }
   }
 
   qDebug() << "MermaidRequirementColorIndexTest: passed";
