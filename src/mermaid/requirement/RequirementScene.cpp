@@ -382,10 +382,11 @@ RequirementScene buildRequirementScene(
     // follows the explicit stroke/stroke-width and otherwise keeps the theme
     // divider color; both default to the 1.3 requirement border size.
     //
-    // colorIndex palette (Commit 4 + review-fixes): when the theme (or a user
-    // themeVariables override) supplies borderColorArray, genColor's palette CSS
-    // layer colors the node by insertion order. buildRequirementLayoutInput
-    // appends requirements then elements, so idx here == upstream colorIndex
+    // colorIndex palette (Commit 4 + review-fixes): when the theme supplies
+    // borderColorArray (only the built-in redux-color / redux-dark-color do — user
+    // arrays are ignored via the %%{init}%% source entry), genColor's palette CSS
+    // layer colors the node by insertion order. buildRequirementLayoutInput appends
+    // requirements then elements, so idx here == upstream colorIndex
     // (RequirementDB.getData stamps colorIndex before each push). We don't bake
     // the palette colors into nodeBase here — instead we record the L1 palette
     // DECLARATIONS (paletteStrokeEntry / paletteFillEntry) and let resolveBoxStyle's

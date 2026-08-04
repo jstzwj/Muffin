@@ -27,7 +27,8 @@
 // -> RequirementScene) under frontmatter-declared themes. §1-7 built-in palette
 // cycling; §8-11 the 3-layer paint cascade (invalid-under-palette, per-property
 // split, no-palette contrast, full keyword matrix); §12-13 THEME_COLOR_LIMIT
-// (=2 rule count, and JS Number()+ceil semantics).
+// (=2 rule count, and JS Number()+ceil semantics incl. array.toString()/null/large);
+// §14 source-entry custom arrays are IGNORED (regression guard).
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/requirement/RequirementScene.h"
@@ -463,17 +464,20 @@ int main(int argc, char** argv) {
 
   // ===== 13. THEME_COLOR_LIMIT JS Number()+ceil semantics (themeVariables path) =====
   // genColor iterates i<Number(TCL) after config merge (null/absent keep default).
-  // Probe step4 rule counts: 2.5/"2.5"->3, true->1, false/"abc"/[]/[1,2]/{}->0,
-  // "0x2"/"0b10"/"0o2"/[2]->2, ["2.5"]->3, null/absent->12. Built-in redux palette.
+  // Number(array)=Number(array.toString()): [2]->"2"->2, ["2.5"]->2.5, [true]->"true"->NaN,
+  // [null]->""->0, [[2]]->"2"->2, [x,y]->NaN. Probe: 2.5/"2.5"->3, true->1,
+  // false/"abc"/[]/[1,2]/[true]/[false]/[null]/[[2,3]]/{}->0, "0x2"/"0b10"/"0o2"/[2]/[[2]]->2,
+  // ["2.5"]->3, null/absent/large->12. Built-in redux palette.
   {
     struct Case { QString lit; int rules; };
     const Case cases[] = {
-        {QStringLiteral("null"), 12},   {QStringLiteral("2.5"), 3},    {QStringLiteral("\"2.5\""), 3},
-        {QStringLiteral("\"0x2\""), 2}, {QStringLiteral("\"0b10\""), 2}, {QStringLiteral("\"0o2\""), 2},
-        {QStringLiteral("[2]"), 2},     {QStringLiteral("[\"2.5\"]"), 3},
-        {QStringLiteral("true"), 1},    {QStringLiteral("false"), 0},
-        {QStringLiteral("[]"), 0},      {QStringLiteral("[1,2]"), 0},   {QStringLiteral("{}"), 0},
-        {QStringLiteral("\"abc\""), 0}, {QStringLiteral("2"), 2},
+        {QStringLiteral("2.5"), 3},        {QStringLiteral("\"2.5\""), 3},    {QStringLiteral("\"0x2\""), 2},
+        {QStringLiteral("\"0b10\""), 2},   {QStringLiteral("\"0o2\""), 2},    {QStringLiteral("[2]"), 2},
+        {QStringLiteral("[\"2.5\"]"), 3},  {QStringLiteral("[[2]]"), 2},      {QStringLiteral("true"), 1},
+        {QStringLiteral("false"), 0},      {QStringLiteral("[]"), 0},         {QStringLiteral("[1,2]"), 0},
+        {QStringLiteral("[true]"), 0},     {QStringLiteral("[false]"), 0},    {QStringLiteral("[null]"), 0},
+        {QStringLiteral("[[2,3]]"), 0},    {QStringLiteral("{}"), 0},         {QStringLiteral("\"abc\""), 0},
+        {QStringLiteral("2"), 2},
     };
     for (const Case& c : cases) {
       const QString tv = QStringLiteral("{\"THEME_COLOR_LIMIT\":%1}").arg(c.lit);
@@ -487,15 +491,57 @@ int main(int argc, char** argv) {
         else
           requireNodeColors(sc, id, mb, nb, dc, true, true);
       };
-      chk(QStringLiteral("A"), 0);  // TCL label in the require messages identifies the case
+      chk(QStringLiteral("A"), 0);  // TCL literal in the require messages identifies the case
       chk(QStringLiteral("B"), 1);
       chk(QStringLiteral("C"), 2);
       chk(QStringLiteral("D"), 3);
     }
-    // absent TCL -> default 12 (full cycle).
+    // TCL values that keep the default (>=12 rules) -> all 12 cycle. Render 12 nodes
+    // (A..L, idx 0..11) and assert BOTH ends are palette — L (idx 11) proves rules>11
+    // (a smaller limit like 4 would leave L on base), so this pins "12", not "<12".
+    auto allTwelve = [&](const QString& label, const QString& tv) {
+      const auto e = tv.isEmpty()
+          ? renderThemeEntry(cache, QStringLiteral("redux-color"), reqsBody(12))
+          : renderThemeTvEntry(cache, QStringLiteral("redux-color"), tv, reqsBody(12));
+      const auto* sc = sceneOf(e);
+      requireNodeColors(sc, QStringLiteral("A"), kBkgPalette.at(0), kBorderPalette.at(0), kBorderPalette.at(0), true, true);
+      requireNodeColors(sc, QStringLiteral("L"), kBkgPalette.at(11), kBorderPalette.at(11), kBorderPalette.at(11), true, true);
+      (void)label;
+    };
+    allTwelve(QStringLiteral("null"), QStringLiteral("{\"THEME_COLOR_LIMIT\":null}"));      // null -> keep default 12
+    allTwelve(QStringLiteral("absent"), QString());                                          // absent -> default 12
+    allTwelve(QStringLiteral("large"), QStringLiteral("{\"THEME_COLOR_LIMIT\":2147483648}")); // huge -> all 12 (no overflow)
+  }
+
+  // ===== 14. Source-entry custom arrays are IGNORED (regression guard, review-fix 4) =====
+  // Upstream ignores user borderColorArray/bkgColorArray via %%{init}%% (only the
+  // external initialize() API honors them). Muffin must match: a custom array does
+  // NOT activate colorIndex under default, and does NOT replace the built-in redux
+  // palette. (Muffin's preprocessor drops the non-whitelisted keys, so they never
+  // reach the adapter; thematically this is parity with the source entry.)
+  {
+    // default + custom arrays -> default behavior (no cycling, all base).
     {
-      const auto e = renderThemeTvEntry(cache, QStringLiteral("redux-color"), QString(), reqsBody(1));
-      requireNodeColors(sceneOf(e), QStringLiteral("A"), kBkgPalette.at(0), kBorderPalette.at(0), kBorderPalette.at(0), true, true);
+      const QString tv = QStringLiteral(
+          "{\"borderColorArray\":[\"#ff0000\",\"#00ff00\",\"#0000ff\"],"
+          "\"bkgColorArray\":[\"#100000\",\"#001000\",\"#000010\"]}");
+      const auto e = renderThemeTvEntry(cache, QStringLiteral("default"), tv, reqsBody(3));
+      const auto* sc = sceneOf(e);
+      for (const auto& id : {QStringLiteral("A"), QStringLiteral("B"), QStringLiteral("C")})
+        requireNodeColors(sc, id, sc->style.boxFill, sc->style.boxStroke, sc->style.dividerColor, true, true);
+      QSet<QString> fills;
+      for (const auto& n : sc->nodes) fills.insert(n.fill);
+      require(fills.size() == 1, QStringLiteral("default + custom arrays ignored: 1 fill; got %1").arg(fills.size()));
+    }
+    // redux-color + custom arrays -> built-in Tailwind palette still cycles (custom ignored).
+    {
+      const QString tv = QStringLiteral(
+          "{\"borderColorArray\":[\"#aa0000\",\"#00aa00\"],\"bkgColorArray\":[\"#100000\",\"001000\"]}");
+      const auto e = renderThemeTvEntry(cache, QStringLiteral("redux-color"), tv, reqsBody(2));
+      const auto* sc = sceneOf(e);
+      // A,B use the BUILT-IN palette[0,1] (#FDF4FF/#E879F9, #F0FDFA/#2DD4BF), NOT the custom.
+      requireNodeColors(sc, QStringLiteral("A"), kBkgPalette.at(0), kBorderPalette.at(0), kBorderPalette.at(0), true, true);
+      requireNodeColors(sc, QStringLiteral("B"), kBkgPalette.at(1), kBorderPalette.at(1), kBorderPalette.at(1), true, true);
     }
   }
 

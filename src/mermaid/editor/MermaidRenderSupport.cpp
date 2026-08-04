@@ -87,24 +87,52 @@ double jsNumberString(QString s) {
   return ok ? n : kJsNaN;
 }
 
+// JS String() of a value as an Array element (Array.prototype.join's per-element
+// String()). number->its decimal (integral without ".0"); bool->"true"/"false";
+// null/undefined->""; string->itself; array->recursive comma-join; object->
+// "[object Object]".
+QString jsElementString(const QJsonValue& v);
+QString jsArrayToString(const QJsonArray& a) {
+  QString r;
+  for (int i = 0; i < a.size(); ++i) {
+    if (i) r += QLatin1Char(',');
+    r += jsElementString(a.at(i));
+  }
+  return r;  // [] -> ""  (so Number([]) == Number("") == 0)
+}
+QString jsElementString(const QJsonValue& v) {
+  switch (v.type()) {
+    case QJsonValue::Double: {
+      const double d = v.toDouble();
+      if (std::isfinite(d) && d == std::floor(d) &&
+          d >= static_cast<double>(std::numeric_limits<qint64>::min()) &&
+          d <= static_cast<double>(std::numeric_limits<qint64>::max()))
+        return QString::number(static_cast<qint64>(d));  // integral -> "2", not "2.0"
+      return QString::number(d);
+    }
+    case QJsonValue::Bool:   return v.toBool() ? QStringLiteral("true") : QStringLiteral("false");
+    case QJsonValue::Null:   return QString();  // null/undefined element -> ""
+    case QJsonValue::String: return v.toString();
+    case QJsonValue::Array:  return jsArrayToString(v.toArray());
+    case QJsonValue::Object:
+    default:                 return QStringLiteral("[object Object]");
+  }
+}
+
 // JS Number(value): number->itself; bool->1/0; null->0; string->jsNumberString;
-// [] ->0; [x]->Number(x); [x,y,..]->NaN; object/undefined->NaN.
+// array->Number(array.toString()) (a comma-join, so [2]->"2"->2, ["2.5"]->2.5,
+// [true]->"true"->NaN, [null]->""->0, [[2]]->"2"->2, [x,y]->"x,y"->NaN);
+// object/undefined->NaN.
 double jsNumber(const QJsonValue& v) {
   switch (v.type()) {
     case QJsonValue::Double: return v.toDouble();
     case QJsonValue::Bool:   return v.toBool() ? 1.0 : 0.0;
     case QJsonValue::Null:   return 0.0;  // Number(null) == 0
     case QJsonValue::String: return jsNumberString(v.toString());
-    case QJsonValue::Array: {
-      const QJsonArray a = v.toArray();
-      if (a.isEmpty()) return 0.0;            // Number([]) == 0
-      if (a.size() == 1) return jsNumber(a.at(0));  // Number([x]) == Number(x)
-      return kJsNaN;                          // Number([x,y]) == NaN
-    }
+    case QJsonValue::Array:  return jsNumberString(jsArrayToString(v.toArray()));
     case QJsonValue::Object:
     case QJsonValue::Undefined:
-    default:
-      return kJsNaN;                          // Number({}) / Number(undefined) == NaN
+    default:                 return kJsNaN;  // Number({}) / Number(undefined) == NaN
   }
 }
 }  // namespace
@@ -123,7 +151,12 @@ std::optional<int> jsThemeColorLimit(const QJsonObject& config) {
   if (v.isUndefined() || v.isNull()) return std::nullopt;  // merge: null/absent keep default
   const double n = jsNumber(v);
   if (!std::isfinite(n) || n <= 0.0) return 0;
-  return static_cast<int>(std::ceil(n));
+  // Saturate: a huge TCL (e.g. 2147483648) would overflow int on the cast; clamp
+  // to INT_MAX so the consumer's `k < limit` gate still selects the full palette
+  // (matching upstream, which visually covers all 12 color-ids for large TCL).
+  const double c = std::ceil(n);
+  constexpr double kIntMax = static_cast<double>(std::numeric_limits<int>::max());
+  return c >= kIntMax ? std::numeric_limits<int>::max() : static_cast<int>(c);
 }
 
 qreal pixelValue(const QString& value, qreal fallback) {

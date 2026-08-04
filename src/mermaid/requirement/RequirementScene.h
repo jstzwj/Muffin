@@ -56,10 +56,12 @@ struct RequirementSceneStyle {
   // RequirementDB.getData colorIndex). The mapping mirrors upstream's genColor:
   //   k = idx % borderColorArray.size(); a genColor CSS rule exists only for
   //     k < themeColorLimit (THEME_COLOR_LIMIT), so k>=limit keeps the base color.
-  // A user themeVariables array REPLACES (or, if empty, clears) the built-in, so a
-  // custom array activates colorIndex under any theme. Only redux-color /
-  // redux-dark-color populate the built-in; the 9 other themes are inert unless the
-  // user supplies an array. Text color never cycles.
+  // NOTE: upstream mermaid 11.16.0 IGNORES user-supplied borderColorArray /
+  // bkgColorArray via the %%{init}%% SOURCE entry (only the external
+  // mermaid.initialize() API honors them) — so these arrays are populated ONLY by
+  // the built-in redux-color / redux-dark-color themes, and the 9 other themes are
+  // inert (colorIndex is a no-op for them). User arrays are not a %%{init}%% parity
+  // feature. Text color never cycles.
   QStringList borderColorArray;
   QStringList bkgColorArray;
   // genColor emits rules for color-0..color-(themeColorLimit-1) (upstream
