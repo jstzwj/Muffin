@@ -79,6 +79,13 @@ struct RequirementDiagramImpl : Diagram {
     // order only when borderColorArray is non-empty.
     style.borderColorArray = themeVars.borderColorArray;
     style.bkgColorArray = themeVars.bkgColorArray;
+    // User themeVariables arrays override (replace) or clear the built-in palette:
+    // a custom array activates colorIndex even under the standard themes, an
+    // explicit empty array disables it (mermaid's gate is borderColorArray?.length).
+    if (auto b = arrayThemeOverride(pre.config, QStringLiteral("borderColorArray")))
+      style.borderColorArray = *b;
+    if (auto b = arrayThemeOverride(pre.config, QStringLiteral("bkgColorArray")))
+      style.bkgColorArray = *b;
     // No inline `title` token in requirementDiagram grammar — pass empty so
     // renderMetadata falls back to the frontmatter title (pre.title).
     MermaidRenderMetadata metadata = renderMetadata(

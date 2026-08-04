@@ -50,16 +50,31 @@ struct RequirementSceneStyle {
   // requirementBox default border size (userNodeOverrides: strokeWidth = sw || 1.3);
   // the box outline AND the divider both render at this width unless overridden.
   qreal strokeWidth = 1.3;
-  // colorIndex palette (Commit 4). When borderColorArray is non-empty, each node's
-  // box outline + divider stroke default to borderColorArray[idx % size] and its
-  // fill defaults to bkgColorArray[idx % size] (or mainBkg when bkgColorArray is
-  // empty, e.g. redux-dark-color), where idx is the node's insertion-order index
-  // (requirements then elements — matches RequirementDB.getData colorIndex). User
-  // `style`/`classDef` still wins (resolveBoxStyle overrides these defaults). Only
-  // redux-color/redux-dark-color populate these; empty => no cycling (all 9 other
-  // themes already parity). Text color never cycles.
+  // colorIndex palette (Commit 4 + review-fix). When borderColorArray is non-empty
+  // each node's box outline + divider + fill DEFAULT colors are taken from the
+  // palette by insertion order (idx; requirements then elements — matches
+  // RequirementDB.getData colorIndex). The mapping mirrors upstream's genColor:
+  //   k = idx % borderColorArray.size(); a genColor CSS rule exists only for k<12
+  //     (THEME_COLOR_LIMIT), so k>=12 (borderLen>12) keeps the base color.
+  //   outline+divider stroke = borderColorArray[k] (when k<12 and it parses);
+  //   fill              = bkgColorArray[k]  (when k<12, k<bkgLen, and it parses);
+  //                       otherwise mainBkg (bkg shorter/empty, e.g. redux-dark-color).
+  //   an unparseable array entry drops just that property -> base for that property.
+  // User `style`/`classDef` still wins (resolveBoxStyle overrides these defaults);
+  // and a user themeVariables array REPLACES (or, if empty, clears) the built-in.
+  // Only redux-color/redux-dark-color populate the built-in; the 9 other themes are
+  // inert unless the user supplies an array. Text color never cycles.
   QStringList borderColorArray;
   QStringList bkgColorArray;
+  // Per-node, per-property: a genColor CSS declaration exists for this node's
+  // color-id, so a user inline fill/stroke value the browser DROPS (invalid/
+  // inherit) falls back to the palette color (fillFromPalette -> base.boxFill;
+  // strokeFromPalette -> base.boxStroke + dividerColor, both visible) rather than
+  // the non-palette behavior (foreground fill / hidden outline). Set per-node in
+  // buildRequirementScene; the scene-level copy stays false. Verified against
+  // mermaid 11.16.0 (G:/github/req-probe/step2-colorindex-full-report.json E1/E5/E7).
+  bool fillFromPalette = false;
+  bool strokeFromPalette = false;
 };
 
 // One text row in a requirementBox. `document` is pre-shaped so the painter

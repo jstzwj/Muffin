@@ -61,6 +61,15 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
   return result;
 }
 
+std::optional<QStringList> arrayThemeOverride(const QJsonObject& config, const QString& key) {
+  const QJsonValue v = config.value(QStringLiteral("themeVariables")).toObject().value(key);
+  if (!v.isArray()) return std::nullopt;  // absent / wrong type -> keep built-in
+  QStringList out;
+  for (const QJsonValue& el : v.toArray())
+    if (el.isString()) out.append(el.toString());
+  return out;  // Some({}) for an explicit empty array -> caller clears the built-in
+}
+
 qreal pixelValue(const QString& value, qreal fallback) {
   static const QRegularExpression number(QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))px\s*$)"),
                                           QRegularExpression::CaseInsensitiveOption);

@@ -14,6 +14,9 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QString>
+#include <QStringList>
+
+#include <optional>
 
 namespace muffin::mermaid {
 struct MermaidPreprocessResult;
@@ -26,6 +29,16 @@ struct MermaidRenderEntry;
 flowtheme::FlowThemeId themeIdFromName(const QString& name);
 QString themeFromConfig(const QJsonObject& config);
 QHash<QString, QString> themeOverrides(const QJsonObject& config);
+
+// A themeVariables ARRAY override (e.g. borderColorArray / bkgColorArray). Returns
+// nullopt when the key is absent (or not an array) -> the caller keeps the theme
+// built-in. Returns Some(list) when present, INCLUDING Some({}) for an explicit
+// empty array -> the caller clears the built-in (mermaid's gate is
+// `borderColorArray?.length`, so an empty array disables colorIndex). Non-string
+// elements are skipped (a color array holds color strings; anything else would
+// fail the color-parse gate at consumption, matching the browser dropping it).
+std::optional<QStringList> arrayThemeOverride(const QJsonObject& config, const QString& key);
+
 qreal pixelValue(const QString& value, qreal fallback);
 QString firstFontFamily(QString cssFamily);
 qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback);

@@ -36,6 +36,10 @@ namespace {
 
 constexpr qreal kPadding = 20.0;
 constexpr qreal kGap = 20.0;
+// genColor emits colorIndex CSS rules for color-0..color-(N-1) only (upstream
+// THEME_COLOR_LIMIT). A node whose color-id k = idx % borderLen is >= this keeps
+// the base color (no matching rule). Verified by dumping the SVG <style> block.
+constexpr int kThemeColorLimit = 12;
 
 // mermaid-cli's default Puppeteer viewport (src/index.js: --width 800, --height
 // 600, --scale unset -> deviceScaleFactor 1). Requirement resolves viewport-
@@ -136,6 +140,11 @@ QVector<qreal> getStrokeDashArray(const QString& strokeDasharrayStyle) {
 //                      outline path's stroke inherits/defaults to none; the
 //                      divider path carries the theme stroke attribute, so an
 //                      unset-style stroke value drops only the outline.
+//   PALETTE EXCEPTION (colorIndex, fillFromPalette/strokeFromPalette): when a
+//   genColor CSS rule exists for the node's color-id, the dropped invalid inline
+//   falls back to the PALETTE color instead — fill -> base.boxFill, stroke ->
+//   base.boxStroke + dividerColor (both visible). The non-palette rows above are
+//   the fillFromPalette/strokeFromPalette == false case. (step2 E1/E2/E5/E6.)
 void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneStyle& base,
                      const CssLengthContext& lengthCtx, req::RequirementSceneNode& node) {
   node.fill = base.boxFill;
@@ -158,7 +167,10 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
     map.insert(key, value);
   }
 
-  // fill: none -> NoBrush; currentColor -> black; invalid/inherit -> foreground.
+  // fill: none -> NoBrush; currentColor -> black; invalid/inherit -> foreground,
+  // UNLESS a palette fill-rule exists (fillFromPalette) — then the dropped inline
+  // falls back to the palette fill (base.boxFill), matching genColor's CSS winning
+  // over the dropped attribute (step2 E1 vs E5).
   if (map.contains(QStringLiteral("fill"))) {
     const QString v = map.value(QStringLiteral("fill"));
     if (v.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0)
@@ -167,11 +179,15 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
       node.fill = QStringLiteral("#000000");
     else if (color::isParsableColor(v))
       node.fill = v;
-    else
-      node.fill = base.foregroundFallback;  // inherit / invalid
+    else if (!base.fillFromPalette)
+      node.fill = base.foregroundFallback;  // inherit / invalid, no palette fill-rule
+    // fillFromPalette: leave base.boxFill (palette) in place.
   }
   // stroke: see the divergence table above. none hides both; currentColor and a
-  // valid color apply to both; inherit/invalid hide the outline only.
+  // valid color apply to both; inherit/invalid hide the outline only — UNLESS a
+  // palette stroke-rule exists (strokeFromPalette), in which case the dropped
+  // inline falls back to the palette stroke on BOTH outline+divider, kept visible
+  // (genColor `.node path` wins over the dropped attribute; step2 E2 vs E6).
   if (map.contains(QStringLiteral("stroke"))) {
     const QString v = map.value(QStringLiteral("stroke"));
     if (v.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0) {
@@ -181,10 +197,12 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
       node.outlineStroke = node.dividerStroke = QStringLiteral("#000000");
     } else if (color::isParsableColor(v)) {
       node.outlineStroke = node.dividerStroke = v;
-    } else {
-      // inherit / invalid: outline inherits/defaults to none; divider keeps theme.
+    } else if (!base.strokeFromPalette) {
+      // inherit / invalid, no palette stroke-rule: outline inherits/defaults to
+      // none (hidden); divider keeps its theme stroke.
       node.outlineVisible = false;
     }
+    // strokeFromPalette: keep base.boxStroke + dividerColor, both visible.
   }
   // stroke-width — mirrors the upstream cascade (probed vs mermaid 11.16.0 +
   // Chrome; see G:/github/req-probe/step0d-a-report.json). userNodeOverrides
@@ -318,23 +336,36 @@ RequirementScene buildRequirementScene(
     // follows the explicit stroke/stroke-width and otherwise keeps the theme
     // divider color; both default to the 1.3 requirement border size.
     //
-    // Commit 4 colorIndex: when the theme carries a palette (redux-color /
-    // redux-dark-color), the box outline + divider + fill DEFAULT colors cycle
-    // by the node's insertion-order index. buildRequirementLayoutInput appends
-    // requirements then elements, so idx here == upstream colorIndex
-    // (RequirementDB.getData stamps colorIndex = nodes.length before each push).
-    // User styles still win — resolveBoxStyle overrides these defaults. An empty
-    // bkgColorArray (redux-dark-color) leaves fill on mainBkg. Text color is
-    // resolved separately below (Commit 3) and never cycles. The divider takes
-    // the border color because upstream's genColor `.node path` CSS rule
-    // (specificity 0,3,1) beats `.divider` (0,1,0) under the palette.
-    RequirementSceneStyle nodeBase = scene.style;
-    if (!scene.style.borderColorArray.isEmpty()) {
-      const int k = idx % scene.style.borderColorArray.size();
-      nodeBase.boxStroke = scene.style.borderColorArray.at(k);
-      nodeBase.dividerColor = nodeBase.boxStroke;
-      if (k < scene.style.bkgColorArray.size())
-        nodeBase.boxFill = scene.style.bkgColorArray.at(k);
+    // colorIndex palette (Commit 4 + review-fix): when the theme (or a user
+    // themeVariables override) supplies borderColorArray, the box outline +
+    // divider + fill DEFAULT colors are taken from the palette by insertion order.
+    // buildRequirementLayoutInput appends requirements then elements, so idx here
+    // == upstream colorIndex (RequirementDB.getData stamps colorIndex before each
+    // push). The mapping mirrors genColor: k = idx % borderLen; only k<12 has a
+    // CSS rule; each property is gated independently on its own array entry
+    // parsing (an unparseable entry drops just that declaration -> base). User
+    // `style`/`classDef` still wins (resolveBoxStyle overrides these defaults).
+    // fillFromPalette/strokeFromPalette flag the properties whose genColor rule
+    // exists, so a DROPPED invalid user inline falls back to the palette color
+    // instead of the non-palette foreground/hide behavior (resolveBoxStyle).
+    RequirementSceneStyle nodeBase = scene.style;           // flags default false
+    const QStringList& border = scene.style.borderColorArray;
+    if (!border.isEmpty()) {
+      const int k = idx % border.size();                    // data-color-id index
+      if (k < kThemeColorLimit) {                           // genColor rule exists
+        if (color::isParsableColor(border.at(k))) {         // stroke protected
+          nodeBase.boxStroke = border.at(k);
+          nodeBase.dividerColor = border.at(k);
+          nodeBase.strokeFromPalette = true;
+        }
+        const QStringList& bkg = scene.style.bkgColorArray;
+        if (k < bkg.size() && color::isParsableColor(bkg.at(k))) {  // fill protected
+          nodeBase.boxFill = bkg.at(k);
+          nodeBase.fillFromPalette = true;
+        }
+      }
+      // k >= 12 (borderLen>12): no genColor rule -> node keeps base; flags stay
+      // false (invalid user inline behaves like the non-palette case).
     }
     resolveBoxStyle(node.cssStyles, nodeBase, lengthCtx, rendered);
     // Resolve the text style (Commit 3) from the same event-ordered cssStyles.
