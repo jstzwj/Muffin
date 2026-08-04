@@ -1,0 +1,785 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "Parser-leniency guard for the pie family. Each case is rendered live through mermaid 11.16.0; accept/reject verdicts and exact reject messages are the ground truth (not transcribed numbers). Reject classes: lexer (Langium tokenization fails: .5 leading dot, unquoted labels, lowercase showdata, trailing garbage), parser (production mismatch: missing value/colon, string where NUMBER_PIE expected), runtime (parser accepts but pieDb.addSection throws on negative values), no-diagram (detector regex /^\\s*pie/ fails). For accepts, expectedDb records the parser contract: sections (label+value, insertion order, first-write-wins duplicates), the showData flag, title/accTitle/accDescr, and the renderer-side draw/legend counts (drawCount = slices >= 1% of total; legendCount = all sections). Section count is asserted to equal the rendered legend count. accTitle/accDescr are read from the SVG <title>/\n<desc> elements mermaid emits (the scout grammar probe left accTitle null — a probe read-side artifact, not parser truth; this generator reads the rendered accessibility elements directly)."
+  },
+  "oracle": "pieDiagram parser accept/reject + pieDb sections/showData/title/acc state",
+  "cases": [
+    {
+      "id": "g_empty",
+      "input": "pie",
+      "accept": true,
+      "expectedDb": {
+        "sections": [],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 0,
+        "legendCount": 0
+      }
+    },
+    {
+      "id": "g_empty_with_newlines",
+      "input": "pie\n\n\n",
+      "accept": true,
+      "expectedDb": {
+        "sections": [],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 0,
+        "legendCount": 0
+      }
+    },
+    {
+      "id": "g_only_title",
+      "input": "pie title My Pie",
+      "accept": true,
+      "expectedDb": {
+        "sections": [],
+        "showData": false,
+        "title": "My Pie",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 0,
+        "legendCount": 0
+      }
+    },
+    {
+      "id": "g_accTitle",
+      "input": "pie\naccTitle: AT\n\"A\":1\n\"B\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": "AT",
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_accDescr_text",
+      "input": "pie\naccDescr: some description\n\"A\":1",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": "some description",
+        "drawCount": 1,
+        "legendCount": 1
+      }
+    },
+    {
+      "id": "g_accDescr_braces",
+      "input": "pie\naccDescr {multi word descr}\n\"A\":1",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": "multi word descr",
+        "drawCount": 1,
+        "legendCount": 1
+      }
+    },
+    {
+      "id": "g_title_and_acc",
+      "input": "pie title T\naccTitle: AT\naccDescr: AD\n\"A\":1\n\"B\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "T",
+        "accTitle": "AT",
+        "accDescr": "AD",
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_showData",
+      "input": "pie showData\n\"Dogs\":38\n\"Cats\":26",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "Dogs",
+            "value": 38
+          },
+          {
+            "label": "Cats",
+            "value": 26
+          }
+        ],
+        "showData": true,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_showData_lower",
+      "input": "pie showdata\n\"A\":1",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 1, column 5: unexpected character: ->s<- at offset: 4, skipped 8 characters. "
+      }
+    },
+    {
+      "id": "g_int",
+      "input": "pie\n\"A\":1\n\"B\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_fractional",
+      "input": "pie\n\"A\":1.5\n\"B\":2.5",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1.5
+          },
+          {
+            "label": "B",
+            "value": 2.5
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_zero_value",
+      "input": "pie\n\"A\":0\n\"B\":10",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 0
+          },
+          {
+            "label": "B",
+            "value": 10
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 1,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_all_zero",
+      "input": "pie\n\"A\":0\n\"B\":0",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 0
+          },
+          {
+            "label": "B",
+            "value": 0
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 0,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_negative",
+      "input": "pie\n\"A\":-5\n\"B\":10",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "\"A\" has invalid value: -5. Negative values are not allowed in pie charts. All slice values must be >= 0."
+      }
+    },
+    {
+      "id": "g_negative_fractional",
+      "input": "pie\n\"A\":-0.5\n\"B\":1.5",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "\"A\" has invalid value: -0.5. Negative values are not allowed in pie charts. All slice values must be >= 0."
+      }
+    },
+    {
+      "id": "g_large",
+      "input": "pie\n\"A\":1000000\n\"B\":2000000",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1000000
+          },
+          {
+            "label": "B",
+            "value": 2000000
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_leading_dot_value",
+      "input": "pie\n\"A\":.5\n\"B\":.5",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 5: unexpected character: ->.<- at offset: 8, skipped 1 characters.\nLexer error on line 3, column 5: unexpected character: ->.<- at offset: 15, skipped 1 characters. "
+      }
+    },
+    {
+      "id": "g_double_quoted",
+      "input": "pie\n\"A B\":1\n\"C D\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A B",
+            "value": 1
+          },
+          {
+            "label": "C D",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_single_quoted",
+      "input": "pie\n'A':1\n'B':2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_unquoted_label",
+      "input": "pie\nA:1\nB:2",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 1: unexpected character: ->A<- at offset: 4, skipped 1 characters.\nLexer error on line 3, column 1: unexpected character: ->B<- at offset: 8, skipped 1 characters. Parse error on line 2, column 2: Expecting token of type 'EOF' but found `:`.\nParse error on line 3, column 2: Expecting token of type 'EOF' but found `:`."
+      }
+    },
+    {
+      "id": "g_quoted_with_colon",
+      "input": "pie\n\"A:B\":1\n\"C\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A:B",
+            "value": 1
+          },
+          {
+            "label": "C",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_empty_label_quoted",
+      "input": "pie\n\"\":1\n\"B\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_unicode_label",
+      "input": "pie\n\"日本\":3\n\"中文\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "日本",
+            "value": 3
+          },
+          {
+            "label": "中文",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_dup_key_same_val",
+      "input": "pie\n\"A\":1\n\"A\":1",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 1,
+        "legendCount": 1
+      }
+    },
+    {
+      "id": "g_dup_key_diff_val",
+      "input": "pie\n\"A\":1\n\"A\":5",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 1,
+        "legendCount": 1
+      }
+    },
+    {
+      "id": "g_inline_comment",
+      "input": "pie\n\"A\":1 %% comment\n\"B\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_line_comment",
+      "input": "pie\n%% whole line comment\n\"A\":1\n\"B\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_missing_value",
+      "input": "pie\n\"A\":\n\"B\":2",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed:  Parse error on line 2, column 5: Expecting token of type 'NUMBER_PIE' but found `\n`."
+      }
+    },
+    {
+      "id": "g_missing_colon",
+      "input": "pie\n\"A 1\"\n\"B\":2",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed:  Parse error on line 2, column 6: Expecting token of type ':' but found `\n`."
+      }
+    },
+    {
+      "id": "g_missing_pie_keyword",
+      "input": "\"A\":1\n\"B\":2",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: \"A\":1\n\"B\":2"
+      }
+    },
+    {
+      "id": "g_string_value",
+      "input": "pie\n\"A\":\"one\"\n\"B\":2",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed:  Parse error on line 2, column 5: Expecting token of type 'NUMBER_PIE' but found `\"one\"`.\nParse error on line 2, column 10: Expecting token of type ':' but found `\n`."
+      }
+    },
+    {
+      "id": "g_trailing_garbage",
+      "input": "pie\n\"A\":1 garbage\n\"B\":2",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 7: unexpected character: ->g<- at offset: 10, skipped 7 characters. "
+      }
+    },
+    {
+      "id": "g_wrong_keyword",
+      "input": "pi title X\n\"A\":1",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: pi title X\n\"A\":1"
+      }
+    },
+    {
+      "id": "g_no_space_after_colon",
+      "input": "pie\n\"A\":1\n\"B\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_extra_spaces",
+      "input": "pie\n  \"A\"  :  1  \n  \"B\"  :  2  ",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_tabs",
+      "input": "pie\n\t\"A\"\t:\t1\n\t\"B\"\t:\t2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_crlf",
+      "input": "pie\r\n\"A\":1\r\n\"B\":2",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "A",
+            "value": 1
+          },
+          {
+            "label": "B",
+            "value": 2
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_fifteen_slices",
+      "input": "pie\n\"S1\":1\n\"S2\":2\n\"S3\":3\n\"S4\":4\n\"S5\":5\n\"S6\":6\n\"S7\":7\n\"S8\":8\n\"S9\":9\n\"S10\":10\n\"S11\":11\n\"S12\":12\n\"S13\":13\n\"S14\":14\n\"S15\":15",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "S1",
+            "value": 1
+          },
+          {
+            "label": "S2",
+            "value": 2
+          },
+          {
+            "label": "S3",
+            "value": 3
+          },
+          {
+            "label": "S4",
+            "value": 4
+          },
+          {
+            "label": "S5",
+            "value": 5
+          },
+          {
+            "label": "S6",
+            "value": 6
+          },
+          {
+            "label": "S7",
+            "value": 7
+          },
+          {
+            "label": "S8",
+            "value": 8
+          },
+          {
+            "label": "S9",
+            "value": 9
+          },
+          {
+            "label": "S10",
+            "value": 10
+          },
+          {
+            "label": "S11",
+            "value": 11
+          },
+          {
+            "label": "S12",
+            "value": 12
+          },
+          {
+            "label": "S13",
+            "value": 13
+          },
+          {
+            "label": "S14",
+            "value": 14
+          },
+          {
+            "label": "S15",
+            "value": 15
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 14,
+        "legendCount": 15
+      }
+    },
+    {
+      "id": "g_tiny_slice_below_1pct",
+      "input": "pie\n\"Big\":1000\n\"Tiny\":5",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "Big",
+            "value": 1000
+          },
+          {
+            "label": "Tiny",
+            "value": 5
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 1,
+        "legendCount": 2
+      }
+    },
+    {
+      "id": "g_tiny_slice_just_over_1pct",
+      "input": "pie\n\"Big\":1000\n\"Tiny\":11",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "label": "Big",
+            "value": 1000
+          },
+          {
+            "label": "Tiny",
+            "value": 11
+          }
+        ],
+        "showData": false,
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "drawCount": 2,
+        "legendCount": 2
+      }
+    }
+  ]
+}
