@@ -50,31 +50,29 @@ struct RequirementSceneStyle {
   // requirementBox default border size (userNodeOverrides: strokeWidth = sw || 1.3);
   // the box outline AND the divider both render at this width unless overridden.
   qreal strokeWidth = 1.3;
-  // colorIndex palette (Commit 4 + review-fix). When borderColorArray is non-empty
-  // each node's box outline + divider + fill DEFAULT colors are taken from the
-  // palette by insertion order (idx; requirements then elements — matches
+  // colorIndex palette (Commit 4 + review-fixes). When borderColorArray is
+  // non-empty, each node's box outline + divider + fill DEFAULT colors are taken
+  // from the palette by insertion order (idx; requirements then elements — matches
   // RequirementDB.getData colorIndex). The mapping mirrors upstream's genColor:
-  //   k = idx % borderColorArray.size(); a genColor CSS rule exists only for k<12
-  //     (THEME_COLOR_LIMIT), so k>=12 (borderLen>12) keeps the base color.
-  //   outline+divider stroke = borderColorArray[k] (when k<12 and it parses);
-  //   fill              = bkgColorArray[k]  (when k<12, k<bkgLen, and it parses);
-  //                       otherwise mainBkg (bkg shorter/empty, e.g. redux-dark-color).
-  //   an unparseable array entry drops just that property -> base for that property.
-  // User `style`/`classDef` still wins (resolveBoxStyle overrides these defaults);
-  // and a user themeVariables array REPLACES (or, if empty, clears) the built-in.
-  // Only redux-color/redux-dark-color populate the built-in; the 9 other themes are
-  // inert unless the user supplies an array. Text color never cycles.
+  //   k = idx % borderColorArray.size(); a genColor CSS rule exists only for
+  //     k < themeColorLimit (THEME_COLOR_LIMIT), so k>=limit keeps the base color.
+  // A user themeVariables array REPLACES (or, if empty, clears) the built-in, so a
+  // custom array activates colorIndex under any theme. Only redux-color /
+  // redux-dark-color populate the built-in; the 9 other themes are inert unless the
+  // user supplies an array. Text color never cycles.
   QStringList borderColorArray;
   QStringList bkgColorArray;
-  // Per-node, per-property: a genColor CSS declaration exists for this node's
-  // color-id, so a user inline fill/stroke value the browser DROPS (invalid/
-  // inherit) falls back to the palette color (fillFromPalette -> base.boxFill;
-  // strokeFromPalette -> base.boxStroke + dividerColor, both visible) rather than
-  // the non-palette behavior (foreground fill / hidden outline). Set per-node in
-  // buildRequirementScene; the scene-level copy stays false. Verified against
-  // mermaid 11.16.0 (G:/github/req-probe/step2-colorindex-full-report.json E1/E5/E7).
-  bool fillFromPalette = false;
-  bool strokeFromPalette = false;
+  // genColor emits rules for color-0..color-(themeColorLimit-1) (upstream
+  // THEME_COLOR_LIMIT; default 12, user-configurable via themeVariables). Copied
+  // from themeVars.themeColorLimit by the adapter.
+  int themeColorLimit = 12;
+  // Per-node L1 (palette CSS) declarations, set in buildRequirementScene. Presence
+  // == a genColor rule exists for this node's color-id for that property; the value
+  // is the array entry carried verbatim so resolveBoxStyle's layered resolver can
+  // categorize paint keywords on it. paletteStrokeEntry = borderColorArray[k] when
+  // k<limit; paletteFillEntry = bkgColorArray[k] when k<limit && k<bkgLen.
+  std::optional<QString> paletteStrokeEntry;
+  std::optional<QString> paletteFillEntry;
 };
 
 // One text row in a requirementBox. `document` is pre-shaped so the painter

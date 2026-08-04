@@ -86,6 +86,10 @@ struct RequirementDiagramImpl : Diagram {
       style.borderColorArray = *b;
     if (auto b = arrayThemeOverride(pre.config, QStringLiteral("bkgColorArray")))
       style.bkgColorArray = *b;
+    // genColor emits palette rules for color-0..color-(THEME_COLOR_LIMIT-1). The
+    // limit defaults to 12 and is user-configurable via themeVariables
+    // .THEME_COLOR_LIMIT (top-level init.THEME_COLOR_LIMIT is upstream-ignored).
+    style.themeColorLimit = themeVars.themeColorLimit;
     // No inline `title` token in requirementDiagram grammar — pass empty so
     // renderMetadata falls back to the frontmatter title (pre.title).
     MermaidRenderMetadata metadata = renderMetadata(

@@ -36,10 +36,6 @@ namespace {
 
 constexpr qreal kPadding = 20.0;
 constexpr qreal kGap = 20.0;
-// genColor emits colorIndex CSS rules for color-0..color-(N-1) only (upstream
-// THEME_COLOR_LIMIT). A node whose color-id k = idx % borderLen is >= this keeps
-// the base color (no matching rule). Verified by dumping the SVG <style> block.
-constexpr int kThemeColorLimit = 12;
 
 // mermaid-cli's default Puppeteer viewport (src/index.js: --width 800, --height
 // 600, --scale unset -> deviceScaleFactor 1). Requirement resolves viewport-
@@ -110,6 +106,77 @@ QVector<qreal> getStrokeDashArray(const QString& strokeDasharrayStyle) {
   return {0.0, 0.0};
 }
 
+// Layered <paint> resolver for the requirementBox fill / outline / divider.
+//
+// Upstream resolves these through a 3-layer CSS cascade (probed vs mermaid 11.16.0,
+// G:/github/req-probe/step3-cascade-report.json): L2 user inline `style` (unlayered,
+// beats the layered L1) -> L1 genColor palette rule (present only when the node has
+// a color-id k < THEME_COLOR_LIMIT, and for fill also k < bkgLen) -> L0a theme
+// attribute (mainBkg / nodeBorder / dividerColor). The DOM-inherited values L0b
+// (fill->foreground, outline->none, divider->dividerColor) are reached by the
+// CSS-wide keywords inherit/unset/revert and by L2 garbage/revert-layer with no L1.
+//
+// A paint value resolves the same at any layer; revert-layer/garbage/absent fall
+// through to the next. The one asymmetry the probe mandates: from L2, `absent`
+// falls to L0a (mainBkg/nodeBorder) while `garbage`/`revert-layer` fall to L0b
+// (foreground/none); from L1, any fall-through lands on L0a.
+enum class PaintCat {
+  Absent, NoneKw, CurrentColor, Inherit, Initial, Unset, Revert, RevertLayer, Color, Garbage
+};
+PaintCat categorizePaint(const QString& v) {
+  if (v.isEmpty()) return PaintCat::Absent;
+  const QString l = v.trimmed().toLower();
+  if (l == QLatin1String("none")) return PaintCat::NoneKw;
+  if (l == QLatin1String("currentcolor")) return PaintCat::CurrentColor;
+  if (l == QLatin1String("inherit")) return PaintCat::Inherit;
+  if (l == QLatin1String("initial")) return PaintCat::Initial;
+  if (l == QLatin1String("unset")) return PaintCat::Unset;
+  if (l == QLatin1String("revert")) return PaintCat::Revert;
+  if (l == QLatin1String("revert-layer")) return PaintCat::RevertLayer;
+  if (color::isParsableColor(v)) return PaintCat::Color;
+  return PaintCat::Garbage;
+}
+// A resolved paint: `none` <=> NoBrush (fill) / hidden (stroke); else a color.
+struct Paint { bool none = false; QString color; };
+// Resolve a value AT ONE layer. Returns nullopt for fall-through (revert-layer /
+// garbage / absent) so the caller walks to the next layer. initial/inherited are
+// this property's initial / DOM-inherited paints (the CSS-wide keywords are
+// absolute — independent of which layer declares them).
+std::optional<Paint> resolveAtLayer(const QString& v, PaintCat cat, const Paint& initial,
+                                    const Paint& inherited) {
+  switch (cat) {
+    case PaintCat::Color:        return Paint{false, v};
+    case PaintCat::NoneKw:       return Paint{true, {}};
+    case PaintCat::CurrentColor: return Paint{false, QStringLiteral("#000000")};
+    case PaintCat::Initial:      return initial;
+    case PaintCat::Inherit:
+    case PaintCat::Unset:
+    case PaintCat::Revert:       return inherited;
+    case PaintCat::Absent:
+    case PaintCat::RevertLayer:
+    case PaintCat::Garbage:      return std::nullopt;  // fall through
+  }
+  return std::nullopt;
+}
+// Walk the cascade for one property. user/l1Entry are nullopt when that layer has
+// no declaration; l0a is the theme-attribute base; initial/inherited the CSS
+// initial / DOM-inherited paints for this property.
+Paint resolvePaint(const std::optional<QString>& user, const std::optional<QString>& l1Entry,
+                   const Paint& l0a, const Paint& initial, const Paint& inherited) {
+  const PaintCat userCat = user ? categorizePaint(*user) : PaintCat::Absent;
+  if (user) {
+    if (auto r = resolveAtLayer(*user, userCat, initial, inherited)) return *r;
+  }
+  // user is absent/garbage/revert-layer -> consult L1, then the appropriate base.
+  if (l1Entry) {
+    if (auto r = resolveAtLayer(*l1Entry, categorizePaint(*l1Entry), initial, inherited))
+      return *r;
+    return l0a;  // L1 present but fell through (entry garbage/revert-layer/absent) -> L0a
+  }
+  // no L1: absent -> L0a (theme attribute); garbage/revert-layer -> L0b (inherited).
+  return (userCat == PaintCat::Absent) ? l0a : inherited;
+}
+
 // compileStyles (chunk-BNCO5QFQ.mjs) for the box: build a Map (last value per
 // key wins) from the node's event-ordered declaration list — styles2Map mirrors
 // `const [key, value] = style.split(":")`, i.e. split on ':' and keep ONLY the
@@ -119,32 +186,21 @@ QVector<qreal> getStrokeDashArray(const QString& strokeDasharrayStyle) {
 // (color/font-*/...) are split out by isLabelStyle upstream and do not affect
 // the box — they are ignored here (text phase).
 //
-// SVG <paint> keywords, probed against mermaid 11.16.0 (probe5-report.json +
-// step0d-e-report.json). CSS/SVG keywords are ASCII case-insensitive, so NONE /
-// CurrentColor / INHERIT match their lowercase forms.
-//   fill:
-//     none          -> NoBrush
-//     currentColor  -> the path's OWN `color`. `color` is a labelStyle upstream
-//                      (text-only), so the box path never inherits a user color —
-//                      its `color` is the SVG-root default black, regardless of
-//                      any `color:<x>` on the label and regardless of declaration
-//                      order. So box currentColor ALWAYS resolves to black (this
-//                      is final parity, not a deferral; the text/color phase only
-//                      paints label text, it cannot change the box's color).
-//     inherit/invalid -> the SVG-inherited foreground (#333/#ccc).
-//   stroke (outline and divider diverge!):
-//     none          -> outline AND divider both hidden (NoPen).
-//     currentColor  -> black on outline AND divider (same color-scope reason).
-//     <valid color> -> that color on outline AND divider.
-//     inherit/invalid -> OUTLINE hidden, divider KEEPS the theme color. The
-//                      outline path's stroke inherits/defaults to none; the
-//                      divider path carries the theme stroke attribute, so an
-//                      unset-style stroke value drops only the outline.
-//   PALETTE EXCEPTION (colorIndex, fillFromPalette/strokeFromPalette): when a
-//   genColor CSS rule exists for the node's color-id, the dropped invalid inline
-//   falls back to the PALETTE color instead — fill -> base.boxFill, stroke ->
-//   base.boxStroke + dividerColor (both visible). The non-palette rows above are
-//   the fillFromPalette/strokeFromPalette == false case. (step2 E1/E2/E5/E6.)
+// SVG <paint> values for fill/stroke are resolved by the layered `resolvePaint`
+// helper above (3-layer cascade: user inline -> genColor palette -> theme base),
+// probed exhaustively vs mermaid 11.16.0 (G:/github/req-probe/step3-cascade-report.json).
+// CSS-wide keywords are ASCII case-insensitive. Key outcomes the resolver reproduces:
+//   fill: none->NoBrush; currentColor/initial->black; inherit/unset/revert->
+//         foreground; revert-layer/garbage->palette fill (if active) else foreground;
+//         absent->palette fill (if active) else mainBkg.
+//   outline: none/initial/inherit/unset/revert->hidden; currentColor->black;
+//         revert-layer/garbage->palette stroke (if active) else hidden;
+//         absent->palette stroke (if active) else nodeBorder.
+//   divider: tracks outline EXCEPT inherit/unset/revert->dividerColor (the divider
+//         path's inherited stroke) and absent/garbage-with-no-L1->dividerColor. So
+//         `stroke:none` hides BOTH outline and divider; `stroke:inherit` hides only
+//         the outline. stroke-width / stroke-dasharray / zero-width below are
+//         resolved separately and unchanged by the paint resolver.
 void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneStyle& base,
                      const CssLengthContext& lengthCtx, req::RequirementSceneNode& node) {
   node.fill = base.boxFill;
@@ -156,9 +212,7 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
   node.strokeWidth = base.strokeWidth;
   node.dashArray = {0.0, 0.0};
 
-  if (cssStyles.isEmpty()) return;
-
-  QHash<QString, QString> map;  // styles2Map: last value per key wins
+  QHash<QString, QString> map;  // styles2Map: last value per key wins (empty if no styles)
   for (const QString& decl : cssStyles) {
     const QStringList parts = decl.split(QLatin1Char(':'));
     if (parts.isEmpty() || parts.first().trimmed().isEmpty()) continue;  // stray token
@@ -167,43 +221,32 @@ void resolveBoxStyle(const QStringList& cssStyles, const req::RequirementSceneSt
     map.insert(key, value);
   }
 
-  // fill: none -> NoBrush; currentColor -> black; invalid/inherit -> foreground,
-  // UNLESS a palette fill-rule exists (fillFromPalette) — then the dropped inline
-  // falls back to the palette fill (base.boxFill), matching genColor's CSS winning
-  // over the dropped attribute (step2 E1 vs E5).
-  if (map.contains(QStringLiteral("fill"))) {
-    const QString v = map.value(QStringLiteral("fill"));
-    if (v.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0)
-      node.fillNone = true;
-    else if (v.compare(QLatin1String("currentColor"), Qt::CaseInsensitive) == 0)
-      node.fill = QStringLiteral("#000000");
-    else if (color::isParsableColor(v))
-      node.fill = v;
-    else if (!base.fillFromPalette)
-      node.fill = base.foregroundFallback;  // inherit / invalid, no palette fill-rule
-    // fillFromPalette: leave base.boxFill (palette) in place.
-  }
-  // stroke: see the divergence table above. none hides both; currentColor and a
-  // valid color apply to both; inherit/invalid hide the outline only — UNLESS a
-  // palette stroke-rule exists (strokeFromPalette), in which case the dropped
-  // inline falls back to the palette stroke on BOTH outline+divider, kept visible
-  // (genColor `.node path` wins over the dropped attribute; step2 E2 vs E6).
-  if (map.contains(QStringLiteral("stroke"))) {
-    const QString v = map.value(QStringLiteral("stroke"));
-    if (v.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0) {
-      node.outlineVisible = false;
-      node.dividerVisible = false;
-    } else if (v.compare(QLatin1String("currentColor"), Qt::CaseInsensitive) == 0) {
-      node.outlineStroke = node.dividerStroke = QStringLiteral("#000000");
-    } else if (color::isParsableColor(v)) {
-      node.outlineStroke = node.dividerStroke = v;
-    } else if (!base.strokeFromPalette) {
-      // inherit / invalid, no palette stroke-rule: outline inherits/defaults to
-      // none (hidden); divider keeps its theme stroke.
-      node.outlineVisible = false;
-    }
-    // strokeFromPalette: keep base.boxStroke + dividerColor, both visible.
-  }
+  // fill / outline / divider paint through the 3-layer cascade. Always run (even
+  // with no user style) so an active palette applies to the box. base here is the
+  // per-node nodeBase carrying paletteFillEntry/paletteStrokeEntry when the node
+  // has a color-id < THEME_COLOR_LIMIT.
+  const std::optional<QString> userFill = map.contains(QStringLiteral("fill"))
+      ? std::optional<QString>(map.value(QStringLiteral("fill"))) : std::nullopt;
+  const std::optional<QString> userStroke = map.contains(QStringLiteral("stroke"))
+      ? std::optional<QString>(map.value(QStringLiteral("stroke"))) : std::nullopt;
+  const Paint kBlack{false, QStringLiteral("#000000")};
+  const Paint kNone{true, {}};
+  const Paint kForeground{false, base.foregroundFallback};
+  const Paint fillL0a{false, base.boxFill};          // mainBkg
+  const Paint outlineL0a{false, base.boxStroke};     // nodeBorder
+  const Paint dividerL0a{false, base.dividerColor};  // dividerColor (also L0b for divider)
+  // fill: initial=black, inherited=foreground.
+  const Paint fp = resolvePaint(userFill, base.paletteFillEntry, fillL0a, kBlack, kForeground);
+  node.fillNone = fp.none;
+  if (!fp.none) node.fill = fp.color;
+  // outline: initial=none, inherited=none (outline path's stroke inherits to none).
+  const Paint op = resolvePaint(userStroke, base.paletteStrokeEntry, outlineL0a, kNone, kNone);
+  node.outlineVisible = !op.none;
+  if (!op.none) node.outlineStroke = op.color;
+  // divider: initial=none, inherited=dividerColor (the divider path's stroke).
+  const Paint dp = resolvePaint(userStroke, base.paletteStrokeEntry, dividerL0a, kNone, dividerL0a);
+  node.dividerVisible = !dp.none;
+  if (!dp.none) node.dividerStroke = dp.color;
   // stroke-width — mirrors the upstream cascade (probed vs mermaid 11.16.0 +
   // Chrome; see G:/github/req-probe/step0d-a-report.json). userNodeOverrides
   // passes the value through (`replace("px","")` then `|| default`, which only
@@ -336,36 +379,27 @@ RequirementScene buildRequirementScene(
     // follows the explicit stroke/stroke-width and otherwise keeps the theme
     // divider color; both default to the 1.3 requirement border size.
     //
-    // colorIndex palette (Commit 4 + review-fix): when the theme (or a user
-    // themeVariables override) supplies borderColorArray, the box outline +
-    // divider + fill DEFAULT colors are taken from the palette by insertion order.
-    // buildRequirementLayoutInput appends requirements then elements, so idx here
-    // == upstream colorIndex (RequirementDB.getData stamps colorIndex before each
-    // push). The mapping mirrors genColor: k = idx % borderLen; only k<12 has a
-    // CSS rule; each property is gated independently on its own array entry
-    // parsing (an unparseable entry drops just that declaration -> base). User
-    // `style`/`classDef` still wins (resolveBoxStyle overrides these defaults).
-    // fillFromPalette/strokeFromPalette flag the properties whose genColor rule
-    // exists, so a DROPPED invalid user inline falls back to the palette color
-    // instead of the non-palette foreground/hide behavior (resolveBoxStyle).
-    RequirementSceneStyle nodeBase = scene.style;           // flags default false
+    // colorIndex palette (Commit 4 + review-fixes): when the theme (or a user
+    // themeVariables override) supplies borderColorArray, genColor's palette CSS
+    // layer colors the node by insertion order. buildRequirementLayoutInput
+    // appends requirements then elements, so idx here == upstream colorIndex
+    // (RequirementDB.getData stamps colorIndex before each push). We don't bake
+    // the palette colors into nodeBase here — instead we record the L1 palette
+    // DECLARATIONS (paletteStrokeEntry / paletteFillEntry) and let resolveBoxStyle's
+    // layered resolver walk them with the user inline + theme base. k = idx %
+    // borderLen is the data-color-id index; a genColor rule exists only for
+    // k < themeColorLimit (THEME_COLOR_LIMIT), and the fill rule only when
+    // k < bkgLen (redux-dark-color has an empty bkg -> no fill rule -> mainBkg).
+    RequirementSceneStyle nodeBase = scene.style;
     const QStringList& border = scene.style.borderColorArray;
     if (!border.isEmpty()) {
-      const int k = idx % border.size();                    // data-color-id index
-      if (k < kThemeColorLimit) {                           // genColor rule exists
-        if (color::isParsableColor(border.at(k))) {         // stroke protected
-          nodeBase.boxStroke = border.at(k);
-          nodeBase.dividerColor = border.at(k);
-          nodeBase.strokeFromPalette = true;
-        }
-        const QStringList& bkg = scene.style.bkgColorArray;
-        if (k < bkg.size() && color::isParsableColor(bkg.at(k))) {  // fill protected
-          nodeBase.boxFill = bkg.at(k);
-          nodeBase.fillFromPalette = true;
-        }
-      }
-      // k >= 12 (borderLen>12): no genColor rule -> node keeps base; flags stay
-      // false (invalid user inline behaves like the non-palette case).
+      const int k = idx % border.size();
+      if (k < scene.style.themeColorLimit)
+        nodeBase.paletteStrokeEntry = border.at(k);  // `.node path`/`.node rect` rule
+      const QStringList& bkg = scene.style.bkgColorArray;
+      if (k < scene.style.themeColorLimit && k < bkg.size())
+        nodeBase.paletteFillEntry = bkg.at(k);
+      // k >= limit: no genColor rule -> both entries stay unset -> resolver uses L0a.
     }
     resolveBoxStyle(node.cssStyles, nodeBase, lengthCtx, rendered);
     // Resolve the text style (Commit 3) from the same event-ordered cssStyles.

@@ -1,28 +1,28 @@
 // requirementDiagram colorIndex — per-node color cycling by insertion order.
 //
-// Commit 4 + review-fix. The requirement DB stamps each node a `colorIndex`
+// Commit 4 + review-fixes. The requirement DB stamps each node a `colorIndex`
 // (a single counter shared across requirements THEN elements, in declaration
-// order). genColor emits a CSS rule per color-id k in 0..11 (THEME_COLOR_LIMIT)
-// only; the shape sets data-color-id = color-(idx % borderLen). So:
-//   k = idx % borderColorArray.size()
-//   k < 12        -> outline+divider = borderColorArray[k], fill = bkgColorArray[k]
-//                   (each gated on its own entry existing+parsing; bkg shorter/
-//                   empty -> fill mainBkg). Verified vs mermaid 11.16.0
-//                   (G:/github/req-probe/step2-colorindex-full-report.json).
-//   k >= 12       -> no rule -> base (mainBkg/nodeBorder).
-//   user `style`  -> wins; an INVALID value the browser drops falls back to the
-//                   PALETTE color when a rule exists (fillFromPalette/strokeFromPalette),
-//                   else to foreground fill / hidden outline.
-// A user themeVariables.borderColorArray/bkgColorArray REPLACES the built-in
-// (or, empty, clears it); a custom array activates colorIndex under any theme.
-// Text color never cycles.
+// order). genColor emits a CSS rule per color-id k in 0..(THEME_COLOR_LIMIT-1)
+// only (default 12, configurable via themeVariables.THEME_COLOR_LIMIT); the shape
+// sets data-color-id = color-(idx % borderColorArray.size()). So with
+// k = idx % borderColorArray.size():
+//   k < limit     -> outline+divider = borderColorArray[k], fill = bkgColorArray[k]
+//                    (the fill rule only when k<bkgLen; bkg shorter/empty -> mainBkg).
+//   k >= limit    -> no rule -> base (mainBkg/nodeBorder).
+// Fill/outline/divider paint is resolved through a 3-layer CSS cascade
+// (RequirementScene.cpp resolvePaint): user inline `style` -> genColor palette ->
+// theme base, with CSS-wide keywords (inherit/initial/unset/revert/revert-layer),
+// currentColor, none, and garbage each having distinct, probe-verified outcomes
+// (G:/github/req-probe/step3-cascade-report.json). Array entries accept the same
+// paint keywords. A user themeVariables array REPLACES (or, empty, clears) the
+// built-in and activates colorIndex under any theme; non-string entries preserve
+// their index (123/null/true -> base). Text color never cycles.
 //
-// Two layers: (1) FlowTheme palette population (resolveFlowTheme ReduxColor /
-// ReduxDarkColor array contents + the 9 inert themes), (2) the full production
-// render path (MermaidRenderCache -> RequirementDiagramAdapter -> RequirementScene)
-// under frontmatter-declared themes, asserting resolved node fill/outline/divider.
-// Sections 8-18 cover the review-fix: structured array pathway + palette-aware
-// per-property invalid fallback.
+// Tests run the full production path (MermaidRenderCache -> RequirementDiagramAdapter
+// -> RequirementScene) under frontmatter-declared themes, asserting resolved node
+// fill/outline/divider. §1-7 Commit-4 cycling; §8-18 review-fix-1 (array pathway +
+// palette invalid fallback); §19-22 review-fix-2 (paint-keyword cascade, array-entry
+// keywords, THEME_COLOR_LIMIT=2, non-string items).
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/requirement/RequirementScene.h"
@@ -158,6 +158,65 @@ void requireNodeColors(const requirement::RequirementScene* sc, const QString& i
           QStringLiteral("%1 outlineVisible: got %2 exp %3").arg(id).arg(static_cast<int>(n->outlineVisible)).arg(static_cast<int>(outlineVisible)));
   require(n->dividerVisible == dividerVisible,
           QStringLiteral("%1 dividerVisible: got %2 exp %3").arg(id).arg(static_cast<int>(n->dividerVisible)).arg(static_cast<int>(dividerVisible)));
+}
+
+// Reference paint resolution for §19, articulating the probe contract
+// (G:/github/req-probe/step3-cascade-report.json Matrix A) directly — independent
+// of the implementation's layered resolver. `pal`=palette active for this node/prop
+// (k=0 under redux-color); pFill/pStroke = palette[k=0]; fg/mainBkg/nodeBorder/
+// divCol read from sc->style. Returns the expected resolved paint; colors that are
+// don't-care (hidden outline/divider, NoBrush fill) are left empty.
+struct RefPaint { bool fillNone; QString fill; QString outline; bool outVis; QString divider; bool divVis; };
+
+// `style A fill:V` (no stroke decl): outline/divider come from L1(palette) if pal
+// else L0a; fill per V (revert-layer/garbage -> palette fill if pal else foreground).
+RefPaint refFill(const QString& v, bool pal, const QString& fg, const QString& mainBkg,
+                 const QString& nodeBorder, const QString& divCol,
+                 const QString& pFill, const QString& pStroke) {
+  RefPaint r{false, {}, pal ? pStroke : nodeBorder, true, pal ? pStroke : divCol, true};
+  const QString l = v.toLower();
+  if (l == QStringLiteral("none")) r.fillNone = true;
+  else if (l == QStringLiteral("currentcolor") || l == QStringLiteral("initial")) r.fill = QStringLiteral("#000000");
+  else if (l == QStringLiteral("inherit") || l == QStringLiteral("unset") || l == QStringLiteral("revert")) r.fill = fg;
+  else if (l == QStringLiteral("revert-layer") || l == QStringLiteral("notacolor")) r.fill = pal ? pFill : fg;
+  else r.fill = v;  // valid color
+  return r;
+}
+// `style A stroke:V` (no fill decl): fill = L1(palette) if pal else L0a(mainBkg);
+// outline per V (inherited=none); divider per V (inherited=divCol).
+RefPaint refStroke(const QString& v, bool pal, const QString& fg, const QString& mainBkg,
+                   const QString& nodeBorder, const QString& divCol,
+                   const QString& pFill, const QString& pStroke) {
+  RefPaint r{false, pal ? pFill : mainBkg, {}, true, {}, true};
+  const QString l = v.toLower();
+  // outline:
+  if (l == QStringLiteral("none") || l == QStringLiteral("initial") ||
+      l == QStringLiteral("inherit") || l == QStringLiteral("unset") || l == QStringLiteral("revert"))
+    r.outVis = false;
+  else if (l == QStringLiteral("revert-layer") || l == QStringLiteral("notacolor")) { r.outline = pal ? pStroke : QString(); r.outVis = pal; }
+  else if (l == QStringLiteral("currentcolor")) r.outline = QStringLiteral("#000000");
+  else { r.outline = v; }  // valid color
+  // divider:
+  if (l == QStringLiteral("none") || l == QStringLiteral("initial")) r.divVis = false;
+  else if (l == QStringLiteral("inherit") || l == QStringLiteral("unset") || l == QStringLiteral("revert")) { r.divider = divCol; }
+  else if (l == QStringLiteral("revert-layer") || l == QStringLiteral("notacolor")) { r.divider = pal ? pStroke : divCol; }
+  else if (l == QStringLiteral("currentcolor")) r.divider = QStringLiteral("#000000");
+  else { r.divider = v; }
+  return r;
+}
+void chkRef(const requirement::RequirementScene* sc, const QString& id, const QString& label,
+            const RefPaint& e) {
+  const auto* n = nodeById(sc, id);
+  require(n != nullptr, QStringLiteral("%1: node missing").arg(label));
+  require(n->fillNone == e.fillNone,
+          QStringLiteral("%1 fillNone got %2 exp %3").arg(label).arg(n->fillNone).arg(e.fillNone));
+  if (!e.fillNone) require(n->fill == e.fill, QStringLiteral("%1 fill got %2 exp %3").arg(label, n->fill, e.fill));
+  require(n->outlineVisible == e.outVis,
+          QStringLiteral("%1 outlineVis got %2 exp %3").arg(label).arg(n->outlineVisible).arg(e.outVis));
+  if (e.outVis) require(n->outlineStroke == e.outline, QStringLiteral("%1 outline got %2 exp %3").arg(label, n->outlineStroke, e.outline));
+  require(n->dividerVisible == e.divVis,
+          QStringLiteral("%1 dividerVis got %2 exp %3").arg(label).arg(n->dividerVisible).arg(e.divVis));
+  if (e.divVis) require(n->dividerStroke == e.divider, QStringLiteral("%1 divider got %2 exp %3").arg(label, n->dividerStroke, e.divider));
 }
 }  // namespace
 
@@ -468,6 +527,100 @@ int main(int argc, char** argv) {
       require(n->dividerVisible && n->dividerStroke == sc->style.dividerColor,
               QStringLiteral("no-palette invalid stroke: divider keeps theme color"));
     }
+  }
+
+  // ===== 19. User paint-keyword cascade: 9 values x {fill,stroke} x {default, redux-color} =====
+  // The full CSS-wide-keyword + palette contract (step3-cascade-report.json Matrix A),
+  // asserted against refFill/refStroke (an independent articulation of the probe).
+  {
+    const QStringList vals = {QStringLiteral("none"),   QStringLiteral("currentColor"),
+                              QStringLiteral("inherit"), QStringLiteral("initial"),
+                              QStringLiteral("unset"),   QStringLiteral("revert"),
+                              QStringLiteral("revert-layer"), QStringLiteral("#00ff00"),
+                              QStringLiteral("notacolor")};
+    struct ThemeCfg { QString theme; bool pal; };
+    for (const ThemeCfg tc : {ThemeCfg{QStringLiteral("redux-color"), true},
+                              ThemeCfg{QStringLiteral("default"), false}}) {
+      const auto baseE = renderThemeTvEntry(cache, tc.theme, QString(), reqsBody(1));
+      const auto* base = sceneOf(baseE);
+      const QString fg = base->style.foregroundFallback, mainBkg = base->style.boxFill,
+                    nodeBorder = base->style.boxStroke, divCol = base->style.dividerColor;
+      const QString pFill = kBkgPalette.at(0), pStroke = kBorderPalette.at(0);
+      for (const QString& v : vals) {
+        {  // fill
+          const auto e = renderThemeTvEntry(cache, tc.theme, QString(),
+                                            reqsBody(1) + QStringLiteral("style A fill:") + v);
+          chkRef(sceneOf(e), QStringLiteral("A"), QStringLiteral("%1 fill:%2").arg(tc.theme, v),
+                 refFill(v, tc.pal, fg, mainBkg, nodeBorder, divCol, pFill, pStroke));
+        }
+        {  // stroke
+          const auto e = renderThemeTvEntry(cache, tc.theme, QString(),
+                                            reqsBody(1) + QStringLiteral("style A stroke:") + v);
+          chkRef(sceneOf(e), QStringLiteral("A"), QStringLiteral("%1 stroke:%2").arg(tc.theme, v),
+                 refStroke(v, tc.pal, fg, mainBkg, nodeBorder, divCol, pFill, pStroke));
+        }
+      }
+    }
+  }
+
+  // ===== 20. Palette array-ENTRY keywords (default theme, [v]/[v], 1 node) =====
+  // L1-entry resolution: an array entry may itself be a paint keyword (Matrix B).
+  {
+    const auto e = renderThemeTvEntry(cache, QStringLiteral("default"), QString(), reqsBody(1));
+    const auto* b = sceneOf(e);
+    const QString fg = b->style.foregroundFallback, mainBkg = b->style.boxFill,
+                  nodeBorder = b->style.boxStroke, divCol = b->style.dividerColor;
+    auto chk = [&](const QString& v, bool fillNone, const QString& fill, const QString& outline,
+                   bool outVis, const QString& divider, bool divVis) {
+      const QString tv = QStringLiteral("{\"borderColorArray\":[\"%1\"],\"bkgColorArray\":[\"%1\"]}").arg(v);
+      const auto e = renderThemeTvEntry(cache, QStringLiteral("default"), tv, reqsBody(1));
+      chkRef(sceneOf(e), QStringLiteral("A"), QStringLiteral("entry:%1").arg(v),
+             RefPaint{fillNone, fill, outline, outVis, divider, divVis});
+    };
+    chk(QStringLiteral("currentColor"), false, QStringLiteral("#000000"), QStringLiteral("#000000"), true, QStringLiteral("#000000"), true);
+    chk(QStringLiteral("initial"),      false, QStringLiteral("#000000"), {}, false, {}, false);
+    chk(QStringLiteral("none"),         true,  {},                       {}, false, {}, false);
+    chk(QStringLiteral("inherit"),      false, fg,                        {}, false, divCol, true);
+    chk(QStringLiteral("unset"),        false, fg,                        {}, false, divCol, true);
+    chk(QStringLiteral("revert"),       false, fg,                        {}, false, divCol, true);
+    chk(QStringLiteral("revert-layer"), false, mainBkg,                   nodeBorder, true, divCol, true);
+    chk(QStringLiteral("notacolor"),    false, mainBkg,                   nodeBorder, true, divCol, true);
+    chk(QStringLiteral("#00ff00"),      false, QStringLiteral("#00ff00"), QStringLiteral("#00ff00"), true, QStringLiteral("#00ff00"), true);
+  }
+
+  // ===== 21. THEME_COLOR_LIMIT=2 (themeVariables path): only color-0/1 cycle =====
+  {
+    auto col = [](int i) { return QStringLiteral("#%1").arg(i + 1, 6, 16, QLatin1Char('0')); };
+    QStringList b15, k15;
+    for (int i = 0; i < 15; ++i) { b15 << col(i + 1); k15 << col(i + 16); }
+    const QString tv = QStringLiteral(
+        "{\"THEME_COLOR_LIMIT\":2,\"borderColorArray\":[\"%1\"],\"bkgColorArray\":[\"%2\"]}")
+        .arg(b15.join("\",\""), k15.join("\",\""));
+    const auto e = renderThemeTvEntry(cache, QStringLiteral("default"), tv, reqsBody(16));
+    const auto* sc = sceneOf(e);
+    const QString mainBkg = sc->style.boxFill, nodeBorder = sc->style.boxStroke, divCol = sc->style.dividerColor;
+    requireNodeColors(sc, QStringLiteral("A"), k15.at(0), b15.at(0), b15.at(0), true, true);   // k0<2 palette
+    requireNodeColors(sc, QStringLiteral("B"), k15.at(1), b15.at(1), b15.at(1), true, true);   // k1<2 palette
+    requireNodeColors(sc, QStringLiteral("C"), mainBkg, nodeBorder, divCol, true, true);       // k2 >= limit -> base
+    requireNodeColors(sc, QStringLiteral("L"), mainBkg, nodeBorder, divCol, true, true);       // k11 -> base
+    requireNodeColors(sc, QStringLiteral("P"), k15.at(0), b15.at(0), b15.at(0), true, true);   // k15%15=0 -> palette
+  }
+
+  // ===== 22. Non-string array items preserve indices (123/null/true -> base) =====
+  {
+    const QString tv = QStringLiteral(
+        "{\"borderColorArray\":[\"#ff0000\",123,null,true,\"#0000ff\"],"
+        "\"bkgColorArray\":[\"#100000\",456,null,false,\"#000010\"]}");
+    const auto e = renderThemeTvEntry(cache, QStringLiteral("default"), tv, reqsBody(7));
+    const auto* sc = sceneOf(e);
+    const QString mainBkg = sc->style.boxFill, nodeBorder = sc->style.boxStroke, divCol = sc->style.dividerColor;
+    requireNodeColors(sc, QStringLiteral("A"), QStringLiteral("#100000"), QStringLiteral("#ff0000"), QStringLiteral("#ff0000"), true, true);  // k0 valid
+    requireNodeColors(sc, QStringLiteral("B"), mainBkg, nodeBorder, divCol, true, true);  // k1: 123/456 -> "" -> base
+    requireNodeColors(sc, QStringLiteral("C"), mainBkg, nodeBorder, divCol, true, true);  // k2: null -> "" -> base
+    requireNodeColors(sc, QStringLiteral("D"), mainBkg, nodeBorder, divCol, true, true);  // k3: true/false -> "" -> base
+    requireNodeColors(sc, QStringLiteral("E"), QStringLiteral("#000010"), QStringLiteral("#0000ff"), QStringLiteral("#0000ff"), true, true);  // k4 valid
+    requireNodeColors(sc, QStringLiteral("F"), QStringLiteral("#100000"), QStringLiteral("#ff0000"), QStringLiteral("#ff0000"), true, true);  // k5%5=0
+    requireNodeColors(sc, QStringLiteral("G"), mainBkg, nodeBorder, divCol, true, true);  // k6%5=1 -> base
   }
 
   qDebug() << "MermaidRequirementColorIndexTest: passed";

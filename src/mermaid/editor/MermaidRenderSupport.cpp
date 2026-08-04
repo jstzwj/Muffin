@@ -65,8 +65,14 @@ std::optional<QStringList> arrayThemeOverride(const QJsonObject& config, const Q
   const QJsonValue v = config.value(QStringLiteral("themeVariables")).toObject().value(key);
   if (!v.isArray()) return std::nullopt;  // absent / wrong type -> keep built-in
   QStringList out;
+  // Preserve EVERY element (incl. non-strings) so indices/length match upstream —
+  // genColor emits one rule per index i < THEME_COLOR_LIMIT and the shape stamps
+  // data-color-id = color-(idx % length), so dropping an element would shift every
+  // later node. Non-string elements (123/null/true) become "" here, which the
+  // consumer's paint resolver treats as absent -> base, matching the browser
+  // dropping the invalid CSS value `stroke: 123`/`null`/`true` would produce.
   for (const QJsonValue& el : v.toArray())
-    if (el.isString()) out.append(el.toString());
+    out.append(el.toString());
   return out;  // Some({}) for an explicit empty array -> caller clears the built-in
 }
 
