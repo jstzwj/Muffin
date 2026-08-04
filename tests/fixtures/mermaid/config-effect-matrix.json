@@ -20,17 +20,18 @@
       "class",
       "state",
       "er",
-      "requirement"
+      "requirement",
+      "pie"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 52,
+    "parity": 57,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 31,
+    "upstream-inert": 32,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -43,7 +44,8 @@
         "class",
         "state",
         "er",
-        "requirement"
+        "requirement",
+        "pie"
       ],
       "status": "parity",
       "upstream": [
@@ -71,7 +73,8 @@
         "class",
         "state",
         "er",
-        "requirement"
+        "requirement",
+        "pie"
       ],
       "status": "partial",
       "upstream": [
@@ -100,7 +103,8 @@
         "class",
         "state",
         "er",
-        "requirement"
+        "requirement",
+        "pie"
       ],
       "status": "parity",
       "upstream": [
@@ -282,7 +286,8 @@
         "class",
         "state",
         "er",
-        "requirement"
+        "requirement",
+        "pie"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -323,7 +328,8 @@
         "class",
         "state",
         "er",
-        "requirement"
+        "requirement",
+        "pie"
       ],
       "status": "parity",
       "upstream": [
@@ -343,7 +349,8 @@
         "class",
         "state",
         "er",
-        "requirement"
+        "requirement",
+        "pie"
       ],
       "status": "parity",
       "upstream": [
@@ -363,7 +370,8 @@
         "class",
         "state",
         "er",
-        "requirement"
+        "requirement",
+        "pie"
       ],
       "status": "unsupported",
       "upstream": [
@@ -2600,7 +2608,128 @@
       ],
       "note": "Dead config in mermaid 11.16.0 — requirement.line_height is never consumed; the row height is measured from text bbox (addText3 return value).",
       "default": 20
+    },
+    {
+      "family": "pie",
+      "interface": "PieDiagramConfig",
+      "path": "pie.useWidth",
+      "field": "useWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Dead config in mermaid 11.16.0 — pieDiagram never reads BaseDiagramConfig.useWidth (grep on the pie chunk returns 0 hits); only Gantt consumes it.",
+      "default": 984
+    },
+    {
+      "family": "pie",
+      "interface": "PieDiagramConfig",
+      "path": "pie.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "pie",
+      "interface": "PieDiagramConfig",
+      "path": "pie.textPosition",
+      "field": "textPosition",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "note": "Slice-percentage label radial position (labelRadius = R*textPosition, default 0.75 -> r=138.75). 0 -> label at chart center (0,0); 1 -> outer edge (r=185); 0.5 -> r=92.5. Moves the text transform only; arc paths and viewBox are unchanged (font-independent geometry).",
+      "default": 0.75
+    },
+    {
+      "family": "pie",
+      "interface": "PieDiagramConfig",
+      "path": "pie.donutHole",
+      "field": "donutHole",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "note": "Inner radius = donutHole*R (R=185). Clamps to (0, 0.9]: 0.5 -> innerR 92.5, 0.9 -> 166.5, but 0.95/1.0/-0.5 clamp to solid. Changes the arc path shape (appends a counter-clockwise inner arc LinnerEnd A innerR innerR 0 0 0 innerStart Z); viewBox unchanged.",
+      "default": 0
+    },
+    {
+      "family": "pie",
+      "interface": "PieDiagramConfig",
+      "path": "pie.legendPosition",
+      "field": "legendPosition",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "note": "top/bottom/left/center/right reshape the viewBox and the pie group translate; unrecognized values fall to default (right). top/bottom add legend height (n*22) -> viewBox height 516; left/right add legend width (22+longestTextWidth) -> viewBox width grows; center leaves both unchanged (490x450).",
+      "default": "right"
+    },
+    {
+      "family": "pie",
+      "interface": "PieDiagramConfig",
+      "path": "pie.highlightSlice",
+      "field": "highlightSlice",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "note": "=label -> that slice gets CSS class 'highlighted' (scale 1.05 about the chart center, opacity 1; bbox grows ~5%); ='hover' -> 'highlightedOnHover' on all slices (CSS :hover only, no static paint change). Default '' highlights nothing — unless a section label is itself empty, which matches ''.",
+      "default": ""
     }
   ],
-  "fixtureSha256": "3afc6ecb796308255e649a353e5fb5226e5740a6a09a2dab9020fb6cc0d42f46"
+  "fixtureSha256": "c216ecc488f2da5a4e56a1f401a89a3e3bd82b06b265eb3f83bbe6f777b2c950"
 }

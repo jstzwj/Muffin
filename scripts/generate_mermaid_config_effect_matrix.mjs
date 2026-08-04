@@ -306,6 +306,33 @@ const familyPolicies = {
       "er.fontSize is dead in mermaid 11.16; the theme fontSize is used.",
     ),
   },
+  pie: {
+    useWidth: inert(
+      "Dead config in mermaid 11.16.0 — pieDiagram never reads " +
+        "BaseDiagramConfig.useWidth (grep on the pie chunk returns 0 hits); " +
+        "only Gantt consumes it.",
+    ),
+    useMaxWidth: parity("viewport", "export"),
+    // Slice-percentage label radial position (labelRadius = R*textPosition).
+    // Moves the slice text transform only; arc paths and viewBox are unchanged.
+    textPosition: {
+      ...parity("text", "paint", "export"),
+      note: "Slice-percentage label radial position (labelRadius = R*textPosition, default 0.75 -> r=138.75). 0 -> label at chart center (0,0); 1 -> outer edge (r=185); 0.5 -> r=92.5. Moves the text transform only; arc paths and viewBox are unchanged (font-independent geometry).",
+    },
+    // Donut inner radius = donutHole*R. Clamps to (0, 0.9].
+    donutHole: {
+      ...parity("layout", "paint", "export"),
+      note: "Inner radius = donutHole*R (R=185). Clamps to (0, 0.9]: 0.5 -> innerR 92.5, 0.9 -> 166.5, but 0.95/1.0/-0.5 clamp to solid. Changes the arc path shape (appends a counter-clockwise inner arc LinnerEnd A innerR innerR 0 0 0 innerStart Z); viewBox unchanged.",
+    },
+    legendPosition: {
+      ...parity("layout", "viewport", "export"),
+      note: "top/bottom/left/center/right reshape the viewBox and the pie group translate; unrecognized values fall to default (right). top/bottom add legend height (n*22) -> viewBox height 516; left/right add legend width (22+longestTextWidth) -> viewBox width grows; center leaves both unchanged (490x450).",
+    },
+    highlightSlice: {
+      ...parity("paint", "export"),
+      note: "=label -> that slice gets CSS class 'highlighted' (scale 1.05 about the chart center, opacity 1; bbox grows ~5%); ='hover' -> 'highlightedOnHover' on all slices (CSS :hover only, no static paint change). Default '' highlights nothing — unless a section label is itself empty, which matches ''.",
+    },
+  },
   requirement: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -355,12 +382,28 @@ const familyPolicies = {
 const shared = [
   {
     path: "theme",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
+    families: [
+      "flowchart",
+      "sequence",
+      "class",
+      "state",
+      "er",
+      "requirement",
+      "pie",
+    ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
   {
     path: "themeVariables.*",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
+    families: [
+      "flowchart",
+      "sequence",
+      "class",
+      "state",
+      "er",
+      "requirement",
+      "pie",
+    ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
       ["text", "layout", "paint", "viewport", "export"],
@@ -369,7 +412,15 @@ const shared = [
   },
   {
     path: "fontFamily",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
+    families: [
+      "flowchart",
+      "sequence",
+      "class",
+      "state",
+      "er",
+      "requirement",
+      "pie",
+    ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
   {
@@ -428,7 +479,15 @@ const shared = [
   },
   {
     path: "securityLevel",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
+    families: [
+      "flowchart",
+      "sequence",
+      "class",
+      "state",
+      "er",
+      "requirement",
+      "pie",
+    ],
     ...policy(
       "security-fixed",
       ["interaction", "export"],
@@ -443,17 +502,41 @@ const shared = [
   },
   {
     path: "deterministicIds",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
+    families: [
+      "flowchart",
+      "sequence",
+      "class",
+      "state",
+      "er",
+      "requirement",
+      "pie",
+    ],
     ...parity("export"),
   },
   {
     path: "deterministicIDSeed",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
+    families: [
+      "flowchart",
+      "sequence",
+      "class",
+      "state",
+      "er",
+      "requirement",
+      "pie",
+    ],
     ...parity("export"),
   },
   {
     path: "themeCSS",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
+    families: [
+      "flowchart",
+      "sequence",
+      "class",
+      "state",
+      "er",
+      "requirement",
+      "pie",
+    ],
     ...unsupported(
       ["paint", "export"],
       "Native scenes consume typed theme variables rather than arbitrary browser CSS.",
@@ -498,6 +581,7 @@ const interfaces = {
   state: "StateDiagramConfig",
   er: "ErDiagramConfig",
   requirement: "RequirementDiagramConfig",
+  pie: "PieDiagramConfig",
 };
 
 const entries = [];
