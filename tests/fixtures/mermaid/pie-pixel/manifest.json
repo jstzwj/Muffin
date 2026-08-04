@@ -1,0 +1,31 @@
+{
+  "upstream": {
+    "version": "11.16.0"
+  },
+  "fontMode": "bundled-noto-2.13b171",
+  "cases": [
+    {
+      "id": "default",
+      "dpr": 1,
+      "theme": "default",
+      "renderId": "pie-pixel-default",
+      "source": "pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "default.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "d2e1d0587496c2d2dbe5dddf0ebdc3057ee05d14dd6cf13d5e82f08d39b118e3"
+    },
+    {
+      "id": "dark",
+      "dpr": 1,
+      "theme": "dark",
+      "renderId": "pie-pixel-dark",
+      "source": "pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "dark.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "69993d7d8d32ed1bb71820213450bc4c6d51b3c35247221d12f08d72519424c3"
+    }
+  ],
+  "fixtureSha256": "d9b7bad81dd70c78787c690042087bc824429aaee5f60e50e937509cc53afa2b"
+}
