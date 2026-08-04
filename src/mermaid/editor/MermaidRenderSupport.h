@@ -30,15 +30,6 @@ flowtheme::FlowThemeId themeIdFromName(const QString& name);
 QString themeFromConfig(const QJsonObject& config);
 QHash<QString, QString> themeOverrides(const QJsonObject& config);
 
-// A themeVariables ARRAY override (e.g. borderColorArray / bkgColorArray). Returns
-// nullopt when the key is absent (or not an array) -> the caller keeps the theme
-// built-in. Returns Some(list) when present, INCLUDING Some({}) for an explicit
-// empty array -> the caller clears the built-in (mermaid's gate is
-// `borderColorArray?.length`, so an empty array disables colorIndex). Non-string
-// elements are skipped (a color array holds color strings; anything else would
-// fail the color-parse gate at consumption, matching the browser dropping it).
-std::optional<QStringList> arrayThemeOverride(const QJsonObject& config, const QString& key);
-
 // genColor rule count for THEME_COLOR_LIMIT, replicating upstream's JS
 // `for (let i = 0; i < THEME_COLOR_LIMIT; i++)`: the count of non-negative
 // integers < Number(TCL), i.e. ceil of a positive finite Number() of the RAW

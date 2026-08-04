@@ -312,13 +312,6 @@ QString sanitizeCss(const QString& value) {
 void sanitizeObject(QJsonObject& object) {
   static const QSet<QString> configKeys = {
 #include "mermaid/MermaidConfigKeys.inc"
-      // Theme-only array keys absent from defaultConfig (defined in the redux
-      // theme classes, not the generated compatibility fixture): whitelisted
-      // here so user themeVariables.borderColorArray / bkgColorArray survive
-      // sanitization for the requirement colorIndex pathway (the array branch
-      // below already preserves string arrays verbatim).
-      QStringLiteral("borderColorArray"),
-      QStringLiteral("bkgColorArray"),
   };
   for (auto it = object.begin(); it != object.end();) {
     if (forbiddenKey(it.key()) || !configKeys.contains(it.key()) || it.value().isNull()) {

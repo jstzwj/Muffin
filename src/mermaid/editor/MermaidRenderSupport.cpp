@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace muffin::mermaid::editor {
 namespace {
@@ -61,40 +62,67 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
   return result;
 }
 
-std::optional<QStringList> arrayThemeOverride(const QJsonObject& config, const QString& key) {
-  const QJsonValue v = config.value(QStringLiteral("themeVariables")).toObject().value(key);
-  if (!v.isArray()) return std::nullopt;  // absent / wrong type -> keep built-in
-  QStringList out;
-  // Preserve EVERY element (incl. non-strings) so indices/length match upstream —
-  // genColor emits one rule per index i < THEME_COLOR_LIMIT and the shape stamps
-  // data-color-id = color-(idx % length), so dropping an element would shift every
-  // later node. Non-string elements (123/null/true) become "" here, which the
-  // consumer's paint resolver treats as absent -> base, matching the browser
-  // dropping the invalid CSS value `stroke: 123`/`null`/`true` would produce.
-  for (const QJsonValue& el : v.toArray())
-    out.append(el.toString());
-  return out;  // Some({}) for an explicit empty array -> caller clears the built-in
+namespace {
+constexpr double kJsNaN = std::numeric_limits<double>::quiet_NaN();
+
+// JS Number(string): trims, then a numeric literal — decimal (with sign +
+// scientific), or an unsigned 0x/0b/0o integer literal; "" -> 0; else NaN.
+// (Signed hex/bin/oct and hex floats are not in the StringNumericLiteral grammar.)
+double jsNumberString(QString s) {
+  s = s.trimmed();
+  if (s.isEmpty()) return 0.0;  // Number("") == 0
+  // 0x / 0b / 0o are all 2-char prefixes; a valid literal has >= 1 digit after.
+  const auto intPrefix = [&s](QLatin1String pfx) {
+    return s.length() > 2 && s.left(2).compare(pfx, Qt::CaseInsensitive) == 0;
+  };
+  bool ok = false;
+  if (intPrefix(QLatin1String("0x"))) {
+    return static_cast<double>(s.mid(2).toULongLong(&ok, 16));
+  } else if (intPrefix(QLatin1String("0b"))) {
+    return static_cast<double>(s.mid(2).toULongLong(&ok, 2));
+  } else if (intPrefix(QLatin1String("0o"))) {
+    return static_cast<double>(s.mid(2).toULongLong(&ok, 8));
+  }
+  const double n = s.toDouble(&ok);  // decimal / scientific (toDouble trims too)
+  return ok ? n : kJsNaN;
 }
 
+// JS Number(value): number->itself; bool->1/0; null->0; string->jsNumberString;
+// [] ->0; [x]->Number(x); [x,y,..]->NaN; object/undefined->NaN.
+double jsNumber(const QJsonValue& v) {
+  switch (v.type()) {
+    case QJsonValue::Double: return v.toDouble();
+    case QJsonValue::Bool:   return v.toBool() ? 1.0 : 0.0;
+    case QJsonValue::Null:   return 0.0;  // Number(null) == 0
+    case QJsonValue::String: return jsNumberString(v.toString());
+    case QJsonValue::Array: {
+      const QJsonArray a = v.toArray();
+      if (a.isEmpty()) return 0.0;            // Number([]) == 0
+      if (a.size() == 1) return jsNumber(a.at(0));  // Number([x]) == Number(x)
+      return kJsNaN;                          // Number([x,y]) == NaN
+    }
+    case QJsonValue::Object:
+    case QJsonValue::Undefined:
+    default:
+      return kJsNaN;                          // Number({}) / Number(undefined) == NaN
+  }
+}
+}  // namespace
+
+// genColor rule count for THEME_COLOR_LIMIT via the %%{init}%% SOURCE entry (probed
+// vs mermaid 11.16.0, G:/github/req-probe/step4-source-entry-report.json). Upstream
+// runs `for (let i = 0; i < THEME_COLOR_LIMIT; i++)`, so the rule count is the count
+// of non-negative integers < Number(TCL) = ceil of a positive finite Number(TCL).
+// Config MERGE runs first: a null/absent value does NOT override -> return nullopt
+// and the caller keeps the theme default (12). Otherwise Number() the raw value
+// (full JS semantics incl. 0x/0b/0o strings and single-element arrays) and ceil it;
+// NaN / non-positive -> 0 rules.
 std::optional<int> jsThemeColorLimit(const QJsonObject& config) {
   const QJsonValue v = config.value(QStringLiteral("themeVariables")).toObject()
                            .value(QStringLiteral("THEME_COLOR_LIMIT"));
-  if (v.isUndefined()) return std::nullopt;  // absent -> caller uses the theme default
-  // JS Number() of the raw value. Number(null)=0; Number(bool)=1/0; Number(string)
-  // = parsed double or NaN; Number(number) = itself.
-  double n = 0.0;
-  if (v.isDouble()) {
-    n = v.toDouble();
-  } else if (v.isBool()) {
-    n = v.toBool() ? 1.0 : 0.0;
-  } else if (v.isString()) {
-    bool ok = false;
-    n = v.toString().trimmed().toDouble(&ok);  // JS Number() trims a numeric string
-    if (!ok) return 0;                          // NaN -> no rules
-  }
-  // null (and any other type) leaves n = 0.0 (Number(null) = 0).
+  if (v.isUndefined() || v.isNull()) return std::nullopt;  // merge: null/absent keep default
+  const double n = jsNumber(v);
   if (!std::isfinite(n) || n <= 0.0) return 0;
-  // genColor iterates i = 0..ceil(n)-1: count of non-negative integers < n.
   return static_cast<int>(std::ceil(n));
 }
 

@@ -79,18 +79,16 @@ struct RequirementDiagramImpl : Diagram {
     // order only when borderColorArray is non-empty.
     style.borderColorArray = themeVars.borderColorArray;
     style.bkgColorArray = themeVars.bkgColorArray;
-    // User themeVariables arrays override (replace) or clear the built-in palette:
-    // a custom array activates colorIndex even under the standard themes, an
-    // explicit empty array disables it (mermaid's gate is borderColorArray?.length).
-    if (auto b = arrayThemeOverride(pre.config, QStringLiteral("borderColorArray")))
-      style.borderColorArray = *b;
-    if (auto b = arrayThemeOverride(pre.config, QStringLiteral("bkgColorArray")))
-      style.bkgColorArray = *b;
+    // NOTE: upstream ignores user-supplied borderColorArray/bkgColorArray via the
+    // %%{init}%% SOURCE entry (only the external mermaid.initialize() API honors
+    // them — verified G:/github/req-probe/step4-source-entry-report.json). The
+    // built-in redux-color/redux-dark-color palette above is the only source-path
+    // palette; custom arrays are not a %%{init}%% parity feature.
     // genColor emits palette rules for color-0..color-(THEME_COLOR_LIMIT-1). The
     // limit defaults to 12 and is user-configurable via themeVariables
     // .THEME_COLOR_LIMIT (top-level init.THEME_COLOR_LIMIT is upstream-ignored).
     // Read the RAW config value with JS Number()+ceil semantics (2.5->3, true->1,
-    // false/"abc"->0); fall back to the theme default when absent.
+    // false/"abc"->0, null/absent->keep default); fall back to the theme default.
     style.themeColorLimit = jsThemeColorLimit(pre.config).value_or(themeVars.themeColorLimit);
     // No inline `title` token in requirementDiagram grammar — pass empty so
     // renderMetadata falls back to the frontmatter title (pre.title).
