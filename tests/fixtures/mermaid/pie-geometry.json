@@ -1,0 +1,1200 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "Real mermaid 11.16.0 pieDiagram geometry captured via headless Chrome (default theme, trebuchet-ms font). Per drawn slice: raw SVG path `d` (byte-parity target) + derived start/end/mid angles + outer/inner radii  + donut inner radius + label centroid. Angle convention theta(f) = -pi/2 + f*2pi (12-o'clock anchor, clockwise; SVG y-down); cumulative fraction f normalized over the FILTERED slice sum (mermaid drops <1% slices before d3pie, so d3pie re-normalizes over the survivors — verified against the 15-slice scout case). Percentage LABEL text uses the ORIGINAL (pre-filter) sum. Arc path `d` strings, radii, counts and derived angles are font-independent (exact). Legend/title pixel positions and the viewBox width depend on live getBoundingClientRect() text widths (font-coupled); the font is pinned to trebuchet-ms and noted, not treated as exact parity for a non-browser renderer. Outer ring r = R + outerStrokeWidth/2 (186 default). donutHole clamps to (0, 0.9]. Cross-check (crossCheck[]) compares the derived outer-start point to the raw `d` M command: slice 0 is exact (0 px, proving the -pi/2 anchor), subsequent slices carry d3's 3-decimal path-serialization rounding noise (<=0.002 px) — the byte-parity target is the captured pathD string itself, not the recovered point."
+  },
+  "mermaidVersion": "11.16.0",
+  "fontMode": "trebuchet-ms",
+  "oracle": "pieDiagram.render slice arcs (pathD + angles + radii + centroid) + legend census + title",
+  "cases": [
+    {
+      "id": "basic-3",
+      "source": "pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0,
+          "effectiveDonutHole": 0
+        },
+        "viewBox": "0 0 547.08154296875 450",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "Pets",
+        "accTitle": null,
+        "accDescr": null,
+        "legendCount": 3,
+        "legends": [
+          {
+            "text": "Dogs"
+          },
+          {
+            "text": "Cats"
+          },
+          {
+            "text": "Fish"
+          }
+        ],
+        "sliceCount": 3,
+        "slices": [
+          {
+            "label": "Dogs",
+            "value": 38,
+            "percentage": "38%",
+            "rawPercentage": 38,
+            "startAngleDeg": -90,
+            "endAngleDeg": 46.8,
+            "midAngleDeg": -21.6,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 129.006,
+            "centroidY": -51.077,
+            "pathD": "M0,-185A185,185,0,0,1,126.641,134.859L0,0Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(129.0064874169949,-51.07728168499904)"
+          },
+          {
+            "label": "Cats",
+            "value": 26,
+            "percentage": "26%",
+            "rawPercentage": 26,
+            "startAngleDeg": 46.8,
+            "endAngleDeg": 140.4,
+            "midAngleDeg": 93.6,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -8.712,
+            "centroidY": 138.476,
+            "pathD": "M126.641,134.859A185,185,0,0,1,-142.545,117.923L0,0Z",
+            "fill": "#ffffde",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-8.712184584692297,138.47620856942268)"
+          },
+          {
+            "label": "Fish",
+            "value": 36,
+            "percentage": "36%",
+            "rawPercentage": 36,
+            "startAngleDeg": 140.4,
+            "endAngleDeg": 270,
+            "midAngleDeg": 205.2,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -125.545,
+            "centroidY": -59.077,
+            "pathD": "M-142.545,117.923A185,185,0,0,1,0,-185L0,0Z",
+            "fill": "hsl(80, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-125.5447535296602,-59.076876704653834)"
+          }
+        ],
+        "sums": {
+          "original": 100,
+          "filtered": 100
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 1,
+            "pathDStart": {
+              "x": 126.641,
+              "y": 134.859
+            },
+            "expected": {
+              "x": 126.641,
+              "y": 134.859
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 2,
+            "pathDStart": {
+              "x": -142.545,
+              "y": 117.923
+            },
+            "expected": {
+              "x": -142.545,
+              "y": 117.923
+            },
+            "pointErr": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "basic-2",
+      "source": "pie\n\"A\" : 1\n\"B\" : 2",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0,
+          "effectiveDonutHole": 0
+        },
+        "viewBox": "0 0 524 450",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "legendCount": 2,
+        "legends": [
+          {
+            "text": "A"
+          },
+          {
+            "text": "B"
+          }
+        ],
+        "sliceCount": 2,
+        "slices": [
+          {
+            "label": "A",
+            "value": 1,
+            "percentage": "33%",
+            "rawPercentage": 33.333,
+            "startAngleDeg": -90,
+            "endAngleDeg": 30,
+            "midAngleDeg": -30,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 120.161,
+            "centroidY": -69.375,
+            "pathD": "M0,-185A185,185,0,0,1,160.215,92.5L0,0Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(120.16102477509085,-69.375)"
+          },
+          {
+            "label": "B",
+            "value": 2,
+            "percentage": "67%",
+            "rawPercentage": 66.667,
+            "startAngleDeg": 30,
+            "endAngleDeg": 270,
+            "midAngleDeg": 150,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -120.161,
+            "centroidY": 69.375,
+            "pathD": "M160.215,92.5A185,185,0,1,1,0,-185L0,0Z",
+            "fill": "#ffffde",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-120.16102477509084,69.37500000000004)"
+          }
+        ],
+        "sums": {
+          "original": 3,
+          "filtered": 3
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 1,
+            "pathDStart": {
+              "x": 160.215,
+              "y": 92.5
+            },
+            "expected": {
+              "x": 160.215,
+              "y": 92.5
+            },
+            "pointErr": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "thirteen-wrap",
+      "source": "pie\n\"S1\" : 1\n\"S2\" : 2\n\"S3\" : 3\n\"S4\" : 4\n\"S5\" : 5\n\"S6\" : 6\n\"S7\" : 7\n\"S8\" : 8\n\"S9\" : 9\n\"S10\" : 10\n\"S11\" : 11\n\"S12\" : 12\n\"S13\" : 13",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0,
+          "effectiveDonutHole": 0
+        },
+        "viewBox": "0 0 538.09130859375 450",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "legendCount": 13,
+        "legends": [
+          {
+            "text": "S1"
+          },
+          {
+            "text": "S2"
+          },
+          {
+            "text": "S3"
+          },
+          {
+            "text": "S4"
+          },
+          {
+            "text": "S5"
+          },
+          {
+            "text": "S6"
+          },
+          {
+            "text": "S7"
+          },
+          {
+            "text": "S8"
+          },
+          {
+            "text": "S9"
+          },
+          {
+            "text": "S10"
+          },
+          {
+            "text": "S11"
+          },
+          {
+            "text": "S12"
+          },
+          {
+            "text": "S13"
+          }
+        ],
+        "sliceCount": 13,
+        "slices": [
+          {
+            "label": "S1",
+            "value": 1,
+            "percentage": "1%",
+            "rawPercentage": 1.099,
+            "startAngleDeg": -90,
+            "endAngleDeg": -86.044,
+            "midAngleDeg": -88.022,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 4.789,
+            "centroidY": -138.667,
+            "pathD": "M0,-185A185,185,0,0,1,12.763,-184.559L0,0Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(4.789114282047016,-138.66732450146102)"
+          },
+          {
+            "label": "S2",
+            "value": 2,
+            "percentage": "2%",
+            "rawPercentage": 2.198,
+            "startAngleDeg": -86.044,
+            "endAngleDeg": -78.132,
+            "midAngleDeg": -82.088,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 19.099,
+            "centroidY": -137.429,
+            "pathD": "M12.763,-184.559A185,185,0,0,1,38.047,-181.045L0,0Z",
+            "fill": "#ffffde",
+            "cls": "pieCircle",
+            "labelTransform": "translate(19.099425148969583,-137.4291616032744)"
+          },
+          {
+            "label": "S3",
+            "value": 3,
+            "percentage": "3%",
+            "rawPercentage": 3.297,
+            "startAngleDeg": -78.132,
+            "endAngleDeg": -66.264,
+            "midAngleDeg": -72.198,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 42.42,
+            "centroidY": -132.106,
+            "pathD": "M38.047,-181.045A185,185,0,0,1,74.468,-169.35L0,0Z",
+            "fill": "hsl(80, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(42.42029104616571,-132.10632614511158)"
+          },
+          {
+            "label": "S4",
+            "value": 4,
+            "percentage": "4%",
+            "rawPercentage": 4.396,
+            "startAngleDeg": -66.264,
+            "endAngleDeg": -50.44,
+            "midAngleDeg": -58.352,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 72.803,
+            "centroidY": -118.116,
+            "pathD": "M74.468,-169.35A185,185,0,0,1,117.825,-142.626L0,0Z",
+            "fill": "hsl(240, 100%, 86.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(72.80274768211238,-118.11571626982872)"
+          },
+          {
+            "label": "S5",
+            "value": 5,
+            "percentage": "5%",
+            "rawPercentage": 5.495,
+            "startAngleDeg": -50.44,
+            "endAngleDeg": -30.659,
+            "midAngleDeg": -40.549,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 105.429,
+            "centroidY": -90.202,
+            "pathD": "M117.825,-142.626A185,185,0,0,1,159.14,-94.338L0,0Z",
+            "fill": "hsl(60, 100%, 63.5294117647%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(105.42851597006033,-90.20194299653825)"
+          },
+          {
+            "label": "S6",
+            "value": 6,
+            "percentage": "7%",
+            "rawPercentage": 6.593,
+            "startAngleDeg": -30.659,
+            "endAngleDeg": -6.923,
+            "midAngleDeg": -18.791,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 131.354,
+            "centroidY": -44.694,
+            "pathD": "M159.14,-94.338A185,185,0,0,1,183.651,-22.299L0,0Z",
+            "fill": "hsl(80, 100%, 76.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(131.35444406761434,-44.694211299540555)"
+          },
+          {
+            "label": "S7",
+            "value": 7,
+            "percentage": "8%",
+            "rawPercentage": 7.692,
+            "startAngleDeg": -6.923,
+            "endAngleDeg": 20.769,
+            "midAngleDeg": 6.923,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 137.738,
+            "centroidY": 16.724,
+            "pathD": "M183.651,-22.299A185,185,0,0,1,172.978,65.602L0,0Z",
+            "fill": "hsl(300, 100%, 76.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(137.73835628110498,16.72446438542609)"
+          },
+          {
+            "label": "S8",
+            "value": 8,
+            "percentage": "9%",
+            "rawPercentage": 8.791,
+            "startAngleDeg": 20.769,
+            "endAngleDeg": 52.418,
+            "midAngleDeg": 36.593,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 111.4,
+            "centroidY": 82.713,
+            "pathD": "M172.978,65.602A185,185,0,0,1,112.832,146.608L0,0Z",
+            "fill": "hsl(180, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(111.40044379964492,82.71338235885507)"
+          },
+          {
+            "label": "S9",
+            "value": 9,
+            "percentage": "10%",
+            "rawPercentage": 9.89,
+            "startAngleDeg": 52.418,
+            "endAngleDeg": 88.022,
+            "midAngleDeg": 70.22,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 46.955,
+            "centroidY": 130.563,
+            "pathD": "M112.832,146.608A185,185,0,0,1,6.385,184.89L0,0Z",
+            "fill": "hsl(0, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(46.954814826921705,130.56342468152974)"
+          },
+          {
+            "label": "S10",
+            "value": 10,
+            "percentage": "11%",
+            "rawPercentage": 10.989,
+            "startAngleDeg": 88.022,
+            "endAngleDeg": 127.582,
+            "midAngleDeg": 107.802,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -42.42,
+            "centroidY": 132.106,
+            "pathD": "M6.385,184.89A185,185,0,0,1,-112.832,146.608L0,0Z",
+            "fill": "hsl(300, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-42.420291046165744,132.10632614511158)"
+          },
+          {
+            "label": "S11",
+            "value": 11,
+            "percentage": "12%",
+            "rawPercentage": 12.088,
+            "startAngleDeg": 127.582,
+            "endAngleDeg": 171.099,
+            "midAngleDeg": 149.341,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -119.355,
+            "centroidY": 70.753,
+            "pathD": "M-112.832,146.608A185,185,0,0,1,-182.772,28.625L0,0Z",
+            "fill": "hsl(150, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-119.35474195237323,70.75314885913136)"
+          },
+          {
+            "label": "S12",
+            "value": 12,
+            "percentage": "13%",
+            "rawPercentage": 13.187,
+            "startAngleDeg": 171.099,
+            "endAngleDeg": 218.571,
+            "midAngleDeg": 194.835,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -134.125,
+            "centroidY": -35.525,
+            "pathD": "M-182.772,28.625A185,185,0,0,1,-144.639,-115.346L0,0Z",
+            "fill": "hsl(0, 100%, 66.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-134.12496698118423,-35.52542374548459)"
+          },
+          {
+            "label": "S13",
+            "value": 13,
+            "percentage": "14%",
+            "rawPercentage": 14.286,
+            "startAngleDeg": 218.571,
+            "endAngleDeg": 270,
+            "midAngleDeg": 244.286,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -60.201,
+            "centroidY": -125.009,
+            "pathD": "M-144.639,-115.346A185,185,0,0,1,0,-185L0,0Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-60.20136880256121,-125.00943042146064)"
+          }
+        ],
+        "sums": {
+          "original": 91,
+          "filtered": 91
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 1,
+            "pathDStart": {
+              "x": 12.763,
+              "y": -184.559
+            },
+            "expected": {
+              "x": 12.763,
+              "y": -184.559
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 2,
+            "pathDStart": {
+              "x": 38.047,
+              "y": -181.045
+            },
+            "expected": {
+              "x": 38.047,
+              "y": -181.045
+            },
+            "pointErr": 0.001
+          },
+          {
+            "sliceIndex": 3,
+            "pathDStart": {
+              "x": 74.468,
+              "y": -169.35
+            },
+            "expected": {
+              "x": 74.467,
+              "y": -169.351
+            },
+            "pointErr": 0.001
+          },
+          {
+            "sliceIndex": 4,
+            "pathDStart": {
+              "x": 117.825,
+              "y": -142.626
+            },
+            "expected": {
+              "x": 117.824,
+              "y": -142.627
+            },
+            "pointErr": 0.002
+          },
+          {
+            "sliceIndex": 5,
+            "pathDStart": {
+              "x": 159.14,
+              "y": -94.338
+            },
+            "expected": {
+              "x": 159.14,
+              "y": -94.337
+            },
+            "pointErr": 0.001
+          },
+          {
+            "sliceIndex": 6,
+            "pathDStart": {
+              "x": 183.651,
+              "y": -22.299
+            },
+            "expected": {
+              "x": 183.651,
+              "y": -22.299
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 7,
+            "pathDStart": {
+              "x": 172.978,
+              "y": 65.602
+            },
+            "expected": {
+              "x": 172.978,
+              "y": 65.601
+            },
+            "pointErr": 0.001
+          },
+          {
+            "sliceIndex": 8,
+            "pathDStart": {
+              "x": 112.832,
+              "y": 146.608
+            },
+            "expected": {
+              "x": 112.831,
+              "y": 146.609
+            },
+            "pointErr": 0.002
+          },
+          {
+            "sliceIndex": 9,
+            "pathDStart": {
+              "x": 6.385,
+              "y": 184.89
+            },
+            "expected": {
+              "x": 6.385,
+              "y": 184.89
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 10,
+            "pathDStart": {
+              "x": -112.832,
+              "y": 146.608
+            },
+            "expected": {
+              "x": -112.831,
+              "y": 146.609
+            },
+            "pointErr": 0.002
+          },
+          {
+            "sliceIndex": 11,
+            "pathDStart": {
+              "x": -182.772,
+              "y": 28.625
+            },
+            "expected": {
+              "x": -182.772,
+              "y": 28.625
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 12,
+            "pathDStart": {
+              "x": -144.639,
+              "y": -115.346
+            },
+            "expected": {
+              "x": -144.64,
+              "y": -115.345
+            },
+            "pointErr": 0.002
+          }
+        ]
+      }
+    },
+    {
+      "id": "donut-half",
+      "source": "%%{init: {\"pie\": {\"donutHole\": 0.5}}}%%\npie title Donut\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0.5,
+          "effectiveDonutHole": 0.5
+        },
+        "viewBox": "0 0 547.08154296875 450",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "Donut",
+        "accTitle": null,
+        "accDescr": null,
+        "legendCount": 3,
+        "legends": [
+          {
+            "text": "Dogs"
+          },
+          {
+            "text": "Cats"
+          },
+          {
+            "text": "Fish"
+          }
+        ],
+        "sliceCount": 3,
+        "slices": [
+          {
+            "label": "Dogs",
+            "value": 38,
+            "percentage": "38%",
+            "rawPercentage": 38,
+            "startAngleDeg": -90,
+            "endAngleDeg": 46.8,
+            "midAngleDeg": -21.6,
+            "outerRadius": 185,
+            "innerRadius": 92.5,
+            "donutInnerRadius": 92.5,
+            "labelRadius": 138.75,
+            "centroidX": 129.006,
+            "centroidY": -51.077,
+            "pathD": "M0,-185A185,185,0,0,1,126.641,134.859L63.321,67.43A92.5,92.5,0,0,0,0,-92.5Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(129.0064874169949,-51.07728168499904)"
+          },
+          {
+            "label": "Cats",
+            "value": 26,
+            "percentage": "26%",
+            "rawPercentage": 26,
+            "startAngleDeg": 46.8,
+            "endAngleDeg": 140.4,
+            "midAngleDeg": 93.6,
+            "outerRadius": 185,
+            "innerRadius": 92.5,
+            "donutInnerRadius": 92.5,
+            "labelRadius": 138.75,
+            "centroidX": -8.712,
+            "centroidY": 138.476,
+            "pathD": "M126.641,134.859A185,185,0,0,1,-142.545,117.923L-71.272,58.962A92.5,92.5,0,0,0,63.321,67.43Z",
+            "fill": "#ffffde",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-8.712184584692297,138.47620856942268)"
+          },
+          {
+            "label": "Fish",
+            "value": 36,
+            "percentage": "36%",
+            "rawPercentage": 36,
+            "startAngleDeg": 140.4,
+            "endAngleDeg": 270,
+            "midAngleDeg": 205.2,
+            "outerRadius": 185,
+            "innerRadius": 92.5,
+            "donutInnerRadius": 92.5,
+            "labelRadius": 138.75,
+            "centroidX": -125.545,
+            "centroidY": -59.077,
+            "pathD": "M-142.545,117.923A185,185,0,0,1,0,-185L0,-92.5A92.5,92.5,0,0,0,-71.272,58.962Z",
+            "fill": "hsl(80, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-125.5447535296602,-59.076876704653834)"
+          }
+        ],
+        "sums": {
+          "original": 100,
+          "filtered": 100
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 1,
+            "pathDStart": {
+              "x": 126.641,
+              "y": 134.859
+            },
+            "expected": {
+              "x": 126.641,
+              "y": 134.859
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 2,
+            "pathDStart": {
+              "x": -142.545,
+              "y": 117.923
+            },
+            "expected": {
+              "x": -142.545,
+              "y": 117.923
+            },
+            "pointErr": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "show-data",
+      "source": "pie showData\n\"Dogs\" : 38\n\"Cats\" : 26",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0,
+          "effectiveDonutHole": 0
+        },
+        "viewBox": "0 0 582.40625 450",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "legendCount": 2,
+        "legends": [
+          {
+            "text": "Dogs [38]"
+          },
+          {
+            "text": "Cats [26]"
+          }
+        ],
+        "sliceCount": 2,
+        "slices": [
+          {
+            "label": "Dogs",
+            "value": 38,
+            "percentage": "59%",
+            "rawPercentage": 59.375,
+            "startAngleDeg": -90,
+            "endAngleDeg": 123.75,
+            "midAngleDeg": 16.875,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 132.775,
+            "centroidY": 40.277,
+            "pathD": "M0,-185A185,185,0,1,1,-102.78,153.822L0,0Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(132.77547158284398,40.27699896905664)"
+          },
+          {
+            "label": "Cats",
+            "value": 26,
+            "percentage": "41%",
+            "rawPercentage": 40.625,
+            "startAngleDeg": 123.75,
+            "endAngleDeg": 270,
+            "midAngleDeg": 196.875,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -132.775,
+            "centroidY": -40.277,
+            "pathD": "M-102.78,153.822A185,185,0,0,1,0,-185L0,0Z",
+            "fill": "#ffffde",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-132.77547158284398,-40.27699896905662)"
+          }
+        ],
+        "sums": {
+          "original": 64,
+          "filtered": 64
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 1,
+            "pathDStart": {
+              "x": -102.78,
+              "y": 153.822
+            },
+            "expected": {
+              "x": -102.78,
+              "y": 153.822
+            },
+            "pointErr": 0.001
+          }
+        ]
+      }
+    },
+    {
+      "id": "title-acc",
+      "source": "pie title Pets\naccTitle: Pet Distribution\naccDescr: A breakdown of household pets\n\"Dogs\" : 38\n\"Cats\" : 26",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0,
+          "effectiveDonutHole": 0
+        },
+        "viewBox": "0 0 547.08154296875 450",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "Pets",
+        "accTitle": "Pet Distribution",
+        "accDescr": "A breakdown of household pets",
+        "legendCount": 2,
+        "legends": [
+          {
+            "text": "Dogs"
+          },
+          {
+            "text": "Cats"
+          }
+        ],
+        "sliceCount": 2,
+        "slices": [
+          {
+            "label": "Dogs",
+            "value": 38,
+            "percentage": "59%",
+            "rawPercentage": 59.375,
+            "startAngleDeg": -90,
+            "endAngleDeg": 123.75,
+            "midAngleDeg": 16.875,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 132.775,
+            "centroidY": 40.277,
+            "pathD": "M0,-185A185,185,0,1,1,-102.78,153.822L0,0Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(132.77547158284398,40.27699896905664)"
+          },
+          {
+            "label": "Cats",
+            "value": 26,
+            "percentage": "41%",
+            "rawPercentage": 40.625,
+            "startAngleDeg": 123.75,
+            "endAngleDeg": 270,
+            "midAngleDeg": 196.875,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -132.775,
+            "centroidY": -40.277,
+            "pathD": "M-102.78,153.822A185,185,0,0,1,0,-185L0,0Z",
+            "fill": "#ffffde",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-132.77547158284398,-40.27699896905662)"
+          }
+        ],
+        "sums": {
+          "original": 64,
+          "filtered": 64
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 1,
+            "pathDStart": {
+              "x": -102.78,
+              "y": 153.822
+            },
+            "expected": {
+              "x": -102.78,
+              "y": 153.822
+            },
+            "pointErr": 0.001
+          }
+        ]
+      }
+    },
+    {
+      "id": "sliver-below-1pct",
+      "source": "pie\n\"Big\" : 1000\n\"Tiny\" : 5",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0,
+          "effectiveDonutHole": 0
+        },
+        "viewBox": "0 0 545.30029296875 450",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "",
+        "accTitle": null,
+        "accDescr": null,
+        "legendCount": 2,
+        "legends": [
+          {
+            "text": "Big"
+          },
+          {
+            "text": "Tiny"
+          }
+        ],
+        "sliceCount": 1,
+        "slices": [
+          {
+            "label": "Big",
+            "value": 1000,
+            "percentage": "100%",
+            "rawPercentage": 99.502,
+            "startAngleDeg": -90,
+            "endAngleDeg": 270,
+            "midAngleDeg": 90,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 0,
+            "centroidY": 138.75,
+            "pathD": "M0,-185A185,185,0,1,1,0,185A185,185,0,1,1,0,-185Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(8.495987169084764e-15,138.75)"
+          }
+        ],
+        "sums": {
+          "original": 1005,
+          "filtered": 1000
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          }
+        ]
+      }
+    }
+  ]
+}
