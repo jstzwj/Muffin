@@ -478,6 +478,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/StateDiagramAdapter.cpp
   src/mermaid/editor/ErDiagramAdapter.cpp
   src/mermaid/editor/RequirementDiagramAdapter.cpp
+  src/mermaid/editor/PieDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -557,6 +558,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/requirement/RequirementScenePainter.h
   src/mermaid/requirement/RequirementTextStyle.cpp
   src/mermaid/requirement/RequirementTextStyle.h
+  src/mermaid/pie/PieDiagram.cpp
+  src/mermaid/pie/PieDiagram.h
+  src/mermaid/pie/PieScene.cpp
+  src/mermaid/pie/PieScene.h
+  src/mermaid/pie/PieScenePainter.cpp
+  src/mermaid/pie/PieScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

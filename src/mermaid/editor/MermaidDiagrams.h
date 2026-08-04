@@ -17,6 +17,7 @@ const Diagram& classDiagramAdapter();
 const Diagram& stateDiagramAdapter();
 const Diagram& erDiagramAdapter();
 const Diagram& requirementDiagramAdapter();
+const Diagram& pieDiagramAdapter();
 
 // Returns the Diagram that handles the detected type id, or nullptr if the
 // type is not natively rendered. The registry is the single source of truth

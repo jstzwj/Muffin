@@ -1,0 +1,163 @@
+// Native pie painter. See PieScenePainter.h.
+
+#include "mermaid/pie/PieScenePainter.h"
+
+#include "mermaid/MermaidPaintOptions.h"
+#include "mermaid/pie/PieScene.h"
+
+#include <QColor>
+#include <QFont>
+#include <QFontMetrics>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPointF>
+#include <QRectF>
+#include <QString>
+#include <QStringList>
+
+#include <cmath>
+
+namespace muffin::mermaid::pie {
+
+namespace {
+
+constexpr double kPi = 3.14159265358979323846;
+
+QColor parsePieColorImpl(const QString& value) {
+  const QString s = value.trimmed();
+  if (s.isEmpty()) return QColor();  // no fill (dark-theme pie12 unset)
+  if (s.startsWith(QStringLiteral("hsl(")) && s.endsWith(QLatin1Char(')'))) {
+    const QString body = s.mid(4, s.size() - 5);
+    const QStringList parts = body.split(QLatin1Char(','));
+    if (parts.size() >= 3) {
+      const double h = parts[0].trimmed().toDouble();
+      const double sa = parts[1].trimmed().remove(QLatin1Char('%')).toDouble();
+      const double la = parts[2].trimmed().remove(QLatin1Char('%')).toDouble();
+      QColor c = QColor::fromHslF(h / 360.0, sa / 100.0, la / 100.0);
+      return c;
+    }
+    return QColor();
+  }
+  QColor c(s);
+  return c;
+}
+
+// Point on the pie circle at angle `deg` (oracle convention: deg=-90 is 12
+// o'clock, increasing clockwise; point = (r*cos, r*sin) in Qt's y-down coords).
+QPointF circlePoint(double r, double deg) {
+  const double rad = deg * kPi / 180.0;
+  return QPointF(r * std::cos(rad), r * std::sin(rad));
+}
+
+// Rebuild a slice's wedge as a QPainterPath (group-local, centered at origin).
+// Qt arcTo convention: startAngle = -startDeg, sweepLength = -(endDeg - startDeg)
+// (derived from Qt measuring 0deg at 3 o'clock, positive counter-clockwise, with
+// the painter's y-down flipping the visual direction to clockwise — matching the
+// oracle's clockwise slice sweep).
+QPainterPath buildSlicePath(double startDeg, double endDeg, double outerR, double innerR) {
+  QPainterPath p;
+  const double span = endDeg - startDeg;
+  const QRectF outerRect(-outerR, -outerR, 2.0 * outerR, 2.0 * outerR);
+  if (span >= 360.0 - 1e-9) {
+    // Full circle. Solid -> disk; donut -> annulus (outer minus inner, even-odd).
+    p.setFillRule(Qt::OddEvenFill);
+    p.addEllipse(outerRect);
+    if (innerR > 0.0) p.addEllipse(QRectF(-innerR, -innerR, 2.0 * innerR, 2.0 * innerR));
+    return p;
+  }
+  if (innerR == 0.0) {
+    p.moveTo(0.0, 0.0);
+    p.arcTo(outerRect, -startDeg, -(endDeg - startDeg));
+    p.closeSubpath();
+  } else {
+    const QRectF innerRect(-innerR, -innerR, 2.0 * innerR, 2.0 * innerR);
+    p.moveTo(circlePoint(outerR, startDeg));
+    p.arcTo(outerRect, -startDeg, -(endDeg - startDeg));
+    p.lineTo(circlePoint(innerR, endDeg));
+    p.arcTo(innerRect, -endDeg, endDeg - startDeg);
+    p.closeSubpath();
+  }
+  return p;
+}
+
+}  // namespace
+
+QColor parsePieColor(const QString& value) { return parsePieColorImpl(value); }
+
+void paintPieScene(const PieScene& scene, QPainter& painter,
+                   const MermaidPaintOptions& /*options*/) {
+  painter.save();
+  painter.translate(scene.centerX, scene.centerY);
+
+  // Outer ring (pieOuterCircle: stroke, no fill).
+  const QColor outerStroke(scene.style.outerStrokeColor);
+  painter.setBrush(Qt::NoBrush);
+  painter.setPen(QPen(outerStroke, scene.style.outerStrokeWidth));
+  painter.drawEllipse(QPointF(0, 0), scene.outerRingRadius, scene.outerRingRadius);
+
+  // Slices (pieCircle: fill + stroke at pieOpacity).
+  painter.setOpacity(scene.style.pieOpacity);
+  for (const PieSliceGeometry& s : scene.slices) {
+    const QColor fill = parsePieColorImpl(s.fill);
+    const QPainterPath wedge =
+        buildSlicePath(s.startAngleDeg, s.endAngleDeg, s.outerRadius, s.innerRadius);
+    painter.setBrush(fill.isValid() ? fill : Qt::NoBrush);
+    painter.setPen(QPen(QColor(scene.style.sliceStrokeColor), scene.style.sliceStrokeWidth));
+    painter.drawPath(wedge);
+  }
+  painter.setOpacity(1.0);
+
+  // Percentage labels (slice text), centered at each centroid.
+  QFont sliceFont(scene.style.fontFamily, qRound(scene.style.sectionFontSize));
+  sliceFont.setPixelSize(qRound(scene.style.sectionFontSize));
+  painter.setFont(sliceFont);
+  painter.setPen(QColor(scene.style.sectionTextColor));
+  for (const PieSliceGeometry& s : scene.slices) {
+    painter.drawText(QRectF(s.centroidX - 60, s.centroidY - 30, 120, 60),
+                     Qt::AlignCenter, s.percentage);
+  }
+
+  // Title (pieTitleText), centered at y = -(height - 50)/2 = -200.
+  if (!scene.title.isEmpty()) {
+    QFont titleFont(scene.style.fontFamily, qRound(scene.style.titleFontSize));
+    titleFont.setPixelSize(qRound(scene.style.titleFontSize));
+    painter.setFont(titleFont);
+    painter.setPen(QColor(scene.style.titleColor));
+    const qreal ty = -(scene.height - 50.0) / 2.0;
+    painter.drawText(QRectF(-400.0, ty - 30.0, 800.0, 60.0),
+                     Qt::AlignCenter, scene.title);
+  }
+
+  // Legend block (mermaid default position "right"). Each entry is a filled
+  // rect (legendRectSize) + text, vertically centered around the pie center.
+  if (!scene.legends.isEmpty()) {
+    QFont legendFont(scene.style.fontFamily, qRound(scene.style.legendFontSize));
+    legendFont.setPixelSize(qRound(scene.style.legendFontSize));
+    painter.setFont(legendFont);
+    painter.setPen(QColor(scene.style.legendTextColor));
+    const int count = scene.legends.size();
+    const qreal offset = scene.legendHeight * count / 2.0;
+    const qreal horizontal = scene.legendPosition == QStringLiteral("left")
+                                 ? -scene.radius - (scene.legendRectSize + scene.legendSpacing)
+                             : scene.legendPosition == QStringLiteral("center")
+                                 ? -scene.longestLegendWidth / 2.0 - (scene.legendRectSize + scene.legendSpacing)
+                                 : 12.0 * scene.legendRectSize;  // right (default)
+    for (int i = 0; i < count; ++i) {
+      const PieLegendEntry& e = scene.legends.at(i);
+      const qreal vertical = i * scene.legendHeight - offset;
+      const QColor lc = parsePieColorImpl(e.fill);
+      painter.setBrush(lc.isValid() ? lc : Qt::NoBrush);
+      painter.setPen(Qt::NoPen);
+      painter.drawRect(QRectF(horizontal, vertical, scene.legendRectSize, scene.legendRectSize));
+      painter.setPen(QColor(scene.style.legendTextColor));
+      painter.drawText(
+          QRectF(horizontal + scene.legendRectSize + scene.legendSpacing,
+                 vertical - 2.0, 1000.0, scene.legendRectSize + 4.0),
+          Qt::AlignLeft | Qt::AlignVCenter, e.text);
+    }
+  }
+
+  painter.restore();
+}
+
+}  // namespace muffin::mermaid::pie

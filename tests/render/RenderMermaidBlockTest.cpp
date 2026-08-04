@@ -641,7 +641,8 @@ int main(int argc, char** argv) {
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\npie title Pets\n  \"Dogs\" : 42\n```\n"), false);
+        "```mermaid\ngantt\ntitle A\ndateFormat X\nsection S\nt1 :a, 1, 2d\n```\n"),
+        false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;
     layout.setMermaidRenderCache(&cache);

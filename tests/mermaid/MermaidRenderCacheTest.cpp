@@ -58,8 +58,10 @@ int main(int argc, char** argv) {
       "ORDER ||--|{ LINE-ITEM : contains\n"
       "CUSTOMER {\n  string name PK\n  int age\n}\n"
       "ORDER {\n  bigint id PK\n  string status\n}");
+  // A family mermaid detects but Muffin does not render natively (pie is now
+  // native; gantt remains upstream-only) -> Unsupported with a message.
   const QString unsupported = QStringLiteral(
-      "pie title Pets\n  \"Dogs\" : 42\n  \"Cats\" : 58");
+      "gantt\ntitle A\ndateFormat X\nsection S\nt1 :a, 1, 2d");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
