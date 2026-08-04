@@ -65,6 +65,28 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
 namespace {
 constexpr double kJsNaN = std::numeric_limits<double>::quiet_NaN();
 
+// Parse the digits of a JS 0x/0b/0o integer literal (after the prefix) to a double.
+// Valid digits but a value beyond ~1e15 saturate there (the caller's ceil saturates
+// at INT_MAX, so any large positive selects the full palette); an INVALID digit —
+// out of radix range (e.g. '2' in binary, '8' in octal) or non-alphanumeric — is
+// NaN. Avoids qulonglong overflow: e.g. "0x10000000000000000" is a valid 2^64 that
+// toULongLong can't hold (it would return 0 and wrongly disable the palette).
+double parseJsRadixInt(const QString& digits, int base) {
+  double acc = 0.0;
+  bool any = false;
+  for (const QChar& ch : digits) {
+    const int lc = ch.toLower().toLatin1();
+    int dv;
+    if (lc >= '0' && lc <= '9') dv = lc - '0';
+    else if (lc >= 'a' && lc <= 'z') dv = lc - 'a' + 10;
+    else return kJsNaN;  // non-alphanumeric -> not a valid literal
+    if (dv >= base) return kJsNaN;  // digit out of radix range
+    if (acc < 1e15) acc = acc * base + dv;  // stop growing once huge (no +inf)
+    any = true;
+  }
+  return any ? acc : kJsNaN;  // empty -> NaN
+}
+
 // JS Number(string): trims, then a numeric literal — decimal (with sign +
 // scientific), or an unsigned 0x/0b/0o integer literal; "" -> 0; else NaN.
 // (Signed hex/bin/oct and hex floats are not in the StringNumericLiteral grammar.)
@@ -75,22 +97,19 @@ double jsNumberString(QString s) {
   const auto intPrefix = [&s](QLatin1String pfx) {
     return s.length() > 2 && s.left(2).compare(pfx, Qt::CaseInsensitive) == 0;
   };
+  if (intPrefix(QLatin1String("0x"))) return parseJsRadixInt(s.mid(2), 16);
+  if (intPrefix(QLatin1String("0b"))) return parseJsRadixInt(s.mid(2), 2);
+  if (intPrefix(QLatin1String("0o"))) return parseJsRadixInt(s.mid(2), 8);
   bool ok = false;
-  if (intPrefix(QLatin1String("0x"))) {
-    return static_cast<double>(s.mid(2).toULongLong(&ok, 16));
-  } else if (intPrefix(QLatin1String("0b"))) {
-    return static_cast<double>(s.mid(2).toULongLong(&ok, 2));
-  } else if (intPrefix(QLatin1String("0o"))) {
-    return static_cast<double>(s.mid(2).toULongLong(&ok, 8));
-  }
   const double n = s.toDouble(&ok);  // decimal / scientific (toDouble trims too)
   return ok ? n : kJsNaN;
 }
 
 // JS String() of a value as an Array element (Array.prototype.join's per-element
-// String()). number->its decimal (integral without ".0"); bool->"true"/"false";
-// null/undefined->""; string->itself; array->recursive comma-join; object->
-// "[object Object]".
+// String()). number->a round-trippable decimal (max_digits10 'g' so 2.0000001 is
+// not truncated to "2"; integral values still print without ".0"); bool->
+// "true"/"false"; null/undefined->""; string->itself; array->recursive comma-join;
+// object->"[object Object]".
 QString jsElementString(const QJsonValue& v);
 QString jsArrayToString(const QJsonArray& a) {
   QString r;
@@ -102,14 +121,9 @@ QString jsArrayToString(const QJsonArray& a) {
 }
 QString jsElementString(const QJsonValue& v) {
   switch (v.type()) {
-    case QJsonValue::Double: {
-      const double d = v.toDouble();
-      if (std::isfinite(d) && d == std::floor(d) &&
-          d >= static_cast<double>(std::numeric_limits<qint64>::min()) &&
-          d <= static_cast<double>(std::numeric_limits<qint64>::max()))
-        return QString::number(static_cast<qint64>(d));  // integral -> "2", not "2.0"
-      return QString::number(d);
-    }
+    case QJsonValue::Double:
+      // 'g' with max_digits10 (17) round-trips; integral doubles still print as "2".
+      return QString::number(v.toDouble(), 'g', std::numeric_limits<double>::max_digits10);
     case QJsonValue::Bool:   return v.toBool() ? QStringLiteral("true") : QStringLiteral("false");
     case QJsonValue::Null:   return QString();  // null/undefined element -> ""
     case QJsonValue::String: return v.toString();

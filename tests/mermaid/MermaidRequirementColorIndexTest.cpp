@@ -464,20 +464,21 @@ int main(int argc, char** argv) {
 
   // ===== 13. THEME_COLOR_LIMIT JS Number()+ceil semantics (themeVariables path) =====
   // genColor iterates i<Number(TCL) after config merge (null/absent keep default).
-  // Number(array)=Number(array.toString()): [2]->"2"->2, ["2.5"]->2.5, [true]->"true"->NaN,
-  // [null]->""->0, [[2]]->"2"->2, [x,y]->NaN. Probe: 2.5/"2.5"->3, true->1,
+  // Number(array)=Number(array.toString()): [2]->"2"->2, ["2.5"]->2.5, [2.0000001]->2.0000001
+  // (max_digits10 stringification, not truncated to "2"), [true]->"true"->NaN, [null]->""->0,
+  // [[2]]->"2"->2, [x,y]->NaN. Probe: 2.5/"2.5"->3, true->1,
   // false/"abc"/[]/[1,2]/[true]/[false]/[null]/[[2,3]]/{}->0, "0x2"/"0b10"/"0o2"/[2]/[[2]]->2,
-  // ["2.5"]->3, null/absent/large->12. Built-in redux palette.
+  // ["2.5"]/[2.0000001]->3, null/absent/large + valid-huge-radix->12. Built-in redux palette.
   {
     struct Case { QString lit; int rules; };
     const Case cases[] = {
         {QStringLiteral("2.5"), 3},        {QStringLiteral("\"2.5\""), 3},    {QStringLiteral("\"0x2\""), 2},
         {QStringLiteral("\"0b10\""), 2},   {QStringLiteral("\"0o2\""), 2},    {QStringLiteral("[2]"), 2},
-        {QStringLiteral("[\"2.5\"]"), 3},  {QStringLiteral("[[2]]"), 2},      {QStringLiteral("true"), 1},
-        {QStringLiteral("false"), 0},      {QStringLiteral("[]"), 0},         {QStringLiteral("[1,2]"), 0},
+        {QStringLiteral("[\"2.5\"]"), 3},  {QStringLiteral("[2.0000001]"), 3}, {QStringLiteral("[[2]]"), 2},
+        {QStringLiteral("true"), 1},       {QStringLiteral("false"), 0},      {QStringLiteral("[]"), 0},
         {QStringLiteral("[true]"), 0},     {QStringLiteral("[false]"), 0},    {QStringLiteral("[null]"), 0},
         {QStringLiteral("[[2,3]]"), 0},    {QStringLiteral("{}"), 0},         {QStringLiteral("\"abc\""), 0},
-        {QStringLiteral("2"), 2},
+        {QStringLiteral("[1,2]"), 0},      {QStringLiteral("2"), 2},
     };
     for (const Case& c : cases) {
       const QString tv = QStringLiteral("{\"THEME_COLOR_LIMIT\":%1}").arg(c.lit);
@@ -511,6 +512,11 @@ int main(int argc, char** argv) {
     allTwelve(QStringLiteral("null"), QStringLiteral("{\"THEME_COLOR_LIMIT\":null}"));      // null -> keep default 12
     allTwelve(QStringLiteral("absent"), QString());                                          // absent -> default 12
     allTwelve(QStringLiteral("large"), QStringLiteral("{\"THEME_COLOR_LIMIT\":2147483648}")); // huge -> all 12 (no overflow)
+    // Valid-but-huge radix literals (out of qulonglong range): positive finite -> all 12.
+    // parseJsRadixInt saturates rather than returning 0 (which would disable the palette).
+    allTwelve(QStringLiteral("hex-huge"), QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0x10000000000000000\"}"));  // 2^64
+    allTwelve(QStringLiteral("bin-huge"), QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0b1111111111111111111111111111111111111111111111111111111111111111\"}"));  // 2^64-1
+    allTwelve(QStringLiteral("oct-huge"), QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0o4000000000000000000000\"}"));  // 4*8^21
   }
 
   // ===== 14. Source-entry custom arrays are IGNORED (regression guard, review-fix 4) =====
