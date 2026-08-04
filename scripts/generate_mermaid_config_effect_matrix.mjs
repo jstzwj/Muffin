@@ -374,11 +374,11 @@ const shared = [
   },
   {
     path: "htmlLabels",
-    families: ["flowchart", "class"],
+    families: ["flowchart", "class", "requirement"],
     ...partial(
       textLayout,
       textLayout,
-      "Native class labels consume this option; native flow labels do not yet branch on it.",
+      "Native class labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path).",
     ),
   },
   {

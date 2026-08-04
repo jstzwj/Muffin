@@ -1,6 +1,7 @@
 #pragma once
 
-// Common base for every diagram scene (flowchart, sequence, class, state, er).
+// Common base for every diagram scene (flowchart, sequence, class, state, er,
+// requirement).
 //
 // The render cache and exporters hold scenes through this uniform pointer so
 // they can paint and measure bounds without type-switching on the diagram
@@ -8,8 +9,8 @@
 // painter; sceneBounds() returns the pre-computed `bounds` member.
 //
 // This is the foundational seam of the 1:1-parity architecture
-// (docs/mermaid-architecture.md, L1): it lets a future Diagram interface +
-// registry treat all diagram families uniformly.
+// (docs/mermaid-architecture.md, L1): the Diagram registry, render cache, and
+// exporters use it to treat every native family uniformly.
 
 #include "mermaid/MermaidPaintOptions.h"
 
@@ -66,10 +67,10 @@ struct MermaidScene {
   virtual bool hasAnimation() const { return false; }
 
   // Hit/interaction regions in scene coordinates (empty by default; FlowScene
-  // and SequenceScene precompute and return a reference). Class/state/er inherit
-  // the empty default at no cost. Consumers apply their own visibility/safe-URL
-  // rules. Returns a reference so the editor hot path (mouse-move hit-test) does
-  // not reallocate.
+  // and SequenceScene precompute and return a reference). Class/state/er/
+  // requirement inherit the empty default at no cost. Consumers apply their own
+  // visibility/safe-URL rules. Returns a reference so the editor hot path
+  // (mouse-move hit-test) does not reallocate.
   virtual const QVector<InteractionRegion>& interactionRegions() const {
     static const QVector<InteractionRegion> kEmpty;
     return kEmpty;

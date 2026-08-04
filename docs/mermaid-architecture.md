@@ -12,13 +12,17 @@
 | **几何/布局** | 节点、边、簇的坐标与 dagre/ELK 输出一致 | dagre-snapshots JSON oracle |
 | **结构/语义** | SVG 的元素树、class、可访问性属性对齐 | 语义 SVG diff（结构 + 容差） |
 | **视觉** | 像素级在容差内一致 | golden pixel 对比 |
-| **配置** | 每个 config key 的效果与上游一致 | config-effect-matrix（102 行，逐 key 标 parity/partial/deferred） |
+| **配置** | 每个 config key 的效果与上游一致 | config-effect-matrix（126 行，逐 key 标 parity/partial/deferred） |
 
 **不追求「字节同」的 SVG**：Muffin 的 SVG 由 `QSvgGenerator`（经 painter）产出，再由 `MermaidSvgExporter` 归一化成 mermaid 形态。字节级与 mermaid 手写 SVG 不同是必然的；parity 以**视觉 + 结构 + 几何**为准。
 
 ---
 
-## 2. 现状诊断
+## 2. 初始诊断（五族阶段，现已解决）
+
+以下内容保留当时的设计动机。当前实现已经落地统一 `MermaidScene`、`Diagram`
+registry、族无关的 paint/export/canvas/interaction 产品边界，并增加了第六族
+Requirement；准确现状见第 7 节及 `mermaid-native-port.md`。
 
 **已有的好设计（保留）：**
 - 模块化目录：`flowchart / sequence / class / state / erdiagram` 各有 tokenizer/db/layout/scene/painter。
@@ -139,7 +143,18 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 
 **ER geometry oracle 已翻成 fail-on-divergence**（commit 9d26947）。**Phase 2 完成**：`measureErLayoutInput` 重写为 mermaid erBox 模型（空 fast-path + 4 列宽 + 行高 + 重分配，padding diagramPadding=20/entityPadding=15，SVG 模式 ×1.25），entity **高度现精确匹配** mermaid。Oracle 断言 **font 无关 par­ity**（entity 高度 + cardinality + identifying）；宽度/x/y 与 relationship path 是 **Qt-vs-Chrome 字体光栅化耦合**（~5px/文本，与像素 golden 同源），报告不断言；`entity-alias` 跳过（mermaid 按 id 而非 alias 定尺寸，边缘怪癖）。**`config-effect-matrix.scope.families` 已加 `er`**（commit b933d04，13 个 ErDiagramConfig 字段全分类 + ER spacing probe）。
 
-**已知 follow-up**：ER dagre 曲线坐标存在 run-to-run FP 抖动（QHash 迭代序），回归 oracle 用 path 0.01 容差吸收；根治需在 dagre 移植层做确定性化。
+**已关闭的误判**：后续审计证实 graphlib 的迭代面由 insertion-order
+`OrderedMap` 承载，原先推测的「ER dagre QHash 抖动」并不存在；0.01 是几何
+oracle 的坐标容差，不是随机性掩码。ER 已加入字节级 SVG 双渲染确定性测试。
+
+**2026-08-05 现状**：六个生产图族均通过单一 scene 指针和 `Diagram` registry
+进入族无关的 editor/PNG/SVG/canvas/interaction 路径；六个 adapter 分离在各自
+TU。Requirement（第六族）已有严格 lexer、Dagre 几何 oracle、默认主题像素
+golden、事件序样式级联、文本排版和内置 Redux colorIndex。完整 Release 门禁为
+187/187。配置矩阵现为 126 行（52 parity / 8 partial / 7 unsupported /
+31 upstream-inert / 5 deferred / 19 legacy-only / 3 api-only /
+1 security-fixed）。Requirement 的全局 `htmlLabels:false` 保持 partial；外部
+`mermaid.initialize()` 配置不属于当前 Markdown source API。
 
 ---
 
@@ -164,5 +179,3 @@ class oracle 关键设计：edge 的 markerStart/markerEnd 在 mermaid 侧从 `m
 state oracle 关键设计：state 边**无** `LS-/LE-` class 编码（区别于 flowchart），from/to 通过匹配每条边的 `data-points`（base64 dagre 路径点，首=源/末=目标）到最近节点中心恢复；节点 id（root_start/root_end/`<name>`）与 Muffin 直接对齐。断言的 transition multiset 覆盖分支/fork-join 扇出收敛/自环/start-end，证明 Muffin 复现 mermaid 的状态机结构。
 
 sequence oracle 关键设计：sequence 用 legacy flat renderer，**位置**（actor anchorX / message lineY / lifeline Y）全是 font 耦合，故 oracle 是**纯结构**断言（不比几何）。mermaid 的 message `<line>` 带 `data-from`/`data-to`/`data-id`/`marker-end`/`style`，from/to/顺序/箭头/虚线直接读取（无需坐标匹配）。断言 participant multiset + message count + **有序** (from,to,dashed,markerEnd) 列表——顺序即对话流，故用有序列表而非 multiset。覆盖 `->>`/`-->>`/`->`/`-x`/`--x` 箭头种类。自环（`A->>A`）渲染为 loop path 而非 messageLine，暂排除。60 mermaid 测试全绿，**5 图族真-mermaid geometry oracle 全部完成**。
-
-

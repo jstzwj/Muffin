@@ -3,22 +3,24 @@
 The flowchart execution contract and milestone history are maintained in
 [`mermaid-flowchart-remaining-plan.md`](mermaid-flowchart-remaining-plan.md).
 
-## Current status (2026-07-24)
+## Current status (2026-08-05)
 
-Muffin renders four Mermaid families through a native C++20/Qt pipeline:
+Muffin renders six Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
 - class diagram;
-- state diagram (`stateDiagram-v2` and the supported legacy renderer path).
+- state diagram (`stateDiagram-v2` and the supported legacy renderer path);
+- ER diagram;
+- requirement diagram.
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 168/168 tests, including 50 `MuffinMermaid*` tests and the end-to-end
+currently 187/187 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All four native families now share `MermaidRenderMetadata` for the diagram
+All six native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
@@ -115,8 +117,8 @@ assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 
 The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
 and whole-diagram painter are now native and covered by structural and pixel
-oracles. Flowchart, sequence, class, and state scenes are integrated into the
-editor and print/PDF path through `MermaidRenderCache`. The legacy flat
+oracles. All six native scenes are integrated into the editor and print/PDF path
+through `MermaidRenderCache`. The legacy flat
 `WorkGraph` implementation remains as inactive reference code; the active path
 always delegates to the compound Dagre pipeline.
 
@@ -369,11 +371,12 @@ available.
 
 `scripts/generate_mermaid_config_effect_matrix.mjs` reads Mermaid 11.16.0's
 `BaseDiagramConfig`, `FlowchartDiagramConfig`, `SequenceDiagramConfig`,
-`ClassDiagramConfig`, and `StateDiagramConfig` declarations and writes the
+`ClassDiagramConfig`, `StateDiagramConfig`, `ErDiagramConfig`, and
+`RequirementDiagramConfig` declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 102
-rows: 87 family-interface fields and 15 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 126
+rows: 111 family-interface fields and 15 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -391,11 +394,11 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 40 | Audited upstream and native stages agree |
+| `parity` | 52 | Audited upstream and native stages agree |
 | `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 8 | Mermaid retains the option but 11.16.0 does not consume it |
+| `upstream-inert` | 31 | Mermaid retains the option but 11.16.0 does not consume it |
 | `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
-| `unsupported` | 18 | Upstream effect exists but no native consumer exists yet |
+| `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
 | `api-only` | 3 | Function-valued hooks cannot be expressed by Markdown JSON/YAML config |
 | `security-fixed` | 1 | Muffin intentionally keeps its strict desktop security policy |
@@ -423,14 +426,14 @@ variant through config, per-edge metadata, scene paint, interaction geometry,
 and PNG export. The interaction/animation milestone is also complete: safe
 Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
 Sequence participant menus, and `sequence.forceMenus` all reach their runtime
-consumers. Native SVG export is now complete at the product boundary: all four
+consumers. Native SVG export is now complete at the product boundary: all six
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
 `deterministicIds`, `deterministicIDSeed`, and the effective family
 `useMaxWidth` rows to parity. The remaining SVG-specific work is the five
 root/family `arrowMarkerAbsolute` rows: Qt currently expands arrowheads into
-painted paths instead of serializing reusable marker URL references. Complete
-that marker contract before starting ER Diagram as the fifth native family.
+painted paths instead of serializing reusable marker URL references. This is a
+shared export follow-up rather than a blocker for adding another native family.
 
 ## Large-scene paint contract
 
@@ -453,10 +456,54 @@ not used as a platform-sensitive pass/fail threshold.
 
 ## Port order
 
-The implemented order was flowchart, sequence, class, then state. Flowchart
+The implemented order was flowchart, sequence, class, state, ER, then
+Requirement. Flowchart
 established the shared graph, Dagre, shape, theme, and style layers; sequence
 established diagram-specific placement and the shared structured text/MathML
-pipeline; class and state reused those contracts. New families must add
+pipeline; class, state, ER, and Requirement reused those contracts. Requirement
+also validates the current per-family workflow: strict lexer probes, a geometry
+oracle, default-theme pixel comparison, event-ordered style cascade, typography,
+and built-in Redux color-index coverage. New families must add
 AST/database goldens, layout geometry goldens, SVG/DOM structural goldens, Qt
 pixel tests, invalid-input tests, and recursion/size guards before editor
 integration is enabled.
+
+### Requirement boundary
+
+The source API now covers Requirement parsing, Dagre topology, box and marker
+paint, titles/accessibility, event-ordered `classDef`/`class`/`style` cascade,
+text layout/decoration/transform, and the built-in `redux-color` /
+`redux-dark-color` color-index palettes. The production editor, PNG, SVG,
+canvas, and determinism paths all consume the same immutable scene.
+
+The remaining boundaries are explicit rather than hidden parity claims:
+
+- global `htmlLabels:false` is partial; Requirement currently follows the
+  upstream `htmlLabels:true` text path;
+- arbitrary `themeCSS` and absolute SVG marker URL serialization are shared
+  unsupported/deferred capabilities recorded in the config matrix;
+- external `mermaid.initialize()` object/array configuration is not part of
+  Muffin's Markdown source API. In particular, source-level custom
+  `borderColorArray`/`bkgColorArray` values are ignored, matching Mermaid
+  11.16.0's source-entry behavior.
+
+### Seventh-family selection
+
+The next native family is **pie**, subject to a probe-first grammar/config
+fixture before production code. The Mermaid 11.16.0 `pieDiagram` chunk is about
+300 lines and has no graph-layout dependency: it uses deterministic D3
+`pie()`/`arc()` geometry, a fixed 450 px chart, and measured legend placement.
+Its family config has four live fields (`textPosition`, `donutHole`,
+`legendPosition`, and `highlightSlice`). This is materially smaller and easier
+to verify than the other previously considered candidates:
+
+| Candidate | Upstream layout dependency | Port implication |
+| --- | --- | --- |
+| pie | D3 pie/arc formulas only | Small deterministic geometry port; selected |
+| mindmap | registered `cose-bilkent` layout | Requires a force-layout port or a new proven native dependency |
+| architecture | Cytoscape + `fcose` constraints | Requires seeded constrained force layout and icon/group semantics |
+| block | custom recursive `layoutBlocks` plus Dagre wrapper shapes/edges | Large parser/shape surface despite no external force engine |
+
+The pie implementation should land in four reviewable stages: upstream parser
+and DB fixtures; pure arc/legend geometry oracle; immutable scene/painter plus
+theme/config mapping; then registry/editor/PNG/SVG integration and matrix rows.

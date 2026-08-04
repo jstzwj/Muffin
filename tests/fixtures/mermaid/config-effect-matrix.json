@@ -124,7 +124,8 @@
       "path": "htmlLabels",
       "families": [
         "flowchart",
-        "class"
+        "class",
+        "requirement"
       ],
       "status": "partial",
       "upstream": [
@@ -143,7 +144,7 @@
         "viewport",
         "export"
       ],
-      "note": "Native class labels consume this option; native flow labels do not yet branch on it."
+      "note": "Native class labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path)."
     },
     {
       "path": "look",
@@ -2601,5 +2602,5 @@
       "default": 20
     }
   ],
-  "fixtureSha256": "90006a63f34d28a6c8b0add407115967a5c5297b99f66a5def78c5da60719e96"
+  "fixtureSha256": "3afc6ecb796308255e649a353e5fb5226e5740a6a09a2dab9020fb6cc0d42f46"
 }
