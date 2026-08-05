@@ -85,9 +85,11 @@ struct FlowThemeVariables {
   // Pie family themeVariables (pieDiagram). Derived per-theme in updateColors
   // via MermaidColor::adjust from primaryColor/secondaryColor/tertiaryColor.
   QString pie[12];  // pie1..pie12 section fills (scaleOrdinal range)
-  QString pieTitleTextFill;
-  QString pieSectionTextFill;
-  QString pieLegendTextFill;
+  // Upstream themeVariable keys are *TextColor (NOT *TextFill); the repo
+  // whitelist (MermaidConfigKeys.inc) and the golden confirm this.
+  QString pieTitleTextColor;
+  QString pieSectionTextColor;
+  QString pieLegendTextColor;
   QString pieStrokeColor;
   QString pieStrokeWidth = QStringLiteral("2px");
   QString pieOpacity = QStringLiteral("0.7");

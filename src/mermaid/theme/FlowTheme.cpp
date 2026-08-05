@@ -298,15 +298,16 @@ void applyRawConstructor(FlowThemeId id, FlowThemeVariables& t) {
 
 // --- updateColors variants ---
 // Forward declarations (pie/quadrant derivation).
-void populatePieFamilyA(FlowThemeVariables& t);
+void populatePieFamilyA(FlowThemeVariables& t, const QString& primary,
+                        const QString& secondary, const QString& tertiary);
 void populatePieDefault(FlowThemeVariables& t);
-void populateQuadrant(FlowThemeVariables& t);
+void populateQuadrant(FlowThemeVariables& t, const QString& primary);
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
 // the shared `||`-guarded derivation (darkMode always false for built-in
 // themes). primaryTextColorDefault is the non-darkMode fallback ("#333" etc.).
 void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorDefault,
-                         bool nodeBorderFromBorder1) {
+                         bool nodeBorderFromBorder1, bool lightPalette = false) {
   assignIfEmpty(t.primaryTextColor, primaryTextColorDefault);
   assignIfEmpty(t.secondaryColor, adjust(t.primaryColor, {.h = -120.0}));
   assignIfEmpty(t.tertiaryColor, adjust(t.primaryColor, {.h = 180.0, .l = 5.0}));
@@ -329,8 +330,21 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   assignIfEmpty(t.titleColor, tertiaryTextColor);
   assignIfEmpty(t.edgeLabelBackground, t.secondaryColor);  // darkMode false
   assignIfEmpty(t.nodeTextColor, t.primaryTextColor);
-  populatePieFamilyA(t);
-  populateQuadrant(t);
+  // The light non-base themes (neo/redux/redux-color) bind a LOCAL primaryColor
+  // constant "#ECECFE" in upstream's updateColors — distinct from
+  // themeVariables.primaryColor — and derive BOTH the pie and quadrant palettes
+  // from that constant family (const primaryColor="#ECECFE", secondaryColor=
+  // "#E9E9F1", tertiaryColor=adjust(primaryColor,{h:180,l:5}); chunk-CHAKFXHA.mjs
+  // L2737). base + the dark variants have no such local and use themeVariables
+  // primaryColor/secondaryColor/tertiaryColor directly. Quadrant text fills
+  // always derive from primaryTextColor (not the local primary).
+  const QString primary = lightPalette ? QStringLiteral("#ECECFE") : t.primaryColor;
+  if (lightPalette) {
+    populatePieFamilyA(t, primary, QStringLiteral("#E9E9F1"), adjust(primary, {.h = 180.0, .l = 5.0}));
+  } else {
+    populatePieFamilyA(t, primary, t.secondaryColor, t.tertiaryColor);
+  }
+  populateQuadrant(t, primary);
 }
 
 void finishCScale(FlowThemeVariables& t, bool darkMode,
@@ -347,19 +361,20 @@ void finishCScale(FlowThemeVariables& t, bool darkMode,
 // Family-A pie palette (shared by base/neo/redux/redux-color/redux-dark/
 // redux-dark-color). pie1-3 = primary/secondary/tertiary; pie4-6 = adjust(base,
 // {l:-10}); pie7-12 = adjust(primary, {h, l}).
-void populatePieFamilyA(FlowThemeVariables& t) {
-  assignIfEmpty(t.pie[0], t.primaryColor);
-  assignIfEmpty(t.pie[1], t.secondaryColor);
-  assignIfEmpty(t.pie[2], t.tertiaryColor);
-  assignIfEmpty(t.pie[3], adjust(t.primaryColor, {.l = -10.0}));
-  assignIfEmpty(t.pie[4], adjust(t.secondaryColor, {.l = -10.0}));
-  assignIfEmpty(t.pie[5], adjust(t.tertiaryColor, {.l = -10.0}));
-  assignIfEmpty(t.pie[6], adjust(t.primaryColor, {.h = 60.0, .l = -10.0}));
-  assignIfEmpty(t.pie[7], adjust(t.primaryColor, {.h = -60.0, .l = -10.0}));
-  assignIfEmpty(t.pie[8], adjust(t.primaryColor, {.h = 120.0}));
-  assignIfEmpty(t.pie[9], adjust(t.primaryColor, {.h = 60.0, .l = -20.0}));
-  assignIfEmpty(t.pie[10], adjust(t.primaryColor, {.h = -60.0, .l = -20.0}));
-  assignIfEmpty(t.pie[11], adjust(t.primaryColor, {.h = 120.0, .l = -10.0}));
+void populatePieFamilyA(FlowThemeVariables& t, const QString& primary,
+                        const QString& secondary, const QString& tertiary) {
+  assignIfEmpty(t.pie[0], primary);
+  assignIfEmpty(t.pie[1], secondary);
+  assignIfEmpty(t.pie[2], tertiary);
+  assignIfEmpty(t.pie[3], adjust(primary, {.l = -10.0}));
+  assignIfEmpty(t.pie[4], adjust(secondary, {.l = -10.0}));
+  assignIfEmpty(t.pie[5], adjust(tertiary, {.l = -10.0}));
+  assignIfEmpty(t.pie[6], adjust(primary, {.h = 60.0, .l = -10.0}));
+  assignIfEmpty(t.pie[7], adjust(primary, {.h = -60.0, .l = -10.0}));
+  assignIfEmpty(t.pie[8], adjust(primary, {.h = 120.0}));
+  assignIfEmpty(t.pie[9], adjust(primary, {.h = 60.0, .l = -20.0}));
+  assignIfEmpty(t.pie[10], adjust(primary, {.h = -60.0, .l = -20.0}));
+  assignIfEmpty(t.pie[11], adjust(primary, {.h = 120.0, .l = -10.0}));
 }
 
 // Default theme's OWN pie formula (different from Family-A). From the upstream
@@ -384,11 +399,11 @@ void populatePieDefault(FlowThemeVariables& t) {
 
 // Quadrant fills + text fills (UNIFORM across all 11 themes): RGB adjustments
 // of primaryColor / primaryTextColor in +5/+10/+15 steps.
-void populateQuadrant(FlowThemeVariables& t) {
-  assignIfEmpty(t.quadrant[0], t.primaryColor);
-  assignIfEmpty(t.quadrant[1], adjust(t.primaryColor, {.r = 5.0, .g = 5.0, .b = 5.0}));
-  assignIfEmpty(t.quadrant[2], adjust(t.primaryColor, {.r = 10.0, .g = 10.0, .b = 10.0}));
-  assignIfEmpty(t.quadrant[3], adjust(t.primaryColor, {.r = 15.0, .g = 15.0, .b = 15.0}));
+void populateQuadrant(FlowThemeVariables& t, const QString& primary) {
+  assignIfEmpty(t.quadrant[0], primary);
+  assignIfEmpty(t.quadrant[1], adjust(primary, {.r = 5.0, .g = 5.0, .b = 5.0}));
+  assignIfEmpty(t.quadrant[2], adjust(primary, {.r = 10.0, .g = 10.0, .b = 10.0}));
+  assignIfEmpty(t.quadrant[3], adjust(primary, {.r = 15.0, .g = 15.0, .b = 15.0}));
   assignIfEmpty(t.quadrantText[0], t.primaryTextColor);
   assignIfEmpty(t.quadrantText[1], adjust(t.primaryTextColor, {.r = -5.0, .g = -5.0, .b = -5.0}));
   assignIfEmpty(t.quadrantText[2], adjust(t.primaryTextColor, {.r = -10.0, .g = -10.0, .b = -10.0}));
@@ -479,7 +494,7 @@ void updateColorsDefault(FlowThemeVariables& t) {
   t.titleColor = t.textColor;
   t.edgeLabelBackground = t.labelBackground;
   populatePieDefault(t);
-  populateQuadrant(t);
+  populateQuadrant(t, t.primaryColor);
 }
 
 void updateColorsForest(FlowThemeVariables& t) {
@@ -560,15 +575,15 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::Base:
       updateColorsFamilyA(t, QStringLiteral("#333"), false); updateBaseCScale(t, false); break;
     case FlowThemeId::Neo:
-      updateColorsFamilyA(t, QStringLiteral("#333"), false); updateNeoCScale(t); break;
+      updateColorsFamilyA(t, QStringLiteral("#333"), false, true); updateNeoCScale(t); break;
     case FlowThemeId::NeoDark:
       updateColorsFamilyA(t, QStringLiteral("#333"), true); updateBaseCScale(t, false); break;
     case FlowThemeId::Redux:
-      updateColorsFamilyA(t, QStringLiteral("#28253D"), false); updateReduxCScale(t); break;
+      updateColorsFamilyA(t, QStringLiteral("#28253D"), false, true); updateReduxCScale(t); break;
     case FlowThemeId::ReduxDark:
       updateColorsFamilyA(t, QStringLiteral("#FFFFFF"), true); updateBaseCScale(t, false); break;
     case FlowThemeId::ReduxColor:
-      updateColorsFamilyA(t, QStringLiteral("#28253D"), false); updateReduxColorCScale(t, false); break;
+      updateColorsFamilyA(t, QStringLiteral("#28253D"), false, true); updateReduxColorCScale(t, false); break;
     case FlowThemeId::ReduxDarkColor:
       updateColorsFamilyA(t, QStringLiteral("#FFFFFF"), true); updateReduxColorCScale(t, true); break;
     case FlowThemeId::Default: updateColorsDefault(t); break;
@@ -677,9 +692,9 @@ QString FlowThemeVariables::get(const QString& key) const {
     if (key == QStringLiteral("quadrant%1Fill").arg(i + 1)) return quadrant[i];
     if (key == QStringLiteral("quadrant%1TextFill").arg(i + 1)) return quadrantText[i];
   }
-  if (key == QStringLiteral("pieTitleTextFill")) return pieTitleTextFill;
-  if (key == QStringLiteral("pieSectionTextFill")) return pieSectionTextFill;
-  if (key == QStringLiteral("pieLegendTextFill")) return pieLegendTextFill;
+  if (key == QStringLiteral("pieTitleTextColor")) return pieTitleTextColor;
+  if (key == QStringLiteral("pieSectionTextColor")) return pieSectionTextColor;
+  if (key == QStringLiteral("pieLegendTextColor")) return pieLegendTextColor;
   if (key == QStringLiteral("pieStrokeColor")) return pieStrokeColor;
   if (key == QStringLiteral("pieStrokeWidth")) return pieStrokeWidth;
   if (key == QStringLiteral("pieOpacity")) return pieOpacity;
@@ -735,9 +750,9 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
     if (key == QStringLiteral("quadrant%1Fill").arg(i + 1)) { quadrant[i] = value; return; }
     if (key == QStringLiteral("quadrant%1TextFill").arg(i + 1)) { quadrantText[i] = value; return; }
   }
-  if (key == QStringLiteral("pieTitleTextFill")) pieTitleTextFill = value;
-  else if (key == QStringLiteral("pieSectionTextFill")) pieSectionTextFill = value;
-  else if (key == QStringLiteral("pieLegendTextFill")) pieLegendTextFill = value;
+  if (key == QStringLiteral("pieTitleTextColor")) pieTitleTextColor = value;
+  else if (key == QStringLiteral("pieSectionTextColor")) pieSectionTextColor = value;
+  else if (key == QStringLiteral("pieLegendTextColor")) pieLegendTextColor = value;
   else if (key == QStringLiteral("pieStrokeColor")) pieStrokeColor = value;
   else if (key == QStringLiteral("pieStrokeWidth")) pieStrokeWidth = value;
   else if (key == QStringLiteral("pieOpacity")) pieOpacity = value;

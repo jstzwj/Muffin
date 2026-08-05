@@ -100,6 +100,13 @@ try {
     const req = (v, msg) => { if (typeof v === "string") assert(v, `${th}: ${msg} missing`); else assert(v && (v.attr || v.computed), `${th}: ${msg} missing`); };
     for (const [k, v] of Object.entries(t.pie)) if (k !== "fills") req(v, `pie.${k}`);
     for (const [k, v] of Object.entries(t.quadrant)) if (!Array.isArray(v)) req(v, `quadrant.${k}`);
+    // Per-element attr+computed (not just length): every slice/quadrant fill
+    // and text fill must carry BOTH the raw themeVariable attribute (the
+    // theme-model golden) and a resolved computed paint value.
+    const reqBoth = (v, msg) => { assert(v && v.attr, `${th}: ${msg} attr missing`); assert(v && v.computed, `${th}: ${msg} computed missing`); };
+    t.pie.fills.forEach((e, i) => reqBoth(e, `pie.fills[${i}]`));
+    t.quadrant.fills.forEach((e, i) => reqBoth(e, `quadrant.fills[${i}]`));
+    t.quadrant.textFills.forEach((e, i) => reqBoth(e, `quadrant.textFills[${i}]`));
   }
   for (const [entry, ov] of Object.entries(d1.overrides)) {
     assert(ov.pie1 === "#abcdef", `${entry}: pie1 override = ${ov.pie1} (expected #abcdef)`);

@@ -52,7 +52,41 @@ const QStringList criticalFields() {
   };
 }
 
-QStringList fieldsForTheme(FlowThemeId) {
+// Pie + Quadrant themeVariables are derived per-theme in updateColors.
+// Currently implemented for the Family-A themes (base/neo/neo-dark/redux/
+// redux-dark/redux-color/redux-dark-color — populatePieFamilyA) and Default
+// (populatePieDefault). Dark/Forest/Neutral get their own pie/quadrant formulas
+// in a later commit; until then they are excluded from the golden comparison
+// (compare only what is derived, never a knowingly-unimplemented field).
+bool pieQuadrantImplemented(FlowThemeId id) {
+  switch (id) {
+    case FlowThemeId::Base:
+    case FlowThemeId::Neo:
+    case FlowThemeId::NeoDark:
+    case FlowThemeId::Redux:
+    case FlowThemeId::ReduxDark:
+    case FlowThemeId::ReduxColor:
+    case FlowThemeId::ReduxDarkColor:
+    case FlowThemeId::Default:
+      return true;
+    default:
+      return false;
+  }
+}
+
+// The 20 pie/quadrant fields that populatePie*/populateQuadrant derive: the
+// 12 section fills + 4 quadrant fills + 4 quadrant text fills.
+QStringList pieQuadrantFields() {
+  QStringList f;
+  for (int i = 1; i <= 12; ++i) f.append(QStringLiteral("pie%1").arg(i));
+  for (int i = 1; i <= 4; ++i) {
+    f.append(QStringLiteral("quadrant%1Fill").arg(i));
+    f.append(QStringLiteral("quadrant%1TextFill").arg(i));
+  }
+  return f;
+}
+
+QStringList fieldsForTheme(FlowThemeId id) {
   QStringList f = criticalFields();
   for (int i = 0; i <= 11; ++i) {
     f.append(QStringLiteral("cScale%1").arg(i));
@@ -60,6 +94,7 @@ QStringList fieldsForTheme(FlowThemeId) {
     f.append(QStringLiteral("cScaleInv%1").arg(i));
     f.append(QStringLiteral("cScaleLabel%1").arg(i));
   }
+  if (pieQuadrantImplemented(id)) f.append(pieQuadrantFields());
   return f;
 }
 
@@ -97,6 +132,27 @@ void compareOverride(FlowThemeId id, const QHash<QString, QString>& overrides,
     }
   }
 }
+
+// Source-entry override of the pie text-color themeVariables. Upstream keys are
+// *TextColor (NOT *TextFill); each must round-trip through get/set so that
+// %%{init}%% / frontmatter / initialize themeVariables overrides take effect at
+// runtime. This guards against the prior regression where the keys were wired
+// to nonexistent *TextFill names and every override was silently dropped.
+void checkPieTextColorOverrides() {
+  const struct { QString key; QString val; } cases[3] = {
+    {QStringLiteral("pieTitleTextColor"), QStringLiteral("#a1b2c3")},
+    {QStringLiteral("pieSectionTextColor"), QStringLiteral("#4d5e6f")},
+    {QStringLiteral("pieLegendTextColor"), QStringLiteral("#778899")},
+  };
+  for (const auto& c : cases) {
+    QHash<QString, QString> ov;
+    ov.insert(c.key, c.val);
+    const FlowThemeVariables t = resolveFlowTheme(FlowThemeId::Default, ov);
+    const QString got = t.get(c.key);
+    require(got == c.val,
+            QStringLiteral("pie text-color override %1 = %2 (expected %3)").arg(c.key, got, c.val));
+  }
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -125,6 +181,8 @@ int main(int argc, char** argv) {
   compareOverride(FlowThemeId::Default, overrides,
                   overrideCase.value(QStringLiteral("variables")).toObject(),
                   overrideCase.value(QStringLiteral("name")).toString());
+
+  checkPieTextColorOverrides();
 
   qDebug().noquote() << "MermaidThemeTest: all themes + override match golden";
   return 0;
