@@ -297,6 +297,9 @@ void applyRawConstructor(FlowThemeId id, FlowThemeVariables& t) {
 }
 
 // --- updateColors variants ---
+// Forward declarations (pie/quadrant derivation).
+void populatePieStandard(FlowThemeVariables& t);
+void populateQuadrant(FlowThemeVariables& t);
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
 // the shared `||`-guarded derivation (darkMode always false for built-in
@@ -325,6 +328,8 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   assignIfEmpty(t.titleColor, tertiaryTextColor);
   assignIfEmpty(t.edgeLabelBackground, t.secondaryColor);  // darkMode false
   assignIfEmpty(t.nodeTextColor, t.primaryTextColor);
+  populatePieStandard(t);
+  populateQuadrant(t);
 }
 
 void finishCScale(FlowThemeVariables& t, bool darkMode,
@@ -336,6 +341,39 @@ void finishCScale(FlowThemeVariables& t, bool darkMode,
     assignIfEmpty(t.cScaleLabel[i], darkColorLabels ? darken(t.cScale[i], 75)
                                                      : t.primaryTextColor);
   }
+}
+
+// Standard pie palette derivation (shared by default/base/neo/redux/redux-color/
+// redux-dark/redux-dark-color — the majority). From the upstream source:
+// pie1-3 = primary/secondary/tertiary; pie4-6 = adjust(base, {l:-10});
+// pie7-9 = adjust(primary, {h:+60/-60/+120, l}); pie10-12 = adjust(primary,
+// {h:+60/-60/+120, l:-20/-20/-10}). Uses MermaidColor::adjust (= upstream adjust2/4/etc.).
+void populatePieStandard(FlowThemeVariables& t) {
+  assignIfEmpty(t.pie[0], t.primaryColor);
+  assignIfEmpty(t.pie[1], t.secondaryColor);
+  assignIfEmpty(t.pie[2], t.tertiaryColor);
+  assignIfEmpty(t.pie[3], adjust(t.primaryColor, {.l = -10.0}));
+  assignIfEmpty(t.pie[4], adjust(t.secondaryColor, {.l = -10.0}));
+  assignIfEmpty(t.pie[5], adjust(t.tertiaryColor, {.l = -10.0}));
+  assignIfEmpty(t.pie[6], adjust(t.primaryColor, {.h = 60.0, .l = -10.0}));
+  assignIfEmpty(t.pie[7], adjust(t.primaryColor, {.h = -60.0, .l = -10.0}));
+  assignIfEmpty(t.pie[8], adjust(t.primaryColor, {.h = 120.0}));
+  assignIfEmpty(t.pie[9], adjust(t.primaryColor, {.h = 60.0, .l = -20.0}));
+  assignIfEmpty(t.pie[10], adjust(t.primaryColor, {.h = -60.0, .l = -20.0}));
+  assignIfEmpty(t.pie[11], adjust(t.primaryColor, {.h = 120.0, .l = -10.0}));
+}
+
+// Quadrant fills + text fills (UNIFORM across all 11 themes): RGB adjustments
+// of primaryColor / primaryTextColor in +5/+10/+15 steps.
+void populateQuadrant(FlowThemeVariables& t) {
+  assignIfEmpty(t.quadrant[0], t.primaryColor);
+  assignIfEmpty(t.quadrant[1], adjust(t.primaryColor, {.r = 5.0, .g = 5.0, .b = 5.0}));
+  assignIfEmpty(t.quadrant[2], adjust(t.primaryColor, {.r = 10.0, .g = 10.0, .b = 10.0}));
+  assignIfEmpty(t.quadrant[3], adjust(t.primaryColor, {.r = 15.0, .g = 15.0, .b = 15.0}));
+  assignIfEmpty(t.quadrantText[0], t.primaryTextColor);
+  assignIfEmpty(t.quadrantText[1], adjust(t.primaryTextColor, {.r = -5.0, .g = -5.0, .b = -5.0}));
+  assignIfEmpty(t.quadrantText[2], adjust(t.primaryTextColor, {.r = -10.0, .g = -10.0, .b = -10.0}));
+  assignIfEmpty(t.quadrantText[3], adjust(t.primaryTextColor, {.r = -15.0, .g = -15.0, .b = -15.0}));
 }
 
 void populateAdjustedScale(FlowThemeVariables& t, const QString& primary,
@@ -421,6 +459,8 @@ void updateColorsDefault(FlowThemeVariables& t) {
   t.defaultLinkColor = t.lineColor;
   t.titleColor = t.textColor;
   t.edgeLabelBackground = t.labelBackground;
+  populatePieStandard(t);
+  populateQuadrant(t);
 }
 
 void updateColorsForest(FlowThemeVariables& t) {

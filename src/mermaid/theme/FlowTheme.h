@@ -82,6 +82,33 @@ struct FlowThemeVariables {
   QString cScalePeer[12];
   QString cScaleLabel[12];
 
+  // Pie family themeVariables (pieDiagram). Derived per-theme in updateColors
+  // via MermaidColor::adjust from primaryColor/secondaryColor/tertiaryColor.
+  QString pie[12];  // pie1..pie12 section fills (scaleOrdinal range)
+  QString pieTitleTextFill;
+  QString pieSectionTextFill;
+  QString pieLegendTextFill;
+  QString pieStrokeColor;
+  QString pieStrokeWidth = QStringLiteral("2px");
+  QString pieOpacity = QStringLiteral("0.7");
+  QString pieOuterStrokeColor;
+  QString pieOuterStrokeWidth = QStringLiteral("2px");
+  QString pieTitleTextSize = QStringLiteral("25px");
+  QString pieSectionTextSize = QStringLiteral("17px");
+  QString pieLegendTextSize = QStringLiteral("17px");
+
+  // Quadrant family themeVariables (quadrantChart). Derived per-theme in
+  // updateColors via MermaidColor::adjust from primaryColor (RGB steps).
+  QString quadrant[4];  // quadrant1..4Fill
+  QString quadrantText[4];  // quadrant1..4TextFill
+  QString quadrantPointFill;
+  QString quadrantPointTextFill;
+  QString quadrantXAxisTextFill;
+  QString quadrantYAxisTextFill;
+  QString quadrantInternalBorderStrokeFill;
+  QString quadrantExternalBorderStrokeFill;
+  QString quadrantTitleFill;
+
   // requirementDiagram / er / rect `colorIndex` palette (chunk-CHAKFXHA.mjs:
   // only redux-color defines both; redux-dark-color defines borderColorArray
   // only with bkgColorArray = []). When borderColorArray is non-empty, the
