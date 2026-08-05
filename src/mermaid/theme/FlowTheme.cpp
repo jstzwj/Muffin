@@ -298,7 +298,8 @@ void applyRawConstructor(FlowThemeId id, FlowThemeVariables& t) {
 
 // --- updateColors variants ---
 // Forward declarations (pie/quadrant derivation).
-void populatePieStandard(FlowThemeVariables& t);
+void populatePieFamilyA(FlowThemeVariables& t);
+void populatePieDefault(FlowThemeVariables& t);
 void populateQuadrant(FlowThemeVariables& t);
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
@@ -328,7 +329,7 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   assignIfEmpty(t.titleColor, tertiaryTextColor);
   assignIfEmpty(t.edgeLabelBackground, t.secondaryColor);  // darkMode false
   assignIfEmpty(t.nodeTextColor, t.primaryTextColor);
-  populatePieStandard(t);
+  populatePieFamilyA(t);
   populateQuadrant(t);
 }
 
@@ -343,12 +344,10 @@ void finishCScale(FlowThemeVariables& t, bool darkMode,
   }
 }
 
-// Standard pie palette derivation (shared by default/base/neo/redux/redux-color/
-// redux-dark/redux-dark-color — the majority). From the upstream source:
-// pie1-3 = primary/secondary/tertiary; pie4-6 = adjust(base, {l:-10});
-// pie7-9 = adjust(primary, {h:+60/-60/+120, l}); pie10-12 = adjust(primary,
-// {h:+60/-60/+120, l:-20/-20/-10}). Uses MermaidColor::adjust (= upstream adjust2/4/etc.).
-void populatePieStandard(FlowThemeVariables& t) {
+// Family-A pie palette (shared by base/neo/redux/redux-color/redux-dark/
+// redux-dark-color). pie1-3 = primary/secondary/tertiary; pie4-6 = adjust(base,
+// {l:-10}); pie7-12 = adjust(primary, {h, l}).
+void populatePieFamilyA(FlowThemeVariables& t) {
   assignIfEmpty(t.pie[0], t.primaryColor);
   assignIfEmpty(t.pie[1], t.secondaryColor);
   assignIfEmpty(t.pie[2], t.tertiaryColor);
@@ -361,6 +360,26 @@ void populatePieStandard(FlowThemeVariables& t) {
   assignIfEmpty(t.pie[9], adjust(t.primaryColor, {.h = 60.0, .l = -20.0}));
   assignIfEmpty(t.pie[10], adjust(t.primaryColor, {.h = -60.0, .l = -20.0}));
   assignIfEmpty(t.pie[11], adjust(t.primaryColor, {.h = 120.0, .l = -10.0}));
+}
+
+// Default theme's OWN pie formula (different from Family-A). From the upstream
+// source (chunk-WYO6CB5R.mjs ~L53671): pie3=adjust(tertiary,{l:-40}),
+// pie5=adjust(secondary,{l:-30}), pie6=adjust(tertiary,{l:-20}),
+// pie7=adjust(primary,{h:60,l:-20}), pie8=adjust(primary,{h:-60,l:-40}),
+// pie9-12 = adjust(primary,{h,l}) with the Default-specific {h,l} pairs.
+void populatePieDefault(FlowThemeVariables& t) {
+  assignIfEmpty(t.pie[0], t.primaryColor);
+  assignIfEmpty(t.pie[1], t.secondaryColor);
+  assignIfEmpty(t.pie[2], adjust(t.tertiaryColor, {.l = -40.0}));
+  assignIfEmpty(t.pie[3], adjust(t.primaryColor, {.l = -10.0}));
+  assignIfEmpty(t.pie[4], adjust(t.secondaryColor, {.l = -30.0}));
+  assignIfEmpty(t.pie[5], adjust(t.tertiaryColor, {.l = -20.0}));
+  assignIfEmpty(t.pie[6], adjust(t.primaryColor, {.h = 60.0, .l = -20.0}));
+  assignIfEmpty(t.pie[7], adjust(t.primaryColor, {.h = -60.0, .l = -40.0}));
+  assignIfEmpty(t.pie[8], adjust(t.primaryColor, {.h = 120.0, .l = -40.0}));
+  assignIfEmpty(t.pie[9], adjust(t.primaryColor, {.h = 60.0, .l = -40.0}));
+  assignIfEmpty(t.pie[10], adjust(t.primaryColor, {.h = -90.0, .l = -40.0}));
+  assignIfEmpty(t.pie[11], adjust(t.primaryColor, {.h = 120.0, .l = -30.0}));
 }
 
 // Quadrant fills + text fills (UNIFORM across all 11 themes): RGB adjustments
@@ -459,7 +478,7 @@ void updateColorsDefault(FlowThemeVariables& t) {
   t.defaultLinkColor = t.lineColor;
   t.titleColor = t.textColor;
   t.edgeLabelBackground = t.labelBackground;
-  populatePieStandard(t);
+  populatePieDefault(t);
   populateQuadrant(t);
 }
 
@@ -651,6 +670,31 @@ QString FlowThemeVariables::get(const QString& key) const {
     if (key == QStringLiteral("cScalePeer%1").arg(i)) return cScalePeer[i];
     if (key == QStringLiteral("cScaleLabel%1").arg(i)) return cScaleLabel[i];
   }
+  // Pie + Quadrant themeVariables.
+  for (int i = 0; i < 12; ++i)
+    if (key == QStringLiteral("pie%1").arg(i + 1)) return pie[i];
+  for (int i = 0; i < 4; ++i) {
+    if (key == QStringLiteral("quadrant%1Fill").arg(i + 1)) return quadrant[i];
+    if (key == QStringLiteral("quadrant%1TextFill").arg(i + 1)) return quadrantText[i];
+  }
+  if (key == QStringLiteral("pieTitleTextFill")) return pieTitleTextFill;
+  if (key == QStringLiteral("pieSectionTextFill")) return pieSectionTextFill;
+  if (key == QStringLiteral("pieLegendTextFill")) return pieLegendTextFill;
+  if (key == QStringLiteral("pieStrokeColor")) return pieStrokeColor;
+  if (key == QStringLiteral("pieStrokeWidth")) return pieStrokeWidth;
+  if (key == QStringLiteral("pieOpacity")) return pieOpacity;
+  if (key == QStringLiteral("pieOuterStrokeColor")) return pieOuterStrokeColor;
+  if (key == QStringLiteral("pieOuterStrokeWidth")) return pieOuterStrokeWidth;
+  if (key == QStringLiteral("pieTitleTextSize")) return pieTitleTextSize;
+  if (key == QStringLiteral("pieSectionTextSize")) return pieSectionTextSize;
+  if (key == QStringLiteral("pieLegendTextSize")) return pieLegendTextSize;
+  if (key == QStringLiteral("quadrantPointFill")) return quadrantPointFill;
+  if (key == QStringLiteral("quadrantPointTextFill")) return quadrantPointTextFill;
+  if (key == QStringLiteral("quadrantXAxisTextFill")) return quadrantXAxisTextFill;
+  if (key == QStringLiteral("quadrantYAxisTextFill")) return quadrantYAxisTextFill;
+  if (key == QStringLiteral("quadrantInternalBorderStrokeFill")) return quadrantInternalBorderStrokeFill;
+  if (key == QStringLiteral("quadrantExternalBorderStrokeFill")) return quadrantExternalBorderStrokeFill;
+  if (key == QStringLiteral("quadrantTitleFill")) return quadrantTitleFill;
   return QString();
 }
 
@@ -684,6 +728,31 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("gradientStart")) gradientStart = value;
   else if (key == QStringLiteral("gradientStop")) gradientStop = value;
   else if (key == QStringLiteral("THEME_COLOR_LIMIT")) themeColorLimit = value.toInt();
+  // Pie + Quadrant overrides (separate from the main chain; loops early-return).
+  for (int i = 0; i < 12; ++i)
+    if (key == QStringLiteral("pie%1").arg(i + 1)) { pie[i] = value; return; }
+  for (int i = 0; i < 4; ++i) {
+    if (key == QStringLiteral("quadrant%1Fill").arg(i + 1)) { quadrant[i] = value; return; }
+    if (key == QStringLiteral("quadrant%1TextFill").arg(i + 1)) { quadrantText[i] = value; return; }
+  }
+  if (key == QStringLiteral("pieTitleTextFill")) pieTitleTextFill = value;
+  else if (key == QStringLiteral("pieSectionTextFill")) pieSectionTextFill = value;
+  else if (key == QStringLiteral("pieLegendTextFill")) pieLegendTextFill = value;
+  else if (key == QStringLiteral("pieStrokeColor")) pieStrokeColor = value;
+  else if (key == QStringLiteral("pieStrokeWidth")) pieStrokeWidth = value;
+  else if (key == QStringLiteral("pieOpacity")) pieOpacity = value;
+  else if (key == QStringLiteral("pieOuterStrokeColor")) pieOuterStrokeColor = value;
+  else if (key == QStringLiteral("pieOuterStrokeWidth")) pieOuterStrokeWidth = value;
+  else if (key == QStringLiteral("pieTitleTextSize")) pieTitleTextSize = value;
+  else if (key == QStringLiteral("pieSectionTextSize")) pieSectionTextSize = value;
+  else if (key == QStringLiteral("pieLegendTextSize")) pieLegendTextSize = value;
+  else if (key == QStringLiteral("quadrantPointFill")) quadrantPointFill = value;
+  else if (key == QStringLiteral("quadrantPointTextFill")) quadrantPointTextFill = value;
+  else if (key == QStringLiteral("quadrantXAxisTextFill")) quadrantXAxisTextFill = value;
+  else if (key == QStringLiteral("quadrantYAxisTextFill")) quadrantYAxisTextFill = value;
+  else if (key == QStringLiteral("quadrantInternalBorderStrokeFill")) quadrantInternalBorderStrokeFill = value;
+  else if (key == QStringLiteral("quadrantExternalBorderStrokeFill")) quadrantExternalBorderStrokeFill = value;
+  else if (key == QStringLiteral("quadrantTitleFill")) quadrantTitleFill = value;
 }
 
 }  // namespace muffin::mermaid::flowtheme
