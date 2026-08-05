@@ -54,6 +54,8 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
   const double yAxisLabelPadding = cfgD(cfg, QStringLiteral("yAxisLabelPadding"), 5.0);
   const double xAxisLabelFontSize = cfgD(cfg, QStringLiteral("xAxisLabelFontSize"), 16.0);
   const double yAxisLabelFontSize = cfgD(cfg, QStringLiteral("yAxisLabelFontSize"), 16.0);
+  const double quadrantLabelFontSize = cfgD(cfg, QStringLiteral("quadrantLabelFontSize"), 16.0);
+  const double pointLabelFontSize = cfgD(cfg, QStringLiteral("pointLabelFontSize"), 12.0);
   const double quadrantTextTopPadding = cfgD(cfg, QStringLiteral("quadrantTextTopPadding"), 5.0);
   const double pointTextPadding = cfgD(cfg, QStringLiteral("pointTextPadding"), 5.0);
   const double pointRadius = cfgD(cfg, QStringLiteral("pointRadius"), 5.0);
@@ -103,10 +105,12 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
     const QuadrantPoint& pp = data.points.at(idx);
     const double px = quadrantLeft + pp.x * quadrantWidth;
     const double py = quadrantTop + quadrantHeight - pp.y * quadrantHeight;
+    // Upstream quadrantBuilder.classes is a Map -> a repeated classDef name has
+    // the LAST definition win. Search back-to-front.
     const QuadrantClassDef* cdef = nullptr;
     if (!pp.className.isEmpty())
-      for (const QuadrantClassDef& cd : data.classDefs)
-        if (cd.name == pp.className) { cdef = &cd; break; }
+      for (int ci = data.classDefs.size() - 1; ci >= 0; --ci)
+        if (data.classDefs.at(ci).name == pp.className) { cdef = &data.classDefs.at(ci); break; }
     QuadrantPointG g;
     g.x = px;
     g.y = py;
@@ -168,6 +172,15 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
   // Quadrant label Y placement depends on whether there are points (middle vs top).
   // (Stored implicitly: the painter computes it; record it in toJson.)
   s.bounds = QRectF(0.0, 0.0, chartWidth, chartHeight);
+  // Surface the live config so the painter does not hardcode sizes/paddings.
+  s.quadrantLabelFontSize = quadrantLabelFontSize;
+  s.pointLabelFontSize = pointLabelFontSize;
+  s.xAxisLabelFontSize = xAxisLabelFontSize;
+  s.yAxisLabelFontSize = yAxisLabelFontSize;
+  s.titleFontSizeCfg = titleFontSize;
+  s.quadrantTextTopPadding = quadrantTextTopPadding;
+  s.pointTextPadding = pointTextPadding;
+  s.pointRadiusCfg = pointRadius;
   return s;
 }
 
@@ -184,7 +197,7 @@ QJsonObject QuadrantScene::toJsonObject() const {
   QJsonArray qArr;
   const bool pointsEmpty = points.isEmpty();
   for (const auto& q : quadrants) {
-    const double textY = pointsEmpty ? q.y + q.height / 2.0 : q.y + 5.0 /*quadrantTextTopPadding*/;
+    const double textY = pointsEmpty ? q.y + q.height / 2.0 : q.y + quadrantTextTopPadding;
     QJsonObject o;
     QJsonObject rect;
     rect[QStringLiteral("x")] = r3(q.x);
@@ -211,7 +224,7 @@ QJsonObject QuadrantScene::toJsonObject() const {
         : 0.0;
     o[QStringLiteral("text")] = p.text;
     o[QStringLiteral("transform")] =
-        QStringLiteral("translate(%1, %2) rotate(0)").arg(r3(p.x)).arg(r3(p.y + 5.0));
+        QStringLiteral("translate(%1, %2) rotate(0)").arg(r3(p.x)).arg(r3(p.y + pointTextPadding));
     pArr.append(o);
   }
   QJsonArray bArr;

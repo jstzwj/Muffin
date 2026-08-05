@@ -22,7 +22,11 @@ struct QuadrantDiagramImpl : Diagram {
 
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
                             const QString& theme) const override {
-    const quadrant::QuadrantData data = quadrant::QuadrantDiagram::parse(pre.code);
+    quadrant::QuadrantData data = quadrant::QuadrantDiagram::parse(pre.code);
+    // Effective title: the in-source `quadrantChart title` wins; otherwise the
+    // frontmatter title is the diagram title. Resolved BEFORE buildQuadrantScene
+    // so titleSpace is reserved and the in-scene title is placed correctly.
+    if (data.title.isEmpty() && !pre.title.isEmpty()) data.title = pre.title;
     const QString configuredTheme = themeFromConfig(pre.config);
     const QString effectiveTheme = configuredTheme.isEmpty() ? theme : configuredTheme;
     const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
@@ -52,15 +56,14 @@ struct QuadrantDiagramImpl : Diagram {
 
     const QJsonObject qcfg = pre.config.value(QStringLiteral("quadrantChart")).toObject();
     quadrant::QuadrantScene scene = quadrant::buildQuadrantScene(data, qcfg, std::move(style));
-    // Frontmatter title is the diagram title when there is no in-source
-    // `quadrantChart title`; the inline title wins when both are present.
-    if (scene.titleText.isEmpty() && !pre.title.isEmpty()) scene.titleText = pre.title;
 
     // The quadrant title is drawn INSIDE the viewBox (mermaid places it at
-    // y=titlePadding), so do not reserve title space in the image path.
+    // y=titlePadding). Clear metadata.title so the shared image path does not add
+    // a second title band (renderMetadata would otherwise pull in pre.title).
     MermaidRenderMetadata metadata =
         renderMetadata(pre, type, QString(), data.accTitle, data.accDescr,
                        scene.style.quadrantTitleFill, scene.style.fontFamily, 20.0, 10.0, 0.0);
+    metadata.title = QString();
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));

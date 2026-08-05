@@ -65,6 +65,15 @@ struct QuadrantScene : MermaidScene {
   QRectF bounds;
   // Config (deterministic defaults; chartWidth/Height from pre.config).
   qreal chartWidth = 500.0, chartHeight = 500.0;
+  // Live config fields that drive the painter (no hardcoded sizes/paddings).
+  qreal quadrantLabelFontSize = 16.0;
+  qreal pointLabelFontSize = 12.0;
+  qreal xAxisLabelFontSize = 16.0;
+  qreal yAxisLabelFontSize = 16.0;
+  qreal titleFontSizeCfg = 20.0;
+  qreal quadrantTextTopPadding = 5.0;
+  qreal pointTextPadding = 5.0;
+  qreal pointRadiusCfg = 5.0;
   QString title;
   QString accTitle, accDescr;
   QVector<QuadrantRect> quadrants;

@@ -164,11 +164,14 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
     painter.setPen(QColor(scene.style.legendTextColor));
     const QString& pos = scene.legendPosition;
     const qreal rectBlock = scene.legendRectSize + scene.legendSpacing;
-    const qreal horizontal = (pos == QStringLiteral("right") || pos.isEmpty())
-                                 ? 12.0 * scene.legendRectSize
-                             : pos == QStringLiteral("left")
+    // Upstream's switch default is "right": only left/top/bottom/center are
+    // special; every other value (incl. empty/unknown) behaves as right.
+    const qreal horizontal = pos == QStringLiteral("left")
                                  ? -scene.radius - rectBlock
-                                 : -scene.longestLegendWidth / 2.0 - rectBlock;  // top/bottom/center
+                             : (pos == QStringLiteral("top") || pos == QStringLiteral("bottom") ||
+                                pos == QStringLiteral("center"))
+                                 ? -scene.longestLegendWidth / 2.0 - rectBlock
+                                 : 12.0 * scene.legendRectSize;  // right (default)
     const qreal offset = pos == QStringLiteral("top") ? scene.radius
                           : pos == QStringLiteral("bottom") ? -scene.radius - scene.legendHeight
                                                              : scene.legendHeight * n / 2.0;

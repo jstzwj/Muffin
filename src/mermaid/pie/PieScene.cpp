@@ -197,7 +197,7 @@ PieScene buildPieScene(const PieData& data, const PieConfig& config, PieSceneSty
       g.pathD = arcPath(a0, a1, scene.radius, scene.donutInnerRadius);
       if (scene.highlightSlice == QStringLiteral("hover"))
         g.className += QStringLiteral(" highlightedOnHover");
-      else if (!scene.highlightSlice.isEmpty() && scene.highlightSlice == s.label)
+      else if (scene.highlightSlice == s.label)  // "" == "" : empty highlight hits empty-label slices
         g.className += QStringLiteral(" highlighted");
       scene.slices.append(g);
     }

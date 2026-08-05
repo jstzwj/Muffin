@@ -70,13 +70,13 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
 
   // Quadrant label text.
   QFont qFont(scene.style.fontFamily);
-  qFont.setPixelSize(16);
+  qFont.setPixelSize(qRound(scene.quadrantLabelFontSize));
   painter.setFont(qFont);
   for (const QuadrantRect& q : scene.quadrants) {
     if (q.text.isEmpty()) continue;
     painter.setPen(QColor(q.textFill));
     const qreal cx = q.x + q.width / 2.0;
-    const qreal cy = pointsEmpty ? q.y + q.height / 2.0 : q.y + 5.0;
+    const qreal cy = pointsEmpty ? q.y + q.height / 2.0 : q.y + scene.quadrantTextTopPadding;
     // pointsEmpty => centered (middle baseline); else top (hanging baseline).
     const QRectF box(cx - q.width / 2.0, pointsEmpty ? cy - 30.0 : cy,
                      q.width, pointsEmpty ? 60.0 : 40.0);
@@ -101,18 +101,18 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
     painter.drawEllipse(QPointF(p.x, p.y), p.radius, p.radius);
   }
   QFont pFont(scene.style.fontFamily);
-  pFont.setPixelSize(12);
+  pFont.setPixelSize(qRound(scene.pointLabelFontSize));
   painter.setFont(pFont);
   painter.setPen(QColor(scene.style.quadrantPointTextFill));
   for (const QuadrantPointG& p : scene.points) {
     if (p.text.isEmpty()) continue;
-    painter.drawText(QRectF(p.x - 200.0, p.y + 5.0, 400.0, 40.0),
+    painter.drawText(QRectF(p.x - 200.0, p.y + scene.pointTextPadding, 400.0, 40.0),
                      Qt::AlignHCenter | Qt::AlignTop, p.text);
   }
 
   // Axis labels (rotated -90 for the y-axis).
   QFont aFont(scene.style.fontFamily);
-  aFont.setPixelSize(16);
+  aFont.setPixelSize(qRound(scene.xAxisLabelFontSize));
   painter.setFont(aFont);
   for (const QuadrantAxisLabel& a : scene.axisLabels) {
     if (a.text.isEmpty()) continue;
@@ -128,7 +128,7 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
   // Title.
   if (!scene.titleText.isEmpty()) {
     QFont tFont(scene.style.fontFamily);
-    tFont.setPixelSize(20);
+    tFont.setPixelSize(qRound(scene.titleFontSizeCfg));
     painter.setFont(tFont);
     painter.setPen(QColor(scene.style.quadrantTitleFill));
     painter.drawText(QRectF(scene.titleX - 400.0, scene.titleY, 800.0, 40.0),
