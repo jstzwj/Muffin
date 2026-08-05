@@ -1,13 +1,15 @@
-// Theme-0 probe (corrected): getComputedStyle requires an ATTACHED DOM — the
-// previous version read CSS-driven fields off a detached div (all empty). This
-// mounts each rendered SVG offscreen (position:absolute; left:-9999px, NOT
-// display:none), records BOTH the attribute value and the computed value, and
-// self-checks that no field is null/empty unless the upstream value is genuinely
-// empty. It also verifies the two override entry points SEPARATELY:
-// initialize({themeVariables}) vs %%{init}%% source-entry vs frontmatter.
-// Output: tests/fixtures/mermaid/theme-probe.json (golden oracle for the port).
+// Theme-0 probe (final-fix): per Codex review, every CSS field stores BOTH the
+// raw attribute value and the computed paint value (never merged — an invalid
+// hsl(...NaN%) attr and the browser's effective black must not collapse). The
+// quadrant model is fully split (X/Y axis, internal/external border) since each
+// allows an independent override. Self-check THROWS (non-zero exit) on any
+// missing field, wrong array length, or failed override, and the script asserts
+// two consecutive captures produce an identical fixture digest.
+// Output: tests/fixtures/mermaid/theme-probe.json (raw=theme-model golden,
+// computed=pixel-semantics check).
 import fs from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 const mr = path.resolve("../mermaid-cli/node_modules/mermaid");
 const out = path.resolve("tests/fixtures/mermaid/theme-probe.json");
@@ -17,89 +19,94 @@ const THEMES = ["default", "dark", "forest", "neutral", "neo", "neo-dark", "base
 const pieSrc = "pie\n" + Array.from({ length: 13 }, (_, i) => `"S${i + 1}" : ${i + 1}`).join("\n");
 const quadSrc = "quadrantChart\ntitle T\nx-axis L --> R\ny-axis B --> T\nquadrant-1 Q1\nquadrant-2 Q2\nquadrant-3 Q3\nquadrant-4 Q4\n\"P\": [0.5, 0.5]";
 
-function mount(svg) {
-  const c = document.createElement("div");
-  c.style.cssText = "position:absolute;left:-9999px;top:0;width:1000px;height:1000px;";
-  c.innerHTML = svg;
-  document.body.appendChild(c);
-  return c;
-}
+function assert(cond, msg) { if (!cond) { throw new Error("SELFCHECK FAIL: " + msg); } }
 
 try {
   const page = await browser.newPage();
   await page.goto(pathToFileURL(path.join(path.dirname(mr), "..", "index.html")).href);
   const mod = pathToFileURL(path.join(mr, "dist/mermaid.esm.mjs")).href;
-  const data = await page.evaluate(async ({ THEMES, pieSrc, quadSrc, mod }) => {
-    const mount = (svg) => {
-      const c = document.createElement("div");
-      c.style.cssText = "position:absolute;left:-9999px;top:0;width:1000px;height:1000px;";
-      c.innerHTML = svg;
-      document.body.appendChild(c);
-      return c;
-    };
+
+  // capture() returns the data object (no selfCheck). Run twice for digest check.
+  const capture = () => page.evaluate(async ({ THEMES, pieSrc, quadSrc, mod }) => {
+    const mount = (svg) => { const c = document.createElement("div"); c.style.cssText = "position:absolute;left:-9999px;top:0;width:1000px;height:1000px;"; c.innerHTML = svg; document.body.appendChild(c); return c; };
+    // BOTH attr + computed (never merged).
+    const both = (c, sel, a) => { const e = c.querySelector(sel); return e ? { attr: e.getAttribute(a), computed: getComputedStyle(e)[a] } : { attr: null, computed: null }; };
+    const allBoth = (c, sel, a) => [...c.querySelectorAll(sel)].map((e) => ({ attr: e.getAttribute(a), computed: getComputedStyle(e)[a] }));
+    const comp = (c, sel, p) => { const e = c.querySelector(sel); return e ? getComputedStyle(e)[p] : null; };
     const { default: mermaid } = await import(mod);
-    // attr + computed for a node, with the container attached.
     const readFields = async (id, src) => {
       const { svg } = await mermaid.render(id, src);
       const c = mount(svg);
-      // effective value: attribute if present, else computed (CSS-applied fields).
-      const val = (sel, a) => { const e = c.querySelector(sel); if (!e) return null; const av = e.getAttribute(a); return av !== null ? av : getComputedStyle(e)[a]; };
-      const allV = (sel, a) => [...c.querySelectorAll(sel)].map((e) => { const av = e.getAttribute(a); return av !== null ? av : getComputedStyle(e)[a]; });
-      const comp = (sel, p) => { const e = c.querySelector(sel); return e ? getComputedStyle(e)[p] : null; };
-      const out = {};
-      // PIE
-      out.pie = {
-        fills: allV("path.pieCircle", "fill").slice(0, 12),
-        titleTextFill: val("text.pieTitleText", "fill"), titleFontSize: comp("text.pieTitleText", "font-size"),
-        sectionTextFill: val("text.slice", "fill"), sectionFontSize: comp("text.slice", "font-size"),
-        legendTextFill: val("g.legend text", "fill"), legendFontSize: comp("g.legend text", "font-size"),
-        sliceStroke: val("path.pieCircle", "stroke"), sliceStrokeWidth: comp("path.pieCircle", "stroke-width"),
-        sliceOpacity: comp("path.pieCircle", "opacity"),
-        outerStroke: val("circle.pieOuterCircle", "stroke"), outerStrokeWidth: comp("circle.pieOuterCircle", "stroke-width"),
+      const o = {};
+      o.pie = {
+        fills: allBoth(c, "path.pieCircle", "fill").slice(0, 12),
+        titleTextFill: both(c, "text.pieTitleText", "fill"), titleFontSize: comp(c, "text.pieTitleText", "font-size"),
+        sectionTextFill: both(c, "text.slice", "fill"), sectionFontSize: comp(c, "text.slice", "font-size"),
+        legendTextFill: both(c, "g.legend text", "fill"), legendFontSize: comp(c, "g.legend text", "font-size"),
+        sliceStroke: both(c, "path.pieCircle", "stroke"), sliceStrokeWidth: comp(c, "path.pieCircle", "stroke-width"),
+        sliceOpacity: comp(c, "path.pieCircle", "opacity"),
+        outerStroke: both(c, "circle.pieOuterCircle", "stroke"), outerStrokeWidth: comp(c, "circle.pieOuterCircle", "stroke-width"),
       };
-      // QUADRANT
-      out.quadrant = {
-        fills: allV("g.quadrant rect", "fill"),
-        textFills: allV("g.quadrant text", "fill"),
-        pointFill: val("g.data-point circle", "fill"), pointStroke: val("g.data-point circle", "stroke"),
-        pointStrokeWidth: val("g.data-point circle", "stroke-width"),
-        pointTextFill: val("g.data-point text", "fill"),
-        axisTextFill: val("g.label text", "fill"),
-        borderStroke: val("g.border line", "stroke"), borderStrokeWidth: comp("g.border line", "stroke-width"),
-        titleFill: val("g.title text", "fill"),
+      // Quadrant: fully split. X/Y axis labels by rotation; external/internal
+      // border by index (0..3 external width-2, 4..5 internal width-1).
+      const labels = [...c.querySelectorAll("g.label text")].map((t) => ({ fill: { attr: t.getAttribute("fill"), computed: getComputedStyle(t).fill }, rot: (t.getAttribute("transform") || "").match(/rotate\(([-\d]+)\)/)?.[1] ?? "0" }));
+      const xLabel = labels.find((l) => l.rot === "0") || { fill: { attr: null, computed: null } };
+      const yLabel = labels.find((l) => l.rot === "-90") || { fill: { attr: null, computed: null } };
+      const borders = [...c.querySelectorAll("g.border line")];
+      o.quadrant = {
+        fills: allBoth(c, "g.quadrant rect", "fill"),
+        textFills: allBoth(c, "g.quadrant text", "fill"),
+        pointFill: both(c, "g.data-point circle", "fill"), pointStroke: both(c, "g.data-point circle", "stroke"),
+        pointStrokeWidth: both(c, "g.data-point circle", "stroke-width"), pointTextFill: both(c, "g.data-point text", "fill"),
+        xAxisTextFill: xLabel.fill, yAxisTextFill: yLabel.fill,
+        externalBorderStroke: borders[0] ? { attr: borders[0].getAttribute("stroke"), computed: getComputedStyle(borders[0]).stroke } : { attr: null, computed: null },
+        internalBorderStroke: borders[4] ? { attr: borders[4].getAttribute("stroke"), computed: getComputedStyle(borders[4]).stroke } : { attr: null, computed: null },
+        titleFill: both(c, "g.title text", "fill"),
       };
       document.body.removeChild(c);
-      return out;
+      return o;
     };
     const themes = {};
     for (const th of THEMES) {
       mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: th, look: "classic" });
       themes[th] = { pie: (await readFields("tp" + th, pieSrc)).pie, quadrant: (await readFields("tq" + th, quadSrc)).quadrant };
     }
-    // Override entry points (separate): initialize API vs %%{init}%% source-entry.
-    mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default", look: "classic", themeVariables: { pie1: "#abcdef", quadrant1Fill: "#112233" } });
-    const initApi = { pie1: (await readFields("oi1", pieSrc)).pie.fills[0], quadrant1Fill: (await readFields("oi2", quadSrc)).quadrant.fills[0] };
-    mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default", look: "classic" });
-    const sePie = (await readFields("se1", '%%{init: {"themeVariables":{"pie1":"#abcdef"}}}%%\n' + pieSrc)).pie.fills[0];
-    const seQuad = (await readFields("se2", '%%{init: {"themeVariables":{"quadrant1Fill":"#112233"}}}%%\n' + quadSrc)).quadrant.fills[0];
-    const fmPie = (await readFields("fm1", "---\nconfig:\n  themeVariables:\n    pie1: \"#abcdef\"\n---\n" + pieSrc)).pie.fills[0];
-    return { upstream: "mermaid 11.16.0", note: "attr=getAttribute; comp=getComputedStyle on attached DOM", themes,
-      overrides: { initializeApi: initApi, sourceEntryInit: { pie1: sePie, quadrant1Fill: seQuad }, frontmatter: { pie1: fmPie } } };
+    // Override entry points — all three must apply BOTH pie1 and quadrant1Fill.
+    const ov = async (id, kind) => {
+      let src;
+      if (kind === "init") { mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default", look: "classic", themeVariables: { pie1: "#abcdef", quadrant1Fill: "#112233" } }); src = [pieSrc, quadSrc]; }
+      else { mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default", look: "classic" }); }
+      if (kind === "init") return { pie1: (await readFields(id + "p", pieSrc)).pie.fills[0].attr, quadrant1Fill: (await readFields(id + "q", quadSrc)).quadrant.fills[0].attr };
+      if (kind === "sourceEntry") { const p = '%%{init: {"themeVariables":{"pie1":"#abcdef","quadrant1Fill":"#112233"}}}%%\n'; return { pie1: (await readFields(id + "p", p + pieSrc)).pie.fills[0].attr, quadrant1Fill: (await readFields(id + "q", p + quadSrc)).quadrant.fills[0].attr }; }
+      // frontmatter
+      const fm = "---\nconfig:\n  themeVariables:\n    pie1: \"#abcdef\"\n    quadrant1Fill: \"#112233\"\n---\n";
+      return { pie1: (await readFields(id + "p", fm + pieSrc)).pie.fills[0].attr, quadrant1Fill: (await readFields(id + "q", fm + quadSrc)).quadrant.fills[0].attr };
+    };
+    const overrides = { initializeApi: await ov("oi", "init"), sourceEntryInit: await ov("se", "sourceEntry"), frontmatter: await ov("fm", "frontmatter") };
+    return { upstream: "mermaid 11.16.0", note: "every CSS field = {attr, computed}; raw attr is the theme-model golden, computed is the paint semantic", themes, overrides };
   }, { THEMES, pieSrc, quadSrc, mod });
-  // Self-check: flag null/empty fields.
-  const empties = [];
-  for (const [th, tv] of Object.entries(data.themes)) {
-    for (const [k, v] of Object.entries(tv.pie)) if (k !== "fills") (Array.isArray(v) ? v : [v]).forEach((x, i) => { if (x === null || x === "" || x === "none") empties.push(`${th}.pie.${k}${Array.isArray(v) ? "["+i+"]" : ""}=${JSON.stringify(x)}`); });
-    for (const [k, v] of Object.entries(tv.quadrant)) (Array.isArray(v) ? v : [v]).forEach((x, i) => { if (x === null || x === "" || x === "none") empties.push(`${th}.quadrant.${k}${Array.isArray(v) ? "["+i+"]" : ""}=${JSON.stringify(x)}`); });
+
+  const d1 = await capture();
+  const d2 = await capture();
+  const canon = (d) => JSON.stringify({ upstream: d.upstream, themes: d.themes, overrides: d.overrides });
+  assert(canon(d1) === canon(d2), "two consecutive captures differ (non-deterministic fixture)");
+
+  // Self-check (throws on any failure).
+  for (const th of THEMES) {
+    const t = d1.themes[th];
+    assert(t.pie.fills.length === 12, `${th}: pie.fills length ${t.pie.fills.length} != 12`);
+    assert(t.quadrant.fills.length === 4, `${th}: quadrant.fills length ${t.quadrant.fills.length} != 4`);
+    assert(t.quadrant.textFills.length === 4, `${th}: quadrant.textFills length != 4`);
+    const req = (v, msg) => { if (typeof v === "string") assert(v, `${th}: ${msg} missing`); else assert(v && (v.attr || v.computed), `${th}: ${msg} missing`); };
+    for (const [k, v] of Object.entries(t.pie)) if (k !== "fills") req(v, `pie.${k}`);
+    for (const [k, v] of Object.entries(t.quadrant)) if (!Array.isArray(v)) req(v, `quadrant.${k}`);
   }
-  data.selfCheck = { emptyFieldCount: empties.length, empties: empties.slice(0, 40) };
-  fs.writeFileSync(out, JSON.stringify(data, null, 2) + "\n");
-  for (const t of THEMES) {
-    const p = data.themes[t].pie, q = data.themes[t].quadrant;
-    console.log(`${t.padEnd(16)} pie1=${p.fills[0]} titleFill=${p.titleTextFill} sliceStroke=${p.sliceStroke} op=${p.sliceOpacity} | q1=${q.fills[0]} ptStroke=${q.pointStroke} border=${q.borderStroke}`);
+  for (const [entry, ov] of Object.entries(d1.overrides)) {
+    assert(ov.pie1 === "#abcdef", `${entry}: pie1 override = ${ov.pie1} (expected #abcdef)`);
+    assert(ov.quadrant1Fill === "#112233", `${entry}: quadrant1Fill override = ${ov.quadrant1Fill} (expected #112233)`);
   }
-  console.log("selfCheck empty fields:", empties.length, empties.slice(0, 8));
-  console.log("override initialize:", JSON.stringify(data.overrides.initializeApi));
-  console.log("override %%{init}%%:", JSON.stringify(data.overrides.sourceEntryInit));
-  console.log("override frontmatter:", JSON.stringify(data.overrides.frontmatter));
+  d1.selfCheck = { status: "passed", twoRunDigestStable: true };
+  fs.writeFileSync(out, JSON.stringify(d1, null, 2) + "\n");
+  console.log("SELFCHECK passed: 11 themes, pie.fills=12, quadrant.fills/textFills=4, all fields present, 3 override entries (pie1+quadrant1Fill), two-run digest stable.");
+  for (const th of THEMES) console.log(`  ${th.padEnd(16)} pie1.attr=${d1.themes[th].pie.fills[0].attr} q1.attr=${d1.themes[th].quadrant.fills[0].attr} extBorder=${d1.themes[th].quadrant.externalBorderStroke.attr || d1.themes[th].quadrant.externalBorderStroke.computed} intBorder=${d1.themes[th].quadrant.internalBorderStroke.attr || d1.themes[th].quadrant.internalBorderStroke.computed}`);
 } finally { await browser.close(); }
