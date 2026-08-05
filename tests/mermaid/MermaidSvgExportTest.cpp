@@ -103,6 +103,11 @@ int main(int argc, char** argv) {
       {QStringLiteral("requirement"), QStringLiteral("requirementDiagram"),
        QStringLiteral("requirementDiagram\nrequirement R {\n id: 1\n text: hello\n}\n"
                       "element E {\n type: hw\n}\nR -contains-> E")},
+      {QStringLiteral("pie"), QStringLiteral("pieDiagram"),
+       QStringLiteral("pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36")},
+      {QStringLiteral("quadrant"), QStringLiteral("quadrantChart"),
+       QStringLiteral("quadrantChart\ntitle Reach\nx-axis Low --> High\ny-axis Down --> Up\n"
+                      "quadrant-1 Q1\nquadrant-2 Q2\nquadrant-3 Q3\nquadrant-4 Q4\n\"A\": [0.3, 0.7]")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);

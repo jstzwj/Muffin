@@ -52,6 +52,9 @@ struct QuadrantDiagramImpl : Diagram {
 
     const QJsonObject qcfg = pre.config.value(QStringLiteral("quadrantChart")).toObject();
     quadrant::QuadrantScene scene = quadrant::buildQuadrantScene(data, qcfg, std::move(style));
+    // Frontmatter title is the diagram title when there is no in-source
+    // `quadrantChart title`; the inline title wins when both are present.
+    if (scene.titleText.isEmpty() && !pre.title.isEmpty()) scene.titleText = pre.title;
 
     // The quadrant title is drawn INSIDE the viewBox (mermaid places it at
     // y=titlePadding), so do not reserve title space in the image path.

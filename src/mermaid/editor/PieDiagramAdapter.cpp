@@ -83,6 +83,11 @@ struct PieDiagramImpl : Diagram {
     style.legendTextColor = themeVars.primaryTextColor;
 
     pie::PieScene scene = pie::buildPieScene(data, config, std::move(style));
+    // Frontmatter title (`---\ntitle: X\n---`) is the diagram title when there is
+    // no in-source `pie title`; the inline title wins when both are present
+    // (mermaid's getDiagramTitle = last-set: frontmatter during preprocess, the
+    // inline `title` token during parse). The pie renderer draws it in-scene.
+    if (scene.title.isEmpty() && !pre.title.isEmpty()) scene.title = pre.title;
 
     // Measure legend text advance with the resolved font so the canvas width
     // (font-coupled) and the painted legend block agree. Mirrors mermaid's

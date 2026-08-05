@@ -942,6 +942,9 @@ int main(int argc, char** argv) {
         {QStringLiteral("requirement"),
          QStringLiteral("requirementDiagram\nrequirement R {\n id: 1\n text: hello\n}\n"
                         "element E {\n type: hw\n}\nR -contains-> E")},
+        {QStringLiteral("pie"), QStringLiteral("pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26")},
+        {QStringLiteral("quadrant"),
+         QStringLiteral("quadrantChart\nx-axis Low --> High\ny-axis Down --> Up\n\"A\": [0.3, 0.7]")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);
