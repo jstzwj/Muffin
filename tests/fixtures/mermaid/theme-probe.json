@@ -1,0 +1,493 @@
+{
+  "upstream": "mermaid 11.16.0",
+  "themes": {
+    "default": {
+      "pie": {
+        "fills": [
+          "#ECECFF",
+          "#ffffde",
+          "hsl(80, 100%, 56.2745098039%)",
+          "hsl(240, 100%, 86.2745098039%)",
+          "hsl(60, 100%, 63.5294117647%)",
+          "hsl(80, 100%, 76.2745098039%)",
+          "hsl(300, 100%, 76.2745098039%)",
+          "hsl(180, 100%, 56.2745098039%)",
+          "hsl(0, 100%, 56.2745098039%)",
+          "hsl(300, 100%, 56.2745098039%)",
+          "hsl(150, 100%, 56.2745098039%)",
+          "hsl(0, 100%, 66.2745098039%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#ECECFF",
+          "#f1f1ff",
+          "#f6f6ff",
+          "#fbfbff"
+        ],
+        "textFills": [
+          "#131300",
+          "#0e0e00",
+          "#090900",
+          "#040400"
+        ],
+        "pointFill": "hsl(240, 100%, NaN%)",
+        "pointTextFill": "#131300",
+        "axisTextFill": "#131300",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "dark": {
+      "pie": {
+        "fills": [
+          "#0b0000",
+          "#4d1037",
+          "#3f5258",
+          "#4f2f1b",
+          "#6e0a0a",
+          "#3b0048",
+          "#995a01",
+          "#154706",
+          "#161722",
+          "#00296f",
+          "#01629c",
+          null
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#1f2020",
+          "#242525",
+          "#292a2a",
+          "#2e2f2f"
+        ],
+        "textFills": [
+          "#e0dfdf",
+          "#dbdada",
+          "#d6d5d5",
+          "#d1d0d0"
+        ],
+        "pointFill": "hsl(180, 1.5873015873%, NaN%)",
+        "pointTextFill": "#e0dfdf",
+        "axisTextFill": "#e0dfdf",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "forest": {
+      "pie": {
+        "fills": [
+          "#cde498",
+          "#cdffb2",
+          "hsl(78.1578947368, 58.4615384615%, 84.5098039216%)",
+          "hsl(78.1578947368, 58.4615384615%, 44.5098039216%)",
+          "hsl(98.961038961, 100%, 54.9019607843%)",
+          "hsl(118.1578947368, 58.4615384615%, 44.5098039216%)",
+          "hsl(138.1578947368, 58.4615384615%, 64.5098039216%)",
+          "hsl(18.1578947368, 58.4615384615%, 64.5098039216%)",
+          "hsl(198.1578947368, 58.4615384615%, 74.5098039216%)",
+          "hsl(138.1578947368, 58.4615384615%, 24.5098039216%)",
+          "hsl(18.1578947368, 58.4615384615%, 24.5098039216%)",
+          "hsl(198.1578947368, 58.4615384615%, 24.5098039216%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#cde498",
+          "#d2e99d",
+          "#d7eea2",
+          "#dcf3a7"
+        ],
+        "textFills": [
+          "#321b67",
+          "#2d1662",
+          "#28115d",
+          "#230c58"
+        ],
+        "pointFill": "hsl(78.1578947368, 58.4615384615%, NaN%)",
+        "pointTextFill": "#321b67",
+        "axisTextFill": "#321b67",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "neutral": {
+      "pie": {
+        "fills": [
+          "#F4F4F4",
+          "#555",
+          "#BBB",
+          "#777",
+          "#999",
+          "#DDD",
+          "#FFF",
+          "#DDD",
+          "#BBB",
+          "#999",
+          "#777",
+          "#555"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#eee",
+          "#f3f3f3",
+          "#f8f8f8",
+          "#fdfdfd"
+        ],
+        "textFills": [
+          "#111111",
+          "#0c0c0c",
+          "#070707",
+          "#020202"
+        ],
+        "pointFill": "hsl(0, 0%, NaN%)",
+        "pointTextFill": "#111111",
+        "axisTextFill": "#111111",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "neo": {
+      "pie": {
+        "fills": [
+          "#ECECFE",
+          "#E9E9F1",
+          "hsl(60, 90%, 100%)",
+          "hsl(240, 90%, 86.0784313725%)",
+          "hsl(240, 22.2222222222%, 82.9411764706%)",
+          "hsl(60, 90%, 90%)",
+          "hsl(300, 90%, 86.0784313725%)",
+          "hsl(180, 90%, 86.0784313725%)",
+          "hsl(0, 90%, 96.0784313725%)",
+          "hsl(300, 90%, 76.0784313725%)",
+          "hsl(180, 90%, 76.0784313725%)",
+          "hsl(0, 90%, 86.0784313725%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#ECECFE",
+          "#f1f1ff",
+          "#f6f6ff",
+          "#fbfbff"
+        ],
+        "textFills": [
+          "#333",
+          "#2e2e2e",
+          "#292929",
+          "#242424"
+        ],
+        "pointFill": "hsl(240, 90%, NaN%)",
+        "pointTextFill": "#333",
+        "axisTextFill": "#333",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "neo-dark": {
+      "pie": {
+        "fills": [
+          "#1f2020",
+          "hsl(180, 1.5873015873%, 28.3529411765%)",
+          "hsl(20, 1.5873015873%, 12.3529411765%)",
+          "hsl(180, 1.5873015873%, 2.3529411765%)",
+          "hsl(180, 1.5873015873%, 18.3529411765%)",
+          "hsl(20, 1.5873015873%, 2.3529411765%)",
+          "hsl(240, 1.5873015873%, 2.3529411765%)",
+          "hsl(120, 1.5873015873%, 2.3529411765%)",
+          "hsl(300, 1.5873015873%, 12.3529411765%)",
+          "hsl(240, 1.5873015873%, 0%)",
+          "hsl(120, 1.5873015873%, 0%)",
+          "hsl(300, 1.5873015873%, 2.3529411765%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#1f2020",
+          "#242525",
+          "#292a2a",
+          "#2e2f2f"
+        ],
+        "textFills": [
+          "#e0dfdf",
+          "#dbdada",
+          "#d6d5d5",
+          "#d1d0d0"
+        ],
+        "pointFill": "hsl(180, 1.5873015873%, NaN%)",
+        "pointTextFill": "#e0dfdf",
+        "axisTextFill": "#e0dfdf",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "base": {
+      "pie": {
+        "fills": [
+          "#fff4dd",
+          "hsl(-79.4117647059, 100%, 93.3333333333%)",
+          "hsl(220.5882352941, 100%, 98.3333333333%)",
+          "hsl(40.5882352941, 100%, 83.3333333333%)",
+          "hsl(-79.4117647059, 100%, 83.3333333333%)",
+          "hsl(220.5882352941, 100%, 88.3333333333%)",
+          "hsl(100.5882352941, 100%, 83.3333333333%)",
+          "hsl(-19.4117647059, 100%, 83.3333333333%)",
+          "hsl(160.5882352941, 100%, 93.3333333333%)",
+          "hsl(100.5882352941, 100%, 73.3333333333%)",
+          "hsl(-19.4117647059, 100%, 73.3333333333%)",
+          "hsl(160.5882352941, 100%, 83.3333333333%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#fff4dd",
+          "#fff9e2",
+          "#fffee7",
+          "#ffffec"
+        ],
+        "textFills": [
+          "#333",
+          "#2e2e2e",
+          "#292929",
+          "#242424"
+        ],
+        "pointFill": "hsl(40.5882352941, 100%, NaN%)",
+        "pointTextFill": "#333",
+        "axisTextFill": "#333",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "redux": {
+      "pie": {
+        "fills": [
+          "#ECECFE",
+          "#E9E9F1",
+          "hsl(60, 90%, 100%)",
+          "hsl(240, 90%, 86.0784313725%)",
+          "hsl(240, 22.2222222222%, 82.9411764706%)",
+          "hsl(60, 90%, 90%)",
+          "hsl(300, 90%, 86.0784313725%)",
+          "hsl(180, 90%, 86.0784313725%)",
+          "hsl(0, 90%, 96.0784313725%)",
+          "hsl(300, 90%, 76.0784313725%)",
+          "hsl(180, 90%, 76.0784313725%)",
+          "hsl(0, 90%, 86.0784313725%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#ECECFE",
+          "#f1f1ff",
+          "#f6f6ff",
+          "#fbfbff"
+        ],
+        "textFills": [
+          "#28253D",
+          "#232038",
+          "#1e1b33",
+          "#19162e"
+        ],
+        "pointFill": "hsl(240, 90%, NaN%)",
+        "pointTextFill": "#28253D",
+        "axisTextFill": "#28253D",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "redux-dark": {
+      "pie": {
+        "fills": [
+          "#1f2020",
+          "hsl(180, 1.5873015873%, 28.3529411765%)",
+          "hsl(20, 1.5873015873%, 12.3529411765%)",
+          "hsl(180, 1.5873015873%, 2.3529411765%)",
+          "hsl(180, 1.5873015873%, 18.3529411765%)",
+          "hsl(20, 1.5873015873%, 2.3529411765%)",
+          "hsl(240, 1.5873015873%, 2.3529411765%)",
+          "hsl(120, 1.5873015873%, 2.3529411765%)",
+          "hsl(300, 1.5873015873%, 12.3529411765%)",
+          "hsl(240, 1.5873015873%, 0%)",
+          "hsl(120, 1.5873015873%, 0%)",
+          "hsl(300, 1.5873015873%, 2.3529411765%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#1f2020",
+          "#242525",
+          "#292a2a",
+          "#2e2f2f"
+        ],
+        "textFills": [
+          "#e0dfdf",
+          "#dbdada",
+          "#d6d5d5",
+          "#d1d0d0"
+        ],
+        "pointFill": "hsl(180, 1.5873015873%, NaN%)",
+        "pointTextFill": "#e0dfdf",
+        "axisTextFill": "#e0dfdf",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "redux-color": {
+      "pie": {
+        "fills": [
+          "#ECECFE",
+          "#E9E9F1",
+          "hsl(60, 90%, 100%)",
+          "hsl(240, 90%, 86.0784313725%)",
+          "hsl(240, 22.2222222222%, 82.9411764706%)",
+          "hsl(60, 90%, 90%)",
+          "hsl(300, 90%, 86.0784313725%)",
+          "hsl(180, 90%, 86.0784313725%)",
+          "hsl(0, 90%, 96.0784313725%)",
+          "hsl(300, 90%, 76.0784313725%)",
+          "hsl(180, 90%, 76.0784313725%)",
+          "hsl(0, 90%, 86.0784313725%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#ECECFE",
+          "#f1f1ff",
+          "#f6f6ff",
+          "#fbfbff"
+        ],
+        "textFills": [
+          "#28253D",
+          "#232038",
+          "#1e1b33",
+          "#19162e"
+        ],
+        "pointFill": "hsl(240, 90%, NaN%)",
+        "pointTextFill": "#28253D",
+        "axisTextFill": "#28253D",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    },
+    "redux-dark-color": {
+      "pie": {
+        "fills": [
+          "#1f2020",
+          "hsl(180, 1.5873015873%, 28.3529411765%)",
+          "hsl(20, 1.5873015873%, 12.3529411765%)",
+          "hsl(180, 1.5873015873%, 2.3529411765%)",
+          "hsl(180, 1.5873015873%, 18.3529411765%)",
+          "hsl(20, 1.5873015873%, 2.3529411765%)",
+          "hsl(240, 1.5873015873%, 2.3529411765%)",
+          "hsl(120, 1.5873015873%, 2.3529411765%)",
+          "hsl(300, 1.5873015873%, 12.3529411765%)",
+          "hsl(240, 1.5873015873%, 0%)",
+          "hsl(120, 1.5873015873%, 0%)",
+          "hsl(300, 1.5873015873%, 2.3529411765%)"
+        ],
+        "titleTextFill": null,
+        "sectionTextFill": null,
+        "legendTextFill": null,
+        "sliceStroke": "",
+        "sliceStrokeWidth": "",
+        "sliceOpacity": "",
+        "outerStroke": ""
+      },
+      "quadrant": {
+        "fills": [
+          "#1f2020",
+          "#242525",
+          "#292a2a",
+          "#2e2f2f"
+        ],
+        "textFills": [
+          "#e0dfdf",
+          "#dbdada",
+          "#d6d5d5",
+          "#d1d0d0"
+        ],
+        "pointFill": "hsl(180, 1.5873015873%, NaN%)",
+        "pointTextFill": "#e0dfdf",
+        "axisTextFill": "#e0dfdf",
+        "borderStroke": "",
+        "titleFill": null
+      }
+    }
+  },
+  "overrides": {
+    "pie1": "#abcdef",
+    "quadrant1Fill": "#112233"
+  }
+}
