@@ -1,0 +1,29 @@
+{
+  "upstream": {
+    "version": "11.16.0"
+  },
+  "fontMode": "bundled-noto-2.13b171",
+  "cases": [
+    {
+      "id": "default",
+      "dpr": 1,
+      "theme": "default",
+      "source": "quadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "default.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "df9e1584bcdf52800c5bfe133c2f9da1f97482067f5429e3bacf21a31c733ab2"
+    },
+    {
+      "id": "dark",
+      "dpr": 1,
+      "theme": "dark",
+      "source": "quadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "dark.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "e88fbeac7252b72d79cc7b74918c7a357a5f89c4eae3c0af00bd61d034e797fd"
+    }
+  ],
+  "fixtureSha256": "03d35f14c59c747f5c13a15af0ebeea04f4af6e6513f75900854d32d7fb37e83"
+}

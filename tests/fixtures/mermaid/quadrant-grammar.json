@@ -1,0 +1,305 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "quadrantChart jison parser accept/reject + rendered DB-derived structure (quadrant/point/axis text + counts). Point coords ∈ [0,1]."
+  },
+  "oracle": "quadrantChart parser accept/reject + quadrantDb data",
+  "cases": [
+    {
+      "id": "g_empty",
+      "input": "quadrantChart",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 0,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_title",
+      "input": "quadrantChart\ntitle Reach vs Engagement",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [],
+        "axisTexts": [],
+        "title": "Reach vs Engagement",
+        "quadrantRectCount": 4,
+        "pointCount": 0,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_acc",
+      "input": "quadrantChart\naccTitle: AT\naccDescr: AD",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 0,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_axes",
+      "input": "quadrantChart\nx-axis Low --> High\ny-axis Down --> Up",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [],
+        "axisTexts": [
+          "Low",
+          "High",
+          "Down",
+          "Up"
+        ],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 0,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_quadrants",
+      "input": "quadrantChart\nquadrant-1 Q1\nquadrant-2 Q2\nquadrant-3 Q3\nquadrant-4 Q4",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "Q1",
+          "Q2",
+          "Q3",
+          "Q4"
+        ],
+        "pointTexts": [],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 0,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_point_simple",
+      "input": "quadrantChart\npoint1: [0.5, 0.7]",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "point1"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_point_text",
+      "input": "quadrantChart\n\"Point A\": [0.3, 0.8]",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "Point A"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_point_corners",
+      "input": "quadrantChart\na: [0, 0]\nb: [1, 1]\nc: [0.0, 1.0]\nd: [1, 0]",
+      "accept": false,
+      "reject": {
+        "message": "Lexical error on line 4. Unrecognized text."
+      }
+    },
+    {
+      "id": "g_point_full",
+      "input": "quadrantChart\nclassDef red color: #ff0000, stroke-color: #00ff00, stroke-width: 2px, radius: 7\n\"P\": [0.4, 0.6]: red",
+      "accept": false,
+      "reject": {
+        "message": "style named  is not supported."
+      }
+    },
+    {
+      "id": "g_two_points",
+      "input": "quadrantChart\na: [0.2, 0.3]\nb: [0.8, 0.9]",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "b",
+          "a"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 2,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_xaxis_single",
+      "input": "quadrantChart\nx-axis Only",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [],
+        "axisTexts": [
+          "Only"
+        ],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 0,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_comment",
+      "input": "quadrantChart\n%% a comment\nx-axis A --> B",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [],
+        "axisTexts": [
+          "A",
+          "B"
+        ],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 0,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_lower_keyword",
+      "input": "quadrantchart\nx-axis A --> B",
+      "accept": false,
+      "reject": {
+        "message": "No diagram type detected matching given configuration for text: quadrantchart"
+      }
+    },
+    {
+      "id": "g_bad_header",
+      "input": "quadrnt\nx-axis A",
+      "accept": false,
+      "reject": {
+        "message": "No diagram type detected matching given configuration for text: quadrnt"
+      }
+    },
+    {
+      "id": "g_point_oob_high",
+      "input": "quadrantChart\na: [1.5, 0.7]",
+      "accept": false,
+      "reject": {
+        "message": "Lexical error on line 2. Unrecognized text."
+      }
+    },
+    {
+      "id": "g_point_oob_neg",
+      "input": "quadrantChart\na: [-0.1, 0.7]",
+      "accept": false,
+      "reject": {
+        "message": "Lexical error on line 2. Unrecognized text."
+      }
+    },
+    {
+      "id": "g_point_oob_over1",
+      "input": "quadrantChart\na: [0.5, 2]",
+      "accept": false,
+      "reject": {
+        "message": "Lexical error on line 2. Unrecognized text."
+      }
+    },
+    {
+      "id": "g_point_missing_bracket",
+      "input": "quadrantChart\na: 0.5, 0.7",
+      "accept": false,
+      "reject": {
+        "message": "Parse error on line 2:"
+      }
+    },
+    {
+      "id": "g_bad_classdef",
+      "input": "quadrantChart\nclassDef red color: notahex",
+      "accept": false,
+      "reject": {
+        "message": "value for color notahex is invalid, please use a valid hex code"
+      }
+    },
+    {
+      "id": "g_bad_style_key",
+      "input": "quadrantChart\nclassDef red bogus: 5",
+      "accept": false,
+      "reject": {
+        "message": "style named bogus is not supported."
+      }
+    },
+    {
+      "id": "g_no_space_header",
+      "input": "quadrantChartx",
+      "accept": false,
+      "reject": {
+        "message": "Parse error on line 1:"
+      }
+    }
+  ]
+}

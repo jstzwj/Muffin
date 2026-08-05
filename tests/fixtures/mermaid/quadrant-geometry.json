@@ -1,0 +1,496 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "notes": "quadrantChart deterministic layout (config constants + d3 scaleLinear [0,1]). Quadrant rects, point cx/cy/r, border lines, title — font-independent geometry (byte-parity target). Point insertion is REVERSE source order (addPoints prepends)."
+  },
+  "mermaidVersion": "11.16.0",
+  "oracle": "quadrantChart.build quadrants+points+borders+title",
+  "cases": [
+    {
+      "id": "basic",
+      "source": "quadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Q1\nquadrant-2 Q2\nquadrant-3 Q3\nquadrant-4 Q4",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "263",
+              "y": "71",
+              "width": "232",
+              "height": "212",
+              "fill": "#ECECFF"
+            },
+            "text": "Q1",
+            "transform": "translate(379, 177) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "31",
+              "y": "71",
+              "width": "232",
+              "height": "212",
+              "fill": "#f1f1ff"
+            },
+            "text": "Q2",
+            "transform": "translate(147, 177) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "31",
+              "y": "283",
+              "width": "232",
+              "height": "212",
+              "fill": "#f6f6ff"
+            },
+            "text": "Q3",
+            "transform": "translate(147, 389) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "263",
+              "y": "283",
+              "width": "232",
+              "height": "212",
+              "fill": "#fbfbff"
+            },
+            "text": "Q4",
+            "transform": "translate(379, 389) rotate(0)"
+          }
+        ],
+        "points": [],
+        "borders": [
+          {
+            "x1": 30,
+            "y1": 71,
+            "x2": 496,
+            "y2": 71
+          },
+          {
+            "x1": 495,
+            "y1": 72,
+            "x2": 495,
+            "y2": 494
+          },
+          {
+            "x1": 30,
+            "y1": 495,
+            "x2": 496,
+            "y2": 495
+          },
+          {
+            "x1": 31,
+            "y1": 72,
+            "x2": 31,
+            "y2": 494
+          },
+          {
+            "x1": 263,
+            "y1": 72,
+            "x2": 263,
+            "y2": 494
+          },
+          {
+            "x1": 32,
+            "y1": 283,
+            "x2": 494,
+            "y2": 283
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "Low",
+            "transform": "translate(147, 45) rotate(0)"
+          },
+          {
+            "text": "High",
+            "transform": "translate(379, 45) rotate(0)"
+          },
+          {
+            "text": "Down",
+            "transform": "translate(5, 389) rotate(-90)"
+          },
+          {
+            "text": "Up",
+            "transform": "translate(5, 177) rotate(-90)"
+          }
+        ],
+        "title": "Reach vs Engagement"
+      }
+    },
+    {
+      "id": "points",
+      "source": "quadrantChart\nx-axis Low --> High\ny-axis Down --> Up\n\"A\": [0.2, 0.9]\n\"B\": [0.8, 0.3]\n\"C\": [0.5, 0.5]",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "263",
+              "y": "5",
+              "width": "232",
+              "height": "232",
+              "fill": "#ECECFF"
+            },
+            "text": "",
+            "transform": "translate(379, 10) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "31",
+              "y": "5",
+              "width": "232",
+              "height": "232",
+              "fill": "#f1f1ff"
+            },
+            "text": "",
+            "transform": "translate(147, 10) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "31",
+              "y": "237",
+              "width": "232",
+              "height": "232",
+              "fill": "#f6f6ff"
+            },
+            "text": "",
+            "transform": "translate(147, 242) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "263",
+              "y": "237",
+              "width": "232",
+              "height": "232",
+              "fill": "#fbfbff"
+            },
+            "text": "",
+            "transform": "translate(379, 242) rotate(0)"
+          }
+        ],
+        "points": [
+          {
+            "cx": 263,
+            "cy": 237,
+            "r": 5,
+            "fill": "hsl(240, 100%, NaN%)",
+            "text": "C",
+            "transform": "translate(263, 242) rotate(0)"
+          },
+          {
+            "cx": 402.2,
+            "cy": 329.8,
+            "r": 5,
+            "fill": "hsl(240, 100%, NaN%)",
+            "text": "B",
+            "transform": "translate(402.2, 334.79999999999995) rotate(0)"
+          },
+          {
+            "cx": 123.8,
+            "cy": 51.4,
+            "r": 5,
+            "fill": "hsl(240, 100%, NaN%)",
+            "text": "A",
+            "transform": "translate(123.8, 56.39999999999999) rotate(0)"
+          }
+        ],
+        "borders": [
+          {
+            "x1": 30,
+            "y1": 5,
+            "x2": 496,
+            "y2": 5
+          },
+          {
+            "x1": 495,
+            "y1": 6,
+            "x2": 495,
+            "y2": 468
+          },
+          {
+            "x1": 30,
+            "y1": 469,
+            "x2": 496,
+            "y2": 469
+          },
+          {
+            "x1": 31,
+            "y1": 6,
+            "x2": 31,
+            "y2": 468
+          },
+          {
+            "x1": 263,
+            "y1": 6,
+            "x2": 263,
+            "y2": 468
+          },
+          {
+            "x1": 32,
+            "y1": 237,
+            "x2": 494,
+            "y2": 237
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "Low",
+            "transform": "translate(147, 479) rotate(0)"
+          },
+          {
+            "text": "High",
+            "transform": "translate(379, 479) rotate(0)"
+          },
+          {
+            "text": "Down",
+            "transform": "translate(5, 353) rotate(-90)"
+          },
+          {
+            "text": "Up",
+            "transform": "translate(5, 121) rotate(-90)"
+          }
+        ],
+        "title": null
+      }
+    },
+    {
+      "id": "points-reverse",
+      "source": "quadrantChart\nx-axis Low --> High\ny-axis Down --> Up\n\"P1\": [0.1, 0.1]\n\"P2\": [0.9, 0.9]\n\"P3\": [0.2, 0.8]\n\"P4\": [0.8, 0.2]",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "263",
+              "y": "5",
+              "width": "232",
+              "height": "232",
+              "fill": "#ECECFF"
+            },
+            "text": "",
+            "transform": "translate(379, 10) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "31",
+              "y": "5",
+              "width": "232",
+              "height": "232",
+              "fill": "#f1f1ff"
+            },
+            "text": "",
+            "transform": "translate(147, 10) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "31",
+              "y": "237",
+              "width": "232",
+              "height": "232",
+              "fill": "#f6f6ff"
+            },
+            "text": "",
+            "transform": "translate(147, 242) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "263",
+              "y": "237",
+              "width": "232",
+              "height": "232",
+              "fill": "#fbfbff"
+            },
+            "text": "",
+            "transform": "translate(379, 242) rotate(0)"
+          }
+        ],
+        "points": [
+          {
+            "cx": 402.2,
+            "cy": 376.2,
+            "r": 5,
+            "fill": "hsl(240, 100%, NaN%)",
+            "text": "P4",
+            "transform": "translate(402.2, 381.20000000000005) rotate(0)"
+          },
+          {
+            "cx": 123.8,
+            "cy": 97.8,
+            "r": 5,
+            "fill": "hsl(240, 100%, NaN%)",
+            "text": "P3",
+            "transform": "translate(123.8, 102.79999999999998) rotate(0)"
+          },
+          {
+            "cx": 448.6,
+            "cy": 51.4,
+            "r": 5,
+            "fill": "hsl(240, 100%, NaN%)",
+            "text": "P2",
+            "transform": "translate(448.6, 56.39999999999999) rotate(0)"
+          },
+          {
+            "cx": 77.4,
+            "cy": 422.6,
+            "r": 5,
+            "fill": "hsl(240, 100%, NaN%)",
+            "text": "P1",
+            "transform": "translate(77.4, 427.6) rotate(0)"
+          }
+        ],
+        "borders": [
+          {
+            "x1": 30,
+            "y1": 5,
+            "x2": 496,
+            "y2": 5
+          },
+          {
+            "x1": 495,
+            "y1": 6,
+            "x2": 495,
+            "y2": 468
+          },
+          {
+            "x1": 30,
+            "y1": 469,
+            "x2": 496,
+            "y2": 469
+          },
+          {
+            "x1": 31,
+            "y1": 6,
+            "x2": 31,
+            "y2": 468
+          },
+          {
+            "x1": 263,
+            "y1": 6,
+            "x2": 263,
+            "y2": 468
+          },
+          {
+            "x1": 32,
+            "y1": 237,
+            "x2": 494,
+            "y2": 237
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "Low",
+            "transform": "translate(147, 479) rotate(0)"
+          },
+          {
+            "text": "High",
+            "transform": "translate(379, 479) rotate(0)"
+          },
+          {
+            "text": "Down",
+            "transform": "translate(5, 353) rotate(-90)"
+          },
+          {
+            "text": "Up",
+            "transform": "translate(5, 121) rotate(-90)"
+          }
+        ],
+        "title": null
+      }
+    },
+    {
+      "id": "empty-axes",
+      "source": "quadrantChart\nquadrant-1 First\nquadrant-2 Second\nquadrant-3 Third\nquadrant-4 Fourth",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "250",
+              "y": "5",
+              "width": "245",
+              "height": "245",
+              "fill": "#ECECFF"
+            },
+            "text": "First",
+            "transform": "translate(372.5, 127.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "5",
+              "width": "245",
+              "height": "245",
+              "fill": "#f1f1ff"
+            },
+            "text": "Second",
+            "transform": "translate(127.5, 127.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "250",
+              "width": "245",
+              "height": "245",
+              "fill": "#f6f6ff"
+            },
+            "text": "Third",
+            "transform": "translate(127.5, 372.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "250",
+              "y": "250",
+              "width": "245",
+              "height": "245",
+              "fill": "#fbfbff"
+            },
+            "text": "Fourth",
+            "transform": "translate(372.5, 372.5) rotate(0)"
+          }
+        ],
+        "points": [],
+        "borders": [
+          {
+            "x1": 4,
+            "y1": 5,
+            "x2": 496,
+            "y2": 5
+          },
+          {
+            "x1": 495,
+            "y1": 6,
+            "x2": 495,
+            "y2": 494
+          },
+          {
+            "x1": 4,
+            "y1": 495,
+            "x2": 496,
+            "y2": 495
+          },
+          {
+            "x1": 5,
+            "y1": 6,
+            "x2": 5,
+            "y2": 494
+          },
+          {
+            "x1": 250,
+            "y1": 6,
+            "x2": 250,
+            "y2": 494
+          },
+          {
+            "x1": 6,
+            "y1": 250,
+            "x2": 494,
+            "y2": 250
+          }
+        ],
+        "axisLabels": [],
+        "title": null
+      }
+    }
+  ]
+}
