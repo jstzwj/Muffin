@@ -1,5 +1,6 @@
 {
   "upstream": "mermaid 11.16.0",
+  "note": "attr=getAttribute; comp=getComputedStyle on attached DOM",
   "themes": {
     "default": {
       "pie": {
@@ -17,13 +18,17 @@
           "hsl(150, 100%, 56.2745098039%)",
           "hsl(0, 100%, 66.2745098039%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(0, 0, 0)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(51, 51, 51)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(0, 0, 0)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -39,10 +44,13 @@
           "#040400"
         ],
         "pointFill": "hsl(240, 100%, NaN%)",
+        "pointStroke": "hsl(240, 100%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#131300",
         "axisTextFill": "#131300",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(199, 199, 241)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#131300"
       }
     },
     "dark": {
@@ -59,15 +67,19 @@
           "#161722",
           "#00296f",
           "#01629c",
-          null
+          "rgb(204, 204, 204)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(211, 211, 211)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(204, 204, 204)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(211, 211, 211)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -83,10 +95,13 @@
           "#d1d0d0"
         ],
         "pointFill": "hsl(180, 1.5873015873%, NaN%)",
+        "pointStroke": "hsl(180, 1.5873015873%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#e0dfdf",
         "axisTextFill": "#e0dfdf",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(204, 204, 204)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#e0dfdf"
       }
     },
     "forest": {
@@ -105,13 +120,17 @@
           "hsl(18.1578947368, 58.4615384615%, 24.5098039216%)",
           "hsl(198.1578947368, 58.4615384615%, 24.5098039216%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(0, 0, 0)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(0, 0, 0)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(0, 0, 0)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -127,10 +146,13 @@
           "#230c58"
         ],
         "pointFill": "hsl(78.1578947368, 58.4615384615%, NaN%)",
+        "pointStroke": "hsl(78.1578947368, 58.4615384615%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#321b67",
         "axisTextFill": "#321b67",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(171, 181, 148)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#321b67"
       }
     },
     "neutral": {
@@ -149,13 +171,17 @@
           "#777",
           "#555"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(51, 51, 51)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(0, 0, 0)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(51, 51, 51)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -171,10 +197,13 @@
           "#020202"
         ],
         "pointFill": "hsl(0, 0%, NaN%)",
+        "pointStroke": "hsl(0, 0%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#111111",
         "axisTextFill": "#111111",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(213, 213, 213)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#111111"
       }
     },
     "neo": {
@@ -193,13 +222,17 @@
           "hsl(180, 90%, 76.0784313725%)",
           "hsl(0, 90%, 86.0784313725%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(51, 51, 51)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(51, 51, 51)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(51, 51, 51)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -215,10 +248,13 @@
           "#242424"
         ],
         "pointFill": "hsl(240, 90%, NaN%)",
+        "pointStroke": "hsl(240, 90%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#333",
         "axisTextFill": "#333",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(179, 179, 179)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#333"
       }
     },
     "neo-dark": {
@@ -237,13 +273,17 @@
           "hsl(120, 1.5873015873%, 0%)",
           "hsl(300, 1.5873015873%, 2.3529411765%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(204, 204, 204)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(204, 204, 204)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(204, 204, 204)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -259,10 +299,13 @@
           "#d1d0d0"
         ],
         "pointFill": "hsl(180, 1.5873015873%, NaN%)",
+        "pointStroke": "hsl(180, 1.5873015873%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#e0dfdf",
         "axisTextFill": "#e0dfdf",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(204, 204, 204)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#e0dfdf"
       }
     },
     "base": {
@@ -281,13 +324,17 @@
           "hsl(-19.4117647059, 100%, 73.3333333333%)",
           "hsl(160.5882352941, 100%, 83.3333333333%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(51, 51, 51)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(51, 51, 51)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(51, 51, 51)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -303,10 +350,13 @@
           "#242424"
         ],
         "pointFill": "hsl(40.5882352941, 100%, NaN%)",
+        "pointStroke": "hsl(40.5882352941, 100%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#333",
         "axisTextFill": "#333",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(238, 222, 187)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#333"
       }
     },
     "redux": {
@@ -325,13 +375,17 @@
           "hsl(180, 90%, 76.0784313725%)",
           "hsl(0, 90%, 86.0784313725%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(40, 37, 61)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(40, 37, 61)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(40, 37, 61)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -347,10 +401,13 @@
           "#19162e"
         ],
         "pointFill": "hsl(240, 90%, NaN%)",
+        "pointStroke": "hsl(240, 90%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#28253D",
         "axisTextFill": "#28253D",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(24, 24, 24)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#28253D"
       }
     },
     "redux-dark": {
@@ -369,13 +426,17 @@
           "hsl(120, 1.5873015873%, 0%)",
           "hsl(300, 1.5873015873%, 2.3529411765%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(204, 204, 204)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(204, 204, 204)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(204, 204, 204)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -391,10 +452,13 @@
           "#d1d0d0"
         ],
         "pointFill": "hsl(180, 1.5873015873%, NaN%)",
+        "pointStroke": "hsl(180, 1.5873015873%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#e0dfdf",
         "axisTextFill": "#e0dfdf",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(204, 204, 204)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#e0dfdf"
       }
     },
     "redux-color": {
@@ -413,13 +477,17 @@
           "hsl(180, 90%, 76.0784313725%)",
           "hsl(0, 90%, 86.0784313725%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(40, 37, 61)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(40, 37, 61)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(40, 37, 61)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -435,10 +503,13 @@
           "#19162e"
         ],
         "pointFill": "hsl(240, 90%, NaN%)",
+        "pointStroke": "hsl(240, 90%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#28253D",
         "axisTextFill": "#28253D",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(179, 179, 179)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#28253D"
       }
     },
     "redux-dark-color": {
@@ -457,13 +528,17 @@
           "hsl(120, 1.5873015873%, 0%)",
           "hsl(300, 1.5873015873%, 2.3529411765%)"
         ],
-        "titleTextFill": null,
-        "sectionTextFill": null,
-        "legendTextFill": null,
-        "sliceStroke": "",
-        "sliceStrokeWidth": "",
-        "sliceOpacity": "",
-        "outerStroke": ""
+        "titleTextFill": "rgb(204, 204, 204)",
+        "titleFontSize": "25px",
+        "sectionTextFill": "rgb(204, 204, 204)",
+        "sectionFontSize": "17px",
+        "legendTextFill": "rgb(204, 204, 204)",
+        "legendFontSize": "17px",
+        "sliceStroke": "rgb(0, 0, 0)",
+        "sliceStrokeWidth": "2px",
+        "sliceOpacity": "0.7",
+        "outerStroke": "rgb(0, 0, 0)",
+        "outerStrokeWidth": "2px"
       },
       "quadrant": {
         "fills": [
@@ -479,15 +554,31 @@
           "#d1d0d0"
         ],
         "pointFill": "hsl(180, 1.5873015873%, NaN%)",
+        "pointStroke": "hsl(180, 1.5873015873%, NaN%)",
+        "pointStrokeWidth": "0px",
         "pointTextFill": "#e0dfdf",
         "axisTextFill": "#e0dfdf",
-        "borderStroke": "",
-        "titleFill": null
+        "borderStroke": "rgb(204, 204, 204)",
+        "borderStrokeWidth": "2px",
+        "titleFill": "#e0dfdf"
       }
     }
   },
   "overrides": {
-    "pie1": "#abcdef",
-    "quadrant1Fill": "#112233"
+    "initializeApi": {
+      "pie1": "#abcdef",
+      "quadrant1Fill": "#112233"
+    },
+    "sourceEntryInit": {
+      "pie1": "#abcdef",
+      "quadrant1Fill": "#112233"
+    },
+    "frontmatter": {
+      "pie1": "#abcdef"
+    }
+  },
+  "selfCheck": {
+    "emptyFieldCount": 0,
+    "empties": []
   }
 }
