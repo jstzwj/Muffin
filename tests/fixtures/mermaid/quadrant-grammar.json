@@ -300,6 +300,115 @@
       "reject": {
         "message": "Parse error on line 1:"
       }
+    },
+    {
+      "id": "g_classdef_color",
+      "input": "quadrantChart\nclassDef red color: #ff0000\n\"P\":::red: [0.4, 0.6]",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "P"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_classdef_multi",
+      "input": "quadrantChart\nclassDef red color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px\n\"P\":::red: [0.4, 0.6]",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "P"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_classdef_radius",
+      "input": "quadrantChart\nclassDef big radius: 8\n\"P\":::big: [0.4, 0.6]",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "P"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_two_points_classed",
+      "input": "quadrantChart\nclassDef a color: #ff0000, radius: 8\nclassDef b color: #0000ff\n\"A\":::a: [0.2, 0.8]\n\"B\":::b: [0.7, 0.2]",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "B",
+          "A"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 2,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_point_class_single_colon",
+      "input": "quadrantChart\n\"P\": [0.4, 0.6]: red",
+      "accept": false,
+      "reject": {
+        "message": "style named  is not supported."
+      }
+    },
+    {
+      "id": "g_multi_class",
+      "input": "quadrantChart\nclassDef a radius: 8\nclassDef b color: #0000ff\n\"P\":::a,b: [0.4, 0.6]",
+      "accept": false,
+      "reject": {
+        "message": "Parse error on line 4:"
+      }
+    },
+    {
+      "id": "g_classdef_bad_hex_applied",
+      "input": "quadrantChart\nclassDef bad color: notahex\n\"P\":::bad: [0.4, 0.6]",
+      "accept": false,
+      "reject": {
+        "message": "value for color notahex is invalid, please use a valid hex code"
+      }
     }
   ]
 }

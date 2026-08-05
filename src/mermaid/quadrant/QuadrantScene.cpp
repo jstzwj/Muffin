@@ -33,7 +33,9 @@ double cfgD(const QJsonObject& o, const QString& k, double dflt) {
 QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cfg,
                                  QuadrantSceneStyle style) {
   QuadrantScene s;
-  s.style = std::move(style);
+  // Copy (not move): Qt's move-assignment swaps, which would leave `style`
+  // holding s.style's prior (default) values and corrupt the reads below.
+  s.style = style;
   s.title = data.title;
   s.accTitle = data.accTitle;
   s.accDescr = data.accDescr;
@@ -96,13 +98,24 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
   }
 
   // Points — REVERSE source order (addPoints prepends). d3 scaleLinear [0,1].
+  // A point's classDef (matched by name via :::) overrides color/stroke/radius.
   for (int idx = data.points.size() - 1; idx >= 0; --idx) {
     const QuadrantPoint& pp = data.points.at(idx);
     const double px = quadrantLeft + pp.x * quadrantWidth;
     const double py = quadrantTop + quadrantHeight - pp.y * quadrantHeight;
+    const QuadrantClassDef* cdef = nullptr;
+    if (!pp.className.isEmpty())
+      for (const QuadrantClassDef& cd : data.classDefs)
+        if (cd.name == pp.className) { cdef = &cd; break; }
     QuadrantPointG g;
-    g.x = px; g.y = py; g.radius = pointRadius;
-    g.fill = style.quadrantPointFill; g.text = pp.label;
+    g.x = px;
+    g.y = py;
+    g.radius = (cdef && cdef->radius >= 0) ? cdef->radius : pointRadius;
+    g.fill = (cdef && !cdef->color.isEmpty()) ? cdef->color : style.quadrantPointFill;
+    // Upstream default point stroke == point fill (the invalid hsl), width "0px".
+    g.stroke = (cdef && !cdef->strokeColor.isEmpty()) ? cdef->strokeColor : style.quadrantPointFill;
+    g.strokeWidth = (cdef && !cdef->strokeWidth.isEmpty()) ? cdef->strokeWidth : QStringLiteral("0px");
+    g.text = pp.label;
     s.points.append(g);
   }
 
@@ -192,6 +205,10 @@ QJsonObject QuadrantScene::toJsonObject() const {
     o[QStringLiteral("cy")] = r3(p.y);
     o[QStringLiteral("r")] = r3(p.radius);
     o[QStringLiteral("fill")] = p.fill;
+    o[QStringLiteral("stroke")] = p.stroke;
+    o[QStringLiteral("strokeWidth")] = p.strokeWidth.endsWith(QLatin1String("px"))
+        ? r3(p.strokeWidth.left(p.strokeWidth.size() - 2).toDouble())
+        : 0.0;
     o[QStringLiteral("text")] = p.text;
     o[QStringLiteral("transform")] =
         QStringLiteral("translate(%1, %2) rotate(0)").arg(r3(p.x)).arg(r3(p.y + 5.0));

@@ -22,27 +22,38 @@ class QPainter;
 
 namespace muffin::mermaid::quadrant {
 
+// Theme values captured live from mermaid 11.16.0 (default theme). The adapter
+// swaps in the dark-theme set when the resolved theme is dark. NB the default
+// quadrantPointFill is the upstream-invalid "hsl(240, 100%, NaN%)" — emitted
+// verbatim for oracle parity; the painter falls back to black.
 struct QuadrantSceneStyle {
   QString quadrant1Fill = QStringLiteral("#ECECFF");
   QString quadrant2Fill = QStringLiteral("#f1f1ff");
   QString quadrant3Fill = QStringLiteral("#f6f6ff");
   QString quadrant4Fill = QStringLiteral("#fbfbff");
-  QString quadrantPointFill = QStringLiteral("hsl(240, 100%, NaN%)");  // invalid upstream
-  QString quadrantPointTextFill = QStringLiteral("#191919");
-  QString quadrantXAxisTextFill = QStringLiteral("#191919");
-  QString quadrantYAxisTextFill = QStringLiteral("#191919");
-  QString quadrantInternalBorderStrokeFill = QStringLiteral("#D8D8D8");
-  QString quadrantExternalBorderStrokeFill = QStringLiteral("#999999");
-  QString quadrant1TextFill = QStringLiteral("#191919");
-  QString quadrant2TextFill = QStringLiteral("#191919");
-  QString quadrant3TextFill = QStringLiteral("#191919");
-  QString quadrant4TextFill = QStringLiteral("#191919");
-  QString quadrantTitleFill = QStringLiteral("#191919");
+  QString quadrant1TextFill = QStringLiteral("#131300");
+  QString quadrant2TextFill = QStringLiteral("#0e0e00");
+  QString quadrant3TextFill = QStringLiteral("#090900");
+  QString quadrant4TextFill = QStringLiteral("#040400");
+  QString quadrantPointFill = QStringLiteral("hsl(240, 100%, NaN%)");
+  QString quadrantPointTextFill = QStringLiteral("#131300");
+  QString quadrantXAxisTextFill = QStringLiteral("#131300");
+  QString quadrantYAxisTextFill = QStringLiteral("#131300");
+  QString quadrantInternalBorderStrokeFill = QStringLiteral("#C7C7F1");
+  QString quadrantExternalBorderStrokeFill = QStringLiteral("#C7C7F1");
+  QString quadrantTitleFill = QStringLiteral("#131300");
   QString fontFamily = QStringLiteral("Noto Sans");
 };
 
 struct QuadrantRect { qreal x, y, width, height; QString fill; QString text; QString textFill; };
-struct QuadrantPointG { qreal x, y; qreal radius; QString fill; QString text; };
+struct QuadrantPointG {
+  qreal x, y;
+  qreal radius;
+  QString fill;
+  QString stroke;
+  QString strokeWidth;  // "Npx" (theme default "0px")
+  QString text;
+};
 struct QuadrantBorder { qreal x1, y1, x2, y2; QString strokeFill; qreal strokeWidth; };
 struct QuadrantAxisLabel { QString text; QString fill; qreal x, y; qreal fontSize; int rotation; };
 

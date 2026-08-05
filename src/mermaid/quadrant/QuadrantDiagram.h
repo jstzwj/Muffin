@@ -32,7 +32,18 @@ struct QuadrantPoint {
   QString label;
   double x = 0.0;  // [0,1]
   double y = 0.0;  // [0,1]
-  QString className;  // parsed but classDef styles are deferred
+  QString className;  // set via `<label>:::<class>: [...]`; "" when unclassed
+};
+
+// A classDef: comma-separated point styles (quadrantDb.parseStyles). Each field
+// is empty/unset unless declared. Validation rejects unknown keys and bad hex /
+// non-numeric radius / non-Npx stroke-width, matching the upstream errors.
+struct QuadrantClassDef {
+  QString name;
+  QString color;         // hex (fill) or empty
+  QString strokeColor;   // hex or empty
+  QString strokeWidth;   // "Npx" or empty
+  int radius = -1;       // -1 = unset
 };
 
 struct QuadrantData {
@@ -43,6 +54,7 @@ struct QuadrantData {
   QString yAxisBottomText, yAxisTopText;
   QString quadrant1Text, quadrant2Text, quadrant3Text, quadrant4Text;
   QVector<QuadrantPoint> points;  // source order; the scene reverses for render
+  QVector<QuadrantClassDef> classDefs;
 };
 
 class QuadrantDiagram {

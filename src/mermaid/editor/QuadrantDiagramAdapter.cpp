@@ -30,8 +30,25 @@ struct QuadrantDiagramImpl : Diagram {
 
     quadrant::QuadrantSceneStyle style;
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
-    // Default-theme quadrant fills mirror the frozen geometry oracle.
-    // (Dark-theme fills differ; the pixel golden is the visual-parity target.)
+    // Default-theme values are the struct defaults (captured live from 11.16.0).
+    // Dark theme overrides (captured via the style probe).
+    if (effectiveTheme == QStringLiteral("dark")) {
+      style.quadrant1Fill = QStringLiteral("#1f2020");
+      style.quadrant2Fill = QStringLiteral("#242525");
+      style.quadrant3Fill = QStringLiteral("#292a2a");
+      style.quadrant4Fill = QStringLiteral("#2e2f2f");
+      style.quadrant1TextFill = QStringLiteral("#e0dfdf");
+      style.quadrant2TextFill = QStringLiteral("#dbdada");
+      style.quadrant3TextFill = QStringLiteral("#d6d5d5");
+      style.quadrant4TextFill = QStringLiteral("#d1d0d0");
+      style.quadrantPointFill = QStringLiteral("hsl(180, 1.5873015873%, NaN%)");
+      style.quadrantPointTextFill = QStringLiteral("#e0dfdf");
+      style.quadrantXAxisTextFill = QStringLiteral("#e0dfdf");
+      style.quadrantYAxisTextFill = QStringLiteral("#e0dfdf");
+      style.quadrantInternalBorderStrokeFill = QStringLiteral("#CCCCCC");
+      style.quadrantExternalBorderStrokeFill = QStringLiteral("#CCCCCC");
+      style.quadrantTitleFill = QStringLiteral("#e0dfdf");
+    }
 
     const QJsonObject qcfg = pre.config.value(QStringLiteral("quadrantChart")).toObject();
     quadrant::QuadrantScene scene = quadrant::buildQuadrantScene(data, qcfg, std::move(style));

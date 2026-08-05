@@ -84,9 +84,19 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
   }
 
   // Data points (circles + labels). Fill falls back to black for the invalid
-  // upstream hsl(NaN).
+  // upstream hsl(NaN). A classDef stroke-width > 0 draws the stroke (its color,
+  // or black if the stroke value is also the invalid hsl).
   for (const QuadrantPointG& p : scene.points) {
-    painter.setPen(Qt::NoPen);
+    double sw = 0.0;
+    if (p.strokeWidth.endsWith(QLatin1String("px")))
+      sw = p.strokeWidth.left(p.strokeWidth.size() - 2).toDouble();
+    QPen pen(Qt::NoPen);
+    if (sw > 0.0) {
+      QColor sc = parseColorImpl(p.stroke);
+      if (!sc.isValid()) sc = Qt::black;
+      pen = QPen(sc, sw);
+    }
+    painter.setPen(pen);
     painter.setBrush(resolveFill(p.fill));
     painter.drawEllipse(QPointF(p.x, p.y), p.radius, p.radius);
   }

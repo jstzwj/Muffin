@@ -48,6 +48,17 @@ const grammarCases = [
   { id: "g_bad_classdef", src: "quadrantChart\nclassDef red color: notahex" },
   { id: "g_bad_style_key", src: "quadrantChart\nclassDef red bogus: 5" },
   { id: "g_no_space_header", src: "quadrantChartx" },
+  // classDef + ::: class application (the canonical styling path).
+  { id: "g_classdef_color", src: "quadrantChart\nclassDef red color: #ff0000\n\"P\":::red: [0.4, 0.6]" },
+  { id: "g_classdef_multi", src: "quadrantChart\nclassDef red color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px\n\"P\":::red: [0.4, 0.6]" },
+  { id: "g_classdef_radius", src: "quadrantChart\nclassDef big radius: 8\n\"P\":::big: [0.4, 0.6]" },
+  { id: "g_two_points_classed", src: "quadrantChart\nclassDef a color: #ff0000, radius: 8\nclassDef b color: #0000ff\n\"A\":::a: [0.2, 0.8]\n\"B\":::b: [0.7, 0.2]" },
+  // Single-colon class suffix AFTER the bracket is upstream-INVALID (::: is required).
+  { id: "g_point_class_single_colon", src: "quadrantChart\n\"P\": [0.4, 0.6]: red" },
+  // Multi-class :::a,b is upstream-INVALID (single class only).
+  { id: "g_multi_class", src: "quadrantChart\nclassDef a radius: 8\nclassDef b color: #0000ff\n\"P\":::a,b: [0.4, 0.6]" },
+  // classDef with the point referencing it via ::: but invalid style value still rejects.
+  { id: "g_classdef_bad_hex_applied", src: "quadrantChart\nclassDef bad color: notahex\n\"P\":::bad: [0.4, 0.6]" },
 ];
 
 // ---- geometry / pixel sources ----
@@ -56,6 +67,7 @@ const geomSources = [
   { id: "points", src: "quadrantChart\nx-axis Low --> High\ny-axis Down --> Up\n\"A\": [0.2, 0.9]\n\"B\": [0.8, 0.3]\n\"C\": [0.5, 0.5]" },
   { id: "points-reverse", src: "quadrantChart\nx-axis Low --> High\ny-axis Down --> Up\n\"P1\": [0.1, 0.1]\n\"P2\": [0.9, 0.9]\n\"P3\": [0.2, 0.8]\n\"P4\": [0.8, 0.2]" },
   { id: "empty-axes", src: "quadrantChart\nquadrant-1 First\nquadrant-2 Second\nquadrant-3 Third\nquadrant-4 Fourth" },
+  { id: "styled-points", src: "quadrantChart\nclassDef red color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px\nclassDef blue color: #0000ff\n\"R\":::red: [0.2, 0.8]\n\"B\":::blue: [0.7, 0.2]" },
 ];
 const pixelSrc = "quadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]";
 
@@ -137,8 +149,10 @@ try {
           }),
           points: [...tmp.querySelectorAll("g.data-point")].map((g) => {
             const c2 = g.querySelector("circle"); const t = g.querySelector("text");
+            const sw = c2.getAttribute("stroke-width");
             return { cx: num(parseFloat(c2.getAttribute("cx"))), cy: num(parseFloat(c2.getAttribute("cy"))),
                      r: num(parseFloat(c2.getAttribute("r"))), fill: c2.getAttribute("fill"),
+                     stroke: c2.getAttribute("stroke"), strokeWidth: sw ? num(parseFloat(sw)) : 0,
                      text: t?.textContent ?? "", transform: t?.getAttribute("transform") ?? "" };
           }),
           borders: [...tmp.querySelectorAll("g.border line")].map((l) => pick(l, ["x1", "y1", "x2", "y2"]).x1 !== null
@@ -156,13 +170,18 @@ try {
   console.log(`geometry: ${geom.length} cases`);
 
   // ===== PIXEL =====
+  // Each case's `source` self-declares its theme via %%{init}%%, so the native
+  // pipeline (which renders from `source`) produces the same theme as the golden.
   const manifest = { upstream: { version: "11.16.0" }, fontMode: "bundled-noto-2.13b171", cases: [] };
-  for (const theme of ["default", "dark"]) {
-    const buf = await page.evaluate(async (src, theme2, mod) => {
+  const pixelCases = [
+    { id: "default", theme: "default", src: pixelSrc },
+    { id: "dark", theme: "dark", src: '%%{init: {"theme":"dark"}}%%\n' + pixelSrc },
+  ];
+  for (const pc of pixelCases) {
+    const buf = await page.evaluate(async (src, id, mod) => {
       const { default: mermaid } = await import(mod);
-      mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: theme2, look: "classic" });
-      const { svg } = await mermaid.render(`qp-${theme2}`, src);
-      // Serialize the SVG and rasterize at a fixed size via an <img>.
+      mermaid.initialize({ startOnLoad: false, securityLevel: "loose", theme: "default", look: "classic" });
+      const { svg } = await mermaid.render(`qp-${id}`, src);
       const blob = new Blob([svg], { type: "image/svg+xml" });
       const url = URL.createObjectURL(blob);
       const img = new Image();
@@ -173,18 +192,15 @@ try {
       URL.revokeObjectURL(url);
       const dataUrl = canvas.toDataURL("image/png");
       return dataUrl.slice(dataUrl.indexOf(",") + 1);
-    }, pixelSrc, theme, mod);
-    const file = `${theme}.png`;
+    }, pc.src, pc.id, mod);
+    const file = `${pc.id}.png`;
     fs.writeFileSync(path.join(outDir, "quadrant-pixel", file), Buffer.from(buf, "base64"));
     const bytes = fs.readFileSync(path.join(outDir, "quadrant-pixel", file));
-    manifest.cases.push({ id: theme, dpr: 1, theme, source: pixelSrc, file, width: 500, height: 500,
+    manifest.cases.push({ id: pc.id, dpr: 1, theme: pc.theme, source: pc.src, file, width: 500, height: 500,
       sha256: createHash("sha256").update(bytes).digest("hex") });
   }
-  const manJson = JSON.stringify(manifest, null, 2);
-  const canon = manJson.slice(0, manJson.lastIndexOf(',"fixtureSha256":')) + "}";
-  // (no fixtureSha256 in manifest above; compute one over the cases-containing canonical form)
-  const fixtureSha256 = createHash("sha256").update(manJson.replace(/\s+/g, "")).digest("hex");
-  manifest.fixtureSha256 = fixtureSha256;
+  const manStr = JSON.stringify(manifest);
+  manifest.fixtureSha256 = createHash("sha256").update(manStr.replace(/\s+/g, "")).digest("hex");
   fs.writeFileSync(path.join(outDir, "quadrant-pixel", "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
   console.log(`pixel: ${manifest.cases.length} cases`);
 } finally {

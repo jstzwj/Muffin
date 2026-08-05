@@ -81,21 +81,86 @@ int matchCoord(const QString& s, int pos) {
   return 0;
 }
 
+// classDef style validators (quadrantDb.validateHexCode / validateNumber /
+// validateSizeInPixels). Each returns true when the value is INVALID.
+bool invalidHex(const QString& v) {
+  return !QRegularExpression(QStringLiteral("^#?([\\dA-Fa-f]{6}|[\\dA-Fa-f]{3})$")).match(v).hasMatch();
+}
+bool invalidNumber(const QString& v) {
+  return !QRegularExpression(QStringLiteral("^\\d+$")).match(v).hasMatch();
+}
+bool invalidPixels(const QString& v) {
+  return !QRegularExpression(QStringLiteral("^\\d+px$")).match(v).hasMatch();
+}
+
+void parseClassDef(QuadrantData& data, const QString& line, int lineNo) {
+  // classDef <name> <comma-separated key:value styles>
+  const int p = matchKw(line, QLatin1String("classdef"));
+  const QString rest = line.mid(p).trimmed();
+  int sp = 0;
+  while (sp < rest.size() && !isWs(rest.at(sp))) ++sp;
+  const QString name = rest.left(sp);
+  const QString stylesStr = rest.mid(sp).trimmed();
+  if (name.isEmpty()) throw QuadrantParseError(QStringLiteral("classDef missing name"), lineNo);
+  QuadrantClassDef def;
+  def.name = name;
+  if (!stylesStr.isEmpty()) {
+    for (const QString& part : stylesStr.split(QLatin1Char(','))) {
+      const QString s = part.trimmed();
+      const int c = s.indexOf(QLatin1Char(':'));
+      const QString key = (c >= 0 ? s.left(c) : s).trimmed();
+      const QString value = c >= 0 ? s.mid(c + 1).trimmed() : QString();
+      if (key == QStringLiteral("radius")) {
+        if (invalidNumber(value))
+          throw QuadrantParseError(QStringLiteral("value for radius %1 is invalid, please use a valid number").arg(value), lineNo);
+        def.radius = value.toInt();
+      } else if (key == QStringLiteral("color")) {
+        if (invalidHex(value))
+          throw QuadrantParseError(QStringLiteral("value for color %1 is invalid, please use a valid hex code").arg(value), lineNo);
+        def.color = value;
+      } else if (key == QStringLiteral("stroke-color")) {
+        if (invalidHex(value))
+          throw QuadrantParseError(QStringLiteral("value for stroke-color %1 is invalid, please use a valid hex code").arg(value), lineNo);
+        def.strokeColor = value;
+      } else if (key == QStringLiteral("stroke-width")) {
+        if (invalidPixels(value))
+          throw QuadrantParseError(QStringLiteral("value for stroke-width %1 is invalid, please use a valid number of pixels (eg. 10px)").arg(value), lineNo);
+        def.strokeWidth = value;
+      } else {
+        throw QuadrantParseError(QStringLiteral("style named %1 is not supported.").arg(key), lineNo);
+      }
+    }
+  }
+  data.classDefs.append(def);
+}
+
 void parsePoint(QuadrantData& data, const QString& line, int lineNo) {
-  // <label> : [ x , y ]  [: className]
+  // <label>[:::<class>] : [ x , y ]   — class attaches via :::, NOT a trailing colon.
   const int open = line.indexOf(QStringLiteral("["));
   if (open < 0) throw QuadrantParseError(QStringLiteral("Expecting '[' in point"), lineNo);
-  // label = text before the `: [` opener.
-  int colon = -1;
-  for (int i = 0; i < open; ++i)
-    if (line.at(i) == QLatin1Char(':')) { colon = i; break; }
-  if (colon < 0) throw QuadrantParseError(QStringLiteral("Expecting ':' before point coords"), lineNo);
-  QString label = line.left(colon).trimmed();
+  // point_start colon = the ':' immediately before '[' (only whitespace between).
+  int i = open - 1;
+  while (i >= 0 && isWs(line.at(i))) --i;
+  if (i < 0 || line.at(i) != QLatin1Char(':'))
+    throw QuadrantParseError(QStringLiteral("Expecting ':' before point coords"), lineNo);
+  const int colon = i;
+  QString labelPart = line.left(colon).trimmed();
+  // Strip quotes from the label; an optional `:::<class>` sits between them.
+  QString className;
+  const int tri = labelPart.indexOf(QStringLiteral(":::"));
+  if (tri >= 0) {
+    className = labelPart.mid(tri + 3).trimmed();
+    labelPart = labelPart.left(tri).trimmed();
+  }
+  QString label = labelPart;
   if (label.size() >= 2 && label.startsWith(QLatin1Char('"')) && label.endsWith(QLatin1Char('"')))
     label = label.mid(1, label.size() - 2);
   else if (label.size() >= 2 && label.startsWith(QLatin1Char('\'')) && label.endsWith(QLatin1Char('\'')))
     label = label.mid(1, label.size() - 2);
-  int i = open + 1;
+  // Multi-class (:::a,b) is upstream-invalid.
+  if (className.contains(QLatin1Char(',')))
+    throw QuadrantParseError(QStringLiteral("multiple classes on a point are not supported"), lineNo);
+  i = open + 1;
   while (i < line.size() && isWs(line.at(i))) ++i;
   const int xlen = matchCoord(line, i);
   if (xlen == 0) throw QuadrantParseError(QStringLiteral("Lexical error: invalid x coordinate"), lineNo);
@@ -114,17 +179,16 @@ void parsePoint(QuadrantData& data, const QString& line, int lineNo) {
   if (i >= line.size() || line.at(i) != QLatin1Char(']'))
     throw QuadrantParseError(QStringLiteral("Expecting ']' after point coords"), lineNo);
   ++i;
+  while (i < line.size() && isWs(line.at(i))) ++i;
+  // Anything after ']' (e.g. `[x,y]: class` single-colon, or inline styles) is
+  // upstream-invalid — reject.
+  if (i < line.size())
+    throw QuadrantParseError(QStringLiteral("unexpected trailing content after point"), lineNo);
   QuadrantPoint p;
   p.label = label;
   p.x = x;
   p.y = y;
-  // Optional `: className` (parsed; classDef styles are deferred).
-  int c = i;
-  while (c < line.size() && isWs(line.at(c))) ++c;
-  if (c < line.size() && line.at(c) == QLatin1Char(':')) {
-    ++c;
-    p.className = line.mid(c).trimmed();
-  }
+  p.className = className;
   data.points.append(p);
 }
 
@@ -187,10 +251,7 @@ QuadrantData QuadrantDiagram::parse(const QString& source) {
         if (close > c) { data.accDescr = raw.mid(c + 1, close - c - 1).trimmed(); continue; }
       }
     }
-    if (matchKw(raw, QLatin1String("classdef")) >= 0)
-      // classDef / point styling is deferred (the frozen oracle has only classDef
-      // rejects); reject to match those verdicts.
-      throw QuadrantParseError(QStringLiteral("classDef styling is not yet supported"), lineNo);
+    if (matchKw(raw, QLatin1String("classdef")) >= 0) { parseClassDef(data, raw, lineNo); continue; }
     if (trimmed.contains(QLatin1Char('['))) { parsePoint(data, raw, lineNo); continue; }
     throw QuadrantParseError(QStringLiteral("unrecognized line: ") + trimmed, lineNo);
   }

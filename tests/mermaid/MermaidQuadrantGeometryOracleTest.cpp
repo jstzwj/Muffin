@@ -97,9 +97,11 @@ int main(int argc, char** argv) {
       const QString pfx = id + QStringLiteral("/p%1").arg(i);
       if (a.value(QStringLiteral("text")).toString() != e.value(QStringLiteral("text")).toString()) errors << pfx + "/text";
       if (a.value(QStringLiteral("fill")).toString() != e.value(QStringLiteral("fill")).toString()) errors << pfx + "/fill";
+      if (a.value(QStringLiteral("stroke")).toString() != e.value(QStringLiteral("stroke")).toString()) errors << pfx + "/stroke";
       errors += parity::compareNumber(a.value(QStringLiteral("cx")).toDouble(), e.value(QStringLiteral("cx")).toDouble(), num, pfx + "/cx");
       errors += parity::compareNumber(a.value(QStringLiteral("cy")).toDouble(), e.value(QStringLiteral("cy")).toDouble(), num, pfx + "/cy");
       errors += parity::compareNumber(a.value(QStringLiteral("r")).toDouble(), e.value(QStringLiteral("r")).toDouble(), num, pfx + "/r");
+      errors += parity::compareNumber(a.value(QStringLiteral("strokeWidth")).toDouble(), e.value(QStringLiteral("strokeWidth")).toDouble(), num, pfx + "/strokeWidth");
     }
     // Borders.
     const QJsonArray eb = expected.value(QStringLiteral("borders")).toArray();

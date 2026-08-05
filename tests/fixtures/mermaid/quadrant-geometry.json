@@ -175,6 +175,8 @@
             "cy": 237,
             "r": 5,
             "fill": "hsl(240, 100%, NaN%)",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
             "text": "C",
             "transform": "translate(263, 242) rotate(0)"
           },
@@ -183,6 +185,8 @@
             "cy": 329.8,
             "r": 5,
             "fill": "hsl(240, 100%, NaN%)",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
             "text": "B",
             "transform": "translate(402.2, 334.79999999999995) rotate(0)"
           },
@@ -191,6 +195,8 @@
             "cy": 51.4,
             "r": 5,
             "fill": "hsl(240, 100%, NaN%)",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
             "text": "A",
             "transform": "translate(123.8, 56.39999999999999) rotate(0)"
           }
@@ -311,6 +317,8 @@
             "cy": 376.2,
             "r": 5,
             "fill": "hsl(240, 100%, NaN%)",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
             "text": "P4",
             "transform": "translate(402.2, 381.20000000000005) rotate(0)"
           },
@@ -319,6 +327,8 @@
             "cy": 97.8,
             "r": 5,
             "fill": "hsl(240, 100%, NaN%)",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
             "text": "P3",
             "transform": "translate(123.8, 102.79999999999998) rotate(0)"
           },
@@ -327,6 +337,8 @@
             "cy": 51.4,
             "r": 5,
             "fill": "hsl(240, 100%, NaN%)",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
             "text": "P2",
             "transform": "translate(448.6, 56.39999999999999) rotate(0)"
           },
@@ -335,6 +347,8 @@
             "cy": 422.6,
             "r": 5,
             "fill": "hsl(240, 100%, NaN%)",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
             "text": "P1",
             "transform": "translate(77.4, 427.6) rotate(0)"
           }
@@ -450,6 +464,121 @@
           }
         ],
         "points": [],
+        "borders": [
+          {
+            "x1": 4,
+            "y1": 5,
+            "x2": 496,
+            "y2": 5
+          },
+          {
+            "x1": 495,
+            "y1": 6,
+            "x2": 495,
+            "y2": 494
+          },
+          {
+            "x1": 4,
+            "y1": 495,
+            "x2": 496,
+            "y2": 495
+          },
+          {
+            "x1": 5,
+            "y1": 6,
+            "x2": 5,
+            "y2": 494
+          },
+          {
+            "x1": 250,
+            "y1": 6,
+            "x2": 250,
+            "y2": 494
+          },
+          {
+            "x1": 6,
+            "y1": 250,
+            "x2": 494,
+            "y2": 250
+          }
+        ],
+        "axisLabels": [],
+        "title": null
+      }
+    },
+    {
+      "id": "styled-points",
+      "source": "quadrantChart\nclassDef red color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px\nclassDef blue color: #0000ff\n\"R\":::red: [0.2, 0.8]\n\"B\":::blue: [0.7, 0.2]",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "250",
+              "y": "5",
+              "width": "245",
+              "height": "245",
+              "fill": "#ECECFF"
+            },
+            "text": "",
+            "transform": "translate(372.5, 10) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "5",
+              "width": "245",
+              "height": "245",
+              "fill": "#f1f1ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 10) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "250",
+              "width": "245",
+              "height": "245",
+              "fill": "#f6f6ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 255) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "250",
+              "y": "250",
+              "width": "245",
+              "height": "245",
+              "fill": "#fbfbff"
+            },
+            "text": "",
+            "transform": "translate(372.5, 255) rotate(0)"
+          }
+        ],
+        "points": [
+          {
+            "cx": 348,
+            "cy": 397,
+            "r": 5,
+            "fill": "#0000ff",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
+            "text": "B",
+            "transform": "translate(348, 402) rotate(0)"
+          },
+          {
+            "cx": 103,
+            "cy": 103,
+            "r": 8,
+            "fill": "#ff0000",
+            "stroke": "#00ff00",
+            "strokeWidth": 3,
+            "text": "R",
+            "transform": "translate(103, 107.99999999999997) rotate(0)"
+          }
+        ],
         "borders": [
           {
             "x1": 4,
