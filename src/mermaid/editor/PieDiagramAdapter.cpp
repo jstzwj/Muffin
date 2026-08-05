@@ -94,24 +94,35 @@ struct PieDiagramImpl : Diagram {
     for (const pie::PieLegendEntry& e : scene.legends)
       longest = std::max(longest, qreal(fm.horizontalAdvance(e.text)));
     scene.longestLegendWidth = longest;
-    if (config.legendPosition == QStringLiteral("right") ||
-        config.legendPosition == QStringLiteral("left") ||
-        config.legendPosition.isEmpty()) {
+    const bool legendVertical = config.legendPosition == QStringLiteral("right") ||
+                                config.legendPosition == QStringLiteral("left") ||
+                                config.legendPosition.isEmpty();
+    if (legendVertical) {
       scene.totalWidth =
           scene.pieWidth + scene.margin + scene.legendRectSize + scene.legendSpacing + longest;
     } else {
       scene.totalWidth = scene.pieWidth + scene.margin;  // top/bottom/center: no side block
     }
-    scene.bounds = QRectF(0.0, 0.0, scene.totalWidth, scene.height);
+    // top/bottom legendPosition grows the canvas HEIGHT by n*legendHeight (the
+    // legend block stacks above/below the chart).
+    const bool legendHorizontal = config.legendPosition == QStringLiteral("top") ||
+                                  config.legendPosition == QStringLiteral("bottom");
+    scene.totalHeight = legendHorizontal ? scene.height + scene.legends.size() * scene.legendHeight
+                                         : scene.height;
+    scene.bounds = QRectF(0.0, 0.0, scene.totalWidth, scene.totalHeight);
 
     // The pie title is part of the chart (mermaid draws pieTitleText INSIDE the
     // viewBox at y=25, not above it). Pass an empty diagramTitle so the image
     // path does not reserve title space or paint a second title; the painter
-    // draws data.title in-scene. accTitle/accDescr still travel as accessibility.
+    // draws data.title in-scene. Force metadata.title empty too (renderMetadata
+    // would otherwise pull in a frontmatter title and add a second title band).
+    // Frontmatter-vs-inline title precedence is covered separately.
     MermaidRenderMetadata metadata =
         renderMetadata(pre, type, QString(), data.accTitle, data.accDescr,
                        scene.style.titleColor, scene.style.fontFamily, scene.style.titleFontSize,
                        25.0, 0.0);
+    metadata.title = QString();
+    metadata.svgUseMaxWidth = config.useMaxWidth;
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));

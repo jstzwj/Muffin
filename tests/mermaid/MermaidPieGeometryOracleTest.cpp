@@ -91,6 +91,19 @@ int main(int argc, char** argv) {
     if (actual.value(QStringLiteral("outerRingRadius")).toDouble() !=
         expected.value(QStringLiteral("outerRingRadius")).toDouble())
       errors << id + QStringLiteral(": outerRingRadius mismatch");
+    // Canvas HEIGHT is deterministic (legendPosition top/bottom grow it by
+    // n*legendHeight) — assert it against the oracle's viewBox height. (Width is
+    // font-coupled, compared only loosely elsewhere.)
+    {
+      const QStringList vb = expected.value(QStringLiteral("viewBox")).toString().split(
+          QRegularExpression(QStringLiteral("\\s+")));
+      const QJsonArray bnds = actual.value(QStringLiteral("bounds")).toArray();
+      if (vb.size() >= 4 && bnds.size() >= 4) {
+        const qreal expH = vb.at(3).toDouble();
+        errors += parity::compareNumber(bnds.at(3).toDouble(), expH, parity::Tier{0.001},
+                                        id + QStringLiteral("/boundsHeight"));
+      }
+    }
 
     // Legend text census.
     const QJsonArray expLegends = expected.value(QStringLiteral("legends")).toArray();

@@ -1195,6 +1195,296 @@
           }
         ]
       }
+    },
+    {
+      "id": "legend-top",
+      "source": "%%{init: {\"pie\": {\"legendPosition\": \"top\"}}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0,
+          "effectiveDonutHole": 0
+        },
+        "viewBox": "0 0 490 516",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "Pets",
+        "accTitle": null,
+        "accDescr": null,
+        "legendCount": 3,
+        "legends": [
+          {
+            "text": "Dogs"
+          },
+          {
+            "text": "Cats"
+          },
+          {
+            "text": "Fish"
+          }
+        ],
+        "sliceCount": 3,
+        "slices": [
+          {
+            "label": "Dogs",
+            "value": 38,
+            "percentage": "38%",
+            "rawPercentage": 38,
+            "startAngleDeg": -90,
+            "endAngleDeg": 46.8,
+            "midAngleDeg": -21.6,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 129.006,
+            "centroidY": -51.077,
+            "pathD": "M0,-185A185,185,0,0,1,126.641,134.859L0,0Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(129.0064874169949,-51.07728168499904)"
+          },
+          {
+            "label": "Cats",
+            "value": 26,
+            "percentage": "26%",
+            "rawPercentage": 26,
+            "startAngleDeg": 46.8,
+            "endAngleDeg": 140.4,
+            "midAngleDeg": 93.6,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -8.712,
+            "centroidY": 138.476,
+            "pathD": "M126.641,134.859A185,185,0,0,1,-142.545,117.923L0,0Z",
+            "fill": "#ffffde",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-8.712184584692297,138.47620856942268)"
+          },
+          {
+            "label": "Fish",
+            "value": 36,
+            "percentage": "36%",
+            "rawPercentage": 36,
+            "startAngleDeg": 140.4,
+            "endAngleDeg": 270,
+            "midAngleDeg": 205.2,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -125.545,
+            "centroidY": -59.077,
+            "pathD": "M-142.545,117.923A185,185,0,0,1,0,-185L0,0Z",
+            "fill": "hsl(80, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-125.5447535296602,-59.076876704653834)"
+          }
+        ],
+        "sums": {
+          "original": 100,
+          "filtered": 100
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 1,
+            "pathDStart": {
+              "x": 126.641,
+              "y": 134.859
+            },
+            "expected": {
+              "x": 126.641,
+              "y": 134.859
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 2,
+            "pathDStart": {
+              "x": -142.545,
+              "y": 117.923
+            },
+            "expected": {
+              "x": -142.545,
+              "y": 117.923
+            },
+            "pointErr": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "legend-left",
+      "source": "%%{init: {\"pie\": {\"legendPosition\": \"left\"}}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "expected": {
+        "constants": {
+          "margin": 40,
+          "height": 450,
+          "pieWidth": 450,
+          "centerX": 225,
+          "centerY": 225,
+          "radius": 185,
+          "legendRectSize": 18,
+          "legendSpacing": 4,
+          "legendHeight": 22
+        },
+        "config": {
+          "textPosition": 0.75,
+          "donutHole": 0,
+          "effectiveDonutHole": 0
+        },
+        "viewBox": "0 0 547.08154296875 450",
+        "outerRingRadius": 186,
+        "chartCenter": {
+          "x": 225,
+          "y": 225
+        },
+        "title": "Pets",
+        "accTitle": null,
+        "accDescr": null,
+        "legendCount": 3,
+        "legends": [
+          {
+            "text": "Dogs"
+          },
+          {
+            "text": "Cats"
+          },
+          {
+            "text": "Fish"
+          }
+        ],
+        "sliceCount": 3,
+        "slices": [
+          {
+            "label": "Dogs",
+            "value": 38,
+            "percentage": "38%",
+            "rawPercentage": 38,
+            "startAngleDeg": -90,
+            "endAngleDeg": 46.8,
+            "midAngleDeg": -21.6,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": 129.006,
+            "centroidY": -51.077,
+            "pathD": "M0,-185A185,185,0,0,1,126.641,134.859L0,0Z",
+            "fill": "#ECECFF",
+            "cls": "pieCircle",
+            "labelTransform": "translate(129.0064874169949,-51.07728168499904)"
+          },
+          {
+            "label": "Cats",
+            "value": 26,
+            "percentage": "26%",
+            "rawPercentage": 26,
+            "startAngleDeg": 46.8,
+            "endAngleDeg": 140.4,
+            "midAngleDeg": 93.6,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -8.712,
+            "centroidY": 138.476,
+            "pathD": "M126.641,134.859A185,185,0,0,1,-142.545,117.923L0,0Z",
+            "fill": "#ffffde",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-8.712184584692297,138.47620856942268)"
+          },
+          {
+            "label": "Fish",
+            "value": 36,
+            "percentage": "36%",
+            "rawPercentage": 36,
+            "startAngleDeg": 140.4,
+            "endAngleDeg": 270,
+            "midAngleDeg": 205.2,
+            "outerRadius": 185,
+            "innerRadius": 0,
+            "donutInnerRadius": 0,
+            "labelRadius": 138.75,
+            "centroidX": -125.545,
+            "centroidY": -59.077,
+            "pathD": "M-142.545,117.923A185,185,0,0,1,0,-185L0,0Z",
+            "fill": "hsl(80, 100%, 56.2745098039%)",
+            "cls": "pieCircle",
+            "labelTransform": "translate(-125.5447535296602,-59.076876704653834)"
+          }
+        ],
+        "sums": {
+          "original": 100,
+          "filtered": 100
+        },
+        "crossCheck": [
+          {
+            "sliceIndex": 0,
+            "pathDStart": {
+              "x": 0,
+              "y": -185
+            },
+            "expected": {
+              "x": 0,
+              "y": -185
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 1,
+            "pathDStart": {
+              "x": 126.641,
+              "y": 134.859
+            },
+            "expected": {
+              "x": 126.641,
+              "y": 134.859
+            },
+            "pointErr": 0
+          },
+          {
+            "sliceIndex": 2,
+            "pathDStart": {
+              "x": -142.545,
+              "y": 117.923
+            },
+            "expected": {
+              "x": -142.545,
+              "y": 117.923
+            },
+            "pointErr": 0
+          }
+        ]
+      }
     }
   ]
 }

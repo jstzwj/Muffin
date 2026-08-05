@@ -87,7 +87,7 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("d9b7bad81dd70c78787c690042087bc824429aaee5f60e50e937509cc53afa2b"),
+              QLatin1String("bb526c82a8e570c21632620a9fe418b3b7bacafb34f8ef24beba683ce94f08ca"),
           QStringLiteral("Pie pixel fixture changed; audit and update its digest"));
   const QDir fixtureDir = QFileInfo(manifestPath).dir();
   qreal minimumIou = 1.0;
@@ -122,9 +122,11 @@ int main(int argc, char** argv) {
     require(widthDiff <= 0.03 * browser.width() && heightDiff <= 0.03 * browser.height(),
             QStringLiteral("%1: canvas differs by %2 x %3").arg(id).arg(widthDiff, 0, 'f', 0).arg(heightDiff, 0, 'f', 0));
     // Alpha IoU (shape parity) — the slice geometry is exact, so this sits well
-    // above 0.90. RGBA is not asserted: the dark-theme slice palette is dark and
-    // the foreground-RGBA metric is noisy there (IoU is the reliable channel).
+    // above 0.90. Foreground RGBA catches theme/palette regressions IoU misses;
+    // both themes now render with the exact upstream palette (the dark case
+    // self-declares its theme), so RGBA sits well above the threshold.
     require(iou >= 0.90, id + QStringLiteral(": alpha IoU regressed"));
+    require(rgba >= 0.85, id + QStringLiteral(": foreground RGBA regressed"));
     minimumIou = std::min(minimumIou, iou);
   }
   qDebug() << "MermaidPiePixelTest: passed; minimum alpha IoU" << minimumIou;

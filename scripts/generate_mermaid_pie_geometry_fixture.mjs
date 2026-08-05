@@ -106,6 +106,20 @@ const cases = [
     textPosition: 0.75,
     donutHole: 0,
   },
+  // legendPosition coverage: the slice geometry is unchanged, but the canvas
+  // size and pie/legend group transforms differ per position.
+  {
+    id: "legend-top",
+    source: "%%{init: {\"pie\": {\"legendPosition\": \"top\"}}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+    textPosition: 0.75,
+    donutHole: 0,
+  },
+  {
+    id: "legend-left",
+    source: "%%{init: {\"pie\": {\"legendPosition\": \"left\"}}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+    textPosition: 0.75,
+    donutHole: 0,
+  },
 ];
 
 const browser = await puppeteer.launch({

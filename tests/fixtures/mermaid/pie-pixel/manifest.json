@@ -20,12 +20,12 @@
       "dpr": 1,
       "theme": "dark",
       "renderId": "pie-pixel-dark",
-      "source": "pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "source": "%%{init: {\"theme\":\"dark\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
       "file": "dark.png",
       "width": 553,
       "height": 450,
       "sha256": "69993d7d8d32ed1bb71820213450bc4c6d51b3c35247221d12f08d72519424c3"
     }
   ],
-  "fixtureSha256": "d9b7bad81dd70c78787c690042087bc824429aaee5f60e50e937509cc53afa2b"
+  "fixtureSha256": "bb526c82a8e570c21632620a9fe418b3b7bacafb34f8ef24beba683ce94f08ca"
 }

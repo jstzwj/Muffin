@@ -89,21 +89,48 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
   painter.save();
   painter.translate(scene.centerX, scene.centerY);
 
+  // The pie subgroup (outer ring + slices + slice labels) is shifted for the
+  // top/left legend positions so the legend block fits beside/above the chart
+  // (mermaid's pie-group transform).
+  const int n = scene.legends.size();
+  const qreal totalLegendHeight = n * scene.legendHeight;
+  qreal pieShiftX = 0.0, pieShiftY = 0.0;
+  if (scene.legendPosition == QStringLiteral("top"))
+    pieShiftY = totalLegendHeight + scene.legendHeight;
+  else if (scene.legendPosition == QStringLiteral("left"))
+    pieShiftX = scene.longestLegendWidth + scene.legendRectSize + scene.legendSpacing;
+
+  painter.save();
+  painter.translate(pieShiftX, pieShiftY);
+
   // Outer ring (pieOuterCircle: stroke, no fill).
   const QColor outerStroke(scene.style.outerStrokeColor);
   painter.setBrush(Qt::NoBrush);
   painter.setPen(QPen(outerStroke, scene.style.outerStrokeWidth));
   painter.drawEllipse(QPointF(0, 0), scene.outerRingRadius, scene.outerRingRadius);
 
-  // Slices (pieCircle: fill + stroke at pieOpacity).
+  // Slices (pieCircle: fill + stroke at pieOpacity). A `highlightSlice=<label>`
+  // slice gets the upstream "highlighted" class: scale 1.05 about the chart
+  // center + opacity 1. `=hover` (highlightedOnHover) is hover-only upstream —
+  // no static paint change.
   painter.setOpacity(scene.style.pieOpacity);
   for (const PieSliceGeometry& s : scene.slices) {
+    const bool highlighted = s.className.contains(QStringLiteral("highlighted")) &&
+                             !s.className.contains(QStringLiteral("highlightedOnHover"));
     const QColor fill = parsePieColorImpl(s.fill);
     const QPainterPath wedge =
         buildSlicePath(s.startAngleDeg, s.endAngleDeg, s.outerRadius, s.innerRadius);
     painter.setBrush(fill.isValid() ? fill : Qt::NoBrush);
     painter.setPen(QPen(QColor(scene.style.sliceStrokeColor), scene.style.sliceStrokeWidth));
-    painter.drawPath(wedge);
+    if (highlighted) {
+      painter.save();
+      painter.setOpacity(1.0);
+      painter.scale(1.05, 1.05);  // about the chart center (origin after translate)
+      painter.drawPath(wedge);
+      painter.restore();
+    } else {
+      painter.drawPath(wedge);
+    }
   }
   painter.setOpacity(1.0);
 
@@ -116,8 +143,9 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
     painter.drawText(QRectF(s.centroidX - 60, s.centroidY - 30, 120, 60),
                      Qt::AlignCenter, s.percentage);
   }
+  painter.restore();  // pie subgroup
 
-  // Title (pieTitleText), centered at y = -(height - 50)/2 = -200.
+  // Title (pieTitleText, in the main group — not shifted), centered at y=-200.
   if (!scene.title.isEmpty()) {
     QFont titleFont(scene.style.fontFamily, qRound(scene.style.titleFontSize));
     titleFont.setPixelSize(qRound(scene.style.titleFontSize));
@@ -128,21 +156,23 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
                      Qt::AlignCenter, scene.title);
   }
 
-  // Legend block (mermaid default position "right"). Each entry is a filled
-  // rect (legendRectSize) + text, vertically centered around the pie center.
+  // Legend block — position-dependent horizontal/vertical (mermaid draw()).
   if (!scene.legends.isEmpty()) {
     QFont legendFont(scene.style.fontFamily, qRound(scene.style.legendFontSize));
     legendFont.setPixelSize(qRound(scene.style.legendFontSize));
     painter.setFont(legendFont);
     painter.setPen(QColor(scene.style.legendTextColor));
-    const int count = scene.legends.size();
-    const qreal offset = scene.legendHeight * count / 2.0;
-    const qreal horizontal = scene.legendPosition == QStringLiteral("left")
-                                 ? -scene.radius - (scene.legendRectSize + scene.legendSpacing)
-                             : scene.legendPosition == QStringLiteral("center")
-                                 ? -scene.longestLegendWidth / 2.0 - (scene.legendRectSize + scene.legendSpacing)
-                                 : 12.0 * scene.legendRectSize;  // right (default)
-    for (int i = 0; i < count; ++i) {
+    const QString& pos = scene.legendPosition;
+    const qreal rectBlock = scene.legendRectSize + scene.legendSpacing;
+    const qreal horizontal = (pos == QStringLiteral("right") || pos.isEmpty())
+                                 ? 12.0 * scene.legendRectSize
+                             : pos == QStringLiteral("left")
+                                 ? -scene.radius - rectBlock
+                                 : -scene.longestLegendWidth / 2.0 - rectBlock;  // top/bottom/center
+    const qreal offset = pos == QStringLiteral("top") ? scene.radius
+                          : pos == QStringLiteral("bottom") ? -scene.radius - scene.legendHeight
+                                                             : scene.legendHeight * n / 2.0;
+    for (int i = 0; i < n; ++i) {
       const PieLegendEntry& e = scene.legends.at(i);
       const qreal vertical = i * scene.legendHeight - offset;
       const QColor lc = parsePieColorImpl(e.fill);

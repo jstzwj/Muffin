@@ -121,6 +121,7 @@ struct PieScene : MermaidScene {
   double filteredSum = 0.0;
   // Computed canvas width (font-coupled — legend text width dependent).
   qreal totalWidth = 450.0;
+  qreal totalHeight = 450.0;  // grows by n*legendHeight for top/bottom legendPosition
   // Longest legend text advance (font-coupled), measured by the adapter so the
   // painter can place legends identically and the bounds/canvas agree.
   qreal longestLegendWidth = 0.0;

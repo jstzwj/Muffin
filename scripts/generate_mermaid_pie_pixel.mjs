@@ -47,7 +47,9 @@ const cases = [
     dpr: 1,
     theme: "dark",
     renderId: "pie-pixel-dark",
-    source: "pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+    // Self-declares its theme so the native pipeline (which renders from
+    // `source`) produces dark to match this golden, not default.
+    source: "%%{init: {\"theme\":\"dark\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
   },
 ];
 
