@@ -28,22 +28,28 @@
 
 namespace muffin::mermaid::quadrant {
 
-struct QuadrantPoint {
-  QString label;
-  double x = 0.0;  // [0,1]
-  double y = 0.0;  // [0,1]
-  QString className;  // set via `<label>:::<class>: [...]`; "" when unclassed
-};
-
-// A classDef: comma-separated point styles (quadrantDb.parseStyles). Each field
-// is empty/unset unless declared. Validation rejects unknown keys and bad hex /
-// non-numeric radius / non-Npx stroke-width, matching the upstream errors.
-struct QuadrantClassDef {
-  QString name;
+// Point styles (quadrantDb.parseStyles): comma-separated `key: value`. Each
+// field is empty/unset unless declared. Validation rejects unknown keys and bad
+// hex / non-numeric radius / non-Npx stroke-width, matching upstream errors.
+// Used by both classDef and point-inline stylesOpt (inline overrides classDef).
+struct QuadrantStyles {
   QString color;         // hex (fill) or empty
   QString strokeColor;   // hex or empty
   QString strokeWidth;   // "Npx" or empty
   int radius = -1;       // -1 = unset
+};
+
+struct QuadrantPoint {
+  QString label;
+  double x = 0.0;  // [0,1]
+  double y = 0.0;  // [0,1]
+  QString className;        // set via `<label>:::<class>: [...]`; "" when unclassed
+  QuadrantStyles inlineStyles;  // set via `[x, y] key: value, ...` after the bracket
+};
+
+struct QuadrantClassDef {
+  QString name;
+  QuadrantStyles styles;
 };
 
 struct QuadrantData {

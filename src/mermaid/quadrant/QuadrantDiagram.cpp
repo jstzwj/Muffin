@@ -93,6 +93,40 @@ bool invalidPixels(const QString& v) {
   return !QRegularExpression(QStringLiteral("^\\d+px$")).match(v).hasMatch();
 }
 
+// Parse a comma-separated `key: value` styles string (quadrantDb.parseStyles):
+// radius (number), color/stroke-color (hex), stroke-width (Npx). Throws the
+// upstream error messages on an unknown key or invalid value.
+QuadrantStyles parseStylesStr(const QString& stylesStr, int lineNo) {
+  QuadrantStyles s;
+  if (stylesStr.isEmpty()) return s;
+  for (const QString& part : stylesStr.split(QLatin1Char(','))) {
+    const QString str = part.trimmed();
+    const int c = str.indexOf(QLatin1Char(':'));
+    const QString key = (c >= 0 ? str.left(c) : str).trimmed();
+    const QString value = c >= 0 ? str.mid(c + 1).trimmed() : QString();
+    if (key == QStringLiteral("radius")) {
+      if (invalidNumber(value))
+        throw QuadrantParseError(QStringLiteral("value for radius %1 is invalid, please use a valid number").arg(value), lineNo);
+      s.radius = value.toInt();
+    } else if (key == QStringLiteral("color")) {
+      if (invalidHex(value))
+        throw QuadrantParseError(QStringLiteral("value for color %1 is invalid, please use a valid hex code").arg(value), lineNo);
+      s.color = value;
+    } else if (key == QStringLiteral("stroke-color")) {
+      if (invalidHex(value))
+        throw QuadrantParseError(QStringLiteral("value for stroke-color %1 is invalid, please use a valid hex code").arg(value), lineNo);
+      s.strokeColor = value;
+    } else if (key == QStringLiteral("stroke-width")) {
+      if (invalidPixels(value))
+        throw QuadrantParseError(QStringLiteral("value for stroke-width %1 is invalid, please use a valid number of pixels (eg. 10px)").arg(value), lineNo);
+      s.strokeWidth = value;
+    } else {
+      throw QuadrantParseError(QStringLiteral("style named %1 is not supported.").arg(key), lineNo);
+    }
+  }
+  return s;
+}
+
 void parseClassDef(QuadrantData& data, const QString& line, int lineNo) {
   // classDef <name> <comma-separated key:value styles>
   const int p = matchKw(line, QLatin1String("classdef"));
@@ -104,33 +138,7 @@ void parseClassDef(QuadrantData& data, const QString& line, int lineNo) {
   if (name.isEmpty()) throw QuadrantParseError(QStringLiteral("classDef missing name"), lineNo);
   QuadrantClassDef def;
   def.name = name;
-  if (!stylesStr.isEmpty()) {
-    for (const QString& part : stylesStr.split(QLatin1Char(','))) {
-      const QString s = part.trimmed();
-      const int c = s.indexOf(QLatin1Char(':'));
-      const QString key = (c >= 0 ? s.left(c) : s).trimmed();
-      const QString value = c >= 0 ? s.mid(c + 1).trimmed() : QString();
-      if (key == QStringLiteral("radius")) {
-        if (invalidNumber(value))
-          throw QuadrantParseError(QStringLiteral("value for radius %1 is invalid, please use a valid number").arg(value), lineNo);
-        def.radius = value.toInt();
-      } else if (key == QStringLiteral("color")) {
-        if (invalidHex(value))
-          throw QuadrantParseError(QStringLiteral("value for color %1 is invalid, please use a valid hex code").arg(value), lineNo);
-        def.color = value;
-      } else if (key == QStringLiteral("stroke-color")) {
-        if (invalidHex(value))
-          throw QuadrantParseError(QStringLiteral("value for stroke-color %1 is invalid, please use a valid hex code").arg(value), lineNo);
-        def.strokeColor = value;
-      } else if (key == QStringLiteral("stroke-width")) {
-        if (invalidPixels(value))
-          throw QuadrantParseError(QStringLiteral("value for stroke-width %1 is invalid, please use a valid number of pixels (eg. 10px)").arg(value), lineNo);
-        def.strokeWidth = value;
-      } else {
-        throw QuadrantParseError(QStringLiteral("style named %1 is not supported.").arg(key), lineNo);
-      }
-    }
-  }
+  def.styles = parseStylesStr(stylesStr, lineNo);
   data.classDefs.append(def);
 }
 
@@ -180,15 +188,15 @@ void parsePoint(QuadrantData& data, const QString& line, int lineNo) {
     throw QuadrantParseError(QStringLiteral("Expecting ']' after point coords"), lineNo);
   ++i;
   while (i < line.size() && isWs(line.at(i))) ++i;
-  // Anything after ']' (e.g. `[x,y]: class` single-colon, or inline styles) is
-  // upstream-invalid — reject.
-  if (i < line.size())
-    throw QuadrantParseError(QStringLiteral("unexpected trailing content after point"), lineNo);
+  // Trailing content after ']' is the point's inline stylesOpt
+  // (`[x,y] key: value, ...`). parseStylesStr also rejects the upstream-invalid
+  // single-colon `[x,y]: class` form (": class" -> empty style name).
   QuadrantPoint p;
   p.label = label;
   p.x = x;
   p.y = y;
   p.className = className;
+  p.inlineStyles = parseStylesStr(line.mid(i).trimmed(), lineNo);
   data.points.append(p);
 }
 

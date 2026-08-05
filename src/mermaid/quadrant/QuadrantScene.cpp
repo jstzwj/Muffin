@@ -100,25 +100,28 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
   }
 
   // Points — REVERSE source order (addPoints prepends). d3 scaleLinear [0,1].
-  // A point's classDef (matched by name via :::) overrides color/stroke/radius.
+  // Effective styles: classDef (matched by name via :::, last-wins) then the
+  // point's inline stylesOpt overrides (inline > classDef > theme).
   for (int idx = data.points.size() - 1; idx >= 0; --idx) {
     const QuadrantPoint& pp = data.points.at(idx);
     const double px = quadrantLeft + pp.x * quadrantWidth;
     const double py = quadrantTop + quadrantHeight - pp.y * quadrantHeight;
-    // Upstream quadrantBuilder.classes is a Map -> a repeated classDef name has
-    // the LAST definition win. Search back-to-front.
     const QuadrantClassDef* cdef = nullptr;
     if (!pp.className.isEmpty())
       for (int ci = data.classDefs.size() - 1; ci >= 0; --ci)
         if (data.classDefs.at(ci).name == pp.className) { cdef = &data.classDefs.at(ci); break; }
+    QuadrantStyles eff = cdef ? cdef->styles : QuadrantStyles{};
+    if (pp.inlineStyles.radius >= 0) eff.radius = pp.inlineStyles.radius;
+    if (!pp.inlineStyles.color.isEmpty()) eff.color = pp.inlineStyles.color;
+    if (!pp.inlineStyles.strokeColor.isEmpty()) eff.strokeColor = pp.inlineStyles.strokeColor;
+    if (!pp.inlineStyles.strokeWidth.isEmpty()) eff.strokeWidth = pp.inlineStyles.strokeWidth;
     QuadrantPointG g;
     g.x = px;
     g.y = py;
-    g.radius = (cdef && cdef->radius >= 0) ? cdef->radius : pointRadius;
-    g.fill = (cdef && !cdef->color.isEmpty()) ? cdef->color : style.quadrantPointFill;
-    // Upstream default point stroke == point fill (the invalid hsl), width "0px".
-    g.stroke = (cdef && !cdef->strokeColor.isEmpty()) ? cdef->strokeColor : style.quadrantPointFill;
-    g.strokeWidth = (cdef && !cdef->strokeWidth.isEmpty()) ? cdef->strokeWidth : QStringLiteral("0px");
+    g.radius = eff.radius >= 0 ? eff.radius : pointRadius;
+    g.fill = !eff.color.isEmpty() ? eff.color : style.quadrantPointFill;
+    g.stroke = !eff.strokeColor.isEmpty() ? eff.strokeColor : style.quadrantPointFill;
+    g.strokeWidth = !eff.strokeWidth.isEmpty() ? eff.strokeWidth : QStringLiteral("0px");
     g.text = pp.label;
     s.points.append(g);
   }

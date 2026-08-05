@@ -409,6 +409,90 @@
       "reject": {
         "message": "value for color notahex is invalid, please use a valid hex code"
       }
+    },
+    {
+      "id": "g_inline_style",
+      "input": "quadrantChart\n\"P\": [0.4, 0.6] radius: 8",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "P"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_inline_multi",
+      "input": "quadrantChart\n\"P\": [0.4, 0.6] color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "P"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_inline_over_class",
+      "input": "quadrantChart\nclassDef red color: #ff0000\n\"P\":::red: [0.4, 0.6] color: #0000ff",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "P"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
+    },
+    {
+      "id": "g_dup_last_wins",
+      "input": "quadrantChart\nclassDef c color: #ff0000\nclassDef c color: #0000ff\n\"P\":::c: [0.4, 0.6]",
+      "accept": true,
+      "expectedDb": {
+        "quadrantTexts": [
+          "",
+          "",
+          "",
+          ""
+        ],
+        "pointTexts": [
+          "P"
+        ],
+        "axisTexts": [],
+        "title": null,
+        "quadrantRectCount": 4,
+        "pointCount": 1,
+        "borderCount": 6
+      }
     }
   ]
 }

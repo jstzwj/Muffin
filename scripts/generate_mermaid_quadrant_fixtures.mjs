@@ -59,6 +59,13 @@ const grammarCases = [
   { id: "g_multi_class", src: "quadrantChart\nclassDef a radius: 8\nclassDef b color: #0000ff\n\"P\":::a,b: [0.4, 0.6]" },
   // classDef with the point referencing it via ::: but invalid style value still rejects.
   { id: "g_classdef_bad_hex_applied", src: "quadrantChart\nclassDef bad color: notahex\n\"P\":::bad: [0.4, 0.6]" },
+  // Point inline stylesOpt (after ']'): space then comma-separated key:value.
+  { id: "g_inline_style", src: "quadrantChart\n\"P\": [0.4, 0.6] radius: 8" },
+  { id: "g_inline_multi", src: "quadrantChart\n\"P\": [0.4, 0.6] color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px" },
+  // Inline overrides classDef.
+  { id: "g_inline_over_class", src: "quadrantChart\nclassDef red color: #ff0000\n\"P\":::red: [0.4, 0.6] color: #0000ff" },
+  // Duplicate classDef last-wins.
+  { id: "g_dup_last_wins", src: "quadrantChart\nclassDef c color: #ff0000\nclassDef c color: #0000ff\n\"P\":::c: [0.4, 0.6]" },
 ];
 
 // ---- geometry / pixel sources ----
@@ -68,6 +75,11 @@ const geomSources = [
   { id: "points-reverse", src: "quadrantChart\nx-axis Low --> High\ny-axis Down --> Up\n\"P1\": [0.1, 0.1]\n\"P2\": [0.9, 0.9]\n\"P3\": [0.2, 0.8]\n\"P4\": [0.8, 0.2]" },
   { id: "empty-axes", src: "quadrantChart\nquadrant-1 First\nquadrant-2 Second\nquadrant-3 Third\nquadrant-4 Fourth" },
   { id: "styled-points", src: "quadrantChart\nclassDef red color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px\nclassDef blue color: #0000ff\n\"R\":::red: [0.2, 0.8]\n\"B\":::blue: [0.7, 0.2]" },
+  { id: "inline-styled-points", src: "quadrantChart\n\"A\": [0.2, 0.8] color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px\n\"B\": [0.7, 0.2] color: #0000ff" },
+  // Title precedence: frontmatter-only, both (inline wins), showTitle:false.
+  { id: "title-frontmatter", src: "---\ntitle: FromFrontmatter\n---\nquadrantChart\nquadrant-1 Q1" },
+  { id: "title-both", src: "---\ntitle: FromFrontmatter\n---\nquadrantChart\ntitle FromInline\nquadrant-1 Q1" },
+  { id: "title-showtitle-false", src: "%%{init: {\"quadrantChart\": {\"showTitle\": false}}}%%\nquadrantChart\ntitle Hidden\nquadrant-1 Q1" },
 ];
 const pixelSrc = "quadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]";
 

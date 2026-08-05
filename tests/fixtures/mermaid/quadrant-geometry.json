@@ -620,6 +620,403 @@
         "axisLabels": [],
         "title": null
       }
+    },
+    {
+      "id": "inline-styled-points",
+      "source": "quadrantChart\n\"A\": [0.2, 0.8] color: #ff0000, radius: 8, stroke-color: #00ff00, stroke-width: 3px\n\"B\": [0.7, 0.2] color: #0000ff",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "250",
+              "y": "5",
+              "width": "245",
+              "height": "245",
+              "fill": "#ECECFF"
+            },
+            "text": "",
+            "transform": "translate(372.5, 10) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "5",
+              "width": "245",
+              "height": "245",
+              "fill": "#f1f1ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 10) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "250",
+              "width": "245",
+              "height": "245",
+              "fill": "#f6f6ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 255) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "250",
+              "y": "250",
+              "width": "245",
+              "height": "245",
+              "fill": "#fbfbff"
+            },
+            "text": "",
+            "transform": "translate(372.5, 255) rotate(0)"
+          }
+        ],
+        "points": [
+          {
+            "cx": 348,
+            "cy": 397,
+            "r": 5,
+            "fill": "#0000ff",
+            "stroke": "hsl(240, 100%, NaN%)",
+            "strokeWidth": 0,
+            "text": "B",
+            "transform": "translate(348, 402) rotate(0)"
+          },
+          {
+            "cx": 103,
+            "cy": 103,
+            "r": 8,
+            "fill": "#ff0000",
+            "stroke": "#00ff00",
+            "strokeWidth": 3,
+            "text": "A",
+            "transform": "translate(103, 107.99999999999997) rotate(0)"
+          }
+        ],
+        "borders": [
+          {
+            "x1": 4,
+            "y1": 5,
+            "x2": 496,
+            "y2": 5
+          },
+          {
+            "x1": 495,
+            "y1": 6,
+            "x2": 495,
+            "y2": 494
+          },
+          {
+            "x1": 4,
+            "y1": 495,
+            "x2": 496,
+            "y2": 495
+          },
+          {
+            "x1": 5,
+            "y1": 6,
+            "x2": 5,
+            "y2": 494
+          },
+          {
+            "x1": 250,
+            "y1": 6,
+            "x2": 250,
+            "y2": 494
+          },
+          {
+            "x1": 6,
+            "y1": 250,
+            "x2": 494,
+            "y2": 250
+          }
+        ],
+        "axisLabels": [],
+        "title": null
+      }
+    },
+    {
+      "id": "title-frontmatter",
+      "source": "---\ntitle: FromFrontmatter\n---\nquadrantChart\nquadrant-1 Q1",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "250",
+              "y": "45",
+              "width": "245",
+              "height": "225",
+              "fill": "#ECECFF"
+            },
+            "text": "Q1",
+            "transform": "translate(372.5, 157.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "45",
+              "width": "245",
+              "height": "225",
+              "fill": "#f1f1ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 157.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "270",
+              "width": "245",
+              "height": "225",
+              "fill": "#f6f6ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 382.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "250",
+              "y": "270",
+              "width": "245",
+              "height": "225",
+              "fill": "#fbfbff"
+            },
+            "text": "",
+            "transform": "translate(372.5, 382.5) rotate(0)"
+          }
+        ],
+        "points": [],
+        "borders": [
+          {
+            "x1": 4,
+            "y1": 45,
+            "x2": 496,
+            "y2": 45
+          },
+          {
+            "x1": 495,
+            "y1": 46,
+            "x2": 495,
+            "y2": 494
+          },
+          {
+            "x1": 4,
+            "y1": 495,
+            "x2": 496,
+            "y2": 495
+          },
+          {
+            "x1": 5,
+            "y1": 46,
+            "x2": 5,
+            "y2": 494
+          },
+          {
+            "x1": 250,
+            "y1": 46,
+            "x2": 250,
+            "y2": 494
+          },
+          {
+            "x1": 6,
+            "y1": 270,
+            "x2": 494,
+            "y2": 270
+          }
+        ],
+        "axisLabels": [],
+        "title": "FromFrontmatter"
+      }
+    },
+    {
+      "id": "title-both",
+      "source": "---\ntitle: FromFrontmatter\n---\nquadrantChart\ntitle FromInline\nquadrant-1 Q1",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "250",
+              "y": "45",
+              "width": "245",
+              "height": "225",
+              "fill": "#ECECFF"
+            },
+            "text": "Q1",
+            "transform": "translate(372.5, 157.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "45",
+              "width": "245",
+              "height": "225",
+              "fill": "#f1f1ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 157.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "270",
+              "width": "245",
+              "height": "225",
+              "fill": "#f6f6ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 382.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "250",
+              "y": "270",
+              "width": "245",
+              "height": "225",
+              "fill": "#fbfbff"
+            },
+            "text": "",
+            "transform": "translate(372.5, 382.5) rotate(0)"
+          }
+        ],
+        "points": [],
+        "borders": [
+          {
+            "x1": 4,
+            "y1": 45,
+            "x2": 496,
+            "y2": 45
+          },
+          {
+            "x1": 495,
+            "y1": 46,
+            "x2": 495,
+            "y2": 494
+          },
+          {
+            "x1": 4,
+            "y1": 495,
+            "x2": 496,
+            "y2": 495
+          },
+          {
+            "x1": 5,
+            "y1": 46,
+            "x2": 5,
+            "y2": 494
+          },
+          {
+            "x1": 250,
+            "y1": 46,
+            "x2": 250,
+            "y2": 494
+          },
+          {
+            "x1": 6,
+            "y1": 270,
+            "x2": 494,
+            "y2": 270
+          }
+        ],
+        "axisLabels": [],
+        "title": "FromInline"
+      }
+    },
+    {
+      "id": "title-showtitle-false",
+      "source": "%%{init: {\"quadrantChart\": {\"showTitle\": false}}}%%\nquadrantChart\ntitle Hidden\nquadrant-1 Q1",
+      "expected": {
+        "viewBox": "0 0 500 500",
+        "quadrants": [
+          {
+            "rect": {
+              "x": "250",
+              "y": "5",
+              "width": "245",
+              "height": "245",
+              "fill": "#ECECFF"
+            },
+            "text": "Q1",
+            "transform": "translate(372.5, 127.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "5",
+              "width": "245",
+              "height": "245",
+              "fill": "#f1f1ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 127.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "5",
+              "y": "250",
+              "width": "245",
+              "height": "245",
+              "fill": "#f6f6ff"
+            },
+            "text": "",
+            "transform": "translate(127.5, 372.5) rotate(0)"
+          },
+          {
+            "rect": {
+              "x": "250",
+              "y": "250",
+              "width": "245",
+              "height": "245",
+              "fill": "#fbfbff"
+            },
+            "text": "",
+            "transform": "translate(372.5, 372.5) rotate(0)"
+          }
+        ],
+        "points": [],
+        "borders": [
+          {
+            "x1": 4,
+            "y1": 5,
+            "x2": 496,
+            "y2": 5
+          },
+          {
+            "x1": 495,
+            "y1": 6,
+            "x2": 495,
+            "y2": 494
+          },
+          {
+            "x1": 4,
+            "y1": 495,
+            "x2": 496,
+            "y2": 495
+          },
+          {
+            "x1": 5,
+            "y1": 6,
+            "x2": 5,
+            "y2": 494
+          },
+          {
+            "x1": 250,
+            "y1": 6,
+            "x2": 250,
+            "y2": 494
+          },
+          {
+            "x1": 6,
+            "y1": 250,
+            "x2": 494,
+            "y2": 250
+          }
+        ],
+        "axisLabels": [],
+        "title": null
+      }
     }
   ]
 }
