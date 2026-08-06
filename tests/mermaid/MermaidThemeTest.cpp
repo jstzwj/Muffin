@@ -133,11 +133,17 @@ void compareOverride(FlowThemeId id, const QHash<QString, QString>& overrides,
   }
 }
 
-// Source-entry override of the pie text-color themeVariables. Upstream keys are
-// *TextColor (NOT *TextFill); each must round-trip through get/set so that
-// %%{init}%% / frontmatter / initialize themeVariables overrides take effect at
-// runtime. This guards against the prior regression where the keys were wired
-// to nonexistent *TextFill names and every override was silently dropped.
+// Theme-MODEL override round-trip for the pie text-color themeVariables
+// (resolveFlowTheme(overrides) -> get()). Upstream keys are *TextColor (NOT
+// *TextFill); each must round-trip through get()/set() so that a user override
+// wins over the derived value. This guards against the prior regression where
+// the keys were wired to nonexistent *TextFill names and every override was
+// silently dropped. NOTE: this verifies the theme MODEL only -- it does NOT
+// assert the source-entry PRODUCTION path. The production Pie adapter
+// (PieDiagramAdapter) still consumes its own style keys (titleColor /
+// primaryTextColor) and is wired to these *TextColor themeVariables in a later
+// commit; until then the keys are correct in the model but not yet read by the
+// renderer.
 void checkPieTextColorOverrides() {
   const struct { QString key; QString val; } cases[3] = {
     {QStringLiteral("pieTitleTextColor"), QStringLiteral("#a1b2c3")},
@@ -151,6 +157,27 @@ void checkPieTextColorOverrides() {
     const QString got = t.get(c.key);
     require(got == c.val,
             QStringLiteral("pie text-color override %1 = %2 (expected %3)").arg(c.key, got, c.val));
+  }
+}
+
+// Theme-MODEL override round-trip for the dynamic-array pie/quadrant keys
+// (pie%N / quadrant%NFill): exercises the looped set()/get() branches, which
+// are distinct from the scalar *TextColor keys above. Like the scalar check,
+// this verifies the model (resolveFlowTheme) override path, not the production
+// adapter. resolveFlowTheme re-applies overrides after the final updateColors,
+// so the user value must win over the derived palette entry.
+void checkPieQuadrantDynamicOverrides() {
+  const struct { QString key; QString val; } cases[2] = {
+    {QStringLiteral("pie1"), QStringLiteral("#abcdef")},
+    {QStringLiteral("quadrant1Fill"), QStringLiteral("#112233")},
+  };
+  for (const auto& c : cases) {
+    QHash<QString, QString> ov;
+    ov.insert(c.key, c.val);
+    const FlowThemeVariables t = resolveFlowTheme(FlowThemeId::Default, ov);
+    const QString got = t.get(c.key);
+    require(got == c.val,
+            QStringLiteral("dynamic pie/quadrant override %1 = %2 (expected %3)").arg(c.key, got, c.val));
   }
 }
 }  // namespace
@@ -183,6 +210,7 @@ int main(int argc, char** argv) {
                   overrideCase.value(QStringLiteral("name")).toString());
 
   checkPieTextColorOverrides();
+  checkPieQuadrantDynamicOverrides();
 
   qDebug().noquote() << "MermaidThemeTest: all themes + override match golden";
   return 0;

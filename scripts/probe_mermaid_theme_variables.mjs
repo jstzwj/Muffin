@@ -101,12 +101,27 @@ try {
     for (const [k, v] of Object.entries(t.pie)) if (k !== "fills") req(v, `pie.${k}`);
     for (const [k, v] of Object.entries(t.quadrant)) if (!Array.isArray(v)) req(v, `quadrant.${k}`);
     // Per-element attr+computed (not just length): every slice/quadrant fill
-    // and text fill must carry BOTH the raw themeVariable attribute (the
-    // theme-model golden) and a resolved computed paint value.
-    const reqBoth = (v, msg) => { assert(v && v.attr, `${th}: ${msg} attr missing`); assert(v && v.computed, `${th}: ${msg} computed missing`); };
-    t.pie.fills.forEach((e, i) => reqBoth(e, `pie.fills[${i}]`));
-    t.quadrant.fills.forEach((e, i) => reqBoth(e, `quadrant.fills[${i}]`));
-    t.quadrant.textFills.forEach((e, i) => reqBoth(e, `quadrant.textFills[${i}]`));
+    // and text fill element must OWN both an attr and a computed key (object
+    // shape), and the computed paint must be non-empty. The raw attr must be
+    // non-empty too — EXCEPT one documented upstream contract: dark's 12th pie
+    // slice (index 11) is intentionally left unset, so its fill attr is null and
+    // it inherits the gray computed paint rgb(204, 204, 204). That single null
+    // attr is the sanctioned exception (asserted explicitly below, with its exact
+    // computed gray, so the exception cannot silently broaden); every other
+    // element still requires a non-empty attr.
+    const reqShape = (v, msg) => { assert(v && "attr" in v && "computed" in v, `${th}: ${msg} missing attr/computed keys`); assert(v.computed, `${th}: ${msg} computed empty`); };
+    const reqAttr = (v, msg) => { reqShape(v, msg); assert(v.attr, `${th}: ${msg} attr empty`); };
+    t.pie.fills.forEach((e, i) => {
+      reqShape(e, `pie.fills[${i}]`);
+      if (th === "dark" && i === 11) {
+        assert(e.attr === null, `dark.pie.fills[11].attr expected null (upstream contract: 12th slice unset), got ${e.attr}`);
+        assert(e.computed === "rgb(204, 204, 204)", `dark.pie.fills[11].computed expected rgb(204, 204, 204), got ${e.computed}`);
+      } else {
+        reqAttr(e, `pie.fills[${i}]`);
+      }
+    });
+    t.quadrant.fills.forEach((e, i) => reqAttr(e, `quadrant.fills[${i}]`));
+    t.quadrant.textFills.forEach((e, i) => reqAttr(e, `quadrant.textFills[${i}]`));
   }
   for (const [entry, ov] of Object.entries(d1.overrides)) {
     assert(ov.pie1 === "#abcdef", `${entry}: pie1 override = ${ov.pie1} (expected #abcdef)`);
