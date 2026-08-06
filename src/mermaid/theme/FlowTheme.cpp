@@ -301,6 +301,8 @@ void applyRawConstructor(FlowThemeId id, FlowThemeVariables& t) {
 void populatePieFamilyA(FlowThemeVariables& t, const QString& primary,
                         const QString& secondary, const QString& tertiary);
 void populatePieDefault(FlowThemeVariables& t);
+void populatePieForest(FlowThemeVariables& t);
+void populatePieFromCScale(FlowThemeVariables& t, bool pie12FromCScale0);
 void populateQuadrant(FlowThemeVariables& t, const QString& primary);
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
@@ -395,6 +397,41 @@ void populatePieDefault(FlowThemeVariables& t) {
   assignIfEmpty(t.pie[9], adjust(t.primaryColor, {.h = 60.0, .l = -40.0}));
   assignIfEmpty(t.pie[10], adjust(t.primaryColor, {.h = -90.0, .l = -40.0}));
   assignIfEmpty(t.pie[11], adjust(t.primaryColor, {.h = 120.0, .l = -30.0}));
+}
+
+// Forest theme's OWN pie formula (chunk-WYO6CB5R.mjs ~L1363, the `adjust5`
+// block). pie1-3 = primary/secondary/tertiary; pie4/5 = adjust(*,{l:-30});
+// pie6 = adjust(tertiary,{h:40,l:-40}); pie7-12 = adjust(primary,{h,l}).
+void populatePieForest(FlowThemeVariables& t) {
+  assignIfEmpty(t.pie[0], t.primaryColor);
+  assignIfEmpty(t.pie[1], t.secondaryColor);
+  assignIfEmpty(t.pie[2], t.tertiaryColor);
+  assignIfEmpty(t.pie[3], adjust(t.primaryColor, {.l = -30.0}));
+  assignIfEmpty(t.pie[4], adjust(t.secondaryColor, {.l = -30.0}));
+  assignIfEmpty(t.pie[5], adjust(t.tertiaryColor, {.h = 40.0, .l = -40.0}));
+  assignIfEmpty(t.pie[6], adjust(t.primaryColor, {.h = 60.0, .l = -10.0}));
+  assignIfEmpty(t.pie[7], adjust(t.primaryColor, {.h = -60.0, .l = -10.0}));
+  assignIfEmpty(t.pie[8], adjust(t.primaryColor, {.h = 120.0}));
+  assignIfEmpty(t.pie[9], adjust(t.primaryColor, {.h = 60.0, .l = -50.0}));
+  assignIfEmpty(t.pie[10], adjust(t.primaryColor, {.h = -60.0, .l = -50.0}));
+  assignIfEmpty(t.pie[11], adjust(t.primaryColor, {.h = 120.0, .l = -50.0}));
+}
+
+// Dark + Neutral derive the pie palette from cScale (chunk-WYO6CB5R.mjs L613 /
+// L1765): `for (i=0; i<THEME_COLOR_LIMIT; i++) this["pie"+i] = this["cScale"+i]`.
+// The loop writes upstream keys pie0..pie11 (note: 0-based), but the renderer
+// and golden read pie1..pie12, so golden pie1..pie11 = cScale1..cScale11. The
+// loop never writes "pie12": dark leaves it unset (renders as a null attr with a
+// gray computed fallback -- the documented dark-pie12 contract); neutral follows
+// the loop with `this.pie12 = this.pie0` (= cScale0). pie12FromCScale0 selects
+// that fix-up. The copy is unconditional (upstream uses `=`, not `||`); user
+// overrides still win because resolveFlowTheme re-applies them after updateColors.
+// Must be called AFTER cScale0..11 are finalized.
+void populatePieFromCScale(FlowThemeVariables& t, bool pie12FromCScale0) {
+  for (int i = 0; i < 11; ++i) t.pie[i] = t.cScale[i + 1];  // pie1..pie11 = cScale1..cScale11
+  if (pie12FromCScale0)
+    t.pie[11] = t.cScale[0];  // neutral: pie12 = pie0 = cScale0
+  // dark: pie[11] ("pie12") stays empty, matching the unset upstream "pie12".
 }
 
 // Quadrant fills + text fills (UNIFORM across all 11 themes): RGB adjustments
@@ -507,6 +544,8 @@ void updateColorsForest(FlowThemeVariables& t) {
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
   // forest keeps constructor titleColor (#333) and edgeLabelBackground (#e8e8e8).
+  populatePieForest(t);
+  populateQuadrant(t, t.primaryColor);
 }
 
 void updateColorsDark(FlowThemeVariables& t) {
@@ -542,6 +581,8 @@ void updateColorsDark(FlowThemeVariables& t) {
   // dark's final nodeBorder override (line 1502): nodeBorder = nodeBorder || "#999".
   assignIfEmpty(t.nodeBorder, QStringLiteral("#999"));
   // dark does NOT derive nodeTextColor (getStyles falls back to textColor).
+  populatePieFromCScale(t, false);  // dark: pie1..pie11 = cScale1..11; pie12 left empty
+  populateQuadrant(t, t.primaryColor);
 }
 
 void updateColorsNeutral(FlowThemeVariables& t) {
@@ -568,6 +609,8 @@ void updateColorsNeutral(FlowThemeVariables& t) {
                                               : QStringLiteral("#333"));
   }
   // neutral does NOT derive nodeTextColor (getStyles falls back to textColor).
+  populatePieFromCScale(t, true);  // neutral: pie1..pie11 = cScale1..11; pie12 = cScale0
+  populateQuadrant(t, t.primaryColor);
 }
 
 void updateColors(FlowThemeId id, FlowThemeVariables& t) {

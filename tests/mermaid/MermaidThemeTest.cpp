@@ -52,12 +52,11 @@ const QStringList criticalFields() {
   };
 }
 
-// Pie + Quadrant themeVariables are derived per-theme in updateColors.
-// Currently implemented for the Family-A themes (base/neo/neo-dark/redux/
-// redux-dark/redux-color/redux-dark-color — populatePieFamilyA) and Default
-// (populatePieDefault). Dark/Forest/Neutral get their own pie/quadrant formulas
-// in a later commit; until then they are excluded from the golden comparison
-// (compare only what is derived, never a knowingly-unimplemented field).
+// Pie + Quadrant themeVariables are derived per-theme in updateColors for all
+// 11 themes: Family-A (base/neo/neo-dark/redux/redux-dark/redux-color/
+// redux-dark-color — populatePieFamilyA), Default (populatePieDefault), Forest
+// (populatePieForest), and Dark/Neutral (populatePieFromCScale — pie mirrors
+// cScale). Quadrant is uniform across all themes (populateQuadrant).
 bool pieQuadrantImplemented(FlowThemeId id) {
   switch (id) {
     case FlowThemeId::Base:
@@ -68,6 +67,9 @@ bool pieQuadrantImplemented(FlowThemeId id) {
     case FlowThemeId::ReduxColor:
     case FlowThemeId::ReduxDarkColor:
     case FlowThemeId::Default:
+    case FlowThemeId::Forest:
+    case FlowThemeId::Neutral:
+    case FlowThemeId::Dark:
       return true;
     default:
       return false;
