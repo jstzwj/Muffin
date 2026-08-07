@@ -52,9 +52,18 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
   QHash<QString, QString> result;
   const QJsonObject values = config.value(QStringLiteral("themeVariables")).toObject();
   for (auto it = values.constBegin(); it != values.constEnd(); ++it) {
+    if (it.key() == QLatin1String("THEME_COLOR_LIMIT")) continue;  // handled below via jsThemeColorLimit
     const QString value = configString(it.value());
     if (!value.isEmpty()) result.insert(it.key(), value);
   }
+  // THEME_COLOR_LIMIT is an integer palette size, not a free-form string: route
+  // it through jsThemeColorLimit so the value carried into FlowThemeVariables::
+  // set() is upstream's JS Number()+ceil result (e.g. 2.5 -> 3, "0x2" -> 2), not
+  // the generic configString -> FlowThemeVariables::set toInt() path (which
+  // truncates "2.5" to 0). null/absent -> nullopt -> not inserted -> the theme
+  // keeps its default (12). Present-but-non-positive/NaN -> 0.
+  if (const std::optional<int> lim = jsThemeColorLimit(config))
+    result.insert(QStringLiteral("THEME_COLOR_LIMIT"), QString::number(*lim));
   if (config.value(QStringLiteral("fontFamily")).isString())
     result.insert(QStringLiteral("fontFamily"), config.value(QStringLiteral("fontFamily")).toString());
   if (!result.contains(QStringLiteral("fontFamily")))
