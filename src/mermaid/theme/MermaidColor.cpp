@@ -22,6 +22,12 @@ qreal langRound(qreal x) { return std::floor(x * 1e10 + 0.5) / 1e10; }
 // default 6 sig-figs would truncate -79.4117647059 -> -79.4118.
 QString numberToString(qreal x) {
   if (x == 0.0) return QStringLiteral("0");  // also catches -0
+  // JS String(NaN)="NaN", String(±Infinity)="Infinity". Qt's QString::number
+  // emits lowercase "nan"/"inf"; match JS so e.g. quadrantPointFill (whose
+  // lightness is NaN because upstream calls darken()/lighten() with one arg ->
+  // amount=undefined) round-trips the golden byte-for-byte.
+  if (std::isnan(x)) return QStringLiteral("NaN");
+  if (std::isinf(x)) return x < 0.0 ? QStringLiteral("-Infinity") : QStringLiteral("Infinity");
   QString s = QString::number(x, 'f', 10);
   if (s.contains(QLatin1Char('.'))) {
     while (s.endsWith(QLatin1Char('0'))) s.chop(1);

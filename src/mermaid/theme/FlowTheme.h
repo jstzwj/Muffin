@@ -63,9 +63,15 @@ struct FlowThemeVariables {
   QString nodeBkg;
   QString nodeBorder;
   QString defaultLinkColor;
-  QString mainContrastColor;  // dark theme only
+  QString mainContrastColor;  // dark + dark-variant FamilyA themes
   QString contrast;           // neutral theme only
   QString text;               // neutral theme only
+  // taskTextDarkColor: pie title/legend text source for every theme but the
+  // standalone dark (which uses mainContrastColor). Derived per-theme in
+  // updateColors (base/FamilyA = textColor; default/forest = "black"; neutral =
+  // text; dark = invert(mainContrastColor)). Exposed via get()/set() so a
+  // source-entry override propagates to the pie title/legend.
+  QString taskTextDarkColor;
   qreal strokeWidth = 1.0;
   bool useGradient = true;
   QString gradientStart;

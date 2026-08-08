@@ -5,6 +5,7 @@
 #include <QString>
 
 #include <algorithm>
+#include <limits>
 
 namespace muffin::mermaid::flowtheme {
 namespace {
@@ -12,9 +13,15 @@ namespace {
 using color::adjust;
 using color::darken;
 using color::invert;
+using color::isDark;
 using color::lighten;
 using color::mkBorder;
 using color::rgba;
+
+// JS NaN — upstream's quadrantPointFill calls lighten()/darken() with ONE arg, so
+// amount=undefined -> lightness = clampL(L + NaN) = NaN, stringifying as
+// hsl(h, s, NaN%). Used to reproduce that exactly.
+constexpr double kJsNaN = std::numeric_limits<double>::quiet_NaN();
 
 // `this.x = this.x || value` — keep existing non-empty value (JS truthy string).
 void assignIfEmpty(QString& field, const QString& value) {
@@ -317,6 +324,7 @@ void populatePieFamilyA(FlowThemeVariables& t, const QString& primary,
 void populatePieDefault(FlowThemeVariables& t);
 void populatePieForest(FlowThemeVariables& t);
 void populatePieFromCScale(FlowThemeVariables& t, bool pie12FromCScale0);
+void populatePieScalars(FlowThemeVariables& t, const QString& titleLegendColor);
 void populateQuadrant(FlowThemeVariables& t, const QString& primary);
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
@@ -355,6 +363,14 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   // primaryColor/secondaryColor/tertiaryColor directly. Quadrant text fills
   // always derive from primaryTextColor (not the local primary).
   const QString primary = lightPalette ? QStringLiteral("#ECECFE") : t.primaryColor;
+  // taskTextDarkColor (pie title/legend source for every non-dark theme) =
+  // textColor. The dark-variant FamilyA (neo-dark/redux-dark/redux-dark-color,
+  // flagged by nodeBorderFromBorder1) also sets mainContrastColor="lightgrey"
+  // (upstream constructor literal) for golden parity; their pie title/legend
+  // still use taskTextDarkColor, NOT mainContrastColor.
+  assignIfEmpty(t.taskTextDarkColor, t.textColor);
+  if (nodeBorderFromBorder1) assignIfEmpty(t.mainContrastColor, QStringLiteral("lightgrey"));
+  populatePieScalars(t, t.taskTextDarkColor);
   if (lightPalette) {
     populatePieFamilyA(t, primary, QStringLiteral("#E9E9F1"), adjust(primary, {.h = 180.0, .l = 5.0}));
   } else {
@@ -459,8 +475,34 @@ void populatePieFromCScale(FlowThemeVariables& t, bool pie12FromCScale0) {
     t.pie[11] = t.cScale[0];  // neutral: this.pie12 = this.pie0 (= cScale0)
 }
 
-// Quadrant fills + text fills (UNIFORM across all 11 themes): RGB adjustments
-// of primaryColor / primaryTextColor in +5/+10/+15 steps.
+// Pie scalar themeVariables (UNIFORM formulas across all 11 themes): the stroke
+// / opacity / sizes are constant defaults; pieSectionTextColor = textColor; and
+// pieTitleTextColor / pieLegendTextColor = titleLegendColor, which is
+// taskTextDarkColor for every theme but the standalone dark (mainContrastColor).
+// `||`-guarded so a direct pie*TextColor override wins, and (because
+// resolveFlowTheme re-applies overrides after updateColors) a taskTextDarkColor /
+// mainContrastColor override propagates here.
+void populatePieScalars(FlowThemeVariables& t, const QString& titleLegendColor) {
+  assignIfEmpty(t.pieTitleTextColor, titleLegendColor);
+  assignIfEmpty(t.pieSectionTextColor, t.textColor);
+  assignIfEmpty(t.pieLegendTextColor, titleLegendColor);
+  assignIfEmpty(t.pieStrokeColor, QStringLiteral("black"));
+  assignIfEmpty(t.pieStrokeWidth, QStringLiteral("2px"));
+  assignIfEmpty(t.pieOuterStrokeColor, QStringLiteral("black"));
+  assignIfEmpty(t.pieOuterStrokeWidth, QStringLiteral("2px"));
+  assignIfEmpty(t.pieOpacity, QStringLiteral("0.7"));
+  assignIfEmpty(t.pieTitleTextSize, QStringLiteral("25px"));
+  assignIfEmpty(t.pieSectionTextSize, QStringLiteral("17px"));
+  assignIfEmpty(t.pieLegendTextSize, QStringLiteral("17px"));
+}
+
+// Quadrant fills + text fills + scalar fields (UNIFORM across all 11 themes):
+// RGB adjustments of primaryColor / primaryTextColor in +5/+10/+15 steps, plus
+// the scalar fields (pointText/xAxis/yAxis/title = primaryTextColor; internal/
+// external border = primaryBorderColor). quadrantPointFill is upstream's
+// `isDark(q1Fill) ? lighten(q1Fill) : darken(q1Fill)` called with ONE arg, so
+// amount=undefined -> lightness NaN -> hsl(h, s, NaN%); both branches yield NaN
+// lightness (isDark is moot) but the ternary is kept for source parity.
 void populateQuadrant(FlowThemeVariables& t, const QString& primary) {
   assignIfEmpty(t.quadrant[0], primary);
   assignIfEmpty(t.quadrant[1], adjust(primary, {.r = 5.0, .g = 5.0, .b = 5.0}));
@@ -470,6 +512,14 @@ void populateQuadrant(FlowThemeVariables& t, const QString& primary) {
   assignIfEmpty(t.quadrantText[1], adjust(t.primaryTextColor, {.r = -5.0, .g = -5.0, .b = -5.0}));
   assignIfEmpty(t.quadrantText[2], adjust(t.primaryTextColor, {.r = -10.0, .g = -10.0, .b = -10.0}));
   assignIfEmpty(t.quadrantText[3], adjust(t.primaryTextColor, {.r = -15.0, .g = -15.0, .b = -15.0}));
+  assignIfEmpty(t.quadrantPointTextFill, t.primaryTextColor);
+  assignIfEmpty(t.quadrantXAxisTextFill, t.primaryTextColor);
+  assignIfEmpty(t.quadrantYAxisTextFill, t.primaryTextColor);
+  assignIfEmpty(t.quadrantTitleFill, t.primaryTextColor);
+  assignIfEmpty(t.quadrantInternalBorderStrokeFill, t.primaryBorderColor);
+  assignIfEmpty(t.quadrantExternalBorderStrokeFill, t.primaryBorderColor);
+  assignIfEmpty(t.quadrantPointFill,
+                isDark(t.quadrant[0]) ? lighten(t.quadrant[0], kJsNaN) : darken(t.quadrant[0], kJsNaN));
 }
 
 void populateAdjustedScale(FlowThemeVariables& t, const QString& primary,
@@ -557,6 +607,8 @@ void updateColorsDefault(FlowThemeVariables& t) {
   t.defaultLinkColor = t.lineColor;
   t.titleColor = t.textColor;
   t.edgeLabelBackground = t.labelBackground;
+  assignIfEmpty(t.taskTextDarkColor, QStringLiteral("black"));
+  populatePieScalars(t, t.taskTextDarkColor);
   populatePieDefault(t);
   populateQuadrant(t, t.primaryColor);
 }
@@ -571,6 +623,8 @@ void updateColorsForest(FlowThemeVariables& t) {
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
   // forest keeps constructor titleColor (#333) and edgeLabelBackground (#e8e8e8).
+  assignIfEmpty(t.taskTextDarkColor, QStringLiteral("black"));
+  populatePieScalars(t, t.taskTextDarkColor);
   populatePieForest(t);
   populateQuadrant(t, t.primaryColor);
 }
@@ -612,7 +666,9 @@ void updateColorsDark(FlowThemeVariables& t) {
   // dark's final nodeBorder override (line 1502): nodeBorder = nodeBorder || "#999".
   assignIfEmpty(t.nodeBorder, QStringLiteral("#999"));
   // dark does NOT derive nodeTextColor (getStyles falls back to textColor).
-  populatePieFromCScale(t, false);  // dark: pie1..pie11 = cScale1..11; pie12 left empty
+  assignIfEmpty(t.taskTextDarkColor, invert(t.mainContrastColor));  // dark: invert(lightgrey) = #2c2c2c
+  populatePieScalars(t, t.mainContrastColor);  // dark pie title/legend = mainContrastColor
+  populatePieFromCScale(t, false);  // dark: pie1..pie(K) = cScale1..K; pie12 empty at TCL<=12, =cScale12 at TCL>=13
   populateQuadrant(t, t.primaryColor);
 }
 
@@ -640,7 +696,13 @@ void updateColorsNeutral(FlowThemeVariables& t) {
                                               : QStringLiteral("#333"));
   }
   // neutral does NOT derive nodeTextColor (getStyles falls back to textColor).
-  populatePieFromCScale(t, true);  // neutral: pie1..pie11 = cScale1..11; pie12 = cScale0
+  // neutral sets taskTextDarkColor UNCONDITIONALLY (= this.text; chunk line 1729),
+  // so a taskTextDarkColor override is clobbered during updateColors and does NOT
+  // propagate to pie title/legend (probed vs upstream). Re-applied after, the
+  // override still wins on get("taskTextDarkColor") itself.
+  t.taskTextDarkColor = t.text;  // neutral.text = #333
+  populatePieScalars(t, t.taskTextDarkColor);
+  populatePieFromCScale(t, true);  // neutral: pie1..pie(K) = cScale1..K; pie12 = cScale0
   populateQuadrant(t, t.primaryColor);
 }
 
@@ -766,6 +828,8 @@ QString FlowThemeVariables::get(const QString& key) const {
     if (key == QStringLiteral("quadrant%1Fill").arg(i + 1)) return quadrant[i];
     if (key == QStringLiteral("quadrant%1TextFill").arg(i + 1)) return quadrantText[i];
   }
+  if (key == QStringLiteral("mainContrastColor")) return mainContrastColor;
+  if (key == QStringLiteral("taskTextDarkColor")) return taskTextDarkColor;
   if (key == QStringLiteral("pieTitleTextColor")) return pieTitleTextColor;
   if (key == QStringLiteral("pieSectionTextColor")) return pieSectionTextColor;
   if (key == QStringLiteral("pieLegendTextColor")) return pieLegendTextColor;
@@ -824,7 +888,9 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
     if (key == QStringLiteral("quadrant%1Fill").arg(i + 1)) { quadrant[i] = value; return; }
     if (key == QStringLiteral("quadrant%1TextFill").arg(i + 1)) { quadrantText[i] = value; return; }
   }
-  if (key == QStringLiteral("pieTitleTextColor")) pieTitleTextColor = value;
+  if (key == QStringLiteral("mainContrastColor")) mainContrastColor = value;
+  else if (key == QStringLiteral("taskTextDarkColor")) taskTextDarkColor = value;
+  else if (key == QStringLiteral("pieTitleTextColor")) pieTitleTextColor = value;
   else if (key == QStringLiteral("pieSectionTextColor")) pieSectionTextColor = value;
   else if (key == QStringLiteral("pieLegendTextColor")) pieLegendTextColor = value;
   else if (key == QStringLiteral("pieStrokeColor")) pieStrokeColor = value;

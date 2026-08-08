@@ -92,6 +92,24 @@ QStringList pieQuadrantFields() {
   return f;
 }
 
+// Pie + Quadrant SCALAR themeVariables (uniform formulas across themes): the
+// dependency fields (taskTextDarkColor, mainContrastColor) that the pie text
+// colors derive from, the pie stroke/opacity/sizes, and the quadrant point/axis/
+// title/border scalars. Compared for every implemented theme.
+QStringList pieQuadrantScalarFields() {
+  return {QStringLiteral("taskTextDarkColor"), QStringLiteral("mainContrastColor"),
+          QStringLiteral("pieTitleTextColor"), QStringLiteral("pieSectionTextColor"),
+          QStringLiteral("pieLegendTextColor"), QStringLiteral("pieStrokeColor"),
+          QStringLiteral("pieStrokeWidth"), QStringLiteral("pieOuterStrokeColor"),
+          QStringLiteral("pieOuterStrokeWidth"), QStringLiteral("pieOpacity"),
+          QStringLiteral("pieTitleTextSize"), QStringLiteral("pieSectionTextSize"),
+          QStringLiteral("pieLegendTextSize"), QStringLiteral("quadrantPointFill"),
+          QStringLiteral("quadrantPointTextFill"), QStringLiteral("quadrantXAxisTextFill"),
+          QStringLiteral("quadrantYAxisTextFill"), QStringLiteral("quadrantTitleFill"),
+          QStringLiteral("quadrantInternalBorderStrokeFill"),
+          QStringLiteral("quadrantExternalBorderStrokeFill")};
+}
+
 QStringList fieldsForTheme(FlowThemeId id) {
   QStringList f = criticalFields();
   for (int i = 0; i <= 11; ++i) {
@@ -101,10 +119,14 @@ QStringList fieldsForTheme(FlowThemeId id) {
     f.append(QStringLiteral("cScaleLabel%1").arg(i));
   }
   // cScale12: dark defines "#010029" UNCONDITIONALLY (present even at TCL=12);
-  // every other theme leaves it empty. (cScaleInv/Peer/Label[12] are TCL-gated and
+  // every other theme leaves it empty at the default TCL. (At abnormal TCL redux
+  // etc. may also derive cScale12; cScaleInv/Peer/Label[12] are TCL-gated and
   // unset at TCL=12 for everyone, so they are not part of the golden.)
   f.append(QStringLiteral("cScale12"));
-  if (pieQuadrantImplemented(id)) f.append(pieQuadrantFields());
+  if (pieQuadrantImplemented(id)) {
+    f.append(pieQuadrantFields());
+    f.append(pieQuadrantScalarFields());
+  }
   return f;
 }
 
@@ -319,6 +341,97 @@ void checkThemeOverridesTclJs() {
   require(!overridesFor(QString()).contains(QStringLiteral("THEME_COLOR_LIMIT")),
           "TCL absent -> absent (keep default)");
 }
+
+// Pie/Quadrant scalar dependency overrides. Probed vs mermaid 11.16.0
+// (scripts/probe_mermaid_pie_dep.mjs): a taskTextDarkColor override propagates to
+// pie title/legend for Forest + the Family-A themes (their updateColors uses
+// `||`, so the override survives), but NOT for Default (constructor updateColors
+// pre-derives pie title) or Neutral (updateColors sets taskTextDarkColor
+// unconditionally = this.text, clobbering the override). mainContrastColor
+// propagates for Dark. A direct pieTitleTextColor override always wins.
+// Quadrant point/axis/title text derive from primaryTextColor, borders from
+// primaryBorderColor.
+void checkScalarDependencyOverrides() {
+  const auto resolved = [](FlowThemeId id, const QHash<QString, QString>& ov) {
+    return resolveFlowTheme(id, ov);
+  };
+
+  // 1a. taskTextDarkColor override PROPAGATES (Forest + Family-A).
+  for (FlowThemeId id : {FlowThemeId::Forest, FlowThemeId::Base, FlowThemeId::Neo,
+                         FlowThemeId::ReduxColor}) {
+    QHash<QString, QString> ov;
+    ov.insert(QStringLiteral("taskTextDarkColor"), QStringLiteral("#abcdef"));
+    const FlowThemeVariables t = resolved(id, ov);
+    require(t.get(QStringLiteral("pieTitleTextColor")) == QLatin1String("#abcdef"),
+            QStringLiteral("taskTextDarkColor propagates to pieTitle (%1)").arg(flowThemeIdName(id)));
+    require(t.get(QStringLiteral("pieLegendTextColor")) == QLatin1String("#abcdef"),
+            QStringLiteral("taskTextDarkColor propagates to pieLegend (%1)").arg(flowThemeIdName(id)));
+  }
+  // 1b. taskTextDarkColor override does NOT propagate for Default / Neutral (the
+  // pie title keeps the theme's own taskTextDarkColor); the override still wins
+  // on get("taskTextDarkColor") itself.
+  {
+    QHash<QString, QString> ov;
+    ov.insert(QStringLiteral("taskTextDarkColor"), QStringLiteral("#abcdef"));
+    const FlowThemeVariables td = resolved(FlowThemeId::Default, ov);
+    require(td.get(QStringLiteral("taskTextDarkColor")) == QLatin1String("#abcdef"),
+            "default taskTextDarkColor override applied");
+    require(td.get(QStringLiteral("pieTitleTextColor")) == QLatin1String("black"),
+            "default pieTitleTextColor does NOT follow taskTextDarkColor override");
+    const FlowThemeVariables tn = resolved(FlowThemeId::Neutral, ov);
+    require(tn.get(QStringLiteral("taskTextDarkColor")) == QLatin1String("#abcdef"),
+            "neutral taskTextDarkColor override applied");
+    require(tn.get(QStringLiteral("pieTitleTextColor")) == QLatin1String("#333"),
+            "neutral pieTitleTextColor does NOT follow taskTextDarkColor override");
+  }
+  // pieSectionTextColor derives from textColor, NOT taskTextDarkColor.
+  {
+    QHash<QString, QString> ov;
+    ov.insert(QStringLiteral("taskTextDarkColor"), QStringLiteral("#abcdef"));
+    const FlowThemeVariables t = resolved(FlowThemeId::Forest, ov);
+    require(t.get(QStringLiteral("pieSectionTextColor")) != QLatin1String("#abcdef"),
+            "pieSectionTextColor is textColor, independent of taskTextDarkColor");
+  }
+
+  // 2. mainContrastColor override -> Dark pie title/legend.
+  {
+    QHash<QString, QString> ov;
+    ov.insert(QStringLiteral("mainContrastColor"), QStringLiteral("#fedcba"));
+    const FlowThemeVariables t = resolved(FlowThemeId::Dark, ov);
+    require(t.get(QStringLiteral("pieTitleTextColor")) == QLatin1String("#fedcba"),
+            "mainContrastColor -> dark pieTitleTextColor");
+    require(t.get(QStringLiteral("pieLegendTextColor")) == QLatin1String("#fedcba"),
+            "mainContrastColor -> dark pieLegendTextColor");
+  }
+
+  // 3. A direct pieTitleTextColor override wins over taskTextDarkColor.
+  {
+    QHash<QString, QString> ov;
+    ov.insert(QStringLiteral("taskTextDarkColor"), QStringLiteral("#abcdef"));
+    ov.insert(QStringLiteral("pieTitleTextColor"), QStringLiteral("#111111"));
+    const FlowThemeVariables t = resolved(FlowThemeId::Default, ov);
+    require(t.get(QStringLiteral("pieTitleTextColor")) == QLatin1String("#111111"),
+            "direct pieTitleTextColor has highest priority");
+  }
+
+  // 4. Quadrant scalar derivation from primaryTextColor / primaryBorderColor.
+  {
+    QHash<QString, QString> ov;
+    ov.insert(QStringLiteral("primaryTextColor"), QStringLiteral("#123456"));
+    ov.insert(QStringLiteral("primaryBorderColor"), QStringLiteral("#654321"));
+    const FlowThemeVariables t = resolved(FlowThemeId::Base, ov);
+    require(t.get(QStringLiteral("quadrantPointTextFill")) == QLatin1String("#123456"),
+            "quadrantPointTextFill = primaryTextColor");
+    require(t.get(QStringLiteral("quadrantXAxisTextFill")) == QLatin1String("#123456"),
+            "quadrantXAxisTextFill = primaryTextColor");
+    require(t.get(QStringLiteral("quadrantTitleFill")) == QLatin1String("#123456"),
+            "quadrantTitleFill = primaryTextColor");
+    require(t.get(QStringLiteral("quadrantInternalBorderStrokeFill")) == QLatin1String("#654321"),
+            "quadrantInternalBorderStrokeFill = primaryBorderColor");
+    require(t.get(QStringLiteral("quadrantExternalBorderStrokeFill")) == QLatin1String("#654321"),
+            "quadrantExternalBorderStrokeFill = primaryBorderColor");
+  }
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -353,6 +466,7 @@ int main(int argc, char** argv) {
   checkPieTclDistribution();
   checkTclNoOverflow();
   checkThemeOverridesTclJs();
+  checkScalarDependencyOverrides();
 
   qDebug().noquote() << "MermaidThemeTest: all themes + override match golden";
   return 0;
