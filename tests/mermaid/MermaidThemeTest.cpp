@@ -431,6 +431,39 @@ void checkScalarDependencyOverrides() {
     require(t.get(QStringLiteral("quadrantExternalBorderStrokeFill")) == QLatin1String("#654321"),
             "quadrantExternalBorderStrokeFill = primaryBorderColor");
   }
+
+  // 5. quadrantPointFill is re-derived UNCONDITIONALLY each updateColors
+  // (upstream `(pointFill || isDark(q1)) ? lighten(q1) : darken(q1)`, NOT a
+  // ||-guarded assign-if-empty). Probed vs mermaid 11.16.0
+  // (scripts/probe_mermaid_quadrant_pointfill.mjs): a quadrant1Fill override
+  // re-derives pointFill from the NEW q1 -- essential for Default's double pass,
+  // where pointFill is already set on the second updateColors. Given the SAME
+  // quadrant1Fill, single-pass (Forest/Base) and double-pass (Default) yield the
+  // SAME pointFill (the one-arg lighten/darken both produce hsl(h, s, NaN%)), and
+  // Default's overridden pointFill differs from its own base. A direct
+  // quadrantPointFill override still wins.
+  {
+    const FlowThemeVariables defBase = resolved(FlowThemeId::Default, {});
+    QHash<QString, QString> q1ov;
+    q1ov.insert(QStringLiteral("quadrant1Fill"), QStringLiteral("#112233"));
+    const FlowThemeVariables defOv = resolved(FlowThemeId::Default, q1ov);
+    const FlowThemeVariables forOv = resolved(FlowThemeId::Forest, q1ov);
+    const FlowThemeVariables basOv = resolved(FlowThemeId::Base, q1ov);
+    require(defOv.get(QStringLiteral("quadrantPointFill")) !=
+                defBase.get(QStringLiteral("quadrantPointFill")),
+            "default quadrantPointFill re-derived from overridden quadrant1Fill");
+    require(defOv.get(QStringLiteral("quadrantPointFill")) ==
+                forOv.get(QStringLiteral("quadrantPointFill")),
+            "default/forest quadrantPointFill agree for same quadrant1Fill");
+    require(defOv.get(QStringLiteral("quadrantPointFill")) ==
+                basOv.get(QStringLiteral("quadrantPointFill")),
+            "default/base quadrantPointFill agree for same quadrant1Fill");
+    QHash<QString, QString> pov;
+    pov.insert(QStringLiteral("quadrantPointFill"), QStringLiteral("#aabbcc"));
+    const FlowThemeVariables t = resolved(FlowThemeId::Default, pov);
+    require(t.get(QStringLiteral("quadrantPointFill")) == QLatin1String("#aabbcc"),
+            "direct quadrantPointFill override wins");
+  }
 }
 }  // namespace
 

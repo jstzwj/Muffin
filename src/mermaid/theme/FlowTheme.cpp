@@ -500,9 +500,18 @@ void populatePieScalars(FlowThemeVariables& t, const QString& titleLegendColor) 
 // RGB adjustments of primaryColor / primaryTextColor in +5/+10/+15 steps, plus
 // the scalar fields (pointText/xAxis/yAxis/title = primaryTextColor; internal/
 // external border = primaryBorderColor). quadrantPointFill is upstream's
-// `isDark(q1Fill) ? lighten(q1Fill) : darken(q1Fill)` called with ONE arg, so
-// amount=undefined -> lightness NaN -> hsl(h, s, NaN%); both branches yield NaN
-// lightness (isDark is moot) but the ternary is kept for source parity.
+//   this.quadrantPointFill = this.quadrantPointFill || isDark(this.quadrant1Fill)
+//       ? lighten(this.quadrant1Fill) : darken(this.quadrant1Fill);
+// which by JS precedence parses as
+//   (this.quadrantPointFill || isDark(q1)) ? lighten(q1) : darken(q1)
+// -- an UNCONDITIONAL reassignment every updateColors() (NOT a ||-guarded
+// assign-if-empty). The one-arg lighten/darken pass amount=undefined -> lightness
+// NaN -> hsl(h, s, NaN%), so both branches yield the same string; the condition
+// still matters because Default's double pass means pointFill is already set on
+// the second updateColors, so a user quadrant1Fill override must re-derive
+// pointFill from the NEW q1 (the non-empty pointFill forces the lighten branch).
+// A direct quadrantPointFill override still wins -- resolveFlowTheme re-applies
+// overrides after the final updateColors.
 void populateQuadrant(FlowThemeVariables& t, const QString& primary) {
   assignIfEmpty(t.quadrant[0], primary);
   assignIfEmpty(t.quadrant[1], adjust(primary, {.r = 5.0, .g = 5.0, .b = 5.0}));
@@ -518,8 +527,12 @@ void populateQuadrant(FlowThemeVariables& t, const QString& primary) {
   assignIfEmpty(t.quadrantTitleFill, t.primaryTextColor);
   assignIfEmpty(t.quadrantInternalBorderStrokeFill, t.primaryBorderColor);
   assignIfEmpty(t.quadrantExternalBorderStrokeFill, t.primaryBorderColor);
-  assignIfEmpty(t.quadrantPointFill,
-                isDark(t.quadrant[0]) ? lighten(t.quadrant[0], kJsNaN) : darken(t.quadrant[0], kJsNaN));
+  // Unconditional reassignment mirroring upstream's
+  //   (this.quadrantPointFill || isDark(q1)) ? lighten(q1) : darken(q1)
+  // (see the function header); the one-arg calls produce hsl(h, s, NaN%).
+  const bool lightenBranch = !t.quadrantPointFill.isEmpty() || isDark(t.quadrant[0]);
+  t.quadrantPointFill =
+      lightenBranch ? lighten(t.quadrant[0], kJsNaN) : darken(t.quadrant[0], kJsNaN);
 }
 
 void populateAdjustedScale(FlowThemeVariables& t, const QString& primary,
