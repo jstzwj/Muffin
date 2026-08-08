@@ -41,6 +41,25 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config);
 std::optional<int> jsThemeColorLimit(const QJsonObject& config);
 
 qreal pixelValue(const QString& value, qreal fallback);
+
+// Browser-faithful CSS length parser for themeVariables that upstream emits as
+// raw CSS and lets the browser resolve (pie stroke widths / text sizes). Unlike
+// pixelValue (which requires a "px" suffix and rejects 0), this mirrors the
+// browser: a bare number or an "Npx" value resolves to N pixels, 0 is accepted
+// (a 0-width stroke paints nothing), and anything else (em/pt/% units, invalid
+// text, empty, negative) falls back. Probed vs mermaid 11.16.0
+// (scripts/probe_mermaid_pie_scalars.mjs): "2px"->2, "2"->2, "0"->0, "0px"->0,
+// "1.7"->1.7; "3em" (browser resolves font-relative) and "abc" (browser CSS
+// initial 1) fall back here -- documented divergences for exotic/garbage input.
+qreal parseCssPx(const QString& value, qreal fallback);
+
+// Browser-faithful CSS opacity parser: a unitless number clamped to [0,1].
+// Probed vs mermaid 11.16.0: "0.7"->0.7, "0"->0, "1.7"->1 (clamp), "-0.5"->0
+// (clamp). A non-numeric/empty value falls back (the browser would use the CSS
+// initial 1.0; falling back to the theme default is a documented divergence for
+// garbage input).
+qreal opacityValue(const QString& value, qreal fallback);
+
 QString firstFontFamily(QString cssFamily);
 qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback);
 

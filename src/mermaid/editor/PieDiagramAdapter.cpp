@@ -21,36 +21,6 @@
 namespace muffin::mermaid::editor {
 namespace {
 
-// mermaid 11.16.0 pie section palette (theme pie1..pie12), captured live from a
-// 13-slice render in each theme via scripts/probe_mermaid_pie_palette.mjs. The
-// default-theme list reproduces the frozen pie-geometry.json fill values
-// byte-for-byte; the dark-theme list leaves slot 12 unset (mermaid's dark theme
-// only generates pie1..pie11), reproduced as an empty string => no fill.
-QStringList defaultPiePalette() {
-  return {
-      QStringLiteral("#ECECFF"),
-      QStringLiteral("#ffffde"),
-      QStringLiteral("hsl(80, 100%, 56.2745098039%)"),
-      QStringLiteral("hsl(240, 100%, 86.2745098039%)"),
-      QStringLiteral("hsl(60, 100%, 63.5294117647%)"),
-      QStringLiteral("hsl(80, 100%, 76.2745098039%)"),
-      QStringLiteral("hsl(300, 100%, 76.2745098039%)"),
-      QStringLiteral("hsl(180, 100%, 56.2745098039%)"),
-      QStringLiteral("hsl(0, 100%, 56.2745098039%)"),
-      QStringLiteral("hsl(300, 100%, 56.2745098039%)"),
-      QStringLiteral("hsl(150, 100%, 56.2745098039%)"),
-      QStringLiteral("hsl(0, 100%, 66.2745098039%)"),
-  };
-}
-QStringList darkPiePalette() {
-  return {
-      QStringLiteral("#0b0000"), QStringLiteral("#4d1037"), QStringLiteral("#3f5258"),
-      QStringLiteral("#4f2f1b"), QStringLiteral("#6e0a0a"), QStringLiteral("#3b0048"),
-      QStringLiteral("#995a01"), QStringLiteral("#154706"), QStringLiteral("#161722"),
-      QStringLiteral("#00296f"), QStringLiteral("#01629c"), QString(),
-  };
-}
-
 struct PieDiagramImpl : Diagram {
   QStringList ids() const override { return {QStringLiteral("pie")}; }
   QString cssClass() const override { return QStringLiteral("pieDiagram"); }
@@ -74,13 +44,25 @@ struct PieDiagramImpl : Diagram {
     config.useMaxWidth = pieConfig.value(QStringLiteral("useMaxWidth")).toBool(true);
 
     pie::PieSceneStyle style;
-    style.palette = (effectiveTheme == QStringLiteral("dark")) ? darkPiePalette()
-                                                                : defaultPiePalette();
+    // Consume the fully-resolved pie themeVariables (FlowTheme already derived
+    // pie1..pie12 + the scalars per the active theme, honoring THEME_COLOR_LIMIT
+    // and any source-entry overrides). The palette cycles by GLOBAL section
+    // index; an empty entry (dark pie12 at TCL<=12) is "no fill attribute" and is
+    // preserved verbatim. The pie*TextColor keys are the family-correct source
+    // (the model derives them from taskTextDarkColor / mainContrastColor).
+    for (int i = 0; i < 12; ++i) style.palette.append(themeVars.pie[i]);
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
-    style.titleColor = themeVars.titleColor.isEmpty() ? QStringLiteral("#333333")
-                                                      : themeVars.titleColor;
-    style.sectionTextColor = themeVars.primaryTextColor;
-    style.legendTextColor = themeVars.primaryTextColor;
+    style.outerStrokeColor = themeVars.pieOuterStrokeColor;
+    style.outerStrokeWidth = parseCssPx(themeVars.pieOuterStrokeWidth, style.outerStrokeWidth);
+    style.sliceStrokeColor = themeVars.pieStrokeColor;
+    style.sliceStrokeWidth = parseCssPx(themeVars.pieStrokeWidth, style.sliceStrokeWidth);
+    style.pieOpacity = opacityValue(themeVars.pieOpacity, style.pieOpacity);
+    if (!themeVars.pieTitleTextColor.isEmpty()) style.titleColor = themeVars.pieTitleTextColor;
+    if (!themeVars.pieSectionTextColor.isEmpty()) style.sectionTextColor = themeVars.pieSectionTextColor;
+    if (!themeVars.pieLegendTextColor.isEmpty()) style.legendTextColor = themeVars.pieLegendTextColor;
+    style.titleFontSize = parseCssPx(themeVars.pieTitleTextSize, style.titleFontSize);
+    style.sectionFontSize = parseCssPx(themeVars.pieSectionTextSize, style.sectionFontSize);
+    style.legendFontSize = parseCssPx(themeVars.pieLegendTextSize, style.legendFontSize);
 
     pie::PieScene scene = pie::buildPieScene(data, config, std::move(style));
     // Frontmatter title (`---\ntitle: X\n---`) is the diagram title when there is

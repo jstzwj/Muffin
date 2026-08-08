@@ -452,6 +452,11 @@ void checkScalarDependencyOverrides() {
     require(defOv.get(QStringLiteral("quadrantPointFill")) !=
                 defBase.get(QStringLiteral("quadrantPointFill")),
             "default quadrantPointFill re-derived from overridden quadrant1Fill");
+    // Exact probed value (scripts/probe_mermaid_quadrant_pointfill.mjs):
+    // quadrant1Fill #112233 -> hsl(210, 50%, NaN%) (one-arg lighten, NaN lightness).
+    require(defOv.get(QStringLiteral("quadrantPointFill")) ==
+                QLatin1String("hsl(210, 50%, NaN%)"),
+            "default quadrantPointFill exact value for quadrant1Fill #112233");
     require(defOv.get(QStringLiteral("quadrantPointFill")) ==
                 forOv.get(QStringLiteral("quadrantPointFill")),
             "default/forest quadrantPointFill agree for same quadrant1Fill");

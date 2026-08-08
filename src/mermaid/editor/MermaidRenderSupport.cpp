@@ -192,6 +192,26 @@ qreal pixelValue(const QString& value, qreal fallback) {
   return ok && parsed > 0.0 ? parsed : fallback;
 }
 
+qreal parseCssPx(const QString& value, qreal fallback) {
+  // A bare number OR an "Npx" value (browser CSS length: unitless == px). The
+  // px suffix is optional and case-insensitive; 0 is accepted (>= 0 gate).
+  static const QRegularExpression number(
+      QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))(?:px)?\s*$)"),
+      QRegularExpression::CaseInsensitiveOption);
+  const auto match = number.match(value);
+  if (!match.hasMatch()) return fallback;
+  bool ok = false;
+  const qreal parsed = match.captured(1).toDouble(&ok);
+  return ok && parsed >= 0.0 ? parsed : fallback;
+}
+
+qreal opacityValue(const QString& value, qreal fallback) {
+  bool ok = false;
+  const qreal parsed = value.trimmed().toDouble(&ok);
+  if (!ok) return fallback;
+  return std::clamp(parsed, 0.0, 1.0);
+}
+
 QString firstFontFamily(QString cssFamily) {
   cssFamily = cssFamily.section(QLatin1Char(','), 0, 0).trimmed();
   if (cssFamily.size() >= 2 &&

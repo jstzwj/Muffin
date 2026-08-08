@@ -22,10 +22,11 @@ class QPainter;
 
 namespace muffin::mermaid::quadrant {
 
-// Theme values captured live from mermaid 11.16.0 (default theme). The adapter
-// swaps in the dark-theme set when the resolved theme is dark. NB the default
-// quadrantPointFill is the upstream-invalid "hsl(240, 100%, NaN%)" — emitted
-// verbatim for oracle parity; the painter falls back to black.
+// Default-theme fallback values (captured live from mermaid 11.16.0). The adapter
+// now populates EVERY field from the resolved FlowThemeVariables, so these
+// initializers are dead safety fallbacks. NB the default quadrantPointFill is the
+// upstream-invalid "hsl(240, 100%, NaN%)" — emitted verbatim for oracle parity;
+// the painter falls back to black.
 struct QuadrantSceneStyle {
   QString quadrant1Fill = QStringLiteral("#ECECFF");
   QString quadrant2Fill = QStringLiteral("#f1f1ff");

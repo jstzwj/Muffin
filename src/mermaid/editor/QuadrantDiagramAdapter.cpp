@@ -33,26 +33,27 @@ struct QuadrantDiagramImpl : Diagram {
         themeIdFromName(effectiveTheme), themeOverrides(pre.config));
 
     quadrant::QuadrantSceneStyle style;
+    // Consume the fully-resolved quadrant themeVariables (FlowTheme derived every
+    // fill / text fill / point fill / axis+title text / border per the active
+    // theme, including the upstream-invalid quadrantPointFill "hsl(..., NaN%)"
+    // string emitted verbatim). No default/dark special-casing remains; the
+    // struct defaults below are dead safety fallbacks.
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
-    // Default-theme values are the struct defaults (captured live from 11.16.0).
-    // Dark theme overrides (captured via the style probe).
-    if (effectiveTheme == QStringLiteral("dark")) {
-      style.quadrant1Fill = QStringLiteral("#1f2020");
-      style.quadrant2Fill = QStringLiteral("#242525");
-      style.quadrant3Fill = QStringLiteral("#292a2a");
-      style.quadrant4Fill = QStringLiteral("#2e2f2f");
-      style.quadrant1TextFill = QStringLiteral("#e0dfdf");
-      style.quadrant2TextFill = QStringLiteral("#dbdada");
-      style.quadrant3TextFill = QStringLiteral("#d6d5d5");
-      style.quadrant4TextFill = QStringLiteral("#d1d0d0");
-      style.quadrantPointFill = QStringLiteral("hsl(180, 1.5873015873%, NaN%)");
-      style.quadrantPointTextFill = QStringLiteral("#e0dfdf");
-      style.quadrantXAxisTextFill = QStringLiteral("#e0dfdf");
-      style.quadrantYAxisTextFill = QStringLiteral("#e0dfdf");
-      style.quadrantInternalBorderStrokeFill = QStringLiteral("#CCCCCC");
-      style.quadrantExternalBorderStrokeFill = QStringLiteral("#CCCCCC");
-      style.quadrantTitleFill = QStringLiteral("#e0dfdf");
-    }
+    style.quadrant1Fill = themeVars.quadrant[0];
+    style.quadrant2Fill = themeVars.quadrant[1];
+    style.quadrant3Fill = themeVars.quadrant[2];
+    style.quadrant4Fill = themeVars.quadrant[3];
+    style.quadrant1TextFill = themeVars.quadrantText[0];
+    style.quadrant2TextFill = themeVars.quadrantText[1];
+    style.quadrant3TextFill = themeVars.quadrantText[2];
+    style.quadrant4TextFill = themeVars.quadrantText[3];
+    style.quadrantPointFill = themeVars.quadrantPointFill;
+    style.quadrantPointTextFill = themeVars.quadrantPointTextFill;
+    style.quadrantXAxisTextFill = themeVars.quadrantXAxisTextFill;
+    style.quadrantYAxisTextFill = themeVars.quadrantYAxisTextFill;
+    style.quadrantInternalBorderStrokeFill = themeVars.quadrantInternalBorderStrokeFill;
+    style.quadrantExternalBorderStrokeFill = themeVars.quadrantExternalBorderStrokeFill;
+    style.quadrantTitleFill = themeVars.quadrantTitleFill;
 
     const QJsonObject qcfg = pre.config.value(QStringLiteral("quadrantChart")).toObject();
     quadrant::QuadrantScene scene = quadrant::buildQuadrantScene(data, qcfg, std::move(style));
