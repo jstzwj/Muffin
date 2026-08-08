@@ -76,11 +76,14 @@ struct FlowThemeVariables {
   qreal shadowOffsetY = 1.0;
   int themeColorLimit = 12;
 
-  // Complete 12-color theme palette.
-  QString cScale[12];
-  QString cScaleInv[12];
-  QString cScalePeer[12];
-  QString cScaleLabel[12];
+  // cScale palette: 13 slots = upstream cScale0..cScale12. dark defines
+  // cScale12 = "#010029" unconditionally (so TCL=13 yields pie12 = cScale12);
+  // every other theme leaves cScale12 empty. pie stays a 12-slot array
+  // (pie1..pie12) and is capped separately when copied from cScale.
+  QString cScale[13];
+  QString cScaleInv[13];
+  QString cScalePeer[13];
+  QString cScaleLabel[13];
 
   // Pie family themeVariables (pieDiagram). Derived per-theme in updateColors
   // via MermaidColor::adjust from primaryColor/secondaryColor/tertiaryColor.

@@ -21,15 +21,16 @@ void assignIfEmpty(QString& field, const QString& value) {
   if (field.isEmpty()) field = value;
 }
 
-// The number of palette entries to derive. Upstream iterates
+// The number of cScale entries to derive. Upstream iterates
 // `for (i=0; i<this.THEME_COLOR_LIMIT; i++)` over a DYNAMIC array; the native
-// port stores cScale/cScaleInv/cScalePeer/cScaleLabel/pie as FIXED 12-element
-// arrays, so clamp the user-controlled THEME_COLOR_LIMIT to [0,12] for every
-// fixed-array access. For the default TCL=12 this is a no-op; for TCL>12 it
-// prevents out-of-bounds writes (upstream would just create extra, unused keys
-// beyond the 12-color palette). Negative TCL -> 0.
-int paletteCount(const FlowThemeVariables& t) {
-  return std::clamp(t.themeColorLimit, 0, 12);
+// port stores cScale/cScaleInv/cScalePeer/cScaleLabel as FIXED 13-element arrays
+// (cScale0..cScale12), so clamp the user-controlled THEME_COLOR_LIMIT to [0,13]
+// for every fixed-array access. For the default TCL=12 this is a no-op; for
+// TCL=13 it lets dark populate cScaleInv/Peer/Label[12] and pie12 (= cScale12);
+// for TCL>13 it prevents out-of-bounds writes. Negative TCL -> 0. (pie is a
+// separate 12-slot array and is capped independently in populatePieFromCScale.)
+int cScaleCount(const FlowThemeVariables& t) {
+  return std::clamp(t.themeColorLimit, 0, 13);
 }
 
 // --- per-theme raw constructors (the `this.X = literal` lines) ---
@@ -364,12 +365,19 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
 
 void finishCScale(FlowThemeVariables& t, bool darkMode,
                   bool darkColorLabels = false) {
-  for (int i = 0; i < paletteCount(t); ++i) {
-    assignIfEmpty(t.cScaleInv[i], invert(t.cScale[i]));
-    assignIfEmpty(t.cScalePeer[i], darkMode ? lighten(t.cScale[i], 10)
-                                            : darken(t.cScale[i], 10));
-    assignIfEmpty(t.cScaleLabel[i], darkColorLabels ? darken(t.cScale[i], 75)
-                                                     : t.primaryTextColor);
+  for (int i = 0; i < cScaleCount(t); ++i) {
+    // An empty cScale[i] (e.g. cScale12 for every theme but dark) has no color to
+    // invert/darken/lighten -- skip those color ops. cScaleLabel still takes its
+    // non-cScale fallback (primaryTextColor) unless darkColorLabels actually
+    // darkens a (non-empty) cScale[i].
+    if (!t.cScale[i].isEmpty()) {
+      assignIfEmpty(t.cScaleInv[i], invert(t.cScale[i]));
+      assignIfEmpty(t.cScalePeer[i], darkMode ? lighten(t.cScale[i], 10)
+                                              : darken(t.cScale[i], 10));
+    }
+    assignIfEmpty(t.cScaleLabel[i],
+                  (darkColorLabels && !t.cScale[i].isEmpty()) ? darken(t.cScale[i], 75)
+                                                              : t.primaryTextColor);
   }
 }
 
@@ -432,22 +440,23 @@ void populatePieForest(FlowThemeVariables& t) {
 
 // Dark + Neutral derive the pie palette from cScale (chunk-WYO6CB5R.mjs L613 /
 // L1765): `for (i=0; i<THEME_COLOR_LIMIT; i++) this["pie"+i] = this["cScale"+i]`.
-// The loop writes upstream keys pie0..pie(n-1) (0-based, n=paletteCount), but the
-// renderer and golden read pie1..pie12, so golden pieK = cScaleK for K in 1..n-1.
-// Map upstream i=1..n-1 -> native pie[i-1]=cScale[i]. The loop never writes
-// "pie12" for n<=12: dark leaves it unset (renders as a null attr with a gray
-// computed fallback -- the documented dark-pie12 contract); the native clamp
-// caps n at 12, so dark pie12 stays unset even for TCL>12. neutral follows the
-// loop with `this.pie12 = this.pie0` (= cScale0), but only when the loop created
-// pie0 (TCL > 0). The copy is unconditional (upstream uses `=`, not `||`); user
-// overrides still win because resolveFlowTheme re-applies them after updateColors.
-// Must be called AFTER cScale0..11 are finalized.
+// The loop writes upstream keys pie0..pie(count-1) (0-based, count=cScaleCount),
+// but the renderer and golden read pie1..pie12, so golden pieK = cScaleK for
+// K in 1..min(count-1,12). pie is a 12-slot array, so cap the source index at 12
+// (cScale12). Outcomes:
+//   dark  TCL=12     -> pie12 empty (loop writes pie0..pie11 only);
+//   dark  TCL>=13    -> pie12 = cScale12 = "#010029";
+//   neutral TCL>0    -> pie12 = cScale0 (upstream `this.pie12 = this.pie0`,
+//                       run after the loop, overrides any cScale12 copy);
+//   any TCL<=1       -> no pie slots populated.
+// The copy is unconditional (upstream uses `=`, not `||`); user overrides still
+// win because resolveFlowTheme re-applies them after updateColors. Must be called
+// AFTER cScale0..12 are finalized.
 void populatePieFromCScale(FlowThemeVariables& t, bool pie12FromCScale0) {
-  const int n = paletteCount(t);
-  for (int i = 1; i < n; ++i) t.pie[i - 1] = t.cScale[i];  // pie1..pie(n-1) = cScale1..cScale(n-1)
+  const int last = std::min(cScaleCount(t) - 1, 12);
+  for (int i = 1; i <= last; ++i) t.pie[i - 1] = t.cScale[i];  // pie1..pieK = cScale1..cScaleK
   if (pie12FromCScale0 && t.themeColorLimit > 0)
     t.pie[11] = t.cScale[0];  // neutral: this.pie12 = this.pie0 (= cScale0)
-  // dark: pie[11] ("pie12") stays empty, matching the unset upstream "pie12".
 }
 
 // Quadrant fills + text fills (UNIFORM across all 11 themes): RGB adjustments
@@ -478,8 +487,8 @@ void populateAdjustedScale(FlowThemeVariables& t, const QString& primary,
 
 void updateBaseCScale(FlowThemeVariables& t, bool darkMode) {
   populateAdjustedScale(t, t.primaryColor, t.secondaryColor, t.tertiaryColor);
-  for (int i = 0; i < paletteCount(t); ++i)
-    t.cScale[i] = darken(t.cScale[i], darkMode ? 75 : 25);
+  for (int i = 0; i < cScaleCount(t); ++i)
+    if (!t.cScale[i].isEmpty()) t.cScale[i] = darken(t.cScale[i], darkMode ? 75 : 25);
   finishCScale(t, false);
 }
 
@@ -487,12 +496,13 @@ void updateNeoCScale(FlowThemeVariables& t) {
   const QString primary = QStringLiteral("#ECECFE");
   const QString secondary = QStringLiteral("#E9E9F1");
   populateAdjustedScale(t, primary, secondary, adjust(primary, {.h = 180.0, .l = 5.0}));
-  for (int i = 0; i < paletteCount(t); ++i) t.cScale[i] = darken(t.cScale[i], 25);
+  for (int i = 0; i < cScaleCount(t); ++i)
+    if (!t.cScale[i].isEmpty()) t.cScale[i] = darken(t.cScale[i], 25);
   finishCScale(t, false);
 }
 
 void updateReduxCScale(FlowThemeVariables& t) {
-  for (int i = 0; i < paletteCount(t); ++i) {
+  for (int i = 0; i < cScaleCount(t); ++i) {
     assignIfEmpty(t.cScale[i], t.mainBkg);
     t.cScale[i] = darken(t.cScale[i], 25);
   }
@@ -526,7 +536,8 @@ void updateDefaultForestCScale(FlowThemeVariables& t) {
   assignIfEmpty(t.cScale[11], adjust(t.primaryColor, {.h = 330.0}));
   assignIfEmpty(t.cScalePeer[1], darken(t.secondaryColor, 45));
   assignIfEmpty(t.cScalePeer[2], darken(t.tertiaryColor, 40));
-  for (int i = 0; i < paletteCount(t); ++i) {
+  for (int i = 0; i < cScaleCount(t); ++i) {
+    if (t.cScale[i].isEmpty()) continue;  // no color to darken at this index (e.g. cScale12)
     t.cScale[i] = darken(t.cScale[i], 10);  // UNCONDITIONAL — accumulates per call
     assignIfEmpty(t.cScalePeer[i], darken(t.cScale[i], 25));
     assignIfEmpty(t.cScaleInv[i], adjust(t.cScale[i], {.h = 180.0}));
@@ -535,7 +546,7 @@ void updateDefaultForestCScale(FlowThemeVariables& t) {
 
 void updateColorsDefault(FlowThemeVariables& t) {
   updateDefaultForestCScale(t);
-  for (int i = 0; i < paletteCount(t); ++i)
+  for (int i = 0; i < cScaleCount(t); ++i)
     assignIfEmpty(t.cScaleLabel[i], (i == 0 || i == 3)
                                               ? QStringLiteral("#ffffff")
                                               : QStringLiteral("black"));
@@ -552,7 +563,7 @@ void updateColorsDefault(FlowThemeVariables& t) {
 
 void updateColorsForest(FlowThemeVariables& t) {
   updateDefaultForestCScale(t);
-  for (int i = 0; i < paletteCount(t); ++i)
+  for (int i = 0; i < cScaleCount(t); ++i)
     assignIfEmpty(t.cScaleLabel[i], QStringLiteral("black"));
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
@@ -575,8 +586,11 @@ void updateColorsDark(FlowThemeVariables& t) {
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
   t.edgeLabelBackground = lighten(t.labelBackground, 25);
-  // cScale: dark sets cScale1..11 to literal hex (chunk lines 1309-1320
-  // unconditionally), then the `||` block keeps them; cScale0 = primaryColor.
+  // cScale: dark sets cScale1..12 to literal hex UNCONDITIONALLY (chunk lines
+  // 1309-1320), then the `||` block keeps them; cScale0 = primaryColor. cScale12
+  // = #010029 is set even at TCL=12 (so the golden sees it), but cScaleInv/Peer/
+  // Label[12] are only computed when the TCL-gated loop below reaches i=12
+  // (TCL>=13), matching upstream.
   assignIfEmpty(t.cScale[0], t.primaryColor);
   t.cScale[1] = QStringLiteral("#0b0000");
   t.cScale[2] = QStringLiteral("#4d1037");
@@ -589,7 +603,8 @@ void updateColorsDark(FlowThemeVariables& t) {
   t.cScale[9] = QStringLiteral("#161722");
   t.cScale[10] = QStringLiteral("#00296f");
   t.cScale[11] = QStringLiteral("#01629c");
-  for (int i = 0; i < paletteCount(t); ++i) {
+  t.cScale[12] = QStringLiteral("#010029");
+  for (int i = 0; i < cScaleCount(t); ++i) {
     assignIfEmpty(t.cScaleInv[i], invert(t.cScale[i]));
     assignIfEmpty(t.cScalePeer[i], lighten(t.cScale[i], 10));
     assignIfEmpty(t.cScaleLabel[i], t.mainContrastColor);
@@ -738,7 +753,7 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("gradientStart")) return gradientStart;
   if (key == QStringLiteral("gradientStop")) return gradientStop;
   if (key == QStringLiteral("THEME_COLOR_LIMIT")) return QString::number(themeColorLimit);
-  for (int i = 0; i < 12; ++i) {
+  for (int i = 0; i < 13; ++i) {
     if (key == QStringLiteral("cScale%1").arg(i)) return cScale[i];
     if (key == QStringLiteral("cScaleInv%1").arg(i)) return cScaleInv[i];
     if (key == QStringLiteral("cScalePeer%1").arg(i)) return cScalePeer[i];

@@ -100,6 +100,10 @@ QStringList fieldsForTheme(FlowThemeId id) {
     f.append(QStringLiteral("cScaleInv%1").arg(i));
     f.append(QStringLiteral("cScaleLabel%1").arg(i));
   }
+  // cScale12: dark defines "#010029" UNCONDITIONALLY (present even at TCL=12);
+  // every other theme leaves it empty. (cScaleInv/Peer/Label[12] are TCL-gated and
+  // unset at TCL=12 for everyone, so they are not part of the golden.)
+  f.append(QStringLiteral("cScale12"));
   if (pieQuadrantImplemented(id)) f.append(pieQuadrantFields());
   return f;
 }
@@ -191,10 +195,10 @@ void checkPieQuadrantDynamicOverrides() {
 // (dark, neutral) populate. Upstream: `for i<TCL: this["pie"+i]=this["cScale"+i]`
 // (0-based keys), renderer reads pie1..pie12, so pieK = cScaleK for K=1..TCL-1.
 // Probed vs mermaid 11.16.0 (scripts/probe_mermaid_pie_tcl.mjs): dark is robust
-// across TCL=0/1/2/12; neutral is defined at TCL=2/12 (crashes upstream at 0/1/
-// 13, exercised only for no-crash in checkTclNoOverflow). dark pie12 is ALWAYS
-// unset: the native paletteCount clamp caps TCL>12 at 12, and the upstream loop
-// never writes the 0-based "pie12" key for TCL<=12.
+// across TCL=0/1/2/12/13; neutral is defined at TCL=2/12 (crashes upstream at
+// 0/1/13, exercised only for no-crash in checkTclNoOverflow). dark pie12 is
+// EMPTY at TCL<=12 (the loop writes pie0..pie11 only) but is cScale12="#010029"
+// at TCL>=13 (dark defines cScale12 unconditionally, and the loop reaches i=12).
 void checkPieTclDistribution() {
   const auto resolveAt = [](FlowThemeId id, int tcl) {
     QHash<QString, QString> ov;
@@ -226,6 +230,18 @@ void checkPieTclDistribution() {
       require(t.pie[i] == expected[i], QStringLiteral("dark TCL=12 pie%1").arg(i + 1));
     require(t.pie[11].isEmpty(), "dark TCL=12 pie12 not empty");
   }
+  {
+    // TCL=13: upstream writes pie0..pie12; renderer pie1..pie12 = cScale1..12.
+    // cScale12 = #010029 (dark's unconditional literal), so pie12 is SET here.
+    const FlowThemeVariables t = resolveAt(FlowThemeId::Dark, 13);
+    const QString expected[12] = {
+        QStringLiteral("#0b0000"), QStringLiteral("#4d1037"), QStringLiteral("#3f5258"),
+        QStringLiteral("#4f2f1b"), QStringLiteral("#6e0a0a"), QStringLiteral("#3b0048"),
+        QStringLiteral("#995a01"), QStringLiteral("#154706"), QStringLiteral("#161722"),
+        QStringLiteral("#00296f"), QStringLiteral("#01629c"), QStringLiteral("#010029")};
+    for (int i = 0; i < 12; ++i)
+      require(t.pie[i] == expected[i], QStringLiteral("dark TCL=13 pie%1").arg(i + 1));
+  }
 
   // Neutral (probed upstream-defined at TCL=2/12). pie12 = cScale0 (= "#555")
   // whenever TCL > 0 (upstream `this.pie12 = this.pie0`).
@@ -248,11 +264,12 @@ void checkPieTclDistribution() {
 }
 
 // All 11 themes must resolve without crashing / out-of-bounds for extreme
-// THEME_COLOR_LIMIT values. The fixed 12-element cScale/pie arrays are indexed
-// via paletteCount = clamp(TCL, 0, 12), so TCL=13 / INT_MAX behave as 12 and
-// negative as 0. (Upstream neutral crashes at TCL=0/1/13; the native port must
-// be safer -- no crash, no OOB write.) The raw TCL is preserved on the model
-// (get("THEME_COLOR_LIMIT")); only the array-access loops are clamped.
+// THEME_COLOR_LIMIT values. The fixed 13-element cScale arrays are indexed via
+// cScaleCount = clamp(TCL, 0, 13), so TCL=13 reaches cScale[12] (dark: pie12 =
+// cScale12 = #010029; others: empty, color ops skipped), TCL>13 / INT_MAX behave
+// as 13, and negative as 0. (Upstream neutral crashes at TCL=0/1/13; the native
+// port must be safer -- no crash, no OOB write.) The raw TCL is preserved on the
+// model (get("THEME_COLOR_LIMIT")); only the array-access loops are clamped.
 void checkTclNoOverflow() {
   const FlowThemeId all[] = {FlowThemeId::Base,  FlowThemeId::Dark,    FlowThemeId::Default,
                              FlowThemeId::Forest, FlowThemeId::Neutral, FlowThemeId::Neo,
@@ -268,8 +285,8 @@ void checkTclNoOverflow() {
               QStringLiteral("TCL raw value not preserved for %1 / TCL=%2")
                   .arg(flowThemeIdName(id))
                   .arg(tcl));
-      const int pc = std::clamp(t.themeColorLimit, 0, 12);
-      require(pc >= 0 && pc <= 12, "paletteCount out of [0,12]");
+      const int pc = std::clamp(t.themeColorLimit, 0, 13);
+      require(pc >= 0 && pc <= 13, "cScaleCount out of [0,13]");
     }
   }
 }
