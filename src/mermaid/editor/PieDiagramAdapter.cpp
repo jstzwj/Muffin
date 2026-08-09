@@ -136,6 +136,7 @@ struct PieDiagramImpl : Diagram {
     const qreal viewBoxX = std::min(0.0, titleLeft);
     const qreal viewBoxRight = std::max(scene.totalWidth, titleRight);
     scene.bounds = QRectF(viewBoxX, 0.0, viewBoxRight - viewBoxX, scene.totalHeight);
+    scene.titleWidth = titleWidth;  // reused by the painter to size the title rect
 
     // Resolve the stroke-width PAINT values now that the SVG viewport (bounds)
     // is known: stroke-width % is relative to the normalized diagonal

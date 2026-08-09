@@ -141,6 +141,18 @@ int main(int argc, char** argv) {
   require(approx(editor::cssFontSizePx(QStringLiteral("200%"), ctx14), 28.0), "fs14 200% -> 28 (x 14)");
   require(approx(editor::cssFontSizePx(QStringLiteral("3em"), ctx14), 42.0), "fs14 3em -> 42 (x 14)");
   require(approx(editor::cssFontSizePx(QStringLiteral("25px"), ctx14), 25.0), "fs14 valid 25px -> 25");
+  // ctx.emPx == 0 is a VALID zero (root fontSize "0px"), NOT coerced to 16: em/%
+  // collapse to 0 and ex/ch are 0 (no 0px QFont built). Probed vs 11.16.0.
+  const muffin::CssLengthContext ctx0 =
+      editor::pieCssLengthContext(QStringLiteral("Noto Sans"), 0.0);
+  require(approx(ctx0.emPx, 0.0) && approx(ctx0.exPx, 0.0) && approx(ctx0.chPx, 0.0),
+          "ctx0 preserves zero em/ex/ch (no 16 coercion, no 0px QFont)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("200%"), ctx0), 0.0), "fs0 200% -> 0");
+  require(approx(editor::cssFontSizePx(QStringLiteral("3em"), ctx0), 0.0), "fs0 3em -> 0");
+  require(approx(editor::cssFontSizePx(QStringLiteral("abc"), ctx0), 0.0), "fs0 invalid -> 0");
+  require(approx(editor::cssFontSizePx(QStringLiteral("25"), ctx0), 0.0), "fs0 bare -> 0");
+  require(approx(editor::cssFontSizePx(QStringLiteral("25px"), ctx0), 25.0), "fs0 valid 25px -> 25");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("3em"), ctx0, 500.0), 0.0), "sw0 3em -> 0");
   // parseFontSizeNumber: upstream parseInt (leading int, truncates decimals,
   //   ignores unit); no leading int -> default 2. Parsed as a JS Number (double,
   //   not qint64) so values beyond the qint64 range parse to the nearest double
@@ -443,6 +455,76 @@ int main(int argc, char** argv) {
             "2em root + 200% title -> 200% of 32 = 64");
   }
 
-  qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint, units)";
+  // --- 11. root fontSize:"0px" is a VALID zero (not coerced to 16) ---
+  // Upstream honors a 0 root: em/%/inherited sizes collapse to 0; a valid px size
+  // stays itself. Probed vs 11.16.0 (scripts/probe_mermaid_pie_fontsize_cascade.mjs).
+  {
+    const auto root0TitleFs = [&](const QString& titleTv) {
+      const QString src = QStringLiteral(
+          "%%{init: {\"themeVariables\": {\"fontSize\": \"0px\", %1}}}%%\n pie title T\n\"A\" : 50\n\"B\" : 50").arg(titleTv);
+      return renderPie(cache, src)->style.titleFontSize;
+    };
+    require(approx(root0TitleFs(QStringLiteral("\"pieTitleTextSize\": \"200%\"")), 0.0),
+            "root 0 + title 200% -> 0 (200% of 0)");
+    require(approx(root0TitleFs(QStringLiteral("\"pieTitleTextSize\": \"3em\"")), 0.0),
+            "root 0 + title 3em -> 0 (3 x 0)");
+    require(approx(root0TitleFs(QStringLiteral("\"pieTitleTextSize\": \"abc\"")), 0.0),
+            "root 0 + title invalid -> 0 (inherits root 0)");
+    require(approx(root0TitleFs(QStringLiteral("\"pieTitleTextSize\": \"25\"")), 0.0),
+            "root 0 + title bare 25 -> 0 (inherits root 0)");
+    require(approx(root0TitleFs(QStringLiteral("\"pieTitleTextSize\": \"25px\"")), 25.0),
+            "root 0 + title valid 25px -> 25 (independent of root)");
+    // pieStrokeWidth 3em of root 0 -> 0 (NoPen).
+    const QString sw0 = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"fontSize\": \"0px\", \"pieStrokeWidth\": \"3em\"}}}%%\n pie title T\n\"A\" : 50\n\"B\" : 50");
+    require(approx(renderPie(cache, sw0)->style.sliceStrokeWidth, 0.0),
+            "root 0 + pieStrokeWidth 3em -> 0");
+    // A 0 root must not emit a setPixelSize(0) warning (pieCssLengthContext skips
+    // the QFont; the painter skips a 0 title/section/legend font).
+    static QStringList zeroRootCaptured;
+    zeroRootCaptured.clear();
+    const auto zeroHandler = [](QtMsgType, const QMessageLogContext&, const QString& msg) { zeroRootCaptured << msg; };
+    const auto oldZeroHandler = qInstallMessageHandler(zeroHandler);
+    decodePng(editor::MermaidRenderCache::renderMermaidSourceToPng(
+        QStringLiteral("%%{init: {\"themeVariables\": {\"fontSize\": \"0px\"}}}%%\n pie title T\n\"A\" : 50\n\"B\" : 50"), 1.0).dataUrl);
+    qInstallMessageHandler(oldZeroHandler);
+    for (const QString& w : zeroRootCaptured)
+      require(!w.contains(QStringLiteral("pixel size"), Qt::CaseInsensitive),
+              QStringLiteral("root fontSize 0 emitted a pixel-size warning: %1").arg(w));
+  }
+
+  // --- 12. a super-long title is NOT clipped to the old fixed 800px drawText rect ---
+  // The painter sizes the title rect to the measured width (+ TextDontClip), so a
+  // title whose natural advance > 800px renders in full (SVG <text> is never
+  // clipped). Scan the painted red title ink span and assert it exceeds 800px.
+  {
+    const QString longTitle = QStringLiteral("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW");  // 80 W's
+    const QString src = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"pieTitleTextColor\": \"red\"}}}%%\n pie title %1\n\"A\" : 50\n\"B\" : 50").arg(longTitle);
+    const pie::PieScene* s = renderPie(cache, src);
+    // Independently confirm the title's natural advance > 800px (else the test
+    // would be meaningless -- a <=800px title is never clipped by the old rect).
+    QFont titleFont(s->style.fontFamily);
+    titleFont.setPixelSize(qRound(s->style.titleFontSize));
+    const qreal advance = qreal(QFontMetrics(titleFont).horizontalAdvance(longTitle));
+    require(advance > 800.0,
+            QStringLiteral("test title advance %1 must exceed 800").arg(advance));
+    require(s->titleWidth > 800.0, "scene.titleWidth = measured advance (>800)");
+    const QImage img = decodePng(editor::MermaidRenderCache::renderMermaidSourceToPng(src, 1.0).dataUrl);
+    int minX = img.width(), maxX = -1;
+    for (int y = 0; y < img.height(); ++y)
+      for (int x = 0; x < img.width(); ++x) {
+        const QColor c = img.pixelColor(x, y);
+        if (c.red() > 200 && c.green() < 50 && c.blue() < 50) {
+          minX = std::min(minX, x);
+          maxX = std::max(maxX, x);
+        }
+      }
+    require(maxX > minX, "red title ink found");
+    require(maxX - minX > 800,
+            QStringLiteral("title ink span %1 > 800 (not clipped to the fixed rect)").arg(maxX - minX));
+  }
+
+  qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint, units, title-clip)";
   return 0;
 }

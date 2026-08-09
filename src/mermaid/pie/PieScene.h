@@ -133,6 +133,10 @@ struct PieScene : MermaidScene {
   // Longest legend text advance (font-coupled), measured by the adapter so the
   // painter can place legends identically and the bounds/canvas agree.
   qreal longestLegendWidth = 0.0;
+  // Title text advance (font-coupled), measured by the adapter for the
+  // title-driven viewBox expansion AND reused by the painter to size the title's
+  // drawText rect (so a super-long title is not clipped to a fixed width).
+  qreal titleWidth = 0.0;
   PieSceneStyle style;
 };
 

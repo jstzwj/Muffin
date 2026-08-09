@@ -195,12 +195,20 @@ qreal pixelValue(const QString& value, qreal fallback) {
 }
 
 CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx) {
-  const qreal em = emPx > 0.0 ? emPx : 16.0;
+  // A valid zero (or sub-px) root font-size is PRESERVED -- upstream honors
+  // fontSize:"0px": em/%/inherited sizes collapse to 0 (probed: root "0px" +
+  // title 200%/3em/invalid/bare -> 0px, pieStrokeWidth "3em" -> 0px). Do NOT
+  // coerce 0 -> 16; the caller resolves the inherited root, which is 16 only
+  // when absent/invalid (cssFontSizePx already falls back to the parent). Skip
+  // the QFont when the rounded pixel size is <= 0: setPixelSize(0) warns and
+  // keeps the default, so a 0 root sets ex/ch = 0 (their natural value there).
+  const int px = qRound(emPx);
+  if (px <= 0) return {emPx, 16.0, 0.0, 0.0, QSizeF(800.0, 600.0)};
   QFont f(fontFamily);
-  f.setPixelSize(qRound(em));
+  f.setPixelSize(px);
   const QFontMetricsF m(f);
   // viewport = mmdc default raster profile (RequirementScene.cpp:46).
-  return {em, 16.0, m.xHeight(), m.horizontalAdvance(QChar('0')), QSizeF(800.0, 600.0)};
+  return {emPx, 16.0, m.xHeight(), m.horizontalAdvance(QChar('0')), QSizeF(800.0, 600.0)};
 }
 
 qreal cssStrokeWidthPx(const QString& value, const CssLengthContext& ctx, qreal diagonalPx) {

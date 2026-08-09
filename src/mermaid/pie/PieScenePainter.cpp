@@ -161,8 +161,13 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
       painter.setFont(titleFont);
       painter.setPen(titlePaint.color);
       const qreal ty = -(scene.height - 50.0) / 2.0;
-      painter.drawText(QRectF(-400.0, ty - 30.0, 800.0, 60.0),
-                       Qt::AlignCenter, scene.title);
+      // Size the rect to the measured title width (scene.titleWidth, set by the
+      // adapter) so a super-long title is NOT clipped to the old fixed 800px --
+      // an SVG <text> is never clipped. TextDontClip is a safety net for any
+      // sub-pixel drift between QFontMetrics advance and drawText's own metrics.
+      const qreal tw = scene.titleWidth;
+      painter.drawText(QRectF(-tw / 2.0 - 2.0, ty - 30.0, tw + 4.0, 60.0),
+                       Qt::AlignCenter | Qt::TextDontClip, scene.title);
     }
   }
 

@@ -69,6 +69,27 @@ try {
       em: await titleFs(`%%{init: {"theme":"neo","themeVariables": {"pieTitleTextSize": "3em"}}}%%`),
       valid: await titleFs(`%%{init: {"theme":"neo","themeVariables": {"pieTitleTextSize": "25px"}}}%%`),
     };
+    // root font-size 0px is a VALID zero (not coerced to 16): em/%/inherited sizes
+    // collapse to 0; a valid px size stays itself. Also check pieStrokeWidth 3em.
+    const scalar = async (initBlock, sel, prop) => {
+      const src = `${initBlock}\n pie title T\n"A" : 50\n"B" : 50`;
+      mermaid.initialize({ startOnLoad: false, securityLevel: "loose", look: "classic" });
+      const { svg } = await mermaid.render("p", src);
+      const c = mount(svg);
+      const el = c.querySelector(sel);
+      const v = el ? getComputedStyle(el)[prop] : null;
+      document.body.removeChild(c);
+      return v;
+    };
+    r.root0 = {
+      title200: await titleFs(`%%{init: {"themeVariables": {"fontSize": "0px", "pieTitleTextSize": "200%"}}}%%`),
+      title3em: await titleFs(`%%{init: {"themeVariables": {"fontSize": "0px", "pieTitleTextSize": "3em"}}}%%`),
+      titleInvalid: await titleFs(`%%{init: {"themeVariables": {"fontSize": "0px", "pieTitleTextSize": "abc"}}}%%`),
+      titleBare: await titleFs(`%%{init: {"themeVariables": {"fontSize": "0px", "pieTitleTextSize": "25"}}}%%`),
+      titleValid: await titleFs(`%%{init: {"themeVariables": {"fontSize": "0px", "pieTitleTextSize": "25px"}}}%%`),
+      svgFontSize: (await titleFs(`%%{init: {"themeVariables": {"fontSize": "0px"}}}%%`)).svgFontSize,
+      stroke3em: await scalar(`%%{init: {"themeVariables": {"fontSize": "0px", "pieStrokeWidth": "3em"}}}%%`, "path.pieCircle", "stroke-width"),
+    };
     return r;
   }, { mod });
   console.log(JSON.stringify(out, null, 2));
