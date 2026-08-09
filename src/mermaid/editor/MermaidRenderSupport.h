@@ -8,6 +8,7 @@
 
 #include "mermaid/MermaidRenderMetadata.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "theme/CssCalc.h"
 
 #include <QFont>
 #include <QHash>
@@ -42,25 +43,33 @@ std::optional<int> jsThemeColorLimit(const QJsonObject& config);
 
 qreal pixelValue(const QString& value, qreal fallback);
 
-// CSS <length> -> px for SVG paint properties (pie stroke widths). Delegates to
-// the shared resolveCssLengthToPx (full unit space: px/pt/pc/in/cm/mm/q/em/rem/
-// ex/ch/vw/vh/vmin/vmax + scientific), then applies stroke-width's own policy:
-// a valid length (incl. 0) is returned; a negative length or a missing/invalid
-// value yields the CSS initial (1). Probed vs mermaid 11.16.0
-// (scripts/probe_mermaid_pie_scalars.mjs): "2px"->2, "1.7"->1.7, "0"->0,
-// "3em"->48, "abc"->1, "-2px"->1. A 0 result means the caller paints NoPen.
-qreal cssStrokeWidthPx(const QString& value);
+// A CssLengthContext for the Pie family, mirroring requirement's layerCtx
+// (RequirementTextStyle.cpp:107): emPx = inherited SVG root font-size, remPx =
+// 16 (browser default <html> root), exPx/chPx from the actual Pie font's
+// QFontMetricsF, viewport = mmdc's default 800x600 raster profile (vw/vh/vmin/
+// vmax). NOT the neutral CssLengthContext{} placeholder.
+CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx);
+
+// CSS <length> -> px for SVG stroke-width. Delegates to resolveCssLengthToPx
+// (full unit space) against `ctx`; a percentage resolves to N/100 of the SVG
+// normalized diagonal `diagonalPx` (sqrt(w^2+h^2)/sqrt(2) of the SVG viewport --
+// probed, deferred to paint, so the caller passes the scene bounds diagonal).
+// A valid length (incl. 0) is returned; a negative or missing/invalid value
+// yields the CSS initial (1). Probed: "2px"->2, "1.7"->1.7, "0"->0, "3em"->48,
+// "10vw"->80, "abc"->1. A 0 result means the caller paints NoPen.
+qreal cssStrokeWidthPx(const QString& value, const CssLengthContext& ctx, qreal diagonalPx);
 
 // CSS opacity: a number or percentage, clamped to [0,1]; missing/invalid/
 // non-finite -> CSS initial (1). Probed: "0.7"->0.7, "50%"->0.5, "150%"->1,
 // "0"->0, "-0.5"->0, "abc"->1.
 qreal cssOpacity(const QString& value);
 
-// CSS font-size -> px. Unlike stroke-width, a BARE number is invalid for
-// font-size (it resolves to the INHERITED 16px default); em/rem scale by 16, pt
-// by 4/3, a negative length is invalid -> inherited. Probed: "25px"->25,
-// "25"->16, "0px"->0, "3em"->48, "abc"->16.
-qreal cssFontSizePx(const QString& value);
+// CSS font-size -> px against `ctx`. A percentage resolves to N/100 of the
+// parent font-size (ctx.emPx). A BARE number (full CSS <number>, incl.
+// exponent: "1e2") is invalid for font-size -> inherited 16; em/rem scale by
+// emPx; a negative length is invalid -> inherited. Probed: "25px"->25,
+// "25"->16, "1e2"->16, "1e2px"->100, "0px"->0, "3em"->48, "200%"->32, "10vw"->80.
+qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx);
 
 // Replicates upstream parseFontSize()[0] ?? 2 (pieDiagram-ENE6RG2P.mjs:157):
 // parseInt(value, 10) of the LEADING integer (truncates decimals, ignores any

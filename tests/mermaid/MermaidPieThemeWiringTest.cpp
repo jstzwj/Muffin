@@ -77,21 +77,30 @@ int main(int argc, char** argv) {
   (void)argv;
 
   // --- numeric helpers match the probed browser CSS semantics ---
-  // (scripts/probe_mermaid_pie_scalars.mjs). No theme-default fallback: invalid
-  // values resolve to the CSS initial / inherited value, exactly as the browser.
-  // cssStrokeWidthPx: px or unitless == px, em/rem x16, pt x4/3; 0 accepted;
-  //   missing/invalid/negative -> CSS initial 1.
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("2px")), 2.0), "sw 2px");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("2")), 2.0), "sw unitless 2");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("0px")), 0.0), "sw 0px (zero)");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("0")), 0.0), "sw 0 (zero)");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("1.7")), 1.7), "sw unitless 1.7");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("3em")), 48.0), "sw 3em -> 48 (x16)");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("1.5pt")), 2.0), "sw 1.5pt -> 2 (x96/72)");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("1e1px")), 10.0), "sw scientific 1e1px -> 10");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("abc")), 1.0), "sw invalid -> CSS initial 1");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("")), 1.0), "sw empty -> 1");
-  require(approx(editor::cssStrokeWidthPx(QStringLiteral("-2px")), 1.0), "sw negative -> 1");
+  // (scripts/probe_mermaid_pie_scalars.mjs + probe_mermaid_css_units.mjs). A REAL
+  // CssLengthContext (800x600 viewport + pie-font ex/ch), not the placeholder.
+  const muffin::CssLengthContext ctx = editor::pieCssLengthContext(QStringLiteral("Noto Sans"), 16.0);
+  const qreal diag = 500.0;  // test SVG diagonal for stroke-width %
+  // cssStrokeWidthPx: px/unitless==px, em x16, pt x4/3, vw/vh of 800x600, ex/ch
+  //   font-relative, % of the diagonal; 0 ok; missing/invalid/negative -> 1.
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("2px"), ctx, diag), 2.0), "sw 2px");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("2"), ctx, diag), 2.0), "sw unitless 2");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("0px"), ctx, diag), 0.0), "sw 0px (zero)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("0"), ctx, diag), 0.0), "sw 0 (zero)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("1.7"), ctx, diag), 1.7), "sw unitless 1.7");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("3em"), ctx, diag), 48.0), "sw 3em -> 48 (x16)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("1.5pt"), ctx, diag), 2.0), "sw 1.5pt -> 2 (x96/72)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("1e1px"), ctx, diag), 10.0), "sw 1e1px -> 10");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("10vw"), ctx, diag), 80.0), "sw 10vw -> 80 (800 viewport)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("10vh"), ctx, diag), 60.0), "sw 10vh -> 60 (600 viewport)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("10vmin"), ctx, diag), 60.0), "sw 10vmin -> 60");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("10vmax"), ctx, diag), 80.0), "sw 10vmax -> 80");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("10ex"), ctx, diag), 10.0 * ctx.exPx), "sw 10ex -> 10*xHeight");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("10ch"), ctx, diag), 10.0 * ctx.chPx), "sw 10ch -> 10*advance('0')");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("50%"), ctx, diag), 250.0), "sw 50% -> 250 (x diagonal)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("abc"), ctx, diag), 1.0), "sw invalid -> 1");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral(""), ctx, diag), 1.0), "sw empty -> 1");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("-2px"), ctx, diag), 1.0), "sw negative -> 1");
   // cssOpacity: a number OR percentage, clamped [0,1]; invalid/non-finite -> 1.
   require(approx(editor::cssOpacity(QStringLiteral("0.7")), 0.7), "opacity 0.7");
   require(approx(editor::cssOpacity(QStringLiteral("0")), 0.0), "opacity 0");
@@ -101,21 +110,31 @@ int main(int argc, char** argv) {
   require(approx(editor::cssOpacity(QStringLiteral("150%")), 1.0), "opacity 150% -> 1 clamp");
   require(approx(editor::cssOpacity(QStringLiteral("abc")), 1.0), "opacity invalid -> 1");
   require(approx(editor::cssOpacity(QStringLiteral("")), 1.0), "opacity empty -> 1");
-  // cssFontSizePx: a UNIT is required (unitless is invalid -> inherited 16);
-  //   em/rem x16; negative -> inherited; invalid/empty -> 16.
-  require(approx(editor::cssFontSizePx(QStringLiteral("25px")), 25.0), "fs 25px");
-  require(approx(editor::cssFontSizePx(QStringLiteral("25")), 16.0), "fs unitless 25 -> inherited 16");
-  require(approx(editor::cssFontSizePx(QStringLiteral("0px")), 0.0), "fs 0px (zero)");
-  require(approx(editor::cssFontSizePx(QStringLiteral("3em")), 48.0), "fs 3em -> 48");
-  require(approx(editor::cssFontSizePx(QStringLiteral("abc")), 16.0), "fs invalid -> inherited 16");
-  require(approx(editor::cssFontSizePx(QStringLiteral("")), 16.0), "fs empty -> 16");
+  // cssFontSizePx: a UNIT is required (a bare number incl. exponent like "1e2" is
+  //   invalid -> inherited 16); em x16; % of parent (emPx); vw of 800; ex/ch
+  //   font-relative; negative/invalid/empty -> 16.
+  require(approx(editor::cssFontSizePx(QStringLiteral("25px"), ctx), 25.0), "fs 25px");
+  require(approx(editor::cssFontSizePx(QStringLiteral("25"), ctx), 16.0), "fs unitless 25 -> 16");
+  require(approx(editor::cssFontSizePx(QStringLiteral("1e2"), ctx), 16.0), "fs bare 1e2 -> 16 (invalid font-size)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("1e2px"), ctx), 100.0), "fs 1e2px -> 100");
+  require(approx(editor::cssFontSizePx(QStringLiteral("0px"), ctx), 0.0), "fs 0px (zero)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("3em"), ctx), 48.0), "fs 3em -> 48");
+  require(approx(editor::cssFontSizePx(QStringLiteral("200%"), ctx), 32.0), "fs 200% -> 32 (x parent 16)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("50%"), ctx), 8.0), "fs 50% -> 8");
+  require(approx(editor::cssFontSizePx(QStringLiteral("10vw"), ctx), 80.0), "fs 10vw -> 80");
+  require(approx(editor::cssFontSizePx(QStringLiteral("10ex"), ctx), 10.0 * ctx.exPx), "fs 10ex -> 10*xHeight");
+  require(approx(editor::cssFontSizePx(QStringLiteral("abc"), ctx), 16.0), "fs invalid -> 16");
+  require(approx(editor::cssFontSizePx(QStringLiteral(""), ctx), 16.0), "fs empty -> 16");
   // parseFontSizeNumber: upstream parseInt (leading int, truncates decimals,
-  //   ignores unit); no leading int -> default 2. Drives the outer-ring radius.
+  //   ignores unit); no leading int -> default 2. toLongLong (not toInt) so
+  //   values > INT_MAX parse like JS parseInt. Drives the outer-ring radius.
   require(approx(editor::parseFontSizeNumber(QStringLiteral("2px")), 2.0), "fsn 2px");
   require(approx(editor::parseFontSizeNumber(QStringLiteral("3em")), 3.0), "fsn 3em -> 3");
   require(approx(editor::parseFontSizeNumber(QStringLiteral("1.7")), 1.0), "fsn 1.7 -> 1 (trunc)");
   require(approx(editor::parseFontSizeNumber(QStringLiteral("abc")), 2.0), "fsn abc -> default 2");
   require(approx(editor::parseFontSizeNumber(QStringLiteral("0")), 0.0), "fsn 0");
+  require(approx(editor::parseFontSizeNumber(QStringLiteral("3000000000px")), 3000000000.0),
+          "fsn 3000000000px -> 3e9 (no INT_MAX cap)");
   // parseFontSizeNumber JSON-type branch: upstream returns a NUMBER verbatim but
   // parseInt-truncates a STRING. Probed: number 1.7 -> r 185.85; "1.7" -> r 185.5.
   require(approx(editor::parseFontSizeNumber(QJsonValue(1.7), QStringLiteral("2px")), 1.7),
@@ -307,6 +326,31 @@ int main(int argc, char** argv) {
     require(ringPx(QStringLiteral("\"garbage\"")) < 50, "invalid outer stroke -> no stroke (SVG initial none)");
   }
 
-  qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint)";
+  // --- 10. source-entry CSS units reach the scene (production path) ---
+  // ex/ch/vw/vh/% and the bare-exponent font-size, through MermaidRenderCache.
+  {
+    const auto titleFs = [&](const QString& jsonSize) {
+      const QString src = QStringLiteral(
+          "%%{init: {\"themeVariables\": {\"pieTitleTextSize\": %1}}}%%\n pie title T\n\"A\" : 50\n\"B\" : 50").arg(jsonSize);
+      return renderPie(cache, src)->style.titleFontSize;
+    };
+    require(approx(titleFs(QStringLiteral("\"10vw\"")), 80.0), "prod pieTitleTextSize 10vw -> 80");
+    require(approx(titleFs(QStringLiteral("\"10vh\"")), 60.0), "prod pieTitleTextSize 10vh -> 60");
+    require(approx(titleFs(QStringLiteral("\"200%\"")), 32.0), "prod pieTitleTextSize 200% -> 32");
+    require(approx(titleFs(QStringLiteral("\"1e2\"")), 16.0), "prod pieTitleTextSize bare 1e2 -> 16 (invalid)");
+    require(approx(titleFs(QStringLiteral("\"1e2px\"")), 100.0), "prod pieTitleTextSize 1e2px -> 100");
+    require(titleFs(QStringLiteral("\"10ex\"")) > 50.0, "prod pieTitleTextSize 10ex -> font-relative (>50)");
+    // stroke-width % uses the scene-bounds normalized diagonal.
+    const QString sw = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"pieStrokeWidth\": \"10%\"}}}%%\n pie title T\n\"A\" : 50\n\"B\" : 50");
+    const pie::PieScene* s = renderPie(cache, sw);
+    const qreal diag = std::sqrt(s->bounds.width() * s->bounds.width() +
+                                 s->bounds.height() * s->bounds.height()) /
+                       std::sqrt(2.0);
+    require(approx(s->style.sliceStrokeWidth, 0.10 * diag),
+            "prod pieStrokeWidth 10% -> 0.1 x SVG diagonal");
+  }
+
+  qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint, units)";
   return 0;
 }

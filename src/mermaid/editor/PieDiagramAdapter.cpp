@@ -16,6 +16,7 @@
 #include <QStringList>
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 
 namespace muffin::mermaid::editor {
@@ -53,23 +54,27 @@ struct PieDiagramImpl : Diagram {
     for (int i = 0; i < 12; ++i) style.palette.append(themeVars.pie[i]);
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
     style.inheritedColor = themeVars.textColor;
+    // CSS length context for the pie scalars: real viewport (800x600) + the pie
+    // font's ex/ch + inherited em (themeVariables.fontSize, default 16).
+    const CssLengthContext lengthCtx =
+        pieCssLengthContext(style.fontFamily, pixelValue(themeVars.fontSize, 16.0));
     style.outerStrokeColor = themeVars.pieOuterStrokeColor;
-    // Paint width is CSS-resolved; the outer-ring RADIUS uses parseFontSize's
-    // numeric prefix (upstream pieDiagram:157). parseFontSize branches on the
-    // JSON type (number verbatim vs string parseInt), so read the RAW override.
-    style.outerStrokeWidth = cssStrokeWidthPx(themeVars.pieOuterStrokeWidth);
+    style.sliceStrokeColor = themeVars.pieStrokeColor;
+    // The outer-ring RADIUS uses parseFontSize's numeric prefix (upstream
+    // pieDiagram:157). parseFontSize branches on the JSON type (number verbatim
+    // vs string parseInt), so read the RAW override.
     const QJsonValue rawOsw =
         pre.config.value(QStringLiteral("themeVariables")).toObject().value(QStringLiteral("pieOuterStrokeWidth"));
     style.outerStrokeWidthGeom = parseFontSizeNumber(rawOsw, themeVars.pieOuterStrokeWidth);
-    style.sliceStrokeColor = themeVars.pieStrokeColor;
-    style.sliceStrokeWidth = cssStrokeWidthPx(themeVars.pieStrokeWidth);
     style.pieOpacity = cssOpacity(themeVars.pieOpacity);
     if (!themeVars.pieTitleTextColor.isEmpty()) style.titleColor = themeVars.pieTitleTextColor;
     if (!themeVars.pieSectionTextColor.isEmpty()) style.sectionTextColor = themeVars.pieSectionTextColor;
     if (!themeVars.pieLegendTextColor.isEmpty()) style.legendTextColor = themeVars.pieLegendTextColor;
-    style.titleFontSize = cssFontSizePx(themeVars.pieTitleTextSize);
-    style.sectionFontSize = cssFontSizePx(themeVars.pieSectionTextSize);
-    style.legendFontSize = cssFontSizePx(themeVars.pieLegendTextSize);
+    style.titleFontSize = cssFontSizePx(themeVars.pieTitleTextSize, lengthCtx);
+    style.sectionFontSize = cssFontSizePx(themeVars.pieSectionTextSize, lengthCtx);
+    style.legendFontSize = cssFontSizePx(themeVars.pieLegendTextSize, lengthCtx);
+    // slice/outerStrokeWidth (paint) are resolved AFTER the canvas bounds are
+    // known -- stroke-width % is relative to the SVG normalized diagonal.
 
     pie::PieScene scene = pie::buildPieScene(data, config, std::move(style));
     // Frontmatter title (`---\ntitle: X\n---`) is the diagram title when there is
@@ -107,6 +112,17 @@ struct PieDiagramImpl : Diagram {
                                          : scene.height;
     (void)legendCenter;
     scene.bounds = QRectF(0.0, 0.0, scene.totalWidth, scene.totalHeight);
+
+    // Resolve the stroke-width PAINT values now that the SVG viewport (bounds)
+    // is known: stroke-width % is relative to the normalized diagonal
+    // sqrt(w^2+h^2)/sqrt(2) of the SVG viewport (probed; deferred to paint, so
+    // getComputedStyle leaves it as "%"). Non-% values ignore the diagonal.
+    const qreal diagonal =
+        std::sqrt(scene.bounds.width() * scene.bounds.width() +
+                  scene.bounds.height() * scene.bounds.height()) /
+        std::sqrt(2.0);
+    scene.style.sliceStrokeWidth = cssStrokeWidthPx(themeVars.pieStrokeWidth, lengthCtx, diagonal);
+    scene.style.outerStrokeWidth = cssStrokeWidthPx(themeVars.pieOuterStrokeWidth, lengthCtx, diagonal);
 
     // The pie title is part of the chart (mermaid draws pieTitleText INSIDE the
     // viewBox at y=25, not above it). Pass an empty diagramTitle so the image

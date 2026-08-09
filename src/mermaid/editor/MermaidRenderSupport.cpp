@@ -7,6 +7,7 @@
 
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QFontMetricsF>
 #include <QRegularExpression>
 
 #include <algorithm>
@@ -193,8 +194,27 @@ qreal pixelValue(const QString& value, qreal fallback) {
   return ok && parsed > 0.0 ? parsed : fallback;
 }
 
-qreal cssStrokeWidthPx(const QString& value) {
-  const CssLengthResult r = resolveCssLengthToPx(value, CssLengthContext{});
+CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx) {
+  const qreal em = emPx > 0.0 ? emPx : 16.0;
+  QFont f(fontFamily);
+  f.setPixelSize(qRound(em));
+  const QFontMetricsF m(f);
+  // viewport = mmdc default raster profile (RequirementScene.cpp:46).
+  return {em, 16.0, m.xHeight(), m.horizontalAdvance(QChar('0')), QSizeF(800.0, 600.0)};
+}
+
+qreal cssStrokeWidthPx(const QString& value, const CssLengthContext& ctx, qreal diagonalPx) {
+  const QString t = value.trimmed();
+  // stroke-width % -> N/100 of the SVG normalized diagonal (probed; resolved at
+  // paint, so getComputedStyle leaves it as "%").
+  if (t.endsWith(QLatin1Char('%'))) {
+    bool ok = false;
+    const qreal n = t.left(t.size() - 1).toDouble(&ok);
+    if (!ok || !std::isfinite(n)) return 1.0;
+    const qreal px = n / 100.0 * diagonalPx;
+    return px < 0.0 ? 1.0 : px;
+  }
+  const CssLengthResult r = resolveCssLengthToPx(value, ctx);
   if (r.status != CssLengthStatus::Valid) return 1.0;  // missing/invalid -> CSS initial
   if (r.px < 0.0) return 1.0;                           // negative -> CSS initial
   return r.px;                                          // 0 or positive (0 -> caller NoPen)
@@ -210,25 +230,36 @@ qreal cssOpacity(const QString& value) {
   return std::clamp(percent ? n / 100.0 : n, 0.0, 1.0);
 }
 
-qreal cssFontSizePx(const QString& value) {
-  // font-size REQUIRES a unit: a bare number is invalid -> inherited 16px.
-  // (resolveCssLengthToPx accepts bare numbers as px, correct for stroke-width.)
+qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx) {
+  const QString t = value.trimmed();
+  // font-size % -> N/100 of the parent font-size (ctx.emPx).
+  if (t.endsWith(QLatin1Char('%'))) {
+    bool ok = false;
+    const qreal n = t.left(t.size() - 1).toDouble(&ok);
+    if (!ok || !std::isfinite(n)) return 16.0;
+    const qreal px = n / 100.0 * ctx.emPx;
+    return px < 0.0 ? 16.0 : px;
+  }
+  // font-size REQUIRES a unit: a bare number is invalid -> inherited 16px. Full
+  // CSS <number> incl. exponent so "1e2" is bare (browser: invalid font-size),
+  // while "1e2px" carries a unit and resolves to 100.
   static const QRegularExpression bareNumber(
-      QStringLiteral(R"(^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)\s*$)"));
+      QStringLiteral(R"(^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\s*$)"));
   if (bareNumber.match(value).hasMatch()) return 16.0;
-  const CssLengthResult r = resolveCssLengthToPx(value, CssLengthContext{});
+  const CssLengthResult r = resolveCssLengthToPx(value, ctx);
   if (r.status != CssLengthStatus::Valid || r.px < 0.0) return 16.0;  // inherited
   return r.px;
 }
 
 qreal parseFontSizeNumber(const QString& value) {
   // Upstream parseInt(value, 10): the leading signed integer (decimals truncated,
-  // any trailing unit ignored); no leading integer -> default 2.
+  // any trailing unit ignored); no leading integer -> default 2. toLongLong (not
+  // toInt) so values > INT_MAX parse like JS parseInt instead of falling back.
   static const QRegularExpression re(QStringLiteral(R"(^\s*([+-]?\d+))"));
   const auto m = re.match(value);
   if (!m.hasMatch()) return 2.0;
   bool ok = false;
-  const int n = m.captured(1).toInt(&ok);
+  const qint64 n = m.captured(1).toLongLong(&ok);
   return ok ? qreal(n) : 2.0;
 }
 
