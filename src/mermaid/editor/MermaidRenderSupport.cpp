@@ -192,24 +192,55 @@ qreal pixelValue(const QString& value, qreal fallback) {
   return ok && parsed > 0.0 ? parsed : fallback;
 }
 
-qreal parseCssPx(const QString& value, qreal fallback) {
-  // A bare number OR an "Npx" value (browser CSS length: unitless == px). The
-  // px suffix is optional and case-insensitive; 0 is accepted (>= 0 gate).
-  static const QRegularExpression number(
-      QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))(?:px)?\s*$)"),
+qreal cssStrokeWidthPx(const QString& value) {
+  // px or a bare number -> the number; em/rem -> x16; pt -> x4/3. CSS stroke-width
+  // treats a unitless length as px. Missing/invalid/negative -> CSS initial (1).
+  static const QRegularExpression re(
+      QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(px|em|rem|pt)?\s*$)"),
       QRegularExpression::CaseInsensitiveOption);
-  const auto match = number.match(value);
-  if (!match.hasMatch()) return fallback;
+  const auto m = re.match(value);
+  if (!m.hasMatch()) return 1.0;
   bool ok = false;
-  const qreal parsed = match.captured(1).toDouble(&ok);
-  return ok && parsed >= 0.0 ? parsed : fallback;
+  const double n = m.captured(1).toDouble(&ok);
+  if (!ok || n < 0.0) return 1.0;
+  const QString unit = m.captured(2).toLower();
+  if (unit == QLatin1String("em") || unit == QLatin1String("rem")) return n * 16.0;
+  if (unit == QLatin1String("pt")) return n * 4.0 / 3.0;
+  return n;  // px or unitless
 }
 
-qreal opacityValue(const QString& value, qreal fallback) {
+qreal cssOpacity(const QString& value) {
   bool ok = false;
-  const qreal parsed = value.trimmed().toDouble(&ok);
-  if (!ok) return fallback;
-  return std::clamp(parsed, 0.0, 1.0);
+  const double n = value.trimmed().toDouble(&ok);
+  if (!ok || !std::isfinite(n)) return 1.0;  // CSS initial
+  return std::clamp(n, 0.0, 1.0);
+}
+
+qreal cssFontSizePx(const QString& value) {
+  // font-size REQUIRES a unit (a bare number is invalid -> inherited 16px).
+  static const QRegularExpression re(
+      QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(px|em|rem|pt)\s*$)"),
+      QRegularExpression::CaseInsensitiveOption);
+  const auto m = re.match(value);
+  if (!m.hasMatch()) return 16.0;  // inherited browser default
+  bool ok = false;
+  const double n = m.captured(1).toDouble(&ok);
+  if (!ok || n < 0.0) return 16.0;  // negative font-size is invalid -> inherited
+  const QString unit = m.captured(2).toLower();
+  if (unit == QLatin1String("em") || unit == QLatin1String("rem")) return n * 16.0;
+  if (unit == QLatin1String("pt")) return n * 4.0 / 3.0;
+  return n;  // px
+}
+
+qreal parseFontSizeNumber(const QString& value) {
+  // Upstream parseInt(value, 10): the leading signed integer (decimals truncated,
+  // any trailing unit ignored); no leading integer -> default 2.
+  static const QRegularExpression re(QStringLiteral(R"(^\s*([+-]?\d+))"));
+  const auto m = re.match(value);
+  if (!m.hasMatch()) return 2.0;
+  bool ok = false;
+  const int n = m.captured(1).toInt(&ok);
+  return ok ? qreal(n) : 2.0;
 }
 
 QString firstFontFamily(QString cssFamily) {

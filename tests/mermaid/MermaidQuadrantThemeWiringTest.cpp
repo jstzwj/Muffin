@@ -13,6 +13,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/quadrant/QuadrantScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidColor.h"
 
 #include <QGuiApplication>
 #include <QImage>
@@ -39,6 +40,19 @@ QImage decodePng(const QString& dataUrl) {
   QImage img;
   img.loadFromData(QByteArray::fromBase64(dataUrl.mid(comma + 1).toLatin1()), "PNG");
   return img;
+}
+
+// Count pixels within `tol` per channel of `target` (a precise color-match scan).
+int countNear(const QImage& img, const QColor& target, int tol) {
+  int count = 0;
+  for (int y = 0; y < img.height(); ++y)
+    for (int x = 0; x < img.width(); ++x) {
+      const QColor c = img.pixelColor(x, y);
+      if (std::abs(c.red() - target.red()) <= tol && std::abs(c.green() - target.green()) <= tol &&
+          std::abs(c.blue() - target.blue()) <= tol)
+        ++count;
+    }
+  return count;
 }
 
 const quadrant::QuadrantScene* renderQuad(editor::MermaidRenderCache& cache, const QString& source) {
@@ -139,6 +153,59 @@ int main(int argc, char** argv) {
             QStringLiteral("quadrant1Fill=#ff0000 must paint red pixels (got %1)").arg(redPixels));
   }
 
-  qDebug().noquote() << "MermaidQuadrantThemeWiringTest: quadrant adapter consumes resolved theme (+overrides, RGBA)";
+  // --- 5. default-theme HSL borders actually PAINT as the hsl color (not black) ---
+  // The default internal/external borders are hsl() strings (e.g.
+  // flowchart-theme.json:749). QColor(QString) cannot parse hsl, so before the
+  // color::toQColor wiring they painted black. Sample the top external border's
+  // midpoint pixel (borders[0] is the horizontal top edge at y=quadrantTop) and
+  // scan for the border color -- both must match the resolved hsl, not black.
+  {
+    const flowtheme::FlowThemeVariables model =
+        flowtheme::resolveFlowTheme(flowtheme::FlowThemeId::Default);
+    const quadrant::QuadrantScene* s = renderQuad(cache, kSrc);
+    const editor::MermaidPngRenderResult result =
+        editor::MermaidRenderCache::renderMermaidSourceToPng(kSrc, 1.0);
+    const QImage img = decodePng(result.dataUrl);
+    require(!img.isNull(), "default border case must render a PNG");
+    const QColor expected = muffin::mermaid::color::toQColor(model.quadrantExternalBorderStrokeFill);
+    require(expected != Qt::black, "default external border color is a real hsl, not black");
+    // Exact pixel at the top-border midpoint (a 2px line; its center is solid).
+    require(!s->borders.isEmpty(), "default quadrant has borders");
+    const auto& top = s->borders.first();
+    const int bx = static_cast<int>(std::round((top.x1 + top.x2) / 2.0));
+    const int by = static_cast<int>(std::round(top.y1));
+    const QColor sampled = img.pixelColor(bx, by);
+    require(std::abs(sampled.red() - expected.red()) <= 16 &&
+                std::abs(sampled.green() - expected.green()) <= 16 &&
+                std::abs(sampled.blue() - expected.blue()) <= 16,
+            QStringLiteral("default top border pixel (%1,%2) = rgb(%3,%4,%5), expected hsl-resolved rgb(%6,%7,%8)")
+                .arg(bx).arg(by)
+                .arg(sampled.red()).arg(sampled.green()).arg(sampled.blue())
+                .arg(expected.red()).arg(expected.green()).arg(expected.blue()));
+    // And the full 2px frame must paint the hsl color (not black): the 4 external
+    // borders are ~thousands of px, so >800 within tol proves the hsl painted.
+    const int borderPixels = countNear(img, expected, 12);
+    require(borderPixels > 800,
+            QStringLiteral("default HSL borders must paint (got %1 matching px)").arg(borderPixels));
+  }
+
+  // --- 6. a functional-color (hsl) source override reaches the painted borders ---
+  // Overrides quadrantExternalBorderStrokeFill with an hsl() value; before the
+  // color::toQColor wiring this hsl could not parse, so no magenta would paint.
+  {
+    const QString src = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"quadrantExternalBorderStrokeFill\": \"hsl(300, 100%, 50%)\"}}}%%\n") + kSrc;
+    const editor::MermaidPngRenderResult result =
+        editor::MermaidRenderCache::renderMermaidSourceToPng(src, 1.0);
+    const QImage img = decodePng(result.dataUrl);
+    require(!img.isNull(), "hsl border override case must render a PNG");
+    const QColor magenta = QColor::fromHslF(300.0f / 360.0f, 1.0f, 0.5f);
+    const int magentaPixels = countNear(img, magenta, 25);
+    // The 4 external borders (2px frame, ~thousands of px) paint magenta.
+    require(magentaPixels > 800,
+            QStringLiteral("hsl(300,100%,50%) external-border override must paint (got %1 px)").arg(magentaPixels));
+  }
+
+  qDebug().noquote() << "MermaidQuadrantThemeWiringTest: quadrant adapter consumes resolved theme (+overrides, RGBA, HSL borders)";
   return 0;
 }

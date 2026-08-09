@@ -42,23 +42,32 @@ std::optional<int> jsThemeColorLimit(const QJsonObject& config);
 
 qreal pixelValue(const QString& value, qreal fallback);
 
-// Browser-faithful CSS length parser for themeVariables that upstream emits as
-// raw CSS and lets the browser resolve (pie stroke widths / text sizes). Unlike
-// pixelValue (which requires a "px" suffix and rejects 0), this mirrors the
-// browser: a bare number or an "Npx" value resolves to N pixels, 0 is accepted
-// (a 0-width stroke paints nothing), and anything else (em/pt/% units, invalid
-// text, empty, negative) falls back. Probed vs mermaid 11.16.0
-// (scripts/probe_mermaid_pie_scalars.mjs): "2px"->2, "2"->2, "0"->0, "0px"->0,
-// "1.7"->1.7; "3em" (browser resolves font-relative) and "abc" (browser CSS
-// initial 1) fall back here -- documented divergences for exotic/garbage input.
-qreal parseCssPx(const QString& value, qreal fallback);
+// CSS <length> -> px for SVG paint properties (pie stroke widths). Replicates
+// the browser: px and a bare number both resolve to the number; em/rem scale by
+// the 16px root font-size; pt by 4/3. A missing/invalid/negative value yields
+// the CSS initial value for stroke-width (1px). Probed vs mermaid 11.16.0
+// (scripts/probe_mermaid_pie_scalars.mjs): "2px"->2, "1.7"->1.7, "0"->0,
+// "3em"->48, "abc"->1, "-2px"->1.
+qreal cssStrokeWidthPx(const QString& value);
 
-// Browser-faithful CSS opacity parser: a unitless number clamped to [0,1].
-// Probed vs mermaid 11.16.0: "0.7"->0.7, "0"->0, "1.7"->1 (clamp), "-0.5"->0
-// (clamp). A non-numeric/empty value falls back (the browser would use the CSS
-// initial 1.0; falling back to the theme default is a documented divergence for
-// garbage input).
-qreal opacityValue(const QString& value, qreal fallback);
+// CSS opacity: a unitless number clamped to [0,1]; a missing/invalid/non-finite
+// value yields the CSS initial (1.0). Probed: "0.7"->0.7, "0"->0, "1.7"->1,
+// "-0.5"->0, "abc"->1.
+qreal cssOpacity(const QString& value);
+
+// CSS font-size -> px. Unlike stroke-width, a bare number is INVALID for
+// font-size, so it (and any other invalid/empty value) resolves to the INHERITED
+// 16px browser default, not the number. em/rem scale by 16px; pt by 4/3; a
+// negative length is invalid -> inherited. Probed: "25px"->25, "25"->16,
+// "0px"->0, "3em"->48, "abc"->16.
+qreal cssFontSizePx(const QString& value);
+
+// Replicates upstream parseFontSize()[0] ?? 2 (pieDiagram-ENE6RG2P.mjs:157):
+// parseInt(value, 10) of the LEADING integer (truncates decimals, ignores any
+// unit), defaulting to 2 when there is no leading integer. Upstream uses this
+// numeric prefix -- NOT the CSS paint width -- for the outer-circle radius
+// (r = radius + n/2), so it must be tracked separately from cssStrokeWidthPx.
+qreal parseFontSizeNumber(const QString& value);
 
 QString firstFontFamily(QString cssFamily);
 qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback);

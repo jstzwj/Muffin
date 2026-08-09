@@ -126,7 +126,9 @@ PieScene buildPieScene(const PieData& data, const PieConfig& config, PieSceneSty
   scene.accDescr = data.accDescr;
 
   scene.radius = std::min(scene.pieWidth, scene.height) / 2.0 - scene.margin;  // 185
-  scene.outerRingRadius = scene.radius + scene.style.outerStrokeWidth / 2.0;   // 186
+  // Outer-circle radius uses the parseFontSize numeric prefix (upstream), NOT the
+  // CSS paint width -- see PieSceneStyle::outerStrokeWidthGeom.
+  scene.outerRingRadius = scene.radius + scene.style.outerStrokeWidthGeom / 2.0;   // 186
   scene.donutInnerRadius = scene.effectiveDonutHole * scene.radius;            // 0 solid
   scene.labelRadius = scene.radius * scene.textPosition;                       // 138.75
 

@@ -37,7 +37,12 @@ struct PieSceneStyle {
   // (chunk-WYO6CB5R.mjs): pieStrokeColor/ pieOuterStrokeColor default "black",
   // widths "2px", pieOpacity "0.7".
   QString outerStrokeColor = QStringLiteral("black");   // pieOuterStrokeColor
-  qreal outerStrokeWidth = 2.0;                          // pieOuterStrokeWidth
+  qreal outerStrokeWidth = 2.0;                          // pieOuterStrokeWidth (paint, CSS)
+  // Upstream computes the outer-circle RADIUS from parseFontSize(pieOuterStrokeWidth)
+  // (the leading-integer prefix), NOT the CSS paint width above (pieDiagram:157).
+  // For "2px" both are 2, but they diverge for non-px/non-integer overrides, so the
+  // geometry width is tracked separately and feeds outerRingRadius below.
+  qreal outerStrokeWidthGeom = 2.0;                      // parseFontSize(pieOuterStrokeWidth)
   QString sliceStrokeColor = QStringLiteral("black");   // pieStrokeColor
   qreal sliceStrokeWidth = 2.0;                          // pieStrokeWidth
   qreal pieOpacity = 0.7;                                // pieOpacity

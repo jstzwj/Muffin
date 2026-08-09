@@ -60,25 +60,42 @@ int main(int argc, char** argv) {
   MermaidFontRegistry::ensureLoaded();
   (void)argv;
 
-  // --- numeric helpers match the probed browser semantics ---
-  // parseCssPx: px or unitless (== px), 0 accepted; em/invalid/empty/negative -> fallback.
-  require(approx(editor::parseCssPx(QStringLiteral("2px"), 9.0), 2.0), "parseCssPx 2px");
-  require(approx(editor::parseCssPx(QStringLiteral("2"), 9.0), 2.0), "parseCssPx unitless 2");
-  require(approx(editor::parseCssPx(QStringLiteral("0px"), 9.0), 0.0), "parseCssPx 0px (zero)");
-  require(approx(editor::parseCssPx(QStringLiteral("0"), 9.0), 0.0), "parseCssPx 0 (zero)");
-  require(approx(editor::parseCssPx(QStringLiteral("1.7"), 9.0), 1.7), "parseCssPx unitless 1.7");
-  require(approx(editor::parseCssPx(QStringLiteral("25px"), 9.0), 25.0), "parseCssPx 25px");
-  require(approx(editor::parseCssPx(QStringLiteral("3em"), 9.0), 9.0), "parseCssPx em -> fallback");
-  require(approx(editor::parseCssPx(QStringLiteral("abc"), 9.0), 9.0), "parseCssPx invalid -> fallback");
-  require(approx(editor::parseCssPx(QStringLiteral(""), 9.0), 9.0), "parseCssPx empty -> fallback");
-  require(approx(editor::parseCssPx(QStringLiteral("-2px"), 9.0), 9.0), "parseCssPx negative -> fallback");
-  // opacityValue: unitless, clamped to [0,1]; invalid/empty -> fallback.
-  require(approx(editor::opacityValue(QStringLiteral("0.7"), 0.5), 0.7), "opacity 0.7");
-  require(approx(editor::opacityValue(QStringLiteral("0"), 0.5), 0.0), "opacity 0");
-  require(approx(editor::opacityValue(QStringLiteral("1.7"), 0.5), 1.0), "opacity 1.7 clamp");
-  require(approx(editor::opacityValue(QStringLiteral("-0.5"), 0.5), 0.0), "opacity -0.5 clamp");
-  require(approx(editor::opacityValue(QStringLiteral("abc"), 0.5), 0.5), "opacity invalid -> fallback");
-  require(approx(editor::opacityValue(QStringLiteral(""), 0.5), 0.5), "opacity empty -> fallback");
+  // --- numeric helpers match the probed browser CSS semantics ---
+  // (scripts/probe_mermaid_pie_scalars.mjs). No theme-default fallback: invalid
+  // values resolve to the CSS initial / inherited value, exactly as the browser.
+  // cssStrokeWidthPx: px or unitless == px, em/rem x16, pt x4/3; 0 accepted;
+  //   missing/invalid/negative -> CSS initial 1.
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("2px")), 2.0), "sw 2px");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("2")), 2.0), "sw unitless 2");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("0px")), 0.0), "sw 0px (zero)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("0")), 0.0), "sw 0 (zero)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("1.7")), 1.7), "sw unitless 1.7");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("3em")), 48.0), "sw 3em -> 48 (x16)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("abc")), 1.0), "sw invalid -> CSS initial 1");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("")), 1.0), "sw empty -> 1");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("-2px")), 1.0), "sw negative -> 1");
+  // cssOpacity: unitless, clamped [0,1]; invalid/non-finite -> CSS initial 1.
+  require(approx(editor::cssOpacity(QStringLiteral("0.7")), 0.7), "opacity 0.7");
+  require(approx(editor::cssOpacity(QStringLiteral("0")), 0.0), "opacity 0");
+  require(approx(editor::cssOpacity(QStringLiteral("1.7")), 1.0), "opacity 1.7 clamp");
+  require(approx(editor::cssOpacity(QStringLiteral("-0.5")), 0.0), "opacity -0.5 clamp");
+  require(approx(editor::cssOpacity(QStringLiteral("abc")), 1.0), "opacity invalid -> 1");
+  require(approx(editor::cssOpacity(QStringLiteral("")), 1.0), "opacity empty -> 1");
+  // cssFontSizePx: a UNIT is required (unitless is invalid -> inherited 16);
+  //   em/rem x16; negative -> inherited; invalid/empty -> 16.
+  require(approx(editor::cssFontSizePx(QStringLiteral("25px")), 25.0), "fs 25px");
+  require(approx(editor::cssFontSizePx(QStringLiteral("25")), 16.0), "fs unitless 25 -> inherited 16");
+  require(approx(editor::cssFontSizePx(QStringLiteral("0px")), 0.0), "fs 0px (zero)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("3em")), 48.0), "fs 3em -> 48");
+  require(approx(editor::cssFontSizePx(QStringLiteral("abc")), 16.0), "fs invalid -> inherited 16");
+  require(approx(editor::cssFontSizePx(QStringLiteral("")), 16.0), "fs empty -> 16");
+  // parseFontSizeNumber: upstream parseInt (leading int, truncates decimals,
+  //   ignores unit); no leading int -> default 2. Drives the outer-ring radius.
+  require(approx(editor::parseFontSizeNumber(QStringLiteral("2px")), 2.0), "fsn 2px");
+  require(approx(editor::parseFontSizeNumber(QStringLiteral("3em")), 3.0), "fsn 3em -> 3");
+  require(approx(editor::parseFontSizeNumber(QStringLiteral("1.7")), 1.0), "fsn 1.7 -> 1 (trunc)");
+  require(approx(editor::parseFontSizeNumber(QStringLiteral("abc")), 2.0), "fsn abc -> default 2");
+  require(approx(editor::parseFontSizeNumber(QStringLiteral("0")), 0.0), "fsn 0");
 
   editor::MermaidRenderCache cache;
 
@@ -99,6 +116,7 @@ int main(int argc, char** argv) {
     require(st.sectionTextColor == model.pieSectionTextColor, "default sectionTextColor wired");
     require(st.legendTextColor == model.pieLegendTextColor, "default legendTextColor wired");
     require(approx(st.outerStrokeWidth, 2.0), "default outerStrokeWidth 2.0");
+    require(approx(st.outerStrokeWidthGeom, 2.0), "default outerStrokeWidthGeom 2.0 (parseFontSize)");
     require(approx(st.sliceStrokeWidth, 2.0), "default sliceStrokeWidth 2.0");
     require(approx(st.pieOpacity, 0.7), "default pieOpacity 0.7");
     require(approx(st.titleFontSize, 25.0), "default titleFontSize 25.0");
@@ -129,7 +147,8 @@ int main(int argc, char** argv) {
     const pie::PieSceneStyle& st = s->style;
     require(st.palette.at(0) == QLatin1String("#abcdef"), "override pie1 reached palette");
     require(approx(st.sliceStrokeWidth, 5.0), "override pieStrokeWidth reached scene");
-    require(approx(st.outerStrokeWidth, 7.0), "override pieOuterStrokeWidth reached scene");
+    require(approx(st.outerStrokeWidth, 7.0), "override pieOuterStrokeWidth (paint) reached scene");
+    require(approx(st.outerStrokeWidthGeom, 7.0), "override pieOuterStrokeWidthGeom (parseFontSize) reached scene");
     require(approx(st.pieOpacity, 0.4), "override pieOpacity reached scene");
     require(approx(st.titleFontSize, 30.0), "override pieTitleTextSize reached scene");
     require(st.sectionTextColor == QLatin1String("#123456"), "override pieSectionTextColor reached scene");

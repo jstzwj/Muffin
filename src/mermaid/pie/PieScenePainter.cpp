@@ -4,6 +4,7 @@
 
 #include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/pie/PieScene.h"
+#include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
 #include <QFont>
@@ -22,25 +23,6 @@ namespace muffin::mermaid::pie {
 namespace {
 
 constexpr double kPi = 3.14159265358979323846;
-
-QColor parsePieColorImpl(const QString& value) {
-  const QString s = value.trimmed();
-  if (s.isEmpty()) return QColor();  // no fill (dark-theme pie12 unset)
-  if (s.startsWith(QStringLiteral("hsl(")) && s.endsWith(QLatin1Char(')'))) {
-    const QString body = s.mid(4, s.size() - 5);
-    const QStringList parts = body.split(QLatin1Char(','));
-    if (parts.size() >= 3) {
-      const double h = parts[0].trimmed().toDouble();
-      const double sa = parts[1].trimmed().remove(QLatin1Char('%')).toDouble();
-      const double la = parts[2].trimmed().remove(QLatin1Char('%')).toDouble();
-      QColor c = QColor::fromHslF(h / 360.0, sa / 100.0, la / 100.0);
-      return c;
-    }
-    return QColor();
-  }
-  QColor c(s);
-  return c;
-}
 
 // Point on the pie circle at angle `deg` (oracle convention: deg=-90 is 12
 // o'clock, increasing clockwise; point = (r*cos, r*sin) in Qt's y-down coords).
@@ -82,7 +64,14 @@ QPainterPath buildSlicePath(double startDeg, double endDeg, double outerR, doubl
 
 }  // namespace
 
-QColor parsePieColor(const QString& value) { return parsePieColorImpl(value); }
+// Theme colors arrive as CSS strings (hex / hsl() / rgba() / named / ...). The
+// shared color::toQColor parses every notation the way the browser does; an
+// EMPTY value returns an invalid QColor so fill call sites paint NoBrush (the
+// dark-theme pie12 "no fill attribute" contract). color::toQColor never returns
+// invalid for non-empty input (garbage/NaN-hsl -> opaque black, the SVG default).
+QColor parsePieColor(const QString& value) {
+  return value.trimmed().isEmpty() ? QColor() : color::toQColor(value);
+}
 
 void paintPieScene(const PieScene& scene, QPainter& painter,
                    const MermaidPaintOptions& /*options*/) {
@@ -104,7 +93,7 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
   painter.translate(pieShiftX, pieShiftY);
 
   // Outer ring (pieOuterCircle: stroke, no fill).
-  const QColor outerStroke(scene.style.outerStrokeColor);
+  const QColor outerStroke = parsePieColor(scene.style.outerStrokeColor);
   painter.setBrush(Qt::NoBrush);
   painter.setPen(QPen(outerStroke, scene.style.outerStrokeWidth));
   painter.drawEllipse(QPointF(0, 0), scene.outerRingRadius, scene.outerRingRadius);
@@ -117,11 +106,11 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
   for (const PieSliceGeometry& s : scene.slices) {
     const bool highlighted = s.className.contains(QStringLiteral("highlighted")) &&
                              !s.className.contains(QStringLiteral("highlightedOnHover"));
-    const QColor fill = parsePieColorImpl(s.fill);
+    const QColor fill = parsePieColor(s.fill);
     const QPainterPath wedge =
         buildSlicePath(s.startAngleDeg, s.endAngleDeg, s.outerRadius, s.innerRadius);
     painter.setBrush(fill.isValid() ? fill : Qt::NoBrush);
-    painter.setPen(QPen(QColor(scene.style.sliceStrokeColor), scene.style.sliceStrokeWidth));
+    painter.setPen(QPen(parsePieColor(scene.style.sliceStrokeColor), scene.style.sliceStrokeWidth));
     if (highlighted) {
       painter.save();
       painter.setOpacity(1.0);
@@ -138,7 +127,7 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
   QFont sliceFont(scene.style.fontFamily, qRound(scene.style.sectionFontSize));
   sliceFont.setPixelSize(qRound(scene.style.sectionFontSize));
   painter.setFont(sliceFont);
-  painter.setPen(QColor(scene.style.sectionTextColor));
+  painter.setPen(parsePieColor(scene.style.sectionTextColor));
   for (const PieSliceGeometry& s : scene.slices) {
     painter.drawText(QRectF(s.centroidX - 60, s.centroidY - 30, 120, 60),
                      Qt::AlignCenter, s.percentage);
@@ -150,7 +139,7 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
     QFont titleFont(scene.style.fontFamily, qRound(scene.style.titleFontSize));
     titleFont.setPixelSize(qRound(scene.style.titleFontSize));
     painter.setFont(titleFont);
-    painter.setPen(QColor(scene.style.titleColor));
+    painter.setPen(parsePieColor(scene.style.titleColor));
     const qreal ty = -(scene.height - 50.0) / 2.0;
     painter.drawText(QRectF(-400.0, ty - 30.0, 800.0, 60.0),
                      Qt::AlignCenter, scene.title);
@@ -161,7 +150,7 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
     QFont legendFont(scene.style.fontFamily, qRound(scene.style.legendFontSize));
     legendFont.setPixelSize(qRound(scene.style.legendFontSize));
     painter.setFont(legendFont);
-    painter.setPen(QColor(scene.style.legendTextColor));
+    painter.setPen(parsePieColor(scene.style.legendTextColor));
     const QString& pos = scene.legendPosition;
     const qreal rectBlock = scene.legendRectSize + scene.legendSpacing;
     // Upstream's switch default is "right": only left/top/bottom/center are
@@ -178,11 +167,11 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
     for (int i = 0; i < n; ++i) {
       const PieLegendEntry& e = scene.legends.at(i);
       const qreal vertical = i * scene.legendHeight - offset;
-      const QColor lc = parsePieColorImpl(e.fill);
+      const QColor lc = parsePieColor(e.fill);
       painter.setBrush(lc.isValid() ? lc : Qt::NoBrush);
       painter.setPen(Qt::NoPen);
       painter.drawRect(QRectF(horizontal, vertical, scene.legendRectSize, scene.legendRectSize));
-      painter.setPen(QColor(scene.style.legendTextColor));
+      painter.setPen(parsePieColor(scene.style.legendTextColor));
       painter.drawText(
           QRectF(horizontal + scene.legendRectSize + scene.legendSpacing,
                  vertical - 2.0, 1000.0, scene.legendRectSize + 4.0),

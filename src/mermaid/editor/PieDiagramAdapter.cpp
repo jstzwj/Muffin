@@ -53,16 +53,19 @@ struct PieDiagramImpl : Diagram {
     for (int i = 0; i < 12; ++i) style.palette.append(themeVars.pie[i]);
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
     style.outerStrokeColor = themeVars.pieOuterStrokeColor;
-    style.outerStrokeWidth = parseCssPx(themeVars.pieOuterStrokeWidth, style.outerStrokeWidth);
+    // Paint width is CSS-resolved; the outer-ring RADIUS uses parseFontSize's
+    // numeric prefix (upstream pieDiagram:157) -- tracked separately.
+    style.outerStrokeWidth = cssStrokeWidthPx(themeVars.pieOuterStrokeWidth);
+    style.outerStrokeWidthGeom = parseFontSizeNumber(themeVars.pieOuterStrokeWidth);
     style.sliceStrokeColor = themeVars.pieStrokeColor;
-    style.sliceStrokeWidth = parseCssPx(themeVars.pieStrokeWidth, style.sliceStrokeWidth);
-    style.pieOpacity = opacityValue(themeVars.pieOpacity, style.pieOpacity);
+    style.sliceStrokeWidth = cssStrokeWidthPx(themeVars.pieStrokeWidth);
+    style.pieOpacity = cssOpacity(themeVars.pieOpacity);
     if (!themeVars.pieTitleTextColor.isEmpty()) style.titleColor = themeVars.pieTitleTextColor;
     if (!themeVars.pieSectionTextColor.isEmpty()) style.sectionTextColor = themeVars.pieSectionTextColor;
     if (!themeVars.pieLegendTextColor.isEmpty()) style.legendTextColor = themeVars.pieLegendTextColor;
-    style.titleFontSize = parseCssPx(themeVars.pieTitleTextSize, style.titleFontSize);
-    style.sectionFontSize = parseCssPx(themeVars.pieSectionTextSize, style.sectionFontSize);
-    style.legendFontSize = parseCssPx(themeVars.pieLegendTextSize, style.legendFontSize);
+    style.titleFontSize = cssFontSizePx(themeVars.pieTitleTextSize);
+    style.sectionFontSize = cssFontSizePx(themeVars.pieSectionTextSize);
+    style.legendFontSize = cssFontSizePx(themeVars.pieLegendTextSize);
 
     pie::PieScene scene = pie::buildPieScene(data, config, std::move(style));
     // Frontmatter title (`---\ntitle: X\n---`) is the diagram title when there is

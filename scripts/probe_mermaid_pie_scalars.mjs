@@ -89,6 +89,26 @@ try {
       neg: (await read({ pieOpacity: "-0.5" })).sliceOpacity,
       invalid: (await read({ pieOpacity: "abc" })).sliceOpacity,
     };
+    // Font-size edge cases: font-size CSS resolution DIFFERS from stroke-width
+    // (a unitless value is INVALID for font-size -> inherited, not treated as px).
+    r.titleFsEdges = {
+      px: (await read({ pieTitleTextSize: "30px" })).titleFontSize,
+      unitless: (await read({ pieTitleTextSize: "25" })).titleFontSize,
+      zero: (await read({ pieTitleTextSize: "0px" })).titleFontSize,
+      em: (await read({ pieTitleTextSize: "3em" })).titleFontSize,
+      invalid: (await read({ pieTitleTextSize: "abc" })).titleFontSize,
+    };
+    r.sectionFsEdges = {
+      unitless: (await read({ pieSectionTextSize: "17" })).sectionFontSize,
+      zero: (await read({ pieSectionTextSize: "0px" })).sectionFontSize,
+      em: (await read({ pieSectionTextSize: "3em" })).sectionFontSize,
+      invalid: (await read({ pieSectionTextSize: "abc" })).sectionFontSize,
+    };
+    r.legendFsEdges = {
+      unitless: (await read({ pieLegendTextSize: "17" })).legendFontSize,
+      em: (await read({ pieLegendTextSize: "3em" })).legendFontSize,
+      invalid: (await read({ pieLegendTextSize: "abc" })).legendFontSize,
+    };
     return r;
   }, { mod, pieBody });
   console.log(JSON.stringify(out, null, 2));
