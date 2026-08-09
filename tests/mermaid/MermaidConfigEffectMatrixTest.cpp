@@ -1,6 +1,7 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/journey/JourneyScene.h"
+#include "mermaid/radar/RadarScene.h"
 
 #include <QByteArray>
 #include <QCryptographicHash>
@@ -144,8 +145,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 178,
-          QStringLiteral("Expected 178 classified config rows, found %1")
+  require(entries.size() == 189,
+          QStringLiteral("Expected 189 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -203,6 +204,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("journey"), 26},
                                              {QStringLiteral("pie"), 6},
                                              {QStringLiteral("quadrantChart"), 20},
+                                             {QStringLiteral("radar"), 11},
                                              {QStringLiteral("requirement"), 11},
                                              {QStringLiteral("sequence"), 37},
                                              {QStringLiteral("state"), 22}},
@@ -477,6 +479,37 @@ int main(int argc, char** argv) {
   require(pngImage(journeySource) != pngImage(QStringLiteral(
               "journey\ntitle Configured\nsection S\ntask: 5: Alice")),
           QStringLiteral("Journey live config did not affect PNG output"));
+
+  // Radar's ten live layout/viewport fields reach the immutable scene and
+  // produce a different raster. Style keys under config.radar are deliberately
+  // inert upstream; their live counterparts are covered through
+  // themeVariables.radar by MermaidRadarEdgeParityTest.
+  const QString radarSource = QStringLiteral(
+      "%%{init: {\"radar\": {\"useMaxWidth\": false, "
+      "\"width\": 420, \"height\": 300, \"marginTop\": 10, "
+      "\"marginRight\": 20, \"marginBottom\": 30, "
+      "\"marginLeft\": 40, \"axisScaleFactor\": 0.8, "
+      "\"axisLabelFactor\": 1.2, \"curveTension\": 0.1}}}%%\n"
+      "radar-beta\naxis A,B,C\ncurve C {1,2,3}");
+  const MermaidRenderEntry radarEntry = render(radarSource);
+  const auto* radarScene =
+      dynamic_cast<const muffin::mermaid::radar::RadarScene*>(
+          radarEntry.scene.get());
+  require(radarEntry.status == MermaidRenderStatus::Ready && radarScene &&
+              !radarEntry.metadata.svgUseMaxWidth &&
+              radarScene->config.width == 420.0 &&
+              radarScene->config.height == 300.0 &&
+              radarScene->config.marginTop == 10.0 &&
+              radarScene->config.marginRight == 20.0 &&
+              radarScene->config.marginBottom == 30.0 &&
+              radarScene->config.marginLeft == 40.0 &&
+              radarScene->config.axisScaleFactor == 0.8 &&
+              radarScene->config.axisLabelFactor == 1.2 &&
+              radarScene->config.curveTension == 0.1,
+          QStringLiteral("Radar live config did not reach the scene"));
+  require(pngImage(radarSource) != pngImage(QStringLiteral(
+              "radar-beta\naxis A,B,C\ncurve C {1,2,3}")),
+          QStringLiteral("Radar live config did not affect PNG output"));
 
   // Unsupported engines must not silently produce a Dagre scene.
   for (const QString& source : {

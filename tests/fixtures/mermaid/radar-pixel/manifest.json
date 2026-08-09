@@ -1,0 +1,58 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "chrome": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965"
+  },
+  "font": {
+    "family": "Noto Sans",
+    "file": "NotoSans-Regular.ttf",
+    "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+  },
+  "capture": "attached SVG element screenshot at DPR 1",
+  "cases": [
+    {
+      "id": "default",
+      "theme": "default",
+      "dpr": 1,
+      "source": "%%{init: {\"theme\":\"default\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nradar-beta\ntitle Team capability\naxis Quality[\"Quality\"],Speed[\"Speed\"],Reach[\"Reach\"],Cost[\"Cost\"],Risk[\"Risk\"]\ncurve Alpha[\"Alpha\"] {8,6,7,4,5}\ncurve Beta[\"Beta\"] {5,8,4,7,6}",
+      "file": "default.png",
+      "width": 700,
+      "height": 700,
+      "sha256": "b0683e81e1ad4063f6e5f8a3bcb3de1e3f97da96b0fdd7f05ece90c4ced88d48"
+    },
+    {
+      "id": "dark",
+      "theme": "dark",
+      "dpr": 1,
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nradar-beta\ntitle Team capability\naxis Quality[\"Quality\"],Speed[\"Speed\"],Reach[\"Reach\"],Cost[\"Cost\"],Risk[\"Risk\"]\ncurve Alpha[\"Alpha\"] {8,6,7,4,5}\ncurve Beta[\"Beta\"] {5,8,4,7,6}",
+      "file": "dark.png",
+      "width": 700,
+      "height": 700,
+      "sha256": "4bed0b806ea4ea20a00c1393a237d8948325d814320e26069f4808182de35cbc"
+    },
+    {
+      "id": "redux-color",
+      "theme": "redux-color",
+      "dpr": 1,
+      "source": "%%{init: {\"theme\":\"redux-color\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nradar-beta\ntitle Team capability\naxis Quality[\"Quality\"],Speed[\"Speed\"],Reach[\"Reach\"],Cost[\"Cost\"],Risk[\"Risk\"]\ncurve Alpha[\"Alpha\"] {8,6,7,4,5}\ncurve Beta[\"Beta\"] {5,8,4,7,6}",
+      "file": "redux-color.png",
+      "width": 700,
+      "height": 700,
+      "sha256": "faa4b76e622b96ea7e3f61d30f80033a023b66963a47e33f51c0515030e02719"
+    },
+    {
+      "id": "path-stress",
+      "theme": "default",
+      "dpr": 1,
+      "source": "%%{init: {\"theme\":\"default\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"},\"radar\":{\"curveTension\":-2}}}%%\nradar-beta\ntitle Closed path stress\naxis A,B,C,D,E\ncurve Stress {10,1,10,1,10}\ncurve Cross {1,10,1,10,1}\nmax 10\nshowLegend false",
+      "file": "path-stress.png",
+      "width": 700,
+      "height": 700,
+      "sha256": "7c32e00a4252404be9902b0137f705680184ee86ffaa59e22f8d831eb02a4434"
+    }
+  ],
+  "fixtureSha256": "224a017a84fd602c2fc777e6a534f41795cb98bf14fe879f3a745d51b6dc365e"
+}

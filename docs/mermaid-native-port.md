@@ -5,7 +5,7 @@ The flowchart execution contract and milestone history are maintained in
 
 ## Current status (2026-08-10)
 
-Muffin renders nine Mermaid families through a native C++20/Qt pipeline:
+Muffin renders ten Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
@@ -15,15 +15,16 @@ Muffin renders nine Mermaid families through a native C++20/Qt pipeline:
 - requirement diagram;
 - pie chart;
 - quadrant chart;
-- user journey diagram.
+- user journey diagram;
+- radar chart (`radar-beta`).
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 199/199 tests, including the end-to-end
+currently 203/203 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All nine native families now share `MermaidRenderMetadata` for the diagram
+All ten native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
@@ -120,7 +121,7 @@ assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 
 The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
 and whole-diagram painter are now native and covered by structural and pixel
-oracles. All nine native scenes are integrated into the editor and print/PDF path
+oracles. All ten native scenes are integrated into the editor and print/PDF path
 through `MermaidRenderCache`. The legacy flat
 `WorkGraph` implementation remains as inactive reference code; the active path
 always delegates to the compound Dagre pipeline.
@@ -376,11 +377,11 @@ available.
 `BaseDiagramConfig`, `FlowchartDiagramConfig`, `SequenceDiagramConfig`,
 `ClassDiagramConfig`, `StateDiagramConfig`, `ErDiagramConfig`, and
 `RequirementDiagramConfig`, `PieDiagramConfig`, `QuadrantChartConfig`, and
-`JourneyDiagramConfig` declarations and writes the
+`JourneyDiagramConfig`, and `RadarDiagramConfig` declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 178
-rows: 163 family-interface fields and 15 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 189
+rows: 174 family-interface fields and 15 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -398,9 +399,9 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 91 | Audited upstream and native stages agree |
+| `parity` | 101 | Audited upstream and native stages agree |
 | `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 44 | Mermaid retains the option but 11.16.0 does not consume it |
+| `upstream-inert` | 45 | Mermaid retains the option but 11.16.0 does not consume it |
 | `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
 | `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
@@ -430,7 +431,7 @@ variant through config, per-edge metadata, scene paint, interaction geometry,
 and PNG export. The interaction/animation milestone is also complete: safe
 Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
 Sequence participant menus, and `sequence.forceMenus` all reach their runtime
-consumers. Native SVG export is now complete at the product boundary: all nine
+consumers. Native SVG export is now complete at the product boundary: all ten
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
 `deterministicIds`, `deterministicIDSeed`, and the effective family
@@ -461,7 +462,7 @@ not used as a platform-sensitive pass/fail threshold.
 ## Port order
 
 The implemented order was flowchart, sequence, class, state, ER, Requirement,
-pie, quadrant, then journey. Flowchart
+pie, quadrant, journey, then radar. Flowchart
 established the shared graph, Dagre, shape, theme, and style layers; sequence
 established diagram-specific placement and the shared structured text/MathML
 pipeline; class, state, ER, and Requirement reused those contracts. Requirement
@@ -493,12 +494,14 @@ The remaining boundaries are explicit rather than hidden parity claims:
 
 ### Family expansion status
 
-Pie, quadrant, and journey are now native. Each was implemented probe-first
+Pie, quadrant, journey, and radar are now native. Each was implemented probe-first
 against Mermaid 11.16.0 and ships with grammar/database coverage, immutable
 geometry fixtures, native painter tests, deterministic PNG/SVG integration, and
 configuration-matrix rows. Journey additionally freezes JavaScript scalar
 coercion, CSS presentation-attribute fallback, actor wrapping, and the upstream
-viewBox/root-height mismatch.
+viewBox/root-height mismatch. Radar freezes its Langium database semantics,
+formula geometry, nested theme style path, JavaScript configuration coercion,
+and fixed-canvas rendering against Mermaid 11.16.0.
 
 The next family must start with a fresh Gate-0 survey. Formula-driven families
 remain preferable before force-layout families: mindmap uses `cose-bilkent`,

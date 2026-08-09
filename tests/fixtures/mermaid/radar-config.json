@@ -1,0 +1,6605 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "chrome": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "sourceEntry": true
+  },
+  "oracle": "raw JSON config types after source sanitizer plus rendered SVG geometry/computed style",
+  "cases": [
+    {
+      "id": "baseline",
+      "source": "radar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {},
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-width-string",
+      "source": "%%{init: {\"radar\":{\"width\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "width": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 3205050 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 3205050px;"
+        },
+        "frameTransform": "translate(210, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "4.898587196589413e-15,-80 69.2820323027551,39.999999999999986 -69.28203230275508,40.00000000000003"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "9.797174393178826e-15",
+            "y2": "-160"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.0531962472667237e-14",
+            "y": "-172"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "3.2657247977262754e-15,-53.333333333333336 92.37604307034013,53.333333333333314 -138.56406460551017,80.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-width-bool",
+      "source": "%%{init: {\"radar\":{\"width\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "width": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 101 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 101px;"
+        },
+        "frameTransform": "translate(50.5, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "1.5308084989341915e-17,-0.25 0.21650635094610968,0.12499999999999996 -0.21650635094610962,0.12500000000000008"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "3.061616997868383e-17",
+            "y2": "-0.5"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "2.7707633830708865e-16",
+            "y": "-4.525"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "1.020538999289461e-17,-0.16666666666666666 0.28867513459481287,0.1666666666666666 -0.43301270189221924,0.25000000000000017"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-width-null",
+      "source": "%%{init: {\"radar\":{\"width\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-width-array",
+      "source": "%%{init: {\"radar\":{\"width\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "width": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-width-object",
+      "source": "%%{init: {\"radar\":{\"width\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "width": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-width-zero",
+      "source": "%%{init: {\"radar\":{\"width\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "width": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 100 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 100px;"
+        },
+        "frameTransform": "translate(50, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "0,0 0,0 0,0"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "0"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "2.4492935982947064e-16",
+            "y": "-4"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "0,0 0,0 0,0"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-width-huge",
+      "source": "%%{init: {\"radar\":{\"width\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "width": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 1000000100 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 1000000100px;"
+        },
+        "frameTransform": "translate(500000050, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-height-string",
+      "source": "%%{init: {\"radar\":{\"height\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "height": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 3205050",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 210)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "4.898587196589413e-15,-80 69.2820323027551,39.999999999999986 -69.28203230275508,40.00000000000003"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "9.797174393178826e-15",
+            "y2": "-160"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.0531962472667237e-14",
+            "y": "-172"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "3.2657247977262754e-15,-53.333333333333336 92.37604307034013,53.333333333333314 -138.56406460551017,80.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-height-bool",
+      "source": "%%{init: {\"radar\":{\"height\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "height": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 101",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 50.5)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "1.5308084989341915e-17,-0.25 0.21650635094610968,0.12499999999999996 -0.21650635094610962,0.12500000000000008"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "3.061616997868383e-17",
+            "y2": "-0.5"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "2.7707633830708865e-16",
+            "y": "-4.525"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "1.020538999289461e-17,-0.16666666666666666 0.28867513459481287,0.1666666666666666 -0.43301270189221924,0.25000000000000017"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-height-null",
+      "source": "%%{init: {\"radar\":{\"height\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-height-array",
+      "source": "%%{init: {\"radar\":{\"height\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "height": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-height-object",
+      "source": "%%{init: {\"radar\":{\"height\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "height": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-height-zero",
+      "source": "%%{init: {\"radar\":{\"height\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "height": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 100",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 50)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "0,0 0,0 0,0"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "0"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "2.4492935982947064e-16",
+            "y": "-4"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "0,0 0,0 0,0"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-height-huge",
+      "source": "%%{init: {\"radar\":{\"height\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "height": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 1000000100",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 500000050)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginTop-string",
+      "source": "%%{init: {\"radar\":{\"marginTop\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginTop": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 60032050",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 320300)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginTop-bool",
+      "source": "%%{init: {\"radar\":{\"marginTop\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginTop": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 651",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 301)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginTop-null",
+      "source": "%%{init: {\"radar\":{\"marginTop\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginTop-array",
+      "source": "%%{init: {\"radar\":{\"marginTop\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginTop": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginTop-object",
+      "source": "%%{init: {\"radar\":{\"marginTop\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginTop": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginTop-zero",
+      "source": "%%{init: {\"radar\":{\"marginTop\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginTop": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 650",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 300)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginTop-huge",
+      "source": "%%{init: {\"radar\":{\"marginTop\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginTop": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 1000000650",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 1000000300)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginRight-string",
+      "source": "%%{init: {\"radar\":{\"marginRight\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginRight": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 650320 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 650320px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginRight-bool",
+      "source": "%%{init: {\"radar\":{\"marginRight\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginRight": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 651 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 651px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginRight-null",
+      "source": "%%{init: {\"radar\":{\"marginRight\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginRight-array",
+      "source": "%%{init: {\"radar\":{\"marginRight\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginRight": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginRight-object",
+      "source": "%%{init: {\"radar\":{\"marginRight\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginRight": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginRight-zero",
+      "source": "%%{init: {\"radar\":{\"marginRight\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginRight": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 650 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 650px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginRight-huge",
+      "source": "%%{init: {\"radar\":{\"marginRight\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginRight": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 1000000650 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 1000000650px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginBottom-string",
+      "source": "%%{init: {\"radar\":{\"marginBottom\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginBottom": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 650320",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginBottom-bool",
+      "source": "%%{init: {\"radar\":{\"marginBottom\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginBottom": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 651",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginBottom-null",
+      "source": "%%{init: {\"radar\":{\"marginBottom\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginBottom-array",
+      "source": "%%{init: {\"radar\":{\"marginBottom\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginBottom": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginBottom-object",
+      "source": "%%{init: {\"radar\":{\"marginBottom\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginBottom": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginBottom-zero",
+      "source": "%%{init: {\"radar\":{\"marginBottom\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginBottom": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 650",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginBottom-huge",
+      "source": "%%{init: {\"radar\":{\"marginBottom\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginBottom": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 1000000650",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginLeft-string",
+      "source": "%%{init: {\"radar\":{\"marginLeft\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginLeft": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 60032050 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 60032050px;"
+        },
+        "frameTransform": "translate(320300, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginLeft-bool",
+      "source": "%%{init: {\"radar\":{\"marginLeft\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginLeft": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 651 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 651px;"
+        },
+        "frameTransform": "translate(301, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginLeft-null",
+      "source": "%%{init: {\"radar\":{\"marginLeft\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginLeft-array",
+      "source": "%%{init: {\"radar\":{\"marginLeft\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginLeft": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginLeft-object",
+      "source": "%%{init: {\"radar\":{\"marginLeft\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginLeft": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginLeft-zero",
+      "source": "%%{init: {\"radar\":{\"marginLeft\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginLeft": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 650 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 650px;"
+        },
+        "frameTransform": "translate(300, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-marginLeft-huge",
+      "source": "%%{init: {\"radar\":{\"marginLeft\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "marginLeft": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 1000000650 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 1000000650px;"
+        },
+        "frameTransform": "translate(1000000300, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisScaleFactor-string",
+      "source": "%%{init: {\"radar\":{\"axisScaleFactor\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisScaleFactor": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "5.878304635907295e-12",
+            "y2": "-96000"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisScaleFactor-bool",
+      "source": "%%{init: {\"radar\":{\"axisScaleFactor\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisScaleFactor": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisScaleFactor-null",
+      "source": "%%{init: {\"radar\":{\"axisScaleFactor\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisScaleFactor-array",
+      "source": "%%{init: {\"radar\":{\"axisScaleFactor\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisScaleFactor": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisScaleFactor-object",
+      "source": "%%{init: {\"radar\":{\"axisScaleFactor\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisScaleFactor": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisScaleFactor-zero",
+      "source": "%%{init: {\"radar\":{\"axisScaleFactor\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisScaleFactor": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "0"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisScaleFactor-huge",
+      "source": "%%{init: {\"radar\":{\"axisScaleFactor\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisScaleFactor": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "0.000018369701987210297",
+            "y2": "-300000000000"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisLabelFactor-string",
+      "source": "%%{init: {\"radar\":{\"axisLabelFactor\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisLabelFactor": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "5.878549565267124e-12",
+            "y": "-96004"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisLabelFactor-bool",
+      "source": "%%{init: {\"radar\":{\"axisLabelFactor\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisLabelFactor": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.8614631347039768e-14",
+            "y": "-304"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisLabelFactor-null",
+      "source": "%%{init: {\"radar\":{\"axisLabelFactor\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisLabelFactor-array",
+      "source": "%%{init: {\"radar\":{\"axisLabelFactor\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisLabelFactor": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisLabelFactor-object",
+      "source": "%%{init: {\"radar\":{\"axisLabelFactor\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisLabelFactor": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisLabelFactor-zero",
+      "source": "%%{init: {\"radar\":{\"axisLabelFactor\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisLabelFactor": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "2.4492935982947064e-16",
+            "y": "-4"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-axisLabelFactor-huge",
+      "source": "%%{init: {\"radar\":{\"axisLabelFactor\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisLabelFactor": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "0.000018369701987455225",
+            "y": "-300000000004"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-curveTension-string",
+      "source": "%%{init: {\"radar\":{\"curveTension\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "curveTension": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-curveTension-bool",
+      "source": "%%{init: {\"radar\":{\"curveTension\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "curveTension": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-curveTension-null",
+      "source": "%%{init: {\"radar\":{\"curveTension\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-curveTension-array",
+      "source": "%%{init: {\"radar\":{\"curveTension\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "curveTension": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-curveTension-object",
+      "source": "%%{init: {\"radar\":{\"curveTension\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "curveTension": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-curveTension-zero",
+      "source": "%%{init: {\"radar\":{\"curveTension\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "curveTension": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-curveTension-huge",
+      "source": "%%{init: {\"radar\":{\"curveTension\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "curveTension": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-useMaxWidth-string",
+      "source": "%%{init: {\"radar\":{\"useMaxWidth\":\"320\"}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "useMaxWidth": "320"
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-useMaxWidth-bool",
+      "source": "%%{init: {\"radar\":{\"useMaxWidth\":true}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "useMaxWidth": true
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-useMaxWidth-null",
+      "source": "%%{init: {\"radar\":{\"useMaxWidth\":null}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {}
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-useMaxWidth-array",
+      "source": "%%{init: {\"radar\":{\"useMaxWidth\":[320]}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "useMaxWidth": [
+            320
+          ]
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-useMaxWidth-object",
+      "source": "%%{init: {\"radar\":{\"useMaxWidth\":{\"x\":320}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "useMaxWidth": {
+            "x": 320
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-useMaxWidth-zero",
+      "source": "%%{init: {\"radar\":{\"useMaxWidth\":0}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "useMaxWidth": 0
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "700",
+          "height": "700",
+          "style": null
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "layout-useMaxWidth-huge",
+      "source": "%%{init: {\"radar\":{\"useMaxWidth\":1000000000}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "useMaxWidth": 1000000000
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "theme-live-all",
+      "source": "%%{init: {\"themeVariables\":{\"radar\":{\"axisColor\":\"#ff0000\",\"axisStrokeWidth\":7,\"axisLabelFontSize\":19,\"curveOpacity\":0.25,\"curveStrokeWidth\":8,\"graticuleColor\":\"#00ff00\",\"graticuleStrokeWidth\":6,\"graticuleOpacity\":0.4,\"legendFontSize\":21}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "themeVariables": {
+          "radar": {
+            "axisColor": "#ff0000",
+            "axisStrokeWidth": 7,
+            "axisLabelFontSize": 19,
+            "curveOpacity": 0.25,
+            "curveStrokeWidth": 8,
+            "graticuleColor": "#00ff00",
+            "graticuleStrokeWidth": 6,
+            "graticuleOpacity": 0.4,
+            "legendFontSize": 21
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(0, 255, 0)",
+            "fill-opacity": "0.4",
+            "stroke": "rgb(0, 255, 0)",
+            "stroke-width": "6px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(255, 0, 0)",
+            "stroke-width": "7px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(255, 0, 0)",
+            "font-size": "19px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.25",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "8px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.25",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "21px"
+          }
+        }
+      }
+    },
+    {
+      "id": "theme-live-zero",
+      "source": "%%{init: {\"themeVariables\":{\"radar\":{\"axisStrokeWidth\":0,\"axisLabelFontSize\":0,\"curveOpacity\":0,\"curveStrokeWidth\":0,\"graticuleStrokeWidth\":0,\"graticuleOpacity\":0,\"legendFontSize\":0}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "themeVariables": {
+          "radar": {
+            "axisStrokeWidth": 0,
+            "axisLabelFontSize": 0,
+            "curveOpacity": 0,
+            "curveStrokeWidth": 0,
+            "graticuleStrokeWidth": 0,
+            "graticuleOpacity": 0,
+            "legendFontSize": 0
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "0px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "0px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "0px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "0px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "0px"
+          }
+        }
+      }
+    },
+    {
+      "id": "theme-live-invalid",
+      "source": "%%{init: {\"themeVariables\":{\"radar\":{\"axisColor\":\"not-a-color\",\"axisStrokeWidth\":\"bad\",\"axisLabelFontSize\":\"bad\",\"curveOpacity\":\"bad\",\"curveStrokeWidth\":\"bad\",\"graticuleColor\":\"not-a-color\",\"graticuleStrokeWidth\":\"bad\",\"graticuleOpacity\":\"bad\",\"legendFontSize\":\"bad\"}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "themeVariables": {
+          "radar": {
+            "axisColor": "not-a-color",
+            "axisStrokeWidth": "bad",
+            "axisLabelFontSize": "bad",
+            "curveOpacity": "bad",
+            "curveStrokeWidth": "bad",
+            "graticuleColor": "not-a-color",
+            "graticuleStrokeWidth": "bad",
+            "graticuleOpacity": "bad",
+            "legendFontSize": "bad"
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(51, 51, 51)",
+            "fill-opacity": "1",
+            "stroke": "none",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "none",
+            "stroke-width": "1px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(0, 0, 0)",
+            "font-size": "16px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "1",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "1px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "1",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "16px"
+          }
+        }
+      }
+    },
+    {
+      "id": "radar-style-keys-preserved-but-inert",
+      "source": "%%{init: {\"radar\":{\"axisColor\":\"#ff0000\",\"axisStrokeWidth\":7,\"axisLabelFontSize\":19,\"curveOpacity\":0.25,\"curveStrokeWidth\":8,\"graticuleColor\":\"#00ff00\",\"graticuleStrokeWidth\":6,\"graticuleOpacity\":0.4,\"legendFontSize\":21,\"legendBoxSize\":99}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "radar": {
+          "axisColor": "#ff0000",
+          "axisStrokeWidth": 7,
+          "axisLabelFontSize": 19,
+          "curveOpacity": 0.25,
+          "curveStrokeWidth": 8,
+          "graticuleColor": "#00ff00",
+          "graticuleStrokeWidth": 6,
+          "graticuleOpacity": 0.4,
+          "legendFontSize": 21,
+          "legendBoxSize": 99
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    },
+    {
+      "id": "theme-legend-box-size-dead",
+      "source": "%%{init: {\"themeVariables\":{\"radar\":{\"legendBoxSize\":99}}}}%%\nradar-beta\ntitle Config probe\naxis A,B,C\ncurve C {1,2,3}\nticks 2\nmax 3\ngraticule polygon",
+      "parse": true,
+      "sanitizedConfig": {
+        "themeVariables": {
+          "radar": {
+            "legendBoxSize": 99
+          }
+        }
+      },
+      "render": true,
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticule": {
+          "tag": "polygon",
+          "attributes": {
+            "r": null,
+            "points": "9.184850993605149e-15,-150 129.9038105676658,74.99999999999997 -129.90381056766577,75.00000000000006"
+          },
+          "style": {
+            "fill": "rgb(222, 222, 222)",
+            "fill-opacity": "0.3",
+            "stroke": "rgb(222, 222, 222)",
+            "stroke-width": "1px"
+          }
+        },
+        "axis": {
+          "attributes": {
+            "x1": "0",
+            "y1": "0",
+            "x2": "1.8369701987210297e-14",
+            "y2": "-300"
+          },
+          "style": {
+            "stroke": "rgb(51, 51, 51)",
+            "stroke-width": "2px"
+          }
+        },
+        "axisLabel": {
+          "text": "A",
+          "attributes": {
+            "x": "1.9533116446400285e-14",
+            "y": "-319"
+          },
+          "style": {
+            "color": "rgb(51, 51, 51)",
+            "font-size": "12px"
+          }
+        },
+        "curve": {
+          "tag": "polygon",
+          "attributes": {
+            "d": null,
+            "points": "6.123233995736766e-15,-100 173.20508075688775,99.99999999999997 -259.80762113533154,150.0000000000001"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)",
+            "stroke-width": "2px"
+          }
+        },
+        "legendBox": {
+          "attributes": {
+            "width": "12",
+            "height": "12"
+          },
+          "style": {
+            "fill": "rgb(134, 134, 255)",
+            "fill-opacity": "0.5",
+            "stroke": "rgb(134, 134, 255)"
+          }
+        },
+        "legendText": {
+          "text": "C",
+          "style": {
+            "font-size": "12px"
+          }
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "6828d4b767ddc35f0fb5e601ddeb2e0b552bf81b71cb5c8872bd5b040095dab5"
+}

@@ -287,6 +287,28 @@ void checkPieQuadrantDynamicOverrides() {
   }
 }
 
+// The indexed cScale families share looped get()/set() branches. Exercise both
+// ends of the base palette and one entry from every companion palette so a
+// missing setter cannot be hidden by the theme's derived defaults.
+void checkCScaleDynamicOverrides() {
+  const struct { QString key; QString value; } cases[] = {
+      {QStringLiteral("cScale0"), QStringLiteral("#010203")},
+      {QStringLiteral("cScale12"), QStringLiteral("#121314")},
+      {QStringLiteral("cScaleInv0"), QStringLiteral("#212223")},
+      {QStringLiteral("cScalePeer0"), QStringLiteral("#313233")},
+      {QStringLiteral("cScaleLabel0"), QStringLiteral("#414243")},
+  };
+  for (const auto& item : cases) {
+    QHash<QString, QString> overrides;
+    overrides.insert(item.key, item.value);
+    const FlowThemeVariables theme =
+        resolveFlowTheme(FlowThemeId::Default, overrides);
+    require(theme.get(item.key) == item.value,
+            QStringLiteral("dynamic cScale override failed: %1")
+                .arg(item.key));
+  }
+}
+
 // THEME_COLOR_LIMIT controls how many pie slices the cScale-derived themes
 // (dark, neutral) populate. Upstream: `for i<TCL: this["pie"+i]=this["cScale"+i]`
 // (0-based keys), renderer reads pie1..pie12, so pieK = cScaleK for K=1..TCL-1.
@@ -575,6 +597,7 @@ int main(int argc, char** argv) {
 
   checkPieTextColorOverrides();
   checkPieQuadrantDynamicOverrides();
+  checkCScaleDynamicOverrides();
   checkJourneyFillTypeOverrides();
   checkPieTclDistribution();
   checkTclNoOverflow();

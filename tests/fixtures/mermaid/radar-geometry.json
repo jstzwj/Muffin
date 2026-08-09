@@ -1,0 +1,2146 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "chrome": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965"
+  },
+  "oracle": "rendered radar SVG attributes and attached-DOM computed styles; exact formula geometry",
+  "cases": [
+    {
+      "id": "default-circle",
+      "source": "radar-beta\ntitle Team capability\naxis Quality[\"Quality\"],Speed[\"Speed\"],Reach[\"Reach\"],Cost[\"Cost\"],Risk[\"Risk\"]\ncurve Alpha[\"Alpha\"] {8,6,7,4,5}\ncurve Beta[\"Beta\"] {5,8,4,7,6}",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "60",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "120",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "180",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "240",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "300",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "285.31695488854604",
+              "y2": "-92.70509831248422"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "176.33557568774194",
+              "y2": "242.70509831248424"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-176.3355756877419",
+              "y2": "242.70509831248424"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-285.3169548885461",
+              "y2": "-92.70509831248418"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "Quality",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "Speed",
+            "attributes": {
+              "x": "303.387028698154",
+              "y": "-98.57642120560821",
+              "text-anchor": "start",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "Reach",
+            "attributes": {
+              "x": "187.50349548129893",
+              "y": "258.07642120560826",
+              "text-anchor": "start",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "Cost",
+            "attributes": {
+              "x": "-187.50349548129887",
+              "y": "258.07642120560826",
+              "text-anchor": "end",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "Risk",
+            "attributes": {
+              "x": "-303.38702869815404",
+              "y": "-98.57642120560818",
+              "text-anchor": "end",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [
+          {
+            "tag": "path",
+            "attributes": {
+              "d": "M1.8369701987210297e-14,-300 C66.69283820519766,-301.9699833391403 187.75779928285795,-156.63120710834522 213.98771616640954,-69.52882373436316 C240.21763304996114,17.573559639618892 205.66006440852186,179.9171276320208 154.2936287267742,212.3669610234237 C102.9271930450265,244.8167944148266 -31.62294450341131,167.30484922592558 -88.16778784387095,121.35254915624212 C-144.7126311843306,75.40024908655865 -193.31162073879938,13.68924691125855 -178.32309680534132,-57.94068644530262 C-163.33457287188327,-129.57061980186378 -66.69283820519763,-298.0300166608597 1.8369701987210297e-14,-300 Z",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "tag": "path",
+            "attributes": {
+              "d": "M1.1481063742006436e-14,-187.5 C84.88179407934248,-191.4399666782806 270.328430955088,-145.21003166904538 285.31695488854604,-92.70509831248422 C300.3054788220041,-40.200164955923064 162.9015870584754,69.49029906913776 88.16778784387097,121.35254915624212 C13.433988629266537,173.21479924334648 -102.92719304502646,244.8167944148266 -154.29362872677416,212.3669610234237 C-205.66006440852186,179.9171276320208 -240.2176330499612,-1.5514403603811076 -213.98771616640957,-69.52882373436314 C-187.75779928285795,-137.50620710834517 -84.88179407934246,-183.5600333217194 1.1481063742006436e-14,-187.5 Z",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(255, 255, 120)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(255, 255, 120)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "legendBoxes": [
+          {
+            "attributes": {
+              "width": "12",
+              "height": "12"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)"
+            }
+          },
+          {
+            "attributes": {
+              "width": "12",
+              "height": "12"
+            },
+            "style": {
+              "fill": "rgb(255, 255, 120)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(255, 255, 120)"
+            }
+          }
+        ],
+        "legendTexts": [
+          {
+            "text": "Alpha",
+            "attributes": {
+              "x": "16",
+              "y": "0"
+            },
+            "parentTransform": "translate(262.5, -262.5)",
+            "style": {
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "Beta",
+            "attributes": {
+              "x": "16",
+              "y": "0"
+            },
+            "parentTransform": "translate(262.5, -242.5)",
+            "style": {
+              "font-size": "12px"
+            }
+          }
+        ],
+        "title": {
+          "text": "Team capability",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "polygon-options",
+      "source": "radar-beta\ntitle Polygon\naxis A,B,C,D\ncurve C {1,4,7,10}\nshowLegend false\nticks 3\nmin 1\nmax 10\ngraticule polygon",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "6.123233995736766e-15,-100 100,0 6.123233995736766e-15,100 -100,1.2246467991473532e-14"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "1.2246467991473532e-14,-200 200,0 1.2246467991473532e-14,200 -200,2.4492935982947064e-14"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "1.8369701987210297e-14,-300 300,0 1.8369701987210297e-14,300 -300,3.6739403974420595e-14"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "300",
+              "y2": "0"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-300",
+              "y2": "3.6739403974420595e-14"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "A",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "B",
+            "attributes": {
+              "x": "319",
+              "y": "0",
+              "text-anchor": "start",
+              "dominant-baseline": "central"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "C",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "319",
+              "text-anchor": "middle",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "D",
+            "attributes": {
+              "x": "-319",
+              "y": "3.906623289280057e-14",
+              "text-anchor": "end",
+              "dominant-baseline": "central"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [
+          {
+            "tag": "polygon",
+            "attributes": {
+              "d": null,
+              "points": "0,0 100,0 1.2246467991473532e-14,200 -300,3.6739403974420595e-14"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "legendBoxes": [],
+        "legendTexts": [],
+        "title": {
+          "text": "Polygon",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "asymmetric-config",
+      "source": "%%{init: {\"radar\":{\"width\":480,\"height\":320,\"marginTop\":20,\"marginRight\":70,\"marginBottom\":30,\"marginLeft\":40,\"axisScaleFactor\":0.8,\"axisLabelFactor\":1.2,\"curveTension\":0.31,\"useMaxWidth\":false}}}%%\nradar-beta\naxis A,B,C,D,E\ncurve C {1,2,3,4,5}\nticks 4",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 590 370",
+          "width": "590",
+          "height": "370",
+          "style": null,
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(280, 180)",
+        "graticules": [
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "40",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "80",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "120",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "160",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "7.83773951454306e-15",
+              "y2": "-128"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "121.73523408577965",
+              "y2": "-39.55417527999327"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "75.23651229343656",
+              "y2": "103.55417527999327"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-75.23651229343655",
+              "y2": "103.55417527999327"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-121.73523408577967",
+              "y2": "-39.55417527999325"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "A",
+            "attributes": {
+              "x": "1.200153863164406e-14",
+              "y": "-196",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "B",
+            "attributes": {
+              "x": "186.40707719385009",
+              "y": "-60.56733089748968",
+              "text-anchor": "start",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "C",
+            "attributes": {
+              "x": "115.20590944932474",
+              "y": "158.5673308974897",
+              "text-anchor": "start",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "D",
+            "attributes": {
+              "x": "-115.20590944932472",
+              "y": "158.5673308974897",
+              "text-anchor": "end",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "E",
+            "attributes": {
+              "x": "-186.4070771938501",
+              "y": "-60.56733089748967",
+              "text-anchor": "end",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [
+          {
+            "tag": "path",
+            "attributes": {
+              "d": "M1.959434878635765e-15,-32 C66.04136449153548,-22.80365424740157 43.37512793466583,-53.77343339259507 60.867617042889826,-19.777087639996633 C78.36010615111383,14.219258112601803 98.61966431433859,39.43293995479808 56.42738422007742,77.66563145999496 C14.23510412581625,115.89832296519182 -10.571619976972926,142.9577639535891 -75.23651229343655,103.55417527999327 C-139.90140460990017,64.15058660639745 -175.49236141818992,-7.420924763193646 -152.16904260722458,-49.442719099991564 C-128.84572379625925,-91.46451343678947 -66.04136449153548,-41.19634575259843 1.959434878635765e-15,-32 Z",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "legendBoxes": [
+          {
+            "attributes": {
+              "width": "12",
+              "height": "12"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)"
+            }
+          }
+        ],
+        "legendTexts": [
+          {
+            "text": "C",
+            "attributes": {
+              "x": "16",
+              "y": "0"
+            },
+            "parentTransform": "translate(232.5, -135)",
+            "style": {
+              "font-size": "12px"
+            }
+          }
+        ],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-180"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "detailed-reorder",
+      "source": "radar-beta\naxis A[\"Alpha\"],B[\"Beta\"],C[\"Gamma\"]\ncurve R[\"Reordered\"] {C:30,A:10,B:20}\nmin 0\nmax 30",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "60",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "120",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "180",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "240",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "300",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "259.8076211353316",
+              "y2": "149.99999999999994"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-259.80762113533154",
+              "y2": "150.0000000000001"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "Alpha",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "Beta",
+            "attributes": {
+              "x": "276.2621038072359",
+              "y": "159.49999999999994",
+              "text-anchor": "start",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "Gamma",
+            "attributes": {
+              "x": "-276.26210380723586",
+              "y": "159.5000000000001",
+              "text-anchor": "end",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [
+          {
+            "tag": "path",
+            "attributes": {
+              "d": "M6.123233995736766e-15,-100 C73.61215932167728,-108.50000000000003 217.37237634989413,57.49999999999995 173.20508075688775,99.99999999999997 C129.03778516388138,142.5 -230.36275740666062,184.0000000000001 -259.80762113533154,150.0000000000001 C-289.25248486400244,116.00000000000011 -73.61215932167728,-91.49999999999997 6.123233995736766e-15,-100 Z",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "legendBoxes": [
+          {
+            "attributes": {
+              "width": "12",
+              "height": "12"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)"
+            }
+          }
+        ],
+        "legendTexts": [
+          {
+            "text": "Reordered",
+            "attributes": {
+              "x": "16",
+              "y": "0"
+            },
+            "parentTransform": "translate(262.5, -262.5)",
+            "style": {
+              "font-size": "12px"
+            }
+          }
+        ],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "mismatch-more",
+      "source": "radar-beta\n axis A,B\n curve TooMany {1,2,3}",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "60",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "120",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "180",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "240",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "300",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "A",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "B",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "319",
+              "text-anchor": "middle",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [],
+        "legendBoxes": [
+          {
+            "attributes": {
+              "width": "12",
+              "height": "12"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)"
+            }
+          }
+        ],
+        "legendTexts": [
+          {
+            "text": "TooMany",
+            "attributes": {
+              "x": "16",
+              "y": "0"
+            },
+            "parentTransform": "translate(262.5, -262.5)",
+            "style": {
+              "font-size": "12px"
+            }
+          }
+        ],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "mismatch-less",
+      "source": "radar-beta\n axis A,B,C\n curve TooFew {1,2}",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "60",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "120",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "180",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "240",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "300",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "259.8076211353316",
+              "y2": "149.99999999999994"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-259.80762113533154",
+              "y2": "150.0000000000001"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "A",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "B",
+            "attributes": {
+              "x": "276.2621038072359",
+              "y": "159.49999999999994",
+              "text-anchor": "start",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "C",
+            "attributes": {
+              "x": "-276.26210380723586",
+              "y": "159.5000000000001",
+              "text-anchor": "end",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [],
+        "legendBoxes": [
+          {
+            "attributes": {
+              "width": "12",
+              "height": "12"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)"
+            }
+          }
+        ],
+        "legendTexts": [
+          {
+            "text": "TooFew",
+            "attributes": {
+              "x": "16",
+              "y": "0"
+            },
+            "parentTransform": "translate(262.5, -262.5)",
+            "style": {
+              "font-size": "12px"
+            }
+          }
+        ],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "axes-only",
+      "source": "radar-beta\n axis A,B,C",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "60",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "120",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "180",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "240",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "300",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "259.8076211353316",
+              "y2": "149.99999999999994"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-259.80762113533154",
+              "y2": "150.0000000000001"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "A",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "B",
+            "attributes": {
+              "x": "276.2621038072359",
+              "y": "159.49999999999994",
+              "text-anchor": "start",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "C",
+            "attributes": {
+              "x": "-276.26210380723586",
+              "y": "159.5000000000001",
+              "text-anchor": "end",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [],
+        "legendBoxes": [],
+        "legendTexts": [],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "empty",
+      "source": "radar-beta",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "60",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "120",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "180",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "240",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "circle",
+            "attributes": {
+              "r": "300",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [],
+        "axisLabels": [],
+        "curves": [],
+        "legendBoxes": [],
+        "legendTexts": [],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "zero-ticks-no-legend",
+      "source": "radar-beta\n axis A,B,C\n curve C {1,2,3}\n ticks 0\n showLegend false",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "259.8076211353316",
+              "y2": "149.99999999999994"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-259.80762113533154",
+              "y2": "150.0000000000001"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "A",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "B",
+            "attributes": {
+              "x": "276.2621038072359",
+              "y": "159.49999999999994",
+              "text-anchor": "start",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "C",
+            "attributes": {
+              "x": "-276.26210380723586",
+              "y": "159.5000000000001",
+              "text-anchor": "end",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [
+          {
+            "tag": "path",
+            "attributes": {
+              "d": "M6.123233995736766e-15,-100 C73.61215932167728,-108.50000000000003 217.37237634989413,57.49999999999995 173.20508075688775,99.99999999999997 C129.03778516388138,142.5 -230.36275740666062,184.0000000000001 -259.80762113533154,150.0000000000001 C-289.25248486400244,116.00000000000011 -73.61215932167728,-91.49999999999997 6.123233995736766e-15,-100 Z",
+              "points": null
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "legendBoxes": [],
+        "legendTexts": [],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "equal-min-max",
+      "source": "radar-beta\n axis A,B,C\n curve C {5,5,5}\n min 5\n max 5\n graticule polygon",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "3.67394039744206e-15,-60 51.96152422706632,29.99999999999999 -51.961524227066306,30.00000000000002"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "7.34788079488412e-15,-120 103.92304845413264,59.99999999999998 -103.92304845413261,60.00000000000004"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "1.1021821192326179e-14,-180 155.88457268119896,89.99999999999997 -155.88457268119893,90.00000000000006"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "1.469576158976824e-14,-240 207.84609690826528,119.99999999999996 -207.84609690826522,120.00000000000009"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "1.8369701987210297e-14,-300 259.8076211353316,149.99999999999994 -259.80762113533154,150.0000000000001"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "259.8076211353316",
+              "y2": "149.99999999999994"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-259.80762113533154",
+              "y2": "150.0000000000001"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "A",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "B",
+            "attributes": {
+              "x": "276.2621038072359",
+              "y": "159.49999999999994",
+              "text-anchor": "start",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "C",
+            "attributes": {
+              "x": "-276.26210380723586",
+              "y": "159.5000000000001",
+              "text-anchor": "end",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [
+          {
+            "tag": "polygon",
+            "attributes": {
+              "d": null,
+              "points": "NaN,NaN NaN,NaN NaN,NaN"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "legendBoxes": [
+          {
+            "attributes": {
+              "width": "12",
+              "height": "12"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)"
+            }
+          }
+        ],
+        "legendTexts": [
+          {
+            "text": "C",
+            "attributes": {
+              "x": "16",
+              "y": "0"
+            },
+            "parentTransform": "translate(262.5, -262.5)",
+            "style": {
+              "font-size": "12px"
+            }
+          }
+        ],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    },
+    {
+      "id": "clipping",
+      "source": "radar-beta\n axis A,B,C\n curve C {0,5,10}\n min 2\n max 8\n graticule polygon",
+      "expected": {
+        "root": {
+          "viewBox": "0 0 700 700",
+          "width": "100%",
+          "height": null,
+          "style": "max-width: 700px;",
+          "overflow": "visible"
+        },
+        "frameTransform": "translate(350, 350)",
+        "graticules": [
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "3.67394039744206e-15,-60 51.96152422706632,29.99999999999999 -51.961524227066306,30.00000000000002"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "7.34788079488412e-15,-120 103.92304845413264,59.99999999999998 -103.92304845413261,60.00000000000004"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "1.1021821192326179e-14,-180 155.88457268119896,89.99999999999997 -155.88457268119893,90.00000000000006"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "1.469576158976824e-14,-240 207.84609690826528,119.99999999999996 -207.84609690826522,120.00000000000009"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          },
+          {
+            "tag": "polygon",
+            "attributes": {
+              "r": null,
+              "points": "1.8369701987210297e-14,-300 259.8076211353316,149.99999999999994 -259.80762113533154,150.0000000000001"
+            },
+            "style": {
+              "fill": "rgb(222, 222, 222)",
+              "fill-opacity": "0.3",
+              "stroke": "rgb(222, 222, 222)",
+              "stroke-width": "1px"
+            }
+          }
+        ],
+        "axes": [
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "1.8369701987210297e-14",
+              "y2": "-300"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "259.8076211353316",
+              "y2": "149.99999999999994"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          },
+          {
+            "attributes": {
+              "x1": "0",
+              "y1": "0",
+              "x2": "-259.80762113533154",
+              "y2": "150.0000000000001"
+            },
+            "style": {
+              "stroke": "rgb(51, 51, 51)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "axisLabels": [
+          {
+            "text": "A",
+            "attributes": {
+              "x": "1.9533116446400285e-14",
+              "y": "-319",
+              "text-anchor": "middle",
+              "dominant-baseline": "auto"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "B",
+            "attributes": {
+              "x": "276.2621038072359",
+              "y": "159.49999999999994",
+              "text-anchor": "start",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          },
+          {
+            "text": "C",
+            "attributes": {
+              "x": "-276.26210380723586",
+              "y": "159.5000000000001",
+              "text-anchor": "end",
+              "dominant-baseline": "hanging"
+            },
+            "style": {
+              "color": "rgb(51, 51, 51)",
+              "font-size": "12px"
+            }
+          }
+        ],
+        "curves": [
+          {
+            "tag": "polygon",
+            "attributes": {
+              "d": null,
+              "points": "0,0 129.9038105676658,74.99999999999997 -259.80762113533154,150.0000000000001"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)",
+              "stroke-width": "2px"
+            }
+          }
+        ],
+        "legendBoxes": [
+          {
+            "attributes": {
+              "width": "12",
+              "height": "12"
+            },
+            "style": {
+              "fill": "rgb(134, 134, 255)",
+              "fill-opacity": "0.5",
+              "stroke": "rgb(134, 134, 255)"
+            }
+          }
+        ],
+        "legendTexts": [
+          {
+            "text": "C",
+            "attributes": {
+              "x": "16",
+              "y": "0"
+            },
+            "parentTransform": "translate(262.5, -262.5)",
+            "style": {
+              "font-size": "12px"
+            }
+          }
+        ],
+        "title": {
+          "text": "",
+          "attributes": {
+            "x": "0",
+            "y": "-350"
+          },
+          "style": {
+            "font-size": "16px",
+            "color": "rgb(51, 51, 51)"
+          }
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "0a6983e68547c76e2f23d3b3afd6eae24ff096e24a1b4b9aa44815a24b9ece48"
+}

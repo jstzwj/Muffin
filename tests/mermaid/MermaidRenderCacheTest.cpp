@@ -6,6 +6,7 @@
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/journey/JourneyScene.h"
+#include "mermaid/radar/RadarScene.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
@@ -364,6 +365,63 @@ int main(int argc, char** argv) {
             QStringLiteral("Journey diagnostics must map to original source lines"));
   }
 
+  // Radar owns its visible title in the fixed scene while keeping shared
+  // accessibility metadata for SVG/PNG consumers.
+  {
+    const QString source = QStringLiteral(
+        "---\ntitle: Radar overview\n---\nradar-beta\n"
+        "accTitle: Radar accessible\naccDescr: Radar description\n"
+        "axis A,B,C\ncurve Team {1,2,3}");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::radar::RadarScene>(entry.scene);
+    require(entry.status == kReady && scene &&
+                scene->title == QLatin1String("Radar overview") &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle ==
+                    QLatin1String("Radar accessible") &&
+                entry.metadata.accessibleDescription ==
+                    QLatin1String("Radar description"),
+            QStringLiteral("Radar title ownership/accessibility metadata drifted"));
+  }
+
+  // populateCommonDb ignores a falsy final AST title. An empty source title,
+  // even after a non-empty one, therefore leaves the frontmatter title intact.
+  {
+    const QString source = QStringLiteral(
+        "---\ntitle: Frontmatter Radar\n---\nradar-beta\n"
+        "title Temporary\ntitle\naxis A");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::radar::RadarScene>(entry.scene);
+    require(entry.status == kReady && scene &&
+                scene->title == QLatin1String("Frontmatter Radar"),
+            QStringLiteral("Empty Radar title must retain frontmatter title"));
+  }
+
+  // Radar parser positions are measured in preprocessed code and must map
+  // through removed frontmatter, directives, and comments.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: Radar title\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\nradar-beta axis A,");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.code == QLatin1String("radar-parse-error") &&
+                entry.diagnostic.span.offset ==
+                    decorated.size() &&
+                entry.diagnostic.span.line == 6 &&
+                entry.diagnostic.span.column == 19,
+            QStringLiteral("Radar diagnostics must map original line and column"));
+  }
+
   // Every native family is normalised into the same 1-based diagnostic model.
   {
     struct InvalidCase {
@@ -379,6 +437,8 @@ int main(int argc, char** argv) {
          QStringLiteral("class"), QStringLiteral("missing-relation-target"), 2},
         {QStringLiteral("stateDiagram-v2\nA -->"),
          QStringLiteral("state"), QStringLiteral("unexpected-token"), 2},
+        {QStringLiteral("radar-beta\naxis"),
+         QStringLiteral("radar"), QStringLiteral("radar-parse-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -407,6 +467,8 @@ int main(int argc, char** argv) {
         MermaidRenderCache::makeKey(noHeader), noHeader);
     require(detected.status == kError &&
                 detected.diagnostic.stage == QLatin1String("detector") &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("radar-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -990,6 +1052,8 @@ int main(int argc, char** argv) {
          QStringLiteral("quadrantChart\nx-axis Low --> High\ny-axis Down --> Up\n\"A\": [0.3, 0.7]")},
         {QStringLiteral("journey"),
          QStringLiteral("journey\nsection Morning\nMake tea: 5: Me\nDo work: 3: Me, You")},
+        {QStringLiteral("radar"),
+         QStringLiteral("radar-beta\naxis A,B,C\ncurve C {1,2,3}")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

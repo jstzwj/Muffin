@@ -23,17 +23,18 @@
       "requirement",
       "pie",
       "quadrantChart",
-      "journey"
+      "journey",
+      "radar"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 91,
+    "parity": 101,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 44,
+    "upstream-inert": 45,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -49,7 +50,8 @@
         "requirement",
         "pie",
         "quadrantChart",
-        "journey"
+        "journey",
+        "radar"
       ],
       "status": "parity",
       "upstream": [
@@ -80,7 +82,8 @@
         "requirement",
         "pie",
         "quadrantChart",
-        "journey"
+        "journey",
+        "radar"
       ],
       "status": "partial",
       "upstream": [
@@ -112,7 +115,8 @@
         "requirement",
         "pie",
         "quadrantChart",
-        "journey"
+        "journey",
+        "radar"
       ],
       "status": "parity",
       "upstream": [
@@ -280,7 +284,8 @@
         "requirement",
         "pie",
         "quadrantChart",
-        "journey"
+        "journey",
+        "radar"
       ],
       "status": "unsupported",
       "upstream": [
@@ -302,7 +307,8 @@
         "requirement",
         "pie",
         "quadrantChart",
-        "journey"
+        "journey",
+        "radar"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -346,7 +352,8 @@
         "requirement",
         "pie",
         "quadrantChart",
-        "journey"
+        "journey",
+        "radar"
       ],
       "status": "parity",
       "upstream": [
@@ -369,7 +376,8 @@
         "requirement",
         "pie",
         "quadrantChart",
-        "journey"
+        "journey",
+        "radar"
       ],
       "status": "parity",
       "upstream": [
@@ -392,7 +400,8 @@
         "requirement",
         "pie",
         "quadrantChart",
-        "journey"
+        "journey",
+        "radar"
       ],
       "status": "unsupported",
       "upstream": [
@@ -3705,7 +3714,245 @@
         "export"
       ],
       "default": "4ex"
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 600
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 600
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.marginTop",
+      "field": "marginTop",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.marginRight",
+      "field": "marginRight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.marginBottom",
+      "field": "marginBottom",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.marginLeft",
+      "field": "marginLeft",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.axisScaleFactor",
+      "field": "axisScaleFactor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 1
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.axisLabelFactor",
+      "field": "axisLabelFactor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 1.05
+    },
+    {
+      "family": "radar",
+      "interface": "RadarDiagramConfig",
+      "path": "radar.curveTension",
+      "field": "curveTension",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "note": "Controls the closed Catmull-Rom cubic path for circle graticules; polygon curves intentionally ignore it.",
+      "default": 0.17
     }
   ],
-  "fixtureSha256": "aaac3bbe8175b2c6c794d156fb9950c12950fc1def3793e717abfe9dce8adef8"
+  "fixtureSha256": "8c6a75113a987b1ba0587746f1088f1d093af8e6f5acd14ee45a9a97baf96101"
 }

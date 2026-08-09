@@ -237,6 +237,22 @@ const familyPolicies = {
     titleFontFamily: parity("text", "paint", "export"),
     titleFontSize: parity("text", "paint", "export"),
   },
+  radar: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    width: parity("layout", "paint", "viewport", "export"),
+    height: parity("layout", "paint", "viewport", "export"),
+    marginTop: parity("layout", "paint", "viewport", "export"),
+    marginRight: parity("layout", "paint", "viewport", "export"),
+    marginBottom: parity("layout", "paint", "viewport", "export"),
+    marginLeft: parity("layout", "paint", "viewport", "export"),
+    axisScaleFactor: parity("layout", "paint", "export"),
+    axisLabelFactor: parity("text", "layout", "paint", "export"),
+    curveTension: {
+      ...parity("layout", "paint", "export"),
+      note: "Controls the closed Catmull-Rom cubic path for circle graticules; polygon curves intentionally ignore it.",
+    },
+  },
   class: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -448,6 +464,7 @@ const shared = [
       "pie",
       "quadrantChart",
       "journey",
+      "radar",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -463,6 +480,7 @@ const shared = [
       "pie",
       "quadrantChart",
       "journey",
+      "radar",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -482,6 +500,7 @@ const shared = [
       "pie",
       "quadrantChart",
       "journey",
+      "radar",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -535,7 +554,7 @@ const shared = [
     path: "maxTextSize",
     families: [
       "flowchart", "sequence", "class", "state", "er", "requirement",
-      "pie", "quadrantChart", "journey",
+      "pie", "quadrantChart", "journey", "radar",
     ],
     ...unsupported(
       ["parsed"],
@@ -554,6 +573,7 @@ const shared = [
       "pie",
       "quadrantChart",
       "journey",
+      "radar",
     ],
     ...policy(
       "security-fixed",
@@ -579,6 +599,7 @@ const shared = [
       "pie",
       "quadrantChart",
       "journey",
+      "radar",
     ],
     ...parity("export"),
   },
@@ -594,6 +615,7 @@ const shared = [
       "pie",
       "quadrantChart",
       "journey",
+      "radar",
     ],
     ...parity("export"),
   },
@@ -609,6 +631,7 @@ const shared = [
       "pie",
       "quadrantChart",
       "journey",
+      "radar",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -657,6 +680,7 @@ const interfaces = {
   pie: "PieDiagramConfig",
   quadrantChart: "QuadrantChartConfig",
   journey: "JourneyDiagramConfig",
+  radar: "RadarDiagramConfig",
 };
 
 const entries = [];

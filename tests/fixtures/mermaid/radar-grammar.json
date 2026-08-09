@@ -1,0 +1,1174 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "parser": "Langium RadarGrammar",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry accept/reject plus normalized radar DB state",
+  "cases": [
+    {
+      "id": "empty",
+      "source": "radar-beta",
+      "accept": true,
+      "expectedDb": {
+        "axes": [],
+        "curves": [],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "header-colon",
+      "source": "radar-beta:",
+      "accept": true,
+      "expectedDb": {
+        "axes": [],
+        "curves": [],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "header-space-colon",
+      "source": "radar-beta :",
+      "accept": true,
+      "expectedDb": {
+        "axes": [],
+        "curves": [],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "radar-beta axis A curve C {1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "bom-crlf",
+      "source": "﻿radar-beta\r\n axis A\r\n curve C {1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "comments",
+      "source": "%% before\nradar-beta %% header\n axis A %% axis\n curve C {1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "axis-single",
+      "source": "radar-beta\n axis A",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "axis-list",
+      "source": "radar-beta\n axis A,B,C",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          },
+          {
+            "name": "B",
+            "label": "B"
+          },
+          {
+            "name": "C",
+            "label": "C"
+          }
+        ],
+        "curves": [],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "axis-ids",
+      "source": "radar-beta\n axis _A1,A-B,z9\n curve C {1,2,3}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "_A1",
+            "label": "_A1"
+          },
+          {
+            "name": "A-B",
+            "label": "A-B"
+          },
+          {
+            "name": "z9",
+            "label": "z9"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1,
+              2,
+              3
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "axis-duplicate",
+      "source": "radar-beta\n axis A,A\n curve C {1,2}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          },
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1,
+              2
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "labels-double-single-empty",
+      "source": "radar-beta\n axis A[\"Alpha One\"],B['Beta Two'],C[\"\"]\n curve D[\"Curve Label\"] {1,2,3}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "Alpha One"
+          },
+          {
+            "name": "B",
+            "label": "Beta Two"
+          },
+          {
+            "name": "C",
+            "label": ""
+          }
+        ],
+        "curves": [
+          {
+            "name": "D",
+            "label": "Curve Label",
+            "entries": [
+              1,
+              2,
+              3
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "label-escapes",
+      "source": "radar-beta\n axis A[\"line\\nnext\\tend\\q\"]\n curve C {1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "line\nnext\tendq"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "numeric-values",
+      "source": "radar-beta\n axis A,B,C\n curve C {0,1.25,999}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          },
+          {
+            "name": "B",
+            "label": "B"
+          },
+          {
+            "name": "C",
+            "label": "C"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              0,
+              1.25,
+              999
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "numeric-count-more",
+      "source": "radar-beta\n axis A\n curve C {1,2}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1,
+              2
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "numeric-count-less",
+      "source": "radar-beta\n axis A,B\n curve C {1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          },
+          {
+            "name": "B",
+            "label": "B"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "detailed-reordered",
+      "source": "radar-beta\n axis A[\"Alpha\"],B[\"Beta\"],C[\"Gamma\"]\n curve R {C:30,A:10,B:20}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "Alpha"
+          },
+          {
+            "name": "B",
+            "label": "Beta"
+          },
+          {
+            "name": "C",
+            "label": "Gamma"
+          }
+        ],
+        "curves": [
+          {
+            "name": "R",
+            "label": "R",
+            "entries": [
+              10,
+              20,
+              30
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "detailed-optional-colon",
+      "source": "radar-beta\n axis A,B\n curve R {B 2,A 1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          },
+          {
+            "name": "B",
+            "label": "B"
+          }
+        ],
+        "curves": [
+          {
+            "name": "R",
+            "label": "R",
+            "entries": [
+              1,
+              2
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "detailed-before-axis",
+      "source": "radar-beta\n curve R {B:2,A:1}\n axis A,B",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          },
+          {
+            "name": "B",
+            "label": "B"
+          }
+        ],
+        "curves": [
+          {
+            "name": "R",
+            "label": "R",
+            "entries": [
+              1,
+              2
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "detailed-extra-ref",
+      "source": "radar-beta\n axis A\n curve R {A:1,B:2}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "R",
+            "label": "R",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "detailed-duplicate-first",
+      "source": "radar-beta\n axis A\n curve R {A:1,A:2}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "R",
+            "label": "R",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "duplicate-curves",
+      "source": "radar-beta\n axis A\n curve C {1},C {2}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          },
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              2
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "entries-newlines",
+      "source": "radar-beta\n axis A,B\n curve C {\n 1,\n 2\n }",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          },
+          {
+            "name": "B",
+            "label": "B"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1,
+              2
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "options-all",
+      "source": "radar-beta\n axis A\n curve C {1}\n showLegend false, ticks 3, max 10, min 1, graticule polygon",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": false,
+          "ticks": 3,
+          "max": 10,
+          "min": 1,
+          "graticule": "polygon"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "options-last-wins",
+      "source": "radar-beta\n axis A\n curve C {1}\n ticks 3\n ticks 7\n max 9\n max 11",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 7,
+          "max": 11,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "radar-beta\n title Hello  world\n accTitle:  Radar title\n accDescr:  Radar description\n axis A\n curve C {1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "Hello world",
+        "accTitle": "Radar title",
+        "accDescription": "Radar description"
+      }
+    },
+    {
+      "id": "metadata-block-last-wins",
+      "source": "radar-beta\n title First\n title Second\n accDescr {\n first line\n second line\n}\n axis A\n curve C {1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "Second",
+        "accTitle": "",
+        "accDescription": "first line\nsecond line"
+      }
+    },
+    {
+      "id": "frontmatter-title",
+      "source": "---\ntitle: Frontmatter Radar\n---\nradar-beta\n axis A\n curve C {1}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "Frontmatter Radar",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "huge-finite",
+      "source": "radar-beta\n axis A\n curve C {99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              1e+308
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "huge-infinity",
+      "source": "radar-beta\n axis A\n curve C {999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999}",
+      "accept": true,
+      "expectedDb": {
+        "axes": [
+          {
+            "name": "A",
+            "label": "A"
+          }
+        ],
+        "curves": [
+          {
+            "name": "C",
+            "label": "C",
+            "entries": [
+              "Infinity"
+            ]
+          }
+        ],
+        "options": {
+          "showLegend": true,
+          "ticks": 5,
+          "max": null,
+          "min": 0,
+          "graticule": "circle"
+        },
+        "title": "",
+        "accTitle": "",
+        "accDescription": ""
+      }
+    },
+    {
+      "id": "reject-header-case",
+      "source": "Radar-beta\n axis A",
+      "accept": false,
+      "reject": {
+        "message": "No diagram type detected matching given configuration for text: Radar-beta axis A"
+      }
+    },
+    {
+      "id": "reject-header-prefix",
+      "source": "radar-betaX\n axis A",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 1, column 1: Expecting: one of these possible Token sequences: 1. [radar-beta] 2. [radar-beta:] 3. [radar-beta, :] but found: 'radar-betaX'"
+      }
+    },
+    {
+      "id": "reject-semicolon",
+      "source": "radar-beta;\n axis A",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Lexer error on line 1, column 11: unexpected character: ->;<- at offset: 10, skipped 1 characters. Parse error on line 1, column 1: Expecting: one of these possible Token sequences: 1. [radar-beta] 2. [radar-beta:] 3. [radar-beta, :] but found: 'radar-beta'"
+      }
+    },
+    {
+      "id": "reject-axis-unicode",
+      "source": "radar-beta\n axis 中",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Lexer error on line 2, column 7: unexpected character: ->中<- at offset: 17, skipped 1 characters. Parse error on line 2, column 8: Expecting token of type 'ID' but found ` `."
+      }
+    },
+    {
+      "id": "reject-axis-reserved",
+      "source": "radar-beta\n axis axis\n curve C {1}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 7: Expecting token of type 'ID' but found `axis`. Parse error on line 2, column 11: Expecting token of type 'ID' but found ` `."
+      }
+    },
+    {
+      "id": "reject-axis-bare-label",
+      "source": "radar-beta\n axis A[Alpha]\n curve C {1}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 9: Expecting token of type 'STRING' but found `Alpha`."
+      }
+    },
+    {
+      "id": "reject-axis-comma-newline",
+      "source": "radar-beta\n axis A,\n B",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 9: Expecting token of type 'ID' but found ` `. Parse error on line 3, column 2: Expecting token of type 'EOF' but found `B`."
+      }
+    },
+    {
+      "id": "reject-empty-curve",
+      "source": "radar-beta\n axis A\n curve C {}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 3, column 11: Expecting: one of these possible Token sequences: 1. [NUMBER] 2. [NEWLINE, NUMBER] 3. [NEWLINE, NEWLINE, NEWLINE] 4. [NEWLINE, NEWLINE, NUMBER] 5. [ID] 6. [NEWLINE, ID] 7. [NEWLINE, NEWLINE, NEWLINE] 8. [NEWLINE, NEWLINE, ID] but found: '}'"
+      }
+    },
+    {
+      "id": "reject-mixed-number-ref",
+      "source": "radar-beta\n axis A,B\n curve C {1,B:2}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 3, column 13: Expecting token of type 'NUMBER' but found `B`."
+      }
+    },
+    {
+      "id": "reject-mixed-ref-number",
+      "source": "radar-beta\n axis A,B\n curve C {A:1,2}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 3, column 15: Expecting token of type 'ID' but found `2`."
+      }
+    },
+    {
+      "id": "reject-number-leading-zero",
+      "source": "radar-beta\n axis A\n curve C {01}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 3, column 12: Expecting token of type '}' but found `1`."
+      }
+    },
+    {
+      "id": "reject-number-leading-dot",
+      "source": "radar-beta\n axis A\n curve C {.5}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Lexer error on line 3, column 11: unexpected character: ->.<- at offset: 29, skipped 1 characters."
+      }
+    },
+    {
+      "id": "reject-number-trailing-dot",
+      "source": "radar-beta\n axis A\n curve C {1.}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Lexer error on line 3, column 12: unexpected character: ->.<- at offset: 30, skipped 1 characters. Parse error on line 3, column 13: Expecting token of type 'NUMBER' but found `}`."
+      }
+    },
+    {
+      "id": "reject-number-negative",
+      "source": "radar-beta\n axis A\n curve C {-1}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Lexer error on line 3, column 11: unexpected character: ->-<- at offset: 29, skipped 1 characters."
+      }
+    },
+    {
+      "id": "reject-number-plus",
+      "source": "radar-beta\n axis A\n curve C {+1}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Lexer error on line 3, column 11: unexpected character: ->+<- at offset: 29, skipped 1 characters."
+      }
+    },
+    {
+      "id": "reject-number-exponent",
+      "source": "radar-beta\n axis A\n curve C {1e3}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 3, column 12: Expecting token of type '}' but found `e3`."
+      }
+    },
+    {
+      "id": "reject-number-infinity-token",
+      "source": "radar-beta\n axis A\n curve C {Infinity}",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 3, column 19: Expecting token of type 'NUMBER' but found `}`."
+      }
+    },
+    {
+      "id": "reject-detailed-no-axes",
+      "source": "radar-beta\n curve C {A:1}",
+      "accept": false,
+      "reject": {
+        "message": "Axes must be populated before curves for reference entries"
+      }
+    },
+    {
+      "id": "reject-detailed-missing-axis",
+      "source": "radar-beta\n axis A,B\n curve C {A:1}",
+      "accept": false,
+      "reject": {
+        "message": "Missing entry for axis B"
+      }
+    },
+    {
+      "id": "reject-detailed-unknown-ref",
+      "source": "radar-beta\n axis A\n curve C {B:1}",
+      "accept": false,
+      "reject": {
+        "message": "Missing entry for axis A"
+      }
+    },
+    {
+      "id": "reject-option-colon",
+      "source": "radar-beta\n ticks: 3",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 7: Expecting token of type 'NUMBER' but found `:`."
+      }
+    },
+    {
+      "id": "reject-option-case",
+      "source": "radar-beta\n showlegend false",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 2: Expecting token of type 'EOF' but found `showlegend`."
+      }
+    },
+    {
+      "id": "reject-option-bool-case",
+      "source": "radar-beta\n showLegend TRUE",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 13: Expecting token of type 'BOOLEAN' but found `TRUE`."
+      }
+    },
+    {
+      "id": "reject-option-graticule",
+      "source": "radar-beta\n graticule square",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 12: Expecting token of type 'GRATICULE' but found `square`."
+      }
+    },
+    {
+      "id": "reject-title-colon",
+      "source": "radar-beta\n title: Radar",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 7: Expecting: one of these possible Token sequences: 1. [NEWLINE] 2. [EOF] but found: ':'"
+      }
+    },
+    {
+      "id": "reject-unknown",
+      "source": "radar-beta\n unknown value",
+      "accept": false,
+      "reject": {
+        "message": "Parsing failed: Parse error on line 2, column 2: Expecting token of type 'EOF' but found `unknown`."
+      }
+    }
+  ],
+  "fixtureSha256": "fa6819c687cc72f40ac0f4efc26e790403606b320c17f5f1f69da3b5764d9708"
+}

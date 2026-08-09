@@ -929,7 +929,15 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("gradientStart")) gradientStart = value;
   else if (key == QStringLiteral("gradientStop")) gradientStop = value;
   else if (key == QStringLiteral("THEME_COLOR_LIMIT")) themeColorLimit = value.toInt();
-  // Journey + Pie + Quadrant overrides (separate from the main chain; loops early-return).
+  // Indexed palette and family overrides are separate from the scalar chain;
+  // return as soon as the matching slot is found.
+  for (int i = 0; i < 13; ++i) {
+    if (key == QStringLiteral("cScale%1").arg(i)) { cScale[i] = value; return; }
+    if (key == QStringLiteral("cScaleInv%1").arg(i)) { cScaleInv[i] = value; return; }
+    if (key == QStringLiteral("cScalePeer%1").arg(i)) { cScalePeer[i] = value; return; }
+    if (key == QStringLiteral("cScaleLabel%1").arg(i)) { cScaleLabel[i] = value; return; }
+  }
+  // Journey + Pie + Quadrant overrides.
   for (int i = 0; i < 8; ++i)
     if (key == QStringLiteral("fillType%1").arg(i)) { fillType[i] = value; return; }
   for (int i = 0; i < 12; ++i)

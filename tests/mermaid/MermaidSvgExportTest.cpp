@@ -110,6 +110,8 @@ int main(int argc, char** argv) {
                       "quadrant-1 Q1\nquadrant-2 Q2\nquadrant-3 Q3\nquadrant-4 Q4\n\"A\": [0.3, 0.7]")},
       {QStringLiteral("journey"), QStringLiteral("journey"),
        QStringLiteral("journey\ntitle Work\nsection Morning\nMake tea: 5: Me\nDo work: 3: Me, You")},
+      {QStringLiteral("radar"), QStringLiteral("radar"),
+       QStringLiteral("radar-beta\naxis Quality,Speed,Cost\ncurve Team {8,6,4}")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -195,6 +197,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"journey\": {\"useMaxWidth\": false}}}%%\n"
           "journey\nsection S\nTask: 5: A"),
+      QStringLiteral(
+          "%%{init: {\"radar\": {\"useMaxWidth\": false}}}%%\n"
+          "radar-beta\naxis A,B,C\ncurve C {1,2,3}"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);
@@ -238,6 +243,17 @@ int main(int argc, char** argv) {
               journeyAria.contains("aria-labelledby=") &&
               journeyAria.contains("aria-describedby="),
           QStringLiteral("Journey SVG accessibility metadata drifted"));
+
+  const QByteArray radarAria = renderSvg(QStringLiteral(
+      "radar-beta\naccTitle: Radar accessible\n"
+      "accDescr: Radar description\naxis A,B,C\ncurve C {1,2,3}")).svg;
+  require(radarAria.contains("<title") &&
+              radarAria.contains("Radar accessible</title>") &&
+              radarAria.contains("<desc") &&
+              radarAria.contains("Radar description</desc>") &&
+              radarAria.contains("aria-labelledby=") &&
+              radarAria.contains("aria-describedby="),
+          QStringLiteral("Radar SVG accessibility metadata drifted"));
 
   require(MermaidRenderCache::renderMermaidSourceToSvg(
               QStringLiteral("flowchart TB\nA -->"))
