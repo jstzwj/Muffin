@@ -333,6 +333,28 @@ const familyPolicies = {
       note: "=label -> that slice gets CSS class 'highlighted' (scale 1.05 about the chart center, opacity 1; bbox grows ~5%); ='hover' -> 'highlightedOnHover' on all slices (CSS :hover only, no static paint change). Default '' highlights nothing — unless a section label is itself empty, which matches ''.",
     },
   },
+  quadrantChart: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    chartWidth: parity("layout", "paint", "viewport", "export"),
+    chartHeight: parity("layout", "paint", "viewport", "export"),
+    titleFontSize: parity("text", "layout", "paint", "export"),
+    titlePadding: parity("layout", "paint", "export"),
+    quadrantPadding: parity("layout", "paint", "export"),
+    xAxisLabelPadding: parity("layout", "paint", "export"),
+    yAxisLabelPadding: parity("layout", "paint", "export"),
+    xAxisLabelFontSize: parity("text", "layout", "paint", "export"),
+    yAxisLabelFontSize: parity("text", "layout", "paint", "export"),
+    quadrantLabelFontSize: parity("text", "paint", "export"),
+    quadrantTextTopPadding: parity("layout", "paint", "export"),
+    pointTextPadding: parity("layout", "paint", "export"),
+    pointLabelFontSize: parity("text", "paint", "export"),
+    pointRadius: parity("layout", "paint", "export"),
+    xAxisPosition: parity("layout", "paint", "export"),
+    yAxisPosition: parity("layout", "paint", "export"),
+    quadrantInternalBorderStrokeWidth: parity("layout", "paint", "export"),
+    quadrantExternalBorderStrokeWidth: parity("layout", "paint", "export"),
+  },
   requirement: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -390,6 +412,7 @@ const shared = [
       "er",
       "requirement",
       "pie",
+      "quadrantChart",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -403,6 +426,7 @@ const shared = [
       "er",
       "requirement",
       "pie",
+      "quadrantChart",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -420,6 +444,7 @@ const shared = [
       "er",
       "requirement",
       "pie",
+      "quadrantChart",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -487,6 +512,7 @@ const shared = [
       "er",
       "requirement",
       "pie",
+      "quadrantChart",
     ],
     ...policy(
       "security-fixed",
@@ -510,6 +536,7 @@ const shared = [
       "er",
       "requirement",
       "pie",
+      "quadrantChart",
     ],
     ...parity("export"),
   },
@@ -523,6 +550,7 @@ const shared = [
       "er",
       "requirement",
       "pie",
+      "quadrantChart",
     ],
     ...parity("export"),
   },
@@ -536,6 +564,7 @@ const shared = [
       "er",
       "requirement",
       "pie",
+      "quadrantChart",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -582,6 +611,7 @@ const interfaces = {
   er: "ErDiagramConfig",
   requirement: "RequirementDiagramConfig",
   pie: "PieDiagramConfig",
+  quadrantChart: "QuadrantChartConfig",
 };
 
 const entries = [];

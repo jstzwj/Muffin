@@ -21,17 +21,18 @@
       "state",
       "er",
       "requirement",
-      "pie"
+      "pie",
+      "quadrantChart"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 57,
+    "parity": 76,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 32,
+    "upstream-inert": 33,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -45,7 +46,8 @@
         "state",
         "er",
         "requirement",
-        "pie"
+        "pie",
+        "quadrantChart"
       ],
       "status": "parity",
       "upstream": [
@@ -74,7 +76,8 @@
         "state",
         "er",
         "requirement",
-        "pie"
+        "pie",
+        "quadrantChart"
       ],
       "status": "partial",
       "upstream": [
@@ -104,7 +107,8 @@
         "state",
         "er",
         "requirement",
-        "pie"
+        "pie",
+        "quadrantChart"
       ],
       "status": "parity",
       "upstream": [
@@ -287,7 +291,8 @@
         "state",
         "er",
         "requirement",
-        "pie"
+        "pie",
+        "quadrantChart"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -329,7 +334,8 @@
         "state",
         "er",
         "requirement",
-        "pie"
+        "pie",
+        "quadrantChart"
       ],
       "status": "parity",
       "upstream": [
@@ -350,7 +356,8 @@
         "state",
         "er",
         "requirement",
-        "pie"
+        "pie",
+        "quadrantChart"
       ],
       "status": "parity",
       "upstream": [
@@ -371,7 +378,8 @@
         "state",
         "er",
         "requirement",
-        "pie"
+        "pie",
+        "quadrantChart"
       ],
       "status": "unsupported",
       "upstream": [
@@ -2729,7 +2737,429 @@
       ],
       "note": "=label -> that slice gets CSS class 'highlighted' (scale 1.05 about the chart center, opacity 1; bbox grows ~5%); ='hover' -> 'highlightedOnHover' on all slices (CSS :hover only, no static paint change). Default '' highlights nothing — unless a section label is itself empty, which matches ''.",
       "default": ""
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.chartWidth",
+      "field": "chartWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 500
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.chartHeight",
+      "field": "chartHeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 500
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.titleFontSize",
+      "field": "titleFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 20
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.titlePadding",
+      "field": "titlePadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.quadrantPadding",
+      "field": "quadrantPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.xAxisLabelPadding",
+      "field": "xAxisLabelPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.yAxisLabelPadding",
+      "field": "yAxisLabelPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.xAxisLabelFontSize",
+      "field": "xAxisLabelFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 16
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.yAxisLabelFontSize",
+      "field": "yAxisLabelFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 16
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.quadrantLabelFontSize",
+      "field": "quadrantLabelFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": 16
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.quadrantTextTopPadding",
+      "field": "quadrantTextTopPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.pointTextPadding",
+      "field": "pointTextPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.pointLabelFontSize",
+      "field": "pointLabelFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": 12
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.pointRadius",
+      "field": "pointRadius",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.xAxisPosition",
+      "field": "xAxisPosition",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": "top"
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.yAxisPosition",
+      "field": "yAxisPosition",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": "left"
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.quadrantInternalBorderStrokeWidth",
+      "field": "quadrantInternalBorderStrokeWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 1
+    },
+    {
+      "family": "quadrantChart",
+      "interface": "QuadrantChartConfig",
+      "path": "quadrantChart.quadrantExternalBorderStrokeWidth",
+      "field": "quadrantExternalBorderStrokeWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 2
     }
   ],
-  "fixtureSha256": "c216ecc488f2da5a4e56a1f401a89a3e3bd82b06b265eb3f83bbe6f777b2c950"
+  "fixtureSha256": "14d0d56e0b543b47d7d1a696ab3b37d8e31d1adad35f0ebd23b9a0e70b9b144a"
 }

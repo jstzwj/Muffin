@@ -44,6 +44,7 @@ struct QuadrantSceneStyle {
   QString quadrantExternalBorderStrokeFill = QStringLiteral("#C7C7F1");
   QString quadrantTitleFill = QStringLiteral("#131300");
   QString fontFamily = QStringLiteral("Noto Sans");
+  qreal inheritedFontSize = 16.0;
   // DOM-inherited color (theme textColor) for SVG <paint> resolution: a garbage/
   // inherit fill or text value resolves to this (probed #333 for default).
   QString inheritedColor;
@@ -55,11 +56,18 @@ struct QuadrantPointG {
   qreal radius;
   QString fill;
   QString stroke;
-  QString strokeWidth;  // "Npx" (theme default "0px")
+  qreal strokeWidth = 0.0;  // Chromium used px (theme default 0)
   QString text;
 };
 struct QuadrantBorder { qreal x1, y1, x2, y2; QString strokeFill; qreal strokeWidth; };
-struct QuadrantAxisLabel { QString text; QString fill; qreal x, y; qreal fontSize; int rotation; };
+struct QuadrantAxisLabel {
+  QString text;
+  QString fill;
+  qreal x, y;
+  qreal fontSize;
+  int rotation;
+  bool centered = false;  // SVG text-anchor: middle (false => start)
+};
 
 struct QuadrantScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }

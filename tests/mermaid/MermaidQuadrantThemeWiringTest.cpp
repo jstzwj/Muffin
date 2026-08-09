@@ -233,6 +233,94 @@ int main(int argc, char** argv) {
     require(borderPx(QStringLiteral("\"garbage\"")) < 50, "invalid external border -> no border (SVG initial none)");
   }
 
-  qDebug().noquote() << "MermaidQuadrantThemeWiringTest: quadrant adapter consumes resolved theme (+overrides, RGBA, HSL borders, paint)";
+  // --- 8. right-side Y axis reserves its slot and keeps independent sizes ---
+  {
+    const QString src = QStringLiteral(
+        "%%{init: {\"quadrantChart\": {\"yAxisPosition\": \"right\"}}}%%\n") + kSrc;
+    const quadrant::QuadrantScene* s = renderQuad(cache, src);
+    require(std::abs(s->quadrants[0].width - 232.0) < 0.001,
+            QStringLiteral("right Y-axis slot must leave 232px half-quadrants"));
+    require(s->axisLabels.size() == 4, QStringLiteral("expected four axis labels"));
+    require(std::abs(s->axisLabels[2].x - 479.0) < 0.001,
+            QStringLiteral("right Y-axis anchor must match upstream x=479"));
+    const QString sizedSrc = QStringLiteral(
+        "%%{init: {\"quadrantChart\": {\"xAxisLabelFontSize\": 11, "
+        "\"yAxisLabelFontSize\": 27}}}%%\n") + kSrc;
+    const quadrant::QuadrantScene* sized = renderQuad(cache, sizedSrc);
+    require(std::abs(sized->axisLabels[0].fontSize - 11.0) < 0.001 &&
+                std::abs(sized->axisLabels[2].fontSize - 27.0) < 0.001,
+            QStringLiteral("X/Y axis labels must retain their own font sizes"));
+  }
+
+  // --- 9. axis text paints inside the canvas (not from an x=-400 clip rect) ---
+  {
+    const QString src = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"quadrantXAxisTextFill\": \"#ff0000\", "
+        "\"quadrantYAxisTextFill\": \"#0000ff\"}, \"quadrantChart\": {"
+        "\"xAxisLabelFontSize\": 28, \"yAxisLabelFontSize\": 28}}}%%\n") + kSrc;
+    const QImage img = decodePng(
+        editor::MermaidRenderCache::renderMermaidSourceToPng(src, 1.0).dataUrl);
+    require(countNear(img, QColor(255, 0, 0), 45) > 80,
+            QStringLiteral("X-axis labels must paint visible red ink"));
+    require(countNear(img, QColor(0, 0, 255), 45) > 80,
+            QStringLiteral("Y-axis labels must paint visible blue ink"));
+  }
+
+  // --- 10. an explicitly empty inline title suppresses frontmatter fallback ---
+  {
+    const QString src = QStringLiteral(
+        "---\ntitle: Frontmatter title\n---\nquadrantChart\ntitle\n\"P\": [0.5, 0.5]");
+    const quadrant::QuadrantScene* s = renderQuad(cache, src);
+    require(s->title.isEmpty() && s->titleText.isEmpty(),
+            QStringLiteral("empty inline title must win over frontmatter"));
+  }
+
+  // --- 11. quadrantChart.useMaxWidth follows JS/nullish semantics ---
+  {
+    const auto svgUseMaxWidth = [&](const QString& raw) {
+      const QString src = QStringLiteral(
+          "%%{init: {\"quadrantChart\": {\"useMaxWidth\": %1}}}%%\n").arg(raw) + kSrc;
+      const auto entry = cache.getSync(cache.makeKey(src), src);
+      require(entry.status == editor::MermaidRenderStatus::Ready,
+              QStringLiteral("useMaxWidth source must render: ") + raw);
+      return entry.metadata.svgUseMaxWidth;
+    };
+    require(!svgUseMaxWidth(QStringLiteral("false")) &&
+                !svgUseMaxWidth(QStringLiteral("0")) &&
+                !svgUseMaxWidth(QStringLiteral("\"\"")),
+            QStringLiteral("false/0/empty-string must request fixed SVG size"));
+    require(svgUseMaxWidth(QStringLiteral("true")) &&
+                svgUseMaxWidth(QStringLiteral("\"false\"")) &&
+                svgUseMaxWidth(QStringLiteral("null")),
+            QStringLiteral("true/non-empty-string/nullish-default must be responsive"));
+  }
+
+  // --- 12. SVG used-value saturation protects valid huge point styles ---
+  {
+    const QString src = QStringLiteral(
+        "quadrantChart\nclassDef huge radius: 99999999999999999999, "
+        "stroke-width: 99999999999999999999px\n\"P\":::huge: [0.5, 0.5]");
+    const quadrant::QuadrantScene* s = renderQuad(cache, src);
+    require(s->points.size() == 1 &&
+                std::abs(s->points[0].radius - 33554428.0) < 0.001 &&
+                std::abs(s->points[0].strokeWidth - 33554428.0) < 0.001,
+            QStringLiteral("radius/stroke-width must saturate to Chromium used value"));
+  }
+
+  // --- 13. zero and fractional label sizes remain valid CSS used values ---
+  {
+    const QString zeroSrc = QStringLiteral(
+        "%%{init: {\"quadrantChart\": {\"xAxisLabelFontSize\": 0}}}%%\n") + kSrc;
+    const quadrant::QuadrantScene* zero = renderQuad(cache, zeroSrc);
+    require(zero->axisLabels[0].fontSize == 0.0,
+            QStringLiteral("zero axis font-size must remain zero"));
+    const QString subSrc = QStringLiteral(
+        "%%{init: {\"quadrantChart\": {\"xAxisLabelFontSize\": 0.4}}}%%\n") + kSrc;
+    const quadrant::QuadrantScene* sub = renderQuad(cache, subSrc);
+    require(std::abs(sub->axisLabels[0].fontSize - 0.4) < 0.0001,
+            QStringLiteral("fractional axis font-size must not be rounded"));
+  }
+
+  qDebug().noquote() << "MermaidQuadrantThemeWiringTest: theme, layout, CSS used values, metadata and paint parity";
   return 0;
 }

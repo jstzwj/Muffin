@@ -187,6 +187,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"state\": {\"useMaxWidth\": false}}}%%\n"
           "stateDiagram-v2\n[*] --> Idle"),
+      QStringLiteral(
+          "%%{init: {\"quadrantChart\": {\"useMaxWidth\": false}}}%%\n"
+          "quadrantChart\n\"A\": [0.5, 0.5]"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);

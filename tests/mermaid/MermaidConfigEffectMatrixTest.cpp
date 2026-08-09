@@ -143,8 +143,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 132,
-          QStringLiteral("Expected 132 classified config rows, found %1")
+  require(entries.size() == 152,
+          QStringLiteral("Expected 152 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -200,6 +200,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("er"), 13},
                                              {QStringLiteral("flowchart"), 14},
                                              {QStringLiteral("pie"), 6},
+                                             {QStringLiteral("quadrantChart"), 20},
                                              {QStringLiteral("requirement"), 11},
                                              {QStringLiteral("sequence"), 37},
                                              {QStringLiteral("state"), 22}},
@@ -233,6 +234,7 @@ int main(int argc, char** argv) {
            QStringLiteral("deterministicIds"),
            QStringLiteral("deterministicIDSeed"),
            QStringLiteral("flowchart.useMaxWidth"),
+           QStringLiteral("quadrantChart.useMaxWidth"),
            QStringLiteral("sequence.useMaxWidth"),
            QStringLiteral("state.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==

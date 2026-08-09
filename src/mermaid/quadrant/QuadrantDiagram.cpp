@@ -8,6 +8,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <limits>
+
 namespace muffin::mermaid::quadrant {
 
 QuadrantParseError::QuadrantParseError(const QString& message, int line)
@@ -31,11 +33,89 @@ QStringList splitLines(const QString& source) {
   return lines;
 }
 
-// Strip a `%%` line comment (quadrant has no # comments). Unlike pie, %% here is
-// only a whole-line/full comment (jison rules 0/3); we strip from the first %%.
+// INITIAL-state comments stop at the first %% outside a quoted STR/MD_STR.
+// The title and accessibility lexer states are exclusive and handled before
+// this scanner, so their text keeps both %% and semicolons verbatim.
+int initialCommentStart(const QString& line) {
+  bool quoted = false;
+  for (int i = 0; i + 1 < line.size(); ++i) {
+    if (line.at(i) == QLatin1Char('"')) quoted = !quoted;
+    if (!quoted && line.at(i) == QLatin1Char('%') &&
+        line.at(i + 1) == QLatin1Char('%'))
+      return i;
+  }
+  return -1;
+}
+
 QString stripComment(const QString& line) {
-  const int i = line.indexOf(QStringLiteral("%%"));
+  const int i = initialCommentStart(line);
   return i < 0 ? line : line.left(i);
+}
+
+bool startsExclusiveTextState(const QString& trimmed) {
+  static const QRegularExpression stateStart(
+      QStringLiteral(R"(^(?:title\b|accTitle\s*:|accDescr\s*(?::|\{)))"),
+      QRegularExpression::CaseInsensitiveOption);
+  return stateStart.match(trimmed).hasMatch();
+}
+
+QStringList splitInitialLine(const QString& line) {
+  QStringList statements;
+  QString current;
+  bool quoted = false;
+  for (int i = 0; i < line.size(); ++i) {
+    const QChar c = line.at(i);
+    if (c == QLatin1Char('"')) quoted = !quoted;
+    if (!quoted && c == QLatin1Char('%') && i + 1 < line.size() &&
+        line.at(i + 1) == QLatin1Char('%'))
+      break;
+    if (!quoted && c == QLatin1Char(';')) {
+      statements.append(current);
+      current.clear();
+      continue;
+    }
+    current.append(c);
+  }
+  statements.append(current);
+  return statements;
+}
+
+QStringList splitStatements(const QString& source) {
+  const QStringList physical = splitLines(source);
+  QStringList statements;
+  for (int i = 0; i < physical.size(); ++i) {
+    QString line = physical.at(i);
+    const QString trimmed = line.trimmed();
+    // accDescr's exclusive lexer state consumes everything through the first
+    // closing brace, including newlines and semicolons.
+    if (trimmed.startsWith(QLatin1String("accDescr"), Qt::CaseInsensitive) &&
+        trimmed.contains(QLatin1Char('{')) && !trimmed.contains(QLatin1Char('}'))) {
+      while (++i < physical.size()) {
+        line += QLatin1Char('\n') + physical.at(i);
+        if (physical.at(i).contains(QLatin1Char('}'))) break;
+      }
+      statements.append(line);
+      continue;
+    }
+    const QString head = line.trimmed();
+    // title/acc single-line lexer states consume through newline; SEMI remains
+    // literal text there. In INITIAL, SEMI is an end-of-line token.
+    if (startsExclusiveTextState(head)) {
+      statements.append(line);
+    } else {
+      statements.append(splitInitialLine(line));
+    }
+  }
+  return statements;
+}
+
+QString sanitizeRenderedText(QString text) {
+  text = text.trimmed();
+  static const QRegularExpression script(
+      QStringLiteral(R"(<script\b[^>]*>[\s\S]*?</script\s*>)"),
+      QRegularExpression::CaseInsensitiveOption);
+  text.remove(script);
+  return text;
 }
 
 // Case-insensitive keyword match at the start of `s` (after optional leading
@@ -62,9 +142,12 @@ int matchCoord(const QString& s, int pos) {
   const QChar c = s.at(pos);
   if (c == QLatin1Char('0')) {
     int j = pos + 1;
-    if (j < n && s.at(j) == QLatin1Char('.')) {
+    // Upstream's Jison rule is literally `0(.\d+)?` (the dot is unescaped),
+    // so any one character followed by digits is consumed. Preserve this odd
+    // accepted form; its Number conversion becomes NaN unless that character
+    // was a decimal point.
+    if (j + 1 < n && s.at(j + 1).isDigit()) {
       int k = j + 1;
-      if (k >= n || s.at(k) < QLatin1Char('0') || s.at(k) > QLatin1Char('9')) return 0;
       while (k < n && s.at(k) >= QLatin1Char('0') && s.at(k) <= QLatin1Char('9')) ++k;
       j = k;
     }
@@ -107,7 +190,7 @@ QuadrantStyles parseStylesStr(const QString& stylesStr, int lineNo) {
     if (key == QStringLiteral("radius")) {
       if (invalidNumber(value))
         throw QuadrantParseError(QStringLiteral("value for radius %1 is invalid, please use a valid number").arg(value), lineNo);
-      s.radius = value.toInt();
+      s.radius = value.toDouble();
     } else if (key == QStringLiteral("color")) {
       if (invalidHex(value))
         throw QuadrantParseError(QStringLiteral("value for color %1 is invalid, please use a valid hex code").arg(value), lineNo);
@@ -144,35 +227,61 @@ void parseClassDef(QuadrantData& data, const QString& line, int lineNo) {
 
 void parsePoint(QuadrantData& data, const QString& line, int lineNo) {
   // <label>[:::<class>] : [ x , y ]   — class attaches via :::, NOT a trailing colon.
-  const int open = line.indexOf(QStringLiteral("["));
-  if (open < 0) throw QuadrantParseError(QStringLiteral("Expecting '[' in point"), lineNo);
-  // point_start colon = the ':' immediately before '[' (only whitespace between).
-  int i = open - 1;
-  while (i >= 0 && isWs(line.at(i))) --i;
-  if (i < 0 || line.at(i) != QLatin1Char(':'))
+  int colon = -1, open = -1;
+  bool quoted = false;
+  for (int pos = 0; pos < line.size(); ++pos) {
+    if (line.at(pos) == QLatin1Char('"')) quoted = !quoted;
+    if (quoted || line.at(pos) != QLatin1Char(':')) continue;
+    int bracket = pos + 1;
+    while (bracket < line.size() && isWs(line.at(bracket))) ++bracket;
+    if (bracket < line.size() && line.at(bracket) == QLatin1Char('[')) {
+      colon = pos;
+      open = bracket;
+      break;
+    }
+  }
+  if (open < 0)
     throw QuadrantParseError(QStringLiteral("Expecting ':' before point coords"), lineNo);
-  const int colon = i;
   QString labelPart = line.left(colon).trimmed();
-  // Strip quotes from the label; an optional `:::<class>` sits between them.
+  // An optional `:::<class>` is recognized only outside a quoted label.
   QString className;
-  const int tri = labelPart.indexOf(QStringLiteral(":::"));
+  int tri = -1;
+  quoted = false;
+  for (int pos = 0; pos + 2 < labelPart.size(); ++pos) {
+    if (labelPart.at(pos) == QLatin1Char('"')) quoted = !quoted;
+    if (!quoted && labelPart.mid(pos, 3) == QLatin1String(":::")) {
+      tri = pos;
+      break;
+    }
+  }
   if (tri >= 0) {
     className = labelPart.mid(tri + 3).trimmed();
     labelPart = labelPart.left(tri).trimmed();
+    if (className.isEmpty())
+      throw QuadrantParseError(QStringLiteral("missing point class name"), lineNo);
   }
   QString label = labelPart;
-  if (label.size() >= 2 && label.startsWith(QLatin1Char('"')) && label.endsWith(QLatin1Char('"')))
+  if (label.size() >= 2 && label.startsWith(QLatin1Char('"')) &&
+      label.endsWith(QLatin1Char('"'))) {
     label = label.mid(1, label.size() - 2);
-  else if (label.size() >= 2 && label.startsWith(QLatin1Char('\'')) && label.endsWith(QLatin1Char('\'')))
-    label = label.mid(1, label.size() - 2);
+    // MD_STR is delimited by a backtick just inside the double quotes. The DB
+    // receives its text content, not the markdown delimiters.
+    if (label.size() >= 2 && label.startsWith(QLatin1Char('`')) &&
+        label.endsWith(QLatin1Char('`')))
+      label = label.mid(1, label.size() - 2);
+  }
+  label = sanitizeRenderedText(label);
   // Multi-class (:::a,b) is upstream-invalid.
-  if (className.contains(QLatin1Char(',')))
+  if (!className.isEmpty() &&
+      !QRegularExpression(QStringLiteral("^[A-Za-z0-9_]+$")).match(className).hasMatch())
     throw QuadrantParseError(QStringLiteral("multiple classes on a point are not supported"), lineNo);
-  i = open + 1;
+  int i = open + 1;
   while (i < line.size() && isWs(line.at(i))) ++i;
   const int xlen = matchCoord(line, i);
   if (xlen == 0) throw QuadrantParseError(QStringLiteral("Lexical error: invalid x coordinate"), lineNo);
-  const double x = line.mid(i, xlen).toDouble();
+  bool xOk = false;
+  const double xParsed = line.mid(i, xlen).toDouble(&xOk);
+  const double x = xOk ? xParsed : std::numeric_limits<double>::quiet_NaN();
   i += xlen;
   while (i < line.size() && isWs(line.at(i))) ++i;
   if (i >= line.size() || line.at(i) != QLatin1Char(','))
@@ -181,7 +290,9 @@ void parsePoint(QuadrantData& data, const QString& line, int lineNo) {
   while (i < line.size() && isWs(line.at(i))) ++i;
   const int ylen = matchCoord(line, i);
   if (ylen == 0) throw QuadrantParseError(QStringLiteral("Lexical error: invalid y coordinate"), lineNo);
-  const double y = line.mid(i, ylen).toDouble();
+  bool yOk = false;
+  const double yParsed = line.mid(i, ylen).toDouble(&yOk);
+  const double y = yOk ? yParsed : std::numeric_limits<double>::quiet_NaN();
   i += ylen;
   while (i < line.size() && isWs(line.at(i))) ++i;
   if (i >= line.size() || line.at(i) != QLatin1Char(']'))
@@ -210,9 +321,12 @@ void parseAxis(QuadrantData& data, QLatin1String kw, const QString& line, bool i
   if (m.hasMatch()) {
     left = r.left(m.capturedStart()).trimmed();
     right = r.mid(m.capturedEnd()).trimmed();
+    if (right.isEmpty()) left += QStringLiteral(" \u27F6");
   } else {
     left = r;
   }
+  left = sanitizeRenderedText(left);
+  right = sanitizeRenderedText(right);
   if (isX) { data.xAxisLeftText = left; data.xAxisRightText = right; }
   else { data.yAxisBottomText = left; data.yAxisTopText = right; }
 }
@@ -221,20 +335,20 @@ void parseAxis(QuadrantData& data, QLatin1String kw, const QString& line, bool i
 
 QuadrantData QuadrantDiagram::parse(const QString& source) {
   QuadrantData data;
-  const QStringList lines = splitLines(source);
+  const QStringList lines = splitStatements(source);
 
   int idx = 0;
-  while (idx < lines.size() && stripComment(lines.at(idx)).trimmed().isEmpty()) ++idx;
+  while (idx < lines.size() && lines.at(idx).trimmed().isEmpty()) ++idx;
   if (idx >= lines.size()) throw QuadrantParseError(QStringLiteral("missing quadrantChart header"));
 
-  const QString header = stripComment(lines.at(idx));
+  const QString header = lines.at(idx);
   const int after = matchKw(header, QLatin1String("quadrantchart"));
   if (after < 0) throw QuadrantParseError(QStringLiteral("missing quadrantChart header"), idx + 1);
   if (after != header.size())  // trailing garbage after the keyword (e.g. quadrantChartx)
     throw QuadrantParseError(QStringLiteral("unexpected text after quadrantChart header"), idx + 1);
 
   for (int j = idx + 1; j < lines.size(); ++j) {
-    const QString raw = stripComment(lines.at(j));
+    const QString raw = lines.at(j);
     const QString trimmed = raw.trimmed();
     if (trimmed.isEmpty()) continue;
     const int lineNo = j + 1;
@@ -242,11 +356,15 @@ QuadrantData QuadrantDiagram::parse(const QString& source) {
     int p;
     if ((p = matchKw(raw, QLatin1String("x-axis"))) >= 0) { parseAxis(data, QLatin1String("x-axis"), raw, true); continue; }
     if ((p = matchKw(raw, QLatin1String("y-axis"))) >= 0) { parseAxis(data, QLatin1String("y-axis"), raw, false); continue; }
-    if ((p = matchKw(raw, QLatin1String("quadrant-1"))) >= 0) { data.quadrant1Text = raw.mid(p).trimmed(); continue; }
-    if ((p = matchKw(raw, QLatin1String("quadrant-2"))) >= 0) { data.quadrant2Text = raw.mid(p).trimmed(); continue; }
-    if ((p = matchKw(raw, QLatin1String("quadrant-3"))) >= 0) { data.quadrant3Text = raw.mid(p).trimmed(); continue; }
-    if ((p = matchKw(raw, QLatin1String("quadrant-4"))) >= 0) { data.quadrant4Text = raw.mid(p).trimmed(); continue; }
-    if ((p = matchKw(raw, QLatin1String("title"))) >= 0) { data.title = raw.mid(p).trimmed(); continue; }
+    if ((p = matchKw(raw, QLatin1String("quadrant-1"))) >= 0) { data.quadrant1Text = sanitizeRenderedText(raw.mid(p)); continue; }
+    if ((p = matchKw(raw, QLatin1String("quadrant-2"))) >= 0) { data.quadrant2Text = sanitizeRenderedText(raw.mid(p)); continue; }
+    if ((p = matchKw(raw, QLatin1String("quadrant-3"))) >= 0) { data.quadrant3Text = sanitizeRenderedText(raw.mid(p)); continue; }
+    if ((p = matchKw(raw, QLatin1String("quadrant-4"))) >= 0) { data.quadrant4Text = sanitizeRenderedText(raw.mid(p)); continue; }
+    if ((p = matchKw(raw, QLatin1String("title"))) >= 0) {
+      data.hasTitleDirective = true;
+      data.title = raw.mid(p).trimmed();
+      continue;
+    }
     if ((p = matchKw(raw, QLatin1String("acctitle"))) >= 0) {
       int c = p; while (c < raw.size() && isWs(raw.at(c))) ++c;
       if (c < raw.size() && raw.at(c) == QLatin1Char(':')) { data.accTitle = raw.mid(c + 1).trimmed(); continue; }
@@ -256,7 +374,10 @@ QuadrantData QuadrantDiagram::parse(const QString& source) {
       if (c < raw.size() && raw.at(c) == QLatin1Char(':')) { data.accDescr = raw.mid(c + 1).trimmed(); continue; }
       if (c < raw.size() && raw.at(c) == QLatin1Char('{')) {
         const int close = raw.lastIndexOf(QLatin1Char('}'));
-        if (close > c) { data.accDescr = raw.mid(c + 1, close - c - 1).trimmed(); continue; }
+        if (close > c && raw.mid(close + 1).trimmed().isEmpty()) {
+          data.accDescr = raw.mid(c + 1, close - c - 1).trimmed();
+          continue;
+        }
       }
     }
     if (matchKw(raw, QLatin1String("classdef")) >= 0) { parseClassDef(data, raw, lineNo); continue; }

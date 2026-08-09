@@ -26,7 +26,7 @@ struct QuadrantDiagramImpl : Diagram {
     // Effective title: the in-source `quadrantChart title` wins; otherwise the
     // frontmatter title is the diagram title. Resolved BEFORE buildQuadrantScene
     // so titleSpace is reserved and the in-scene title is placed correctly.
-    if (data.title.isEmpty() && !pre.title.isEmpty()) data.title = pre.title;
+    if (!data.hasTitleDirective && !pre.title.isEmpty()) data.title = pre.title;
     const QString configuredTheme = themeFromConfig(pre.config);
     const QString effectiveTheme = configuredTheme.isEmpty() ? theme : configuredTheme;
     const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
@@ -39,6 +39,8 @@ struct QuadrantDiagramImpl : Diagram {
     // string emitted verbatim). No default/dark special-casing remains; the
     // struct defaults below are dead safety fallbacks.
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
+    style.inheritedFontSize = cssFontSizePx(
+        themeVars.fontSize, pieCssLengthContext(style.fontFamily, 16.0));
     style.inheritedColor = themeVars.textColor;
     style.quadrant1Fill = themeVars.quadrant[0];
     style.quadrant2Fill = themeVars.quadrant[1];
@@ -66,6 +68,10 @@ struct QuadrantDiagramImpl : Diagram {
         renderMetadata(pre, type, QString(), data.accTitle, data.accDescr,
                        scene.style.quadrantTitleFill, scene.style.fontFamily, 20.0, 10.0, 0.0);
     metadata.title = QString();
+    const QJsonValue rawUseMaxWidth = qcfg.value(QStringLiteral("useMaxWidth"));
+    metadata.svgUseMaxWidth = rawUseMaxWidth.isUndefined() || rawUseMaxWidth.isNull()
+                                  ? true
+                                  : truthyConfigValue(rawUseMaxWidth);
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));

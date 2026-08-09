@@ -18,8 +18,7 @@
 //     exactly `1`, `0`, or `0.<digits>`. `1.5` / `-0.1` / `2` / `.5` are lexical
 //     errors. Points render in REVERSE source order (quadrantBuilder.addPoints
 //     prepends).
-//   - `%%` line comments. `classDef`/style support is deferred (the frozen
-//     oracle has only classDef rejects; valid classDef is a future enhancement).
+//   - `%%` comments, semicolon EOLs, classDef, and point-inline stylesOpt.
 
 #include <QString>
 #include <QVector>
@@ -36,7 +35,7 @@ struct QuadrantStyles {
   QString color;         // hex (fill) or empty
   QString strokeColor;   // hex or empty
   QString strokeWidth;   // "Npx" or empty
-  int radius = -1;       // -1 = unset
+  qreal radius = -1.0;   // -1 = unset; JS parseInt result is stored as Number
 };
 
 struct QuadrantPoint {
@@ -54,6 +53,7 @@ struct QuadrantClassDef {
 
 struct QuadrantData {
   QString title;
+  bool hasTitleDirective = false;
   QString accTitle;
   QString accDescr;
   QString xAxisLeftText, xAxisRightText;
