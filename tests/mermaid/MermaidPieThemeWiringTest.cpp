@@ -85,6 +85,11 @@ int main(int argc, char** argv) {
   // CssLengthContext (800x600 viewport + pie-font ex/ch), not the placeholder.
   const muffin::CssLengthContext ctx = editor::pieCssLengthContext(QStringLiteral("Noto Sans"), 16.0);
   const qreal diag = 500.0;  // test SVG diagonal for stroke-width %
+  // Shared Noto Sans @16 metrics for independently re-deriving ex/ch expectations
+  // (sub-px root, capped root). Hoisted so the per-section blocks don't shadow it.
+  QFont refFont(QStringLiteral("Noto Sans"));
+  refFont.setPixelSize(16);
+  const QFontMetricsF refM(refFont);
   // cssStrokeWidthPx: px/unitless==px, em x16, pt x4/3, vw/vh of 800x600, ex/ch
   //   font-relative, % of the diagonal; 0 ok; missing/invalid/negative -> 1.
   require(approx(editor::cssStrokeWidthPx(QStringLiteral("2px"), ctx, diag), 2.0), "sw 2px");
@@ -161,9 +166,6 @@ int main(int argc, char** argv) {
   // Probed vs 11.16.0: root 0.4px + pieStrokeWidth 10ex -> 2.0918px = 10 * exPx.
   const muffin::CssLengthContext ctx04 =
       editor::pieCssLengthContext(QStringLiteral("Noto Sans"), 0.4);
-  QFont refFont(QStringLiteral("Noto Sans"));
-  refFont.setPixelSize(16);
-  const QFontMetricsF refM(refFont);
   const qreal scale04 = 0.4 / 16.0;
   require(approx(ctx04.emPx, 0.4), "ctx04 preserves sub-px emPx 0.4");
   require(approx(ctx04.exPx, refM.xHeight() * scale04),
@@ -177,6 +179,19 @@ int main(int argc, char** argv) {
           "sw04 10ex -> 10*exPx (sub-px, non-zero)");
   require(approx(editor::cssStrokeWidthPx(QStringLiteral("10ch"), ctx04, 500.0), 10.0 * ctx04.chPx),
           "sw04 10ch -> 10*chPx (sub-px, non-zero)");
+  // Chromium used-value saturation caps (scripts/probe_mermaid_pie_length_clamp.mjs):
+  // font-size computed value caps at 10000px (min(v,10000); NOT floored -- 9999.9 is
+  // kept), stroke-width caps at 2^31/64 = 33554432 (the LayoutUnit fixed-point max).
+  // Prevents geometry divergence AND int overflow downstream (qRound/setPixelSize).
+  // The % branch is capped by the same std::min. ctx.emPx=16, diag=500 here.
+  require(approx(editor::cssFontSizePx(QStringLiteral("9999px"), ctx), 9999.0), "fs 9999px (under cap)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("10000px"), ctx), 10000.0), "fs 10000px (at cap)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("10001px"), ctx), 10000.0), "fs 10001px -> cap 10000");
+  require(approx(editor::cssFontSizePx(QStringLiteral("1e9px"), ctx), 10000.0), "fs 1e9px -> cap 10000");
+  require(approx(editor::cssFontSizePx(QStringLiteral("2000vw"), ctx), 10000.0), "fs 2000vw (16000) -> cap 10000");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("1e9px"), ctx, diag), 33554432.0), "sw 1e9px -> cap 2^25");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("33554432px"), ctx, diag), 33554432.0), "sw 2^25px (at cap)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("67108864px"), ctx, diag), 33554432.0), "sw 2^26px -> cap 2^25");
   // parseFontSizeNumber: upstream parseInt (leading int, truncates decimals,
   //   ignores unit); no leading int -> default 2. Parsed as a JS Number (double,
   //   not qint64) so values beyond the qint64 range parse to the nearest double
@@ -562,9 +577,6 @@ int main(int argc, char** argv) {
           " pie title T\n\"A\" : 50\n\"B\" : 50").arg(sw);
       return renderPie(cache, src)->style.sliceStrokeWidth;
     };
-    QFont refFont(QStringLiteral("Noto Sans"));
-    refFont.setPixelSize(16);
-    const QFontMetricsF refM(refFont);
     const qreal scale = 0.4 / 16.0;
     require(approx(subpxStroke(QStringLiteral("10ex")), 10.0 * refM.xHeight() * scale),
             "root 0.4px + pieStrokeWidth 10ex -> 10*xHeight(16)*0.4/16 (non-zero)");
@@ -574,6 +586,43 @@ int main(int argc, char** argv) {
             "root 0.4px + pieStrokeWidth 1em -> 0.4 (em linear in root)");
   }
 
-  qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint, units, title-clip, sub-px)";
+  // --- 14. Chromium used-value saturation caps on the PRODUCTION path ---
+  // font-size caps at 10000px, stroke-width at 2^31/64 = 33554432 (LayoutUnit max).
+  // A capped root (1e9px -> 10000) feeds em/%/ex/ch children, which re-cap. Probed
+  // vs 11.16.0 (scripts/probe_mermaid_pie_length_clamp.mjs); ex/ch independently
+  // re-derived from a fresh 16px QFont (Noto Sans != browser trebuchet ms).
+  {
+    const auto titleFsBlock = [&](const QString& initBlock) {
+      const QString src = QStringLiteral("%1\n pie title T\n\"A\" : 50\n\"B\" : 50").arg(initBlock);
+      return renderPie(cache, src)->style.titleFontSize;
+    };
+    const auto swBlock = [&](const QString& initBlock) {
+      const QString src = QStringLiteral("%1\n pie title T\n\"A\" : 50\n\"B\" : 50").arg(initBlock);
+      return renderPie(cache, src)->style.sliceStrokeWidth;
+    };
+    // Direct font-size saturation.
+    require(approx(titleFsBlock(QStringLiteral("%%{init: {\"themeVariables\": {\"pieTitleTextSize\": \"10000px\"}}}%%")), 10000.0),
+            "title 10000px -> 10000 (at cap)");
+    require(approx(titleFsBlock(QStringLiteral("%%{init: {\"themeVariables\": {\"pieTitleTextSize\": \"1e9px\"}}}%%")), 10000.0),
+            "title 1e9px -> 10000 (capped, no setPixelSize overflow)");
+    // Capped root (1e9px -> 10000) feeding em/%: child re-capped to 10000.
+    require(approx(titleFsBlock(QStringLiteral("%%{init: {\"themeVariables\": {\"fontSize\": \"1e9px\", \"pieTitleTextSize\": \"3em\"}}}%%")), 10000.0),
+            "root 1e9px + title 3em -> 10000 (3*10000 re-capped)");
+    require(approx(titleFsBlock(QStringLiteral("%%{init: {\"themeVariables\": {\"fontSize\": \"1e9px\", \"pieTitleTextSize\": \"200%\"}}}%%")), 10000.0),
+            "root 1e9px + title 200% -> 10000 (200% of 10000 re-capped)");
+    // Direct stroke-width saturation.
+    require(approx(swBlock(QStringLiteral("%%{init: {\"themeVariables\": {\"pieStrokeWidth\": \"1e9px\"}}}%%")), 33554432.0),
+            "pieStrokeWidth 1e9px -> 2^25 (capped)");
+    // Capped root feeding ex/ch: linearly scaled at the 10000 root, under the stroke cap.
+    const qreal scale10k = 10000.0 / 16.0;
+    require(approx(swBlock(QStringLiteral("%%{init: {\"themeVariables\": {\"fontSize\": \"1e9px\", \"pieStrokeWidth\": \"10ex\"}}}%%")),
+                    10.0 * refM.xHeight() * scale10k),
+            "root 1e9px + pieStrokeWidth 10ex -> 10*xHeight(16)*10000/16 (linear at capped root)");
+    require(approx(swBlock(QStringLiteral("%%{init: {\"themeVariables\": {\"fontSize\": \"1e9px\", \"pieStrokeWidth\": \"10ch\"}}}%%")),
+                    10.0 * refM.horizontalAdvance(QChar('0')) * scale10k),
+            "root 1e9px + pieStrokeWidth 10ch -> 10*advance('0')(16)*10000/16 (linear at capped root)");
+  }
+
+  qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint, units, title-clip, sub-px, length-clamp)";
   return 0;
 }

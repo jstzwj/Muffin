@@ -194,6 +194,22 @@ qreal pixelValue(const QString& value, qreal fallback) {
   return ok && parsed > 0.0 ? parsed : fallback;
 }
 
+// Chromium clamps a CSS length's USED value per property before it reaches layout
+// or painting. Replicate both caps so an absurd config (font-size:"1e9px") does NOT
+// (a) diverge from the browser's rendered geometry, or (b) overflow int downstream
+// -- a font-size >10000 would reach QFont::setPixelSize(int) via qRound and a value
+// >INT_MAX overflows. Probed vs 11.16.0 (scripts/probe_mermaid_pie_length_clamp.mjs):
+//   - font-size computed value saturates at 10000px: 9999.9 -> 9999.9, 10000 -> 10000,
+//     10000.5/10001/1e5/1e9/1e10 -> 10000 (min(v, 10000); NOT floored -- 9999.9 kept).
+//   - stroke-width computed value saturates at 2^31/64 = 2^25 = 33554432 (the
+//     LayoutUnit fixed-point int31/64 max): everything >= ~3.355e7 -> 33554432.
+// The caps compose with the cascade: a root "1e9px" -> 10000 (font-size cap), then a
+// child "3em" -> 3*10000 = 30000 -> re-capped to 10000; "200%" -> 20000 -> 10000;
+// stroke "3em" -> 30000 (under the stroke cap); stroke "10ex"/"10ch" -> the linearly
+// scaled ex/ch at the 10000 root (52k-ish, under the stroke cap).
+constexpr qreal kChromiumMaxFontSizePx = 10000.0;
+constexpr qreal kChromiumMaxStrokeWidthPx = 33554432.0;  // 2^31 / 64
+
 CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx) {
   // An EXACT-zero (or negative) root font-size is PRESERVED with zero metrics --
   // upstream honors fontSize:"0px": em/%/inherited sizes collapse to 0 (probed:
@@ -230,12 +246,12 @@ qreal cssStrokeWidthPx(const QString& value, const CssLengthContext& ctx, qreal 
     const qreal n = t.left(t.size() - 1).toDouble(&ok);
     if (!ok || !std::isfinite(n)) return 1.0;
     const qreal px = n / 100.0 * diagonalPx;
-    return px < 0.0 ? 1.0 : px;
+    return px < 0.0 ? 1.0 : std::min(px, kChromiumMaxStrokeWidthPx);
   }
   const CssLengthResult r = resolveCssLengthToPx(value, ctx);
   if (r.status != CssLengthStatus::Valid) return 1.0;  // missing/invalid -> CSS initial
   if (r.px < 0.0) return 1.0;                           // negative -> CSS initial
-  return r.px;                                          // 0 or positive (0 -> caller NoPen)
+  return std::min(r.px, kChromiumMaxStrokeWidthPx);     // 0 or positive (0 -> caller NoPen)
 }
 
 qreal cssOpacity(const QString& value) {
@@ -258,7 +274,7 @@ qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx) {
     const qreal n = t.left(t.size() - 1).toDouble(&ok);
     if (!ok || !std::isfinite(n)) return ctx.emPx;
     const qreal px = n / 100.0 * ctx.emPx;
-    return px < 0.0 ? ctx.emPx : px;
+    return px < 0.0 ? ctx.emPx : std::min(px, kChromiumMaxFontSizePx);
   }
   // font-size REQUIRES a unit: a bare number (full CSS <number> incl. exponent
   // like "1e2" or "25") is invalid -> the declaration is dropped and the element
@@ -271,7 +287,7 @@ qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx) {
   if (bareNumber.match(value).hasMatch()) return ctx.emPx;
   const CssLengthResult r = resolveCssLengthToPx(value, ctx);
   if (r.status != CssLengthStatus::Valid || r.px < 0.0) return ctx.emPx;  // inherited
-  return r.px;
+  return std::min(r.px, kChromiumMaxFontSizePx);  // Chromium used-value clamp
 }
 
 qreal parseFontSizeNumber(const QString& value) {

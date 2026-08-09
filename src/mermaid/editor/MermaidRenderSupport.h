@@ -60,8 +60,11 @@ CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx);
 // normalized diagonal `diagonalPx` (sqrt(w^2+h^2)/sqrt(2) of the SVG viewport --
 // probed, deferred to paint, so the caller passes the scene bounds diagonal).
 // A valid length (incl. 0) is returned; a negative or missing/invalid value
-// yields the CSS initial (1). Probed: "2px"->2, "1.7"->1.7, "0"->0, "3em"->48,
-// "10vw"->80, "abc"->1. A 0 result means the caller paints NoPen.
+// yields the CSS initial (1). The computed px is capped at Chromium's used-value
+// saturation (2^31/64 = 33554432, the LayoutUnit max) so a huge config matches
+// the browser and never overflows downstream. Probed: "2px"->2, "1.7"->1.7,
+// "0"->0, "3em"->48, "10vw"->80, "abc"->1, "1e9px"->33554432. A 0 result means
+// the caller paints NoPen.
 qreal cssStrokeWidthPx(const QString& value, const CssLengthContext& ctx, qreal diagonalPx);
 
 // CSS opacity: a number or percentage, clamped to [0,1]; missing/invalid/
@@ -77,8 +80,12 @@ qreal cssOpacity(const QString& value);
 // resolved SVG root font-size (themeVariables.fontSize, resolved against the
 // 16px <html> root) -- build it via a root pass: pieCssLengthContext(f, 16) ->
 // cssFontSizePx(themeVars.fontSize, rootCtx) -> pieCssLengthContext(f, rootFs).
+// The computed px is capped at Chromium's used-value saturation (10000px), which
+// composes with the cascade (root "1e9px" -> 10000; child "3em" -> 30000 -> 10000;
+// "200%" -> 20000 -> 10000) and prevents a huge value overflowing QFont::setPixelSize.
 // Probed vs 11.16.0: neo root 14 -> "25"/"abc"/"-2px"/"" all inherit 14; "2em"
-// root + "200%" -> 64; "25px"->25, "1e2"->16(default ctx), "1e2px"->100, "0px"->0.
+// root + "200%" -> 64; "25px"->25, "1e2"->16(default ctx), "1e2px"->100, "0px"->0,
+// "1e9px"->10000.
 qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx);
 
 // Replicates upstream parseFontSize()[0] ?? 2 (pieDiagram-ENE6RG2P.mjs:157):
