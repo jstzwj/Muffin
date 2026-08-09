@@ -480,6 +480,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/RequirementDiagramAdapter.cpp
   src/mermaid/editor/PieDiagramAdapter.cpp
   src/mermaid/editor/QuadrantDiagramAdapter.cpp
+  src/mermaid/editor/JourneyDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -571,6 +572,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/quadrant/QuadrantScene.h
   src/mermaid/quadrant/QuadrantScenePainter.cpp
   src/mermaid/quadrant/QuadrantScenePainter.h
+  src/mermaid/journey/JourneyDiagram.cpp
+  src/mermaid/journey/JourneyDiagram.h
+  src/mermaid/journey/JourneyScene.cpp
+  src/mermaid/journey/JourneyScene.h
+  src/mermaid/journey/JourneyScenePainter.cpp
+  src/mermaid/journey/JourneyScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

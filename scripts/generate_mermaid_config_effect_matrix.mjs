@@ -203,6 +203,40 @@ const familyPolicies = {
       "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config.",
     ),
   },
+  journey: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    diagramMarginX: parity(...interactiveLayout),
+    diagramMarginY: parity(...interactiveLayout),
+    leftMargin: parity(...interactiveLayout),
+    maxLabelWidth: parity("text", ...interactiveLayout),
+    width: parity(...interactiveLayout),
+    height: parity(...interactiveLayout),
+    boxMargin: inert("Sequence-era field; Journey 11.16.0 never consumes it."),
+    boxTextMargin: parity("text", "paint", "export"),
+    noteMargin: inert("Sequence-era field; Journey 11.16.0 never consumes it."),
+    messageMargin: inert("Sequence-era field; Journey 11.16.0 never consumes it."),
+    messageAlign: inert("Sequence-era field; Journey 11.16.0 never consumes it."),
+    bottomMarginAdj: inert("Sequence-era field; Journey 11.16.0 never consumes it."),
+    rightAngles: inert("Sequence-era field; Journey 11.16.0 never consumes it."),
+    taskFontSize: parity("text", "paint", "export"),
+    taskFontFamily: parity("text", "paint", "export"),
+    taskMargin: parity(...interactiveLayout),
+    activationWidth: inert("Sequence-era field; Journey 11.16.0 never consumes it."),
+    textPlacement: parity("text", "paint", "export"),
+    actorColours: inert(
+      "Array-valued Journey config is removed by the Mermaid source-entry sanitizer.",
+    ),
+    sectionFills: inert(
+      "Array-valued Journey config is removed by the Mermaid source-entry sanitizer.",
+    ),
+    sectionColours: inert(
+      "Array-valued Journey config is removed by the Mermaid source-entry sanitizer.",
+    ),
+    titleColor: parity("paint", "export"),
+    titleFontFamily: parity("text", "paint", "export"),
+    titleFontSize: parity("text", "paint", "export"),
+  },
   class: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -413,6 +447,7 @@ const shared = [
       "requirement",
       "pie",
       "quadrantChart",
+      "journey",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -427,6 +462,7 @@ const shared = [
       "requirement",
       "pie",
       "quadrantChart",
+      "journey",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -445,6 +481,7 @@ const shared = [
       "requirement",
       "pie",
       "quadrantChart",
+      "journey",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -496,7 +533,10 @@ const shared = [
   },
   {
     path: "maxTextSize",
-    families: ["flowchart", "sequence", "class", "state"],
+    families: [
+      "flowchart", "sequence", "class", "state", "er", "requirement",
+      "pie", "quadrantChart", "journey",
+    ],
     ...unsupported(
       ["parsed"],
       "Muffin keeps family-specific safety ceilings instead of trusting document config.",
@@ -513,6 +553,7 @@ const shared = [
       "requirement",
       "pie",
       "quadrantChart",
+      "journey",
     ],
     ...policy(
       "security-fixed",
@@ -537,6 +578,7 @@ const shared = [
       "requirement",
       "pie",
       "quadrantChart",
+      "journey",
     ],
     ...parity("export"),
   },
@@ -551,6 +593,7 @@ const shared = [
       "requirement",
       "pie",
       "quadrantChart",
+      "journey",
     ],
     ...parity("export"),
   },
@@ -565,6 +608,7 @@ const shared = [
       "requirement",
       "pie",
       "quadrantChart",
+      "journey",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -612,6 +656,7 @@ const interfaces = {
   requirement: "RequirementDiagramConfig",
   pie: "PieDiagramConfig",
   quadrantChart: "QuadrantChartConfig",
+  journey: "JourneyDiagramConfig",
 };
 
 const entries = [];

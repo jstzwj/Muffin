@@ -58,7 +58,10 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
   for (auto it = values.constBegin(); it != values.constEnd(); ++it) {
     if (it.key() == QLatin1String("THEME_COLOR_LIMIT")) continue;  // handled below via jsThemeColorLimit
     const QString value = configString(it.value());
-    if (!value.isEmpty()) result.insert(it.key(), value);
+    // An explicitly empty string is a real theme override (Journey uses it to
+    // suppress an individual fillType CSS declaration). Arrays/objects still
+    // stringify to empty here and remain outside the source-entry surface.
+    if (it.value().isString() || !value.isEmpty()) result.insert(it.key(), value);
   }
   // THEME_COLOR_LIMIT is an integer palette size, not a free-form string: route
   // it through jsThemeColorLimit so the value carried into FlowThemeVariables::
@@ -106,6 +109,10 @@ double parseJsRadixInt(const QString& digits, int base) {
 double jsNumberString(QString s) {
   s = s.trimmed();
   if (s.isEmpty()) return 0.0;  // Number("") == 0
+  if (s == QLatin1String("Infinity") || s == QLatin1String("+Infinity"))
+    return std::numeric_limits<double>::infinity();
+  if (s == QLatin1String("-Infinity"))
+    return -std::numeric_limits<double>::infinity();
   // 0x / 0b / 0o are all 2-char prefixes; a valid literal has >= 1 digit after.
   const auto intPrefix = [&s](QLatin1String pfx) {
     return s.length() > 2 && s.left(2).compare(pfx, Qt::CaseInsensitive) == 0;
@@ -389,6 +396,12 @@ CssPixelFont makeCssPixelFont(const QString& family, qreal pixelSize) {
   referencePx = std::max(referencePx, 1);
   result.font.setPixelSize(referencePx);
   result.scale = pixelSize / qreal(referencePx);
+  return result;
+}
+
+CssPixelFont makeUnhintedCssPixelFont(const QString& family, qreal pixelSize) {
+  CssPixelFont result = makeCssPixelFont(family, pixelSize);
+  result.font.setHintingPreference(QFont::PreferNoHinting);
   return result;
 }
 

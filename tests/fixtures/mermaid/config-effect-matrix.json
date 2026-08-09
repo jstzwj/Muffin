@@ -22,17 +22,18 @@
       "er",
       "requirement",
       "pie",
-      "quadrantChart"
+      "quadrantChart",
+      "journey"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 76,
+    "parity": 91,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 33,
+    "upstream-inert": 44,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -47,7 +48,8 @@
         "er",
         "requirement",
         "pie",
-        "quadrantChart"
+        "quadrantChart",
+        "journey"
       ],
       "status": "parity",
       "upstream": [
@@ -77,7 +79,8 @@
         "er",
         "requirement",
         "pie",
-        "quadrantChart"
+        "quadrantChart",
+        "journey"
       ],
       "status": "partial",
       "upstream": [
@@ -108,7 +111,8 @@
         "er",
         "requirement",
         "pie",
-        "quadrantChart"
+        "quadrantChart",
+        "journey"
       ],
       "status": "parity",
       "upstream": [
@@ -271,7 +275,12 @@
         "flowchart",
         "sequence",
         "class",
-        "state"
+        "state",
+        "er",
+        "requirement",
+        "pie",
+        "quadrantChart",
+        "journey"
       ],
       "status": "unsupported",
       "upstream": [
@@ -292,7 +301,8 @@
         "er",
         "requirement",
         "pie",
-        "quadrantChart"
+        "quadrantChart",
+        "journey"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -335,7 +345,8 @@
         "er",
         "requirement",
         "pie",
-        "quadrantChart"
+        "quadrantChart",
+        "journey"
       ],
       "status": "parity",
       "upstream": [
@@ -357,7 +368,8 @@
         "er",
         "requirement",
         "pie",
-        "quadrantChart"
+        "quadrantChart",
+        "journey"
       ],
       "status": "parity",
       "upstream": [
@@ -379,7 +391,8 @@
         "er",
         "requirement",
         "pie",
-        "quadrantChart"
+        "quadrantChart",
+        "journey"
       ],
       "status": "unsupported",
       "upstream": [
@@ -3159,7 +3172,540 @@
         "export"
       ],
       "default": 2
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.diagramMarginX",
+      "field": "diagramMarginX",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.diagramMarginY",
+      "field": "diagramMarginY",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.leftMargin",
+      "field": "leftMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 150
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.maxLabelWidth",
+      "field": "maxLabelWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 360
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 150
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.boxMargin",
+      "field": "boxMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Sequence-era field; Journey 11.16.0 never consumes it.",
+      "default": 10
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.boxTextMargin",
+      "field": "boxTextMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.noteMargin",
+      "field": "noteMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Sequence-era field; Journey 11.16.0 never consumes it.",
+      "default": 10
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.messageMargin",
+      "field": "messageMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Sequence-era field; Journey 11.16.0 never consumes it.",
+      "default": 35
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.messageAlign",
+      "field": "messageAlign",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Sequence-era field; Journey 11.16.0 never consumes it.",
+      "default": "center"
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.bottomMarginAdj",
+      "field": "bottomMarginAdj",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Sequence-era field; Journey 11.16.0 never consumes it.",
+      "default": 1
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.rightAngles",
+      "field": "rightAngles",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Sequence-era field; Journey 11.16.0 never consumes it.",
+      "default": false
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.taskFontSize",
+      "field": "taskFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.taskFontFamily",
+      "field": "taskFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.taskMargin",
+      "field": "taskMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.activationWidth",
+      "field": "activationWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Sequence-era field; Journey 11.16.0 never consumes it.",
+      "default": 10
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.textPlacement",
+      "field": "textPlacement",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": "fo"
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.actorColours",
+      "field": "actorColours",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Array-valued Journey config is removed by the Mermaid source-entry sanitizer.",
+      "default": [
+        "#8FBC8F",
+        "#7CFC00",
+        "#00FFFF",
+        "#20B2AA",
+        "#B0E0E6",
+        "#FFFFE0"
+      ]
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.sectionFills",
+      "field": "sectionFills",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Array-valued Journey config is removed by the Mermaid source-entry sanitizer.",
+      "default": [
+        "#191970",
+        "#8B008B",
+        "#4B0082",
+        "#2F4F4F",
+        "#800000",
+        "#8B4513",
+        "#00008B"
+      ]
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.sectionColours",
+      "field": "sectionColours",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Array-valued Journey config is removed by the Mermaid source-entry sanitizer.",
+      "default": [
+        "#fff"
+      ]
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.titleColor",
+      "field": "titleColor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": ""
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.titleFontFamily",
+      "field": "titleFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": "\"trebuchet ms\", verdana, arial, sans-serif"
+    },
+    {
+      "family": "journey",
+      "interface": "JourneyDiagramConfig",
+      "path": "journey.titleFontSize",
+      "field": "titleFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": "4ex"
     }
   ],
-  "fixtureSha256": "14d0d56e0b543b47d7d1a696ab3b37d8e31d1adad35f0ebd23b9a0e70b9b144a"
+  "fixtureSha256": "aaac3bbe8175b2c6c794d156fb9950c12950fc1def3793e717abfe9dce8adef8"
 }

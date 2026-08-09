@@ -73,6 +73,42 @@ void testPreprocess(const QJsonArray& cases) {
   }
 }
 
+void requireJourneySourceConfig(const MermaidPreprocessResult& result, const QString& label) {
+  const QJsonObject themeVariables =
+      result.config.value(QStringLiteral("themeVariables")).toObject();
+  require(themeVariables.value(QStringLiteral("fillType0")).toString() ==
+              QLatin1String("#123456"),
+          label + QStringLiteral(": fillType0 was not retained"));
+  require(themeVariables.value(QStringLiteral("textColor")).toString() ==
+              QLatin1String("#abcdef"),
+          label + QStringLiteral(": textColor was not retained"));
+  require(!themeVariables.contains(QStringLiteral("actor0")),
+          label + QStringLiteral(": actor0 must be filtered from source config"));
+
+  const QJsonObject journey = result.config.value(QStringLiteral("journey")).toObject();
+  require(!journey.contains(QStringLiteral("actorColours")),
+          label + QStringLiteral(": actorColours must be filtered from source config"));
+  require(!journey.contains(QStringLiteral("sectionFills")),
+          label + QStringLiteral(": sectionFills must be filtered from source config"));
+  require(!journey.contains(QStringLiteral("sectionColours")),
+          label + QStringLiteral(": sectionColours must be filtered from source config"));
+}
+
+void testJourneySourceConfigSanitization() {
+  // Mermaid's detectInit has an intentional asymmetry: it invokes the full
+  // allowed-key sanitizer here only for multiple init directives. A single
+  // directive/frontmatter is sanitized later by addDirective, outside this
+  // preprocessing port's result boundary.
+  const QString directive = QStringLiteral(
+      "%%{init: {\"themeVariables\": {\"fillType0\": \"#123456\", "
+      "\"textColor\": \"#abcdef\", \"actor0\": \"#fedcba\"}, \"journey\": {"
+      "\"actorColours\": [\"#111111\"], \"sectionFills\": [\"#222222\"], "
+      "\"sectionColours\": [\"#333333\"]}}}%%\n"
+      "%%{init: {\"theme\": \"default\"}}%%\njourney\nsection S\nT: 1");
+  requireJourneySourceConfig(preprocessDiagram(directive),
+                             QStringLiteral("multiple-init sanitizer"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -90,5 +126,6 @@ int main(int argc, char** argv) {
           QStringLiteral("Mermaid compatibility fixture version drifted"));
   testDetection(root.value(QStringLiteral("detection")).toArray());
   testPreprocess(root.value(QStringLiteral("preprocess")).toArray());
+  testJourneySourceConfigSanitization();
   return 0;
 }

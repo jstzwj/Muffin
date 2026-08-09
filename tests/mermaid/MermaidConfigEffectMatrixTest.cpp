@@ -1,5 +1,6 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/erdiagram/ErScene.h"
+#include "mermaid/journey/JourneyScene.h"
 
 #include <QByteArray>
 #include <QCryptographicHash>
@@ -143,8 +144,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 152,
-          QStringLiteral("Expected 152 classified config rows, found %1")
+  require(entries.size() == 178,
+          QStringLiteral("Expected 178 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -199,6 +200,7 @@ int main(int argc, char** argv) {
   require(familyCounts == QMap<QString, int>{{QStringLiteral("class"), 14},
                                              {QStringLiteral("er"), 13},
                                              {QStringLiteral("flowchart"), 14},
+                                             {QStringLiteral("journey"), 26},
                                              {QStringLiteral("pie"), 6},
                                              {QStringLiteral("quadrantChart"), 20},
                                              {QStringLiteral("requirement"), 11},
@@ -207,6 +209,13 @@ int main(int argc, char** argv) {
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
           QStringLiteral("At least one native effect dimension has no evidence"));
+  const QSet<QString> scopedFamilies = stringSet(
+      fixture.value(QStringLiteral("scope")).toObject()
+          .value(QStringLiteral("families")).toArray());
+  require(stringSet(byPath.value(QStringLiteral("maxTextSize"))
+                        .value(QStringLiteral("families")).toArray()) ==
+              scopedFamilies,
+          QStringLiteral("Global maxTextSize scope must cover every native family"));
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -234,6 +243,7 @@ int main(int argc, char** argv) {
            QStringLiteral("deterministicIds"),
            QStringLiteral("deterministicIDSeed"),
            QStringLiteral("flowchart.useMaxWidth"),
+           QStringLiteral("journey.useMaxWidth"),
            QStringLiteral("quadrantChart.useMaxWidth"),
            QStringLiteral("sequence.useMaxWidth"),
            QStringLiteral("state.useMaxWidth")}) {
@@ -430,6 +440,43 @@ int main(int argc, char** argv) {
   require(pngImage(weightedSequence) !=
               pngImage(QStringLiteral("sequenceDiagram\nAlice->>Bob: hello")),
           QStringLiteral("sequence.messageFontWeight did not affect PNG paint"));
+
+  // Journey's live family configuration reaches both deterministic geometry
+  // and the painter. Dead Sequence-era fields and source-sanitized arrays are
+  // classified separately in the generated matrix.
+  const QString journeySource = QStringLiteral(
+      "%%{init: {\"journey\": {\"useMaxWidth\": false, "
+      "\"diagramMarginX\": 80, \"diagramMarginY\": 20, "
+      "\"leftMargin\": 175, \"maxLabelWidth\": 42, "
+      "\"width\": 120, \"height\": 60, \"boxTextMargin\": 9, "
+      "\"taskFontSize\": 18, \"taskFontFamily\": \"Noto Sans\", "
+      "\"taskMargin\": 70, \"textPlacement\": \"tspan\", "
+      "\"titleColor\": \"#123456\", "
+      "\"titleFontFamily\": \"Noto Sans\", "
+      "\"titleFontSize\": \"20px\"}}}%%\n"
+      "journey\ntitle Configured\nsection S\ntask: 5: Alice");
+  const MermaidRenderEntry journeyEntry = render(journeySource);
+  const auto* journeyScene =
+      dynamic_cast<const muffin::mermaid::journey::JourneyScene*>(
+          journeyEntry.scene.get());
+  require(journeyEntry.status == MermaidRenderStatus::Ready && journeyScene &&
+              !journeyScene->config.useMaxWidth &&
+              journeyScene->config.diagramMarginX == 80.0 &&
+              journeyScene->config.diagramMarginY == 20.0 &&
+              journeyScene->config.leftMargin == 175.0 &&
+              journeyScene->config.maxLabelWidth == 42.0 &&
+              journeyScene->config.width == 120.0 &&
+              journeyScene->config.height == 60.0 &&
+              journeyScene->config.boxTextMargin == 9.0 &&
+              journeyScene->config.taskFontSize == 18.0 &&
+              journeyScene->config.taskMargin == 70.0 &&
+              journeyScene->config.textPlacement == QLatin1String("tspan") &&
+              journeyScene->config.titleColor == QLatin1String("#123456") &&
+              journeyScene->config.titleFontSize == 20.0,
+          QStringLiteral("Journey live config did not reach the scene"));
+  require(pngImage(journeySource) != pngImage(QStringLiteral(
+              "journey\ntitle Configured\nsection S\ntask: 5: Alice")),
+          QStringLiteral("Journey live config did not affect PNG output"));
 
   // Unsupported engines must not silently produce a Dagre scene.
   for (const QString& source : {

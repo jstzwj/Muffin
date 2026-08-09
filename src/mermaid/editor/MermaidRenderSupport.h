@@ -99,6 +99,7 @@ struct CssPixelFont {
   qreal horizontalAdvance(const QString& text) const;
 };
 CssPixelFont makeCssPixelFont(const QString& family, qreal pixelSize);
+CssPixelFont makeUnhintedCssPixelFont(const QString& family, qreal pixelSize);
 
 // Replicates upstream parseFontSize()[0] ?? 2 (pieDiagram-ENE6RG2P.mjs:157):
 // parseInt(value, 10) of the LEADING integer (truncates decimals, ignores any

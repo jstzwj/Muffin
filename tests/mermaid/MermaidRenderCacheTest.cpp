@@ -5,6 +5,7 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/journey/JourneyScene.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
@@ -127,7 +128,7 @@ int main(int argc, char** argv) {
             QStringLiteral("handDrawnSeed must propagate to the sequence scene"));
   }
 
-  // --- shared title/accessibility metadata reaches all four native families ---
+  // --- shared title/accessibility metadata reaches the generic-title families ---
   {
     struct MetadataCase {
       QString family;
@@ -319,6 +320,48 @@ int main(int argc, char** argv) {
                 entry.diagnostic.span.line == 5 &&
                 entry.diagnostic.span.column == 11,
             QStringLiteral("diagnostic mapping must restore original directive/comment lines"));
+  }
+
+  // Journey owns its visible title inside the scene while retaining shared
+  // accessibility metadata for PNG/SVG/export consumers.
+  {
+    const QString source = QStringLiteral(
+        "---\ntitle: Journey overview\n---\njourney\n"
+        "accTitle: Journey accessible\n"
+        "accDescr: Journey description\nsection S\ntask: 5");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::journey::JourneyScene>(entry.scene);
+    require(entry.status == kReady && scene &&
+                scene->title == QLatin1String("Journey overview") &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle ==
+                    QLatin1String("Journey accessible") &&
+                entry.metadata.accessibleDescription ==
+                    QLatin1String("Journey description"),
+            QStringLiteral("Journey title ownership/accessibility metadata drifted"));
+  }
+
+  // Journey reports parser lines against preprocessed code too. Removed
+  // frontmatter/directives/comments must map back to the original source.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: Journey title\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\n"
+        "journey\nsection S\ninvalid journey line");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.code == QLatin1String("journey-parse-error") &&
+                entry.diagnostic.span.offset ==
+                    decorated.indexOf(QStringLiteral("invalid journey line")) &&
+                entry.diagnostic.span.line == 8 &&
+                entry.diagnostic.span.column == 1,
+            QStringLiteral("Journey diagnostics must map to original source lines"));
   }
 
   // Every native family is normalised into the same 1-based diagnostic model.
@@ -945,6 +988,8 @@ int main(int argc, char** argv) {
         {QStringLiteral("pie"), QStringLiteral("pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26")},
         {QStringLiteral("quadrant"),
          QStringLiteral("quadrantChart\nx-axis Low --> High\ny-axis Down --> Up\n\"A\": [0.3, 0.7]")},
+        {QStringLiteral("journey"),
+         QStringLiteral("journey\nsection Morning\nMake tea: 5: Me\nDo work: 3: Me, You")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

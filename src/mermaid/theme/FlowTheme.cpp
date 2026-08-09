@@ -326,6 +326,8 @@ void populatePieForest(FlowThemeVariables& t);
 void populatePieFromCScale(FlowThemeVariables& t, bool pie12FromCScale0);
 void populatePieScalars(FlowThemeVariables& t, const QString& titleLegendColor);
 void populateQuadrant(FlowThemeVariables& t, const QString& primary);
+void populateJourneyFillTypes(FlowThemeVariables& t, const QString& primary,
+                              const QString& secondary, bool unconditional);
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
 // the shared `||`-guarded derivation (darkMode always false for built-in
@@ -363,6 +365,8 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   // primaryColor/secondaryColor/tertiaryColor directly. Quadrant text fills
   // always derive from primaryTextColor (not the local primary).
   const QString primary = lightPalette ? QStringLiteral("#ECECFE") : t.primaryColor;
+  const QString secondary = lightPalette ? QStringLiteral("#E9E9F1") : t.secondaryColor;
+  populateJourneyFillTypes(t, primary, secondary, false);
   // taskTextDarkColor (pie title/legend source for every non-dark theme) =
   // textColor. The dark-variant FamilyA (neo-dark/redux-dark/redux-dark-color,
   // flagged by nodeBorderFromBorder1) also sets mainContrastColor="lightgrey"
@@ -414,6 +418,31 @@ void populatePieFamilyA(FlowThemeVariables& t, const QString& primary,
   assignIfEmpty(t.pie[9], adjust(primary, {.h = 60.0, .l = -20.0}));
   assignIfEmpty(t.pie[10], adjust(primary, {.h = -60.0, .l = -20.0}));
   assignIfEmpty(t.pie[11], adjust(primary, {.h = 120.0, .l = -10.0}));
+}
+
+// Journey's eight task/section fill types share one hue-rotation formula in
+// all themes. Family-A themes use `||` guards; Dark/Default/Forest/Neutral use
+// unconditional assignments. The distinction matters during calculate(): a
+// direct fillType override still wins after the final override re-application,
+// while primary/secondary overrides must feed the derived palette.
+void populateJourneyFillTypes(FlowThemeVariables& t, const QString& primary,
+                              const QString& secondary, bool unconditional) {
+  const QString values[8] = {
+      primary,
+      secondary,
+      adjust(primary, {.h = 64.0}),
+      adjust(secondary, {.h = 64.0}),
+      adjust(primary, {.h = -64.0}),
+      adjust(secondary, {.h = -64.0}),
+      adjust(primary, {.h = 128.0}),
+      adjust(secondary, {.h = 128.0}),
+  };
+  for (int i = 0; i < 8; ++i) {
+    if (unconditional)
+      t.fillType[i] = values[i];
+    else
+      assignIfEmpty(t.fillType[i], values[i]);
+  }
 }
 
 // Default theme's OWN pie formula (different from Family-A). From the upstream
@@ -621,6 +650,7 @@ void updateColorsDefault(FlowThemeVariables& t) {
   t.titleColor = t.textColor;
   t.edgeLabelBackground = t.labelBackground;
   assignIfEmpty(t.taskTextDarkColor, QStringLiteral("black"));
+  populateJourneyFillTypes(t, t.primaryColor, t.secondaryColor, true);
   populatePieScalars(t, t.taskTextDarkColor);
   populatePieDefault(t);
   populateQuadrant(t, t.primaryColor);
@@ -637,6 +667,7 @@ void updateColorsForest(FlowThemeVariables& t) {
   t.defaultLinkColor = t.lineColor;
   // forest keeps constructor titleColor (#333) and edgeLabelBackground (#e8e8e8).
   assignIfEmpty(t.taskTextDarkColor, QStringLiteral("black"));
+  populateJourneyFillTypes(t, t.primaryColor, t.secondaryColor, true);
   populatePieScalars(t, t.taskTextDarkColor);
   populatePieForest(t);
   populateQuadrant(t, t.primaryColor);
@@ -680,6 +711,7 @@ void updateColorsDark(FlowThemeVariables& t) {
   assignIfEmpty(t.nodeBorder, QStringLiteral("#999"));
   // dark does NOT derive nodeTextColor (getStyles falls back to textColor).
   assignIfEmpty(t.taskTextDarkColor, invert(t.mainContrastColor));  // dark: invert(lightgrey) = #2c2c2c
+  populateJourneyFillTypes(t, t.primaryColor, t.secondaryColor, true);
   populatePieScalars(t, t.mainContrastColor);  // dark pie title/legend = mainContrastColor
   populatePieFromCScale(t, false);  // dark: pie1..pie(K) = cScale1..K; pie12 empty at TCL<=12, =cScale12 at TCL>=13
   populateQuadrant(t, t.primaryColor);
@@ -714,6 +746,7 @@ void updateColorsNeutral(FlowThemeVariables& t) {
   // propagate to pie title/legend (probed vs upstream). Re-applied after, the
   // override still wins on get("taskTextDarkColor") itself.
   t.taskTextDarkColor = t.text;  // neutral.text = #333
+  populateJourneyFillTypes(t, t.primaryColor, t.secondaryColor, true);
   populatePieScalars(t, t.taskTextDarkColor);
   populatePieFromCScale(t, true);  // neutral: pie1..pie(K) = cScale1..K; pie12 = cScale0
   populateQuadrant(t, t.primaryColor);
@@ -834,7 +867,9 @@ QString FlowThemeVariables::get(const QString& key) const {
     if (key == QStringLiteral("cScalePeer%1").arg(i)) return cScalePeer[i];
     if (key == QStringLiteral("cScaleLabel%1").arg(i)) return cScaleLabel[i];
   }
-  // Pie + Quadrant themeVariables.
+  // Journey + Pie + Quadrant themeVariables.
+  for (int i = 0; i < 8; ++i)
+    if (key == QStringLiteral("fillType%1").arg(i)) return fillType[i];
   for (int i = 0; i < 12; ++i)
     if (key == QStringLiteral("pie%1").arg(i + 1)) return pie[i];
   for (int i = 0; i < 4; ++i) {
@@ -894,7 +929,9 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("gradientStart")) gradientStart = value;
   else if (key == QStringLiteral("gradientStop")) gradientStop = value;
   else if (key == QStringLiteral("THEME_COLOR_LIMIT")) themeColorLimit = value.toInt();
-  // Pie + Quadrant overrides (separate from the main chain; loops early-return).
+  // Journey + Pie + Quadrant overrides (separate from the main chain; loops early-return).
+  for (int i = 0; i < 8; ++i)
+    if (key == QStringLiteral("fillType%1").arg(i)) { fillType[i] = value; return; }
   for (int i = 0; i < 12; ++i)
     if (key == QStringLiteral("pie%1").arg(i + 1)) { pie[i] = value; return; }
   for (int i = 0; i < 4; ++i) {

@@ -1,0 +1,1766 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "module": "dist/mermaid.esm.mjs",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "browser": {
+      "product": "Chrome/151.0.7922.76",
+      "executableSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+      "headlessMode": "new"
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1200,
+      "deviceScaleFactor": 1
+    },
+    "fonts": [
+      {
+        "family": "Noto Sans",
+        "file": "NotoSans-Regular.ttf",
+        "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+      },
+      {
+        "family": "Noto Sans CJK SC",
+        "file": "NotoSansCJKsc-Regular.otf",
+        "sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b"
+      },
+      {
+        "family": "Noto Sans Arabic",
+        "file": "NotoSansArabic-Regular.ttf",
+        "sha256": "ceea25b464a656dc3b26849bab9356740401af62aedf1bfa8b7f0d9b75925b1b"
+      },
+      {
+        "family": "Noto Sans Hebrew",
+        "file": "NotoSansHebrew-Regular.ttf",
+        "sha256": "a7fa16fffb27bedb060a0866267c29e9859aeb9c21cc33f5b3aaf6eb062eca85"
+      }
+    ],
+    "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+    "generator": "scripts/generate_mermaid_journey_fixtures.mjs"
+  },
+  "oracle": "journey jison accept/reject, parser reductions, and direct journeyDb state",
+  "notes": [
+    "Scores preserve JavaScript Number semantics with explicit nan/infinity/negativeZero tags.",
+    "Actors are the direct getActors() result and therefore use JavaScript UTF-16 default sort order.",
+    "textPlacement is strict: fo and old select those paths; every other value selects tspan.",
+    "Source-entry array overrides are intentionally outside this grammar corpus because Mermaid sanitization removes them."
+  ],
+  "cases": [
+    {
+      "id": "empty",
+      "source": "journey",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        6
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [],
+        "tasks": [],
+        "actors": []
+      }
+    },
+    {
+      "id": "empty-newlines",
+      "source": "journey\n\n",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        6
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [],
+        "tasks": [],
+        "actors": []
+      }
+    },
+    {
+      "id": "bom-crlf",
+      "source": "﻿journey\r\nsection A\r\n  task: 5: Me\r\n",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Me"
+            ]
+          }
+        ],
+        "actors": [
+          "Me"
+        ]
+      }
+    },
+    {
+      "id": "canonical",
+      "source": "journey\ntitle My working day\nsection Go to work\n  Make tea: 5: Me\n  Go upstairs: 3: Me\n  Do work: 1: Me\nsection Go home\n  Go downstairs: 5: Me\n  Sit down: 5: Me",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "My working day",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "Go to work",
+          "Go home"
+        ],
+        "tasks": [
+          {
+            "section": "Go to work",
+            "type": "Go to work",
+            "task": "Make tea",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Me"
+            ]
+          },
+          {
+            "section": "Go to work",
+            "type": "Go to work",
+            "task": "Go upstairs",
+            "score": {
+              "kind": "finite",
+              "value": 3
+            },
+            "people": [
+              "Me"
+            ]
+          },
+          {
+            "section": "Go to work",
+            "type": "Go to work",
+            "task": "Do work",
+            "score": {
+              "kind": "finite",
+              "value": 1
+            },
+            "people": [
+              "Me"
+            ]
+          },
+          {
+            "section": "Go home",
+            "type": "Go home",
+            "task": "Go downstairs",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Me"
+            ]
+          },
+          {
+            "section": "Go home",
+            "type": "Go home",
+            "task": "Sit down",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Me"
+            ]
+          }
+        ],
+        "actors": [
+          "Me"
+        ]
+      }
+    },
+    {
+      "id": "accessibility",
+      "source": "journey\naccTitle:  Journey title  \naccDescr:  A concise description  \nsection A\n  task: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        9,
+        10,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "Journey title",
+        "accDescription": "A concise description",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "accessibility-multiline",
+      "source": "journey\naccDescr {\n  first line\n  second line\n}\nsection A\n  task: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        11,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "first line\nsecond line",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "title-last-wins-whitespace",
+      "source": "journey\ntitle First\ntitle    Second  \nsection A\n  task: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "   Second  ",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "section-trailing-whitespace",
+      "source": "journey\nsection A   \n  task: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A   "
+        ],
+        "tasks": [
+          {
+            "section": "A   ",
+            "type": "A   ",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "empty-section-and-adjacent-duplicate",
+      "source": "journey\nsection Empty\nsection A\n  one: 5\nsection A\n  two: 4",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "Empty",
+          "A",
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "one",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          },
+          {
+            "section": "A",
+            "type": "A",
+            "task": "two",
+            "score": {
+              "kind": "finite",
+              "value": 4
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "nonadjacent-duplicate-section",
+      "source": "journey\nsection A\n  one: 5\nsection B\n  two: 4\nsection A\n  three: 3",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A",
+          "B",
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "one",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          },
+          {
+            "section": "B",
+            "type": "B",
+            "task": "two",
+            "score": {
+              "kind": "finite",
+              "value": 4
+            },
+            "people": []
+          },
+          {
+            "section": "A",
+            "type": "A",
+            "task": "three",
+            "score": {
+              "kind": "finite",
+              "value": 3
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "task-before-section",
+      "source": "journey\n  task: 5: Me",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Me"
+            ]
+          }
+        ],
+        "actors": [
+          "Me"
+        ]
+      }
+    },
+    {
+      "id": "score-only",
+      "source": "journey\nsection A\n  task: 4",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 4
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "people-trim-duplicates",
+      "source": "journey\nsection A\n  task: 5:  Bob , Alice, Bob  ",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Bob",
+              "Alice",
+              "Bob"
+            ]
+          }
+        ],
+        "actors": [
+          "Alice",
+          "Bob"
+        ]
+      }
+    },
+    {
+      "id": "extra-colons-dropped",
+      "source": "journey\nsection A\n  task: 5: Alice: ignored: again",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Alice"
+            ]
+          }
+        ],
+        "actors": [
+          "Alice"
+        ]
+      }
+    },
+    {
+      "id": "empty-actor",
+      "source": "journey\nsection A\n  task: 5:",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              ""
+            ]
+          }
+        ],
+        "actors": [
+          ""
+        ]
+      }
+    },
+    {
+      "id": "actors-utf16-sort",
+      "source": "journey\nsection A\n  task: 5: Zed, Alice, é, 😀, 💩",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Zed",
+              "Alice",
+              "é",
+              "😀",
+              "💩"
+            ]
+          }
+        ],
+        "actors": [
+          "Alice",
+          "Zed",
+          "é",
+          "💩",
+          "😀"
+        ]
+      }
+    },
+    {
+      "id": "actor-prototype-name",
+      "source": "journey\nsection A\n  task: 5: __proto__, constructor",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "__proto__",
+              "constructor"
+            ]
+          }
+        ],
+        "actors": [
+          "__proto__",
+          "constructor"
+        ]
+      }
+    },
+    {
+      "id": "score-zero",
+      "source": "journey\nsection A\n  task: 0",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 0
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-negative-zero",
+      "source": "journey\nsection A\n  task: -0",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 0,
+              "negativeZero": true
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-negative",
+      "source": "journey\nsection A\n  task: -2",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": -2
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-fraction",
+      "source": "journey\nsection A\n  task: 2.5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 2.5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-over-five",
+      "source": "journey\nsection A\n  task: 6",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 6
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-plus",
+      "source": "journey\nsection A\n  task: +3",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 3
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-hex",
+      "source": "journey\nsection A\n  task: 0x10",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 16
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-binary",
+      "source": "journey\nsection A\n  task: 0b11",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 3
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-octal",
+      "source": "journey\nsection A\n  task: 0o10",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 8
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-exponent",
+      "source": "journey\nsection A\n  task: 1e2",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 100
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-infinity",
+      "source": "journey\nsection A\n  task: Infinity",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "infinity",
+              "sign": 1
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-nan",
+      "source": "journey\nsection A\n  task: NaN",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "nan"
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-css-garbage",
+      "source": "journey\nsection A\n  task: 1px",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "nan"
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "score-whitespace-is-zero",
+      "source": "journey\nsection A\n  blank:   \n  after: 3",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "blank",
+            "score": {
+              "kind": "finite",
+              "value": 0
+            },
+            "people": []
+          },
+          {
+            "section": "A",
+            "type": "A",
+            "task": "after",
+            "score": {
+              "kind": "finite",
+              "value": 3
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "comments-hash-percent",
+      "source": "journey\n# hash comment\n% percent comment\nsection A # tail\n  task: 5: Me # tail",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A "
+        ],
+        "tasks": [
+          {
+            "section": "A ",
+            "type": "A ",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Me"
+            ]
+          }
+        ],
+        "actors": [
+          "Me"
+        ]
+      }
+    },
+    {
+      "id": "comments-double-percent",
+      "source": "journey\n%% full line\nsection A\n  task: 5: Me %% trailing\n  after: 4",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": [
+              "Me %% trailing"
+            ]
+          },
+          {
+            "section": "A",
+            "type": "A",
+            "task": "after",
+            "score": {
+              "kind": "finite",
+              "value": 4
+            },
+            "people": []
+          }
+        ],
+        "actors": [
+          "Me %% trailing"
+        ]
+      }
+    },
+    {
+      "id": "body-keywords-case-insensitive",
+      "source": "journey\nTITLE Upper title\nSECTION Upper section\n  task: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        8,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "Upper title",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "Upper section"
+        ],
+        "tasks": [
+          {
+            "section": "Upper section",
+            "type": "Upper section",
+            "task": "task",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "quoted-task-is-literal",
+      "source": "journey\nsection A\n  \"quoted task\": 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "\"quoted task\"",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      }
+    },
+    {
+      "id": "text-placement-fo",
+      "source": "%%{init: {\"journey\":{\"textPlacement\":\"fo\"}}}%%\njourney\nsection A\n  alpha<br>beta: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "alpha<br>beta",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      },
+      "expectedRender": {
+        "renderId": "journey-grammar-text-placement-fo",
+        "taskMode": "fo",
+        "sectionMode": "fo",
+        "foreignObjectCount": 2,
+        "taskTextNodes": 2,
+        "taskTspans": 2,
+        "taskTextContent": "alpha<br>beta"
+      }
+    },
+    {
+      "id": "text-placement-old",
+      "source": "%%{init: {\"journey\":{\"textPlacement\":\"old\"}}}%%\njourney\nsection A\n  alpha<br>beta: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "alpha<br>beta",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      },
+      "expectedRender": {
+        "renderId": "journey-grammar-text-placement-old",
+        "taskMode": "old",
+        "sectionMode": "old",
+        "foreignObjectCount": 0,
+        "taskTextNodes": 1,
+        "taskTspans": 0,
+        "taskTextContent": "alpha<br>beta"
+      }
+    },
+    {
+      "id": "text-placement-tspan",
+      "source": "%%{init: {\"journey\":{\"textPlacement\":\"tspan\"}}}%%\njourney\nsection A\n  alpha<br>beta: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "alpha<br>beta",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      },
+      "expectedRender": {
+        "renderId": "journey-grammar-text-placement-tspan",
+        "taskMode": "tspan",
+        "sectionMode": "tspan",
+        "foreignObjectCount": 0,
+        "taskTextNodes": 2,
+        "taskTspans": 2,
+        "taskTextContent": "alpha|beta"
+      }
+    },
+    {
+      "id": "text-placement-unknown-falls-to-tspan",
+      "source": "%%{init: {\"journey\":{\"textPlacement\":\"unexpected\"}}}%%\njourney\nsection A\n  alpha<br>beta: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "alpha<br>beta",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      },
+      "expectedRender": {
+        "renderId": "journey-grammar-text-placement-unknown-falls-to-tspan",
+        "taskMode": "tspan",
+        "sectionMode": "tspan",
+        "foreignObjectCount": 0,
+        "taskTextNodes": 2,
+        "taskTspans": 2,
+        "taskTextContent": "alpha|beta"
+      }
+    },
+    {
+      "id": "text-placement-false-falls-to-tspan",
+      "source": "%%{init: {\"journey\":{\"textPlacement\":false}}}%%\njourney\nsection A\n  alpha<br>beta: 5",
+      "accept": true,
+      "reductions": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        12,
+        13
+      ],
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "task": "alpha<br>beta",
+            "score": {
+              "kind": "finite",
+              "value": 5
+            },
+            "people": []
+          }
+        ],
+        "actors": []
+      },
+      "expectedRender": {
+        "renderId": "journey-grammar-text-placement-false-falls-to-tspan",
+        "taskMode": "tspan",
+        "sectionMode": "tspan",
+        "foreignObjectCount": 0,
+        "taskTextNodes": 2,
+        "taskTspans": 2,
+        "taskTextContent": "alpha|beta"
+      }
+    },
+    {
+      "id": "reject-no-header",
+      "source": "section A\n  task: 5",
+      "accept": false,
+      "reductions": [],
+      "reject": {
+        "class": "no-diagram",
+        "firstLine": "No diagram type detected matching given configuration for text: section A",
+        "token": null,
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "id": "reject-uppercase-header",
+      "source": "JOURNEY\nsection A\n  task: 5",
+      "accept": false,
+      "reductions": [],
+      "reject": {
+        "class": "no-diagram",
+        "firstLine": "No diagram type detected matching given configuration for text: JOURNEY",
+        "token": null,
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "id": "reject-header-suffix",
+      "source": "journeySuffix\nsection A\n  task: 5",
+      "accept": false,
+      "reductions": [],
+      "reject": {
+        "class": "parser",
+        "firstLine": "Parse error on line 1:",
+        "token": "taskName",
+        "line": 1,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-section-colon",
+      "source": "journey\nsection A: B\n  task: 5",
+      "accept": false,
+      "reductions": [
+        2,
+        3,
+        6
+      ],
+      "reject": {
+        "class": "parser",
+        "firstLine": "Parse error on line 2:",
+        "token": "taskData",
+        "line": 2,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-semicolon-task",
+      "source": "journey\nsection A\n  task;semi: 5",
+      "accept": false,
+      "reductions": [
+        2,
+        3,
+        5,
+        6,
+        12
+      ],
+      "reject": {
+        "class": "parser",
+        "firstLine": "Parse error on line 3:",
+        "token": "INVALID",
+        "line": 3,
+        "column": 2
+      }
+    },
+    {
+      "id": "reject-semicolon-separator",
+      "source": "journey; section A",
+      "accept": false,
+      "reductions": [],
+      "reject": {
+        "class": "parser",
+        "firstLine": "Parse error on line 1:",
+        "token": "INVALID",
+        "line": 1,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-task-missing-colon",
+      "source": "journey\nsection A\n  task 5 Me",
+      "accept": false,
+      "reductions": [
+        2,
+        3,
+        5,
+        6,
+        12
+      ],
+      "reject": {
+        "class": "parser",
+        "firstLine": "Parse error on line 3:",
+        "token": "NEWLINE",
+        "line": 3,
+        "column": 2
+      }
+    },
+    {
+      "id": "reject-invalid-token",
+      "source": "journey\n@@@",
+      "accept": false,
+      "reductions": [
+        2,
+        3,
+        6
+      ],
+      "reject": {
+        "class": "parser",
+        "firstLine": "Parse error on line 2:",
+        "token": "NEWLINE",
+        "line": 2,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-unclosed-accdescr",
+      "source": "journey\naccDescr {never closes",
+      "accept": false,
+      "reductions": [
+        2,
+        3,
+        5,
+        6,
+        11
+      ],
+      "reject": {
+        "class": "parser",
+        "firstLine": "Parse error on line 3:",
+        "token": 1,
+        "line": 3,
+        "column": 0
+      }
+    }
+  ],
+  "fixtureSha256": "09a0549a70577259ba2433f0abd4231e53d7fb7b6b0e54d525a41daf2915e5e2"
+}

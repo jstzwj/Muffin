@@ -16,6 +16,10 @@ bool starts(const QString& text, const QString& expression,
 }
 
 QString stripDetectionPreamble(QString text) {
+  // JavaScript's `\s` includes the byte-order mark. PCRE2's `\s` as used by
+  // QRegularExpression does not, so normalize only the leading BOM before
+  // applying the upstream detector expressions.
+  if (text.startsWith(QChar(0xfeff))) text[0] = QLatin1Char(' ');
   static const QRegularExpression frontMatter(
       QStringLiteral(R"(^([^\S\n\r]*)-{3}\s*[\n\r](.*?)[\n\r]\1-{3}\s*[\n\r]+)"),
       QRegularExpression::DotMatchesEverythingOption);

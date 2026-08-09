@@ -108,6 +108,8 @@ int main(int argc, char** argv) {
       {QStringLiteral("quadrant"), QStringLiteral("quadrantChart"),
        QStringLiteral("quadrantChart\ntitle Reach\nx-axis Low --> High\ny-axis Down --> Up\n"
                       "quadrant-1 Q1\nquadrant-2 Q2\nquadrant-3 Q3\nquadrant-4 Q4\n\"A\": [0.3, 0.7]")},
+      {QStringLiteral("journey"), QStringLiteral("journey"),
+       QStringLiteral("journey\ntitle Work\nsection Morning\nMake tea: 5: Me\nDo work: 3: Me, You")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -190,6 +192,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"quadrantChart\": {\"useMaxWidth\": false}}}%%\n"
           "quadrantChart\n\"A\": [0.5, 0.5]"),
+      QStringLiteral(
+          "%%{init: {\"journey\": {\"useMaxWidth\": false}}}%%\n"
+          "journey\nsection S\nTask: 5: A"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);
@@ -223,12 +228,23 @@ int main(int argc, char** argv) {
               !menuSvg.contains("javascript:"),
           QStringLiteral("Sequence SVG menu link + accessible label sanitization drifted"));
 
+  const QByteArray journeyAria = renderSvg(QStringLiteral(
+      "journey\naccTitle: Journey accessible\n"
+      "accDescr: Journey description\nsection S\ntask: 5")).svg;
+  require(journeyAria.contains("<title") &&
+              journeyAria.contains("Journey accessible</title>") &&
+              journeyAria.contains("<desc") &&
+              journeyAria.contains("Journey description</desc>") &&
+              journeyAria.contains("aria-labelledby=") &&
+              journeyAria.contains("aria-describedby="),
+          QStringLiteral("Journey SVG accessibility metadata drifted"));
+
   require(MermaidRenderCache::renderMermaidSourceToSvg(
               QStringLiteral("flowchart TB\nA -->"))
               .svg.isEmpty(),
           QStringLiteral("Invalid Mermaid source must not export partial SVG"));
 
-  qDebug() << "MermaidSvgExportTest: four native families, SVG roots, ARIA,"
+  qDebug() << "MermaidSvgExportTest: native families, SVG roots, ARIA,"
               " deterministic IDs, sizing, rendering, and safe links passed";
   return 0;
 }

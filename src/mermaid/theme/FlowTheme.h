@@ -91,6 +91,11 @@ struct FlowThemeVariables {
   QString cScalePeer[13];
   QString cScaleLabel[13];
 
+  // Journey section/task CSS palette (fillType0..fillType7). Most themes
+  // derive this from primaryColor/secondaryColor; the light Neo/Redux family
+  // instead uses its local #ECECFE/#E9E9F1 constants, matching upstream.
+  QString fillType[8];
+
   // Pie family themeVariables (pieDiagram). Derived per-theme in updateColors
   // via MermaidColor::adjust from primaryColor/secondaryColor/tertiaryColor.
   QString pie[12];  // pie1..pie12 section fills (scaleOrdinal range)

@@ -92,6 +92,12 @@ QStringList pieQuadrantFields() {
   return f;
 }
 
+QStringList journeyFields() {
+  QStringList f;
+  for (int i = 0; i < 8; ++i) f.append(QStringLiteral("fillType%1").arg(i));
+  return f;
+}
+
 // Pie + Quadrant SCALAR themeVariables (uniform formulas across themes): the
 // dependency fields (taskTextDarkColor, mainContrastColor) that the pie text
 // colors derive from, the pie stroke/opacity/sizes, and the quadrant point/axis/
@@ -123,6 +129,7 @@ QStringList fieldsForTheme(FlowThemeId id) {
   // etc. may also derive cScale12; cScaleInv/Peer/Label[12] are TCL-gated and
   // unset at TCL=12 for everyone, so they are not part of the golden.)
   f.append(QStringLiteral("cScale12"));
+  f.append(journeyFields());
   if (pieQuadrantImplemented(id)) {
     f.append(pieQuadrantFields());
     f.append(pieQuadrantScalarFields());
@@ -153,15 +160,82 @@ void compareTheme(FlowThemeId id, const QJsonObject& goldenVars, const QString& 
 }
 
 void compareOverride(FlowThemeId id, const QHash<QString, QString>& overrides,
-                     const QJsonObject& goldenVars, const QString& label) {
+                      const QJsonObject& goldenVars, const QString& label) {
   const FlowThemeVariables t = resolveFlowTheme(id, overrides);
-  for (const QString& key : criticalFields()) {
+  QStringList fields = criticalFields();
+  fields.append(journeyFields());
+  for (const QString& key : fields) {
     const QString native = t.get(key);
     const QString golden = goldenToString(goldenVars.value(key));
     if (native != golden) {
       fail(QStringLiteral("Override %1/%2 %3 mismatch: native=%4 golden=%5")
                .arg(label, flowThemeIdName(id), key, native, golden));
     }
+  }
+}
+
+void checkJourneyFillTypeOverrides() {
+  const QString dynamicExpected[8] = {
+      QStringLiteral("#ff0000"), QStringLiteral("#00ff00"),
+      QStringLiteral("hsl(64, 100%, 50%)"), QStringLiteral("hsl(184, 100%, 50%)"),
+      QStringLiteral("hsl(-64, 100%, 50%)"), QStringLiteral("hsl(56, 100%, 50%)"),
+      QStringLiteral("hsl(128, 100%, 50%)"), QStringLiteral("hsl(248, 100%, 50%)"),
+  };
+  const QString lightExpected[8] = {
+      QStringLiteral("#ECECFE"), QStringLiteral("#E9E9F1"),
+      QStringLiteral("hsl(304, 90%, 96.0784313725%)"),
+      QStringLiteral("hsl(304, 22.2222222222%, 92.9411764706%)"),
+      QStringLiteral("hsl(176, 90%, 96.0784313725%)"),
+      QStringLiteral("hsl(176, 22.2222222222%, 92.9411764706%)"),
+      QStringLiteral("hsl(8, 90%, 96.0784313725%)"),
+      QStringLiteral("hsl(8, 22.2222222222%, 92.9411764706%)"),
+  };
+  QHash<QString, QString> paletteOverrides;
+  paletteOverrides.insert(QStringLiteral("primaryColor"), QStringLiteral("#ff0000"));
+  paletteOverrides.insert(QStringLiteral("secondaryColor"), QStringLiteral("#00ff00"));
+
+  const FlowThemeId dynamicThemes[] = {
+      FlowThemeId::Base, FlowThemeId::Dark, FlowThemeId::Default, FlowThemeId::Forest,
+      FlowThemeId::Neutral, FlowThemeId::NeoDark, FlowThemeId::ReduxDark,
+      FlowThemeId::ReduxDarkColor,
+  };
+  for (const FlowThemeId id : dynamicThemes) {
+    const FlowThemeVariables t = resolveFlowTheme(id, paletteOverrides);
+    for (int i = 0; i < 8; ++i) {
+      require(t.get(QStringLiteral("fillType%1").arg(i)) == dynamicExpected[i],
+              QStringLiteral("journey dynamic palette %1 fillType%2")
+                  .arg(flowThemeIdName(id))
+                  .arg(i));
+    }
+  }
+
+  const FlowThemeId localLightThemes[] = {
+      FlowThemeId::Neo, FlowThemeId::Redux, FlowThemeId::ReduxColor,
+  };
+  for (const FlowThemeId id : localLightThemes) {
+    const FlowThemeVariables t = resolveFlowTheme(id, paletteOverrides);
+    for (int i = 0; i < 8; ++i) {
+      require(t.get(QStringLiteral("fillType%1").arg(i)) == lightExpected[i],
+              QStringLiteral("journey local-light palette %1 fillType%2")
+                  .arg(flowThemeIdName(id))
+                  .arg(i));
+    }
+  }
+
+  for (const FlowThemeId id : {FlowThemeId::Base, FlowThemeId::Default}) {
+    QHash<QString, QString> direct;
+    direct.insert(QStringLiteral("fillType0"), QStringLiteral("#123456"));
+    direct.insert(QStringLiteral("fillType7"), QStringLiteral("#abcdef"));
+    FlowThemeVariables t = resolveFlowTheme(id, direct);
+    require(t.get(QStringLiteral("fillType0")) == QLatin1String("#123456"),
+            QStringLiteral("journey direct fillType0 override %1").arg(flowThemeIdName(id)));
+    require(t.get(QStringLiteral("fillType7")) == QLatin1String("#abcdef"),
+            QStringLiteral("journey direct fillType7 override %1").arg(flowThemeIdName(id)));
+
+    direct.insert(QStringLiteral("fillType0"), QString());
+    t = resolveFlowTheme(id, direct);
+    require(t.get(QStringLiteral("fillType0")).isEmpty(),
+            QStringLiteral("journey empty fillType0 override %1").arg(flowThemeIdName(id)));
   }
 }
 
@@ -501,6 +575,7 @@ int main(int argc, char** argv) {
 
   checkPieTextColorOverrides();
   checkPieQuadrantDynamicOverrides();
+  checkJourneyFillTypeOverrides();
   checkPieTclDistribution();
   checkTclNoOverflow();
   checkThemeOverridesTclJs();

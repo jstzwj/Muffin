@@ -1,0 +1,81 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "module": "dist/mermaid.esm.mjs",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "browser": {
+      "product": "Chrome/151.0.7922.76",
+      "executableSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+      "headlessMode": "new"
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1200,
+      "deviceScaleFactor": 1
+    },
+    "fonts": [
+      {
+        "family": "Noto Sans",
+        "file": "NotoSans-Regular.ttf",
+        "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+      },
+      {
+        "family": "Noto Sans CJK SC",
+        "file": "NotoSansCJKsc-Regular.otf",
+        "sha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b"
+      },
+      {
+        "family": "Noto Sans Arabic",
+        "file": "NotoSansArabic-Regular.ttf",
+        "sha256": "ceea25b464a656dc3b26849bab9356740401af62aedf1bfa8b7f0d9b75925b1b"
+      },
+      {
+        "family": "Noto Sans Hebrew",
+        "file": "NotoSansHebrew-Regular.ttf",
+        "sha256": "a7fa16fffb27bedb060a0866267c29e9859aeb9c21cc33f5b3aaf6eb062eca85"
+      }
+    ],
+    "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+    "generator": "scripts/generate_mermaid_journey_fixtures.mjs"
+  },
+  "oracle": "Headless Chrome element screenshots with transparent background",
+  "notes": [
+    "Every case is rendered twice and must produce byte-identical canonical RGBA PNG data.",
+    "Transparent RGB channels are zeroed before encoding.",
+    "The source itself declares Noto fonts and the dark theme so the native source-entry pipeline can reproduce each golden."
+  ],
+  "cases": [
+    {
+      "id": "default",
+      "theme": "default",
+      "dpr": 1,
+      "viewport": {
+        "width": 1600,
+        "height": 1200
+      },
+      "renderId": "journey-pixel-default",
+      "source": "%%{init: {\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"},\"journey\":{\"taskFontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"titleFontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\njourney\ntitle My working day\nsection Go to work\n  Make tea: 5: Me\n  Go upstairs: 3: Me\n  Do work: 1: Me\nsection Go home\n  Go downstairs: 5: Me\n  Sit down: 5: Me",
+      "file": "default.png",
+      "width": 1300,
+      "height": 565,
+      "sha256": "ebc37821f9bb343523fc707d6e4a5fc2e0a270be6f00ecd130819948d6e99cbb"
+    },
+    {
+      "id": "dark",
+      "theme": "dark",
+      "dpr": 1,
+      "viewport": {
+        "width": 1600,
+        "height": 1200
+      },
+      "renderId": "journey-pixel-dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"},\"journey\":{\"taskFontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"titleFontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\njourney\ntitle My working day\nsection Go to work\n  Make tea: 5: Me\n  Go upstairs: 3: Me\n  Do work: 1: Me\nsection Go home\n  Go downstairs: 5: Me\n  Sit down: 5: Me",
+      "file": "dark.png",
+      "width": 1300,
+      "height": 565,
+      "sha256": "485d69c6cc84e12e88d339b56ea815561d1adec71e74bc7690f88f150c3a93cb"
+    }
+  ],
+  "fixtureSha256": "bb40febebe8efdc84ed1b06c91237af38412f57c0bf62b223544cc163f7ee1b0"
+}
