@@ -31,7 +31,7 @@ struct PieSceneStyle {
   // 12-color cyclic palette = theme pie1..pie12 (scaleOrdinal range). Cycled by
   // GLOBAL section index (filtered slices still consume their color slot). An
   // empty entry means "no fill attribute" (mermaid's dark theme leaves pie12
-  // unset, so the 12th slice paints no fill — reproduced verbatim).
+  // unset, so the 12th slice inherits the SVG root fill).
   QStringList palette;
   // Stroke / opacity defaults mirror mermaid 11.16.0 default-theme fallbacks
   // (chunk-WYO6CB5R.mjs): pieStrokeColor/ pieOuterStrokeColor default "black",
@@ -116,6 +116,7 @@ struct PieScene : MermaidScene {
   qreal labelRadius = 138.75;      // radius * textPosition
   QString legendPosition = QStringLiteral("right");
   QString highlightSlice;
+  bool highlightSliceIsString = true;
   bool showData = false;
   bool useMaxWidth = true;
   // Text / accessibility.
@@ -134,8 +135,8 @@ struct PieScene : MermaidScene {
   // painter can place legends identically and the bounds/canvas agree.
   qreal longestLegendWidth = 0.0;
   // Title text advance (font-coupled), measured by the adapter for the
-  // title-driven viewBox expansion AND reused by the painter to size the title's
-  // drawText rect (so a super-long title is not clipped to a fixed width).
+  // title-driven viewBox expansion with the same scaled-font contract used by
+  // the baseline-positioned painter.
   qreal titleWidth = 0.0;
   PieSceneStyle style;
 };

@@ -55,7 +55,13 @@ try {
       const { svg } = await mermaid.render("p", src);
       const c = mount(svg);
       const el = c.querySelector("path.pieCircle");
-      const v = el ? getComputedStyle(el).strokeWidth : null;
+      const typed = el?.computedStyleMap?.().get("stroke-width");
+      const v = el ? {
+        css: getComputedStyle(el).strokeWidth,
+        // getComputedStyle serializes all values near the cap as
+        // "3.35544e+07px". Typed OM preserves the exact used value.
+        typedPx: typed?.unit === "px" ? typed.value : null,
+      } : null;
       document.body.removeChild(c);
       return v;
     };
@@ -73,19 +79,22 @@ try {
       f1e9: await titleFs(`%%{init: {"themeVariables": {${tv("1e9px")}}}}%%`),
       f1e10: await titleFs(`%%{init: {"themeVariables": {${tv("10000000000px")}}}}%%`),
     };
-    // stroke-width saturation boundary (cap reported ~3.35544e7 ~ 2^25 = 33554432).
+    // stroke-width saturation boundary. The exact Typed OM cap is 33554428;
+    // getComputedStyle alone cannot distinguish these values.
     r.strokewidth = {
       s2_24: await scalar(`%%{init: {"themeVariables": {${sv("16777216px")}}}}%%`),   // 2^24
-      s2_25_m1: await scalar(`%%{init: {"themeVariables": {${sv("33554431px")}}}}%%`), // 2^25 - 1
-      s2_25: await scalar(`%%{init: {"themeVariables": {${sv("33554432px")}}}}%%`),    // 2^25
-      s2_25_p1: await scalar(`%%{init: {"themeVariables": {${sv("33554433px")}}}}%%`), // 2^25 + 1
+      belowCap: await scalar(`%%{init: {"themeVariables": {${sv("33554426px")}}}}%%`),
+      atCap: await scalar(`%%{init: {"themeVariables": {${sv("33554428px")}}}}%%`),
+      aboveCap: await scalar(`%%{init: {"themeVariables": {${sv("33554429px")}}}}%%`),
       s2_26: await scalar(`%%{init: {"themeVariables": {${sv("67108864px")}}}}%%`),    // 2^26
       s1e8: await scalar(`%%{init: {"themeVariables": {${sv("100000000px")}}}}%%`),
       s1e9: await scalar(`%%{init: {"themeVariables": {${sv("1e9px")}}}}%%`),
     };
     // cascade: a capped root (1e9px -> 10000) feeding em/%/ex/ch children.
     r.cascade = {
-      rootFs: (await titleFs(`%%{init: {"themeVariables": {"fontSize": "1e9px"}}}%%`)),
+      // sw3em independently proves that the capped SVG root is 10000px: its
+      // stroke width is 3 * inherited root = 30000px. titleFs here would read
+      // the title's own default 25px and must not be labelled as the root.
       title3em: await titleFs(`%%{init: {"themeVariables": {"fontSize": "1e9px", ${tv("3em")}}}}%%`),
       title200pct: await titleFs(`%%{init: {"themeVariables": {"fontSize": "1e9px", ${tv("200%")}}}}%%`),
       sw3em: await scalar(`%%{init: {"themeVariables": {"fontSize": "1e9px", ${sv("3em")}}}}%%`),

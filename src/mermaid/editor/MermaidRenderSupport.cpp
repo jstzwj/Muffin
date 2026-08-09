@@ -11,8 +11,10 @@
 #include <QRegularExpression>
 
 #include <algorithm>
+#include <charconv>
 #include <cmath>
 #include <limits>
+#include <string>
 
 namespace muffin::mermaid::editor {
 namespace {
@@ -162,6 +164,58 @@ double jsNumber(const QJsonValue& v) {
 }
 }  // namespace
 
+double jsNumberValue(const QJsonValue& value) { return jsNumber(value); }
+
+QString jsNumberToString(double value) {
+  if (value == 0.0) return QStringLiteral("0");  // includes -0
+  if (std::isnan(value)) return QStringLiteral("NaN");
+  if (std::isinf(value))
+    return value < 0.0 ? QStringLiteral("-Infinity") : QStringLiteral("Infinity");
+
+  char buffer[64];
+  const auto result = std::to_chars(std::begin(buffer), std::end(buffer), value,
+                                    std::chars_format::general);
+  if (result.ec != std::errc())
+    return QString::number(value, 'g', std::numeric_limits<double>::max_digits10);
+  std::string raw(buffer, result.ptr);
+  const size_t exponentAt = raw.find_first_of("eE");
+  if (exponentAt == std::string::npos) return QString::fromStdString(raw);
+
+  const std::string mantissa = raw.substr(0, exponentAt);
+  const int exponent = std::stoi(raw.substr(exponentAt + 1));
+  if (exponent >= -6 && exponent < 21) {
+    const bool negative = !mantissa.empty() && mantissa.front() == '-';
+    const size_t start = negative ? 1 : 0;
+    const size_t dot = mantissa.find('.', start);
+    std::string digits = mantissa.substr(start);
+    const int beforeDot = dot == std::string::npos
+                              ? static_cast<int>(digits.size())
+                              : static_cast<int>(dot - start);
+    if (dot != std::string::npos) digits.erase(dot - start, 1);
+    const int decimalPos = beforeDot + exponent;
+    std::string fixed = negative ? "-" : "";
+    if (decimalPos <= 0) {
+      fixed += "0.";
+      fixed.append(static_cast<size_t>(-decimalPos), '0');
+      fixed += digits;
+    } else if (decimalPos >= static_cast<int>(digits.size())) {
+      fixed += digits;
+      fixed.append(static_cast<size_t>(decimalPos - static_cast<int>(digits.size())), '0');
+    } else {
+      fixed += digits.substr(0, static_cast<size_t>(decimalPos));
+      fixed += '.';
+      fixed += digits.substr(static_cast<size_t>(decimalPos));
+    }
+    return QString::fromStdString(fixed);
+  }
+
+  std::string normalized = mantissa;
+  normalized += 'e';
+  normalized += exponent >= 0 ? '+' : '-';
+  normalized += std::to_string(std::abs(exponent));
+  return QString::fromStdString(normalized);
+}
+
 // genColor rule count for THEME_COLOR_LIMIT via the %%{init}%% SOURCE entry (probed
 // vs mermaid 11.16.0, G:/github/req-probe/step4-source-entry-report.json). Upstream
 // runs `for (let i = 0; i < THEME_COLOR_LIMIT; i++)`, so the rule count is the count
@@ -201,14 +255,15 @@ qreal pixelValue(const QString& value, qreal fallback) {
 // >INT_MAX overflows. Probed vs 11.16.0 (scripts/probe_mermaid_pie_length_clamp.mjs):
 //   - font-size computed value saturates at 10000px: 9999.9 -> 9999.9, 10000 -> 10000,
 //     10000.5/10001/1e5/1e9/1e10 -> 10000 (min(v, 10000); NOT floored -- 9999.9 kept).
-//   - stroke-width computed value saturates at 2^31/64 = 2^25 = 33554432 (the
-//     LayoutUnit fixed-point int31/64 max): everything >= ~3.355e7 -> 33554432.
+//   - stroke-width computed value saturates at 33554428px. getComputedStyle()
+//     rounds this whole range to "3.35544e+07px"; CSS Typed OM exposes the exact
+//     used value (scripts/probe_mermaid_pie_length_clamp.mjs).
 // The caps compose with the cascade: a root "1e9px" -> 10000 (font-size cap), then a
 // child "3em" -> 3*10000 = 30000 -> re-capped to 10000; "200%" -> 20000 -> 10000;
 // stroke "3em" -> 30000 (under the stroke cap); stroke "10ex"/"10ch" -> the linearly
 // scaled ex/ch at the 10000 root (52k-ish, under the stroke cap).
 constexpr qreal kChromiumMaxFontSizePx = 10000.0;
-constexpr qreal kChromiumMaxStrokeWidthPx = 33554432.0;  // 2^31 / 64
+constexpr qreal kChromiumMaxStrokeWidthPx = 33554428.0;
 
 CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx) {
   // An EXACT-zero (or negative) root font-size is PRESERVED with zero metrics --
@@ -266,6 +321,21 @@ qreal cssOpacity(const QString& value) {
 
 qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx) {
   const QString t = value.trimmed();
+  const QString keyword = t.toLower();
+  if (keyword == QLatin1String("xx-small")) return 9.0;
+  if (keyword == QLatin1String("x-small")) return 10.0;
+  if (keyword == QLatin1String("small")) return 13.0;
+  if (keyword == QLatin1String("medium") || keyword == QLatin1String("initial")) return 16.0;
+  if (keyword == QLatin1String("large")) return 18.0;
+  if (keyword == QLatin1String("x-large")) return 24.0;
+  if (keyword == QLatin1String("xx-large")) return 32.0;
+  if (keyword == QLatin1String("xxx-large")) return 48.0;
+  if (keyword == QLatin1String("larger"))
+    return std::min(ctx.emPx * 1.2, kChromiumMaxFontSizePx);
+  if (keyword == QLatin1String("smaller")) return ctx.emPx / 1.2;
+  if (keyword == QLatin1String("inherit") || keyword == QLatin1String("unset") ||
+      keyword == QLatin1String("revert") || keyword == QLatin1String("revert-layer"))
+    return ctx.emPx;
   // font-size % -> N/100 of the PARENT font-size (ctx.emPx). An invalid/negative
   // percentage is dropped by the CSS parser and INHERITS the parent (ctx.emPx),
   // like any invalid font-size.
@@ -284,10 +354,42 @@ qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx) {
   // (invalid) while "1e2px" carries a unit and resolves to 100.
   static const QRegularExpression bareNumber(
       QStringLiteral(R"(^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\s*$)"));
-  if (bareNumber.match(value).hasMatch()) return ctx.emPx;
+  if (bareNumber.match(value).hasMatch()) {
+    bool ok = false;
+    const qreal number = t.toDouble(&ok);
+    // CSS permits unitless zero for a length-valued property. Any non-zero bare
+    // number remains invalid and inherits the parent font size.
+    return ok && number == 0.0 ? 0.0 : ctx.emPx;
+  }
   const CssLengthResult r = resolveCssLengthToPx(value, ctx);
   if (r.status != CssLengthStatus::Valid || r.px < 0.0) return ctx.emPx;  // inherited
   return std::min(r.px, kChromiumMaxFontSizePx);  // Chromium used-value clamp
+}
+
+qreal CssPixelFont::horizontalAdvance(const QString& text) const {
+  return QFontMetricsF(font).horizontalAdvance(text) * scale;
+}
+
+CssPixelFont makeCssPixelFont(const QString& family, qreal pixelSize) {
+  CssPixelFont result;
+  result.font = QFont(family);
+  if (!(pixelSize > 0.0) || !std::isfinite(pixelSize)) {
+    result.scale = 0.0;
+    return result;
+  }
+  const qreal integral = std::floor(pixelSize);
+  int referencePx;
+  if (pixelSize == integral && pixelSize <= qreal(std::numeric_limits<int>::max())) {
+    referencePx = static_cast<int>(pixelSize);
+  } else if (pixelSize < 1.0) {
+    referencePx = 16;
+  } else {
+    referencePx = static_cast<int>(std::min<qreal>(std::ceil(pixelSize), 10000.0));
+  }
+  referencePx = std::max(referencePx, 1);
+  result.font.setPixelSize(referencePx);
+  result.scale = pixelSize / qreal(referencePx);
+  return result;
 }
 
 qreal parseFontSizeNumber(const QString& value) {

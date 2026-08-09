@@ -7,8 +7,6 @@
 #include "mermaid/pie/PieScene.h"
 #include "mermaid/theme/FlowTheme.h"
 
-#include <QFont>
-#include <QFontMetrics>
 #include <QJsonObject>
 #include <QRectF>
 #include <QSize>
@@ -17,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <memory>
 
 namespace muffin::mermaid::editor {
@@ -37,12 +36,22 @@ struct PieDiagramImpl : Diagram {
     // Resolve the 4 live pie config fields from pre.config.pie over the defaults.
     const QJsonObject pieConfig = pre.config.value(QStringLiteral("pie")).toObject();
     pie::PieConfig config;
-    config.textPosition = configNumber(pieConfig, QStringLiteral("textPosition"), 0.75);
-    config.donutHole = configNumber(pieConfig, QStringLiteral("donutHole"), 0.0);
+    const auto jsConfigNumber = [&pieConfig](QLatin1String key, qreal fallback) {
+      const QJsonValue value = pieConfig.value(key);
+      return value.isUndefined() || value.isNull() ? fallback : qreal(jsNumberValue(value));
+    };
+    config.textPosition = jsConfigNumber(QLatin1String("textPosition"), 0.75);
+    config.donutHole = jsConfigNumber(QLatin1String("donutHole"), 0.0);
     config.legendPosition =
         pieConfig.value(QStringLiteral("legendPosition")).toString(QStringLiteral("right"));
-    config.highlightSlice = pieConfig.value(QStringLiteral("highlightSlice")).toString();
-    config.useMaxWidth = pieConfig.value(QStringLiteral("useMaxWidth")).toBool(true);
+    const QJsonValue rawHighlight = pieConfig.value(QStringLiteral("highlightSlice"));
+    config.highlightSliceIsString = rawHighlight.isUndefined() || rawHighlight.isNull() ||
+                                    rawHighlight.isString();
+    config.highlightSlice = rawHighlight.isString() ? rawHighlight.toString() : QString();
+    const QJsonValue rawUseMaxWidth = pieConfig.value(QStringLiteral("useMaxWidth"));
+    config.useMaxWidth = rawUseMaxWidth.isUndefined() || rawUseMaxWidth.isNull()
+                             ? true
+                             : truthyConfigValue(rawUseMaxWidth);
 
     pie::PieSceneStyle style;
     // Consume the fully-resolved pie themeVariables (FlowTheme already derived
@@ -94,29 +103,31 @@ struct PieDiagramImpl : Diagram {
     // chartAndLegendWidth = pieWidth + margin + rect + spacing + longestTextWidth.
     // A 0 legend font-size paints no legend text (font-size:0 -> invisible), so
     // skip measuring (avoids a setPixelSize(0) warning) and contribute 0 width.
-    qreal longest = 0.0;
+    qreal longest = scene.legends.isEmpty()
+                        ? -std::numeric_limits<qreal>::infinity()
+                        : 0.0;
     if (scene.style.legendFontSize > 0.0) {
-      QFont legendFont(scene.style.fontFamily);
-      legendFont.setPixelSize(qRound(scene.style.legendFontSize));
-      const QFontMetrics fm(legendFont);
+      const CssPixelFont legendFont =
+          makeCssPixelFont(scene.style.fontFamily, scene.style.legendFontSize);
       for (const pie::PieLegendEntry& e : scene.legends)
-        longest = std::max(longest, qreal(fm.horizontalAdvance(e.text)));
+        longest = std::max(longest, legendFont.horizontalAdvance(e.text));
     }
     scene.longestLegendWidth = longest;
-    // Upstream switch default is "right": only top/bottom/center are non-right.
+    // Upstream switch default is "right": top/bottom stack vertically, center
+    // overlays the legend without widening, and every other value uses a side
+    // legend block.
     const QString& lpos = config.legendPosition;
     const bool legendHorizontal = lpos == QStringLiteral("top") || lpos == QStringLiteral("bottom");
     const bool legendCenter = lpos == QStringLiteral("center");
-    if (legendHorizontal) {
+    if (legendHorizontal || legendCenter) {
       scene.totalWidth = scene.pieWidth + scene.margin;  // legend stacks above/below
     } else {
-      // right (default), left, center, or unknown -> side legend block widens canvas
+      // right (default), left, or unknown -> side legend block widens canvas.
       scene.totalWidth =
           scene.pieWidth + scene.margin + scene.legendRectSize + scene.legendSpacing + longest;
     }
     scene.totalHeight = legendHorizontal ? scene.height + scene.legends.size() * scene.legendHeight
                                          : scene.height;
-    (void)legendCenter;
     // Upstream title-driven SVG viewBox expansion (pieRenderer draw() lines
     // 280-286): the title <text> is centered at group-local x=0 (= pieWidth/2 =
     // 225 SVG px), and when its rendered width exceeds the chart extent the
@@ -127,9 +138,9 @@ struct PieDiagramImpl : Diagram {
     // empty or its font-size is <= 0 (painter gate), so it then contributes 0.
     qreal titleWidth = 0.0;
     if (!scene.title.isEmpty() && scene.style.titleFontSize > 0.0) {
-      QFont titleFont(scene.style.fontFamily);
-      titleFont.setPixelSize(qRound(scene.style.titleFontSize));
-      titleWidth = qreal(QFontMetrics(titleFont).horizontalAdvance(scene.title));
+      const CssPixelFont titleFont =
+          makeCssPixelFont(scene.style.fontFamily, scene.style.titleFontSize);
+      titleWidth = titleFont.horizontalAdvance(scene.title);
     }
     const qreal titleLeft = scene.pieWidth / 2.0 - titleWidth / 2.0;
     const qreal titleRight = scene.pieWidth / 2.0 + titleWidth / 2.0;

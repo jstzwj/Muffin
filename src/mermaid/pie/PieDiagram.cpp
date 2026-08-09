@@ -53,43 +53,11 @@ QStringList splitLines(const QString& source) {
   return lines;
 }
 
-// Strip a trailing `%% comment` from a line, respecting quoted regions (a `%%`
-// inside a STRING literal is part of the label, not a comment — matching the
-// Langium lexer, which tokenizes STRING before SINGLE_LINE_COMMENT at that
-// position). Backslash escapes inside quotes are honored so a `\"` does not
-// close the string.
+// The hidden SINGLE_LINE_COMMENT token starts at the first `%%`, including
+// after an opening quote; the resulting incomplete STRING is then rejected.
 QString stripInlineComment(const QString& line) {
-  QString out;
-  out.reserve(line.size());
-  const int n = line.size();
-  bool inQuote = false;
-  QChar quoteChar;
-  for (int i = 0; i < n; ++i) {
-    const QChar c = line.at(i);
-    if (inQuote) {
-      out.append(c);
-      if (c == QLatin1Char('\\')) {
-        if (i + 1 < n) {
-          out.append(line.at(i + 1));
-          ++i;
-        }
-        continue;
-      }
-      if (c == quoteChar) inQuote = false;
-    } else {
-      if (c == QLatin1Char('"') || c == QLatin1Char('\'')) {
-        inQuote = true;
-        quoteChar = c;
-        out.append(c);
-      } else if (c == QLatin1Char('%') && i + 1 < n &&
-                 line.at(i + 1) == QLatin1Char('%')) {
-        break;  // comment runs to end of line
-      } else {
-        out.append(c);
-      }
-    }
-  }
-  return out;
+  const int comment = line.indexOf(QLatin1String("%%"));
+  return comment < 0 ? line : line.left(comment);
 }
 
 // Does `s` starting at `pos` begin with the case-sensitive keyword `kw`,
@@ -142,20 +110,16 @@ int matchNumber(const QString& s, int pos) {
   int i = pos;
   if (i < n && s.at(i) == QLatin1Char('-')) ++i;
   if (i >= n) return 0;
-  const QChar d = s.at(i);
-  if (d == QLatin1Char('0')) {
-    ++i;
-  } else if (d >= QLatin1Char('1') && d <= QLatin1Char('9')) {
-    ++i;
-    while (i < n && s.at(i) >= QLatin1Char('0') && s.at(i) <= QLatin1Char('9')) ++i;
-  } else {
-    return 0;
-  }
+  const int digitsStart = i;
+  while (i < n && s.at(i) >= QLatin1Char('0') && s.at(i) <= QLatin1Char('9')) ++i;
+  if (i == digitsStart) return 0;
   if (i < n && s.at(i) == QLatin1Char('.')) {
     int j = i + 1;
     if (j >= n || s.at(j) < QLatin1Char('0') || s.at(j) > QLatin1Char('9')) return 0;
     while (j < n && s.at(j) >= QLatin1Char('0') && s.at(j) <= QLatin1Char('9')) ++j;
     i = j;
+  } else if (i - digitsStart > 1 && s.at(digitsStart) == QLatin1Char('0')) {
+    return 0;
   }
   return i - pos;
 }
@@ -171,7 +135,15 @@ int parseQuotedLabel(const QString& trimmed, QString& label, int line) {
     const QChar c = trimmed.at(i);
     if (c == QLatin1Char('\\')) {
       if (i + 1 < n) {
-        label.append(trimmed.at(i + 1));
+        const QChar escaped = trimmed.at(i + 1);
+        if (escaped == QLatin1Char('b')) label.append(QChar(u'\b'));
+        else if (escaped == QLatin1Char('f')) label.append(QChar(u'\f'));
+        else if (escaped == QLatin1Char('n')) label.append(QChar(u'\n'));
+        else if (escaped == QLatin1Char('r')) label.append(QChar(u'\r'));
+        else if (escaped == QLatin1Char('t')) label.append(QChar(u'\t'));
+        else if (escaped == QLatin1Char('v')) label.append(QChar(u'\v'));
+        else if (escaped == QLatin1Char('0')) label.append(QChar(u'\0'));
+        else label.append(escaped);
         i += 2;
         continue;
       }
@@ -247,13 +219,28 @@ void processContent(PieData& data, const QString& trimmed, int line) {
     }
     if (i < trimmed.size() && trimmed.at(i) == QLatin1Char('{')) {
       const int close = trimmed.lastIndexOf(QLatin1Char('}'));
-      if (close > i) {
+      if (close > i && trimmed.mid(close + 1).trimmed().isEmpty()) {
         data.accDescr = trimmed.mid(i + 1, close - i - 1).trimmed();
         return;
       }
     }
   }
   throw PieParseError(QStringLiteral("unrecognized line: ") + trimmed, line);
+}
+
+QString gatherMultilineAccDescr(QString content, const QStringList& lines, int& lineIndex) {
+  const QString trimmed = content.trimmed();
+  if (!trimmed.startsWith(QLatin1String("accDescr"), Qt::CaseSensitive)) return content;
+  int i = skipWs(trimmed, 8);
+  if (i >= trimmed.size() || trimmed.at(i) != QLatin1Char('{') ||
+      trimmed.indexOf(QLatin1Char('}'), i + 1) >= 0)
+    return content;
+  while (++lineIndex < lines.size()) {
+    content += QLatin1Char('\n') + stripInlineComment(lines.at(lineIndex));
+    if (content.indexOf(QLatin1Char('}'), content.indexOf(QLatin1Char('{')) + 1) >= 0)
+      return content;
+  }
+  return content;
 }
 
 }  // namespace
@@ -283,11 +270,16 @@ PieData PieDiagram::parse(const QString& source) {
   }
   // The remainder of the header line is a normal content segment (title or a
   // section, matching `pie "A":1` and `pie title X`).
-  processContent(data, header.mid(pos).trimmed(), idx + 1);
+  QString headerContent = header.mid(pos).trimmed();
+  if (!headerContent.isEmpty()) {
+    headerContent = gatherMultilineAccDescr(headerContent, lines, idx);
+    processContent(data, headerContent.trimmed(), idx + 1);
+  }
 
   // Body lines.
   for (int j = idx + 1; j < lines.size(); ++j) {
-    const QString stripped = stripInlineComment(lines.at(j));
+    QString stripped = stripInlineComment(lines.at(j));
+    stripped = gatherMultilineAccDescr(stripped, lines, j);
     processContent(data, stripped.trimmed(), j + 1);
   }
   return data;

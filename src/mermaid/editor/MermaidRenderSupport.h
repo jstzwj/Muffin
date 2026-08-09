@@ -61,9 +61,9 @@ CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx);
 // probed, deferred to paint, so the caller passes the scene bounds diagonal).
 // A valid length (incl. 0) is returned; a negative or missing/invalid value
 // yields the CSS initial (1). The computed px is capped at Chromium's used-value
-// saturation (2^31/64 = 33554432, the LayoutUnit max) so a huge config matches
+// saturation (33554428px, read through CSS Typed OM) so a huge config matches
 // the browser and never overflows downstream. Probed: "2px"->2, "1.7"->1.7,
-// "0"->0, "3em"->48, "10vw"->80, "abc"->1, "1e9px"->33554432. A 0 result means
+// "0"->0, "3em"->48, "10vw"->80, "abc"->1, "1e9px"->33554428. A 0 result means
 // the caller paints NoPen.
 qreal cssStrokeWidthPx(const QString& value, const CssLengthContext& ctx, qreal diagonalPx);
 
@@ -88,6 +88,18 @@ qreal cssOpacity(const QString& value);
 // "1e9px"->10000.
 qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx);
 
+// A CSS-pixel font descriptor that preserves fractional sizes although Qt's
+// QFont::setPixelSize accepts only integers. Integer sizes keep scale=1 (the
+// existing byte-stable path); fractional sizes use a nearby integer font and a
+// painter/metric scale. Callers measure via horizontalAdvance() and apply
+// `painter.scale(scale, scale)` around their text anchor before drawing.
+struct CssPixelFont {
+  QFont font;
+  qreal scale = 1.0;
+  qreal horizontalAdvance(const QString& text) const;
+};
+CssPixelFont makeCssPixelFont(const QString& family, qreal pixelSize);
+
 // Replicates upstream parseFontSize()[0] ?? 2 (pieDiagram-ENE6RG2P.mjs:157):
 // parseInt(value, 10) of the LEADING integer (truncates decimals, ignores any
 // unit), defaulting to 2 when there is no leading integer. Upstream uses this
@@ -104,6 +116,14 @@ qreal parseFontSizeNumber(const QJsonValue& raw, const QString& fallbackString);
 
 QString firstFontFamily(QString cssFamily);
 qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback);
+
+// ECMAScript conversions used by Mermaid config/render code. jsNumberValue
+// implements Number(value), including strings, booleans and Array#toString;
+// jsNumberToString implements the shortest round-trippable Number#toString
+// spelling and its fixed/scientific thresholds. They are deliberately shared
+// so diagrams do not grow family-local approximations.
+double jsNumberValue(const QJsonValue& value);
+QString jsNumberToString(double value);
 
 // Parses a CSS font-weight value into Qt's QFont::Weight. Qt 6 uses the standard
 // CSS 100..900 scale (Normal=400, Bold=700), so the value maps near-identity.

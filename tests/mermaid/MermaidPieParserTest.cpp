@@ -134,5 +134,46 @@ int main(int argc, char** argv) {
                 id + QStringLiteral(": runtime reject message missing phrase: ") + msg);
     }
   }
+
+  // Boundaries found by differential probing against the real Langium parser.
+  // Keep these local until the frozen grammar fixture is regenerated from the
+  // updated probe: they prevent the native parser from silently drifting back
+  // to JSON-number or ad-hoc string semantics.
+  {
+    const pie::PieData d = pie::PieDiagram::parse(
+        QStringLiteral("pie\n\"leading\" : 01.5\n\"fraction\" : 00.5"));
+    require(d.sections.size() == 2, QStringLiteral("leading-zero fractions accepted"));
+    require(nearEqual(d.sections.at(0).value, 1.5) &&
+                nearEqual(d.sections.at(1).value, 0.5),
+            QStringLiteral("leading-zero fraction values decoded"));
+  }
+  {
+    const pie::PieData d = pie::PieDiagram::parse(
+        QStringLiteral("pie\n\"A\\nB\\tC\\rD\\bE\\fF\\vG\" : 1"));
+    QString expected = QStringLiteral("A\nB\tC\rD");
+    expected += QChar(u'\b');
+    expected += QStringLiteral("E");
+    expected += QChar(u'\f');
+    expected += QStringLiteral("F");
+    expected += QChar(u'\v');
+    expected += QStringLiteral("G");
+    require(d.sections.size() == 1 && d.sections.first().label == expected,
+            QStringLiteral("quoted label escape decoding"));
+  }
+  {
+    const pie::PieData d = pie::PieDiagram::parse(
+        QStringLiteral("pie\naccDescr {first line\nsecond line}\n\"A\" : 1"));
+    require(d.accDescr == QStringLiteral("first line\nsecond line"),
+            QStringLiteral("multiline accDescr body"));
+  }
+  {
+    bool threw = false;
+    try {
+      pie::PieDiagram::parse(QStringLiteral("pie\n\"A%%B\" : 1"));
+    } catch (const pie::PieParseError&) {
+      threw = true;
+    }
+    require(threw, QStringLiteral("%% starts a comment even inside a quoted label"));
+  }
   return 0;
 }

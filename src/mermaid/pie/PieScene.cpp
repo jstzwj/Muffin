@@ -5,6 +5,7 @@
 
 #include "mermaid/pie/PieScene.h"
 #include "mermaid/pie/PieScenePainter.h"
+#include "mermaid/editor/MermaidRenderSupport.h"
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -119,6 +120,7 @@ PieScene buildPieScene(const PieData& data, const PieConfig& config, PieSceneSty
   scene.legendPosition = config.legendPosition.isEmpty() ? QStringLiteral("right")
                                                          : config.legendPosition;
   scene.highlightSlice = config.highlightSlice;
+  scene.highlightSliceIsString = config.highlightSliceIsString;
   scene.showData = data.showData;
   scene.useMaxWidth = config.useMaxWidth;
   scene.title = data.title;
@@ -159,7 +161,8 @@ PieScene buildPieScene(const PieData& data, const PieConfig& config, PieSceneSty
     PieLegendEntry entry;
     entry.label = s.label;
     entry.text = scene.showData
-                     ? QStringLiteral("%1 [%2]").arg(s.label).arg(QString::number(s.value))
+                     ? QStringLiteral("%1 [%2]")
+                           .arg(s.label, editor::jsNumberToString(s.value))
                      : s.label;
     entry.colorIndex = scene.style.palette.isEmpty() ? 0 : i % scene.style.palette.size();
     entry.fill =
@@ -197,9 +200,9 @@ PieScene buildPieScene(const PieData& data, const PieConfig& config, PieSceneSty
       g.centroidX = c.x;
       g.centroidY = c.y;
       g.pathD = arcPath(a0, a1, scene.radius, scene.donutInnerRadius);
-      if (scene.highlightSlice == QStringLiteral("hover"))
+      if (scene.highlightSliceIsString && scene.highlightSlice == QStringLiteral("hover"))
         g.className += QStringLiteral(" highlightedOnHover");
-      else if (scene.highlightSlice == s.label)  // "" == "" : empty highlight hits empty-label slices
+      else if (scene.highlightSliceIsString && scene.highlightSlice == s.label)
         g.className += QStringLiteral(" highlighted");
       scene.slices.append(g);
     }

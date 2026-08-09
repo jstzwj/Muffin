@@ -49,6 +49,7 @@ struct PieConfig {
   QString legendPosition = QStringLiteral("right");
   // "" (none) | "hover" | <label> — drives the pieCircle highlight class.
   QString highlightSlice;
+  bool highlightSliceIsString = true;
   bool useMaxWidth = true;
 };
 
