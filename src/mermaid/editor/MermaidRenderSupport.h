@@ -47,9 +47,12 @@ qreal pixelValue(const QString& value, qreal fallback);
 // (RequirementTextStyle.cpp:107): emPx = inherited SVG root font-size, remPx =
 // 16 (browser default <html> root), exPx/chPx from the actual Pie font's
 // QFontMetricsF, viewport = mmdc's default 800x600 raster profile (vw/vh/vmin/
-// vmax). NOT the neutral CssLengthContext{} placeholder. A valid zero (or sub-px)
-// emPx is PRESERVED (upstream honors fontSize:"0px" -- em/%/inherited collapse to
-// 0); it is NOT coerced to 16. ex/ch are 0 at a 0 root (no 0px QFont built).
+// vmax). NOT the neutral CssLengthContext{} placeholder. An EXACT-zero emPx is
+// PRESERVED with zero ex/ch (upstream honors fontSize:"0px" -- em/%/inherited
+// collapse to 0; no 0px QFont built); it is NOT coerced to 16. Any POSITIVE emPx
+// (incl. a sub-pixel root like 0.4px) measures ex/ch at a 16px reference and
+// scales linearly by emPx/16 -- font metrics are linear in size, so this is
+// exact at any size and matches upstream (probed: 0.4px + 10ex -> 2.0918px).
 CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx);
 
 // CSS <length> -> px for SVG stroke-width. Delegates to resolveCssLengthToPx

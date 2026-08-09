@@ -90,6 +90,18 @@ try {
       svgFontSize: (await titleFs(`%%{init: {"themeVariables": {"fontSize": "0px"}}}%%`)).svgFontSize,
       stroke3em: await scalar(`%%{init: {"themeVariables": {"fontSize": "0px", "pieStrokeWidth": "3em"}}}%%`, "path.pieCircle", "stroke-width"),
     };
+    // Sub-pixel root (0.4px): ex/ch must be measured at the ACTUAL font size
+    // (font metrics scale linearly), NOT zeroed by an integer-pixel quantize.
+    // 1em -> 0.4, 200% -> 0.8; 10ex/10ch -> a small non-zero px (xHeight('0') at
+    // 0.4px ~= exPx_ref * 0.4/ref). Also title ex/ch inherits the 0.4 root.
+    r.subpx = {
+      sw10ex: await scalar(`%%{init: {"themeVariables": {"fontSize": "0.4px", "pieStrokeWidth": "10ex"}}}%%`, "path.pieCircle", "stroke-width"),
+      sw10ch: await scalar(`%%{init: {"themeVariables": {"fontSize": "0.4px", "pieStrokeWidth": "10ch"}}}%%`, "path.pieCircle", "stroke-width"),
+      sw1em: await scalar(`%%{init: {"themeVariables": {"fontSize": "0.4px", "pieStrokeWidth": "1em"}}}%%`, "path.pieCircle", "stroke-width"),
+      sw200pct: await scalar(`%%{init: {"themeVariables": {"fontSize": "0.4px", "pieStrokeWidth": "200%"}}}%%`, "path.pieCircle", "stroke-width"),
+      title10ex: (await titleFs(`%%{init: {"themeVariables": {"fontSize": "0.4px", "pieTitleTextSize": "10ex"}}}%%`)).titleFontSize,
+      svgFontSize: (await titleFs(`%%{init: {"themeVariables": {"fontSize": "0.4px"}}}%%`)).svgFontSize,
+    };
     return r;
   }, { mod });
   console.log(JSON.stringify(out, null, 2));

@@ -195,20 +195,30 @@ qreal pixelValue(const QString& value, qreal fallback) {
 }
 
 CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx) {
-  // A valid zero (or sub-px) root font-size is PRESERVED -- upstream honors
-  // fontSize:"0px": em/%/inherited sizes collapse to 0 (probed: root "0px" +
-  // title 200%/3em/invalid/bare -> 0px, pieStrokeWidth "3em" -> 0px). Do NOT
-  // coerce 0 -> 16; the caller resolves the inherited root, which is 16 only
-  // when absent/invalid (cssFontSizePx already falls back to the parent). Skip
-  // the QFont when the rounded pixel size is <= 0: setPixelSize(0) warns and
-  // keeps the default, so a 0 root sets ex/ch = 0 (their natural value there).
-  const int px = qRound(emPx);
-  if (px <= 0) return {emPx, 16.0, 0.0, 0.0, QSizeF(800.0, 600.0)};
+  // An EXACT-zero (or negative) root font-size is PRESERVED with zero metrics --
+  // upstream honors fontSize:"0px": em/%/inherited sizes collapse to 0 (probed:
+  // root "0px" + title 200%/3em/invalid/bare -> 0px, pieStrokeWidth "3em" -> 0px).
+  // Do NOT coerce 0 -> 16; the caller resolves the inherited root, which is 16
+  // only when absent/invalid (cssFontSizePx already falls back to the parent).
+  // Skip the QFont at 0: setPixelSize(0) warns and keeps the default, so ex/ch
+  // are 0 (their natural value at a 0-size font).
+  if (emPx <= 0.0) return {emPx, 16.0, 0.0, 0.0, QSizeF(800.0, 600.0)};
+  // Any POSITIVE emPx -- including a sub-pixel root like 0.4px -- measures ex/ch
+  // at the ACTUAL font size. Font metrics (x-height, '0' advance) scale LINEARLY
+  // with pixel size for a scalable font, so measure them ONCE at a safe reference
+  // size and scale to emPx; this is exact for any positive emPx. QFont has no
+  // fractional setPixelSize, and qRound(0.4) = 0 would otherwise zero ex/ch
+  // (probed vs 11.16.0: root 0.4px + pieStrokeWidth 10ex -> 2.0918px = 10 * exPx,
+  // so exPx = 0.20918; 10ch -> 2.09766; 1em -> 0.4; 200% -> 0.8). Measuring at
+  // the reference (16) also sidesteps setPixelSize(0) for any 0 < emPx < 0.5.
+  constexpr qreal kReferencePx = 16.0;
   QFont f(fontFamily);
-  f.setPixelSize(px);
+  f.setPixelSize(int(kReferencePx));
   const QFontMetricsF m(f);
+  const qreal scale = emPx / kReferencePx;
   // viewport = mmdc default raster profile (RequirementScene.cpp:46).
-  return {emPx, 16.0, m.xHeight(), m.horizontalAdvance(QChar('0')), QSizeF(800.0, 600.0)};
+  return {emPx, 16.0, m.xHeight() * scale,
+          m.horizontalAdvance(QChar('0')) * scale, QSizeF(800.0, 600.0)};
 }
 
 qreal cssStrokeWidthPx(const QString& value, const CssLengthContext& ctx, qreal diagonalPx) {

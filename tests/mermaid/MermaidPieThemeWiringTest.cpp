@@ -19,6 +19,7 @@
 
 #include <QFont>
 #include <QFontMetrics>
+#include <QFontMetricsF>
 #include <QGuiApplication>
 #include <QImage>
 #include <QJsonValue>
@@ -153,6 +154,29 @@ int main(int argc, char** argv) {
   require(approx(editor::cssFontSizePx(QStringLiteral("25"), ctx0), 0.0), "fs0 bare -> 0");
   require(approx(editor::cssFontSizePx(QStringLiteral("25px"), ctx0), 25.0), "fs0 valid 25px -> 25");
   require(approx(editor::cssStrokeWidthPx(QStringLiteral("3em"), ctx0, 500.0), 0.0), "sw0 3em -> 0");
+  // ctx.emPx is a SUB-PIXEL positive root (e.g. "0.4px"): NOT zeroed by
+  // qRound(0.4)=0. em/% resolve relative to 0.4, and ex/ch are the font's metrics
+  // at the ACTUAL 0.4px size -- font metrics scale linearly, so exPx =
+  // xHeight(16)*0.4/16 (independently re-derived here from a fresh 16px QFont).
+  // Probed vs 11.16.0: root 0.4px + pieStrokeWidth 10ex -> 2.0918px = 10 * exPx.
+  const muffin::CssLengthContext ctx04 =
+      editor::pieCssLengthContext(QStringLiteral("Noto Sans"), 0.4);
+  QFont refFont(QStringLiteral("Noto Sans"));
+  refFont.setPixelSize(16);
+  const QFontMetricsF refM(refFont);
+  const qreal scale04 = 0.4 / 16.0;
+  require(approx(ctx04.emPx, 0.4), "ctx04 preserves sub-px emPx 0.4");
+  require(approx(ctx04.exPx, refM.xHeight() * scale04),
+          "ctx04 exPx = xHeight(16)*0.4/16 (linear, not zeroed)");
+  require(approx(ctx04.chPx, refM.horizontalAdvance(QChar('0')) * scale04),
+          "ctx04 chPx = advance('0')(16)*0.4/16 (linear, not zeroed)");
+  require(ctx04.exPx > 0.0 && ctx04.chPx > 0.0, "ctx04 ex/ch non-zero at sub-px root");
+  require(approx(editor::cssFontSizePx(QStringLiteral("1em"), ctx04), 0.4), "fs04 1em -> 0.4");
+  require(approx(editor::cssFontSizePx(QStringLiteral("200%"), ctx04), 0.8), "fs04 200% -> 0.8");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("10ex"), ctx04, 500.0), 10.0 * ctx04.exPx),
+          "sw04 10ex -> 10*exPx (sub-px, non-zero)");
+  require(approx(editor::cssStrokeWidthPx(QStringLiteral("10ch"), ctx04, 500.0), 10.0 * ctx04.chPx),
+          "sw04 10ch -> 10*chPx (sub-px, non-zero)");
   // parseFontSizeNumber: upstream parseInt (leading int, truncates decimals,
   //   ignores unit); no leading int -> default 2. Parsed as a JS Number (double,
   //   not qint64) so values beyond the qint64 range parse to the nearest double
@@ -525,6 +549,31 @@ int main(int argc, char** argv) {
             QStringLiteral("title ink span %1 > 800 (not clipped to the fixed rect)").arg(maxX - minX));
   }
 
-  qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint, units, title-clip)";
+  // --- 13. sub-pixel root (0.4px): ex/ch measured at the ACTUAL size, not zeroed ---
+  // root "0.4px" + pieStrokeWidth "10ex"/"10ch" resolves to a small NON-zero px.
+  // The old qRound(0.4)=0 path zeroed ex/ch -> 0; the linear-scaling fix yields
+  // 10 * exPx where exPx = xHeight(16)*0.4/16. Independently re-derived from a
+  // fresh 16px QFont (probed vs 11.16.0: browser 10ex -> 2.0918px, 10ch -> 2.09766;
+  // native uses Noto Sans so the exact px differs, but the LINEAR FORMULA holds).
+  {
+    const auto subpxStroke = [&](const QString& sw) {
+      const QString src = QStringLiteral(
+          "%%{init: {\"themeVariables\": {\"fontSize\": \"0.4px\", \"pieStrokeWidth\": \"%1\"}}}%%\n"
+          " pie title T\n\"A\" : 50\n\"B\" : 50").arg(sw);
+      return renderPie(cache, src)->style.sliceStrokeWidth;
+    };
+    QFont refFont(QStringLiteral("Noto Sans"));
+    refFont.setPixelSize(16);
+    const QFontMetricsF refM(refFont);
+    const qreal scale = 0.4 / 16.0;
+    require(approx(subpxStroke(QStringLiteral("10ex")), 10.0 * refM.xHeight() * scale),
+            "root 0.4px + pieStrokeWidth 10ex -> 10*xHeight(16)*0.4/16 (non-zero)");
+    require(approx(subpxStroke(QStringLiteral("10ch")), 10.0 * refM.horizontalAdvance(QChar('0')) * scale),
+            "root 0.4px + pieStrokeWidth 10ch -> 10*advance('0')(16)*0.4/16 (non-zero)");
+    require(approx(subpxStroke(QStringLiteral("1em")), 0.4),
+            "root 0.4px + pieStrokeWidth 1em -> 0.4 (em linear in root)");
+  }
+
+  qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint, units, title-clip, sub-px)";
   return 0;
 }
