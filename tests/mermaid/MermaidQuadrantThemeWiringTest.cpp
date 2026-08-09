@@ -42,12 +42,14 @@ QImage decodePng(const QString& dataUrl) {
   return img;
 }
 
-// Count pixels within `tol` per channel of `target` (a precise color-match scan).
+// Count OPAQUE pixels within `tol` per channel of `target` (transparent pixels
+// have RGB (0,0,0) and would falsely match black, so they are excluded).
 int countNear(const QImage& img, const QColor& target, int tol) {
   int count = 0;
   for (int y = 0; y < img.height(); ++y)
     for (int x = 0; x < img.width(); ++x) {
       const QColor c = img.pixelColor(x, y);
+      if (c.alpha() < 128) continue;
       if (std::abs(c.red() - target.red()) <= tol && std::abs(c.green() - target.green()) <= tol &&
           std::abs(c.blue() - target.blue()) <= tol)
         ++count;
@@ -206,6 +208,31 @@ int main(int argc, char** argv) {
             QStringLiteral("hsl(300,100%,50%) external-border override must paint (got %1 px)").arg(magentaPixels));
   }
 
-  qDebug().noquote() << "MermaidQuadrantThemeWiringTest: quadrant adapter consumes resolved theme (+overrides, RGBA, HSL borders)";
+  // --- 7. SVG <paint> resolution: none / currentColor / invalid border ---
+  // (source-entry only; initialize() rejects these). Probed vs 11.16.0
+  // (scripts/probe_mermaid_paint_resolution.mjs): fill none->NoBrush,
+  // currentColor->black, stroke none/garbage->NoPen.
+  {
+    const QColor red(255, 0, 0), black(0, 0, 0);
+    const auto pngPx = [&](const QString& tvJson, const QColor& target, int tol) {
+      const QString src = QStringLiteral("%%{init: {\"themeVariables\": %1}}%%\n").arg(tvJson) + kSrc;
+      return countNear(decodePng(editor::MermaidRenderCache::renderMermaidSourceToPng(src, 1.0).dataUrl), target, tol);
+    };
+    require(pngPx(QStringLiteral("{\"quadrant1Fill\":\"red\"}"), red, 40) > 3000, "quadrant1Fill=red -> red quadrant");
+    require(pngPx(QStringLiteral("{\"quadrant1Fill\":\"none\"}"), red, 40) < 200, "quadrant1Fill=none -> no fill");
+    require(pngPx(QStringLiteral("{\"quadrant1Fill\":\"currentColor\"}"), black, 5) >
+                pngPx(QStringLiteral("{\"quadrant1Fill\":\"none\"}"), black, 5) + 2000,
+            "quadrant1Fill=currentColor -> black fill (currentColor=black)");
+    const auto borderPx = [&](const QString& colorJson) {
+      const QString src =
+          QStringLiteral("%%{init: {\"themeVariables\": {\"quadrantExternalBorderStrokeFill\": %1}}}%%\n").arg(colorJson) + kSrc;
+      return countNear(decodePng(editor::MermaidRenderCache::renderMermaidSourceToPng(src, 1.0).dataUrl), red, 30);
+    };
+    require(borderPx(QStringLiteral("\"red\"")) > 500, "red external border present");
+    require(borderPx(QStringLiteral("\"none\"")) < 50, "external border none -> no border");
+    require(borderPx(QStringLiteral("\"garbage\"")) < 50, "invalid external border -> no border (SVG initial none)");
+  }
+
+  qDebug().noquote() << "MermaidQuadrantThemeWiringTest: quadrant adapter consumes resolved theme (+overrides, RGBA, HSL borders, paint)";
   return 0;
 }

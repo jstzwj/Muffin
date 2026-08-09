@@ -25,9 +25,4 @@ struct PieScene;
 void paintPieScene(const PieScene& scene, QPainter& painter,
                    const MermaidPaintOptions& options);
 
-// Parse a pie slice fill value (theme palette entries are either "#RRGGBB" hex
-// or "hsl(H, S%, L%)") into a QColor. Returns an invalid color for an empty
-// fill (mermaid's dark-theme pie12 is unset — the slice paints no fill).
-QColor parsePieColor(const QString& value);
-
 }  // namespace muffin::mermaid::pie

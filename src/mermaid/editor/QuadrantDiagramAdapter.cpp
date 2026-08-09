@@ -39,6 +39,7 @@ struct QuadrantDiagramImpl : Diagram {
     // string emitted verbatim). No default/dark special-casing remains; the
     // struct defaults below are dead safety fallbacks.
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
+    style.inheritedColor = themeVars.textColor;
     style.quadrant1Fill = themeVars.quadrant[0];
     style.quadrant2Fill = themeVars.quadrant[1];
     style.quadrant3Fill = themeVars.quadrant[2];

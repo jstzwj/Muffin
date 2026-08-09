@@ -12,11 +12,10 @@
 // them byte-for-byte. The format-selection stringify (hsl vs rgba vs hex vs
 // original-string round-trip) is load-bearing — see stringify().
 
+#include <QColor>
 #include <QString>
 
 #include <optional>
-
-class QColor;
 
 namespace muffin::mermaid::color {
 
@@ -103,5 +102,22 @@ QColor toQColor(const QString& color);
 // invalid inline values that mermaid's SVG would drop (so Muffin can apply the
 // upstream fallback: invalid fill → inherited foreground, invalid stroke → none).
 bool isParsableColor(const QString& color);
+
+// SVG <paint> resolution at the render boundary. Categorizes a themeVariable /
+// source-entry value (none / currentColor / inherit / initial / a real color /
+// garbage) and resolves it PER PROPERTY the way mermaid's SVG CSS engine does,
+// probed vs 11.16.0 (scripts/probe_mermaid_paint_resolution.mjs):
+//   empty/none  -> no paint (NoBrush / NoPen / hide text)
+//   currentColor-> black (mermaid's currentColor resolution)
+//   inherit     -> Fill/Text: the inherited color; Stroke: none
+//   initial     -> Fill/Text: black (SVG fill initial); Stroke: none (SVG stroke initial)
+//   color       -> the color
+//   garbage     -> Fill/Text: the inherited color; Stroke: none
+// `inherited` is the DOM-inherited color for the element (the theme textColor).
+// The caller applies the result: Fill none->NoBrush, Stroke none->NoPen (or when
+// the width is <=0), Text none->skip the drawText.
+enum class SvgPaintKind { Fill, Stroke, Text };
+struct SvgPaint { bool none = false; QColor color; };
+SvgPaint resolveSvgPaint(const QString& value, SvgPaintKind kind, const QColor& inherited);
 
 }  // namespace muffin::mermaid::color

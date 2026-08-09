@@ -42,24 +42,24 @@ std::optional<int> jsThemeColorLimit(const QJsonObject& config);
 
 qreal pixelValue(const QString& value, qreal fallback);
 
-// CSS <length> -> px for SVG paint properties (pie stroke widths). Replicates
-// the browser: px and a bare number both resolve to the number; em/rem scale by
-// the 16px root font-size; pt by 4/3. A missing/invalid/negative value yields
-// the CSS initial value for stroke-width (1px). Probed vs mermaid 11.16.0
+// CSS <length> -> px for SVG paint properties (pie stroke widths). Delegates to
+// the shared resolveCssLengthToPx (full unit space: px/pt/pc/in/cm/mm/q/em/rem/
+// ex/ch/vw/vh/vmin/vmax + scientific), then applies stroke-width's own policy:
+// a valid length (incl. 0) is returned; a negative length or a missing/invalid
+// value yields the CSS initial (1). Probed vs mermaid 11.16.0
 // (scripts/probe_mermaid_pie_scalars.mjs): "2px"->2, "1.7"->1.7, "0"->0,
-// "3em"->48, "abc"->1, "-2px"->1.
+// "3em"->48, "abc"->1, "-2px"->1. A 0 result means the caller paints NoPen.
 qreal cssStrokeWidthPx(const QString& value);
 
-// CSS opacity: a unitless number clamped to [0,1]; a missing/invalid/non-finite
-// value yields the CSS initial (1.0). Probed: "0.7"->0.7, "0"->0, "1.7"->1,
-// "-0.5"->0, "abc"->1.
+// CSS opacity: a number or percentage, clamped to [0,1]; missing/invalid/
+// non-finite -> CSS initial (1). Probed: "0.7"->0.7, "50%"->0.5, "150%"->1,
+// "0"->0, "-0.5"->0, "abc"->1.
 qreal cssOpacity(const QString& value);
 
-// CSS font-size -> px. Unlike stroke-width, a bare number is INVALID for
-// font-size, so it (and any other invalid/empty value) resolves to the INHERITED
-// 16px browser default, not the number. em/rem scale by 16px; pt by 4/3; a
-// negative length is invalid -> inherited. Probed: "25px"->25, "25"->16,
-// "0px"->0, "3em"->48, "abc"->16.
+// CSS font-size -> px. Unlike stroke-width, a BARE number is invalid for
+// font-size (it resolves to the INHERITED 16px default); em/rem scale by 16, pt
+// by 4/3, a negative length is invalid -> inherited. Probed: "25px"->25,
+// "25"->16, "0px"->0, "3em"->48, "abc"->16.
 qreal cssFontSizePx(const QString& value);
 
 // Replicates upstream parseFontSize()[0] ?? 2 (pieDiagram-ENE6RG2P.mjs:157):
@@ -68,6 +68,13 @@ qreal cssFontSizePx(const QString& value);
 // numeric prefix -- NOT the CSS paint width -- for the outer-circle radius
 // (r = radius + n/2), so it must be tracked separately from cssStrokeWidthPx.
 qreal parseFontSizeNumber(const QString& value);
+// Overload preserving the JSON type: upstream parseFontSize() returns a NUMBER
+// input verbatim (1.7 -> 1.7) but parseInt-truncates a STRING ("1.7" -> 1). The
+// model's themeOverrides flattens numbers to strings, so the geom must be read
+// from the RAW QJsonValue: isDouble -> the number; isString -> parseInt; else
+// (absent) -> parseFontSizeNumber(fallbackString). Probed: 1.7 -> r 185.85,
+// "1.7" -> r 185.5, "2px" -> r 186.
+qreal parseFontSizeNumber(const QJsonValue& raw, const QString& fallbackString);
 
 QString firstFontFamily(QString cssFamily);
 qreal configNumber(const QJsonObject& object, const QString& key, qreal fallback);

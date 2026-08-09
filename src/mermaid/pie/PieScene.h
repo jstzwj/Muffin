@@ -54,6 +54,9 @@ struct PieSceneStyle {
   qreal titleFontSize = 25.0;
   qreal sectionFontSize = 17.0;
   qreal legendFontSize = 17.0;
+  // DOM-inherited color (theme textColor) for SVG <paint> resolution: a garbage/
+  // inherit fill or text value resolves to this (probed #333 for default).
+  QString inheritedColor;
 };
 
 // One drawn slice's geometry. `pathD` is the d3 arc path string (byte-parity

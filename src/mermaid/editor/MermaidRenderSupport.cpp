@@ -3,6 +3,7 @@
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/MermaidPreprocessor.h"
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "theme/CssCalc.h"
 
 #include <QJsonObject>
 #include <QJsonValue>
@@ -193,43 +194,31 @@ qreal pixelValue(const QString& value, qreal fallback) {
 }
 
 qreal cssStrokeWidthPx(const QString& value) {
-  // px or a bare number -> the number; em/rem -> x16; pt -> x4/3. CSS stroke-width
-  // treats a unitless length as px. Missing/invalid/negative -> CSS initial (1).
-  static const QRegularExpression re(
-      QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(px|em|rem|pt)?\s*$)"),
-      QRegularExpression::CaseInsensitiveOption);
-  const auto m = re.match(value);
-  if (!m.hasMatch()) return 1.0;
-  bool ok = false;
-  const double n = m.captured(1).toDouble(&ok);
-  if (!ok || n < 0.0) return 1.0;
-  const QString unit = m.captured(2).toLower();
-  if (unit == QLatin1String("em") || unit == QLatin1String("rem")) return n * 16.0;
-  if (unit == QLatin1String("pt")) return n * 4.0 / 3.0;
-  return n;  // px or unitless
+  const CssLengthResult r = resolveCssLengthToPx(value, CssLengthContext{});
+  if (r.status != CssLengthStatus::Valid) return 1.0;  // missing/invalid -> CSS initial
+  if (r.px < 0.0) return 1.0;                           // negative -> CSS initial
+  return r.px;                                          // 0 or positive (0 -> caller NoPen)
 }
 
 qreal cssOpacity(const QString& value) {
+  QString s = value.trimmed();
+  const bool percent = s.endsWith(QLatin1Char('%'));
+  if (percent) s.chop(1);
   bool ok = false;
-  const double n = value.trimmed().toDouble(&ok);
+  const double n = s.toDouble(&ok);
   if (!ok || !std::isfinite(n)) return 1.0;  // CSS initial
-  return std::clamp(n, 0.0, 1.0);
+  return std::clamp(percent ? n / 100.0 : n, 0.0, 1.0);
 }
 
 qreal cssFontSizePx(const QString& value) {
-  // font-size REQUIRES a unit (a bare number is invalid -> inherited 16px).
-  static const QRegularExpression re(
-      QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*(px|em|rem|pt)\s*$)"),
-      QRegularExpression::CaseInsensitiveOption);
-  const auto m = re.match(value);
-  if (!m.hasMatch()) return 16.0;  // inherited browser default
-  bool ok = false;
-  const double n = m.captured(1).toDouble(&ok);
-  if (!ok || n < 0.0) return 16.0;  // negative font-size is invalid -> inherited
-  const QString unit = m.captured(2).toLower();
-  if (unit == QLatin1String("em") || unit == QLatin1String("rem")) return n * 16.0;
-  if (unit == QLatin1String("pt")) return n * 4.0 / 3.0;
-  return n;  // px
+  // font-size REQUIRES a unit: a bare number is invalid -> inherited 16px.
+  // (resolveCssLengthToPx accepts bare numbers as px, correct for stroke-width.)
+  static const QRegularExpression bareNumber(
+      QStringLiteral(R"(^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)\s*$)"));
+  if (bareNumber.match(value).hasMatch()) return 16.0;
+  const CssLengthResult r = resolveCssLengthToPx(value, CssLengthContext{});
+  if (r.status != CssLengthStatus::Valid || r.px < 0.0) return 16.0;  // inherited
+  return r.px;
 }
 
 qreal parseFontSizeNumber(const QString& value) {
@@ -241,6 +230,11 @@ qreal parseFontSizeNumber(const QString& value) {
   bool ok = false;
   const int n = m.captured(1).toInt(&ok);
   return ok ? qreal(n) : 2.0;
+}
+
+qreal parseFontSizeNumber(const QJsonValue& raw, const QString& fallbackString) {
+  if (raw.isDouble()) return raw.toDouble();  // number verbatim (1.7 -> 1.7)
+  return parseFontSizeNumber(raw.isString() ? raw.toString() : fallbackString);
 }
 
 QString firstFontFamily(QString cssFamily) {

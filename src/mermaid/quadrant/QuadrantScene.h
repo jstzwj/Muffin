@@ -44,6 +44,9 @@ struct QuadrantSceneStyle {
   QString quadrantExternalBorderStrokeFill = QStringLiteral("#C7C7F1");
   QString quadrantTitleFill = QStringLiteral("#131300");
   QString fontFamily = QStringLiteral("Noto Sans");
+  // DOM-inherited color (theme textColor) for SVG <paint> resolution: a garbage/
+  // inherit fill or text value resolves to this (probed #333 for default).
+  QString inheritedColor;
 };
 
 struct QuadrantRect { qreal x, y, width, height; QString fill; QString text; QString textFill; };

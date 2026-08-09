@@ -52,11 +52,15 @@ struct PieDiagramImpl : Diagram {
     // (the model derives them from taskTextDarkColor / mainContrastColor).
     for (int i = 0; i < 12; ++i) style.palette.append(themeVars.pie[i]);
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
+    style.inheritedColor = themeVars.textColor;
     style.outerStrokeColor = themeVars.pieOuterStrokeColor;
     // Paint width is CSS-resolved; the outer-ring RADIUS uses parseFontSize's
-    // numeric prefix (upstream pieDiagram:157) -- tracked separately.
+    // numeric prefix (upstream pieDiagram:157). parseFontSize branches on the
+    // JSON type (number verbatim vs string parseInt), so read the RAW override.
     style.outerStrokeWidth = cssStrokeWidthPx(themeVars.pieOuterStrokeWidth);
-    style.outerStrokeWidthGeom = parseFontSizeNumber(themeVars.pieOuterStrokeWidth);
+    const QJsonValue rawOsw =
+        pre.config.value(QStringLiteral("themeVariables")).toObject().value(QStringLiteral("pieOuterStrokeWidth"));
+    style.outerStrokeWidthGeom = parseFontSizeNumber(rawOsw, themeVars.pieOuterStrokeWidth);
     style.sliceStrokeColor = themeVars.pieStrokeColor;
     style.sliceStrokeWidth = cssStrokeWidthPx(themeVars.pieStrokeWidth);
     style.pieOpacity = cssOpacity(themeVars.pieOpacity);
@@ -77,12 +81,16 @@ struct PieDiagramImpl : Diagram {
     // Measure legend text advance with the resolved font so the canvas width
     // (font-coupled) and the painted legend block agree. Mirrors mermaid's
     // chartAndLegendWidth = pieWidth + margin + rect + spacing + longestTextWidth.
-    QFont legendFont(scene.style.fontFamily);
-    legendFont.setPixelSize(qRound(scene.style.legendFontSize));
-    const QFontMetrics fm(legendFont);
+    // A 0 legend font-size paints no legend text (font-size:0 -> invisible), so
+    // skip measuring (avoids a setPixelSize(0) warning) and contribute 0 width.
     qreal longest = 0.0;
-    for (const pie::PieLegendEntry& e : scene.legends)
-      longest = std::max(longest, qreal(fm.horizontalAdvance(e.text)));
+    if (scene.style.legendFontSize > 0.0) {
+      QFont legendFont(scene.style.fontFamily);
+      legendFont.setPixelSize(qRound(scene.style.legendFontSize));
+      const QFontMetrics fm(legendFont);
+      for (const pie::PieLegendEntry& e : scene.legends)
+        longest = std::max(longest, qreal(fm.horizontalAdvance(e.text)));
+    }
     scene.longestLegendWidth = longest;
     // Upstream switch default is "right": only top/bottom/center are non-right.
     const QString& lpos = config.legendPosition;

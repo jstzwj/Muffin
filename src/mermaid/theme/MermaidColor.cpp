@@ -619,4 +619,21 @@ bool isParsableColor(const QString& color) {
          parseHsl(color).has_value() || parseKeyword(color).has_value();
 }
 
+SvgPaint resolveSvgPaint(const QString& value, SvgPaintKind kind, const QColor& inherited) {
+  const QString t = value.trimmed();
+  if (t.isEmpty()) return {true, {}};  // no value -> no paint (dark-theme pie12 fill)
+  const QString l = t.toLower();
+  const QColor black(0, 0, 0);
+  if (l == QLatin1String("none")) return {true, {}};
+  if (l == QLatin1String("currentcolor")) return {false, black};
+  const bool strokeInitial = (kind == SvgPaintKind::Stroke);  // stroke initial/inherit/garbage -> none
+  if (l == QLatin1String("inherit") || l == QLatin1String("unset") || l == QLatin1String("revert"))
+    return strokeInitial ? SvgPaint{true, {}} : SvgPaint{false, inherited};
+  if (l == QLatin1String("initial"))
+    return strokeInitial ? SvgPaint{true, {}} : SvgPaint{false, black};
+  if (isParsableColor(t)) return {false, toQColor(t)};
+  // garbage: Fill/Text -> inherited; Stroke -> none (SVG stroke initial).
+  return strokeInitial ? SvgPaint{true, {}} : SvgPaint{false, inherited};
+}
+
 }  // namespace muffin::mermaid::color
