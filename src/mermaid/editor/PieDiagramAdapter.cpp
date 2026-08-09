@@ -54,10 +54,16 @@ struct PieDiagramImpl : Diagram {
     for (int i = 0; i < 12; ++i) style.palette.append(themeVars.pie[i]);
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
     style.inheritedColor = themeVars.textColor;
-    // CSS length context for the pie scalars: real viewport (800x600) + the pie
-    // font's ex/ch + inherited em (themeVariables.fontSize, default 16).
-    const CssLengthContext lengthCtx =
-        pieCssLengthContext(style.fontFamily, pixelValue(themeVars.fontSize, 16.0));
+    // Resolve the SVG ROOT font-size (themeVariables.fontSize) against the
+    // browser <html> root (16px) FIRST: em/% here are relative to 16. "2em"->32,
+    // neo's "14px"->14, invalid/absent -> 16 (inherits the document root). The
+    // pie text elements inherit this root, so it is the em basis AND the
+    // invalid/bare/negative fallback for every per-element font-size below
+    // (cssFontSizePx returns ctx.emPx for those). Probed: "2em"+pieTitleTextSize
+    // "200%" -> 64; neo root 14 -> invalid/bare title sizes inherit 14, not 16.
+    const CssLengthContext rootCtx = pieCssLengthContext(style.fontFamily, 16.0);
+    const qreal rootFs = cssFontSizePx(themeVars.fontSize, rootCtx);
+    const CssLengthContext lengthCtx = pieCssLengthContext(style.fontFamily, rootFs);
     style.outerStrokeColor = themeVars.pieOuterStrokeColor;
     style.sliceStrokeColor = themeVars.pieStrokeColor;
     // The outer-ring RADIUS uses parseFontSize's numeric prefix (upstream
@@ -111,7 +117,25 @@ struct PieDiagramImpl : Diagram {
     scene.totalHeight = legendHorizontal ? scene.height + scene.legends.size() * scene.legendHeight
                                          : scene.height;
     (void)legendCenter;
-    scene.bounds = QRectF(0.0, 0.0, scene.totalWidth, scene.totalHeight);
+    // Upstream title-driven SVG viewBox expansion (pieRenderer draw() lines
+    // 280-286): the title <text> is centered at group-local x=0 (= pieWidth/2 =
+    // 225 SVG px), and when its rendered width exceeds the chart extent the
+    // viewBox grows. Upstream's titleWidth is getBoundingClientRect().width read
+    // BEFORE the viewBox is set -- which (no viewBox scaling yet) is the title's
+    // natural advance width in the resolved title font; measure it the same way
+    // the legend text width is measured. The title paints nothing when it is
+    // empty or its font-size is <= 0 (painter gate), so it then contributes 0.
+    qreal titleWidth = 0.0;
+    if (!scene.title.isEmpty() && scene.style.titleFontSize > 0.0) {
+      QFont titleFont(scene.style.fontFamily);
+      titleFont.setPixelSize(qRound(scene.style.titleFontSize));
+      titleWidth = qreal(QFontMetrics(titleFont).horizontalAdvance(scene.title));
+    }
+    const qreal titleLeft = scene.pieWidth / 2.0 - titleWidth / 2.0;
+    const qreal titleRight = scene.pieWidth / 2.0 + titleWidth / 2.0;
+    const qreal viewBoxX = std::min(0.0, titleLeft);
+    const qreal viewBoxRight = std::max(scene.totalWidth, titleRight);
+    scene.bounds = QRectF(viewBoxX, 0.0, viewBoxRight - viewBoxX, scene.totalHeight);
 
     // Resolve the stroke-width PAINT values now that the SVG viewport (bounds)
     // is known: stroke-width % is relative to the normalized diagonal

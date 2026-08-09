@@ -232,34 +232,43 @@ qreal cssOpacity(const QString& value) {
 
 qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx) {
   const QString t = value.trimmed();
-  // font-size % -> N/100 of the parent font-size (ctx.emPx).
+  // font-size % -> N/100 of the PARENT font-size (ctx.emPx). An invalid/negative
+  // percentage is dropped by the CSS parser and INHERITS the parent (ctx.emPx),
+  // like any invalid font-size.
   if (t.endsWith(QLatin1Char('%'))) {
     bool ok = false;
     const qreal n = t.left(t.size() - 1).toDouble(&ok);
-    if (!ok || !std::isfinite(n)) return 16.0;
+    if (!ok || !std::isfinite(n)) return ctx.emPx;
     const qreal px = n / 100.0 * ctx.emPx;
-    return px < 0.0 ? 16.0 : px;
+    return px < 0.0 ? ctx.emPx : px;
   }
-  // font-size REQUIRES a unit: a bare number is invalid -> inherited 16px. Full
-  // CSS <number> incl. exponent so "1e2" is bare (browser: invalid font-size),
-  // while "1e2px" carries a unit and resolves to 100.
+  // font-size REQUIRES a unit: a bare number (full CSS <number> incl. exponent
+  // like "1e2" or "25") is invalid -> the declaration is dropped and the element
+  // INHERITS the parent font-size (ctx.emPx), NOT a hardcoded 16. Probed vs
+  // 11.16.0: neo root 14 -> pieTitleTextSize "25"/"abc"/"-2px"/"" all inherit 14;
+  // "2em" root + "200%" -> 64 (200% of 32). Full <number> grammar so "1e2" is bare
+  // (invalid) while "1e2px" carries a unit and resolves to 100.
   static const QRegularExpression bareNumber(
       QStringLiteral(R"(^\s*[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?\s*$)"));
-  if (bareNumber.match(value).hasMatch()) return 16.0;
+  if (bareNumber.match(value).hasMatch()) return ctx.emPx;
   const CssLengthResult r = resolveCssLengthToPx(value, ctx);
-  if (r.status != CssLengthStatus::Valid || r.px < 0.0) return 16.0;  // inherited
+  if (r.status != CssLengthStatus::Valid || r.px < 0.0) return ctx.emPx;  // inherited
   return r.px;
 }
 
 qreal parseFontSizeNumber(const QString& value) {
   // Upstream parseInt(value, 10): the leading signed integer (decimals truncated,
-  // any trailing unit ignored); no leading integer -> default 2. toLongLong (not
-  // toInt) so values > INT_MAX parse like JS parseInt instead of falling back.
+  // any trailing unit ignored); no leading integer -> default 2. Parsed as a JS
+  // Number (double), NOT qint64: parseInt returns a Number, so a value beyond the
+  // qint64 range (e.g. "9223372036854775808px" = 2^63) parses to the nearest
+  // double like JS instead of overflowing toLongLong and falling back to 2.
+  // Probed: parseInt("9223372036854775808px",10) === 2^63; toDouble matches
+  // (correctly-rounded, same as V8).
   static const QRegularExpression re(QStringLiteral(R"(^\s*([+-]?\d+))"));
   const auto m = re.match(value);
   if (!m.hasMatch()) return 2.0;
   bool ok = false;
-  const qint64 n = m.captured(1).toLongLong(&ok);
+  const double n = m.captured(1).toDouble(&ok);
   return ok ? qreal(n) : 2.0;
 }
 

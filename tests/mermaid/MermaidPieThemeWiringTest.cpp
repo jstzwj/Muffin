@@ -17,12 +17,15 @@
 #include "mermaid/pie/PieScene.h"
 #include "mermaid/theme/FlowTheme.h"
 
+#include <QFont>
+#include <QFontMetrics>
 #include <QGuiApplication>
 #include <QImage>
 #include <QJsonValue>
 #include <QString>
 #include <QStringList>
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -110,12 +113,13 @@ int main(int argc, char** argv) {
   require(approx(editor::cssOpacity(QStringLiteral("150%")), 1.0), "opacity 150% -> 1 clamp");
   require(approx(editor::cssOpacity(QStringLiteral("abc")), 1.0), "opacity invalid -> 1");
   require(approx(editor::cssOpacity(QStringLiteral("")), 1.0), "opacity empty -> 1");
-  // cssFontSizePx: a UNIT is required (a bare number incl. exponent like "1e2" is
-  //   invalid -> inherited 16); em x16; % of parent (emPx); vw of 800; ex/ch
-  //   font-relative; negative/invalid/empty -> 16.
+  // cssFontSizePx: a UNIT is required (a bare number incl. exponent like "1e2" or
+  //   "25" is invalid -> INHERITS ctx.emPx); em/rem x ctx.emPx; % of parent
+  //   (ctx.emPx); vw of 800; ex/ch font-relative; negative/invalid/empty ->
+  //   ctx.emPx. ctx.emPx=16 here, so the inherited fallbacks are 16.
   require(approx(editor::cssFontSizePx(QStringLiteral("25px"), ctx), 25.0), "fs 25px");
-  require(approx(editor::cssFontSizePx(QStringLiteral("25"), ctx), 16.0), "fs unitless 25 -> 16");
-  require(approx(editor::cssFontSizePx(QStringLiteral("1e2"), ctx), 16.0), "fs bare 1e2 -> 16 (invalid font-size)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("25"), ctx), 16.0), "fs unitless 25 -> ctx.emPx 16");
+  require(approx(editor::cssFontSizePx(QStringLiteral("1e2"), ctx), 16.0), "fs bare 1e2 -> ctx.emPx 16 (invalid)");
   require(approx(editor::cssFontSizePx(QStringLiteral("1e2px"), ctx), 100.0), "fs 1e2px -> 100");
   require(approx(editor::cssFontSizePx(QStringLiteral("0px"), ctx), 0.0), "fs 0px (zero)");
   require(approx(editor::cssFontSizePx(QStringLiteral("3em"), ctx), 48.0), "fs 3em -> 48");
@@ -123,11 +127,24 @@ int main(int argc, char** argv) {
   require(approx(editor::cssFontSizePx(QStringLiteral("50%"), ctx), 8.0), "fs 50% -> 8");
   require(approx(editor::cssFontSizePx(QStringLiteral("10vw"), ctx), 80.0), "fs 10vw -> 80");
   require(approx(editor::cssFontSizePx(QStringLiteral("10ex"), ctx), 10.0 * ctx.exPx), "fs 10ex -> 10*xHeight");
-  require(approx(editor::cssFontSizePx(QStringLiteral("abc"), ctx), 16.0), "fs invalid -> 16");
-  require(approx(editor::cssFontSizePx(QStringLiteral(""), ctx), 16.0), "fs empty -> 16");
+  require(approx(editor::cssFontSizePx(QStringLiteral("abc"), ctx), 16.0), "fs invalid -> ctx.emPx 16");
+  require(approx(editor::cssFontSizePx(QStringLiteral(""), ctx), 16.0), "fs empty -> ctx.emPx 16");
+  // ctx.emPx cascade (P1 #2): with a neo-like 14px context the invalid/bare/
+  // negative/empty fallback is ctx.emPx (14), and %/em are relative to 14 -- NOT
+  // a hardcoded 16. Probed vs 11.16.0 (scripts/probe_mermaid_pie_fontsize_cascade.mjs).
+  const muffin::CssLengthContext ctx14 =
+      editor::pieCssLengthContext(QStringLiteral("Noto Sans"), 14.0);
+  require(approx(editor::cssFontSizePx(QStringLiteral("abc"), ctx14), 14.0), "fs14 invalid -> ctx.emPx 14");
+  require(approx(editor::cssFontSizePx(QStringLiteral("25"), ctx14), 14.0), "fs14 bare -> ctx.emPx 14");
+  require(approx(editor::cssFontSizePx(QStringLiteral("-2px"), ctx14), 14.0), "fs14 negative -> ctx.emPx 14");
+  require(approx(editor::cssFontSizePx(QStringLiteral(""), ctx14), 14.0), "fs14 empty -> ctx.emPx 14");
+  require(approx(editor::cssFontSizePx(QStringLiteral("200%"), ctx14), 28.0), "fs14 200% -> 28 (x 14)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("3em"), ctx14), 42.0), "fs14 3em -> 42 (x 14)");
+  require(approx(editor::cssFontSizePx(QStringLiteral("25px"), ctx14), 25.0), "fs14 valid 25px -> 25");
   // parseFontSizeNumber: upstream parseInt (leading int, truncates decimals,
-  //   ignores unit); no leading int -> default 2. toLongLong (not toInt) so
-  //   values > INT_MAX parse like JS parseInt. Drives the outer-ring radius.
+  //   ignores unit); no leading int -> default 2. Parsed as a JS Number (double,
+  //   not qint64) so values beyond the qint64 range parse to the nearest double
+  //   like JS instead of overflowing -> 2. Drives the outer-ring radius.
   require(approx(editor::parseFontSizeNumber(QStringLiteral("2px")), 2.0), "fsn 2px");
   require(approx(editor::parseFontSizeNumber(QStringLiteral("3em")), 3.0), "fsn 3em -> 3");
   require(approx(editor::parseFontSizeNumber(QStringLiteral("1.7")), 1.0), "fsn 1.7 -> 1 (trunc)");
@@ -135,6 +152,10 @@ int main(int argc, char** argv) {
   require(approx(editor::parseFontSizeNumber(QStringLiteral("0")), 0.0), "fsn 0");
   require(approx(editor::parseFontSizeNumber(QStringLiteral("3000000000px")), 3000000000.0),
           "fsn 3000000000px -> 3e9 (no INT_MAX cap)");
+  require(approx(editor::parseFontSizeNumber(QStringLiteral("9223372036854775808px")), std::pow(2.0, 63)),
+          "fsn 2^63 px -> 2^63 (toDouble, not qint64 overflow -> 2)");
+  require(approx(editor::parseFontSizeNumber(QStringLiteral("9007199254740993px")), 9007199254740992.0),
+          "fsn 2^53+1 px -> 2^53 (JS Number rounding, not int trunc)");
   // parseFontSizeNumber JSON-type branch: upstream returns a NUMBER verbatim but
   // parseInt-truncates a STRING. Probed: number 1.7 -> r 185.85; "1.7" -> r 185.5.
   require(approx(editor::parseFontSizeNumber(QJsonValue(1.7), QStringLiteral("2px")), 1.7),
@@ -340,15 +361,86 @@ int main(int argc, char** argv) {
     require(approx(titleFs(QStringLiteral("\"1e2\"")), 16.0), "prod pieTitleTextSize bare 1e2 -> 16 (invalid)");
     require(approx(titleFs(QStringLiteral("\"1e2px\"")), 100.0), "prod pieTitleTextSize 1e2px -> 100");
     require(titleFs(QStringLiteral("\"10ex\"")) > 50.0, "prod pieTitleTextSize 10ex -> font-relative (>50)");
-    // stroke-width % uses the scene-bounds normalized diagonal.
-    const QString sw = QStringLiteral(
+
+    // pieStrokeWidth % uses the SVG normalized diagonal of the (title-expanded)
+    // viewBox. Derive the EXPECTED diagonal INDEPENDENTLY from QFontMetrics (the
+    // legend text width + the scene constants) -- NOT from s->bounds -- so this
+    // catches a wrong/missing basis (the old assertion read diag back out of the
+    // same bounds the adapter used, which was circular and proved nothing). The
+    // short title "T" does not expand the viewBox, so bounds == chart+legend.
+    const QString swShort = QStringLiteral(
         "%%{init: {\"themeVariables\": {\"pieStrokeWidth\": \"10%\"}}}%%\n pie title T\n\"A\" : 50\n\"B\" : 50");
-    const pie::PieScene* s = renderPie(cache, sw);
-    const qreal diag = std::sqrt(s->bounds.width() * s->bounds.width() +
-                                 s->bounds.height() * s->bounds.height()) /
-                       std::sqrt(2.0);
-    require(approx(s->style.sliceStrokeWidth, 0.10 * diag),
-            "prod pieStrokeWidth 10% -> 0.1 x SVG diagonal");
+    const pie::PieScene* sShort = renderPie(cache, swShort);
+    QFont legendFont(sShort->style.fontFamily);
+    legendFont.setPixelSize(qRound(sShort->style.legendFontSize));
+    const QFontMetrics lfm(legendFont);
+    const qreal longestLegend = std::max(
+        qreal(lfm.horizontalAdvance(QStringLiteral("A"))),
+        qreal(lfm.horizontalAdvance(QStringLiteral("B"))));
+    const qreal chartW = sShort->pieWidth + sShort->margin + sShort->legendRectSize +
+                         sShort->legendSpacing + longestLegend;
+    const qreal expDiagShort =
+        std::sqrt(chartW * chartW + sShort->totalHeight * sShort->totalHeight) / std::sqrt(2.0);
+    require(approx(sShort->bounds.x(), 0.0) && approx(sShort->bounds.width(), chartW),
+            "short title 'T' -> no expansion, bounds = chart+legend width");
+    require(approx(sShort->style.sliceStrokeWidth, 0.10 * expDiagShort),
+            "prod pieStrokeWidth 10% -> 0.1 x independently-derived SVG diagonal");
+
+    // --- title-driven viewBox expansion (P1 #1, pieRenderer draw() L280-286) ---
+    // A title wider than the chart grows the viewBox: viewBoxX = min(0, pieWidth/2
+    // - titleW/2) < 0, width = max(chartAndLegendWidth, pieWidth/2 + titleW/2) -
+    // viewBoxX. Derive the EXPECTED viewBox from QFontMetrics(title) (NOT from
+    // s->bounds) so this catches a missing expansion. Native uses Noto Sans, so
+    // the exact width is font-coupled (same stance as the legend); the FORMULA is
+    // upstream-verified (scripts/probe_mermaid_pie_viewbox.mjs: viewBoxX/width
+    // follow exactly titleLeft/titleRight for a long title).
+    const QString longSrc = QStringLiteral(
+        "pie title An Extremely Long Pie Chart Title That Exceeds The Chart Width\n\"A\" : 50\n\"B\" : 50");
+    const pie::PieScene* sLong = renderPie(cache, longSrc);
+    QFont titleFont(sLong->style.fontFamily);
+    titleFont.setPixelSize(qRound(sLong->style.titleFontSize));
+    const qreal titleW = qreal(QFontMetrics(titleFont).horizontalAdvance(sLong->title));
+    const qreal titleLeft = sLong->pieWidth / 2.0 - titleW / 2.0;
+    const qreal titleRight = sLong->pieWidth / 2.0 + titleW / 2.0;
+    const qreal expX = std::min(0.0, titleLeft);
+    const qreal expW = std::max(sLong->totalWidth, titleRight) - expX;
+    require(sLong->bounds.x() < 0.0, "long title -> bounds.x()<0 (title drove viewBoxX)");
+    require(approx(sLong->bounds.x(), expX), "bounds.x = min(0, pieWidth/2 - titleW/2)");
+    require(approx(sLong->bounds.width(), expW), "bounds.width = max(chartW,titleRight) - viewBoxX");
+    require(sLong->bounds.width() > sLong->totalWidth, "long title widens bounds beyond chart+legend");
+    // The expanded viewBox changes the % stroke basis: a long-title pie's 10%
+    // stroke is WIDER than a short-title pie's (larger diagonal). Before the fix
+    // the title never expanded the bounds, so both would be equal.
+    const QString swLong = QStringLiteral(
+        "%%{init: {\"themeVariables\": {\"pieStrokeWidth\": \"10%\"}}}%%\n pie title An Extremely Long Pie Chart Title That Exceeds The Chart Width\n\"A\" : 50\n\"B\" : 50");
+    const qreal longStroke = renderPie(cache, swLong)->style.sliceStrokeWidth;
+    require(longStroke > sShort->style.sliceStrokeWidth + 1.0,
+            "long title -> larger % stroke basis (title expanded the diagonal)");
+
+    // --- inherited font-size cascade (P1 #2) via the production path ---
+    // invalid/bare/negative pieTitleTextSize INHERITS the resolved root font-size
+    // (not 16); % and em are relative to it. Probed vs 11.16.0.
+    const auto titleFsBlock = [&](const QString& initBlock) {
+      const QString src = QStringLiteral("%1\n pie title T\n\"A\" : 50\n\"B\" : 50").arg(initBlock);
+      return renderPie(cache, src)->style.titleFontSize;
+    };
+    require(approx(titleFsBlock(QStringLiteral("%%{init: {\"theme\":\"neo\"}}%%")), 25.0),
+            "neo default pieTitleTextSize 25px (pie default, independent of root)");
+    require(approx(titleFsBlock(QStringLiteral(
+                       "%%{init: {\"theme\":\"neo\",\"themeVariables\": {\"pieTitleTextSize\": \"abc\"}}}%%")), 14.0),
+            "neo invalid title size -> inherits root 14");
+    require(approx(titleFsBlock(QStringLiteral(
+                       "%%{init: {\"theme\":\"neo\",\"themeVariables\": {\"pieTitleTextSize\": \"25\"}}}%%")), 14.0),
+            "neo bare title size -> inherits root 14");
+    require(approx(titleFsBlock(QStringLiteral(
+                       "%%{init: {\"theme\":\"neo\",\"themeVariables\": {\"pieTitleTextSize\": \"-2px\"}}}%%")), 14.0),
+            "neo negative title size -> inherits root 14");
+    require(approx(titleFsBlock(QStringLiteral(
+                       "%%{init: {\"theme\":\"neo\",\"themeVariables\": {\"pieTitleTextSize\": \"200%\"}}}%%")), 28.0),
+            "neo 200% title -> 200% of root 14 = 28");
+    require(approx(titleFsBlock(QStringLiteral(
+                       "%%{init: {\"themeVariables\": {\"fontSize\": \"2em\", \"pieTitleTextSize\": \"200%\"}}}%%")), 64.0),
+            "2em root + 200% title -> 200% of 32 = 64");
   }
 
   qDebug().noquote() << "MermaidPieThemeWiringTest: pie adapter consumes resolved theme (+overrides, RGBA, TCL, zero, paint, units)";

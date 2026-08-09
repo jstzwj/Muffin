@@ -66,9 +66,14 @@ qreal cssOpacity(const QString& value);
 
 // CSS font-size -> px against `ctx`. A percentage resolves to N/100 of the
 // parent font-size (ctx.emPx). A BARE number (full CSS <number>, incl.
-// exponent: "1e2") is invalid for font-size -> inherited 16; em/rem scale by
-// emPx; a negative length is invalid -> inherited. Probed: "25px"->25,
-// "25"->16, "1e2"->16, "1e2px"->100, "0px"->0, "3em"->48, "200%"->32, "10vw"->80.
+// exponent: "1e2" or "25") is invalid for font-size -> the element INHERITS the
+// parent font-size (ctx.emPx), not a hardcoded 16; em/rem scale by emPx; a
+// negative length is invalid -> inherited (ctx.emPx). ctx.emPx MUST be the
+// resolved SVG root font-size (themeVariables.fontSize, resolved against the
+// 16px <html> root) -- build it via a root pass: pieCssLengthContext(f, 16) ->
+// cssFontSizePx(themeVars.fontSize, rootCtx) -> pieCssLengthContext(f, rootFs).
+// Probed vs 11.16.0: neo root 14 -> "25"/"abc"/"-2px"/"" all inherit 14; "2em"
+// root + "200%" -> 64; "25px"->25, "1e2"->16(default ctx), "1e2px"->100, "0px"->0.
 qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx);
 
 // Replicates upstream parseFontSize()[0] ?? 2 (pieDiagram-ENE6RG2P.mjs:157):
