@@ -482,6 +482,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/QuadrantDiagramAdapter.cpp
   src/mermaid/editor/JourneyDiagramAdapter.cpp
   src/mermaid/editor/RadarDiagramAdapter.cpp
+  src/mermaid/editor/XYChartDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -529,6 +530,8 @@ set(MUFFIN_CORE_SOURCES
   src/theme/CssCalc.cpp
   src/theme/CssCalc.h
   src/mermaid/security/MermaidSecurityPolicy.h
+  src/blocks/html/HtmlSanitizer.cpp
+  src/blocks/html/HtmlSanitizer.h
   src/mermaid/scene/FlowMarkers.cpp
   src/mermaid/scene/FlowMarkers.h
   src/mermaid/scene/FlowScene.cpp
@@ -585,6 +588,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/radar/RadarScene.h
   src/mermaid/radar/RadarScenePainter.cpp
   src/mermaid/radar/RadarScenePainter.h
+  src/mermaid/xychart/XYChartDiagram.cpp
+  src/mermaid/xychart/XYChartDiagram.h
+  src/mermaid/xychart/XYChartScene.cpp
+  src/mermaid/xychart/XYChartScene.h
+  src/mermaid/xychart/XYChartScenePainter.cpp
+  src/mermaid/xychart/XYChartScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp
@@ -677,6 +686,7 @@ target_link_libraries(MuffinCore
     Qt6::Gui
     Qt6::Svg
     yaml-cpp::yaml-cpp
+    lexbor::lexbor_static
     libcmark-gfm-extensions_static
     libcmark-gfm_static
 )
@@ -824,12 +834,10 @@ set(MUFFIN_UI_SOURCES
   src/blocks/code/CodeFenceController.h
   src/blocks/code/CodeFenceScrollController.cpp
   src/blocks/code/CodeFenceScrollController.h
-  src/blocks/html/HtmlSanitizer.cpp
   src/blocks/literal/LiteralBlockController.cpp
   src/blocks/literal/LiteralBlockController.h
   src/blocks/literal/LiteralBlockUtil.cpp
   src/blocks/literal/LiteralBlockUtil.h
-  src/blocks/html/HtmlSanitizer.h
   src/html/HtmlBox.cpp
   src/html/HtmlBox.h
   src/html/HtmlParser.cpp

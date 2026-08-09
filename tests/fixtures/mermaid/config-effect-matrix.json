@@ -24,17 +24,18 @@
       "pie",
       "quadrantChart",
       "journey",
-      "radar"
+      "radar",
+      "xyChart"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 101,
+    "parity": 112,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 45,
+    "upstream-inert": 47,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -51,7 +52,8 @@
         "pie",
         "quadrantChart",
         "journey",
-        "radar"
+        "radar",
+        "xyChart"
       ],
       "status": "parity",
       "upstream": [
@@ -83,7 +85,8 @@
         "pie",
         "quadrantChart",
         "journey",
-        "radar"
+        "radar",
+        "xyChart"
       ],
       "status": "partial",
       "upstream": [
@@ -116,7 +119,8 @@
         "pie",
         "quadrantChart",
         "journey",
-        "radar"
+        "radar",
+        "xyChart"
       ],
       "status": "parity",
       "upstream": [
@@ -285,7 +289,8 @@
         "pie",
         "quadrantChart",
         "journey",
-        "radar"
+        "radar",
+        "xyChart"
       ],
       "status": "unsupported",
       "upstream": [
@@ -308,7 +313,8 @@
         "pie",
         "quadrantChart",
         "journey",
-        "radar"
+        "radar",
+        "xyChart"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -353,7 +359,8 @@
         "pie",
         "quadrantChart",
         "journey",
-        "radar"
+        "radar",
+        "xyChart"
       ],
       "status": "parity",
       "upstream": [
@@ -377,7 +384,8 @@
         "pie",
         "quadrantChart",
         "journey",
-        "radar"
+        "radar",
+        "xyChart"
       ],
       "status": "parity",
       "upstream": [
@@ -401,7 +409,8 @@
         "pie",
         "quadrantChart",
         "journey",
-        "radar"
+        "radar",
+        "xyChart"
       ],
       "status": "unsupported",
       "upstream": [
@@ -3952,7 +3961,309 @@
       ],
       "note": "Controls the closed Catmull-Rom cubic path for circle graticules; polygon curves intentionally ignore it.",
       "default": 0.17
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.useWidth",
+      "field": "useWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "xychartRenderer passes true to configureSvgSize unconditionally, so xyChart.useMaxWidth is retained but has no effect.",
+      "default": true
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 700
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 500
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.titleFontSize",
+      "field": "titleFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 20
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.titlePadding",
+      "field": "titlePadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.showDataLabel",
+      "field": "showDataLabel",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.showDataLabelOutsideBar",
+      "field": "showDataLabelOutsideBar",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.showTitle",
+      "field": "showTitle",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.xAxis",
+      "field": "xAxis",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": {
+        "$ref": "#/$defs/XYChartAxisConfig",
+        "showLabel": true,
+        "labelFontSize": 14,
+        "labelPadding": 5,
+        "showTitle": true,
+        "titleFontSize": 16,
+        "titlePadding": 5,
+        "showTick": true,
+        "tickLength": 5,
+        "tickWidth": 2,
+        "showAxisLine": true,
+        "axisLineWidth": 2,
+        "labelRotation": 0
+      }
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.yAxis",
+      "field": "yAxis",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": {
+        "$ref": "#/$defs/XYChartAxisConfig",
+        "showLabel": true,
+        "labelFontSize": 14,
+        "labelPadding": 5,
+        "showTitle": true,
+        "titleFontSize": 16,
+        "titlePadding": 5,
+        "showTick": true,
+        "tickLength": 5,
+        "tickWidth": 2,
+        "showAxisLine": true,
+        "axisLineWidth": 2,
+        "labelRotation": 0
+      }
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.chartOrientation",
+      "field": "chartOrientation",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": "vertical"
+    },
+    {
+      "family": "xyChart",
+      "interface": "XYChartConfig",
+      "path": "xyChart.plotReservedSpacePercent",
+      "field": "plotReservedSpacePercent",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 50
     }
   ],
-  "fixtureSha256": "8c6a75113a987b1ba0587746f1088f1d093af8e6f5acd14ee45a9a97baf96101"
+  "fixtureSha256": "a79728f315c2692b3eb26ed131422a7ead89c6e32fb0bf1bbba8ae595e735b09"
 }

@@ -1,0 +1,80 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "module": "dist/mermaid.esm.mjs",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "browser": {
+      "product": "Chrome/151.0.7922.76",
+      "executableSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+      "headlessMode": "new"
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1200,
+      "deviceScaleFactor": 1
+    },
+    "fonts": [
+      {
+        "family": "Noto Sans",
+        "file": "third_party/noto/fonts/NotoSans-Regular.ttf",
+        "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+      }
+    ],
+    "generator": "scripts/generate_mermaid_xychart_fixtures.mjs"
+  },
+  "oracle": "xychart-beta fixed Noto Sans RGBA raster oracle at DPR 1 for default/dark/redux-color",
+  "cases": [
+    {
+      "id": "default",
+      "theme": "default",
+      "renderId": "xychart-pixel-default",
+      "source": "%%{init: {\"theme\":\"default\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nxychart-beta vertical\ntitle \"Quarterly revenue\"\nx-axis \"Quarter\" [Q1, Q2, Q3, Q4, Q5]\ny-axis \"Units\" -20 --> 100\nbar [10, 45, 80, 60, -10]\nline [15 \"start\", 40, 90 \"peak\", 55, 0 \"end\"]",
+      "file": "default.png",
+      "width": 700,
+      "height": 500,
+      "sha256": "a42e7871238a0cf20e19e4c899f2b5a3f94820395bba92fe5a222b5659e46fac"
+    },
+    {
+      "id": "dark",
+      "theme": "dark",
+      "renderId": "xychart-pixel-dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nxychart-beta vertical\ntitle \"Quarterly revenue\"\nx-axis \"Quarter\" [Q1, Q2, Q3, Q4, Q5]\ny-axis \"Units\" -20 --> 100\nbar [10, 45, 80, 60, -10]\nline [15 \"start\", 40, 90 \"peak\", 55, 0 \"end\"]",
+      "file": "dark.png",
+      "width": 700,
+      "height": 500,
+      "sha256": "69c6384389d4ea19a42d6a5842e7f8d9c7083a70d5fd4f5a33e5050a4023b4e9"
+    },
+    {
+      "id": "redux-color",
+      "theme": "redux-color",
+      "renderId": "xychart-pixel-redux-color",
+      "source": "%%{init: {\"theme\":\"redux-color\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nxychart-beta vertical\ntitle \"Quarterly revenue\"\nx-axis \"Quarter\" [Q1, Q2, Q3, Q4, Q5]\ny-axis \"Units\" -20 --> 100\nbar [10, 45, 80, 60, -10]\nline [15 \"start\", 40, 90 \"peak\", 55, 0 \"end\"]",
+      "file": "redux-color.png",
+      "width": 700,
+      "height": 500,
+      "sha256": "be20eaef5d3c8df6a9e4d310832d24ed5bb909ec9ea751cf9e4ed84b5aad56fc"
+    },
+    {
+      "id": "source-order-rotation",
+      "theme": "default",
+      "renderId": "xychart-pixel-source-order-rotation",
+      "source": "%%{init: {\"xyChart\":{\"xAxis\":{\"labelRotation\":45}},\"themeVariables\":{\"xyChart\":{\"plotColorPalette\":\"#ff0000,#0000ff\"},\"fontFamily\":\"Noto Sans\"},\"fontFamily\":\"Noto Sans\"}}%%\nxychart-beta vertical\nx-axis \"Category\" [A, B, C]\ny-axis \"Value\" 0 --> 100\nline [100, 0, 100]\nbar [80, 80, 80]",
+      "file": "source-order-rotation.png",
+      "width": 700,
+      "height": 500,
+      "sha256": "2ba873073e82cafff6e3b1178cfb00f7d07d1b6f711aaad33eef89d271d8e820"
+    },
+    {
+      "id": "hanging-data-label",
+      "theme": "default",
+      "renderId": "xychart-pixel-hanging-data-label",
+      "source": "%%{init: {\"xyChart\":{\"showDataLabel\":true,\"showDataLabelOutsideBar\":false},\"themeVariables\":{\"xyChart\":{\"dataLabelColor\":\"#ff0000\"},\"fontFamily\":\"Noto Sans\"},\"fontFamily\":\"Noto Sans\"}}%%\nxychart-beta vertical\nx-axis [A, B, C]\nline [91, 82, 73]\nbar [10, 20, 30]",
+      "file": "hanging-data-label.png",
+      "width": 700,
+      "height": 500,
+      "sha256": "23d53f41409312e5fdf36ca563be4c1fcff525088000854a3c327b0dbd294cf9"
+    }
+  ],
+  "fixtureSha256": "3981f694c3f955c16c294a9bd3913b5c2d01a66ed6d9a013b980952a67a5a3fa"
+}

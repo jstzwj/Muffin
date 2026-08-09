@@ -30,6 +30,25 @@ enum class FlowThemeId {
   Redux, ReduxDark, ReduxColor, ReduxDarkColor
 };
 
+// Mermaid stores XYChart colors in the nested themeVariables.xyChart object,
+// rather than as top-level theme-variable scalars. updateColors() fills missing
+// per-field values from the current theme; resolveFlowTheme's final override
+// replay preserves explicit user values, including an empty string.
+struct XYChartThemeVariables {
+  QString backgroundColor;
+  QString titleColor;
+  QString dataLabelColor;
+  QString xAxisTitleColor;
+  QString xAxisLabelColor;
+  QString xAxisTickColor;
+  QString xAxisLineColor;
+  QString yAxisTitleColor;
+  QString yAxisLabelColor;
+  QString yAxisTickColor;
+  QString yAxisLineColor;
+  QString plotColorPalette;
+};
+
 // Parse a mermaid theme name ("default", "neo-dark", ...) → FlowThemeId.
 // Unknown names map to Default (mermaid's default).
 FlowThemeId parseThemeId(const QString& name);
@@ -124,6 +143,11 @@ struct FlowThemeVariables {
   QString quadrantInternalBorderStrokeFill;
   QString quadrantExternalBorderStrokeFill;
   QString quadrantTitleFill;
+
+  // XYChart's 12-field nested theme object. The six Neo/Redux variants inherit
+  // dataLabelColor from their base constructor even though their own
+  // updateColors blocks omit it; populateXYChart preserves that 11.16 quirk.
+  XYChartThemeVariables xyChart;
 
   // requirementDiagram / er / rect `colorIndex` palette (chunk-CHAKFXHA.mjs:
   // only redux-color defines both; redux-dark-color defines borderColorArray

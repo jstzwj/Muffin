@@ -30,6 +30,7 @@
 #include "mermaid/requirement/RequirementDiagram.h"
 #include "mermaid/journey/JourneyDiagram.h"
 #include "mermaid/radar/RadarDiagram.h"
+#include "mermaid/xychart/XYChartDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -488,6 +489,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         QStringLiteral("erDiagram"), QStringLiteral("requirementDiagram"),
         QStringLiteral("pie"), QStringLiteral("quadrantChart"),
         QStringLiteral("journey"), QStringLiteral("radar-beta")};
+    diagnostic.expected.append(QStringLiteral("xychart-beta"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -589,6 +591,16 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     return errorEntry(parserDiagnostic(
         source, pre, type, QStringLiteral("parse"),
         QStringLiteral("radar-parse-error"),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), QString(), {}));
+  } catch (const xychart::XYChartParseError& error) {
+    const qsizetype offset = error.line > 0 && error.column > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       error.column)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"),
+        QStringLiteral("xychart-parse-error"),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
         error.line, error.column, QString(), QString(), {}));
   } catch (const std::exception& error) {

@@ -15,6 +15,8 @@
 namespace muffin {
 namespace {
 
+enum class UnsafeUrlHandling { ReplaceWithHash, DropAttribute };
+
 // Elements whose entire subtree is dropped: active content (script, style),
 // embeds/frames, document-level metadata, and SVG/MathML (which can carry
 // nested event handlers and <script>). Their text is never preview text.
@@ -133,15 +135,17 @@ QString scrubStyle(const QString& value) {
   return value;
 }
 
-void sanitizeNode(lxb_dom_node_t* node, QString& out);
+void sanitizeNode(lxb_dom_node_t* node, QString& out, UnsafeUrlHandling unsafeUrlHandling);
 
-void sanitizeChildren(lxb_dom_node_t* parent, QString& out) {
+void sanitizeChildren(lxb_dom_node_t* parent, QString& out,
+                      UnsafeUrlHandling unsafeUrlHandling) {
   for (lxb_dom_node_t* child = parent->first_child; child != nullptr; child = child->next) {
-    sanitizeNode(child, out);
+    sanitizeNode(child, out, unsafeUrlHandling);
   }
 }
 
-void sanitizeAttributes(lxb_dom_element_t* element, QString& out) {
+void sanitizeAttributes(lxb_dom_element_t* element, QString& out,
+                        UnsafeUrlHandling unsafeUrlHandling) {
   for (lxb_dom_attr_t* attr = lxb_dom_element_first_attribute(element); attr != nullptr;
        attr = lxb_dom_element_next_attribute(attr)) {
     size_t nameLen = 0;
@@ -164,7 +168,10 @@ void sanitizeAttributes(lxb_dom_element_t* element, QString& out) {
       value = scrubStyle(value);
       if (value.isEmpty()) continue;
     } else if (urlAttributes().contains(name)) {
-      if (!isSafeUrl(value, true)) value = QStringLiteral("#");
+      if (!isSafeUrl(value, true)) {
+        if (unsafeUrlHandling == UnsafeUrlHandling::DropAttribute) continue;
+        value = QStringLiteral("#");
+      }
     }
 
     out += QLatin1Char(' ');
@@ -175,7 +182,8 @@ void sanitizeAttributes(lxb_dom_element_t* element, QString& out) {
   }
 }
 
-void sanitizeNode(lxb_dom_node_t* node, QString& out) {
+void sanitizeNode(lxb_dom_node_t* node, QString& out,
+                  UnsafeUrlHandling unsafeUrlHandling) {
   if (node->type == LXB_DOM_NODE_TYPE_TEXT) {
     size_t len = 0;
     const lxb_char_t* data = lxb_dom_node_text_content(node, &len);
@@ -198,30 +206,28 @@ void sanitizeNode(lxb_dom_node_t* node, QString& out) {
     return;  // drop the entire subtree
   }
   if (!safeTags().contains(tag)) {
-    sanitizeChildren(node, out);  // unwrap: keep children, drop the wrapper
+    sanitizeChildren(node, out, unsafeUrlHandling);  // unwrap: keep children, drop the wrapper
     return;
   }
 
   out += QLatin1Char('<');
   out += tag;
-  sanitizeAttributes(element, out);
+  sanitizeAttributes(element, out, unsafeUrlHandling);
   if (voidTags().contains(tag)) {
     out += QLatin1Char('>');  // void: no closing tag, no children
     return;
   }
   out += QLatin1Char('>');
-  sanitizeChildren(node, out);
+  sanitizeChildren(node, out, unsafeUrlHandling);
   out += QStringLiteral("</");
   out += tag;
   out += QLatin1Char('>');
 }
 
-}  // namespace
-
-QString HtmlSanitizer::sanitizedPreview(QString html) const {
+QString sanitizeHtml(QString html, UnsafeUrlHandling unsafeUrlHandling) {
   lxb_html_document_t* doc = lxb_html_document_create();
   if (!doc) {
-    return escapeText(html);  // cannot parse -> emit inert escaped text
+    return escapeText(html);
   }
 
   const QByteArray utf8 = html.toUtf8();
@@ -234,11 +240,21 @@ QString HtmlSanitizer::sanitizedPreview(QString html) const {
 
   QString out;
   if (lxb_html_body_element_t* body = lxb_html_document_body_element(doc)) {
-    sanitizeChildren(lxb_dom_interface_node(body), out);
+    sanitizeChildren(lxb_dom_interface_node(body), out, unsafeUrlHandling);
   }
 
   lxb_html_document_destroy(doc);
   return out;
+}
+
+}  // namespace
+
+QString HtmlSanitizer::sanitizedPreview(QString html) const {
+  return sanitizeHtml(std::move(html), UnsafeUrlHandling::ReplaceWithHash);
+}
+
+QString HtmlSanitizer::sanitizedMermaidText(QString html) const {
+  return sanitizeHtml(std::move(html), UnsafeUrlHandling::DropAttribute);
 }
 
 }  // namespace muffin

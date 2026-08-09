@@ -9,6 +9,7 @@
 #include <QJsonValue>
 #include <QFontMetricsF>
 #include <QRegularExpression>
+#include <QStringList>
 
 #include <algorithm>
 #include <charconv>
@@ -62,6 +63,26 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
     // suppress an individual fillType CSS declaration). Arrays/objects still
     // stringify to empty here and remain outside the source-entry surface.
     if (it.value().isString() || !value.isEmpty()) result.insert(it.key(), value);
+  }
+  // XYChart is the one native family whose theme fields live in a nested
+  // themeVariables object. Flatten its reviewed scalar surface for the typed
+  // FlowTheme model. `cleanAndMerge(defaultThemeVariables.xyChart, raw)` keeps
+  // unspecified defaults, while an explicitly empty string remains a real
+  // final override, so preserve empty strings exactly like top-level fields.
+  static const QStringList xyChartFields = {
+      QStringLiteral("backgroundColor"), QStringLiteral("titleColor"),
+      QStringLiteral("dataLabelColor"), QStringLiteral("xAxisTitleColor"),
+      QStringLiteral("xAxisLabelColor"), QStringLiteral("xAxisTickColor"),
+      QStringLiteral("xAxisLineColor"), QStringLiteral("yAxisTitleColor"),
+      QStringLiteral("yAxisLabelColor"), QStringLiteral("yAxisTickColor"),
+      QStringLiteral("yAxisLineColor"), QStringLiteral("plotColorPalette")};
+  const QJsonObject xyChart = values.value(QStringLiteral("xyChart")).toObject();
+  for (const QString& field : xyChartFields) {
+    if (!xyChart.contains(field)) continue;
+    const QJsonValue raw = xyChart.value(field);
+    const QString value = configString(raw);
+    if (raw.isString() || !value.isEmpty())
+      result.insert(QStringLiteral("xyChart.") + field, value);
   }
   // THEME_COLOR_LIMIT is an integer palette size, not a free-form string: route
   // it through jsThemeColorLimit so the value carried into FlowThemeVariables::

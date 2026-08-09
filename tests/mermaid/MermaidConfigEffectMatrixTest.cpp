@@ -2,6 +2,7 @@
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/radar/RadarScene.h"
+#include "mermaid/xychart/XYChartScene.h"
 
 #include <QByteArray>
 #include <QCryptographicHash>
@@ -145,8 +146,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 189,
-          QStringLiteral("Expected 189 classified config rows, found %1")
+  require(entries.size() == 202,
+          QStringLiteral("Expected 202 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -207,7 +208,8 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("radar"), 11},
                                              {QStringLiteral("requirement"), 11},
                                              {QStringLiteral("sequence"), 37},
-                                             {QStringLiteral("state"), 22}},
+                                             {QStringLiteral("state"), 22},
+                                             {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
           QStringLiteral("At least one native effect dimension has no evidence"));
@@ -239,7 +241,13 @@ int main(int argc, char** argv) {
                   QLatin1String("upstream-inert") &&
               byPath.value(QStringLiteral("state.nodeSpacing"))
                       .value(QStringLiteral("status")).toString() ==
-                  QLatin1String("parity"),
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("xyChart.width"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("xyChart.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert"),
           QStringLiteral("Critical config status rows drifted"));
   for (const QString& path : {
            QStringLiteral("deterministicIds"),
@@ -510,6 +518,60 @@ int main(int argc, char** argv) {
   require(pngImage(radarSource) != pngImage(QStringLiteral(
               "radar-beta\naxis A,B,C\ncurve C {1,2,3}")),
           QStringLiteral("Radar live config did not affect PNG output"));
+
+  // XYChart consumes all eleven family-specific fields. Base useWidth and
+  // useMaxWidth remain upstream-inert; the renderer always exports with
+  // configureSvgSize(..., true).
+  const QString xyChartSource = QStringLiteral(
+      "%%{init: {\"xyChart\": {\"width\": 640, \"height\": 420, "
+      "\"titleFontSize\": 32, \"titlePadding\": 23, "
+      "\"showDataLabel\": true, \"showDataLabelOutsideBar\": true, "
+      "\"showTitle\": false, \"chartOrientation\": \"horizontal\", "
+      "\"plotReservedSpacePercent\": 70, "
+      "\"xAxis\": {\"showLabel\": false, \"labelFontSize\": 24, "
+      "\"labelPadding\": 17, \"showTitle\": false, "
+      "\"titleFontSize\": 26, \"titlePadding\": 19, "
+      "\"showTick\": false, \"tickLength\": 13, \"tickWidth\": 7, "
+      "\"showAxisLine\": false, \"axisLineWidth\": 9, "
+      "\"labelRotation\": 45}, "
+      "\"yAxis\": {\"labelFontSize\": 22, \"axisLineWidth\": 8}}}}%%\n"
+      "xychart-beta\ntitle Sales\nx-axis [A,B,C]\n"
+      "y-axis 0 --> 3\nbar [1,2,3]");
+  const MermaidRenderEntry xyChartEntry = render(xyChartSource);
+  const auto* xyChartScene =
+      dynamic_cast<const muffin::mermaid::xychart::XYChartScene*>(
+          xyChartEntry.scene.get());
+  require(xyChartEntry.status == MermaidRenderStatus::Ready && xyChartScene &&
+              xyChartScene->config.width == 640.0 &&
+              xyChartScene->config.height == 420.0 &&
+              xyChartScene->config.titleFontSize == 32.0 &&
+              xyChartScene->config.titlePadding == 23.0 &&
+              xyChartScene->config.showDataLabel &&
+              xyChartScene->config.showDataLabelOutsideBar &&
+              !xyChartScene->config.showTitle &&
+              xyChartScene->config.orientation ==
+                  muffin::mermaid::xychart::XYChartOrientation::Horizontal &&
+              xyChartScene->config.plotReservedSpacePercent == 70.0 &&
+              !xyChartScene->config.xAxis.showLabel &&
+              xyChartScene->config.xAxis.labelFontSize == 24.0 &&
+              xyChartScene->config.xAxis.labelPadding == 17.0 &&
+              !xyChartScene->config.xAxis.showTitle &&
+              xyChartScene->config.xAxis.titleFontSize == 26.0 &&
+              xyChartScene->config.xAxis.titlePadding == 19.0 &&
+              !xyChartScene->config.xAxis.showTick &&
+              xyChartScene->config.xAxis.tickLength == 13.0 &&
+              xyChartScene->config.xAxis.tickWidth == 7.0 &&
+              !xyChartScene->config.xAxis.showAxisLine &&
+              xyChartScene->config.xAxis.axisLineWidth == 9.0 &&
+              xyChartScene->config.xAxis.labelRotation == 45.0 &&
+              xyChartScene->config.yAxis.labelFontSize == 22.0 &&
+              xyChartScene->config.yAxis.axisLineWidth == 8.0 &&
+              xyChartEntry.metadata.svgUseMaxWidth,
+          QStringLiteral("XYChart live config did not reach the scene"));
+  require(pngImage(xyChartSource) != pngImage(QStringLiteral(
+              "xychart-beta\ntitle Sales\nx-axis [A,B,C]\n"
+              "y-axis 0 --> 3\nbar [1,2,3]")),
+          QStringLiteral("XYChart live config did not affect PNG output"));
 
   // Unsupported engines must not silently produce a Dagre scene.
   for (const QString& source : {

@@ -112,6 +112,9 @@ int main(int argc, char** argv) {
        QStringLiteral("journey\ntitle Work\nsection Morning\nMake tea: 5: Me\nDo work: 3: Me, You")},
       {QStringLiteral("radar"), QStringLiteral("radar"),
        QStringLiteral("radar-beta\naxis Quality,Speed,Cost\ncurve Team {8,6,4}")},
+      {QStringLiteral("xychart"), QStringLiteral("xychart"),
+       QStringLiteral("xychart-beta\ntitle Sales\nx-axis [Jan, Feb, Mar]\n"
+                      "y-axis 0 --> 100\nbar [20, 50, 80]\nline [10, 60, 90]")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -254,6 +257,18 @@ int main(int argc, char** argv) {
               radarAria.contains("aria-labelledby=") &&
               radarAria.contains("aria-describedby="),
           QStringLiteral("Radar SVG accessibility metadata drifted"));
+
+  const QByteArray xyChartAria = renderSvg(QStringLiteral(
+      "xychart-beta\naccTitle: XY accessible\n"
+      "accDescr: XY description\nx-axis [A,B,C]\n"
+      "y-axis 0 --> 3\nbar [1,2,3]")).svg;
+  require(xyChartAria.contains("<title") &&
+              xyChartAria.contains("XY accessible</title>") &&
+              xyChartAria.contains("<desc") &&
+              xyChartAria.contains("XY description</desc>") &&
+              xyChartAria.contains("aria-labelledby=") &&
+              xyChartAria.contains("aria-describedby="),
+          QStringLiteral("XYChart SVG accessibility metadata drifted"));
 
   require(MermaidRenderCache::renderMermaidSourceToSvg(
               QStringLiteral("flowchart TB\nA -->"))

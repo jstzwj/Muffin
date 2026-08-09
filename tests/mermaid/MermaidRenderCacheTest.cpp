@@ -7,6 +7,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/radar/RadarScene.h"
+#include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
@@ -387,6 +388,46 @@ int main(int argc, char** argv) {
             QStringLiteral("Radar title ownership/accessibility metadata drifted"));
   }
 
+  // XYChart parser positions also originate in preprocessed code. Keep the
+  // original-source mapping pinned through every removable decoration layer.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: XY title\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\nxychart-beta\nbar");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.code == QLatin1String("xychart-parse-error") &&
+                entry.diagnostic.span.offset == decorated.size() &&
+                entry.diagnostic.span.line == 7 &&
+                entry.diagnostic.span.column == 4,
+            QStringLiteral("XYChart diagnostics must map original line and column"));
+  }
+
+  // XYChart owns its visible title in the fixed scene while keeping shared
+  // accessibility metadata for SVG/PNG consumers.
+  {
+    const QString source = QStringLiteral(
+        "---\ntitle: XY overview\n---\nxychart-beta\n"
+        "accTitle: XY accessible\naccDescr: XY description\n"
+        "x-axis [A,B,C]\ny-axis 0 --> 3\nbar [1,2,3]");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::xychart::XYChartScene>(entry.scene);
+    require(entry.status == kReady && scene &&
+                scene->title == QLatin1String("XY overview") &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle ==
+                    QLatin1String("XY accessible") &&
+                entry.metadata.accessibleDescription ==
+                    QLatin1String("XY description"),
+            QStringLiteral("XYChart title ownership/accessibility metadata drifted"));
+  }
+
   // populateCommonDb ignores a falsy final AST title. An empty source title,
   // even after a non-empty one, therefore leaves the frontmatter title intact.
   {
@@ -439,6 +480,8 @@ int main(int argc, char** argv) {
          QStringLiteral("state"), QStringLiteral("unexpected-token"), 2},
         {QStringLiteral("radar-beta\naxis"),
          QStringLiteral("radar"), QStringLiteral("radar-parse-error"), 2},
+        {QStringLiteral("xychart-beta\nbar"),
+         QStringLiteral("xychart"), QStringLiteral("xychart-parse-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -469,6 +512,8 @@ int main(int argc, char** argv) {
                 detected.diagnostic.stage == QLatin1String("detector") &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("radar-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("xychart-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1054,6 +1099,9 @@ int main(int argc, char** argv) {
          QStringLiteral("journey\nsection Morning\nMake tea: 5: Me\nDo work: 3: Me, You")},
         {QStringLiteral("radar"),
          QStringLiteral("radar-beta\naxis A,B,C\ncurve C {1,2,3}")},
+        {QStringLiteral("xychart"),
+         QStringLiteral("xychart-beta\nx-axis [A,B,C]\ny-axis 0 --> 3\n"
+                        "bar [1,2,3]\nline [3,2,1]")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

@@ -1,9 +1,12 @@
 #include "mermaid/theme/FlowTheme.h"
 
 #include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/MermaidPreprocessor.h"
 
 #include <QDebug>
+#include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -98,6 +101,21 @@ QStringList journeyFields() {
   return f;
 }
 
+QStringList xyChartFields() {
+  return {QStringLiteral("backgroundColor"),
+          QStringLiteral("titleColor"),
+          QStringLiteral("dataLabelColor"),
+          QStringLiteral("xAxisTitleColor"),
+          QStringLiteral("xAxisLabelColor"),
+          QStringLiteral("xAxisTickColor"),
+          QStringLiteral("xAxisLineColor"),
+          QStringLiteral("yAxisTitleColor"),
+          QStringLiteral("yAxisLabelColor"),
+          QStringLiteral("yAxisTickColor"),
+          QStringLiteral("yAxisLineColor"),
+          QStringLiteral("plotColorPalette")};
+}
+
 // Pie + Quadrant SCALAR themeVariables (uniform formulas across themes): the
 // dependency fields (taskTextDarkColor, mainContrastColor) that the pie text
 // colors derive from, the pie stroke/opacity/sizes, and the quadrant point/axis/
@@ -172,6 +190,86 @@ void compareOverride(FlowThemeId id, const QHash<QString, QString>& overrides,
                .arg(label, flowThemeIdName(id), key, native, golden));
     }
   }
+}
+
+void compareXYChart(const FlowThemeVariables& theme,
+                    const QJsonObject& expected, const QString& label) {
+  for (const QString& field : xyChartFields()) {
+    const QString actual = theme.get(QStringLiteral("xyChart.") + field);
+    const QString wanted = goldenToString(expected.value(field));
+    require(actual == wanted,
+            QStringLiteral("XYChart theme %1/%2 mismatch: native=%3 golden=%4")
+                .arg(label, field, actual, wanted));
+  }
+}
+
+QHash<QString, QString> sourceThemeOverrides(const QString& source) {
+  return muffin::mermaid::editor::themeOverrides(
+      muffin::mermaid::preprocessDiagram(source).config);
+}
+
+void checkXYChartThemes(const QJsonObject& fixture) {
+  require(fixture.value(QStringLiteral("upstream")).toObject()
+                  .value(QStringLiteral("version")).toString() ==
+              QLatin1String("11.16.0"),
+          QStringLiteral("XYChart theme fixture version drifted"));
+  const QJsonArray declaredFields = fixture.value(QStringLiteral("fields")).toArray();
+  require(declaredFields.size() == xyChartFields().size(),
+          QStringLiteral("XYChart theme field count drifted"));
+  for (int i = 0; i < declaredFields.size(); ++i)
+    require(declaredFields.at(i).toString() == xyChartFields().at(i),
+            QStringLiteral("XYChart theme field order drifted at %1").arg(i));
+
+  const QJsonObject themes = fixture.value(QStringLiteral("themes")).toObject();
+  require(themes.size() == 11,
+          QStringLiteral("XYChart fixture must cover all 11 themes"));
+  for (auto it = themes.constBegin(); it != themes.constEnd(); ++it) {
+    const FlowThemeId id = parseThemeId(it.key());
+    require(flowThemeIdName(id) == it.key(),
+            QStringLiteral("Unknown XYChart fixture theme: %1").arg(it.key()));
+    compareXYChart(resolveFlowTheme(id), it.value().toObject(), it.key());
+  }
+
+  const QJsonObject cases = fixture.value(QStringLiteral("overrides")).toObject();
+  QHash<QString, QString> direct;
+  direct.insert(QStringLiteral("xyChart.titleColor"),
+                QStringLiteral("#123456"));
+  compareXYChart(resolveFlowTheme(FlowThemeId::Default, direct),
+                 cases.value(QStringLiteral("initializeSparse")).toObject(),
+                 QStringLiteral("initializeSparse"));
+
+  const QString initSource = QStringLiteral(
+      "%%{init: {\"themeVariables\":{\"xyChart\":{\"titleColor\":\"#123456\"}}}}%%\n"
+      "xychart-beta\nbar [1]");
+  compareXYChart(resolveFlowTheme(FlowThemeId::Default,
+                                  sourceThemeOverrides(initSource)),
+                 cases.value(QStringLiteral("sourceSparse")).toObject(),
+                 QStringLiteral("sourceSparse"));
+
+  const QString frontmatterSource = QStringLiteral(
+      "---\nconfig:\n  themeVariables:\n    xyChart:\n"
+      "      titleColor: \"#123456\"\n---\n"
+      "xychart-beta\nbar [1]");
+  compareXYChart(resolveFlowTheme(FlowThemeId::Default,
+                                  sourceThemeOverrides(frontmatterSource)),
+                 cases.value(QStringLiteral("frontmatterSparse")).toObject(),
+                 QStringLiteral("frontmatterSparse"));
+
+  const QString dependencySource = QStringLiteral(
+      "%%{init: {\"themeVariables\":{\"primaryTextColor\":\"#654321\"}}}%%\n"
+      "xychart-beta\nbar [1]");
+  compareXYChart(resolveFlowTheme(FlowThemeId::Default,
+                                  sourceThemeOverrides(dependencySource)),
+                 cases.value(QStringLiteral("dependency")).toObject(),
+                 QStringLiteral("dependency"));
+
+  const QString emptySource = QStringLiteral(
+      "%%{init: {\"themeVariables\":{\"xyChart\":{\"titleColor\":\"\"}}}}%%\n"
+      "xychart-beta\nbar [1]");
+  compareXYChart(resolveFlowTheme(FlowThemeId::Default,
+                                  sourceThemeOverrides(emptySource)),
+                 cases.value(QStringLiteral("sourceEmpty")).toObject(),
+                 QStringLiteral("sourceEmpty"));
 }
 
 void checkJourneyFillTypeOverrides() {
@@ -571,7 +669,8 @@ void checkScalarDependencyOverrides() {
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
   require(argc == 2, QStringLiteral("Expected theme fixture path"));
-  QFile file(QString::fromLocal8Bit(argv[1]));
+  const QString fixturePath = QString::fromLocal8Bit(argv[1]);
+  QFile file(fixturePath);
   require(file.open(QIODevice::ReadOnly), QStringLiteral("Could not open theme fixture"));
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("upstream")).toObject().value(QStringLiteral("version")).toString() ==
@@ -604,6 +703,13 @@ int main(int argc, char** argv) {
   checkThemeOverridesTclJs();
   checkScalarDependencyOverrides();
 
-  qDebug().noquote() << "MermaidThemeTest: all themes + override match golden";
+  QFile xyChartFile(
+      QFileInfo(fixturePath).dir().filePath(QStringLiteral("xychart-theme.json")));
+  require(xyChartFile.open(QIODevice::ReadOnly),
+          QStringLiteral("Could not open XYChart theme fixture"));
+  checkXYChartThemes(QJsonDocument::fromJson(xyChartFile.readAll()).object());
+
+  qDebug().noquote()
+      << "MermaidThemeTest: all themes + overrides match goldens";
   return 0;
 }

@@ -405,6 +405,23 @@ const familyPolicies = {
     quadrantInternalBorderStrokeWidth: parity("layout", "paint", "export"),
     quadrantExternalBorderStrokeWidth: parity("layout", "paint", "export"),
   },
+  xyChart: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: inert(
+      "xychartRenderer passes true to configureSvgSize unconditionally, so xyChart.useMaxWidth is retained but has no effect.",
+    ),
+    width: parity("layout", "paint", "viewport", "export"),
+    height: parity("layout", "paint", "viewport", "export"),
+    titleFontSize: parity("text", "layout", "paint", "export"),
+    titlePadding: parity("layout", "paint", "export"),
+    showDataLabel: parity("text", "paint", "export"),
+    showDataLabelOutsideBar: parity("text", "paint", "export"),
+    showTitle: parity("text", "layout", "paint", "export"),
+    xAxis: parity("text", "layout", "paint", "export"),
+    yAxis: parity("text", "layout", "paint", "export"),
+    chartOrientation: parity("layout", "paint", "export"),
+    plotReservedSpacePercent: parity("layout", "paint", "export"),
+  },
   requirement: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -465,6 +482,7 @@ const shared = [
       "quadrantChart",
       "journey",
       "radar",
+      "xyChart",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -481,6 +499,7 @@ const shared = [
       "quadrantChart",
       "journey",
       "radar",
+      "xyChart",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -501,6 +520,7 @@ const shared = [
       "quadrantChart",
       "journey",
       "radar",
+      "xyChart",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -554,7 +574,7 @@ const shared = [
     path: "maxTextSize",
     families: [
       "flowchart", "sequence", "class", "state", "er", "requirement",
-      "pie", "quadrantChart", "journey", "radar",
+      "pie", "quadrantChart", "journey", "radar", "xyChart",
     ],
     ...unsupported(
       ["parsed"],
@@ -574,6 +594,7 @@ const shared = [
       "quadrantChart",
       "journey",
       "radar",
+      "xyChart",
     ],
     ...policy(
       "security-fixed",
@@ -600,6 +621,7 @@ const shared = [
       "quadrantChart",
       "journey",
       "radar",
+      "xyChart",
     ],
     ...parity("export"),
   },
@@ -616,6 +638,7 @@ const shared = [
       "quadrantChart",
       "journey",
       "radar",
+      "xyChart",
     ],
     ...parity("export"),
   },
@@ -632,6 +655,7 @@ const shared = [
       "quadrantChart",
       "journey",
       "radar",
+      "xyChart",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -681,6 +705,7 @@ const interfaces = {
   quadrantChart: "QuadrantChartConfig",
   journey: "JourneyDiagramConfig",
   radar: "RadarDiagramConfig",
+  xyChart: "XYChartConfig",
 };
 
 const entries = [];

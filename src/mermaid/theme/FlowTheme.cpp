@@ -328,6 +328,7 @@ void populatePieScalars(FlowThemeVariables& t, const QString& titleLegendColor);
 void populateQuadrant(FlowThemeVariables& t, const QString& primary);
 void populateJourneyFillTypes(FlowThemeVariables& t, const QString& primary,
                               const QString& secondary, bool unconditional);
+void populateXYChart(FlowThemeId id, FlowThemeVariables& t);
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
 // the shared `||`-guarded derivation (darkMode always false for built-in
@@ -752,6 +753,52 @@ void updateColorsNeutral(FlowThemeVariables& t) {
   populateQuadrant(t, t.primaryColor);
 }
 
+void populateXYChart(FlowThemeId id, FlowThemeVariables& t) {
+  QString palette;
+  switch (id) {
+    case FlowThemeId::Dark:
+      palette = QStringLiteral("#3498db,#2ecc71,#e74c3c,#f1c40f,#bdc3c7,#ffffff,#34495e,#9b59b6,#1abc9c,#e67e22");
+      break;
+    case FlowThemeId::Default:
+      palette = QStringLiteral("#ECECFF,#8493A6,#FFC3A0,#DCDDE1,#B8E994,#D1A36F,#C3CDE6,#FFB6C1,#496078,#F8F3E3");
+      break;
+    case FlowThemeId::Forest:
+      palette = QStringLiteral("#CDE498,#FF6B6B,#A0D2DB,#D7BDE2,#F0F0F0,#FFC3A0,#7FD8BE,#FF9A8B,#FAF3E0,#FFF176");
+      break;
+    case FlowThemeId::Neutral:
+      palette = QStringLiteral("#EEE,#6BB8E4,#8ACB88,#C7ACD6,#E8DCC2,#FFB2A8,#FFF380,#7E8D91,#FFD8B1,#FAF3E0");
+      break;
+    default:
+      palette = QStringLiteral("#FFF4DD,#FFD8B1,#FFA07A,#ECEFF1,#D6DBDF,#C3E0A8,#FFB6A4,#FFD74D,#738FA7,#FFFFF0");
+      break;
+  }
+
+  assignIfEmpty(t.xyChart.backgroundColor, t.background);
+  assignIfEmpty(t.xyChart.titleColor, t.primaryTextColor);
+
+  // Theme5..Theme10 (Neo and Redux variants) extend the base theme class.
+  // Their own XYChart object literals omit dataLabelColor, so the value created
+  // by the base constructor survives as #131300 instead of following those
+  // themes' primaryTextColor. The other five themes set it directly.
+  const bool inheritedDataLabel =
+      id == FlowThemeId::Neo || id == FlowThemeId::NeoDark ||
+      id == FlowThemeId::Redux || id == FlowThemeId::ReduxDark ||
+      id == FlowThemeId::ReduxColor || id == FlowThemeId::ReduxDarkColor;
+  assignIfEmpty(t.xyChart.dataLabelColor,
+                inheritedDataLabel ? QStringLiteral("#131300")
+                                   : t.primaryTextColor);
+
+  assignIfEmpty(t.xyChart.xAxisTitleColor, t.primaryTextColor);
+  assignIfEmpty(t.xyChart.xAxisLabelColor, t.primaryTextColor);
+  assignIfEmpty(t.xyChart.xAxisTickColor, t.primaryTextColor);
+  assignIfEmpty(t.xyChart.xAxisLineColor, t.primaryTextColor);
+  assignIfEmpty(t.xyChart.yAxisTitleColor, t.primaryTextColor);
+  assignIfEmpty(t.xyChart.yAxisLabelColor, t.primaryTextColor);
+  assignIfEmpty(t.xyChart.yAxisTickColor, t.primaryTextColor);
+  assignIfEmpty(t.xyChart.yAxisLineColor, t.primaryTextColor);
+  assignIfEmpty(t.xyChart.plotColorPalette, palette);
+}
+
 void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   switch (id) {
     case FlowThemeId::Base:
@@ -773,6 +820,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::Dark: updateColorsDark(t); break;
     case FlowThemeId::Neutral: updateColorsNeutral(t); break;
   }
+  populateXYChart(id, t);
 }
 
 // Whether the theme's constructor calls this.updateColors() (chunk line 1641).
@@ -896,6 +944,18 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("quadrantInternalBorderStrokeFill")) return quadrantInternalBorderStrokeFill;
   if (key == QStringLiteral("quadrantExternalBorderStrokeFill")) return quadrantExternalBorderStrokeFill;
   if (key == QStringLiteral("quadrantTitleFill")) return quadrantTitleFill;
+  if (key == QStringLiteral("xyChart.backgroundColor")) return xyChart.backgroundColor;
+  if (key == QStringLiteral("xyChart.titleColor")) return xyChart.titleColor;
+  if (key == QStringLiteral("xyChart.dataLabelColor")) return xyChart.dataLabelColor;
+  if (key == QStringLiteral("xyChart.xAxisTitleColor")) return xyChart.xAxisTitleColor;
+  if (key == QStringLiteral("xyChart.xAxisLabelColor")) return xyChart.xAxisLabelColor;
+  if (key == QStringLiteral("xyChart.xAxisTickColor")) return xyChart.xAxisTickColor;
+  if (key == QStringLiteral("xyChart.xAxisLineColor")) return xyChart.xAxisLineColor;
+  if (key == QStringLiteral("xyChart.yAxisTitleColor")) return xyChart.yAxisTitleColor;
+  if (key == QStringLiteral("xyChart.yAxisLabelColor")) return xyChart.yAxisLabelColor;
+  if (key == QStringLiteral("xyChart.yAxisTickColor")) return xyChart.yAxisTickColor;
+  if (key == QStringLiteral("xyChart.yAxisLineColor")) return xyChart.yAxisLineColor;
+  if (key == QStringLiteral("xyChart.plotColorPalette")) return xyChart.plotColorPalette;
   return QString();
 }
 
@@ -966,6 +1026,18 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("quadrantInternalBorderStrokeFill")) quadrantInternalBorderStrokeFill = value;
   else if (key == QStringLiteral("quadrantExternalBorderStrokeFill")) quadrantExternalBorderStrokeFill = value;
   else if (key == QStringLiteral("quadrantTitleFill")) quadrantTitleFill = value;
+  else if (key == QStringLiteral("xyChart.backgroundColor")) xyChart.backgroundColor = value;
+  else if (key == QStringLiteral("xyChart.titleColor")) xyChart.titleColor = value;
+  else if (key == QStringLiteral("xyChart.dataLabelColor")) xyChart.dataLabelColor = value;
+  else if (key == QStringLiteral("xyChart.xAxisTitleColor")) xyChart.xAxisTitleColor = value;
+  else if (key == QStringLiteral("xyChart.xAxisLabelColor")) xyChart.xAxisLabelColor = value;
+  else if (key == QStringLiteral("xyChart.xAxisTickColor")) xyChart.xAxisTickColor = value;
+  else if (key == QStringLiteral("xyChart.xAxisLineColor")) xyChart.xAxisLineColor = value;
+  else if (key == QStringLiteral("xyChart.yAxisTitleColor")) xyChart.yAxisTitleColor = value;
+  else if (key == QStringLiteral("xyChart.yAxisLabelColor")) xyChart.yAxisLabelColor = value;
+  else if (key == QStringLiteral("xyChart.yAxisTickColor")) xyChart.yAxisTickColor = value;
+  else if (key == QStringLiteral("xyChart.yAxisLineColor")) xyChart.yAxisLineColor = value;
+  else if (key == QStringLiteral("xyChart.plotColorPalette")) xyChart.plotColorPalette = value;
 }
 
 }  // namespace muffin::mermaid::flowtheme
