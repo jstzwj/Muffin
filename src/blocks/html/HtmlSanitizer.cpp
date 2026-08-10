@@ -18,8 +18,9 @@ namespace {
 enum class UnsafeUrlHandling { ReplaceWithHash, DropAttribute };
 
 // Elements whose entire subtree is dropped: active content (script, style),
-// embeds/frames, document-level metadata, and SVG/MathML (which can carry
-// nested event handlers and <script>). Their text is never preview text.
+// embeds/frames, document-level metadata, and foreign markup which can carry
+// nested active content. Mermaid's DOMPurify path treats the outer <svg>
+// differently; sanitizeNode handles that mode-specific exception below.
 const QSet<QString>& dropSubtreeTags() {
   static const QSet<QString> tags = {
       QStringLiteral("script"),   QStringLiteral("style"),    QStringLiteral("iframe"),
@@ -202,10 +203,13 @@ void sanitizeNode(lxb_dom_node_t* node, QString& out,
   const QString tag =
       QString::fromUtf8(reinterpret_cast<const char*>(tagData), static_cast<int>(tagLen)).toLower();
 
-  if (dropSubtreeTags().contains(tag)) {
+  const bool mermaidSvg =
+      unsafeUrlHandling == UnsafeUrlHandling::DropAttribute &&
+      tag == QLatin1String("svg");
+  if (dropSubtreeTags().contains(tag) && !mermaidSvg) {
     return;  // drop the entire subtree
   }
-  if (!safeTags().contains(tag)) {
+  if (!safeTags().contains(tag) && !mermaidSvg) {
     sanitizeChildren(node, out, unsafeUrlHandling);  // unwrap: keep children, drop the wrapper
     return;
   }

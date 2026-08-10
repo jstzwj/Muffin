@@ -84,6 +84,27 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
     if (raw.isString() || !value.isEmpty())
       result.insert(QStringLiteral("xyChart.") + field, value);
   }
+  // Packet is another nested theme object, but its source-entry surface is
+  // intentionally narrower than PacketStyleOptions. Mermaid's config-key
+  // sanitizer retains only these four names (they occur elsewhere in
+  // defaultConfig); the six packet-specific names are initialize()-API-only.
+  // The object itself is a top-level theme override, so it replaces the full
+  // Dark/Forest object before styles.ts fills omitted fields from defaults.
+  const QJsonValue rawPacket = values.value(QStringLiteral("packet"));
+  if (rawPacket.isObject()) {
+    result.insert(QStringLiteral("packet.__replace"), QStringLiteral("true"));
+    static const QStringList packetSourceFields = {
+        QStringLiteral("labelColor"), QStringLiteral("labelFontSize"),
+        QStringLiteral("titleColor"), QStringLiteral("titleFontSize")};
+    const QJsonObject packet = rawPacket.toObject();
+    for (const QString& field : packetSourceFields) {
+      if (!packet.contains(field)) continue;
+      const QJsonValue raw = packet.value(field);
+      const QString value = configString(raw);
+      if (raw.isString() || !value.isEmpty())
+        result.insert(QStringLiteral("packet.") + field, value);
+    }
+  }
   // THEME_COLOR_LIMIT is an integer palette size, not a free-form string: route
   // it through jsThemeColorLimit so the value carried into FlowThemeVariables::
   // set() is upstream's JS Number()+ceil result (e.g. 2.5 -> 3, "0x2" -> 2), not

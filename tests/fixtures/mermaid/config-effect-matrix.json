@@ -26,17 +26,18 @@
       "journey",
       "radar",
       "xyChart",
-      "timeline"
+      "timeline",
+      "packet"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 116,
+    "parity": 123,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 67,
+    "upstream-inert": 68,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -55,7 +56,8 @@
         "journey",
         "radar",
         "xyChart",
-        "timeline"
+        "timeline",
+        "packet"
       ],
       "status": "parity",
       "upstream": [
@@ -89,7 +91,8 @@
         "journey",
         "radar",
         "xyChart",
-        "timeline"
+        "timeline",
+        "packet"
       ],
       "status": "partial",
       "upstream": [
@@ -124,7 +127,8 @@
         "journey",
         "radar",
         "xyChart",
-        "timeline"
+        "timeline",
+        "packet"
       ],
       "status": "parity",
       "upstream": [
@@ -296,7 +300,8 @@
         "journey",
         "radar",
         "xyChart",
-        "timeline"
+        "timeline",
+        "packet"
       ],
       "status": "unsupported",
       "upstream": [
@@ -321,7 +326,8 @@
         "journey",
         "radar",
         "xyChart",
-        "timeline"
+        "timeline",
+        "packet"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -368,7 +374,8 @@
         "journey",
         "radar",
         "xyChart",
-        "timeline"
+        "timeline",
+        "packet"
       ],
       "status": "parity",
       "upstream": [
@@ -394,7 +401,8 @@
         "journey",
         "radar",
         "xyChart",
-        "timeline"
+        "timeline",
+        "packet"
       ],
       "status": "parity",
       "upstream": [
@@ -420,7 +428,8 @@
         "journey",
         "radar",
         "xyChart",
-        "timeline"
+        "timeline",
+        "packet"
       ],
       "status": "unsupported",
       "upstream": [
@@ -4688,7 +4697,181 @@
         "export"
       ],
       "default": false
+    },
+    {
+      "family": "packet",
+      "interface": "PacketDiagramConfig",
+      "path": "packet.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "packet",
+      "interface": "PacketDiagramConfig",
+      "path": "packet.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "packet",
+      "interface": "PacketDiagramConfig",
+      "path": "packet.rowHeight",
+      "field": "rowHeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 32
+    },
+    {
+      "family": "packet",
+      "interface": "PacketDiagramConfig",
+      "path": "packet.bitWidth",
+      "field": "bitWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 32
+    },
+    {
+      "family": "packet",
+      "interface": "PacketDiagramConfig",
+      "path": "packet.bitsPerRow",
+      "field": "bitsPerRow",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 32
+    },
+    {
+      "family": "packet",
+      "interface": "PacketDiagramConfig",
+      "path": "packet.showBits",
+      "field": "showBits",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "packet",
+      "interface": "PacketDiagramConfig",
+      "path": "packet.paddingX",
+      "field": "paddingX",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "packet",
+      "interface": "PacketDiagramConfig",
+      "path": "packet.paddingY",
+      "field": "paddingY",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 5
     }
   ],
-  "fixtureSha256": "1e3a93ae2c21466f3ee89c680629bd59ce89146475b76f3b6f0489ec03383c68"
+  "fixtureSha256": "643cba9aa0bd558b2db795645aab17a2c4a4e7aab6333297611325398416a678"
 }

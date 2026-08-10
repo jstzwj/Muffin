@@ -214,7 +214,11 @@ int main(int argc, char** argv) {
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), file.errorString());
   const QByteArray bytes = file.readAll();
-  require(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() ==
+  QByteArray canonicalBytes = bytes;
+  canonicalBytes.replace("\r\n", "\n");
+  canonicalBytes.replace('\r', '\n');
+  require(QCryptographicHash::hash(canonicalBytes, QCryptographicHash::Sha256)
+                  .toHex() ==
               QByteArrayLiteral(
                   "e8d3908312919b399b4e2a2c0133d363e182f0000b77da70ad833a0ae47e37dd"),
           QStringLiteral("Timeline geometry fixture bytes changed; audit its digest"));

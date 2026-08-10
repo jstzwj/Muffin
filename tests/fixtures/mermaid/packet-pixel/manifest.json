@@ -1,0 +1,57 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "module": "dist/mermaid.esm.mjs",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "browser": {
+      "product": "Chrome/151.0.7922.76",
+      "executableSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+      "headlessMode": "new"
+    },
+    "viewport": {
+      "width": 1400,
+      "height": 1000,
+      "deviceScaleFactor": 1
+    },
+    "fonts": [
+      {
+        "family": "Noto Sans",
+        "file": "third_party/noto/fonts/NotoSans-Regular.ttf",
+        "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+      }
+    ],
+    "generator": "scripts/generate_mermaid_packet_fixtures.mjs"
+  },
+  "oracle": "packet fixed Noto Sans transparent RGBA raster oracle at DPR 1 for default/dark/forest",
+  "cases": [
+    {
+      "id": "default",
+      "theme": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\npacket-beta\ntitle Packet header\n0-7: \"Version\"\n8-15: \"Type\"\n16-31: \"Payload\"",
+      "file": "default.png",
+      "width": 1026,
+      "height": 94,
+      "sha256": "1f8c6e39cab7de96fffccea3ddb65f5aa31cd54c352974f233b5ec6956c7f377"
+    },
+    {
+      "id": "dark",
+      "theme": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\npacket-beta\ntitle Dark packet\n0-39: \"Across rows\"",
+      "file": "dark.png",
+      "width": 1026,
+      "height": 141,
+      "sha256": "bce16db8c21ab7b3c3b1349c09ac9cb500a1662e8395a0df31256b4458fa3f75"
+    },
+    {
+      "id": "forest",
+      "theme": "forest",
+      "source": "%%{init: {\"theme\":\"forest\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\npacket-beta\ntitle Forest packet\n0: \"Flag\"\n1-31: \"Payload\"",
+      "file": "forest.png",
+      "width": 1026,
+      "height": 94,
+      "sha256": "5f681b8780c80201949147f0302c011d1199ccb80e07d2d27f7faee307c4f8a7"
+    }
+  ],
+  "fixtureSha256": "1bd1e813cd59767e8a5b78703ef8a430292be841dd6ad5f84fe32895ebf99462"
+}

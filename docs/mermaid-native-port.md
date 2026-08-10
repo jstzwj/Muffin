@@ -5,7 +5,7 @@ The flowchart execution contract and milestone history are maintained in
 
 ## Current status (2026-08-10)
 
-Muffin renders twelve Mermaid families through a native C++20/Qt pipeline:
+Muffin renders thirteen Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
@@ -19,14 +19,15 @@ Muffin renders twelve Mermaid families through a native C++20/Qt pipeline:
 - radar chart (`radar-beta`);
 - XY chart (`xychart-beta`);
 - timeline (`timeline`, including LR and TD layouts).
+- packet diagram (`packet` and `packet-beta`).
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 211/211 tests, including the end-to-end
+currently 215/215 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All twelve native families now share `MermaidRenderMetadata` for the diagram
+All thirteen native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
@@ -124,7 +125,7 @@ assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 
 The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
 and whole-diagram painter are now native and covered by structural and pixel
-oracles. All twelve native scenes are integrated into the editor and print/PDF path
+oracles. All thirteen native scenes are integrated into the editor and print/PDF path
 through `MermaidRenderCache`. The legacy flat
 `WorkGraph` implementation remains as inactive reference code; the active path
 always delegates to the compound Dagre pipeline.
@@ -381,11 +382,11 @@ available.
 `ClassDiagramConfig`, `StateDiagramConfig`, `ErDiagramConfig`, and
 `RequirementDiagramConfig`, `PieDiagramConfig`, `QuadrantChartConfig`, and
 `JourneyDiagramConfig`, `RadarDiagramConfig`, `XYChartConfig`, and
-`TimelineDiagramConfig` declarations and writes the
+`TimelineDiagramConfig`, and `PacketDiagramConfig` declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 226
-rows: 211 family-interface fields and 15 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 234
+rows: 219 family-interface fields and 15 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -403,9 +404,9 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 116 | Audited upstream and native stages agree |
+| `parity` | 123 | Audited upstream and native stages agree |
 | `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 67 | Mermaid retains the option but 11.16.0 does not consume it |
+| `upstream-inert` | 68 | Mermaid retains the option but 11.16.0 does not consume it |
 | `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
 | `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
@@ -435,7 +436,7 @@ variant through config, per-edge metadata, scene paint, interaction geometry,
 and PNG export. The interaction/animation milestone is also complete: safe
 Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
 Sequence participant menus, and `sequence.forceMenus` all reach their runtime
-consumers. Native SVG export is now complete at the product boundary: all twelve
+consumers. Native SVG export is now complete at the product boundary: all thirteen
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
 `deterministicIds`, `deterministicIDSeed`, and the effective family
@@ -466,7 +467,7 @@ not used as a platform-sensitive pass/fail threshold.
 ## Port order
 
 The implemented order was flowchart, sequence, class, state, ER, Requirement,
-pie, quadrant, journey, radar, XYChart, then Timeline. Flowchart
+pie, quadrant, journey, radar, XYChart, Timeline, then Packet. Flowchart
 established the shared graph, Dagre, shape, theme, and style layers; sequence
 established diagram-specific placement and the shared structured text/MathML
 pipeline; class, state, ER, and Requirement reused those contracts. Requirement
@@ -498,7 +499,7 @@ The remaining boundaries are explicit rather than hidden parity claims:
 
 ### Family expansion status
 
-Pie, quadrant, journey, radar, XYChart, and Timeline are now native. Each was implemented probe-first
+Pie, quadrant, journey, radar, XYChart, Timeline, and Packet are now native. Each was implemented probe-first
 against Mermaid 11.16.0 and ships with grammar/database coverage, immutable
 geometry fixtures, native painter tests, deterministic PNG/SVG integration, and
 configuration-matrix rows. Journey additionally freezes JavaScript scalar
@@ -508,6 +509,9 @@ formula geometry, nested theme style path, JavaScript configuration coercion,
 and fixed-canvas rendering against Mermaid 11.16.0. Timeline freezes both the
 left-to-right and top-down formula layouts, section/task/event geometry, and
 classic/Neo/Redux palette behavior.
+Packet freezes the Langium block database, contiguous-field validation and
+row splitting, fixed formula geometry, bit-number visibility, nested packet
+theme object replacement, and source-sanitizer boundary against 11.16.0.
 
 The next family must start with a fresh Gate-0 survey. Formula-driven families
 remain preferable before force-layout families: mindmap uses `cose-bilkent`,

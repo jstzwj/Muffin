@@ -6,7 +6,7 @@
 // `updateColors()` derivation + a `calculate(overrides)` two-pass driver.
 //
 // Scope: the shared fields consumed by the native Flowchart, Requirement, Pie,
-// Quadrant, Journey, Radar, XYChart, and Timeline renderers, including all
+// Quadrant, Journey, Radar, XYChart, Timeline, and Packet renderers, including all
 // cScale/cScaleInv/cScalePeer/cScaleLabel palettes for all 11 themes.
 //
 // Critical fidelity note: the `default` theme's constructor calls
@@ -47,6 +47,23 @@ struct XYChartThemeVariables {
   QString yAxisTickColor;
   QString yAxisLineColor;
   QString plotColorPalette;
+};
+
+// Packet styles live in the nested themeVariables.packet object. Mermaid's
+// packet stylesheet supplies these defaults whenever the selected theme does
+// not define the object (all themes except dark and forest), or when a source
+// override replaces the object and omits a field.
+struct PacketThemeVariables {
+  QString byteFontSize = QStringLiteral("10px");
+  QString startByteColor = QStringLiteral("black");
+  QString endByteColor = QStringLiteral("black");
+  QString labelColor = QStringLiteral("black");
+  QString labelFontSize = QStringLiteral("12px");
+  QString titleColor = QStringLiteral("black");
+  QString titleFontSize = QStringLiteral("14px");
+  QString blockStrokeColor = QStringLiteral("black");
+  QString blockStrokeWidth = QStringLiteral("1");
+  QString blockFillColor = QStringLiteral("#efefef");
 };
 
 // Parse a mermaid theme name ("default", "neo-dark", ...) → FlowThemeId.
@@ -151,6 +168,10 @@ struct FlowThemeVariables {
   // dataLabelColor from their base constructor even though their own
   // updateColors blocks omit it; populateXYChart preserves that 11.16 quirk.
   XYChartThemeVariables xyChart;
+
+  // Packet's nested stylesheet object. Dark and Forest replace six colors in
+  // updateColors; the other themes retain PacketStyleOptions defaults.
+  PacketThemeVariables packet;
 
   // requirementDiagram / er / rect `colorIndex` palette (chunk-CHAKFXHA.mjs:
   // only redux-color defines both; redux-dark-color defines borderColorArray

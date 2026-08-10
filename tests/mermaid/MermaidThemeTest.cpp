@@ -117,6 +117,32 @@ QStringList xyChartFields() {
           QStringLiteral("plotColorPalette")};
 }
 
+QStringList packetFields() {
+  return {QStringLiteral("byteFontSize"),
+          QStringLiteral("startByteColor"),
+          QStringLiteral("endByteColor"),
+          QStringLiteral("labelColor"),
+          QStringLiteral("labelFontSize"),
+          QStringLiteral("titleColor"),
+          QStringLiteral("titleFontSize"),
+          QStringLiteral("blockStrokeColor"),
+          QStringLiteral("blockStrokeWidth"),
+          QStringLiteral("blockFillColor")};
+}
+
+QJsonObject packetStyleDefaults() {
+  return {{QStringLiteral("byteFontSize"), QStringLiteral("10px")},
+          {QStringLiteral("startByteColor"), QStringLiteral("black")},
+          {QStringLiteral("endByteColor"), QStringLiteral("black")},
+          {QStringLiteral("labelColor"), QStringLiteral("black")},
+          {QStringLiteral("labelFontSize"), QStringLiteral("12px")},
+          {QStringLiteral("titleColor"), QStringLiteral("black")},
+          {QStringLiteral("titleFontSize"), QStringLiteral("14px")},
+          {QStringLiteral("blockStrokeColor"), QStringLiteral("black")},
+          {QStringLiteral("blockStrokeWidth"), QStringLiteral("1")},
+          {QStringLiteral("blockFillColor"), QStringLiteral("#efefef")}};
+}
+
 // Pie + Quadrant SCALAR themeVariables (uniform formulas across themes): the
 // dependency fields (taskTextDarkColor, mainContrastColor) that the pie text
 // colors derive from, the pie stroke/opacity/sizes, and the quadrant point/axis/
@@ -176,6 +202,18 @@ void compareTheme(FlowThemeId id, const QJsonObject& goldenVars, const QString& 
                .arg(label, flowThemeIdName(id), key, native, golden));
     }
   }
+  QJsonObject expectedPacket = packetStyleDefaults();
+  const QJsonObject upstreamPacket =
+      goldenVars.value(QStringLiteral("packet")).toObject();
+  for (auto it = upstreamPacket.constBegin(); it != upstreamPacket.constEnd(); ++it)
+    expectedPacket.insert(it.key(), it.value());
+  for (const QString& field : packetFields()) {
+    const QString native = t.get(QStringLiteral("packet.") + field);
+    const QString golden = goldenToString(expectedPacket.value(field));
+    require(native == golden,
+            QStringLiteral("Packet theme %1/%2 mismatch: native=%3 golden=%4")
+                .arg(label, field, native, golden));
+  }
 }
 
 void compareOverride(FlowThemeId id, const QHash<QString, QString>& overrides,
@@ -207,6 +245,51 @@ void compareXYChart(const FlowThemeVariables& theme,
 QHash<QString, QString> sourceThemeOverrides(const QString& source) {
   return muffin::mermaid::editor::themeOverrides(
       muffin::mermaid::preprocessDiagram(source).config);
+}
+
+void checkPacketThemeOverrides() {
+  const QString source = QStringLiteral(
+      "%%{init:{\"theme\":\"dark\",\"themeVariables\":{\"packet\":{"
+      "\"labelColor\":\"#ff0000\",\"labelFontSize\":\"22px\","
+      "\"titleColor\":\"#00ff00\",\"titleFontSize\":\"24px\","
+      "\"byteFontSize\":\"30px\",\"startByteColor\":\"#111111\","
+      "\"endByteColor\":\"#222222\",\"blockStrokeColor\":\"#333333\","
+      "\"blockStrokeWidth\":\"7\",\"blockFillColor\":\"#444444\"}}}}%%\n"
+      "packet-beta\n0: x");
+  const FlowThemeVariables sourceTheme =
+      resolveFlowTheme(FlowThemeId::Dark, sourceThemeOverrides(source));
+  require(sourceTheme.packet.labelColor == QLatin1String("#ff0000") &&
+              sourceTheme.packet.labelFontSize == QLatin1String("22px") &&
+              sourceTheme.packet.titleColor == QLatin1String("#00ff00") &&
+              sourceTheme.packet.titleFontSize == QLatin1String("24px"),
+          QStringLiteral("Packet's four source-reachable style fields drifted"));
+  require(sourceTheme.packet.byteFontSize == QLatin1String("10px") &&
+              sourceTheme.packet.startByteColor == QLatin1String("black") &&
+              sourceTheme.packet.endByteColor == QLatin1String("black") &&
+              sourceTheme.packet.blockStrokeColor == QLatin1String("black") &&
+              sourceTheme.packet.blockStrokeWidth == QLatin1String("1") &&
+              sourceTheme.packet.blockFillColor == QLatin1String("#efefef"),
+          QStringLiteral("Packet source sanitizer/API-only fields drifted"));
+
+  const FlowThemeVariables emptyReplacement = resolveFlowTheme(
+      FlowThemeId::Forest,
+      sourceThemeOverrides(QStringLiteral(
+          "---\nconfig:\n  theme: forest\n  themeVariables:\n    packet: {}\n---\n"
+          "packet-beta\n0: x")));
+  require(emptyReplacement.packet.startByteColor == QLatin1String("black") &&
+              emptyReplacement.packet.blockFillColor == QLatin1String("#efefef"),
+          QStringLiteral("Packet empty-object replacement retained Forest colors"));
+
+  QHash<QString, QString> direct;
+  direct.insert(QStringLiteral("packet.byteFontSize"), QStringLiteral("18px"));
+  direct.insert(QStringLiteral("packet.blockFillColor"), QStringLiteral("#abcdef"));
+  const FlowThemeVariables directTheme =
+      resolveFlowTheme(FlowThemeId::Default, direct);
+  require(directTheme.get(QStringLiteral("packet.byteFontSize")) ==
+                  QLatin1String("18px") &&
+              directTheme.get(QStringLiteral("packet.blockFillColor")) ==
+                  QLatin1String("#abcdef"),
+          QStringLiteral("Packet typed get/set round-trip drifted"));
 }
 
 void checkFontWeightOverrides() {
@@ -728,6 +811,7 @@ int main(int argc, char** argv) {
   checkThemeOverridesTclJs();
   checkScalarDependencyOverrides();
   checkFontWeightOverrides();
+  checkPacketThemeOverrides();
 
   QFile xyChartFile(
       QFileInfo(fixturePath).dir().filePath(QStringLiteral("xychart-theme.json")));

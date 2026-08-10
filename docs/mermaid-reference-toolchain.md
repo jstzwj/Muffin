@@ -68,15 +68,15 @@ references.
 - **Real-mermaid geometry oracles** — fail-on-divergence tests that assert
   Muffin's native geometry against captured mermaid 11.16.0 output, splitting
   font-independent parity (asserted) from font-coupled deltas (reported). All
-  twelve native families are covered: flowchart (dagre-snapshots + geometry), ER
+  thirteen native families are covered: flowchart (dagre-snapshots + geometry), ER
   (`er-geometry.json` + `MermaidErGeometryOracleTest`), class
   (`class-geometry.json` + `MermaidClassGeometryOracleTest`), state
   (`state-geometry.json` + `MermaidStateGeometryOracleTest`), and sequence
   (`sequence-geometry.json` + `MermaidSequenceGeometryOracleTest`, a pure
   structural oracle since the legacy renderer is positionally font-coupled),
-  Requirement, pie, quadrant, journey, radar, XYChart, and Timeline (family-specific geometry and pixel
+  Requirement, pie, quadrant, journey, radar, XYChart, Timeline, and Packet (family-specific geometry and pixel
   fixtures).
-- `config-effect-matrix.json` covers all twelve native families.
+- `config-effect-matrix.json` covers all thirteen native families.
 - Regenerating any drifted fixture (e.g. after a mermaid version bump, or when
   extending the case corpus).
 
@@ -87,7 +87,7 @@ Flowchart: `geometry`, `scene`, `db`, `label`, `pixel` (`golden-pixel`),
 Class: `db`, `layout`, `label`, `pixel`, `differential-fuzz`, `geometry`.
 Sequence / state: `db`, `layout`, `label`, `pixel`, `differential-fuzz`,
 `geometry` (sequence also `mathml-box`). ER: `geometry` (+ Muffin self-snapshot
-`er-scene`). Requirement, pie, quadrant, journey, radar, XYChart, and Timeline add their own parser,
+`er-scene`). Requirement, pie, quadrant, journey, radar, XYChart, Timeline, and Packet add their own parser,
 geometry, structure, and pixel fixtures; the journey and radar generators pin Chrome
 and bundled-font hashes.
 Plus `config-effect-matrix`, `compatibility`, `error`, `rough-ops`, `katex-golden`.

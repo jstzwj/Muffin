@@ -544,7 +544,15 @@
         "emArrowhead": "lightgrey",
         "emRelationStroke": "lightgrey",
         "attributeBackgroundColorOdd": "hsl(0, 0%, 32%)",
-        "attributeBackgroundColorEven": "hsl(0, 0%, 22%)"
+        "attributeBackgroundColorEven": "hsl(0, 0%, 22%)",
+        "packet": {
+          "startByteColor": "#e0dfdf",
+          "endByteColor": "#e0dfdf",
+          "labelColor": "#e0dfdf",
+          "titleColor": "#e0dfdf",
+          "blockStrokeColor": "#e0dfdf",
+          "blockFillColor": "#333"
+        }
       }
     },
     {
@@ -1085,7 +1093,15 @@
         "emArrowhead": "#000000",
         "emRelationStroke": "#000000",
         "attributeBackgroundColorOdd": "#ffffff",
-        "attributeBackgroundColorEven": "#f2f2f2"
+        "attributeBackgroundColorEven": "#f2f2f2",
+        "packet": {
+          "startByteColor": "#321b67",
+          "endByteColor": "#321b67",
+          "labelColor": "#321b67",
+          "titleColor": "#321b67",
+          "blockStrokeColor": "#321b67",
+          "blockFillColor": "#cde498"
+        }
       }
     },
     {

@@ -140,7 +140,11 @@ int main(int argc, char** argv) {
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), file.errorString());
   const QByteArray bytes = file.readAll();
-  require(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() ==
+  QByteArray canonicalBytes = bytes;
+  canonicalBytes.replace("\r\n", "\n");
+  canonicalBytes.replace('\r', '\n');
+  require(QCryptographicHash::hash(canonicalBytes, QCryptographicHash::Sha256)
+                  .toHex() ==
               QByteArrayLiteral("8a7fb9bf306bcd62be6a15d84560ced1f8fb2dd105e0f149137cf76787389fdd"),
           QStringLiteral("Timeline config fixture changed; audit its digest"));
   const QJsonObject fixtureRoot = QJsonDocument::fromJson(bytes).object();

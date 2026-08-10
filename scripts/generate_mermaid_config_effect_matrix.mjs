@@ -454,6 +454,16 @@ const familyPolicies = {
     ),
     disableMulticolor: parity("paint", "export"),
   },
+  packet: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    rowHeight: parity(...layout),
+    bitWidth: parity(...layout),
+    bitsPerRow: parity("text", ...layout),
+    showBits: parity("text", ...layout),
+    paddingX: parity("layout", "paint", "export"),
+    paddingY: parity(...layout),
+  },
   requirement: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -516,6 +526,7 @@ const shared = [
       "radar",
       "xyChart",
       "timeline",
+      "packet",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -534,6 +545,7 @@ const shared = [
       "radar",
       "xyChart",
       "timeline",
+      "packet",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -556,6 +568,7 @@ const shared = [
       "radar",
       "xyChart",
       "timeline",
+      "packet",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -610,7 +623,7 @@ const shared = [
     families: [
       "flowchart", "sequence", "class", "state", "er", "requirement",
       "pie", "quadrantChart", "journey", "radar", "xyChart",
-      "timeline",
+      "timeline", "packet",
     ],
     ...unsupported(
       ["parsed"],
@@ -632,6 +645,7 @@ const shared = [
       "radar",
       "xyChart",
       "timeline",
+      "packet",
     ],
     ...policy(
       "security-fixed",
@@ -660,6 +674,7 @@ const shared = [
       "radar",
       "xyChart",
       "timeline",
+      "packet",
     ],
     ...parity("export"),
   },
@@ -678,6 +693,7 @@ const shared = [
       "radar",
       "xyChart",
       "timeline",
+      "packet",
     ],
     ...parity("export"),
   },
@@ -696,6 +712,7 @@ const shared = [
       "radar",
       "xyChart",
       "timeline",
+      "packet",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -747,6 +764,7 @@ const interfaces = {
   radar: "RadarDiagramConfig",
   xyChart: "XYChartConfig",
   timeline: "TimelineDiagramConfig",
+  packet: "PacketDiagramConfig",
 };
 
 const entries = [];

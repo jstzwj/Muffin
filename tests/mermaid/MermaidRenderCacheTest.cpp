@@ -9,6 +9,7 @@
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/timeline/TimelineScene.h"
+#include "mermaid/packet/PacketScene.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
@@ -499,6 +500,106 @@ int main(int argc, char** argv) {
             QStringLiteral("Empty Radar title must retain frontmatter title"));
   }
 
+  // Packet diagnostics originate after preprocessing. Lock the typed stage,
+  // code, exact DB message, and original-source mapping together so a generic
+  // render failure cannot silently replace the family diagnostic.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: Packet frontmatter\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\npacket-beta\n0: \"first\"\n2: \"gap\"");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.stage == QLatin1String("parse") &&
+                entry.diagnostic.code == QLatin1String("packet-runtime-error") &&
+                entry.diagnostic.message ==
+                    QLatin1String("Packet block 2 - 2 is not contiguous. It should start from 1.") &&
+                entry.diagnostic.span.offset ==
+                    decorated.indexOf(QStringLiteral("2: \"gap\"")) &&
+                entry.diagnostic.span.line == 8 &&
+                entry.diagnostic.span.column == 1,
+            QStringLiteral("Packet runtime diagnostic contract drifted"));
+  }
+
+  // Keep the other two Packet exception kinds on the same decorated-source
+  // route. The dedicated parser test proves the kind classification; these
+  // cases prove RenderCache preserves its distinct code and original location.
+  {
+    struct PacketDiagnosticCase {
+      QString tail;
+      QString token;
+      QString code;
+      QString message;
+      int column;
+    };
+    const QVector<PacketDiagnosticCase> cases = {
+        {QStringLiteral("0: x"), QStringLiteral("x"),
+         QStringLiteral("packet-lexer-error"),
+         QStringLiteral("expected quoted STRING"), 4},
+        {QStringLiteral("0 \"x\""), QStringLiteral("\"x\""),
+         QStringLiteral("packet-parse-error"), QStringLiteral("expected ':'"),
+         3},
+    };
+    for (const PacketDiagnosticCase& fixture : cases) {
+      MermaidRenderCache cache;
+      const QString decorated =
+          QStringLiteral("---\ntitle: Packet diagnostic\n---\n"
+                         "%%{init: {\"theme\": \"default\"}}%%\n"
+                         "%% generated comment\npacket-beta\n") +
+          fixture.tail;
+      const qsizetype tokenOffset =
+          decorated.lastIndexOf(fixture.token);
+      const MermaidRenderEntry entry = cache.getSync(
+          MermaidRenderCache::makeKey(decorated), decorated);
+      require(entry.status == kError &&
+                  entry.diagnostic.stage == QLatin1String("parse") &&
+                  entry.diagnostic.code == fixture.code &&
+                  entry.diagnostic.message == fixture.message &&
+                  entry.diagnostic.span.offset == tokenOffset &&
+                  entry.diagnostic.span.line == 7 &&
+                  entry.diagnostic.span.column == fixture.column,
+              QStringLiteral("Packet %1 diagnostic contract drifted")
+                  .arg(fixture.code));
+    }
+  }
+
+  // Packet owns its visible title at the bottom of the family scene. Inline
+  // title wins; frontmatter supplies the title only when the AST has none.
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "---\ntitle: Frontmatter Packet\n---\npacket-beta\n"
+        "title Inline Packet\naccTitle: Packet accessible\n"
+        "accDescr: Packet description\n0-7: \"Header\"");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::packet::PacketScene>(entry.scene);
+    require(entry.status == kReady && scene &&
+                scene->title == QLatin1String("Inline Packet") &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle ==
+                    QLatin1String("Packet accessible") &&
+                entry.metadata.accessibleDescription ==
+                    QLatin1String("Packet description"),
+            QStringLiteral("Packet title ownership/accessibility metadata drifted"));
+
+    const QString frontmatterOnly = QStringLiteral(
+        "---\ntitle: Frontmatter Packet\n---\n"
+        "packet-beta\n0-7: \"Header\"");
+    const MermaidRenderEntry fallback = cache.getSync(
+        MermaidRenderCache::makeKey(frontmatterOnly), frontmatterOnly);
+    const auto fallbackScene = std::dynamic_pointer_cast<
+        const muffin::mermaid::packet::PacketScene>(fallback.scene);
+    require(fallback.status == kReady && fallbackScene &&
+                fallbackScene->title == QLatin1String("Frontmatter Packet") &&
+                fallback.metadata.title.isEmpty() &&
+                fallback.metadata.titleHeight == 0.0,
+            QStringLiteral("Packet frontmatter title fallback drifted"));
+  }
+
   // Radar parser positions are measured in preprocessed code and must map
   // through removed frontmatter, directives, and comments.
   {
@@ -539,6 +640,8 @@ int main(int argc, char** argv) {
          QStringLiteral("xychart"), QStringLiteral("xychart-parse-error"), 2},
         {QStringLiteral("timeline\n: orphan event"),
          QStringLiteral("timeline"), QStringLiteral("timeline-runtime-error"), 2},
+        {QStringLiteral("packet-beta\n0: \"a\"\n2: \"gap\""),
+         QStringLiteral("packet"), QStringLiteral("packet-runtime-error"), 3},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -573,6 +676,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("xychart-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("timeline")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("packet-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1163,6 +1268,8 @@ int main(int argc, char** argv) {
                         "bar [1,2,3]\nline [3,2,1]")},
         {QStringLiteral("timeline"),
          QStringLiteral("timeline\nsection S\nTask : Event")},
+        {QStringLiteral("packet"),
+         QStringLiteral("packet-beta\n0-7: \"Header\"\n8-15: \"Payload\"")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

@@ -1,0 +1,2281 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "packetModuleSha256": "cc7ea4edbd16fc76bd5ce0ad461a8ed6829ab64acef15690d313c8d5ca69181e",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "parser": "Langium PacketGrammar + PacketDB",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry detection/accept/reject plus PacketDB words, metadata, and parse-time config",
+  "cases": [
+    {
+      "id": "empty-stable",
+      "source": "packet",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 0,
+        "words": [],
+        "firstWord": null,
+        "lastWord": null,
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "empty-beta",
+      "source": "packet-beta",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 0,
+        "words": [],
+        "firstWord": null,
+        "lastWord": null,
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "header-same-line",
+      "source": "packet 0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "leading-whitespace-comments",
+      "source": " \t\n%% comment\n packet-beta\n0: \"x\" %% tail",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "one-bit",
+      "source": "packet\n0: \"zero\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "zero"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "zero"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "zero"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "zero-range-one-bit",
+      "source": "packet\n0-0: \"zero\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "zero"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "zero"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "zero"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "range-spaces",
+      "source": "packet\n0 - 7 : \"eight\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 7,
+              "bits": 8,
+              "label": "eight"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 8,
+            "label": "eight"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 8,
+            "label": "eight"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "implicit-plus",
+      "source": "packet\n+8: \"a\"\n+8: \"b\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 7,
+              "bits": 8,
+              "label": "a"
+            },
+            {
+              "start": 8,
+              "end": 15,
+              "bits": 8,
+              "label": "b"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 8,
+            "label": "a"
+          },
+          {
+            "start": 8,
+            "end": 15,
+            "bits": 8,
+            "label": "b"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 8,
+            "label": "a"
+          },
+          {
+            "start": 8,
+            "end": 15,
+            "bits": 8,
+            "label": "b"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "explicit-contiguous",
+      "source": "packet\n0-3: \"a\"\n4: \"b\"\n5-7: \"c\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 3,
+              "bits": 4,
+              "label": "a"
+            },
+            {
+              "start": 4,
+              "end": 4,
+              "bits": 1,
+              "label": "b"
+            },
+            {
+              "start": 5,
+              "end": 7,
+              "bits": 3,
+              "label": "c"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 3,
+            "bits": 4,
+            "label": "a"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "bits": 1,
+            "label": "b"
+          },
+          {
+            "start": 5,
+            "end": 7,
+            "bits": 3,
+            "label": "c"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 3,
+            "bits": 4,
+            "label": "a"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "bits": 1,
+            "label": "b"
+          },
+          {
+            "start": 5,
+            "end": 7,
+            "bits": 3,
+            "label": "c"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "cross-row-default",
+      "source": "packet\n0-7: \"a\"\n+40: \"wide\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 2,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 7,
+              "bits": 8,
+              "label": "a"
+            },
+            {
+              "start": 8,
+              "end": 31,
+              "bits": 23,
+              "label": "wide"
+            }
+          ],
+          [
+            {
+              "start": 32,
+              "end": 47,
+              "bits": 15,
+              "label": "wide"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 8,
+            "label": "a"
+          },
+          {
+            "start": 8,
+            "end": 31,
+            "bits": 23,
+            "label": "wide"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 32,
+            "end": 47,
+            "bits": 15,
+            "label": "wide"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "single-quoted",
+      "source": "packet\n0: 'A B'",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "A B"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "A B"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "A B"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "multiline-double-quoted",
+      "source": "packet\n0: \"line one\nline two\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "line one\nline two"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "line one\nline two"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "line one\nline two"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "multiline-single-quoted",
+      "source": "packet\n0: 'line one\nline two'",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "line one\nline two"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "line one\nline two"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "line one\nline two"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "empty-label",
+      "source": "packet\n0: \"\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": ""
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": ""
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": ""
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "unicode-label",
+      "source": "packet\n0-2: \"日本 中文\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 2,
+              "bits": 3,
+              "label": "日本 中文"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 2,
+            "bits": 3,
+            "label": "日本 中文"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 2,
+            "bits": 3,
+            "label": "日本 中文"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "escaped-label",
+      "source": "packet\n0: \"A\\nB\\tC\\\"D\\u0041\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "A\nB\tC\"Du0041"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "A\nB\tC\"Du0041"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "A\nB\tC\"Du0041"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "percent-in-string",
+      "source": "packet\n0: \"A%%B\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "A%%B"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "A%%B"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "A%%B"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "packet\ntitle Hello  world\naccTitle:  Packet title\naccDescr:  Packet  description\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "Hello world",
+        "accTitle": "Packet title",
+        "accDescription": "Packet description",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "metadata-last-wins",
+      "source": "packet\ntitle One\ntitle Two\naccTitle: A\naccTitle: B\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "Two",
+        "accTitle": "B",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "metadata-empty-last",
+      "source": "packet\ntitle One\ntitle\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "accdescr-block",
+      "source": "packet\naccDescr {\n first  line\n\n second line\n}\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "first line\nsecond line",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "accdescr-block-next-line",
+      "source": "packet\naccDescr\n  {\n first  line\n second line\n}\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "first line\nsecond line",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "metadata-html-sanitizer",
+      "source": "packet\ntitle <script>x</script><b>ok</b><img src=x onerror=evil()>\naccTitle: <style>x</style><i>AT</i><a href=\"javascript:evil()\">bad</a>\naccDescr: <svg onload=evil()>S</svg><u>AD</u>\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "<b>ok</b><img src=\"x\">",
+        "accTitle": "<i>AT</i><a>bad</a>",
+        "accDescription": "<svg>S</svg><u>AD</u>",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "label-html-is-text",
+      "source": "packet\n0: \"<script>x</script><b>literal</b>\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "<script>x</script><b>literal</b>"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "<script>x</script><b>literal</b>"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "<script>x</script><b>literal</b>"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "frontmatter-title",
+      "source": "---\ntitle: Front Packet\n---\npacket\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "Front Packet",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "frontmatter-title-html-sanitizer",
+      "source": "---\ntitle: <script>x</script><b>ok</b><img src=x onerror=evil()>\n---\npacket\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "<b>ok</b><img src=\"x\">",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "frontmatter-inline-wins",
+      "source": "---\ntitle: Front\n---\npacket\ntitle Inline\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "Inline",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-8",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":8}}}%%\npacket\n+20: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 3,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 7,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 8,
+              "end": 15,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 16,
+              "end": 19,
+              "bits": 3,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 7,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 16,
+            "end": 19,
+            "bits": 3,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 8,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-string-8",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":\"8\"}}}%%\npacket\n+20: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 3,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 7,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 8,
+              "end": 15,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 16,
+              "end": 19,
+              "bits": 3,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 7,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 16,
+            "end": 19,
+            "bits": 3,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": "8",
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-string-hex",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":\"0x8\"}}}%%\npacket\n+20: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 3,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 7,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 8,
+              "end": 15,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 16,
+              "end": 19,
+              "bits": 3,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 7,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 16,
+            "end": 19,
+            "bits": 3,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": "0x8",
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-string-binary",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":\"0b10\"}}}%%\npacket\n+20: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 10,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 1,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 2,
+              "end": 3,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 4,
+              "end": 5,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 6,
+              "end": 7,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 8,
+              "end": 9,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 10,
+              "end": 11,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 12,
+              "end": 13,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 14,
+              "end": 15,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 16,
+              "end": 17,
+              "bits": 1,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 18,
+              "end": 19,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 1,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 18,
+            "end": 19,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": "0b10",
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-string-octal",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":\"0o10\"}}}%%\npacket\n+20: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 3,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 7,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 8,
+              "end": 15,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 16,
+              "end": 19,
+              "bits": 3,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 7,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 16,
+            "end": 19,
+            "bits": 3,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": "0o10",
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-string-js-whitespace",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":\"﻿0x8\"}}}%%\npacket\n+20: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 3,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 7,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 8,
+              "end": 15,
+              "bits": 7,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 16,
+              "end": 19,
+              "bits": 3,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 7,
+            "bits": 7,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 16,
+            "end": 19,
+            "bits": 3,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": "﻿0x8",
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-true",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":true}}}%%\npacket\n+3: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 3,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 0,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 1,
+              "end": 1,
+              "bits": 0,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 2,
+              "end": 2,
+              "bits": 0,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 0,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 2,
+            "end": 2,
+            "bits": 0,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": true,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-fractional",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":2.5}}}%%\npacket\n+6: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 3,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 1.5,
+              "bits": 1.5,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 2.5,
+              "end": 4,
+              "bits": 1.5,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 5,
+              "end": 5,
+              "bits": 0,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 1.5,
+            "bits": 1.5,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 5,
+            "end": 5,
+            "bits": 0,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 2.5,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-garbage-string",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":\"abc\"}}}%%\npacket\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 0,
+        "words": [],
+        "firstWord": null,
+        "lastWord": null,
+        "config": {
+          "bitsPerRow": "abc",
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-null-default",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":null}}}%%\npacket\n+33: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 2,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 31,
+              "bits": 31,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 32,
+              "end": 32,
+              "bits": 0,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 31,
+            "bits": 31,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 32,
+            "end": 32,
+            "bits": 0,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-object-default",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":{}}}}%%\npacket\n+33: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 2,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 31,
+              "bits": 31,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 32,
+              "end": 32,
+              "bits": 0,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 31,
+            "bits": 31,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 32,
+            "end": 32,
+            "bits": 0,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-array-default",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":[8]}}}%%\npacket\n+33: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 2,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 31,
+              "bits": 31,
+              "label": "x"
+            }
+          ],
+          [
+            {
+              "start": 32,
+              "end": 32,
+              "bits": 0,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 31,
+            "bits": 31,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 32,
+            "end": 32,
+            "bits": 0,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "bits-false-max",
+      "source": "%%{init: {\"packet\":{\"bitsPerRow\":false}}}%%\npacket\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 10000,
+        "words": null,
+        "firstWord": [
+          {
+            "start": 0,
+            "end": -1,
+            "bits": -1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": -1,
+            "bits": -1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": false,
+          "showBits": true,
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "showbits-false",
+      "source": "%%{init: {\"packet\":{\"showBits\":false}}}%%\npacket\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": false,
+          "paddingY": 5
+        }
+      }
+    },
+    {
+      "id": "showbits-string-false",
+      "source": "%%{init: {\"packet\":{\"showBits\":\"false\"}}}%%\npacket\n0: \"x\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescription": "",
+        "wordCount": 1,
+        "words": [
+          [
+            {
+              "start": 0,
+              "end": 0,
+              "bits": 1,
+              "label": "x"
+            }
+          ]
+        ],
+        "firstWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "lastWord": [
+          {
+            "start": 0,
+            "end": 0,
+            "bits": 1,
+            "label": "x"
+          }
+        ],
+        "config": {
+          "bitsPerRow": 32,
+          "showBits": "false",
+          "paddingY": 15
+        }
+      }
+    },
+    {
+      "id": "reject-no-header",
+      "source": "0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: 0: \"x\"",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-header-case",
+      "source": "Packet\n0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: Packet 0: \"x\"",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-header-prefix",
+      "source": "packetXYZ\n0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 1, column 1: unexpected character: ->p<- at offset: 0, skipped 9 characters. Parse error on line 2, column 1: Expecting: one of these possible Token sequences: 1. [packet] 2. [packet-beta] but found: '0'",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-beta-prefix",
+      "source": "packet-betax\n0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 1, column 12: unexpected character: ->x<- at offset: 11, skipped 1 characters.",
+        "line": 1,
+        "column": 12
+      }
+    },
+    {
+      "id": "reject-header-colon",
+      "source": "packet:\n0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 1, column 1: unexpected character: ->p<- at offset: 0, skipped 6 characters. Parse error on line 1, column 7: Expecting: one of these possible Token sequences: 1. [packet] 2. [packet-beta] but found: ':'",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-bare-label",
+      "source": "packet\n0: x",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 4: unexpected character: ->x<- at offset: 10, skipped 1 characters. Parse error on line 2, column 5: Expecting token of type 'STRING' but found ` `.",
+        "line": 2,
+        "column": 4
+      }
+    },
+    {
+      "id": "reject-leading-zero",
+      "source": "packet\n00: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 2: Expecting token of type ':' but found `0`.",
+        "line": 2,
+        "column": 2
+      }
+    },
+    {
+      "id": "reject-float",
+      "source": "packet\n0.0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 2: unexpected character: ->.<- at offset: 8, skipped 1 characters. Parse error on line 2, column 3: Expecting token of type ':' but found `0`.",
+        "line": 2,
+        "column": 2
+      }
+    },
+    {
+      "id": "reject-negative",
+      "source": "packet\n-1: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 1: Expecting token of type 'EOF' but found `-`.",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-exponent",
+      "source": "packet\n1e2: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 2: unexpected character: ->e<- at offset: 8, skipped 1 characters. Parse error on line 2, column 3: Expecting token of type ':' but found `2`.",
+        "line": 2,
+        "column": 2
+      }
+    },
+    {
+      "id": "reject-two-same-line",
+      "source": "packet\n0: \"a\" 1: \"b\"",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 8: Expecting: one of these possible Token sequences: 1. [NEWLINE] 2. [EOF] but found: '1'",
+        "line": 2,
+        "column": 8
+      }
+    },
+    {
+      "id": "reject-semicolon",
+      "source": "packet\n0: \"a\";",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 7: unexpected character: ->;<- at offset: 13, skipped 1 characters.",
+        "line": 2,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-trailing-dollar",
+      "source": "packet\n0: \"a\"$",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 7: unexpected character: ->$<- at offset: 13, skipped 1 characters.",
+        "line": 2,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-colon-top-level",
+      "source": "packet\n:",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 1: Expecting token of type 'EOF' but found `:`.",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-title-suffix",
+      "source": "packet\ntitleX\n0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 6: unexpected character: ->X<- at offset: 12, skipped 1 characters.",
+        "line": 2,
+        "column": 6
+      }
+    },
+    {
+      "id": "reject-title-colon",
+      "source": "packet\ntitle: Bad\n0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 8: unexpected character: ->B<- at offset: 14, skipped 3 characters. Parse error on line 2, column 6: Expecting: one of these possible Token sequences: 1. [NEWLINE] 2. [EOF] but found: ':'",
+        "line": 2,
+        "column": 8
+      }
+    },
+    {
+      "id": "reject-missing-colon",
+      "source": "packet\n0 \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 3: Expecting token of type ':' but found `\"x\"`.",
+        "line": 2,
+        "column": 3
+      }
+    },
+    {
+      "id": "reject-missing-label",
+      "source": "packet\n0:",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 3: Expecting token of type 'STRING' but found ` `.",
+        "line": 2,
+        "column": 3
+      }
+    },
+    {
+      "id": "reject-unterminated-label",
+      "source": "packet\n0: \"x",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 4: unexpected character: ->\"<- at offset: 10, skipped 2 characters. Parse error on line 2, column 6: Expecting token of type 'STRING' but found ` `.",
+        "line": 2,
+        "column": 4
+      }
+    },
+    {
+      "id": "reject-missing-range-end",
+      "source": "packet\n0-: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 3: Expecting token of type 'INT' but found `:`.",
+        "line": 2,
+        "column": 3
+      }
+    },
+    {
+      "id": "reject-missing-plus-bits",
+      "source": "packet\n+: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 2: Expecting token of type 'INT' but found `:`.",
+        "line": 2,
+        "column": 2
+      }
+    },
+    {
+      "id": "runtime-plus-zero",
+      "source": "packet\n+0: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Packet block 0 is invalid. Cannot have a zero bit field.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "runtime-reverse",
+      "source": "packet\n3-2: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Packet block 3 - 2 is invalid. End must be greater than start.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "runtime-first-nonzero",
+      "source": "packet\n1: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Packet block 1 - 1 is not contiguous. It should start from 0.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "runtime-gap",
+      "source": "packet\n0-1: \"a\"\n3: \"b\"",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Packet block 3 - 3 is not contiguous. It should start from 2.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "runtime-overlap",
+      "source": "packet\n0-2: \"a\"\n2: \"b\"",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Packet block 2 - 2 is not contiguous. It should start from 3.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "runtime-large-first-bit",
+      "source": "packet\n9007199254740993: \"x\"",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Packet block 9007199254740992 - 9007199254740992 is not contiguous. It should start from 0.",
+        "line": 0,
+        "column": 0
+      }
+    }
+  ],
+  "fixtureSha256": "8c3ede49b5d398a8114f1c3c0f4030d7628b3ed6be44cae5cf1def5f435a0ad8"
+}

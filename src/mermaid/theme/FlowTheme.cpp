@@ -809,6 +809,20 @@ void populateXYChart(FlowThemeId id, FlowThemeVariables& t) {
   assignIfEmpty(t.xyChart.plotColorPalette, palette);
 }
 
+void populatePacket(FlowThemeId id, FlowThemeVariables& t) {
+  if (id != FlowThemeId::Dark && id != FlowThemeId::Forest) return;
+  // Both upstream updateColors implementations assign a fresh object, not a
+  // field-wise merge. PacketStyleOptions supplies the four typography/stroke
+  // defaults that are absent from that object.
+  t.packet = PacketThemeVariables{};
+  t.packet.startByteColor = t.primaryTextColor;
+  t.packet.endByteColor = t.primaryTextColor;
+  t.packet.labelColor = t.primaryTextColor;
+  t.packet.titleColor = t.primaryTextColor;
+  t.packet.blockStrokeColor = t.primaryTextColor;
+  t.packet.blockFillColor = id == FlowThemeId::Dark ? t.background : t.mainBkg;
+}
+
 void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   switch (id) {
     case FlowThemeId::Base:
@@ -830,6 +844,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::Dark: updateColorsDark(t); break;
     case FlowThemeId::Neutral: updateColorsNeutral(t); break;
   }
+  populatePacket(id, t);
   populateXYChart(id, t);
 }
 
@@ -877,9 +892,21 @@ FlowThemeVariables resolveFlowTheme(FlowThemeId id, const QHash<QString, QString
   // calculate(overrides): sentinel-clear (default/forest) → apply overrides →
   // updateColors → re-apply overrides (user wins over derived).
   if (clearsCalculatedSentinels(id)) clearCalculatedSentinels(t);
-  for (auto it = overrides.constBegin(); it != overrides.constEnd(); ++it) t.set(it.key(), it.value());
+  const auto applyOverrides = [&overrides](FlowThemeVariables& theme) {
+    // calculate() replays the top-level `packet` key as one object. Replacing
+    // it discards Dark/Forest's derived sibling colors; styles.ts then fills
+    // omitted fields from PacketStyleOptions. Keep the marker out of get/set
+    // so QHash iteration order cannot affect replacement semantics.
+    if (overrides.contains(QStringLiteral("packet.__replace")))
+      theme.packet = PacketThemeVariables{};
+    for (auto it = overrides.constBegin(); it != overrides.constEnd(); ++it) {
+      if (it.key() != QLatin1String("packet.__replace"))
+        theme.set(it.key(), it.value());
+    }
+  };
+  applyOverrides(t);
   updateColors(id, t);
-  for (auto it = overrides.constBegin(); it != overrides.constEnd(); ++it) t.set(it.key(), it.value());
+  applyOverrides(t);
   return t;
 }
 
@@ -967,6 +994,16 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("xyChart.yAxisTickColor")) return xyChart.yAxisTickColor;
   if (key == QStringLiteral("xyChart.yAxisLineColor")) return xyChart.yAxisLineColor;
   if (key == QStringLiteral("xyChart.plotColorPalette")) return xyChart.plotColorPalette;
+  if (key == QStringLiteral("packet.byteFontSize")) return packet.byteFontSize;
+  if (key == QStringLiteral("packet.startByteColor")) return packet.startByteColor;
+  if (key == QStringLiteral("packet.endByteColor")) return packet.endByteColor;
+  if (key == QStringLiteral("packet.labelColor")) return packet.labelColor;
+  if (key == QStringLiteral("packet.labelFontSize")) return packet.labelFontSize;
+  if (key == QStringLiteral("packet.titleColor")) return packet.titleColor;
+  if (key == QStringLiteral("packet.titleFontSize")) return packet.titleFontSize;
+  if (key == QStringLiteral("packet.blockStrokeColor")) return packet.blockStrokeColor;
+  if (key == QStringLiteral("packet.blockStrokeWidth")) return packet.blockStrokeWidth;
+  if (key == QStringLiteral("packet.blockFillColor")) return packet.blockFillColor;
   return QString();
 }
 
@@ -1050,6 +1087,16 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("xyChart.yAxisTickColor")) xyChart.yAxisTickColor = value;
   else if (key == QStringLiteral("xyChart.yAxisLineColor")) xyChart.yAxisLineColor = value;
   else if (key == QStringLiteral("xyChart.plotColorPalette")) xyChart.plotColorPalette = value;
+  else if (key == QStringLiteral("packet.byteFontSize")) packet.byteFontSize = value;
+  else if (key == QStringLiteral("packet.startByteColor")) packet.startByteColor = value;
+  else if (key == QStringLiteral("packet.endByteColor")) packet.endByteColor = value;
+  else if (key == QStringLiteral("packet.labelColor")) packet.labelColor = value;
+  else if (key == QStringLiteral("packet.labelFontSize")) packet.labelFontSize = value;
+  else if (key == QStringLiteral("packet.titleColor")) packet.titleColor = value;
+  else if (key == QStringLiteral("packet.titleFontSize")) packet.titleFontSize = value;
+  else if (key == QStringLiteral("packet.blockStrokeColor")) packet.blockStrokeColor = value;
+  else if (key == QStringLiteral("packet.blockStrokeWidth")) packet.blockStrokeWidth = value;
+  else if (key == QStringLiteral("packet.blockFillColor")) packet.blockFillColor = value;
 }
 
 }  // namespace muffin::mermaid::flowtheme

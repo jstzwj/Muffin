@@ -12,7 +12,7 @@
 | **几何/布局** | 节点、边、簇的坐标与 dagre/ELK 输出一致 | dagre-snapshots JSON oracle |
 | **结构/语义** | SVG 的元素树、class、可访问性属性对齐 | 语义 SVG diff（结构 + 容差） |
 | **视觉** | 像素级在容差内一致 | golden pixel 对比 |
-| **配置** | 每个 config key 的效果与上游一致 | config-effect-matrix（226 行，逐 key 标 parity/partial/deferred） |
+| **配置** | 每个 config key 的效果与上游一致 | config-effect-matrix（234 行，逐 key 标 parity/partial/deferred） |
 
 **不追求「字节同」的 SVG**：Muffin 的 SVG 由 `QSvgGenerator`（经 painter）产出，再由 `MermaidSvgExporter` 归一化成 mermaid 形态。字节级与 mermaid 手写 SVG 不同是必然的；parity 以**视觉 + 结构 + 几何**为准。
 
@@ -149,9 +149,9 @@ oracle 的坐标容差，不是随机性掩码。ER 已加入字节级 SVG 双�
 
 **2026-08-10 现状**：十二个生产图族均通过单一 scene 指针和 `Diagram` registry
 进入族无关的 editor/PNG/SVG/canvas/interaction 路径；十二个 adapter 分离在各自
-TU。新增的 Pie、Quadrant、Journey、Radar、XYChart 和 Timeline 均有真实 Mermaid 11.16.0 语法、几何和像素
-oracle。完整 Release 门禁为 211/211。配置矩阵现为 226 行（116 parity /
-8 partial / 7 unsupported / 67 upstream-inert / 5 deferred /
+TU。新增的 Pie、Quadrant、Journey、Radar、XYChart、Timeline 和 Packet 均有真实 Mermaid 11.16.0 语法、几何和像素
+oracle。完整 Release 门禁为 215/215。配置矩阵现为 234 行（123 parity /
+8 partial / 7 unsupported / 68 upstream-inert / 5 deferred /
 19 legacy-only / 3 api-only / 1 security-fixed）。Requirement 的全局
 `htmlLabels:false` 保持 partial；外部 `mermaid.initialize()` 配置不属于当前
 Markdown source API。

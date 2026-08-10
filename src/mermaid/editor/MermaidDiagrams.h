@@ -23,6 +23,7 @@ const Diagram& journeyDiagramAdapter();
 const Diagram& radarDiagramAdapter();
 const Diagram& xyChartDiagramAdapter();
 const Diagram& timelineDiagramAdapter();
+const Diagram& packetDiagramAdapter();
 
 // Returns the Diagram that handles the detected type id, or nullptr if the
 // type is not natively rendered. The registry is the single source of truth

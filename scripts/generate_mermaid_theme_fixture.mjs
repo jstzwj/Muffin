@@ -83,6 +83,15 @@ try {
         for (const [key, value] of Object.entries(tv)) {
           if (typeof value === "string" || typeof value === "number") flat[key] = value;
         }
+        // Packet is the reviewed nested exception. Only Dark and Forest
+        // construct this object without a user override.
+        if (tv.packet && typeof tv.packet === "object" && !Array.isArray(tv.packet)) {
+          flat.packet = Object.fromEntries(
+            Object.entries(tv.packet).filter(
+              ([, value]) => typeof value === "string" || typeof value === "number",
+            ),
+          );
+        }
         return flat;
       };
       const themeEntries = themes.map((theme) => ({ name: theme, variables: dump(theme) }));

@@ -3,6 +3,7 @@
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/timeline/TimelineScene.h"
+#include "mermaid/packet/PacketScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 
 #include <QByteArray>
@@ -147,8 +148,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 226,
-          QStringLiteral("Expected 226 classified config rows, found %1")
+  require(entries.size() == 234,
+          QStringLiteral("Expected 234 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -205,6 +206,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("flowchart"), 14},
                                              {QStringLiteral("journey"), 26},
                                              {QStringLiteral("pie"), 6},
+                                             {QStringLiteral("packet"), 8},
                                              {QStringLiteral("quadrantChart"), 20},
                                              {QStringLiteral("radar"), 11},
                                              {QStringLiteral("requirement"), 11},
@@ -218,10 +220,19 @@ int main(int argc, char** argv) {
   const QSet<QString> scopedFamilies = stringSet(
       fixture.value(QStringLiteral("scope")).toObject()
           .value(QStringLiteral("families")).toArray());
-  require(stringSet(byPath.value(QStringLiteral("maxTextSize"))
-                        .value(QStringLiteral("families")).toArray()) ==
-              scopedFamilies,
-          QStringLiteral("Global maxTextSize scope must cover every native family"));
+  for (const QString& path : {
+           QStringLiteral("theme"), QStringLiteral("themeVariables.*"),
+           QStringLiteral("fontFamily"), QStringLiteral("maxTextSize"),
+           QStringLiteral("securityLevel"),
+           QStringLiteral("deterministicIds"),
+           QStringLiteral("deterministicIDSeed"),
+           QStringLiteral("themeCSS")}) {
+    require(stringSet(byPath.value(path)
+                          .value(QStringLiteral("families")).toArray()) ==
+                scopedFamilies,
+            QStringLiteral("Global %1 scope must cover every native family")
+                .arg(path));
+  }
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -264,7 +275,16 @@ int main(int argc, char** argv) {
                   QLatin1String("parity") &&
               byPath.value(QStringLiteral("timeline.taskFontSize"))
                       .value(QStringLiteral("status")).toString() ==
-                  QLatin1String("upstream-inert"),
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("packet.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("packet.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("packet.showBits"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity"),
           QStringLiteral("Critical config status rows drifted"));
   for (const QString& path : {
            QStringLiteral("deterministicIds"),
@@ -274,7 +294,8 @@ int main(int argc, char** argv) {
            QStringLiteral("quadrantChart.useMaxWidth"),
            QStringLiteral("sequence.useMaxWidth"),
            QStringLiteral("state.useMaxWidth"),
-           QStringLiteral("timeline.useMaxWidth")}) {
+           QStringLiteral("timeline.useMaxWidth"),
+           QStringLiteral("packet.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())
@@ -633,6 +654,31 @@ int main(int argc, char** argv) {
               timelineFontScene &&
               timelineFontScene->style.fontFamily == QLatin1String("Courier New"),
           QStringLiteral("Timeline nested theme fontFamily precedence drifted"));
+
+  // Packet keeps config scalars raw because the renderer performs JavaScript
+  // arithmetic on them. This production-path case pins all seven live fields;
+  // useWidth remains classified as upstream-inert in the matrix above.
+  const QString packetSource = QStringLiteral(
+      "%%{init: {\"packet\": {\"useMaxWidth\": false, "
+      "\"rowHeight\": 50, \"bitWidth\": 10, \"bitsPerRow\": 8, "
+      "\"showBits\": false, \"paddingX\": 2, \"paddingY\": 3}}}%%\n"
+      "packet-beta\ntitle Header\n0-3: \"Type\"\n4-7: \"Code\"");
+  const MermaidRenderEntry packetEntry = render(packetSource);
+  const auto* packetScene =
+      dynamic_cast<const muffin::mermaid::packet::PacketScene*>(
+          packetEntry.scene.get());
+  require(packetEntry.status == MermaidRenderStatus::Ready && packetScene &&
+              !packetEntry.metadata.svgUseMaxWidth &&
+              !packetScene->showBits && packetScene->svgWidth == 82.0 &&
+              packetScene->config.rowHeight.toDouble() == 50.0 &&
+              packetScene->config.bitWidth.toDouble() == 10.0 &&
+              packetScene->config.bitsPerRow.toDouble() == 8.0 &&
+              packetScene->config.paddingX.toDouble() == 2.0 &&
+              packetScene->config.paddingY.toDouble() == 3.0,
+          QStringLiteral("Packet live config did not reach the scene"));
+  require(pngImage(packetSource) != pngImage(QStringLiteral(
+              "packet-beta\ntitle Header\n0-3: \"Type\"\n4-7: \"Code\"")),
+          QStringLiteral("Packet live config did not affect PNG output"));
 
   // Unsupported engines must not silently produce a Dagre scene.
   for (const QString& source : {
