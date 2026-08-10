@@ -31,18 +31,19 @@
       "kanban",
       "mindmap",
       "treeView",
+      "eventmodeling",
       "gantt",
       "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 155,
+    "parity": 157,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 74,
+    "upstream-inert": 76,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -67,7 +68,8 @@
         "mindmap",
         "gantt",
         "info",
-        "treeView"
+        "treeView",
+        "eventmodeling"
       ],
       "status": "parity",
       "upstream": [
@@ -107,7 +109,8 @@
         "mindmap",
         "gantt",
         "info",
-        "treeView"
+        "treeView",
+        "eventmodeling"
       ],
       "status": "partial",
       "upstream": [
@@ -148,7 +151,8 @@
         "mindmap",
         "gantt",
         "info",
-        "treeView"
+        "treeView",
+        "eventmodeling"
       ],
       "status": "parity",
       "upstream": [
@@ -358,7 +362,8 @@
         "mindmap",
         "gantt",
         "info",
-        "treeView"
+        "treeView",
+        "eventmodeling"
       ],
       "status": "unsupported",
       "upstream": [
@@ -389,7 +394,8 @@
         "mindmap",
         "gantt",
         "info",
-        "treeView"
+        "treeView",
+        "eventmodeling"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -442,7 +448,8 @@
         "mindmap",
         "gantt",
         "info",
-        "treeView"
+        "treeView",
+        "eventmodeling"
       ],
       "status": "parity",
       "upstream": [
@@ -474,7 +481,8 @@
         "mindmap",
         "gantt",
         "info",
-        "treeView"
+        "treeView",
+        "eventmodeling"
       ],
       "status": "parity",
       "upstream": [
@@ -506,7 +514,8 @@
         "mindmap",
         "gantt",
         "info",
-        "treeView"
+        "treeView",
+        "eventmodeling"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5366,6 +5375,79 @@
       "default": {}
     },
     {
+      "family": "eventmodeling",
+      "interface": "EventModelingDiagramConfig",
+      "path": "eventmodeling.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "eventmodeling",
+      "interface": "EventModelingDiagramConfig",
+      "path": "eventmodeling.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "eventmodeling",
+      "interface": "EventModelingDiagramConfig",
+      "path": "eventmodeling.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 30
+    },
+    {
+      "family": "eventmodeling",
+      "interface": "EventModelingDiagramConfig",
+      "path": "eventmodeling.rowHeight",
+      "field": "rowHeight",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Event Modeling 11.16.0 declares rowHeight but uses fixed swimlane and box geometry.",
+      "default": 32
+    },
+    {
       "family": "gantt",
       "interface": "GanttDiagramConfig",
       "path": "gantt.useWidth",
@@ -5747,5 +5829,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "bd97b2bacbcf4ea94bde39ec0d2fbc47fc720d5f6ea31d27b3167f41a17ea0e6"
+  "fixtureSha256": "978a16a1b6e03a9c24a262fcfc2100b0988db3ebea4e82ca6304f49ac76499b1"
 }

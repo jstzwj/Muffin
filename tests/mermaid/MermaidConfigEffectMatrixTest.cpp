@@ -1,5 +1,6 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/erdiagram/ErScene.h"
+#include "mermaid/eventmodeling/EventModelingScene.h"
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
@@ -154,8 +155,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 272,
-          QStringLiteral("Expected 272 classified config rows, found %1")
+  require(entries.size() == 276,
+          QStringLiteral("Expected 276 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -209,6 +210,7 @@ int main(int argc, char** argv) {
   }
   require(familyCounts == QMap<QString, int>{{QStringLiteral("class"), 14},
                                              {QStringLiteral("er"), 13},
+                                             {QStringLiteral("eventmodeling"), 4},
                                              {QStringLiteral("flowchart"), 14},
                                              {QStringLiteral("gantt"), 17},
                                              {QStringLiteral("journey"), 26},
@@ -255,6 +257,20 @@ int main(int argc, char** argv) {
               infoScene->style.textColor == QLatin1String("#ff0000") &&
               !infoEntry.metadata.svgEmitViewBox,
           QStringLiteral("Info shared font/theme/SVG config did not reach the scene"));
+  const MermaidRenderEntry eventEntry = render(QStringLiteral(
+      "%%{init: {\"eventmodeling\": {\"padding\": 80, "
+      "\"useMaxWidth\": false, \"rowHeight\": 96}, "
+      "\"themeVariables\": {\"emEventFill\": \"#123456\"}}}%%\n"
+      "eventmodeling\ntf 1 evt Created"));
+  const auto* eventScene =
+      dynamic_cast<const muffin::mermaid::eventmodeling::EventModelingScene*>(
+          eventEntry.scene.get());
+  require(eventEntry.status == MermaidRenderStatus::Ready && eventScene &&
+              eventScene->padding == 80.0 && !eventScene->useMaxWidth &&
+              !eventEntry.metadata.svgUseMaxWidth &&
+              eventScene->boxes.size() == 1 &&
+              eventScene->boxes.first().fill == QLatin1String("#123456"),
+          QStringLiteral("Event Modeling live config/theme did not reach the scene"));
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -343,6 +359,18 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("treeView.showIcons"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity") &&
+              byPath.value(QStringLiteral("eventmodeling.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("eventmodeling.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("eventmodeling.padding"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("eventmodeling.rowHeight"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -368,7 +396,8 @@ int main(int argc, char** argv) {
            QStringLiteral("timeline.useMaxWidth"),
            QStringLiteral("packet.useMaxWidth"),
            QStringLiteral("mindmap.useMaxWidth"),
-           QStringLiteral("treeView.useMaxWidth")}) {
+           QStringLiteral("treeView.useMaxWidth"),
+           QStringLiteral("eventmodeling.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())

@@ -2,6 +2,7 @@
 
 #include <QFont>
 #include <QFontDatabase>
+#include <QFileInfo>
 #include <QSet>
 
 static void initMermaidFontsResource() {
@@ -39,6 +40,24 @@ void MermaidFontRegistry::ensureLoaded() {
         }
       }
     }
+#ifdef Q_OS_WIN
+    // Mermaid's Event Modeling helper measures with the browser's fixed CSS
+    // stack headed by Trebuchet MS. Conan Qt does not discover Windows system
+    // fonts in the offscreen/runtime bundle, while Chromium does. Register the
+    // installed faces so QFont's CSS fallback list resolves the same face. Do
+    // not add them to familyStack(): Noto remains Muffin's deterministic root
+    // font and these faces are selected only when a diagram asks for them.
+    const QString windowsFonts =
+        qEnvironmentVariable("WINDIR", QStringLiteral("C:/Windows")) +
+        QStringLiteral("/Fonts/");
+    const QStringList compatibilityFaces = {
+        QStringLiteral("trebuc.ttf"), QStringLiteral("trebucbd.ttf"),
+        QStringLiteral("trebucit.ttf"), QStringLiteral("trebucbi.ttf")};
+    for (const QString& face : compatibilityFaces) {
+      const QString path = windowsFonts + face;
+      if (QFileInfo::exists(path)) QFontDatabase::addApplicationFont(path);
+    }
+#endif
     return true;
   }();
   (void)loaded;

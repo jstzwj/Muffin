@@ -507,6 +507,14 @@ const familyPolicies = {
     filenameIcons: parity("layout", "paint", "viewport", "export"),
     extensionIcons: parity("layout", "paint", "viewport", "export"),
   },
+  eventmodeling: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    padding: parity("layout", "paint", "viewport", "export"),
+    rowHeight: inert(
+      "Event Modeling 11.16.0 declares rowHeight but uses fixed swimlane and box geometry.",
+    ),
+  },
   gantt: {
     useWidth: parity("layout", "paint", "viewport", "export"),
     useMaxWidth: parity("viewport", "export"),
@@ -594,6 +602,7 @@ const shared = [
       "gantt",
       "info",
       "treeView",
+      "eventmodeling",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -618,6 +627,7 @@ const shared = [
       "gantt",
       "info",
       "treeView",
+      "eventmodeling",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -646,6 +656,7 @@ const shared = [
       "gantt",
       "info",
       "treeView",
+      "eventmodeling",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -712,6 +723,7 @@ const shared = [
       "gantt",
       "info",
       "treeView",
+      "eventmodeling",
     ],
     ...unsupported(
       ["parsed"],
@@ -739,6 +751,7 @@ const shared = [
       "gantt",
       "info",
       "treeView",
+      "eventmodeling",
     ],
     ...policy(
       "security-fixed",
@@ -773,6 +786,7 @@ const shared = [
       "gantt",
       "info",
       "treeView",
+      "eventmodeling",
     ],
     ...parity("export"),
   },
@@ -797,6 +811,7 @@ const shared = [
       "gantt",
       "info",
       "treeView",
+      "eventmodeling",
     ],
     ...parity("export"),
   },
@@ -821,6 +836,7 @@ const shared = [
       "gantt",
       "info",
       "treeView",
+      "eventmodeling",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -876,6 +892,7 @@ const interfaces = {
   kanban: "KanbanDiagramConfig",
   mindmap: "MindmapDiagramConfig",
   treeView: "TreeViewDiagramConfig",
+  eventmodeling: "EventModelingDiagramConfig",
   gantt: "GanttDiagramConfig",
 };
 

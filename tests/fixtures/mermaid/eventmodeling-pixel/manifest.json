@@ -1,0 +1,43 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "eventModelingModuleSha256": "80d536fceb203c1bb77516be6120c3918d70ec89d25ad4496ff54f19301c3c70",
+    "parserSha256": "d0badc6aa49baa2464210edcff0cb778f147639d5f3c5d902d44d442a4c16643",
+    "parserEventModelingSha256": "cdd34483258805545678ec3684db715c9f5d03e3e545dc62a196c7de5f1958d9",
+    "parserSupportSha256": "65e3ff386104b98fa427f9b335d6425ef03a2f669c2a19ff1f2ce6643b745308",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "transparent Event Modeling element screenshots at DPR 1",
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\neventmodeling\nentity UI\nentity Command\nentity Event\nentity Read\ntf 001 ui UI.Start\ntf 002 cmd Command.Submit ->> 001\ntf 003 evt Event.Submitted ->> 002\ntf 004 rmo Read.Order ->> 003\ntf 005 ui UI.History ->> 004",
+      "file": "canonical.png",
+      "width": 829,
+      "height": 750,
+      "sha256": "9dca2c9b1728d19ae07d88bba74d9dd996c45680073b5bdf59f3efa67b0a5c24"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\"}}%%\neventmodeling\nentity UI\nentity Command\nentity Event\nentity Read\ntf 001 ui UI.Start\ntf 002 cmd Command.Submit ->> 001\ntf 003 evt Event.Submitted ->> 002\ntf 004 rmo Read.Order ->> 003\ntf 005 ui UI.History ->> 004",
+      "file": "dark.png",
+      "width": 829,
+      "height": 750,
+      "sha256": "804a24528060d430217f5baa3cefd36ec427da82cab392f7f0b38adc5a16c83b"
+    },
+    {
+      "id": "styled",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"emUiFill\":\"#110000\",\"emUiStroke\":\"#ff1111\",\"emProcessorFill\":\"#001100\",\"emProcessorStroke\":\"#11ff11\",\"emReadModelFill\":\"#000011\",\"emReadModelStroke\":\"#1111ff\",\"emCommandFill\":\"#111100\",\"emCommandStroke\":\"#ffff11\",\"emEventFill\":\"#110011\",\"emEventStroke\":\"#ff11ff\",\"emSwimlaneBackgroundOdd\":\"#001111\",\"emSwimlaneBackgroundStroke\":\"#11ffff\",\"emArrowhead\":\"#123456\",\"emRelationStroke\":\"#654321\"}}}%%\neventmodeling\nentity UI\nentity Command\nentity Event\nentity Read\ntf 001 ui UI.Start\ntf 002 cmd Command.Submit ->> 001\ntf 003 evt Event.Submitted ->> 002\ntf 004 rmo Read.Order ->> 003\ntf 005 ui UI.History ->> 004",
+      "file": "styled.png",
+      "width": 829,
+      "height": 750,
+      "sha256": "65c4c998aa4f6d3948a15004bb09245dda98e81907bb3cfd8c80c0c81dcae9ea"
+    }
+  ],
+  "fixtureSha256": "947dcec3ea6be96097de0d28d3c51919097cef5acf73d95b0a7bd916843cc449"
+}

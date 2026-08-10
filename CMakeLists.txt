@@ -503,6 +503,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/GanttDiagramAdapter.cpp
   src/mermaid/editor/InfoDiagramAdapter.cpp
   src/mermaid/editor/TreeViewDiagramAdapter.cpp
+  src/mermaid/editor/EventModelingDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -658,6 +659,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/treeview/TreeViewScene.h
   src/mermaid/treeview/TreeViewScenePainter.cpp
   src/mermaid/treeview/TreeViewScenePainter.h
+  src/mermaid/eventmodeling/EventModelingDiagram.cpp
+  src/mermaid/eventmodeling/EventModelingDiagram.h
+  src/mermaid/eventmodeling/EventModelingScene.cpp
+  src/mermaid/eventmodeling/EventModelingScene.h
+  src/mermaid/eventmodeling/EventModelingScenePainter.cpp
+  src/mermaid/eventmodeling/EventModelingScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

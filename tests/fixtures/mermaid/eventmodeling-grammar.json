@@ -1,0 +1,1131 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "eventModelingModuleSha256": "80d536fceb203c1bb77516be6120c3918d70ec89d25ad4496ff54f19301c3c70",
+    "parserSha256": "d0badc6aa49baa2464210edcff0cb778f147639d5f3c5d902d44d442a4c16643",
+    "parserEventModelingSha256": "cdd34483258805545678ec3684db715c9f5d03e3e545dc62a196c7de5f1958d9",
+    "parserSupportSha256": "65e3ff386104b98fa427f9b335d6425ef03a2f669c2a19ff1f2ce6643b745308",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry detector, Langium AST, references, validation, metadata, and diagnostics",
+  "cases": [
+    {
+      "id": "empty",
+      "source": "eventmodeling",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "canonical",
+      "source": "eventmodeling\nentity UI\nentity Command\nentity Event\nentity Read\ntf 001 ui UI.Start\ntf 002 cmd Command.Submit ->> 001\ntf 003 evt Event.Submitted ->> 002\ntf 004 rmo Read.Order ->> 003\ntf 005 ui UI.History ->> 004",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [
+          "UI",
+          "Command",
+          "Event",
+          "Read"
+        ],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "001",
+            "modelEntityType": "ui",
+            "entityIdentifier": "UI.Start",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "002",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "Command.Submit",
+            "sourceFrames": [
+              "001"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "003",
+            "modelEntityType": "evt",
+            "entityIdentifier": "Event.Submitted",
+            "sourceFrames": [
+              "002"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "004",
+            "modelEntityType": "rmo",
+            "entityIdentifier": "Read.Order",
+            "sourceFrames": [
+              "003"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "005",
+            "modelEntityType": "ui",
+            "entityIdentifier": "UI.History",
+            "sourceFrames": [
+              "004"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "eventmodeling tf 1 evt Created",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "Created",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "long-keywords",
+      "source": "eventmodeling\nentity App\ntimeframe 1 processor App.Handler\nresetframe 2 readmodel App.View",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [
+          "App"
+        ],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "processor",
+            "entityIdentifier": "App.Handler",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmResetFrame",
+            "name": "2",
+            "modelEntityType": "readmodel",
+            "entityIdentifier": "App.View",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "all-entity-types",
+      "source": "eventmodeling\ntf 1 ui A\ntf 2 pcr B\ntf 3 processor C\ntf 4 cmd D\ntf 5 command E\ntf 6 evt F\ntf 7 event G\ntf 8 rmo H\ntf 9 readmodel I",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "ui",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "2",
+            "modelEntityType": "pcr",
+            "entityIdentifier": "B",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "3",
+            "modelEntityType": "processor",
+            "entityIdentifier": "C",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "4",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "D",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "5",
+            "modelEntityType": "command",
+            "entityIdentifier": "E",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "6",
+            "modelEntityType": "evt",
+            "entityIdentifier": "F",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "7",
+            "modelEntityType": "event",
+            "entityIdentifier": "G",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "8",
+            "modelEntityType": "rmo",
+            "entityIdentifier": "H",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "9",
+            "modelEntityType": "readmodel",
+            "entityIdentifier": "I",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "qualified-many",
+      "source": "eventmodeling\ntf 001 evt one.two.three",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "001",
+            "modelEntityType": "evt",
+            "entityIdentifier": "one.two.three",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "frame-leading-zero",
+      "source": "eventmodeling\ntf 000 evt Zero\ntf 999 evt Max",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "000",
+            "modelEntityType": "evt",
+            "entityIdentifier": "Zero",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "999",
+            "modelEntityType": "evt",
+            "entityIdentifier": "Max",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "explicit-multiple-sources",
+      "source": "eventmodeling\ntf 1 ui A\ntf 2 pcr B\ntf 3 cmd C ->> 1 ->> 2",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "ui",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "2",
+            "modelEntityType": "pcr",
+            "entityIdentifier": "B",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "3",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "C",
+            "sourceFrames": [
+              "1",
+              "2"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "reset-frame",
+      "source": "eventmodeling\ntf 1 ui A\ntf 2 cmd B ->> 1\nrf 3 evt C ->> 2\ntf 4 rmo D ->> 3",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "ui",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "2",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "B",
+            "sourceFrames": [
+              "1"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmResetFrame",
+            "name": "3",
+            "modelEntityType": "evt",
+            "entityIdentifier": "C",
+            "sourceFrames": [
+              "2"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "4",
+            "modelEntityType": "rmo",
+            "entityIdentifier": "D",
+            "sourceFrames": [
+              "3"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "inline-data-json",
+      "source": "eventmodeling\ntf 1 evt Created `json` {\"id\": 1}",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "Created",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": "json",
+            "dataInlineValue": "{\"id\": 1}"
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "inline-data-string",
+      "source": "eventmodeling\ntf 1 evt Created 'hello world'",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "Created",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": "'hello world'"
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "data-reference",
+      "source": "eventmodeling\ndata payload `json` {\n  \"id\": 1\n}\ntf 1 evt Created [[payload]]",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "Created",
+            "sourceFrames": [],
+            "dataReference": "payload",
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [
+          {
+            "name": "payload",
+            "dataType": "json",
+            "dataBlockValue": "{\n  \"id\": 1\n}\n"
+          }
+        ],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "data-types",
+      "source": "eventmodeling\ndata a `jsobj` {\n x: 1\n}\ndata b `figma` {\n x\n}\ndata c `salt` {\n x\n}\ndata d `uri` {\n x\n}\ndata e `md` {\n x\n}\ndata f `html` {\n x\n}\ndata g `text` {\n x\n}",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [],
+        "dataEntities": [
+          {
+            "name": "a",
+            "dataType": "jsobj",
+            "dataBlockValue": "{\n x: 1\n}\n"
+          },
+          {
+            "name": "b",
+            "dataType": "figma",
+            "dataBlockValue": "{\n x\n}\n"
+          },
+          {
+            "name": "c",
+            "dataType": "salt",
+            "dataBlockValue": "{\n x\n}\n"
+          },
+          {
+            "name": "d",
+            "dataType": "uri",
+            "dataBlockValue": "{\n x\n}\n"
+          },
+          {
+            "name": "e",
+            "dataType": "md",
+            "dataBlockValue": "{\n x\n}\n"
+          },
+          {
+            "name": "f",
+            "dataType": "html",
+            "dataBlockValue": "{\n x\n}\n"
+          },
+          {
+            "name": "g",
+            "dataType": "text",
+            "dataBlockValue": "{\n x\n}"
+          }
+        ],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "note-and-gwt",
+      "source": "eventmodeling\nentity A\nentity B\ntf 1 ui A\ntf 2 cmd B ->> 1\nnote 2 {\n note text\n}\ngwt 2 given ui A when cmd B then ui A",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [
+          "A",
+          "B"
+        ],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "ui",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "2",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "B",
+            "sourceFrames": [
+              "1"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [
+          {
+            "sourceFrame": "2",
+            "dataType": null,
+            "dataBlockValue": "{\n note text\n}\n"
+          }
+        ],
+        "gwt": [
+          {
+            "sourceFrame": "2",
+            "given": [
+              "A"
+            ],
+            "when": [
+              "B"
+            ],
+            "then": [
+              "A"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "eventmodeling\ntitle Inline title\naccTitle: Accessible\naccDescr: Description\ntf 1 evt Created",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 3, column 9: unexpected character: ->:<- at offset: 41, skipped 1 characters. Lexer error on line 4, column 9: unexpected character: ->:<- at offset: 62, skipped 1 characters. Parse error on line 2, column 1: Expecting token of type 'EOF' but found `title`. Parse error on line 3, column 1: Expecting token of type 'EOF' but found `accTitle`.",
+        "line": 3,
+        "column": 9
+      }
+    },
+    {
+      "id": "metadata-block",
+      "source": "eventmodeling\naccDescr { First line\n  Second line }\ntf 1 evt Created",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 10: unexpected character: ->{<- at offset: 23, skipped 1 characters. Lexer error on line 3, column 15: unexpected character: ->}<- at offset: 50, skipped 1 characters. Parse error on line 2, column 1: Expecting token of type 'EOF' but found `accDescr`.",
+        "line": 2,
+        "column": 10
+      }
+    },
+    {
+      "id": "comments",
+      "source": "%% pre\neventmodeling\n// slash\n/* block */\n%% percent\ntf 1 evt A",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\n---\neventmodeling\ntf 1 evt A",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"theme\":\"dark\"}}%%\neventmodeling\ntf 1 evt A",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "uppercase-keywords",
+      "source": "eventmodeling\nTF 1 EVT A",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 1: Expecting token of type 'EOF' but found `TF`.",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "duplicate-frame-id",
+      "source": "eventmodeling\ntf 1 ui A\ntf 1 cmd B",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "ui",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "B",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "duplicate-entity",
+      "source": "eventmodeling\nentity A\nentity A\ntf 1 evt A",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [
+          "A",
+          "A"
+        ],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "unresolved-data",
+      "source": "eventmodeling\ntf 1 evt A [[missing]]",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": "missing",
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "unresolved-source",
+      "source": "eventmodeling\ntf 1 cmd A ->> 9",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "A",
+            "sourceFrames": [
+              "9"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "reject-uppercase-detector",
+      "source": "EVENTMODELING\ntf 1 evt A",
+      "accept": false,
+      "reject": {
+        "kind": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: EVENTMODELING tf 1 evt A",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-prefix",
+      "source": "eventmodelingX\ntf 1 evt A",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 1, column 1: Expecting token of type 'eventmodeling' but found `eventmodelingX`.",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-frame-four-digits",
+      "source": "eventmodeling\ntf 1000 evt A",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 7: Expecting: one of these possible Token sequences: 1. [rmo] 2. [readmodel] 3. [ui] 4. [cmd] 5. [command] 6. [evt] 7. [event] 8. [pcr] 9. [processor] but found: '0'",
+        "line": 2,
+        "column": 7
+      }
+    },
+    {
+      "id": "reject-frame-alpha",
+      "source": "eventmodeling\ntf one evt A",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 4: Expecting token of type 'EM_FID' but found `one`.",
+        "line": 2,
+        "column": 4
+      }
+    },
+    {
+      "id": "reject-missing-entity",
+      "source": "eventmodeling\ntf 1 evt",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line ?, column ?: Expecting token of type 'EM_ID' but found ``.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-inline-bare",
+      "source": "eventmodeling\ntf 1 evt A bare",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 12: Expecting end of file but found `bare`.",
+        "line": 2,
+        "column": 12
+      }
+    },
+    {
+      "id": "reject-data-single-line",
+      "source": "eventmodeling\ndata x { a: 1 }",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 8: Expecting token of type 'EM_DATA_BLOCK' but found `{ a: 1 }`.",
+        "line": 2,
+        "column": 8
+      }
+    },
+    {
+      "id": "reject-unclosed-data",
+      "source": "eventmodeling\ndata x {\n a: 1",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 8: unexpected character: ->{<- at offset: 21, skipped 1 characters. Lexer error on line 3, column 3: unexpected character: ->:<- at offset: 25, skipped 1 characters. Parse error on line 3, column 2: Expecting token of type 'EM_DATA_BLOCK' but found `a`.",
+        "line": 2,
+        "column": 8
+      }
+    },
+    {
+      "id": "reject-bad-type",
+      "source": "eventmodeling\ntf 1 unknown A",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 2, column 6: Expecting: one of these possible Token sequences: 1. [rmo] 2. [readmodel] 3. [ui] 4. [cmd] 5. [command] 6. [evt] 7. [event] 8. [pcr] 9. [processor] but found: 'unknown' Parse error on line 2, column 14: Expecting end of file but found `A`.",
+        "line": 2,
+        "column": 6
+      }
+    },
+    {
+      "id": "reject-validator-command-source",
+      "source": "eventmodeling\ntf 1 evt A\ntf 2 cmd B ->> 1",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "2",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "B",
+            "sourceFrames": [
+              "1"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "reject-validator-event-source",
+      "source": "eventmodeling\ntf 1 ui A\ntf 2 evt B ->> 1",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "ui",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "2",
+            "modelEntityType": "evt",
+            "entityIdentifier": "B",
+            "sourceFrames": [
+              "1"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "reject-validator-readmodel-source",
+      "source": "eventmodeling\ntf 1 cmd A\ntf 2 rmo B ->> 1",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "cmd",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          },
+          {
+            "kind": "EmTimeFrame",
+            "name": "2",
+            "modelEntityType": "rmo",
+            "entityIdentifier": "B",
+            "sourceFrames": [
+              "1"
+            ],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": []
+      }
+    },
+    {
+      "id": "reject-gwt-unknown",
+      "source": "eventmodeling\ntf 1 evt A\ngwt 1 given ui Missing then ui Missing",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "modelEntities": [],
+        "frames": [
+          {
+            "kind": "EmTimeFrame",
+            "name": "1",
+            "modelEntityType": "evt",
+            "entityIdentifier": "A",
+            "sourceFrames": [],
+            "dataReference": null,
+            "dataType": null,
+            "dataInlineValue": null
+          }
+        ],
+        "dataEntities": [],
+        "notes": [],
+        "gwt": [
+          {
+            "sourceFrame": "1",
+            "given": [
+              "Missing"
+            ],
+            "when": [],
+            "then": [
+              "Missing"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "fixtureSha256": "1d4fba6b8d5feff98a41b328fb03bdb91bdd998ff0dcf718c05e11863ccf55c5"
+}

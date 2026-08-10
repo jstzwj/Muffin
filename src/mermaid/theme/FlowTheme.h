@@ -149,6 +149,24 @@ struct FlowThemeVariables {
   QString dropShadow;
   int themeColorLimit = 12;
 
+  // Event Modeling uses fourteen top-level theme variables. All themes except
+  // the standalone dark theme inherit the light literals; dark derives its
+  // four colored boxes and swimlanes from its own background palette.
+  QString emUiFill;
+  QString emUiStroke;
+  QString emProcessorFill;
+  QString emProcessorStroke;
+  QString emReadModelFill;
+  QString emReadModelStroke;
+  QString emCommandFill;
+  QString emCommandStroke;
+  QString emEventFill;
+  QString emEventStroke;
+  QString emSwimlaneBackgroundOdd;
+  QString emSwimlaneBackgroundStroke;
+  QString emArrowhead;
+  QString emRelationStroke;
+
   // cScale palette: 13 slots = upstream cScale0..cScale12. dark defines
   // cScale12 = "#010029" unconditionally (so TCL=13 yields pie12 = cScale12);
   // every other theme leaves cScale12 empty. pie stays a 12-slot array

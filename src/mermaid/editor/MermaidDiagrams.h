@@ -29,6 +29,7 @@ const Diagram& mindmapDiagramAdapter();
 const Diagram& ganttDiagramAdapter();
 const Diagram& infoDiagramAdapter();
 const Diagram& treeViewDiagramAdapter();
+const Diagram& eventModelingDiagramAdapter();
 
 // Returns the Diagram that handles the detected type id, or nullptr if the
 // type is not natively rendered. The registry is the single source of truth

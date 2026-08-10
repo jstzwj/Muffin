@@ -133,6 +133,10 @@ int main(int argc, char** argv) {
        QStringLiteral("info showInfo"), false},
       {QStringLiteral("treeView"), QStringLiteral("treeView"),
        QStringLiteral("treeView-beta\nproject/\n  src/\n    main.cpp\n  README.md")},
+      {QStringLiteral("eventmodeling"), QStringLiteral("eventmodeling"),
+       QStringLiteral("eventmodeling\ntf 1 ui Start\n"
+                      "tf 2 cmd Submit ->> 1\n"
+                      "tf 3 evt Submitted ->> 2")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -237,6 +241,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"treeView\": {\"useMaxWidth\": false}}}%%\n"
           "treeView-beta\nproject/\n  child"),
+      QStringLiteral(
+          "%%{init: {\"eventmodeling\": {\"useMaxWidth\": false}}}%%\n"
+          "eventmodeling\ntf 1 evt Created"),
       QStringLiteral(
           "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
           "\"useWidth\": 640}}}%%\n"
@@ -399,6 +406,14 @@ int main(int argc, char** argv) {
               !infoNoTitle.contains("aria-describedby=") &&
               !infoNoTitle.contains("viewBox="),
           QStringLiteral("Info metadata/viewBox must remain renderer-inert"));
+
+  const QByteArray eventNoTitle = renderSvg(QStringLiteral(
+      "---\ntitle: Event frontmatter\n---\n"
+      "eventmodeling\ntf 1 evt Created")).svg;
+  require(!eventNoTitle.contains("Event frontmatter") &&
+              !eventNoTitle.contains("aria-labelledby=") &&
+              !eventNoTitle.contains("aria-describedby="),
+          QStringLiteral("Event Modeling frontmatter title must remain invisible"));
 
   const QByteArray mindmapSafeLink = renderSvg(QStringLiteral(
       "mindmap\n  root((Root))\n"

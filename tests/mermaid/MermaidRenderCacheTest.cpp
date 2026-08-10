@@ -4,6 +4,7 @@
 
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/erdiagram/ErScene.h"
+#include "mermaid/eventmodeling/EventModelingScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/kanban/KanbanScene.h"
@@ -851,6 +852,27 @@ int main(int argc, char** argv) {
             QStringLiteral("TreeView scene/title/accessibility contract drifted"));
   }
 
+  // Event Modeling has no common metadata grammar. Frontmatter and
+  // metadata-looking statements never create a title strip or SVG ARIA nodes.
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "---\ntitle: Invisible event title\n---\n"
+        "eventmodeling\ntf 1 evt Created");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::eventmodeling::EventModelingScene>(entry.scene);
+    require(entry.status == kReady && scene && scene->boxes.size() == 1 &&
+                entry.naturalSize.width() > 0 &&
+                entry.naturalSize.height() > 0 &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle.isEmpty() &&
+                entry.metadata.accessibleDescription.isEmpty() &&
+                !entry.metadata.svgEmitAccessibleTitle,
+            QStringLiteral("Event Modeling scene/metadata contract drifted"));
+  }
+
   // TreeView parser offsets are measured after preprocessing. Preserve the
   // exact typed lexer failure while restoring the source location around
   // removed frontmatter, directives, and comments.
@@ -905,6 +927,9 @@ int main(int argc, char** argv) {
          QStringLiteral("info"), QStringLiteral("info-lexer-error"), 2},
         {QStringLiteral("treeView-beta\n\"root"),
          QStringLiteral("treeView"), QStringLiteral("treeview-lexer-error"), 2},
+        {QStringLiteral("eventmodeling\ntf 1000 evt A"),
+         QStringLiteral("eventmodeling"),
+         QStringLiteral("eventmodeling-parse-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -951,6 +976,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("info")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("treeView-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("eventmodeling")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1555,6 +1582,10 @@ int main(int argc, char** argv) {
         {QStringLiteral("info"), QStringLiteral("info showInfo")},
         {QStringLiteral("treeView"),
          QStringLiteral("treeView-beta\nproject/\n  src/\n    main.cpp\n  README.md")},
+        {QStringLiteral("eventmodeling"),
+         QStringLiteral("eventmodeling\ntf 1 ui Start\n"
+                        "tf 2 cmd Submit ->> 1\n"
+                        "tf 3 evt Submitted ->> 2")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

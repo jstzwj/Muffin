@@ -898,6 +898,44 @@ void populatePacket(FlowThemeId id, FlowThemeVariables& t) {
   t.packet.blockFillColor = id == FlowThemeId::Dark ? t.background : t.mainBkg;
 }
 
+void populateEventModeling(FlowThemeId id, FlowThemeVariables& t) {
+  if (id == FlowThemeId::Dark) {
+    assignIfEmpty(t.emUiFill, QStringLiteral("#2d2d2d"));
+    assignIfEmpty(t.emUiStroke, QStringLiteral("#555"));
+    assignIfEmpty(t.emProcessorFill,
+                  lighten(QStringLiteral("#5a3d5c"), 10));
+    assignIfEmpty(t.emProcessorStroke, QStringLiteral("#8a6d8c"));
+    assignIfEmpty(t.emReadModelFill,
+                  lighten(QStringLiteral("#3d5a2d"), 10));
+    assignIfEmpty(t.emReadModelStroke, QStringLiteral("#6d8c5c"));
+    assignIfEmpty(t.emCommandFill,
+                  lighten(QStringLiteral("#2d3d5a"), 10));
+    assignIfEmpty(t.emCommandStroke, QStringLiteral("#5c6d8c"));
+    assignIfEmpty(t.emEventFill,
+                  lighten(QStringLiteral("#5a452d"), 10));
+    assignIfEmpty(t.emEventStroke, QStringLiteral("#8c755c"));
+    assignIfEmpty(t.emSwimlaneBackgroundOdd, lighten(t.background, 5));
+    assignIfEmpty(t.emSwimlaneBackgroundStroke, lighten(t.background, 12));
+  } else {
+    assignIfEmpty(t.emUiFill, QStringLiteral("white"));
+    assignIfEmpty(t.emUiStroke, QStringLiteral("#dbdada"));
+    assignIfEmpty(t.emProcessorFill, QStringLiteral("#edb3f6"));
+    assignIfEmpty(t.emProcessorStroke, QStringLiteral("#b88cbf"));
+    assignIfEmpty(t.emReadModelFill, QStringLiteral("#d3f1a2"));
+    assignIfEmpty(t.emReadModelStroke, QStringLiteral("#a3b732"));
+    assignIfEmpty(t.emCommandFill, QStringLiteral("#bcd6fe"));
+    assignIfEmpty(t.emCommandStroke, QStringLiteral("#679ac3"));
+    assignIfEmpty(t.emEventFill, QStringLiteral("#ffb778"));
+    assignIfEmpty(t.emEventStroke, QStringLiteral("#c19a0f"));
+    assignIfEmpty(t.emSwimlaneBackgroundOdd,
+                  QStringLiteral("rgb(250,250,250)"));
+    assignIfEmpty(t.emSwimlaneBackgroundStroke,
+                  QStringLiteral("rgb(240,240,240)"));
+  }
+  assignIfEmpty(t.emArrowhead, t.lineColor);
+  assignIfEmpty(t.emRelationStroke, t.lineColor);
+}
+
 void populateGantt(FlowThemeId id, FlowThemeVariables& t) {
   // Most themes share Mermaid's base `x = x || derived` block. The four
   // standalone themes below replace a subset with literal palettes in their
@@ -1045,6 +1083,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   }
   populateMindmapRoot(id, t);
   populatePacket(id, t);
+  populateEventModeling(id, t);
   populateGantt(id, t);
   populateXYChart(id, t);
 }
@@ -1131,6 +1170,20 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("fontFamily")) return fontFamily;
   if (key == QStringLiteral("fontSize")) return fontSize;
   if (key == QStringLiteral("fontWeight")) return fontWeight;
+  if (key == QStringLiteral("emUiFill")) return emUiFill;
+  if (key == QStringLiteral("emUiStroke")) return emUiStroke;
+  if (key == QStringLiteral("emProcessorFill")) return emProcessorFill;
+  if (key == QStringLiteral("emProcessorStroke")) return emProcessorStroke;
+  if (key == QStringLiteral("emReadModelFill")) return emReadModelFill;
+  if (key == QStringLiteral("emReadModelStroke")) return emReadModelStroke;
+  if (key == QStringLiteral("emCommandFill")) return emCommandFill;
+  if (key == QStringLiteral("emCommandStroke")) return emCommandStroke;
+  if (key == QStringLiteral("emEventFill")) return emEventFill;
+  if (key == QStringLiteral("emEventStroke")) return emEventStroke;
+  if (key == QStringLiteral("emSwimlaneBackgroundOdd")) return emSwimlaneBackgroundOdd;
+  if (key == QStringLiteral("emSwimlaneBackgroundStroke")) return emSwimlaneBackgroundStroke;
+  if (key == QStringLiteral("emArrowhead")) return emArrowhead;
+  if (key == QStringLiteral("emRelationStroke")) return emRelationStroke;
   if (key == QStringLiteral("labelBackground")) return labelBackground;
   if (key == QStringLiteral("textColor")) return textColor;
   if (key == QStringLiteral("titleColor")) return titleColor;
@@ -1244,6 +1297,20 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("fontFamily")) fontFamily = value;
   else if (key == QStringLiteral("fontSize")) fontSize = value;
   else if (key == QStringLiteral("fontWeight")) fontWeight = value;
+  else if (key == QStringLiteral("emUiFill")) emUiFill = value;
+  else if (key == QStringLiteral("emUiStroke")) emUiStroke = value;
+  else if (key == QStringLiteral("emProcessorFill")) emProcessorFill = value;
+  else if (key == QStringLiteral("emProcessorStroke")) emProcessorStroke = value;
+  else if (key == QStringLiteral("emReadModelFill")) emReadModelFill = value;
+  else if (key == QStringLiteral("emReadModelStroke")) emReadModelStroke = value;
+  else if (key == QStringLiteral("emCommandFill")) emCommandFill = value;
+  else if (key == QStringLiteral("emCommandStroke")) emCommandStroke = value;
+  else if (key == QStringLiteral("emEventFill")) emEventFill = value;
+  else if (key == QStringLiteral("emEventStroke")) emEventStroke = value;
+  else if (key == QStringLiteral("emSwimlaneBackgroundOdd")) emSwimlaneBackgroundOdd = value;
+  else if (key == QStringLiteral("emSwimlaneBackgroundStroke")) emSwimlaneBackgroundStroke = value;
+  else if (key == QStringLiteral("emArrowhead")) emArrowhead = value;
+  else if (key == QStringLiteral("emRelationStroke")) emRelationStroke = value;
   else if (key == QStringLiteral("labelBackground")) labelBackground = value;
   else if (key == QStringLiteral("textColor")) textColor = value;
   else if (key == QStringLiteral("titleColor")) titleColor = value;

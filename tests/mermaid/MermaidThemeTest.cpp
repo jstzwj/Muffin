@@ -132,6 +132,60 @@ QStringList packetFields() {
           QStringLiteral("blockFillColor")};
 }
 
+QHash<QString, QString> sourceThemeOverrides(const QString& source);
+
+QStringList eventModelingFields() {
+  return {QStringLiteral("emUiFill"),
+          QStringLiteral("emUiStroke"),
+          QStringLiteral("emProcessorFill"),
+          QStringLiteral("emProcessorStroke"),
+          QStringLiteral("emReadModelFill"),
+          QStringLiteral("emReadModelStroke"),
+          QStringLiteral("emCommandFill"),
+          QStringLiteral("emCommandStroke"),
+          QStringLiteral("emEventFill"),
+          QStringLiteral("emEventStroke"),
+          QStringLiteral("emSwimlaneBackgroundOdd"),
+          QStringLiteral("emSwimlaneBackgroundStroke"),
+          QStringLiteral("emArrowhead"),
+          QStringLiteral("emRelationStroke")};
+}
+
+void checkEventModelingThemeOverrides() {
+  QHash<QString, QString> direct;
+  int index = 1;
+  for (const QString& field : eventModelingFields())
+    direct.insert(field, QStringLiteral("#%1%1%1").arg(index++, 2, 16,
+                                                        QLatin1Char('0')));
+  const FlowThemeVariables directTheme =
+      resolveFlowTheme(FlowThemeId::Default, direct);
+  for (auto it = direct.cbegin(); it != direct.cend(); ++it)
+    require(directTheme.get(it.key()) == it.value(),
+            QStringLiteral("Event Modeling direct override lost %1").arg(it.key()));
+
+  const QString initSource = QStringLiteral(
+      "%%{init: {\"themeVariables\": {\"emUiFill\": \"#123456\", "
+      "\"emRelationStroke\": \"#654321\", "
+      "\"emArrowhead\": \"#abcdef\"}}}%%\n"
+      "eventmodeling\ntf 1 evt Created");
+  const FlowThemeVariables initTheme = resolveFlowTheme(
+      FlowThemeId::Default, sourceThemeOverrides(initSource));
+  require(initTheme.emUiFill == QLatin1String("#123456") &&
+              initTheme.emRelationStroke == QLatin1String("#654321") &&
+              initTheme.emArrowhead == QLatin1String("#abcdef"),
+          QStringLiteral("Event Modeling init theme overrides drifted"));
+
+  const QString frontmatterSource = QStringLiteral(
+      "---\nconfig:\n  themeVariables:\n    emCommandFill: '#102030'\n"
+      "    emCommandStroke: '#405060'\n---\n"
+      "eventmodeling\ntf 1 cmd Submit");
+  const FlowThemeVariables frontmatterTheme = resolveFlowTheme(
+      FlowThemeId::Default, sourceThemeOverrides(frontmatterSource));
+  require(frontmatterTheme.emCommandFill == QLatin1String("#102030") &&
+              frontmatterTheme.emCommandStroke == QLatin1String("#405060"),
+          QStringLiteral("Event Modeling frontmatter theme overrides drifted"));
+}
+
 QStringList ganttFields() {
   return {QStringLiteral("sectionBkgColor"),
           QStringLiteral("altSectionBkgColor"),
@@ -884,6 +938,7 @@ int main(int argc, char** argv) {
   checkScalarDependencyOverrides();
   checkFontWeightOverrides();
   checkPacketThemeOverrides();
+  checkEventModelingThemeOverrides();
 
   QFile xyChartFile(
       QFileInfo(fixturePath).dir().filePath(QStringLiteral("xychart-theme.json")));
