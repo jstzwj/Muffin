@@ -7,6 +7,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/kanban/KanbanScene.h"
+#include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/timeline/TimelineScene.h"
@@ -690,6 +691,90 @@ int main(int argc, char** argv) {
             QStringLiteral("Kanban frontmatter title must remain invisible"));
   }
 
+  // Mindmap keeps lexer/parser/runtime failures typed after preprocessing and
+  // maps known parser locations through removed frontmatter/directives.
+  {
+    struct MindmapDiagnosticCase {
+      QString tail;
+      QString code;
+      QString message;
+      QString actual;
+      int originalLine;
+      int originalColumn;
+    };
+    const QVector<MindmapDiagnosticCase> cases = {
+        {QStringLiteral("mindmapXYZ\n root"),
+         QStringLiteral("mindmap-parse-error"),
+         QStringLiteral("Parse error on line 1: Unexpected NODE_ID"),
+         QStringLiteral("NODE_ID"), 6, 1},
+        {QStringLiteral("mindmap\n root@{ shape: rect }"),
+         QStringLiteral("mindmap-lexer-error"),
+         QStringLiteral("Lexical error on line 2. Unrecognized text."),
+         QString(), 7, 7},
+    };
+    for (const MindmapDiagnosticCase& fixture : cases) {
+      MermaidRenderCache cache;
+      const QString decorated =
+          QStringLiteral("---\ntitle: Ignored Mindmap title\n---\n"
+                         "%%{init: {\"theme\": \"default\"}}%%\n"
+                         "%% generated comment\n") +
+          fixture.tail;
+      const MermaidRenderEntry entry = cache.getSync(
+          MermaidRenderCache::makeKey(decorated), decorated);
+      require(entry.status == kError &&
+                  entry.diagnostic.stage == QLatin1String("parse") &&
+                  entry.diagnostic.code == fixture.code &&
+                  entry.diagnostic.message == fixture.message &&
+                  entry.diagnostic.actual == fixture.actual &&
+                  entry.diagnostic.span.line == fixture.originalLine &&
+                  entry.diagnostic.span.column == fixture.originalColumn,
+              QStringLiteral("Mindmap %1 diagnostic contract drifted")
+                  .arg(fixture.code) +
+                  QStringLiteral(" actual stage=%1 code=%2 message=%3 token=%4 line=%5 column=%6")
+                      .arg(entry.diagnostic.stage, entry.diagnostic.code,
+                           entry.diagnostic.message, entry.diagnostic.actual)
+                      .arg(entry.diagnostic.span.line)
+                      .arg(entry.diagnostic.span.column));
+    }
+
+    const QString runtimeSource = QStringLiteral(
+        "mindmap\n root\n other");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry runtime = cache.getSync(
+        MermaidRenderCache::makeKey(runtimeSource), runtimeSource);
+    require(runtime.status == kError &&
+                runtime.diagnostic.stage == QLatin1String("parse") &&
+                runtime.diagnostic.code ==
+                    QLatin1String("mindmap-runtime-error") &&
+                runtime.diagnostic.message ==
+                    QLatin1String("There can be only one root. No parent could be found for (\"other\")") &&
+                runtime.diagnostic.span.line == 0,
+            QStringLiteral("Mindmap runtime diagnostic contract drifted"));
+  }
+
+  // Mindmap has no commonDb title/accessibility directives; frontmatter title
+  // is ignored just like Kanban and cannot reserve the shared title strip.
+  {
+    MermaidRenderCache cache;
+    const QString body = QStringLiteral(
+        "mindmap\n  root((Root))\n    Child");
+    const QString titled =
+        QStringLiteral("---\ntitle: Invisible mindmap title\n---\n") + body;
+    const MermaidRenderEntry base = cache.getSync(
+        MermaidRenderCache::makeKey(body), body);
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(titled), titled);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::mindmap::MindmapScene>(entry.scene);
+    require(base.status == kReady && entry.status == kReady && scene &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle.isEmpty() &&
+                entry.metadata.accessibleDescription.isEmpty() &&
+                entry.metadata.titleHeight == 0.0 &&
+                entry.naturalSize == base.naturalSize,
+            QStringLiteral("Mindmap frontmatter title must remain invisible"));
+  }
+
   // Every native family is normalised into the same 1-based diagnostic model.
   {
     struct InvalidCase {
@@ -753,6 +838,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("packet-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("kanban")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("mindmap")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1348,6 +1435,8 @@ int main(int argc, char** argv) {
         {QStringLiteral("kanban"),
          QStringLiteral("kanban\n  todo[Todo]\n    task1[Write docs]\n"
                         "  done[Done]\n    task2[Ship]")},
+        {QStringLiteral("mindmap"),
+         QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

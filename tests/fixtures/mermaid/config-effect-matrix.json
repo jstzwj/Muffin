@@ -28,17 +28,18 @@
       "xyChart",
       "timeline",
       "packet",
-      "kanban"
+      "kanban",
+      "mindmap"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 127,
+    "parity": 129,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 71,
+    "upstream-inert": 73,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -59,7 +60,8 @@
         "xyChart",
         "timeline",
         "packet",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "parity",
       "upstream": [
@@ -95,7 +97,8 @@
         "xyChart",
         "timeline",
         "packet",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "partial",
       "upstream": [
@@ -132,7 +135,8 @@
         "xyChart",
         "timeline",
         "packet",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "parity",
       "upstream": [
@@ -157,7 +161,9 @@
       "families": [
         "flowchart",
         "class",
-        "requirement"
+        "requirement",
+        "kanban",
+        "mindmap"
       ],
       "status": "partial",
       "upstream": [
@@ -176,7 +182,7 @@
         "viewport",
         "export"
       ],
-      "note": "Native class labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path)."
+      "note": "Native class, Kanban, and Mindmap labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path)."
     },
     {
       "path": "look",
@@ -185,7 +191,8 @@
         "class",
         "state",
         "timeline",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "partial",
       "upstream": [
@@ -204,13 +211,14 @@
         "interaction",
         "export"
       ],
-      "note": "Flowchart, Timeline, and Kanban are complete; state currently uses look for marker selection and class retains it without rough painting."
+      "note": "Flowchart, Timeline, Kanban, and Mindmap are complete; state currently uses look for marker selection and class retains it without rough painting."
     },
     {
       "path": "handDrawnSeed",
       "families": [
         "flowchart",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "parity",
       "upstream": [
@@ -229,13 +237,15 @@
       ]
     },
     {
-      "path": "mindmap.padding",
+      "path": "markdownAutoWrap",
       "families": [
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "parity",
       "upstream": [
         "parsed",
+        "text",
         "layout",
         "paint",
         "viewport",
@@ -243,37 +253,21 @@
       ],
       "native": [
         "parsed",
+        "text",
         "layout",
         "paint",
         "viewport",
         "export"
       ],
-      "note": "Observable Mermaid 11.16.0 cross-family read: Kanban uses mindmap.padding instead of kanban.padding for node and viewBox padding."
-    },
-    {
-      "path": "mindmap.useMaxWidth",
-      "families": [
-        "kanban"
-      ],
-      "status": "parity",
-      "upstream": [
-        "parsed",
-        "viewport",
-        "export"
-      ],
-      "native": [
-        "parsed",
-        "viewport",
-        "export"
-      ],
-      "note": "Observable Mermaid 11.16.0 cross-family read: Kanban uses mindmap.useMaxWidth instead of kanban.useMaxWidth in setupGraphViewbox."
+      "note": "False disables Markdown label wrapping; other source values follow JavaScript truthiness."
     },
     {
       "path": "layout",
       "families": [
         "flowchart",
         "class",
-        "state"
+        "state",
+        "mindmap"
       ],
       "status": "partial",
       "upstream": [
@@ -292,7 +286,7 @@
         "interaction",
         "export"
       ],
-      "note": "dagre is supported; elk and unknown engines return unsupported-layout-engine."
+      "note": "Dagre is supported by all four families. Flowchart/class/state reject unsupported engines; Mindmap falls back to cose-bilkent for unknown or unregistered names."
     },
     {
       "path": "wrap",
@@ -348,7 +342,8 @@
         "xyChart",
         "timeline",
         "packet",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "unsupported",
       "upstream": [
@@ -375,7 +370,8 @@
         "xyChart",
         "timeline",
         "packet",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -424,7 +420,8 @@
         "xyChart",
         "timeline",
         "packet",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "parity",
       "upstream": [
@@ -452,7 +449,8 @@
         "xyChart",
         "timeline",
         "packet",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "parity",
       "upstream": [
@@ -480,7 +478,8 @@
         "xyChart",
         "timeline",
         "packet",
-        "kanban"
+        "kanban",
+        "mindmap"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5011,7 +5010,115 @@
         "export"
       ],
       "default": ""
+    },
+    {
+      "family": "mindmap",
+      "interface": "MindmapDiagramConfig",
+      "path": "mindmap.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "mindmap",
+      "interface": "MindmapDiagramConfig",
+      "path": "mindmap.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "families": [
+        "mindmap",
+        "kanban"
+      ],
+      "note": "Mindmap consumes its own value; Mermaid 11.16.0 Kanban also reads mindmap.useMaxWidth instead of kanban.useMaxWidth.",
+      "default": true
+    },
+    {
+      "family": "mindmap",
+      "interface": "MindmapDiagramConfig",
+      "path": "mindmap.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "families": [
+        "mindmap",
+        "kanban"
+      ],
+      "note": "Mindmap consumes its own value; Mermaid 11.16.0 Kanban also reads mindmap.padding instead of kanban.padding.",
+      "default": 10
+    },
+    {
+      "family": "mindmap",
+      "interface": "MindmapDiagramConfig",
+      "path": "mindmap.maxNodeWidth",
+      "field": "maxNodeWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 200
+    },
+    {
+      "family": "mindmap",
+      "interface": "MindmapDiagramConfig",
+      "path": "mindmap.layoutAlgorithm",
+      "field": "layoutAlgorithm",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Declared by MindmapDiagramConfig but never read; Mindmap selects the renderer from the top-level layout key.",
+      "default": "cose-bilkent"
     }
   ],
-  "fixtureSha256": "fe3604ef8258fc1d47a5253649968f28901d394c6770acdc29b7ff7306414380"
+  "fixtureSha256": "77673a094ae7482bb34ca115646811e624a6ff5b3fd3bdf233a6fff8e184f195"
 }

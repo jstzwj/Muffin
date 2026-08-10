@@ -332,7 +332,18 @@ CssLengthContext pieCssLengthContext(const QString& fontFamily, qreal emPx) {
   // so exPx = 0.20918; 10ch -> 2.09766; 1em -> 0.4; 200% -> 0.8). Measuring at
   // the reference (16) also sidesteps setPixelSize(0) for any 0 < emPx < 0.5.
   constexpr qreal kReferencePx = 16.0;
-  QFont f(fontFamily);
+  QStringList families;
+  for (QString family : fontFamily.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
+    family = family.trimmed();
+    if (family.size() >= 2 &&
+        ((family.front() == QLatin1Char('"') && family.back() == QLatin1Char('"')) ||
+         (family.front() == QLatin1Char('\'') && family.back() == QLatin1Char('\''))))
+      family = family.mid(1, family.size() - 2);
+    if (!family.isEmpty()) families.append(family);
+  }
+  if (families.isEmpty()) families.append(QStringLiteral("Noto Sans"));
+  QFont f(families.first());
+  if (families.size() > 1) f.setFamilies(families);
   f.setPixelSize(int(kReferencePx));
   const QFontMetricsF m(f);
   const qreal scale = emPx / kReferencePx;

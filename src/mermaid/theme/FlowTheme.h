@@ -102,6 +102,11 @@ struct FlowThemeVariables {
   QString nodeBkg;
   QString nodeBorder;
   QString defaultLinkColor;
+  // Mindmap's classic root node uses the first git palette entry and its
+  // corresponding branch-label color. These are derived by each theme's
+  // updateColors() implementation and remain directly overrideable.
+  QString git0;
+  QString gitBranchLabel0;
   QString mainContrastColor;  // dark + dark-variant FamilyA themes
   QString contrast;           // neutral theme only
   QString text;               // neutral theme only
@@ -119,6 +124,7 @@ struct FlowThemeVariables {
   qreal shadowOpacity = 0.25;
   qreal shadowOffsetX = 0.0;
   qreal shadowOffsetY = 1.0;
+  QString dropShadow;
   int themeColorLimit = 12;
 
   // cScale palette: 13 slots = upstream cScale0..cScale12. dark defines

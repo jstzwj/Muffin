@@ -56,6 +56,8 @@ const QStringList criticalFields() {
       QStringLiteral("primaryBorderColor"), QStringLiteral("primaryTextColor"),
       QStringLiteral("nodeTextColor"), QStringLiteral("nodeBkg"),
       QStringLiteral("nodeBorder"),   QStringLiteral("defaultLinkColor"),
+      QStringLiteral("git0"),         QStringLiteral("gitBranchLabel0"),
+      QStringLiteral("dropShadow"),
       QStringLiteral("strokeWidth"),  QStringLiteral("THEME_COLOR_LIMIT"),
   };
 }
@@ -515,6 +517,18 @@ void checkCScaleDynamicOverrides() {
   }
 }
 
+void checkMindmapRootOverrides() {
+  QHash<QString, QString> overrides;
+  overrides.insert(QStringLiteral("git0"), QStringLiteral("#102030"));
+  overrides.insert(QStringLiteral("gitBranchLabel0"),
+                   QStringLiteral("#f0e0d0"));
+  const FlowThemeVariables theme =
+      resolveFlowTheme(FlowThemeId::Default, overrides);
+  require(theme.git0 == QLatin1String("#102030") &&
+              theme.gitBranchLabel0 == QLatin1String("#f0e0d0"),
+          QStringLiteral("Mindmap root theme overrides did not win"));
+}
+
 void checkKanbanNeoShadows() {
   struct ExpectedShadow {
     FlowThemeId id;
@@ -837,6 +851,7 @@ int main(int argc, char** argv) {
   checkPieTextColorOverrides();
   checkPieQuadrantDynamicOverrides();
   checkCScaleDynamicOverrides();
+  checkMindmapRootOverrides();
   checkKanbanNeoShadows();
   checkJourneyFillTypeOverrides();
   checkPieTclDistribution();

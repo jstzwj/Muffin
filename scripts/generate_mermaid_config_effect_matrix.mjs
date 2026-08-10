@@ -475,6 +475,23 @@ const familyPolicies = {
     sectionWidth: parity("layout", "paint", "viewport", "export"),
     ticketBaseUrl: parity("interaction", "export"),
   },
+  mindmap: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: {
+      ...parity("viewport", "export"),
+      families: ["mindmap", "kanban"],
+      note: "Mindmap consumes its own value; Mermaid 11.16.0 Kanban also reads mindmap.useMaxWidth instead of kanban.useMaxWidth.",
+    },
+    padding: {
+      ...parity("layout", "paint", "viewport", "export"),
+      families: ["mindmap", "kanban"],
+      note: "Mindmap consumes its own value; Mermaid 11.16.0 Kanban also reads mindmap.padding instead of kanban.padding.",
+    },
+    maxNodeWidth: parity("text", "layout", "paint", "viewport", "export"),
+    layoutAlgorithm: inert(
+      "Declared by MindmapDiagramConfig but never read; Mindmap selects the renderer from the top-level layout key.",
+    ),
+  },
   requirement: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -539,6 +556,7 @@ const shared = [
       "timeline",
       "packet",
       "kanban",
+      "mindmap",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -559,6 +577,7 @@ const shared = [
       "timeline",
       "packet",
       "kanban",
+      "mindmap",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -583,51 +602,46 @@ const shared = [
       "timeline",
       "packet",
       "kanban",
+      "mindmap",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
   {
     path: "htmlLabels",
-    families: ["flowchart", "class", "requirement"],
+    families: ["flowchart", "class", "requirement", "kanban", "mindmap"],
     ...partial(
       textLayout,
       textLayout,
-      "Native class labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path).",
+      "Native class, Kanban, and Mindmap labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path).",
     ),
   },
   {
     path: "look",
-    families: ["flowchart", "class", "state", "timeline", "kanban"],
+    families: ["flowchart", "class", "state", "timeline", "kanban", "mindmap"],
     ...partial(
       interactiveLayout,
       interactiveLayout,
-      "Flowchart, Timeline, and Kanban are complete; state currently uses look for marker selection and class retains it without rough painting.",
+      "Flowchart, Timeline, Kanban, and Mindmap are complete; state currently uses look for marker selection and class retains it without rough painting.",
     ),
   },
   {
     path: "handDrawnSeed",
-    families: ["flowchart", "kanban"],
+    families: ["flowchart", "kanban", "mindmap"],
     ...parity("layout", "paint", "interaction", "export"),
   },
   {
-    path: "mindmap.padding",
-    families: ["kanban"],
-    ...parity("layout", "paint", "viewport", "export"),
-    note: "Observable Mermaid 11.16.0 cross-family read: Kanban uses mindmap.padding instead of kanban.padding for node and viewBox padding.",
-  },
-  {
-    path: "mindmap.useMaxWidth",
-    families: ["kanban"],
-    ...parity("viewport", "export"),
-    note: "Observable Mermaid 11.16.0 cross-family read: Kanban uses mindmap.useMaxWidth instead of kanban.useMaxWidth in setupGraphViewbox.",
+    path: "markdownAutoWrap",
+    families: ["kanban", "mindmap"],
+    ...parity("text", "layout", "paint", "viewport", "export"),
+    note: "False disables Markdown label wrapping; other source values follow JavaScript truthiness.",
   },
   {
     path: "layout",
-    families: ["flowchart", "class", "state"],
+    families: ["flowchart", "class", "state", "mindmap"],
     ...partial(
       interactiveLayout,
       interactiveLayout,
-      "dagre is supported; elk and unknown engines return unsupported-layout-engine.",
+      "Dagre is supported by all four families. Flowchart/class/state reject unsupported engines; Mindmap falls back to cose-bilkent for unknown or unregistered names.",
     ),
   },
   {
@@ -651,6 +665,7 @@ const shared = [
       "pie", "quadrantChart", "journey", "radar", "xyChart",
       "timeline", "packet",
       "kanban",
+      "mindmap",
     ],
     ...unsupported(
       ["parsed"],
@@ -674,6 +689,7 @@ const shared = [
       "timeline",
       "packet",
       "kanban",
+      "mindmap",
     ],
     ...policy(
       "security-fixed",
@@ -704,6 +720,7 @@ const shared = [
       "timeline",
       "packet",
       "kanban",
+      "mindmap",
     ],
     ...parity("export"),
   },
@@ -724,6 +741,7 @@ const shared = [
       "timeline",
       "packet",
       "kanban",
+      "mindmap",
     ],
     ...parity("export"),
   },
@@ -744,6 +762,7 @@ const shared = [
       "timeline",
       "packet",
       "kanban",
+      "mindmap",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -797,6 +816,7 @@ const interfaces = {
   timeline: "TimelineDiagramConfig",
   packet: "PacketDiagramConfig",
   kanban: "KanbanDiagramConfig",
+  mindmap: "MindmapDiagramConfig",
 };
 
 const entries = [];

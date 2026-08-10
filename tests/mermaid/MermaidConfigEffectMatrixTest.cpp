@@ -2,6 +2,7 @@
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/kanban/KanbanScene.h"
+#include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
@@ -24,6 +25,7 @@
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
 
 using muffin::mermaid::editor::MermaidRenderCache;
 using muffin::mermaid::editor::MermaidRenderEntry;
@@ -149,8 +151,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 241,
-          QStringLiteral("Expected 241 classified config rows, found %1")
+  require(entries.size() == 245,
+          QStringLiteral("Expected 245 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -207,6 +209,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("flowchart"), 14},
                                              {QStringLiteral("journey"), 26},
                                              {QStringLiteral("kanban"), 5},
+                                             {QStringLiteral("mindmap"), 5},
                                              {QStringLiteral("pie"), 6},
                                              {QStringLiteral("packet"), 8},
                                              {QStringLiteral("quadrantChart"), 20},
@@ -304,8 +307,27 @@ int main(int argc, char** argv) {
                   QLatin1String("parity") &&
               byPath.value(QStringLiteral("mindmap.useMaxWidth"))
                       .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("mindmap.maxNodeWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("mindmap.layoutAlgorithm"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("markdownAutoWrap"))
+                      .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
           QStringLiteral("Critical config status rows drifted"));
+  require(stringSet(byPath.value(QStringLiteral("mindmap.padding"))
+                        .value(QStringLiteral("families")).toArray()) ==
+              QSet<QString>{QStringLiteral("mindmap"), QStringLiteral("kanban")} &&
+              stringSet(byPath.value(QStringLiteral("mindmap.useMaxWidth"))
+                            .value(QStringLiteral("families")).toArray()) ==
+                  QSet<QString>{QStringLiteral("mindmap"), QStringLiteral("kanban")} &&
+              stringSet(byPath.value(QStringLiteral("markdownAutoWrap"))
+                            .value(QStringLiteral("families")).toArray()) ==
+                  QSet<QString>{QStringLiteral("mindmap"), QStringLiteral("kanban")},
+          QStringLiteral("Mindmap/Kanban cross-family config scope drifted"));
   for (const QString& path : {
            QStringLiteral("deterministicIds"),
            QStringLiteral("deterministicIDSeed"),
@@ -741,6 +763,166 @@ int main(int argc, char** argv) {
               "kanban\n  todo[Todo]\n"
               "    task1[Write docs]@{ ticket: KAN-7 }")),
           QStringLiteral("Kanban live config did not affect PNG output"));
+
+  // Mindmap consumes its three live family fields without losing their raw
+  // JSON type. Renderer selection comes from the top-level layout key;
+  // mindmap.layoutAlgorithm remains a declared-but-inert interface field.
+  const QString mindmapSource = QStringLiteral(
+      "%%{init: {\"mindmap\": {\"padding\": 20, "
+      "\"maxNodeWidth\": 80, \"useMaxWidth\": false}, "
+      "\"htmlLabels\": false, \"markdownAutoWrap\": false, "
+      "\"layout\": \"dagre\"}}%%\n"
+      "mindmap\n  root((Root))\n"
+      "    A[alpha beta gamma delta epsilon]\n    B[Beta]");
+  const MermaidRenderEntry mindmapEntry = render(mindmapSource);
+  const auto* mindmapScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          mindmapEntry.scene.get());
+  require(mindmapEntry.status == MermaidRenderStatus::Ready && mindmapScene &&
+              !mindmapEntry.metadata.svgUseMaxWidth &&
+              mindmapScene->config.padding.toDouble() == 20.0 &&
+              mindmapScene->config.maxNodeWidth.toDouble() == 80.0 &&
+              !mindmapScene->config.htmlLabels &&
+              !mindmapScene->config.markdownAutoWrap &&
+              mindmapScene->effectiveLayout == QLatin1String("dagre"),
+          QStringLiteral("Mindmap live config did not reach the scene"));
+  const MermaidRenderEntry inertMindmap = render(QStringLiteral(
+      "%%{init: {\"mindmap\": {\"layoutAlgorithm\": \"dagre\"}}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto* inertMindmapScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          inertMindmap.scene.get());
+  const MermaidRenderEntry fallbackMindmap = render(QStringLiteral(
+      "%%{init: {\"layout\": \"missing\"}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto* fallbackMindmapScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          fallbackMindmap.scene.get());
+  const MermaidRenderEntry uppercaseLayoutMindmap = render(QStringLiteral(
+      "%%{init: {\"layout\": \"DAGRE\"}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto* uppercaseLayoutMindmapScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          uppercaseLayoutMindmap.scene.get());
+  require(inertMindmap.status == MermaidRenderStatus::Ready &&
+              inertMindmapScene &&
+              inertMindmapScene->effectiveLayout ==
+                  QLatin1String("cose-bilkent") &&
+              fallbackMindmap.status == MermaidRenderStatus::Ready &&
+              fallbackMindmapScene &&
+              fallbackMindmapScene->effectiveLayout ==
+                  QLatin1String("cose-bilkent") &&
+              uppercaseLayoutMindmap.status == MermaidRenderStatus::Ready &&
+              uppercaseLayoutMindmapScene &&
+              uppercaseLayoutMindmapScene->effectiveLayout ==
+                  QLatin1String("cose-bilkent"),
+          QStringLiteral("Mindmap layoutAlgorithm/fallback contract drifted"));
+  require(pngImage(mindmapSource) != pngImage(QStringLiteral(
+              "mindmap\n  root((Root))\n"
+              "    A[alpha beta gamma delta epsilon]\n    B[Beta]")),
+          QStringLiteral("Mindmap live config did not affect PNG output"));
+
+  // CSS ex/ch resolution must measure the same full font fallback list that
+  // the scene painter uses. A missing first family must therefore fall through
+  // to Noto Sans instead of being measured with an unrelated system fallback.
+  const auto fallbackFontEntry = render(QStringLiteral(
+      "%%{init: {\"themeVariables\": {\"fontFamily\": "
+      "\"DefinitelyMissing, Noto Sans\", \"fontSize\": \"2ex\"}}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto notoFontEntry = render(QStringLiteral(
+      "%%{init: {\"themeVariables\": {\"fontFamily\": \"Noto Sans\", "
+      "\"fontSize\": \"2ex\"}}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto* fallbackFontScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          fallbackFontEntry.scene.get());
+  const auto* notoFontScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          notoFontEntry.scene.get());
+  require(fallbackFontEntry.status == MermaidRenderStatus::Ready &&
+              notoFontEntry.status == MermaidRenderStatus::Ready &&
+              fallbackFontScene && notoFontScene &&
+              fallbackFontScene->style.fontSize > 0.0 &&
+              std::abs(fallbackFontScene->style.fontSize -
+                       notoFontScene->style.fontSize) < 0.001,
+          QStringLiteral("Mindmap font fallback/ex metric contract drifted"));
+
+  // Theme names and renderer names are case-sensitive at Mermaid's source
+  // entry point. Uppercase variants are not aliases; they fall back to the
+  // default theme / cose-bilkent layout.
+  const auto reduxThemeEntry = render(QStringLiteral(
+      "%%{init: {\"theme\": \"redux\", \"look\": \"neo\"}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto uppercaseThemeEntry = render(QStringLiteral(
+      "%%{init: {\"theme\": \"Redux\", \"look\": \"neo\"}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto defaultThemeEntry = render(QStringLiteral(
+      "%%{init: {\"theme\": \"default\", \"look\": \"neo\"}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto* reduxThemeScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          reduxThemeEntry.scene.get());
+  const auto* uppercaseThemeScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          uppercaseThemeEntry.scene.get());
+  const auto* defaultThemeScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          defaultThemeEntry.scene.get());
+  require(reduxThemeScene && uppercaseThemeScene && defaultThemeScene &&
+              reduxThemeScene->style.themeName == QLatin1String("redux") &&
+              uppercaseThemeScene->style.themeName == QLatin1String("default") &&
+              uppercaseThemeScene->style.rootFill ==
+                  defaultThemeScene->style.rootFill &&
+              uppercaseThemeScene->style.mainBkg ==
+                  defaultThemeScene->style.mainBkg,
+          QStringLiteral("Mindmap source theme case-sensitivity drifted"));
+
+  const auto styledMindmapEntry = render(QStringLiteral(
+      "%%{init: {\"theme\": \"neo\", \"look\": \"neo\", "
+      "\"themeVariables\": {\"mainBkg\": \"#123456\", "
+      "\"strokeWidth\": 7}}}%%\n"
+      "mindmap\n  root((Root))\n    Child"));
+  const auto* styledMindmapScene =
+      dynamic_cast<const muffin::mermaid::mindmap::MindmapScene*>(
+          styledMindmapEntry.scene.get());
+  require(styledMindmapScene &&
+              styledMindmapScene->style.mainBkg == QLatin1String("#123456") &&
+              styledMindmapScene->style.strokeWidth == 7.0 &&
+              !styledMindmapScene->nodes.isEmpty() &&
+              std::all_of(styledMindmapScene->nodes.cbegin(),
+                          styledMindmapScene->nodes.cend(), [](const auto& node) {
+                            return node.fill == QLatin1String("#123456") &&
+                                   node.strokeWidth == 7.0;
+                          }),
+          QStringLiteral("Mindmap mainBkg/strokeWidth adapter wiring drifted"));
+
+  const auto shadowScene = [&](const QString& value, bool includeValue) {
+    const QString vars = includeValue
+        ? QStringLiteral(", \"themeVariables\": {\"dropShadow\": \"%1\"}")
+              .arg(value)
+        : QString();
+    const MermaidRenderEntry entry = render(
+        QStringLiteral("%%{init: {\"theme\": \"neo\", \"look\": \"neo\"%1}}%%\n"
+                       "mindmap\n  root((Root))\n    Child")
+            .arg(vars));
+    return std::dynamic_pointer_cast<const muffin::mermaid::mindmap::MindmapScene>(
+        entry.scene);
+  };
+  const auto shadowAbsent = shadowScene(QString(), false);
+  const auto shadowNone = shadowScene(QStringLiteral("none"), true);
+  const auto shadowCustom =
+      shadowScene(QStringLiteral("drop-shadow(9px 8px 0 #ff0000)"), true);
+  const auto shadowBogus = shadowScene(QStringLiteral("bogus"), true);
+  const auto noNodeShadow = [](const auto& scene) {
+    return scene && std::none_of(scene->nodes.cbegin(), scene->nodes.cend(),
+                                 [](const auto& node) { return node.dropShadow; });
+  };
+  require(shadowAbsent && !shadowAbsent->nodes.isEmpty() &&
+              std::all_of(shadowAbsent->nodes.cbegin(), shadowAbsent->nodes.cend(),
+                          [](const auto& node) { return node.dropShadow; }) &&
+              noNodeShadow(shadowNone) && noNodeShadow(shadowCustom) &&
+              noNodeShadow(shadowBogus),
+          QStringLiteral("Mindmap dropShadow source used-value contract drifted"));
 
   // Unsupported engines must not silently produce a Dagre scene.
   for (const QString& source : {

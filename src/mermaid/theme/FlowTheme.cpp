@@ -41,11 +41,12 @@ int cScaleCount(const FlowThemeVariables& t) {
 }
 
 void setShadow(FlowThemeVariables& t, const QString& color, qreal opacity,
-               qreal offsetX, qreal offsetY) {
+               qreal offsetX, qreal offsetY, const QString& css) {
   t.shadowColor = color;
   t.shadowOpacity = opacity;
   t.shadowOffsetX = offsetX;
   t.shadowOffsetY = offsetY;
+  t.dropShadow = css;
 }
 
 // --- per-theme raw constructors (the `this.X = literal` lines) ---
@@ -58,7 +59,8 @@ void applyBase(FlowThemeVariables& t) {
   t.fontFamily = QStringLiteral("\"trebuchet ms\", verdana, arial, sans-serif");
   t.fontSize = QStringLiteral("16px");
   t.fontWeight = QStringLiteral("normal");
-  setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0);
+  setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
+            QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,1))"));
 }
 
 void applyDark(FlowThemeVariables& t) {
@@ -90,7 +92,8 @@ void applyDark(FlowThemeVariables& t) {
   t.titleColor = QStringLiteral("#F9FFFE");
   t.edgeLabelBackground = QStringLiteral("calculated");
   t.clusterBkg = QStringLiteral("#302F3D");  // constructor overrides the "calculated" above
-  setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0);
+  setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
+            QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,1))"));
 }
 
 void applyDefault(FlowThemeVariables& t) {
@@ -127,7 +130,8 @@ void applyDefault(FlowThemeVariables& t) {
   t.titleColor = QStringLiteral("calculated");
   t.edgeLabelBackground = QStringLiteral("calculated");
   t.clusterBkg = QStringLiteral("#FBFBFF");
-  setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0);
+  setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
+            QStringLiteral("drop-shadow(1px 2px 2px rgba(185, 185, 185, 1))"));
 }
 
 void applyForest(FlowThemeVariables& t) {
@@ -158,7 +162,8 @@ void applyForest(FlowThemeVariables& t) {
   t.defaultLinkColor = QStringLiteral("calculated");
   t.titleColor = QStringLiteral("#333");
   t.edgeLabelBackground = QStringLiteral("#e8e8e8");
-  setShadow(t, QStringLiteral("#b9b9b9"), 0.5, 1.0, 2.0);
+  setShadow(t, QStringLiteral("#b9b9b9"), 0.5, 1.0, 2.0,
+            QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,0.5))"));
 }
 
 void applyNeutral(FlowThemeVariables& t) {
@@ -190,7 +195,8 @@ void applyNeutral(FlowThemeVariables& t) {
   t.titleColor = QStringLiteral("calculated");
   t.edgeLabelBackground = QStringLiteral("white");
   t.text = QStringLiteral("#333");
-  setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0);
+  setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
+            QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,1))"));
 }
 
 void applyNeo(FlowThemeVariables& t) {
@@ -208,7 +214,8 @@ void applyNeo(FlowThemeVariables& t) {
   t.useGradient = true;
   t.gradientStart = QStringLiteral("#0042eb");
   t.gradientStop = QStringLiteral("#eb0042");
-  setShadow(t, QStringLiteral("#000000"), 0.25, 0.0, 1.0);
+  setShadow(t, QStringLiteral("#000000"), 0.25, 0.0, 1.0,
+            QStringLiteral("drop-shadow( 0px 1px 2px rgba(0, 0, 0, 0.25));"));
 }
 
 void applyNeoDark(FlowThemeVariables& t) {
@@ -233,7 +240,8 @@ void applyNeoDark(FlowThemeVariables& t) {
   t.useGradient = true;
   t.gradientStart = QStringLiteral("#0042eb");
   t.gradientStop = QStringLiteral("#eb0042");
-  setShadow(t, QStringLiteral("#b9b9b9"), 0.2, 1.0, 2.0);
+  setShadow(t, QStringLiteral("#b9b9b9"), 0.2, 1.0, 2.0,
+            QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,0.2))"));
 }
 
 void applyRedux(FlowThemeVariables& t) {
@@ -251,7 +259,8 @@ void applyRedux(FlowThemeVariables& t) {
   t.tertiaryColor = QStringLiteral("#ffffff");
   t.clusterBkg = QStringLiteral("#F9F9FB");
   t.clusterBorder = QStringLiteral("#BDBCCC");
-  setShadow(t, QStringLiteral("#000000"), 0.06, 4.0, 4.0);
+  setShadow(t, QStringLiteral("#000000"), 0.06, 4.0, 4.0,
+            QStringLiteral("url(#drop-shadow)"));
 }
 
 void applyReduxDark(FlowThemeVariables& t) {
@@ -277,7 +286,8 @@ void applyReduxDark(FlowThemeVariables& t) {
   t.nodeBorder = QStringLiteral("#FFFFFF");
   t.clusterBkg = QStringLiteral("#1E1A2E");
   t.clusterBorder = QStringLiteral("#BDBCCC");
-  setShadow(t, QStringLiteral("#ffffff"), 0.06, 4.0, 4.0);
+  setShadow(t, QStringLiteral("#ffffff"), 0.06, 4.0, 4.0,
+            QStringLiteral("url(#drop-shadow)"));
 }
 
 // The 12-entry Tailwind *-400 border palette shared by redux-color and
@@ -306,7 +316,8 @@ void applyReduxColor(FlowThemeVariables& t) {
   t.fontWeight = QStringLiteral("600");
   t.nodeBorder = QStringLiteral("#28253D");
   t.tertiaryColor = QStringLiteral("#ffffff");
-  setShadow(t, QStringLiteral("#000000"), 0.06, 4.0, 4.0);
+  setShadow(t, QStringLiteral("#000000"), 0.06, 4.0, 4.0,
+            QStringLiteral("url(#drop-shadow)"));
   // colorIndex palette (chunk-CHAKFXHA.mjs:3936-3987): 12 Tailwind *-400 border
   // + 12 Tailwind *-50 bkg. requirement nodes cycle both by insertion order.
   applyReduxColorBorderPalette(t);
@@ -353,6 +364,55 @@ void populateQuadrant(FlowThemeVariables& t, const QString& primary);
 void populateJourneyFillTypes(FlowThemeVariables& t, const QString& primary,
                               const QString& secondary, bool unconditional);
 void populateXYChart(FlowThemeId id, FlowThemeVariables& t);
+
+// Mindmap classic root colors are borrowed from the first git palette slot.
+// Keep the per-theme update semantics here: Default calls this twice, so its
+// existing git0 is darkened twice; every other built-in theme calls it once.
+void populateMindmapRoot(FlowThemeId id, FlowThemeVariables& t) {
+  switch (id) {
+    case FlowThemeId::Base:
+      assignIfEmpty(t.git0, t.primaryColor);
+      t.git0 = darken(t.git0, 25);
+      assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
+      break;
+    case FlowThemeId::Dark:
+      t.git0 = lighten(t.secondaryColor, 20);
+      assignIfEmpty(t.gitBranchLabel0, t.taskTextDarkColor);
+      break;
+    case FlowThemeId::Default:
+      assignIfEmpty(t.git0, t.primaryColor);
+      t.git0 = darken(t.git0, 25);
+      assignIfEmpty(t.gitBranchLabel0, QStringLiteral("#ffffff"));
+      break;
+    case FlowThemeId::Forest:
+      assignIfEmpty(t.git0, t.primaryColor);
+      t.git0 = darken(t.git0, 25);
+      assignIfEmpty(t.gitBranchLabel0, QStringLiteral("#ffffff"));
+      break;
+    case FlowThemeId::Neutral:
+      t.git0 = darken(t.pie[0], 25);
+      t.gitBranchLabel0 = t.text;
+      break;
+    case FlowThemeId::Neo:
+    case FlowThemeId::Redux:
+    case FlowThemeId::ReduxColor:
+      assignIfEmpty(t.git0, QStringLiteral("#ECECFE"));
+      t.git0 = darken(t.git0, 25);
+      assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
+      break;
+    case FlowThemeId::NeoDark:
+      assignIfEmpty(t.git0, QStringLiteral("#0b0000"));
+      t.git0 = lighten(t.git0, 25);
+      assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
+      break;
+    case FlowThemeId::ReduxDark:
+    case FlowThemeId::ReduxDarkColor:
+      assignIfEmpty(t.git0, t.primaryColor);
+      t.git0 = darken(t.git0, 25);
+      assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
+      break;
+  }
+}
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
 // the shared `||`-guarded derivation (darkMode always false for built-in
@@ -858,6 +918,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::Dark: updateColorsDark(t); break;
     case FlowThemeId::Neutral: updateColorsNeutral(t); break;
   }
+  populateMindmapRoot(id, t);
   populatePacket(id, t);
   populateXYChart(id, t);
 }
@@ -956,10 +1017,13 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("nodeBkg")) return nodeBkg;
   if (key == QStringLiteral("nodeBorder")) return nodeBorder;
   if (key == QStringLiteral("defaultLinkColor")) return defaultLinkColor;
+  if (key == QStringLiteral("git0")) return git0;
+  if (key == QStringLiteral("gitBranchLabel0")) return gitBranchLabel0;
   if (key == QStringLiteral("strokeWidth")) return QString::number(strokeWidth);
   if (key == QStringLiteral("useGradient")) return useGradient ? QStringLiteral("true") : QStringLiteral("false");
   if (key == QStringLiteral("gradientStart")) return gradientStart;
   if (key == QStringLiteral("gradientStop")) return gradientStop;
+  if (key == QStringLiteral("dropShadow")) return dropShadow;
   if (key == QStringLiteral("THEME_COLOR_LIMIT")) return QString::number(themeColorLimit);
   for (int i = 0; i < 13; ++i) {
     if (key == QStringLiteral("cScale%1").arg(i)) return cScale[i];
@@ -1047,10 +1111,13 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("nodeBkg")) nodeBkg = value;
   else if (key == QStringLiteral("nodeBorder")) nodeBorder = value;
   else if (key == QStringLiteral("defaultLinkColor")) defaultLinkColor = value;
+  else if (key == QStringLiteral("git0")) git0 = value;
+  else if (key == QStringLiteral("gitBranchLabel0")) gitBranchLabel0 = value;
   else if (key == QStringLiteral("strokeWidth")) strokeWidth = value.toDouble();
   else if (key == QStringLiteral("useGradient")) useGradient = value.compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0;
   else if (key == QStringLiteral("gradientStart")) gradientStart = value;
   else if (key == QStringLiteral("gradientStop")) gradientStop = value;
+  else if (key == QStringLiteral("dropShadow")) dropShadow = value;
   else if (key == QStringLiteral("THEME_COLOR_LIMIT")) themeColorLimit = value.toInt();
   // Indexed palette and family overrides are separate from the scalar chain;
   // return as soon as the matching slot is found.

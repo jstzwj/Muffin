@@ -1,0 +1,82 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "module": "dist/mermaid.esm.mjs",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "browser": {
+      "product": "Chrome/151.0.7922.76",
+      "executableSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+      "headlessMode": "new"
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1200,
+      "deviceScaleFactor": 1
+    },
+    "fonts": [
+      {
+        "family": "Noto Sans",
+        "file": "third_party/noto/fonts/NotoSans-Regular.ttf",
+        "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+      }
+    ],
+    "layout": {
+      "cytoscape": "3.34.0",
+      "coseBilkent": "4.1.0",
+      "quality": "proof",
+      "styleEnabled": false,
+      "animate": false
+    },
+    "generator": "scripts/generate_mermaid_mindmap_fixtures.mjs"
+  },
+  "oracle": "Mindmap default/dark/neo/redux-color/handDrawn browser raster goldens",
+  "capture": {
+    "background": "transparent",
+    "deviceScaleFactor": 1,
+    "pngCanonicalization": "transparent RGB zeroed; PNG RGBA8 re-encoded"
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nmindmap\n  root((Mindmap))\n    Origins\n      Long history\n      Popularisation\n    Research\n      On effectiveness\n      On features\n    Tools\n      Pen and paper\n      Mermaid",
+      "file": "default.png",
+      "width": 670,
+      "height": 425,
+      "sha256": "fb23bfc1e2eb3808f9a25f45136bab41b55799dfdde480b1889d665ef482494f"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nmindmap\n  root((Mindmap))\n    Origins\n      Long history\n      Popularisation\n    Research\n      On effectiveness\n      On features\n    Tools\n      Pen and paper\n      Mermaid",
+      "file": "dark.png",
+      "width": 670,
+      "height": 425,
+      "sha256": "87ae9c201310c161bb5fe421d88dbf1b1ae81c2ba6c7c0caf65a5596f0437c53"
+    },
+    {
+      "id": "neo",
+      "source": "%%{init: {\"theme\":\"neo\",\"look\":\"neo\",\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nmindmap\n  root((Mindmap))\n    Origins\n      Long history\n      Popularisation\n    Research\n      On effectiveness\n      On features\n    Tools\n      Pen and paper\n      Mermaid",
+      "file": "neo.png",
+      "width": 653,
+      "height": 447,
+      "sha256": "5095edc3f00fdc8a3212b4ace67046c674548080ca3c47cc7716a645c69c9d51"
+    },
+    {
+      "id": "redux-color",
+      "source": "%%{init: {\"theme\":\"redux-color\",\"look\":\"neo\",\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nmindmap\n  root((Mindmap))\n    Origins\n      Long history\n      Popularisation\n    Research\n      On effectiveness\n      On features\n    Tools\n      Pen and paper\n      Mermaid",
+      "file": "redux-color.png",
+      "width": 662,
+      "height": 536,
+      "sha256": "83cb1e296b0d37371123afc8a543801cbf5bfecac023da4cb299f224216c4c3e"
+    },
+    {
+      "id": "hand-drawn",
+      "source": "%%{init: {\"look\":\"handDrawn\",\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nmindmap\n  root((Root))\n    Alpha\n    Beta",
+      "file": "hand-drawn.png",
+      "width": 338,
+      "height": 76,
+      "sha256": "86be9abbd2ae79ae8760ccc580de5e9fbc2057df0f931e86c71820a87bfab71f"
+    }
+  ],
+  "fixtureSha256": "e73e83d95f92f5dfa600f07a1128b90bc74fcba663dd5c06e102e3cc1f6cf4b6"
+}

@@ -1,0 +1,5838 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "mindmapModuleSha256": "584e20b0980902d5749171aca4d48dcdfe9e674df21cdbade0077e7214511ea8",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "parser": "Jison mindmap.jison + mindmapDb.ts",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry detection/accept/reject plus MindmapDB tree, flattened nodes/edges and parser-visible config",
+  "cases": [
+    {
+      "id": "bare-root",
+      "source": "mindmap\n root",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "header-same-line",
+      "source": "mindmap root",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "leading-comment",
+      "source": "%% pre\nmindmap\n root\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "leading-preamble-post-header-blank",
+      "source": "%% pre\n\nmindmap\n\n  root",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: mindmap root -------^ Expecting 'SPACELINE', 'NL', 'EOF', got 'SPACELIST'",
+        "line": 3,
+        "column": 8,
+        "token": "SPACELIST"
+      }
+    },
+    {
+      "id": "post-header-blank-no-preamble",
+      "source": "mindmap\n\n  root",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: mindmap root -------^ Expecting 'SPACELINE', 'NL', 'EOF', got 'SPACELIST'",
+        "line": 3,
+        "column": 8,
+        "token": "SPACELIST"
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "mindmap\r\n root\r\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "blank-and-comments",
+      "source": "%% pre\n\nmindmap\n\n  root\n  %% note\n    child\n\n",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: mindmap root child -------^ Expecting 'SPACELINE', 'NL', 'EOF', got 'SPACELIST'",
+        "line": 3,
+        "column": 8,
+        "token": "SPACELIST"
+      }
+    },
+    {
+      "id": "blank-between-nodes",
+      "source": "mindmap\n root\n\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "comment-between-nodes",
+      "source": "mindmap\n root\n %% note\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "tab-levels",
+      "source": "mindmap\n\troot\n\t\tchild\n\t\t\tleaf",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": [
+                {
+                  "id": 2,
+                  "nodeId": "leaf",
+                  "level": 2,
+                  "descr": "leaf",
+                  "type": 0,
+                  "width": 200,
+                  "padding": 10,
+                  "isRoot": false,
+                  "section": 0,
+                  "anchors": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "leaf",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 2,
+            "nodeId": "leaf",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_1_2",
+            "start": "1",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-2",
+            "depth": 1,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "base-indent-normalized",
+      "source": "mindmap\n      root\n        child\n          leaf",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 2,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": [
+                {
+                  "id": 2,
+                  "nodeId": "leaf",
+                  "level": 4,
+                  "descr": "leaf",
+                  "type": 0,
+                  "width": 200,
+                  "padding": 10,
+                  "isRoot": false,
+                  "section": 0,
+                  "anchors": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 2,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "leaf",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 4,
+            "nodeId": "leaf",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_1_2",
+            "start": "1",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-3",
+            "depth": 2,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "skip-indent-level",
+      "source": "mindmap\n root\n          child\n                    leaf",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 9,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": [
+                {
+                  "id": 2,
+                  "nodeId": "leaf",
+                  "level": 19,
+                  "descr": "leaf",
+                  "type": 0,
+                  "width": 200,
+                  "padding": 10,
+                  "isRoot": false,
+                  "section": 0,
+                  "anchors": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 9,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "leaf",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 19,
+            "nodeId": "leaf",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_1_2",
+            "start": "1",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-10",
+            "depth": 9,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "dedent-nearest-parent",
+      "source": "mindmap\n root\n  a\n   aa\n  b\n   bb",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "a",
+              "level": 1,
+              "descr": "a",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": [
+                {
+                  "id": 2,
+                  "nodeId": "aa",
+                  "level": 2,
+                  "descr": "aa",
+                  "type": 0,
+                  "width": 200,
+                  "padding": 10,
+                  "isRoot": false,
+                  "section": 0,
+                  "anchors": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": 3,
+              "nodeId": "b",
+              "level": 1,
+              "descr": "b",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 1,
+              "anchors": [],
+              "children": [
+                {
+                  "id": 4,
+                  "nodeId": "bb",
+                  "level": 2,
+                  "descr": "bb",
+                  "type": 0,
+                  "width": 200,
+                  "padding": 10,
+                  "isRoot": false,
+                  "section": 1,
+                  "anchors": [],
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "a",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "a",
+            "type": 0,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "aa",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 2,
+            "nodeId": "aa",
+            "type": 0,
+            "section": 0
+          },
+          {
+            "id": "3",
+            "domId": "node_3",
+            "label": "b",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "b",
+            "type": 0,
+            "section": 1
+          },
+          {
+            "id": "4",
+            "domId": "node_4",
+            "label": "bb",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 2,
+            "nodeId": "bb",
+            "type": 0,
+            "section": 1
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_1_2",
+            "start": "1",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-2",
+            "depth": 1,
+            "section": 0
+          },
+          {
+            "id": "edge_0_3",
+            "start": "0",
+            "end": "3",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-1 edge-depth-1",
+            "depth": 0,
+            "section": 1
+          },
+          {
+            "id": "edge_3_4",
+            "start": "3",
+            "end": "4",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-1 edge-depth-2",
+            "depth": 1,
+            "section": 1
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "second-root-runtime",
+      "source": "mindmap\n root\n other",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "Error",
+        "message": "There can be only one root. No parent could be found for (\"other\")",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "shallower-than-base-runtime",
+      "source": "mindmap\n   root\n child",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "Error",
+        "message": "There can be only one root. No parent could be found for (\"child\")",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "all-no-id-shapes",
+      "source": "mindmap\n root\n  [Rect]\n  (Rounded)\n  ((Circle))\n  )Cloud(\n  ))Bang((\n  {{Hexagon}}\n  (-Cloud2-)\n  -)Bang2(-",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "Rect",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 2,
+              "nodeId": "Rounded",
+              "level": 1,
+              "descr": "Rounded",
+              "type": 1,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 1,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 3,
+              "nodeId": "Circle",
+              "level": 1,
+              "descr": "Circle",
+              "type": 3,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 2,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 4,
+              "nodeId": "Cloud",
+              "level": 1,
+              "descr": "Cloud",
+              "type": 4,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 3,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 5,
+              "nodeId": "Bang",
+              "level": 1,
+              "descr": "Bang",
+              "type": 5,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 4,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 6,
+              "nodeId": "Hexagon",
+              "level": 1,
+              "descr": "Hexagon",
+              "type": 6,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 5,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 7,
+              "nodeId": "Cloud2-",
+              "level": 1,
+              "descr": "Cloud2-",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 6,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 8,
+              "nodeId": "Bang2",
+              "level": 1,
+              "descr": "Bang2",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 7,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "Rect",
+            "type": 2,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "Rounded",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rounded",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "Rounded",
+            "type": 1,
+            "section": 1
+          },
+          {
+            "id": "3",
+            "domId": "node_3",
+            "label": "Circle",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "mindmapCircle",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-2",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "Circle",
+            "type": 3,
+            "section": 2
+          },
+          {
+            "id": "4",
+            "domId": "node_4",
+            "label": "Cloud",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "cloud",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-3",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "Cloud",
+            "type": 4,
+            "section": 3
+          },
+          {
+            "id": "5",
+            "domId": "node_5",
+            "label": "Bang",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "bang",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-4",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "Bang",
+            "type": 5,
+            "section": 4
+          },
+          {
+            "id": "6",
+            "domId": "node_6",
+            "label": "Hexagon",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "hexagon",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-5",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "Hexagon",
+            "type": 6,
+            "section": 5
+          },
+          {
+            "id": "7",
+            "domId": "node_7",
+            "label": "Cloud2-",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-6",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "Cloud2-",
+            "type": 0,
+            "section": 6
+          },
+          {
+            "id": "8",
+            "domId": "node_8",
+            "label": "Bang2",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-7",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "Bang2",
+            "type": 0,
+            "section": 7
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_0_2",
+            "start": "0",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-1 edge-depth-1",
+            "depth": 0,
+            "section": 1
+          },
+          {
+            "id": "edge_0_3",
+            "start": "0",
+            "end": "3",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-2 edge-depth-1",
+            "depth": 0,
+            "section": 2
+          },
+          {
+            "id": "edge_0_4",
+            "start": "0",
+            "end": "4",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-3 edge-depth-1",
+            "depth": 0,
+            "section": 3
+          },
+          {
+            "id": "edge_0_5",
+            "start": "0",
+            "end": "5",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-4 edge-depth-1",
+            "depth": 0,
+            "section": 4
+          },
+          {
+            "id": "edge_0_6",
+            "start": "0",
+            "end": "6",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-5 edge-depth-1",
+            "depth": 0,
+            "section": 5
+          },
+          {
+            "id": "edge_0_7",
+            "start": "0",
+            "end": "7",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-6 edge-depth-1",
+            "depth": 0,
+            "section": 6
+          },
+          {
+            "id": "edge_0_8",
+            "start": "0",
+            "end": "8",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-7 edge-depth-1",
+            "depth": 0,
+            "section": 7
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "all-id-shapes",
+      "source": "mindmap\n root\n  a[Rect]\n  b(Rounded)\n  c((Circle))\n  d)Cloud(\n  e))Bang((\n  f{{Hexagon}}\n  g(-Cloud2-)\n  h-)Bang2(-",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "a",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 2,
+              "nodeId": "b",
+              "level": 1,
+              "descr": "Rounded",
+              "type": 1,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 1,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 3,
+              "nodeId": "c",
+              "level": 1,
+              "descr": "Circle",
+              "type": 3,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 2,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 4,
+              "nodeId": "d",
+              "level": 1,
+              "descr": "Cloud",
+              "type": 4,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 3,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 5,
+              "nodeId": "e",
+              "level": 1,
+              "descr": "Bang",
+              "type": 5,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 4,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 6,
+              "nodeId": "f",
+              "level": 1,
+              "descr": "Hexagon",
+              "type": 6,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 5,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 7,
+              "nodeId": "g",
+              "level": 1,
+              "descr": "Cloud2-",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 6,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 8,
+              "nodeId": "h-",
+              "level": 1,
+              "descr": "Bang2",
+              "type": 4,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 7,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "a",
+            "type": 2,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "Rounded",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rounded",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "b",
+            "type": 1,
+            "section": 1
+          },
+          {
+            "id": "3",
+            "domId": "node_3",
+            "label": "Circle",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "mindmapCircle",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-2",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "c",
+            "type": 3,
+            "section": 2
+          },
+          {
+            "id": "4",
+            "domId": "node_4",
+            "label": "Cloud",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "cloud",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-3",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "d",
+            "type": 4,
+            "section": 3
+          },
+          {
+            "id": "5",
+            "domId": "node_5",
+            "label": "Bang",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "bang",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-4",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "e",
+            "type": 5,
+            "section": 4
+          },
+          {
+            "id": "6",
+            "domId": "node_6",
+            "label": "Hexagon",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "hexagon",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-5",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "f",
+            "type": 6,
+            "section": 5
+          },
+          {
+            "id": "7",
+            "domId": "node_7",
+            "label": "Cloud2-",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-6",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "g",
+            "type": 0,
+            "section": 6
+          },
+          {
+            "id": "8",
+            "domId": "node_8",
+            "label": "Bang2",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "cloud",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-7",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "h-",
+            "type": 4,
+            "section": 7
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_0_2",
+            "start": "0",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-1 edge-depth-1",
+            "depth": 0,
+            "section": 1
+          },
+          {
+            "id": "edge_0_3",
+            "start": "0",
+            "end": "3",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-2 edge-depth-1",
+            "depth": 0,
+            "section": 2
+          },
+          {
+            "id": "edge_0_4",
+            "start": "0",
+            "end": "4",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-3 edge-depth-1",
+            "depth": 0,
+            "section": 3
+          },
+          {
+            "id": "edge_0_5",
+            "start": "0",
+            "end": "5",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-4 edge-depth-1",
+            "depth": 0,
+            "section": 4
+          },
+          {
+            "id": "edge_0_6",
+            "start": "0",
+            "end": "6",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-5 edge-depth-1",
+            "depth": 0,
+            "section": 5
+          },
+          {
+            "id": "edge_0_7",
+            "start": "0",
+            "end": "7",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-6 edge-depth-1",
+            "depth": 0,
+            "section": 6
+          },
+          {
+            "id": "edge_0_8",
+            "start": "0",
+            "end": "8",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-7 edge-depth-1",
+            "depth": 0,
+            "section": 7
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "mismatched-shape-end",
+      "source": "mindmap\n root\n  a[Rect)\n  b(Round]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "a",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 2,
+              "nodeId": "b",
+              "level": 1,
+              "descr": "Round",
+              "type": 4,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 1,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "a",
+            "type": 2,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "Round",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "cloud",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "b",
+            "type": 4,
+            "section": 1
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_0_2",
+            "start": "0",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-1 edge-depth-1",
+            "depth": 0,
+            "section": 1
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "quoted-markdown",
+      "source": "mindmap\n root[\"`line **one**`\"]\n  child[\"quoted text\"]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "line **one**",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "quoted text",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "line **one**",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "quoted text",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "quoted-multiline",
+      "source": "mindmap\n root[\"`line one\n line two`\"]\n  child[\"task one\n task two\"]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "line one\n line two",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "task one\n task two",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "line one\n line two",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "task one\n task two",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "unicode-markdown",
+      "source": "mindmap\n root[日本 **Ready**]\n  child[中文 _Task_]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "日本 **Ready**",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "中文 _Task_",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "日本 **Ready**",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "中文 _Task_",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "raw-whitespace",
+      "source": "mindmap\n id  [  Root  ]\n    child  ",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "id  ",
+          "level": 0,
+          "descr": "  Root  ",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child  ",
+              "level": 3,
+              "descr": "child  ",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "  Root  ",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "id  ",
+            "type": 2
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child  ",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 3,
+            "nodeId": "child  ",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "duplicate-node-ids",
+      "source": "mindmap\n same[A]\n  same[B]\n  same[C]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "same",
+          "level": 0,
+          "descr": "A",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "same",
+              "level": 1,
+              "descr": "B",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 2,
+              "nodeId": "same",
+              "level": 1,
+              "descr": "C",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 1,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "A",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "same",
+            "type": 2
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "B",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "same",
+            "type": 2,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "C",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "same",
+            "type": 2,
+            "section": 1
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_0_2",
+            "start": "0",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-1 edge-depth-1",
+            "depth": 0,
+            "section": 1
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "decorations",
+      "source": "mindmap\n root[Root]\n ::icon(root-icon)\n :::root-class\n  child[Child]\n  ::icon(child icon)\n  :::child-class",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "Root",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "icon": "root-icon",
+          "class": "root-class",
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Child",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "icon": "child icon",
+              "class": "child-class",
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "Root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1 root-class",
+            "cssStyles": [],
+            "look": "classic",
+            "icon": "root-icon",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0 child-class",
+            "cssStyles": [],
+            "look": "classic",
+            "icon": "child icon",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "decoration-last-wins",
+      "source": "mindmap\n root\n ::icon(one)\n ::icon(two)\n :::one\n :::two",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "icon": "two",
+          "class": "two",
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1 two",
+            "cssStyles": [],
+            "look": "classic",
+            "icon": "two",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "icon-before-node-runtime",
+      "source": "mindmap\n::icon(star)\n root",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "TypeError",
+        "message": "Cannot set properties of undefined (setting 'icon')",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "class-before-node-runtime",
+      "source": "mindmap\n:::red\n root",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "TypeError",
+        "message": "Cannot set properties of undefined (setting 'class')",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "html-sanitizer",
+      "source": "mindmap\n root[<img src=javascript:bad onerror=x><a href=javascript:bad onclick=x>safe</a>]\n ::icon(<script>x</script><b>icon</b>)\n :::<i onmouseover=x>klass</i>",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "<img><a>safe</a>",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "icon": "<b>icon</b>",
+          "class": "<i>klass</i>",
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "<img><a>safe</a>",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1 <i>klass</i>",
+            "cssStyles": [],
+            "look": "classic",
+            "icon": "<b>icon</b>",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "sanitized-auto-id",
+      "source": "mindmap\n [<script>x</script><b>Root</b>]\n  [<a href=javascript:bad onclick=x>Child</a>]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "<b>Root</b>",
+          "level": 0,
+          "descr": "<b>Root</b>",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "<a>Child</a>",
+              "level": 1,
+              "descr": "<a>Child</a>",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "<b>Root</b>",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "<b>Root</b>",
+            "type": 2
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "<a>Child</a>",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "<a>Child</a>",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "safe-html-anchor",
+      "source": "mindmap\n root[\"<a href='https://example.org/path?q=1'>HtmlLink</a>\"]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "<a href=\"https://example.org/path?q=1\">HtmlLink</a>",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [
+            {
+              "href": "https://example.org/path?q=1",
+              "label": "HtmlLink",
+              "start": 0,
+              "length": 8
+            }
+          ],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "<a href=\"https://example.org/path?q=1\">HtmlLink</a>",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "empty-html-anchor",
+      "source": "mindmap\n root[\"<a href=''>EmptyLink</a>\"]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "<a href=\"\">EmptyLink</a>",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [
+            {
+              "href": "",
+              "label": "EmptyLink",
+              "start": 0,
+              "length": 9
+            }
+          ],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "<a href=\"\">EmptyLink</a>",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "mixed-html-anchor",
+      "source": "mindmap\n root[\"pre <a href='https://example.org'>Link</a> post\"]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "pre <a href=\"https://example.org\">Link</a> post",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [
+            {
+              "href": "https://example.org",
+              "label": "Link",
+              "start": 4,
+              "length": 4
+            }
+          ],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "pre <a href=\"https://example.org\">Link</a> post",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "unsafe-html-anchor",
+      "source": "mindmap\n root[\"<a href='javascript:alert(1)'>BadLink</a>\"]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "<a>BadLink</a>",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "<a>BadLink</a>",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "markdown-link-is-not-html-anchor",
+      "source": "mindmap\n root[\"[MarkdownLink](https://example.org)\"]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "[MarkdownLink](https://example.org)",
+          "type": 2,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "[MarkdownLink](https://example.org)",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 2
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "metadata-are-nodes",
+      "source": "mindmap\n title Hello\n  accTitle: Board\n  accDescr: Details",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "title Hello",
+          "level": 0,
+          "descr": "title Hello",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "accTitle: Board",
+              "level": 1,
+              "descr": "accTitle: Board",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 2,
+              "nodeId": "accDescr: Details",
+              "level": 1,
+              "descr": "accDescr: Details",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 1,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "title Hello",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "title Hello",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "accTitle: Board",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "accTitle: Board",
+            "type": 0,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "accDescr: Details",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "accDescr: Details",
+            "type": 0,
+            "section": 1
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_0_2",
+            "start": "0",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-1 edge-depth-1",
+            "depth": 0,
+            "section": 1
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "shape-data-is-grammar",
+      "source": "mindmap\n root@{ shape: rect }\n  child",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "name": "Error",
+        "message": "Lexical error on line 2. Unrecognized text. mindmap root@{ shape: rect } ch -------------^",
+        "line": 2,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "frontmatter-title-not-db",
+      "source": "---\ntitle: Board title\n---\nmindmap\n root\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "twelve-root-children",
+      "source": "mindmap\n root\n  child0\n  child1\n  child2\n  child3\n  child4\n  child5\n  child6\n  child7\n  child8\n  child9\n  child10\n  child11",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child0",
+              "level": 1,
+              "descr": "child0",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 2,
+              "nodeId": "child1",
+              "level": 1,
+              "descr": "child1",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 1,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 3,
+              "nodeId": "child2",
+              "level": 1,
+              "descr": "child2",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 2,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 4,
+              "nodeId": "child3",
+              "level": 1,
+              "descr": "child3",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 3,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 5,
+              "nodeId": "child4",
+              "level": 1,
+              "descr": "child4",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 4,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 6,
+              "nodeId": "child5",
+              "level": 1,
+              "descr": "child5",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 5,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 7,
+              "nodeId": "child6",
+              "level": 1,
+              "descr": "child6",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 6,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 8,
+              "nodeId": "child7",
+              "level": 1,
+              "descr": "child7",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 7,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 9,
+              "nodeId": "child8",
+              "level": 1,
+              "descr": "child8",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 8,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 10,
+              "nodeId": "child9",
+              "level": 1,
+              "descr": "child9",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 9,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 11,
+              "nodeId": "child10",
+              "level": 1,
+              "descr": "child10",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 10,
+              "anchors": [],
+              "children": []
+            },
+            {
+              "id": 12,
+              "nodeId": "child11",
+              "level": 1,
+              "descr": "child11",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child0",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child0",
+            "type": 0,
+            "section": 0
+          },
+          {
+            "id": "2",
+            "domId": "node_2",
+            "label": "child1",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child1",
+            "type": 0,
+            "section": 1
+          },
+          {
+            "id": "3",
+            "domId": "node_3",
+            "label": "child2",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-2",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child2",
+            "type": 0,
+            "section": 2
+          },
+          {
+            "id": "4",
+            "domId": "node_4",
+            "label": "child3",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-3",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child3",
+            "type": 0,
+            "section": 3
+          },
+          {
+            "id": "5",
+            "domId": "node_5",
+            "label": "child4",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-4",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child4",
+            "type": 0,
+            "section": 4
+          },
+          {
+            "id": "6",
+            "domId": "node_6",
+            "label": "child5",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-5",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child5",
+            "type": 0,
+            "section": 5
+          },
+          {
+            "id": "7",
+            "domId": "node_7",
+            "label": "child6",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-6",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child6",
+            "type": 0,
+            "section": 6
+          },
+          {
+            "id": "8",
+            "domId": "node_8",
+            "label": "child7",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-7",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child7",
+            "type": 0,
+            "section": 7
+          },
+          {
+            "id": "9",
+            "domId": "node_9",
+            "label": "child8",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-8",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child8",
+            "type": 0,
+            "section": 8
+          },
+          {
+            "id": "10",
+            "domId": "node_10",
+            "label": "child9",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-9",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child9",
+            "type": 0,
+            "section": 9
+          },
+          {
+            "id": "11",
+            "domId": "node_11",
+            "label": "child10",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-10",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child10",
+            "type": 0,
+            "section": 10
+          },
+          {
+            "id": "12",
+            "domId": "node_12",
+            "label": "child11",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child11",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          },
+          {
+            "id": "edge_0_2",
+            "start": "0",
+            "end": "2",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-1 edge-depth-1",
+            "depth": 0,
+            "section": 1
+          },
+          {
+            "id": "edge_0_3",
+            "start": "0",
+            "end": "3",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-2 edge-depth-1",
+            "depth": 0,
+            "section": 2
+          },
+          {
+            "id": "edge_0_4",
+            "start": "0",
+            "end": "4",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-3 edge-depth-1",
+            "depth": 0,
+            "section": 3
+          },
+          {
+            "id": "edge_0_5",
+            "start": "0",
+            "end": "5",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-4 edge-depth-1",
+            "depth": 0,
+            "section": 4
+          },
+          {
+            "id": "edge_0_6",
+            "start": "0",
+            "end": "6",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-5 edge-depth-1",
+            "depth": 0,
+            "section": 5
+          },
+          {
+            "id": "edge_0_7",
+            "start": "0",
+            "end": "7",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-6 edge-depth-1",
+            "depth": 0,
+            "section": 6
+          },
+          {
+            "id": "edge_0_8",
+            "start": "0",
+            "end": "8",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-7 edge-depth-1",
+            "depth": 0,
+            "section": 7
+          },
+          {
+            "id": "edge_0_9",
+            "start": "0",
+            "end": "9",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-8 edge-depth-1",
+            "depth": 0,
+            "section": 8
+          },
+          {
+            "id": "edge_0_10",
+            "start": "0",
+            "end": "10",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-9 edge-depth-1",
+            "depth": 0,
+            "section": 9
+          },
+          {
+            "id": "edge_0_11",
+            "start": "0",
+            "end": "11",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-10 edge-depth-1",
+            "depth": 0,
+            "section": 10
+          },
+          {
+            "id": "edge_0_12",
+            "start": "0",
+            "end": "12",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-padding-string",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"6\",\"maxNodeWidth\":\"333\",\"useMaxWidth\":false}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": "333",
+          "padding": "6",
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": "333",
+              "padding": 12,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": "333",
+            "height": 0,
+            "padding": "6",
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": "333",
+            "height": 0,
+            "padding": 12,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": "6",
+          "mindmapMaxNodeWidth": "333",
+          "mindmapUseMaxWidth": false
+        }
+      }
+    },
+    {
+      "id": "init-padding-radix",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"0xA\"}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": "0xA",
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": "0xA",
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": "0xA",
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-padding-binary",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"0b1010\"}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": "0b1010",
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": "0b1010",
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": "0b1010",
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-padding-octal",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"0o12\"}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": "0o12",
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": "0o12",
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": "0o12",
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-padding-decimal",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"2.5\"}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": "2.5",
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 5,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": "2.5",
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 5,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": "2.5",
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-padding-exponent",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"1e1\"}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": "1e1",
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": "1e1",
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": "1e1",
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-padding-bool",
+      "source": "%%{init: {\"mindmap\":{\"padding\":true,\"maxNodeWidth\":false}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": false,
+          "padding": true,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": false,
+              "padding": 2,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": false,
+            "height": 0,
+            "padding": true,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": false,
+            "height": 0,
+            "padding": 2,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": true,
+          "mindmapMaxNodeWidth": false,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-padding-array",
+      "source": "%%{init: {\"mindmap\":{\"padding\":[7],\"maxNodeWidth\":[321]}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-padding-object",
+      "source": "%%{init: {\"mindmap\":{\"padding\":{},\"maxNodeWidth\":{}}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-usemax-invalid-containers",
+      "source": "%%{init: {\"mindmap\":{\"useMaxWidth\":[false]}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "init-invalid-and-scalar-mixed",
+      "source": "%%{init: {\"mindmap\":{\"padding\":{},\"maxNodeWidth\":\"333\",\"useMaxWidth\":false}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": "333",
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": "333",
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": "333",
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": "333",
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": "333",
+          "mindmapUseMaxWidth": false
+        }
+      }
+    },
+    {
+      "id": "init-padding-null",
+      "source": "%%{init: {\"mindmap\":{\"padding\":null,\"maxNodeWidth\":null}}}%%\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 200,
+              "padding": 20,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "frontmatter-config",
+      "source": "---\nconfig:\n  mindmap:\n    padding: 7\n    maxNodeWidth: 321\n    useMaxWidth: false\n---\nmindmap\n root\n  child[Rect]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 321,
+          "padding": 7,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "Rect",
+              "type": 2,
+              "width": 321,
+              "padding": 14,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 321,
+            "height": 0,
+            "padding": 7,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "Rect",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rect",
+            "width": 321,
+            "height": 0,
+            "padding": 14,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 2,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 7,
+          "mindmapMaxNodeWidth": 321,
+          "mindmapUseMaxWidth": false
+        }
+      }
+    },
+    {
+      "id": "init-look-handdrawn",
+      "source": "%%{init: {\"look\":\"handDrawn\"}}%%\nmindmap\n root\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "handDrawn",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "handDrawn",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "handDrawn",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "handDrawn",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "theme-redux-default-shape",
+      "source": "%%{init: {\"theme\":\"redux\"}}%%\nmindmap\n root\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rounded",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rounded",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "redux",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "layout-user-elk",
+      "source": "%%{init: {\"layout\":\"elk\"}}%%\nmindmap\n root\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "elk",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "layout-empty",
+      "source": "%%{init: {\"layout\":\"\"}}%%\nmindmap\n root\n  child",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root",
+          "level": 0,
+          "descr": "root",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": [
+            {
+              "id": 1,
+              "nodeId": "child",
+              "level": 1,
+              "descr": "child",
+              "type": 0,
+              "width": 200,
+              "padding": 10,
+              "isRoot": false,
+              "section": 0,
+              "anchors": [],
+              "children": []
+            }
+          ]
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root",
+            "type": 0
+          },
+          {
+            "id": "1",
+            "domId": "node_1",
+            "label": "child",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-0",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 1,
+            "nodeId": "child",
+            "type": 0,
+            "section": 0
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge_0_1",
+            "start": "0",
+            "end": "1",
+            "type": "normal",
+            "curve": "basis",
+            "thickness": "normal",
+            "look": "classic",
+            "classes": "edge section-edge-0 edge-depth-1",
+            "depth": 0,
+            "section": 0
+          }
+        ],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "empty-document",
+      "source": "mindmap",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 2: mindmap -------^ Expecting 'SPACELINE', 'SPACELIST', 'ICON', 'CLASS', 'NODE_DSTART', 'NODE_ID', got 'EOF'",
+        "line": 2,
+        "column": 8,
+        "token": "EOF"
+      }
+    },
+    {
+      "id": "single-newline-document",
+      "source": "mindmap\n",
+      "accept": true,
+      "expectedDb": {
+        "root": null,
+        "nodes": [],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "comment-only-document",
+      "source": "mindmap\n%% only",
+      "accept": true,
+      "expectedDb": {
+        "root": null,
+        "nodes": [],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "blank-only-document",
+      "source": "mindmap\n\n",
+      "accept": true,
+      "expectedDb": {
+        "root": null,
+        "nodes": [],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "reject-no-header",
+      "source": "root\n child",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "name": "UnknownDiagramError",
+        "message": "No diagram type detected matching given configuration for text: root child",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "reject-header-case-detector",
+      "source": "Mindmap\n root",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "name": "UnknownDiagramError",
+        "message": "No diagram type detected matching given configuration for text: Mindmap root",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "reject-header-prefix",
+      "source": "mindmapXYZ\n root",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 1: mindmapXYZ root ^ Expecting 'SPACELINE', 'MINDMAP', got 'NODE_ID'",
+        "line": 1,
+        "column": 1,
+        "token": "NODE_ID"
+      }
+    },
+    {
+      "id": "reject-unclosed-shape",
+      "source": "mindmap\n root[Open",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: mindmap root[Open -----------------^ Expecting 'NODE_DEND', got '1'",
+        "line": 3,
+        "column": 7,
+        "token": "1"
+      }
+    },
+    {
+      "id": "reject-leading-comment-unclosed-shape",
+      "source": "%% pre\nmindmap\n root[Open",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: mindmap root[Open -----------------^ Expecting 'NODE_DEND', got '1'",
+        "line": 3,
+        "column": 7,
+        "token": "1"
+      }
+    },
+    {
+      "id": "reject-frontmatter-unclosed-shape",
+      "source": "---\ntitle: Board\n---\nmindmap\n root[Open",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: mindmap root[Open -----------------^ Expecting 'NODE_DEND', got '1'",
+        "line": 3,
+        "column": 7,
+        "token": "1"
+      }
+    },
+    {
+      "id": "reject-init-unclosed-shape",
+      "source": "%%{init: {\"mindmap\":{\"padding\":7}}}%%\nmindmap\n root[Open",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: mindmap root[Open -----------------^ Expecting 'NODE_DEND', got '1'",
+        "line": 3,
+        "column": 7,
+        "token": "1"
+      }
+    },
+    {
+      "id": "class-same-line-is-literal",
+      "source": "mindmap\n root:::red",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root:::red",
+          "level": 0,
+          "descr": "root:::red",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "root:::red",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root:::red",
+            "type": 0
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "icon-same-line-is-shape",
+      "source": "mindmap\n root::icon(star)",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "root::icon",
+          "level": 0,
+          "descr": "star",
+          "type": 1,
+          "width": 200,
+          "padding": 20,
+          "isRoot": true,
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "star",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "rounded",
+            "width": 200,
+            "height": 0,
+            "padding": 20,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "root::icon",
+            "type": 1
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    },
+    {
+      "id": "lone-shape-end-is-literal",
+      "source": "mindmap\n ]",
+      "accept": true,
+      "expectedDb": {
+        "root": {
+          "id": 0,
+          "nodeId": "]",
+          "level": 0,
+          "descr": "]",
+          "type": 0,
+          "width": 200,
+          "padding": 10,
+          "isRoot": true,
+          "anchors": [],
+          "children": []
+        },
+        "nodes": [
+          {
+            "id": "0",
+            "domId": "node_0",
+            "label": "]",
+            "labelType": "markdown",
+            "isGroup": false,
+            "shape": "defaultMindmapNode",
+            "width": 200,
+            "height": 0,
+            "padding": 10,
+            "cssClasses": "mindmap-node section-root section--1",
+            "cssStyles": [],
+            "look": "classic",
+            "level": 0,
+            "nodeId": "]",
+            "type": 0
+          }
+        ],
+        "edges": [],
+        "config": {
+          "theme": "default",
+          "look": "classic",
+          "layout": "cose-bilkent",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200,
+          "mindmapUseMaxWidth": true
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "d87fb2c9d93602f27c1066de0c073e058cdd24e90aaa2bfffe0f3d51bd47a94f"
+}

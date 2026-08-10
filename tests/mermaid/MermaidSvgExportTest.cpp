@@ -122,6 +122,8 @@ int main(int argc, char** argv) {
       {QStringLiteral("kanban"), QStringLiteral("kanban"),
        QStringLiteral("kanban\n  todo[Todo]\n    task1[Write docs]\n"
                       "  done[Done]\n    task2[Ship]")},
+      {QStringLiteral("mindmap"), QStringLiteral("mindmap"),
+       QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -219,6 +221,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"mindmap\": {\"useMaxWidth\": false}}}%%\n"
           "kanban\n  todo[Todo]\n    task1[Write docs]"),
+      QStringLiteral(
+          "%%{init: {\"mindmap\": {\"useMaxWidth\": false}}}%%\n"
+          "mindmap\n  root((Root))\n    Child"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);
@@ -318,6 +323,25 @@ int main(int argc, char** argv) {
               !kanbanNoTitle.contains("aria-labelledby=") &&
               !kanbanNoTitle.contains("aria-describedby="),
           QStringLiteral("Kanban frontmatter title must remain invisible"));
+
+  const QByteArray mindmapNoTitle = renderSvg(QStringLiteral(
+      "---\ntitle: Mindmap title\n---\n"
+      "mindmap\n  root((Root))\n    Child")).svg;
+  require(!mindmapNoTitle.contains("Mindmap title") &&
+              !mindmapNoTitle.contains("aria-labelledby=") &&
+              !mindmapNoTitle.contains("aria-describedby="),
+          QStringLiteral("Mindmap frontmatter title must remain invisible"));
+
+  const QByteArray mindmapSafeLink = renderSvg(QStringLiteral(
+      "mindmap\n  root((Root))\n"
+      "    id[\"<a href='https://example.org/docs'>Docs</a>\"]")).svg;
+  const QByteArray mindmapBlockedLink = renderSvg(QStringLiteral(
+      "mindmap\n  root((Root))\n"
+      "    id[\"<a href='javascript:alert(1)'>Blocked</a>\"]")).svg;
+  require(mindmapSafeLink.contains(
+              "href=\"https://example.org/docs\"") &&
+              !mindmapBlockedLink.contains("javascript:"),
+          QStringLiteral("Mindmap inline HTML link sanitization drifted"));
 
   const QByteArray kanbanTicket = renderSvg(QStringLiteral(
       "%%{init: {\"kanban\": {\"ticketBaseUrl\": "

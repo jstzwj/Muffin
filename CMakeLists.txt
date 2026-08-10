@@ -37,6 +37,19 @@ find_package(dav1d REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(harfbuzz REQUIRED)
+set(_muffin_harfbuzz_include_hints ${harfbuzz_INCLUDE_DIRS})
+if(DEFINED harfbuzz_PACKAGE_FOLDER_RELEASE)
+  list(APPEND _muffin_harfbuzz_include_hints
+    "${harfbuzz_PACKAGE_FOLDER_RELEASE}/include/harfbuzz")
+endif()
+find_path(MUFFIN_HARFBUZZ_INCLUDE_DIR
+  NAMES hb.h
+  HINTS ${_muffin_harfbuzz_include_hints}
+  PATH_SUFFIXES harfbuzz
+  REQUIRED
+)
+unset(_muffin_harfbuzz_include_hints)
 find_package(Python3 COMPONENTS Interpreter QUIET)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_QT_TRANSLATION_SOURCE_DIR "" CACHE PATH "Optional directory containing Qt qtbase_*.qm translation files")
@@ -486,6 +499,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/TimelineDiagramAdapter.cpp
   src/mermaid/editor/PacketDiagramAdapter.cpp
   src/mermaid/editor/KanbanDiagramAdapter.cpp
+  src/mermaid/editor/MindmapDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -615,6 +629,14 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/kanban/KanbanScene.h
   src/mermaid/kanban/KanbanScenePainter.cpp
   src/mermaid/kanban/KanbanScenePainter.h
+  src/mermaid/mindmap/MindmapDiagram.cpp
+  src/mermaid/mindmap/MindmapDiagram.h
+  src/mermaid/mindmap/MindmapCoseLayout.cpp
+  src/mermaid/mindmap/MindmapCoseLayout.h
+  src/mermaid/mindmap/MindmapScene.cpp
+  src/mermaid/mindmap/MindmapScene.h
+  src/mermaid/mindmap/MindmapScenePainter.cpp
+  src/mermaid/mindmap/MindmapScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp
@@ -702,6 +724,7 @@ add_library(MuffinCore STATIC
 target_link_libraries(MuffinCore
   PUBLIC
     Qt6::Core
+    harfbuzz::harfbuzz
   PRIVATE
     Qt6::Concurrent
     Qt6::Gui
@@ -719,6 +742,10 @@ target_include_directories(MuffinCore
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cmark-gfm/src
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cmark-gfm/extensions
     ${CMAKE_CURRENT_BINARY_DIR}/third_party/cmark-gfm/src
+)
+
+target_include_directories(MuffinCore SYSTEM PRIVATE
+  ${MUFFIN_HARFBUZZ_INCLUDE_DIR}
 )
 
 # Help documentation: a set of GFM .md files per UI locale (English fallback at
