@@ -485,6 +485,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/XYChartDiagramAdapter.cpp
   src/mermaid/editor/TimelineDiagramAdapter.cpp
   src/mermaid/editor/PacketDiagramAdapter.cpp
+  src/mermaid/editor/KanbanDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -608,6 +609,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/packet/PacketScene.h
   src/mermaid/packet/PacketScenePainter.cpp
   src/mermaid/packet/PacketScenePainter.h
+  src/mermaid/kanban/KanbanDiagram.cpp
+  src/mermaid/kanban/KanbanDiagram.h
+  src/mermaid/kanban/KanbanScene.cpp
+  src/mermaid/kanban/KanbanScene.h
+  src/mermaid/kanban/KanbanScenePainter.cpp
+  src/mermaid/kanban/KanbanScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

@@ -464,6 +464,17 @@ const familyPolicies = {
     paddingX: parity("layout", "paint", "export"),
     paddingY: parity(...layout),
   },
+  kanban: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: inert(
+      "Kanban 11.16.0 mistakenly reads mindmap.useMaxWidth when configuring its SVG; kanban.useMaxWidth is retained but inert.",
+    ),
+    padding: inert(
+      "Kanban 11.16.0 mistakenly reads mindmap.padding for node/viewBox padding; kanban.padding is retained but inert.",
+    ),
+    sectionWidth: parity("layout", "paint", "viewport", "export"),
+    ticketBaseUrl: parity("interaction", "export"),
+  },
   requirement: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -527,6 +538,7 @@ const shared = [
       "xyChart",
       "timeline",
       "packet",
+      "kanban",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -546,6 +558,7 @@ const shared = [
       "xyChart",
       "timeline",
       "packet",
+      "kanban",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -569,6 +582,7 @@ const shared = [
       "xyChart",
       "timeline",
       "packet",
+      "kanban",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -583,17 +597,29 @@ const shared = [
   },
   {
     path: "look",
-    families: ["flowchart", "class", "state", "timeline"],
+    families: ["flowchart", "class", "state", "timeline", "kanban"],
     ...partial(
       interactiveLayout,
       interactiveLayout,
-      "Flowchart and Timeline are complete; state currently uses look for marker selection and class retains it without rough painting.",
+      "Flowchart, Timeline, and Kanban are complete; state currently uses look for marker selection and class retains it without rough painting.",
     ),
   },
   {
     path: "handDrawnSeed",
-    families: ["flowchart"],
+    families: ["flowchart", "kanban"],
     ...parity("layout", "paint", "interaction", "export"),
+  },
+  {
+    path: "mindmap.padding",
+    families: ["kanban"],
+    ...parity("layout", "paint", "viewport", "export"),
+    note: "Observable Mermaid 11.16.0 cross-family read: Kanban uses mindmap.padding instead of kanban.padding for node and viewBox padding.",
+  },
+  {
+    path: "mindmap.useMaxWidth",
+    families: ["kanban"],
+    ...parity("viewport", "export"),
+    note: "Observable Mermaid 11.16.0 cross-family read: Kanban uses mindmap.useMaxWidth instead of kanban.useMaxWidth in setupGraphViewbox.",
   },
   {
     path: "layout",
@@ -624,6 +650,7 @@ const shared = [
       "flowchart", "sequence", "class", "state", "er", "requirement",
       "pie", "quadrantChart", "journey", "radar", "xyChart",
       "timeline", "packet",
+      "kanban",
     ],
     ...unsupported(
       ["parsed"],
@@ -646,6 +673,7 @@ const shared = [
       "xyChart",
       "timeline",
       "packet",
+      "kanban",
     ],
     ...policy(
       "security-fixed",
@@ -675,6 +703,7 @@ const shared = [
       "xyChart",
       "timeline",
       "packet",
+      "kanban",
     ],
     ...parity("export"),
   },
@@ -694,6 +723,7 @@ const shared = [
       "xyChart",
       "timeline",
       "packet",
+      "kanban",
     ],
     ...parity("export"),
   },
@@ -713,6 +743,7 @@ const shared = [
       "xyChart",
       "timeline",
       "packet",
+      "kanban",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -765,6 +796,7 @@ const interfaces = {
   xyChart: "XYChartConfig",
   timeline: "TimelineDiagramConfig",
   packet: "PacketDiagramConfig",
+  kanban: "KanbanDiagramConfig",
 };
 
 const entries = [];

@@ -6,6 +6,7 @@
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/journey/JourneyScene.h"
+#include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/timeline/TimelineScene.h"
@@ -619,6 +620,76 @@ int main(int argc, char** argv) {
             QStringLiteral("Radar diagnostics must map original line and column"));
   }
 
+  // Kanban keeps lexer and parser failures typed after preprocessing. Jison's
+  // lexer reports column zero, which RenderCache normalizes to the first
+  // 1-based column while preserving the original line through removed
+  // frontmatter, directives, and comments.
+  {
+    struct KanbanDiagnosticCase {
+      QString tail;
+      QString code;
+      QString message;
+      QString actual;
+      int originalLine;
+    };
+    const QVector<KanbanDiagnosticCase> cases = {
+        {QStringLiteral("kanbanXYZ\n A"),
+         QStringLiteral("kanban-parse-error"),
+         QStringLiteral("Parse error on line 1"),
+         QStringLiteral("NODE_ID"), 6},
+        {QStringLiteral("kanban\n @"),
+         QStringLiteral("kanban-lexer-error"),
+         QStringLiteral("Lexical error on line 2. Unrecognized text."),
+         QString(), 7},
+    };
+    for (const KanbanDiagnosticCase& fixture : cases) {
+      MermaidRenderCache cache;
+      const QString decorated =
+          QStringLiteral("---\ntitle: Ignored Kanban title\n---\n"
+                         "%%{init: {\"theme\": \"default\"}}%%\n"
+                         "%% generated comment\n") +
+          fixture.tail;
+      const MermaidRenderEntry entry = cache.getSync(
+          MermaidRenderCache::makeKey(decorated), decorated);
+      const qsizetype lineOffset = fixture.originalLine == 6
+          ? decorated.indexOf(QStringLiteral("kanbanXYZ"))
+          : decorated.indexOf(QStringLiteral(" @"));
+      require(entry.status == kError &&
+                  entry.diagnostic.stage == QLatin1String("parse") &&
+                  entry.diagnostic.code == fixture.code &&
+                  entry.diagnostic.message == fixture.message &&
+                  entry.diagnostic.actual == fixture.actual &&
+                  entry.diagnostic.span.offset == lineOffset &&
+                  entry.diagnostic.span.line == fixture.originalLine &&
+                  entry.diagnostic.span.column == 1,
+              QStringLiteral("Kanban %1 diagnostic contract drifted")
+                  .arg(fixture.code));
+    }
+  }
+
+  // Kanban has no commonDb title/accessibility grammar. A frontmatter title is
+  // discarded before shared metadata can add a visible title band or ARIA.
+  {
+    MermaidRenderCache cache;
+    const QString body = QStringLiteral(
+        "kanban\n  todo[Todo]\n    task1[Write docs]");
+    const QString titled =
+        QStringLiteral("---\ntitle: Invisible board title\n---\n") + body;
+    const MermaidRenderEntry base = cache.getSync(
+        MermaidRenderCache::makeKey(body), body);
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(titled), titled);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::kanban::KanbanScene>(entry.scene);
+    require(base.status == kReady && entry.status == kReady && scene &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle.isEmpty() &&
+                entry.metadata.accessibleDescription.isEmpty() &&
+                entry.metadata.titleHeight == 0.0 &&
+                entry.naturalSize == base.naturalSize,
+            QStringLiteral("Kanban frontmatter title must remain invisible"));
+  }
+
   // Every native family is normalised into the same 1-based diagnostic model.
   {
     struct InvalidCase {
@@ -642,6 +713,8 @@ int main(int argc, char** argv) {
          QStringLiteral("timeline"), QStringLiteral("timeline-runtime-error"), 2},
         {QStringLiteral("packet-beta\n0: \"a\"\n2: \"gap\""),
          QStringLiteral("packet"), QStringLiteral("packet-runtime-error"), 3},
+        {QStringLiteral("kanban\n []"),
+         QStringLiteral("kanban"), QStringLiteral("kanban-parse-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -678,6 +751,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("timeline")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("packet-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("kanban")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1270,6 +1345,9 @@ int main(int argc, char** argv) {
          QStringLiteral("timeline\nsection S\nTask : Event")},
         {QStringLiteral("packet"),
          QStringLiteral("packet-beta\n0-7: \"Header\"\n8-15: \"Payload\"")},
+        {QStringLiteral("kanban"),
+         QStringLiteral("kanban\n  todo[Todo]\n    task1[Write docs]\n"
+                        "  done[Done]\n    task2[Ship]")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

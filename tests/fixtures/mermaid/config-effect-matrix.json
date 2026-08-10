@@ -27,17 +27,18 @@
       "radar",
       "xyChart",
       "timeline",
-      "packet"
+      "packet",
+      "kanban"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 123,
+    "parity": 127,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 68,
+    "upstream-inert": 71,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -57,7 +58,8 @@
         "radar",
         "xyChart",
         "timeline",
-        "packet"
+        "packet",
+        "kanban"
       ],
       "status": "parity",
       "upstream": [
@@ -92,7 +94,8 @@
         "radar",
         "xyChart",
         "timeline",
-        "packet"
+        "packet",
+        "kanban"
       ],
       "status": "partial",
       "upstream": [
@@ -128,7 +131,8 @@
         "radar",
         "xyChart",
         "timeline",
-        "packet"
+        "packet",
+        "kanban"
       ],
       "status": "parity",
       "upstream": [
@@ -180,7 +184,8 @@
         "flowchart",
         "class",
         "state",
-        "timeline"
+        "timeline",
+        "kanban"
       ],
       "status": "partial",
       "upstream": [
@@ -199,12 +204,13 @@
         "interaction",
         "export"
       ],
-      "note": "Flowchart and Timeline are complete; state currently uses look for marker selection and class retains it without rough painting."
+      "note": "Flowchart, Timeline, and Kanban are complete; state currently uses look for marker selection and class retains it without rough painting."
     },
     {
       "path": "handDrawnSeed",
       "families": [
-        "flowchart"
+        "flowchart",
+        "kanban"
       ],
       "status": "parity",
       "upstream": [
@@ -221,6 +227,46 @@
         "interaction",
         "export"
       ]
+    },
+    {
+      "path": "mindmap.padding",
+      "families": [
+        "kanban"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "note": "Observable Mermaid 11.16.0 cross-family read: Kanban uses mindmap.padding instead of kanban.padding for node and viewBox padding."
+    },
+    {
+      "path": "mindmap.useMaxWidth",
+      "families": [
+        "kanban"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "note": "Observable Mermaid 11.16.0 cross-family read: Kanban uses mindmap.useMaxWidth instead of kanban.useMaxWidth in setupGraphViewbox."
     },
     {
       "path": "layout",
@@ -301,7 +347,8 @@
         "radar",
         "xyChart",
         "timeline",
-        "packet"
+        "packet",
+        "kanban"
       ],
       "status": "unsupported",
       "upstream": [
@@ -327,7 +374,8 @@
         "radar",
         "xyChart",
         "timeline",
-        "packet"
+        "packet",
+        "kanban"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -375,7 +423,8 @@
         "radar",
         "xyChart",
         "timeline",
-        "packet"
+        "packet",
+        "kanban"
       ],
       "status": "parity",
       "upstream": [
@@ -402,7 +451,8 @@
         "radar",
         "xyChart",
         "timeline",
-        "packet"
+        "packet",
+        "kanban"
       ],
       "status": "parity",
       "upstream": [
@@ -429,7 +479,8 @@
         "radar",
         "xyChart",
         "timeline",
-        "packet"
+        "packet",
+        "kanban"
       ],
       "status": "unsupported",
       "upstream": [
@@ -4871,7 +4922,96 @@
         "export"
       ],
       "default": 5
+    },
+    {
+      "family": "kanban",
+      "interface": "KanbanDiagramConfig",
+      "path": "kanban.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "kanban",
+      "interface": "KanbanDiagramConfig",
+      "path": "kanban.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Kanban 11.16.0 mistakenly reads mindmap.useMaxWidth when configuring its SVG; kanban.useMaxWidth is retained but inert.",
+      "default": true
+    },
+    {
+      "family": "kanban",
+      "interface": "KanbanDiagramConfig",
+      "path": "kanban.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Kanban 11.16.0 mistakenly reads mindmap.padding for node/viewBox padding; kanban.padding is retained but inert.",
+      "default": 8
+    },
+    {
+      "family": "kanban",
+      "interface": "KanbanDiagramConfig",
+      "path": "kanban.sectionWidth",
+      "field": "sectionWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 200
+    },
+    {
+      "family": "kanban",
+      "interface": "KanbanDiagramConfig",
+      "path": "kanban.ticketBaseUrl",
+      "field": "ticketBaseUrl",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "interaction",
+        "export"
+      ],
+      "default": ""
     }
   ],
-  "fixtureSha256": "643cba9aa0bd558b2db795645aab17a2c4a4e7aab6333297611325398416a678"
+  "fixtureSha256": "fe3604ef8258fc1d47a5253649968f28901d394c6770acdc29b7ff7306414380"
 }

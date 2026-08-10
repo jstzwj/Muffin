@@ -31,6 +31,10 @@ struct MermaidRenderMetadata {
   bool svgUseMaxWidth = true;
   bool svgArrowMarkerAbsolute = false;
   bool svgDeterministicIds = false;
+  // Most families always expose an SVG <title>, falling back to "Mermaid
+  // diagram". Kanban 11.16.0 is the exception: it has no accessibility
+  // grammar and ignores frontmatter title, so its root has no labelledby.
+  bool svgEmitAccessibleTitle = true;
   QString svgDeterministicIdSeed;
 
   bool hasVisibleTitle() const { return !title.trimmed().isEmpty(); }

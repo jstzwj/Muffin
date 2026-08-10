@@ -1,0 +1,1918 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "kanbanModuleSha256": "e72b92f9e32d5de4cdd57de283144e44bb868a82ac00871e7859f1294670ebcf",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "parser": "Jison kanban.jison + kanbanDb.ts",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry detection/accept/reject plus KanbanDB sections/nodes and parser-visible config",
+  "cases": [
+    {
+      "id": "bare-section",
+      "source": "kanban\nTodo",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "Todo",
+            "level": 0,
+            "label": "Todo",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "Todo",
+            "level": 0,
+            "label": "Todo",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "header-same-line",
+      "source": "kanban Todo",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "Todo",
+            "level": 1,
+            "label": "Todo",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "Todo",
+            "level": 1,
+            "label": "Todo",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "reject-inline-comment-is-node-text",
+      "source": "%% pre\n\nkanban\n\n  A\n  %% comment\n    a1 %% tail\n\n  B",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: kanban A a1 %% tail ------^ Expecting 'SPACELINE', 'NL', 'EOF', got 'SPACELIST'",
+        "line": 3,
+        "column": 7,
+        "token": "SPACELIST"
+      }
+    },
+    {
+      "id": "reject-comment-blank-section-gap",
+      "source": "%% pre\n\nkanban\n\n  A\n  %% comment\n    a1\n\n  B",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: kanban A a1 B ------^ Expecting 'SPACELINE', 'NL', 'EOF', got 'SPACELIST'",
+        "line": 3,
+        "column": 7,
+        "token": "SPACELIST"
+      }
+    },
+    {
+      "id": "blank-after-header",
+      "source": "kanban\n\n A",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: kanban A ------^ Expecting 'SPACELINE', 'NL', 'EOF', got 'SPACELIST'",
+        "line": 3,
+        "column": 7,
+        "token": "SPACELIST"
+      }
+    },
+    {
+      "id": "blank-between-sections",
+      "source": "kanban\n A\n\n B",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          },
+          {
+            "id": "B",
+            "level": 1,
+            "label": "B",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "B",
+            "level": 1,
+            "label": "B",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "comment-without-blank-gap",
+      "source": "kanban\n A\n %% comment\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "sections-and-tasks",
+      "source": "kanban\n  Todo\n    docs\n    code\n  Done\n    ship",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "Todo",
+            "level": 2,
+            "label": "Todo",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          },
+          {
+            "id": "Done",
+            "level": 2,
+            "label": "Done",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "Todo",
+            "level": 2,
+            "label": "Todo",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "docs",
+            "level": 4,
+            "label": "docs",
+            "parentId": "Todo",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "code",
+            "level": 4,
+            "label": "code",
+            "parentId": "Todo",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "Done",
+            "level": 2,
+            "label": "Done",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "ship",
+            "level": 4,
+            "label": "ship",
+            "parentId": "Done",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "tab-levels",
+      "source": "kanban\n\tTodo\n\t\tTask",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "Todo",
+            "level": 1,
+            "label": "Todo",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "Todo",
+            "level": 1,
+            "label": "Todo",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "Task",
+            "level": 2,
+            "label": "Task",
+            "parentId": "Todo",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "deep-level-is-still-task",
+      "source": "kanban\n A\n          deep\n B",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          },
+          {
+            "id": "B",
+            "level": 1,
+            "label": "B",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "deep",
+            "level": 10,
+            "label": "deep",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "B",
+            "level": 1,
+            "label": "B",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "id-and-no-id-square",
+      "source": "kanban\n s[Section]\n  [Task]",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "Task",
+            "level": 2,
+            "label": "Task",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "all-shapes",
+      "source": "kanban\n a[A]\n  b(B)\n  c((C))\n  d{{D}}\n  e)E(\n  f))F((\n  g(-G-)\n  h-)H(-",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "a",
+            "level": 1,
+            "label": "A",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "a",
+            "level": 1,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "b",
+            "level": 2,
+            "label": "B",
+            "parentId": "a",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "c",
+            "level": 2,
+            "label": "C",
+            "parentId": "a",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "d",
+            "level": 2,
+            "label": "D",
+            "parentId": "a",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "e",
+            "level": 2,
+            "label": "E",
+            "parentId": "a",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "f",
+            "level": 2,
+            "label": "F",
+            "parentId": "a",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "g",
+            "level": 2,
+            "label": "G-",
+            "parentId": "a",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "h-",
+            "level": 2,
+            "label": "H",
+            "parentId": "a",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "mismatched-shape-end",
+      "source": "kanban\n s[Section)\n  t(Task]",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "Task",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "quoted-multiline",
+      "source": "kanban\n s[\"`line one\n line two`\"]\n  t[\"task one\n task two\"]",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "line one\n line two",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "line one\n line two",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "task one\n task two",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "unicode-markdown",
+      "source": "kanban\n s[日本 **Ready**]\n  t[中文 _Task_]",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "日本 **Ready**",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "日本 **Ready**",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "中文 _Task_",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "raw-whitespace",
+      "source": "kanban\n id  [  Section  ]\n   task  ",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "id  ",
+            "level": 1,
+            "label": "  Section  ",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "id  ",
+            "level": 1,
+            "label": "  Section  ",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task  ",
+            "level": 3,
+            "label": "task  ",
+            "parentId": "id  ",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "inline-metadata-is-nodes",
+      "source": "kanban\n title Hello\n  accTitle: Board\n  accDescr: Details",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "title Hello",
+            "level": 1,
+            "label": "title Hello",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "title Hello",
+            "level": 1,
+            "label": "title Hello",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "accTitle: Board",
+            "level": 2,
+            "label": "accTitle: Board",
+            "parentId": "title Hello",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "accDescr: Details",
+            "level": 2,
+            "label": "accDescr: Details",
+            "parentId": "title Hello",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "duplicate-ids",
+      "source": "kanban\n s[A]\n  x[T1]\n s[B]\n  x[T2]",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "A",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          },
+          {
+            "id": "s",
+            "level": 1,
+            "label": "B",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "x",
+            "level": 2,
+            "label": "T1",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "x",
+            "level": 2,
+            "label": "T2",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "s",
+            "level": 1,
+            "label": "B",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "x",
+            "level": 2,
+            "label": "T1",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "x",
+            "level": 2,
+            "label": "T2",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "shallower-last-is-task",
+      "source": "kanban\n  A\n    task\nB",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 2,
+            "label": "A",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 2,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 4,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          },
+          {
+            "id": "B",
+            "level": 0,
+            "label": "B",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "shape-data-basic",
+      "source": "kanban\n s[Section]\n  t[Old]@{ label: New, ticket: K-1, assigned: bob, priority: High, icon: fa-star, shape: kanbanitem }",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "New",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem",
+            "ticket": "K-1",
+            "priority": "High",
+            "assigned": "bob",
+            "icon": "fa-star"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "shape-data-multiline",
+      "source": "kanban\n s[Section]\n  t[Old]@{\n label: New\n ticket: K-1\n assigned: bob\n priority: 2\n icon: star\n}",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "New",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem",
+            "ticket": "K-1",
+            "priority": 2,
+            "assigned": "bob",
+            "icon": "star"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "shape-data-js-coercion",
+      "source": "kanban\n s[Section]\n  t[Old]@{ label: [a,b], ticket: [K,2], assigned: true, priority: -2, icon: 12 }",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "a,b",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem",
+            "ticket": "K,2",
+            "priority": -2,
+            "assigned": "true",
+            "icon": "12"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "shape-data-falsy-inert",
+      "source": "kanban\n s[Section]\n  t[Old]@{ label: false, ticket: 0, assigned: null, priority: 0, icon: false }",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "Old",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "shape-data-empty",
+      "source": "kanban\n s[Section]@{}\n  t[Task]",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "Task",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "shape-data-quoted-newline",
+      "source": "kanban\n s[Section]\n  t[Old]@{\n label: \"line one\n   line two\"\n}",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "line one<br>line two",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "section-shape-data-projection",
+      "source": "kanban\n s[Old]@{ label: \"<b>New</b><script>x</script>\", ticket: S-1, assigned: bob, priority: High, icon: star }\n  t[Task]",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "<b>New</b><script>x</script>",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false,
+            "ticket": "S-1",
+            "priority": "High",
+            "assigned": "bob",
+            "icon": "star"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "<b>New</b>",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "ticket": "S-1",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "Task",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "decorations-next-statements",
+      "source": "kanban\n s[Section]\n :::section-class\n ::icon(section-icon)\n  t[Task]\n  :::task-class\n  ::icon(task icon)",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false,
+            "icon": "section-icon",
+            "cssClasses": "section-class"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "Task",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem",
+            "icon": "task icon"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "decoration-last-wins",
+      "source": "kanban\n s[Section]\n  t[Task]\n  ::icon(one)\n  ::icon(two)\n  :::one\n  :::two",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "Task",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem",
+            "icon": "two"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "sanitized-auto-id",
+      "source": "kanban\n [<script>x</script>]\n  t[<b>ok</b><script>x</script>]",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "kbn0",
+            "level": 1,
+            "label": "",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "kbn0",
+            "level": 1,
+            "label": "",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "<b>ok</b>",
+            "parentId": "kbn0",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "html-sanitizer",
+      "source": "kanban\n s[<img src=javascript:bad onerror=x><a href=javascript:bad onclick=x>safe</a>]\n  t[<style>x</style><i onmouseover=x>ok</i>]\n  ::icon(<script>x</script><b>icon</b>)",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "<img><a>safe</a>",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "s",
+            "level": 1,
+            "label": "<img><a>safe</a>",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "t",
+            "level": 2,
+            "label": "<i>ok</i>",
+            "parentId": "s",
+            "isGroup": false,
+            "shape": "kanbanItem",
+            "icon": "<b>icon</b>"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "frontmatter-title-not-db",
+      "source": "---\ntitle: Board title\n---\nkanban\n A\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "frontmatter-mindmap-config",
+      "source": "---\nconfig:\n  mindmap:\n    padding: 7\n    maxNodeWidth: 321\n---\nkanban\n A[Section]\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "width": 321,
+            "padding": 14,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 7,
+          "mindmapMaxNodeWidth": 321
+        }
+      }
+    },
+    {
+      "id": "init-mindmap-string-config",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"6\",\"maxNodeWidth\":\"333\"}}}%%\nkanban\n A[Section]\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "width": "333",
+            "padding": 12,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": "6",
+          "mindmapMaxNodeWidth": "333"
+        }
+      }
+    },
+    {
+      "id": "init-mindmap-hex-padding",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"0xA\"}}}%%\nkanban\n A[Section]\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": "0xA",
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "init-mindmap-binary-padding",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"0b1010\"}}}%%\nkanban\n A[Section]\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": "0b1010",
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "init-mindmap-octal-padding",
+      "source": "%%{init: {\"mindmap\":{\"padding\":\"0o12\"}}}%%\nkanban\n A[Section]\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "width": 200,
+            "padding": 20,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": "0o12",
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "init-mindmap-bool-config",
+      "source": "%%{init: {\"mindmap\":{\"padding\":true,\"maxNodeWidth\":false}}}%%\nkanban\n A[Section]\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "width": false,
+            "padding": 2,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "Section",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": true,
+          "mindmapMaxNodeWidth": false
+        }
+      }
+    },
+    {
+      "id": "init-look-handdrawn",
+      "source": "%%{init: {\"look\":\"handDrawn\"}}%%\nkanban\n A\n  task",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": "A",
+            "level": 1,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "handDrawn"
+          },
+          {
+            "id": "task",
+            "level": 2,
+            "label": "task",
+            "parentId": "A",
+            "isGroup": false,
+            "shape": "kanbanItem"
+          }
+        ],
+        "config": {
+          "look": "handDrawn",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "comment-only-document",
+      "source": "kanban\n%% only",
+      "accept": true,
+      "expectedDb": {
+        "sections": [],
+        "nodes": [],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "blank-only-document",
+      "source": "kanban\n\n",
+      "accept": true,
+      "expectedDb": {
+        "sections": [],
+        "nodes": [],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "reject-empty-no-newline",
+      "source": "kanban",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 2: kanban ------^ Expecting 'SPACELINE', 'SPACELIST', 'ICON', 'CLASS', 'NODE_DSTART', 'NODE_ID', got 'EOF'",
+        "line": 2,
+        "column": 7,
+        "token": "EOF"
+      }
+    },
+    {
+      "id": "reject-no-header",
+      "source": "A\n task",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "name": "UnknownDiagramError",
+        "message": "No diagram type detected matching given configuration for text: A task",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "reject-header-case-detector",
+      "source": "Kanban\nA",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "name": "UnknownDiagramError",
+        "message": "No diagram type detected matching given configuration for text: Kanban A",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "reject-header-prefix",
+      "source": "kanbanXYZ\nA",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 1: kanbanXYZA ^ Expecting 'SPACELINE', 'KANBAN', got 'NODE_ID'",
+        "line": 1,
+        "column": 1,
+        "token": "NODE_ID"
+      }
+    },
+    {
+      "id": "header-colon-is-node",
+      "source": "kanban:\nA",
+      "accept": true,
+      "expectedDb": {
+        "sections": [
+          {
+            "id": ":",
+            "level": 0,
+            "label": ":",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          },
+          {
+            "id": "A",
+            "level": 0,
+            "label": "A",
+            "width": 200,
+            "padding": 10,
+            "isGroup": false
+          }
+        ],
+        "nodes": [
+          {
+            "id": ":",
+            "level": 0,
+            "label": ":",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          },
+          {
+            "id": "A",
+            "level": 0,
+            "label": "A",
+            "isGroup": true,
+            "shape": "kanbanSection",
+            "look": "classic"
+          }
+        ],
+        "config": {
+          "look": "classic",
+          "mindmapPadding": 10,
+          "mindmapMaxNodeWidth": 200
+        }
+      }
+    },
+    {
+      "id": "reject-empty-square",
+      "source": "kanban\n []",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 2: kanban [] --------^ Expecting 'NODE_DESCR', got 'NODE_DEND'",
+        "line": 2,
+        "column": 2,
+        "token": "NODE_DEND"
+      }
+    },
+    {
+      "id": "reject-unclosed-square",
+      "source": "kanban\n s[Section",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 3: kanban s[Section ----------------^ Expecting 'NODE_DEND', got '1'",
+        "line": 3,
+        "column": 4,
+        "token": 1
+      }
+    },
+    {
+      "id": "reject-lone-at",
+      "source": "kanban\n @",
+      "accept": false,
+      "reject": {
+        "class": "lexer",
+        "name": "Error",
+        "message": "Lexical error on line 2. Unrecognized text. kanban @ -------^",
+        "line": 2,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "reject-class-same-line",
+      "source": "kanban\n s[Section]:::red",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 2: ...anban s[Section]:::red ----------------------^ Expecting 'SPACELINE', 'NL', 'EOF', 'SHAPE_DATA', got 'CLASS'",
+        "line": 2,
+        "column": 11,
+        "token": "CLASS"
+      }
+    },
+    {
+      "id": "reject-icon-same-line",
+      "source": "kanban\n s[Section]::icon(star)",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "name": "Error",
+        "message": "Parse error on line 2: ...n s[Section]::icon(star) ----------------------^ Expecting 'SPACELINE', 'NL', 'EOF', 'SHAPE_DATA', got 'ICON'",
+        "line": 2,
+        "column": 11,
+        "token": "ICON"
+      }
+    },
+    {
+      "id": "runtime-class-before-node",
+      "source": "kanban\n:::red\n s[Section]",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "TypeError",
+        "message": "Cannot set properties of undefined (setting 'cssClasses')",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "runtime-icon-before-node",
+      "source": "kanban\n::icon(star)\n s[Section]",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "TypeError",
+        "message": "Cannot set properties of undefined (setting 'icon')",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "runtime-shallower-followed",
+      "source": "kanban\n  A\n    task\nB\n  C",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "Error",
+        "message": "Items without section detected, found section (\"B\")",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "runtime-invalid-shape-case",
+      "source": "kanban\n A\n  t[Task]@{ shape: KanbanItem }",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "Error",
+        "message": "No such shape: KanbanItem. Shape names should be lowercase.",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "runtime-invalid-shape-underscore",
+      "source": "kanban\n A\n  t[Task]@{ shape: kanban_item }",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "Error",
+        "message": "No such shape: kanban_item. Shape names should be lowercase.",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "runtime-invalid-shape-type",
+      "source": "kanban\n A\n  t[Task]@{ shape: 12 }",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "name": "TypeError",
+        "message": "doc.shape.toLowerCase is not a function",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "yaml-invalid",
+      "source": "kanban\n A\n  t[Task]@{ label: [ }",
+      "accept": false,
+      "reject": {
+        "class": "yaml",
+        "name": "YAMLException",
+        "message": "missed comma between flow collection entries (3:1) 1 | { 2 | label: [ 3 | } -----^",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "yaml-duplicate-key",
+      "source": "kanban\n A\n  t[Task]@{ label: one, label: two }",
+      "accept": false,
+      "reject": {
+        "class": "yaml",
+        "name": "YAMLException",
+        "message": "duplicated mapping key (2:14) 1 | { 2 | label: one, label: two ------------------^ 3 | }",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    }
+  ],
+  "fixtureSha256": "be72acfa5f7a75e0a3b3ef2073723c6eaf6d61c1b988912a0aec4beaa10f6134"
+}

@@ -33,6 +33,7 @@
 #include "mermaid/xychart/XYChartDiagram.h"
 #include "mermaid/timeline/TimelineDiagram.h"
 #include "mermaid/packet/PacketDiagram.h"
+#include "mermaid/kanban/KanbanDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -49,6 +50,7 @@
 #include <QRegularExpression>
 #include <QtConcurrent>
 
+#include <algorithm>
 #include <cmath>
 #include <optional>
 #include <stdexcept>
@@ -522,6 +524,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("xychart-beta"));
     diagnostic.expected.append(QStringLiteral("timeline"));
     diagnostic.expected.append(QStringLiteral("packet-beta"));
+    diagnostic.expected.append(QStringLiteral("kanban"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -675,6 +678,35 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         source, pre, type, QStringLiteral("parse"), std::move(code),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
         error.line, error.column, QString(), QString(), {}));
+  } catch (const kanban::KanbanParseError& error) {
+    QString code;
+    switch (error.kind) {
+      case kanban::KanbanErrorKind::Lexer:
+        code = QStringLiteral("kanban-lexer-error");
+        break;
+      case kanban::KanbanErrorKind::Parser:
+        code = QStringLiteral("kanban-parse-error");
+        break;
+      case kanban::KanbanErrorKind::Yaml:
+        code = QStringLiteral("kanban-yaml-error");
+        break;
+      case kanban::KanbanErrorKind::Runtime:
+        code = QStringLiteral("kanban-runtime-error");
+        break;
+    }
+    // Jison's Kanban lexer reports an unrecognized token at column 0. The
+    // shared diagnostic model is 1-based, so retain the known line and map it
+    // to that line's first source column instead of dropping the location.
+    const int diagnosticColumn =
+        error.line > 0 ? std::max(1, error.column) : error.column;
+    const qsizetype offset = error.line > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       diagnosticColumn)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"), std::move(code),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, diagnosticColumn, QString(), error.token, {}));
   } catch (const std::exception& error) {
     MermaidDiagnostic diagnostic;
     diagnostic.diagramType = type;

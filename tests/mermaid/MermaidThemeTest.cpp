@@ -515,6 +515,38 @@ void checkCScaleDynamicOverrides() {
   }
 }
 
+void checkKanbanNeoShadows() {
+  struct ExpectedShadow {
+    FlowThemeId id;
+    QString color;
+    qreal opacity;
+    qreal x;
+    qreal y;
+  };
+  const ExpectedShadow cases[] = {
+      {FlowThemeId::Base, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0},
+      {FlowThemeId::Dark, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0},
+      {FlowThemeId::Default, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0},
+      {FlowThemeId::Forest, QStringLiteral("#b9b9b9"), 0.5, 1.0, 2.0},
+      {FlowThemeId::Neutral, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0},
+      {FlowThemeId::Neo, QStringLiteral("#000000"), 0.25, 0.0, 1.0},
+      {FlowThemeId::NeoDark, QStringLiteral("#b9b9b9"), 0.2, 1.0, 2.0},
+      {FlowThemeId::Redux, QStringLiteral("#000000"), 0.06, 4.0, 4.0},
+      {FlowThemeId::ReduxDark, QStringLiteral("#ffffff"), 0.06, 4.0, 4.0},
+      {FlowThemeId::ReduxColor, QStringLiteral("#000000"), 0.06, 4.0, 4.0},
+      {FlowThemeId::ReduxDarkColor, QStringLiteral("#ffffff"), 0.06, 4.0, 4.0},
+  };
+  for (const ExpectedShadow& expected : cases) {
+    const FlowThemeVariables theme = resolveFlowTheme(expected.id);
+    require(theme.shadowColor == expected.color &&
+                theme.shadowOpacity == expected.opacity &&
+                theme.shadowOffsetX == expected.x &&
+                theme.shadowOffsetY == expected.y,
+            QStringLiteral("Kanban neo drop-shadow drifted for %1")
+                .arg(flowThemeIdName(expected.id)));
+  }
+}
+
 // THEME_COLOR_LIMIT controls how many pie slices the cScale-derived themes
 // (dark, neutral) populate. Upstream: `for i<TCL: this["pie"+i]=this["cScale"+i]`
 // (0-based keys), renderer reads pie1..pie12, so pieK = cScaleK for K=1..TCL-1.
@@ -805,6 +837,7 @@ int main(int argc, char** argv) {
   checkPieTextColorOverrides();
   checkPieQuadrantDynamicOverrides();
   checkCScaleDynamicOverrides();
+  checkKanbanNeoShadows();
   checkJourneyFillTypeOverrides();
   checkPieTclDistribution();
   checkTclNoOverflow();

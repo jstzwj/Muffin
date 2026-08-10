@@ -1,6 +1,7 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/journey/JourneyScene.h"
+#include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
@@ -148,8 +149,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 234,
-          QStringLiteral("Expected 234 classified config rows, found %1")
+  require(entries.size() == 241,
+          QStringLiteral("Expected 241 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -205,6 +206,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("er"), 13},
                                              {QStringLiteral("flowchart"), 14},
                                              {QStringLiteral("journey"), 26},
+                                             {QStringLiteral("kanban"), 5},
                                              {QStringLiteral("pie"), 6},
                                              {QStringLiteral("packet"), 8},
                                              {QStringLiteral("quadrantChart"), 20},
@@ -284,6 +286,24 @@ int main(int argc, char** argv) {
                   QLatin1String("parity") &&
               byPath.value(QStringLiteral("packet.showBits"))
                       .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("kanban.sectionWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("kanban.ticketBaseUrl"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("kanban.padding"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("kanban.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("mindmap.padding"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("mindmap.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
           QStringLiteral("Critical config status rows drifted"));
   for (const QString& path : {
@@ -295,7 +315,8 @@ int main(int argc, char** argv) {
            QStringLiteral("sequence.useMaxWidth"),
            QStringLiteral("state.useMaxWidth"),
            QStringLiteral("timeline.useMaxWidth"),
-           QStringLiteral("packet.useMaxWidth")}) {
+           QStringLiteral("packet.useMaxWidth"),
+           QStringLiteral("mindmap.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())
@@ -679,6 +700,47 @@ int main(int argc, char** argv) {
   require(pngImage(packetSource) != pngImage(QStringLiteral(
               "packet-beta\ntitle Header\n0-3: \"Type\"\n4-7: \"Code\"")),
           QStringLiteral("Packet live config did not affect PNG output"));
+
+  // Kanban's own sectionWidth and ticketBaseUrl are live. Its padding and
+  // useMaxWidth declarations are inert because the 11.16.0 renderer reads the
+  // same-named MINDMAP values instead; lock both sides of that cross-family
+  // contract through the production adapter.
+  const QString kanbanSource = QStringLiteral(
+      "%%{init: {\"kanban\": {\"sectionWidth\": 320, "
+      "\"ticketBaseUrl\": \"https://example.test/items/#TICKET#\", "
+      "\"padding\": 99, \"useMaxWidth\": false}, "
+      "\"mindmap\": {\"padding\": 40, \"useMaxWidth\": false}}}%%\n"
+      "kanban\n  todo[Todo]\n"
+      "    task1[Write docs]@{ ticket: KAN-7 }");
+  const MermaidRenderEntry kanbanEntry = render(kanbanSource);
+  const auto* kanbanScene =
+      dynamic_cast<const muffin::mermaid::kanban::KanbanScene*>(
+          kanbanEntry.scene.get());
+  require(kanbanEntry.status == MermaidRenderStatus::Ready && kanbanScene &&
+              !kanbanEntry.metadata.svgUseMaxWidth &&
+              kanbanScene->config.sectionWidth.toDouble() == 320.0 &&
+              kanbanScene->config.padding.toDouble() == 40.0 &&
+              !kanbanScene->useMaxWidth &&
+              kanbanScene->interactions.size() == 1 &&
+              kanbanScene->interactions.first().href ==
+                  QLatin1String("https://example.test/items/KAN-7"),
+          QStringLiteral("Kanban live/cross-family config did not reach the scene"));
+  const MermaidRenderEntry inertKanban = render(QStringLiteral(
+      "%%{init: {\"kanban\": {\"padding\": 99, "
+      "\"useMaxWidth\": false}}}%%\n"
+      "kanban\n  todo[Todo]\n    task1[Write docs]"));
+  const auto* inertKanbanScene =
+      dynamic_cast<const muffin::mermaid::kanban::KanbanScene*>(
+          inertKanban.scene.get());
+  require(inertKanban.status == MermaidRenderStatus::Ready &&
+              inertKanbanScene &&
+              inertKanbanScene->config.padding.toDouble() == 10.0 &&
+              inertKanbanScene->useMaxWidth,
+          QStringLiteral("Inert Kanban padding/useMaxWidth leaked into rendering"));
+  require(pngImage(kanbanSource) != pngImage(QStringLiteral(
+              "kanban\n  todo[Todo]\n"
+              "    task1[Write docs]@{ ticket: KAN-7 }")),
+          QStringLiteral("Kanban live config did not affect PNG output"));
 
   // Unsupported engines must not silently produce a Dagre scene.
   for (const QString& source : {

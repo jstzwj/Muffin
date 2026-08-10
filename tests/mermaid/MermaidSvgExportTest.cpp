@@ -119,6 +119,9 @@ int main(int argc, char** argv) {
        QStringLiteral("timeline\ntitle Releases\nsection 2026\nAlpha : API ready\nBeta : Ship")},
       {QStringLiteral("packet"), QStringLiteral("packet"),
        QStringLiteral("packet-beta\ntitle Frame\n0-7: \"Header\"\n8-15: \"Payload\"")},
+      {QStringLiteral("kanban"), QStringLiteral("kanban"),
+       QStringLiteral("kanban\n  todo[Todo]\n    task1[Write docs]\n"
+                      "  done[Done]\n    task2[Ship]")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -213,6 +216,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"packet\": {\"useMaxWidth\": false}}}%%\n"
           "packet-beta\n0-7: \"Header\""),
+      QStringLiteral(
+          "%%{init: {\"mindmap\": {\"useMaxWidth\": false}}}%%\n"
+          "kanban\n  todo[Todo]\n    task1[Write docs]"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);
@@ -301,6 +307,32 @@ int main(int argc, char** argv) {
               packetAria.contains("aria-labelledby=") &&
               packetAria.contains("aria-describedby="),
           QStringLiteral("Packet SVG accessibility metadata drifted"));
+
+  // Kanban has no title/accessibility grammar and ignores frontmatter title in
+  // 11.16.0. It keeps only the root graphics-document role/roledescription;
+  // do not accidentally introduce the shared visible title strip or SVG ARIA.
+  const QByteArray kanbanNoTitle = renderSvg(QStringLiteral(
+      "---\ntitle: Board title\n---\n"
+      "kanban\n  todo[Todo]\n    task1[Write docs]")).svg;
+  require(!kanbanNoTitle.contains("Board title") &&
+              !kanbanNoTitle.contains("aria-labelledby=") &&
+              !kanbanNoTitle.contains("aria-describedby="),
+          QStringLiteral("Kanban frontmatter title must remain invisible"));
+
+  const QByteArray kanbanTicket = renderSvg(QStringLiteral(
+      "%%{init: {\"kanban\": {\"ticketBaseUrl\": "
+      "\"https://example.test/items/#TICKET#\"}}}%%\n"
+      "kanban\n  todo[Todo]\n"
+      "    task1[Write docs]@{ ticket: KAN-7 }")).svg;
+  const QByteArray blockedKanbanTicket = renderSvg(QStringLiteral(
+      "%%{init: {\"kanban\": {\"ticketBaseUrl\": "
+      "\"javascript:alert(#TICKET#)\"}}}%%\n"
+      "kanban\n  todo[Todo]\n"
+      "    task1[Write docs]@{ ticket: KAN-7 }")).svg;
+  require(kanbanTicket.contains(
+              "href=\"https://example.test/items/KAN-7\"") &&
+              !blockedKanbanTicket.contains("javascript:"),
+          QStringLiteral("Kanban SVG ticket link sanitization drifted"));
 
   require(MermaidRenderCache::renderMermaidSourceToSvg(
               QStringLiteral("flowchart TB\nA -->"))

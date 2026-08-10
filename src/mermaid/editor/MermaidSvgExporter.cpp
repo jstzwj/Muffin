@@ -252,16 +252,19 @@ QByteArray normalizeSvg(const QByteArray& generated,
           if (!entry.metadata.roleDescription.isEmpty())
             writer.writeAttribute(QStringLiteral("aria-roledescription"),
                                   entry.metadata.roleDescription);
-          writer.writeAttribute(QStringLiteral("aria-labelledby"), titleId);
+          if (entry.metadata.svgEmitAccessibleTitle)
+            writer.writeAttribute(QStringLiteral("aria-labelledby"), titleId);
           if (!accessibleDescription.isEmpty())
             writer.writeAttribute(QStringLiteral("aria-describedby"),
                                   descriptionId);
           writer.writeAttribute(QStringLiteral("data-diagram-type"),
                                 entry.metadata.diagramType);
-          writer.writeStartElement(QStringLiteral("title"));
-          writer.writeAttribute(QStringLiteral("id"), titleId);
-          writer.writeCharacters(accessibleTitle);
-          writer.writeEndElement();
+          if (entry.metadata.svgEmitAccessibleTitle) {
+            writer.writeStartElement(QStringLiteral("title"));
+            writer.writeAttribute(QStringLiteral("id"), titleId);
+            writer.writeCharacters(accessibleTitle);
+            writer.writeEndElement();
+          }
           if (!accessibleDescription.isEmpty()) {
             writer.writeStartElement(QStringLiteral("desc"));
             writer.writeAttribute(QStringLiteral("id"), descriptionId);

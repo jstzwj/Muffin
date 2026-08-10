@@ -1,0 +1,75 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "module": "dist/mermaid.esm.mjs",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "browser": {
+      "product": "Chrome/151.0.7922.76",
+      "executableSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+      "headlessMode": "new"
+    },
+    "viewport": {
+      "width": 1600,
+      "height": 1200,
+      "deviceScaleFactor": 1
+    },
+    "fonts": [
+      {
+        "family": "Noto Sans",
+        "file": "third_party/noto/fonts/NotoSans-Regular.ttf",
+        "sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+      }
+    ],
+    "generator": "scripts/generate_mermaid_kanban_fixtures.mjs"
+  },
+  "oracle": "Kanban default/dark/neo/redux-color/handDrawn browser raster goldens",
+  "capture": {
+    "background": "transparent",
+    "deviceScaleFactor": 1,
+    "pngCanonicalization": "transparent RGB zeroed; PNG RGBA8 re-encoded"
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nkanban\n  todo[Todo]\n    task1[Write docs]\n    task2[Review **carefully** with a long label that should wrap]\n  done[Done]\n    task3[Ship]",
+      "file": "default.png",
+      "width": 425,
+      "height": 196,
+      "sha256": "0fde29bfb820309588ef0fee9b5547a93b55e38d9c1bcb5179e4aa291706324b"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nkanban\n  todo[Todo]\n    task1[Write docs]@{ assigned: 'Ada', ticket: KAN-12, priority: 'High' }",
+      "file": "dark.png",
+      "width": 220,
+      "height": 111,
+      "sha256": "45ecff8a3a57d6db390cda80159458df4b8fa04555e07e475236a687f65ac41e"
+    },
+    {
+      "id": "neo",
+      "source": "%%{init: {\"theme\":\"neo\",\"look\":\"neo\",\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nkanban\n  todo[Todo]\n    task1[Write docs]\n    task2[Review **carefully** with a long label that should wrap]\n  done[Done]\n    task3[Ship]",
+      "file": "neo.png",
+      "width": 425,
+      "height": 184,
+      "sha256": "8f4e3fd1e0a5a5f26f56873576a1012381d96b52783a3d32d2711c52aa7c62d6"
+    },
+    {
+      "id": "redux-color",
+      "source": "%%{init: {\"theme\":\"redux-color\",\"fontFamily\":\"Noto Sans\",\"handDrawnSeed\":7,\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nkanban\n  todo[Todo]\n    task1[Write docs]@{ assigned: 'Ada', ticket: KAN-12, priority: 'High' }",
+      "file": "redux-color.png",
+      "width": 220,
+      "height": 107,
+      "sha256": "e433373a63d9ee0f812d5eb27c8e9c92f50df7c107fb6f57543de0d223acc51c"
+    },
+    {
+      "id": "hand-drawn",
+      "source": "%%{init: {\"look\":\"handDrawn\",\"handDrawnSeed\":7,\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\nkanban\n  todo[Todo]\n    task1[Write docs]\n    task2[Review **carefully** with a long label that should wrap]\n  done[Done]\n    task3[Ship]",
+      "file": "hand-drawn.png",
+      "width": 427,
+      "height": 623,
+      "sha256": "cd39eac9010b95ea9f3617b9a35b6de3154d4aac87d883edb63bf77d0b7a3fcf"
+    }
+  ],
+  "fixtureSha256": "e5921cb9490024fd48402720cee1a89f29c7c9d6d2e6fc02752fa69f25f29c87"
+}
