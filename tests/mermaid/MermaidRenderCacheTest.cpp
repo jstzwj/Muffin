@@ -8,6 +8,7 @@
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
+#include "mermaid/gantt/GanttScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/timeline/TimelineScene.h"
@@ -65,10 +66,9 @@ int main(int argc, char** argv) {
       "ORDER ||--|{ LINE-ITEM : contains\n"
       "CUSTOMER {\n  string name PK\n  int age\n}\n"
       "ORDER {\n  bigint id PK\n  string status\n}");
-  // A family mermaid detects but Muffin does not render natively (pie is now
-  // native; gantt remains upstream-only) -> Unsupported with a message.
+  // A family Mermaid detects but Muffin does not yet render natively.
   const QString unsupported = QStringLiteral(
-      "gantt\ntitle A\ndateFormat X\nsection S\nt1 :a, 1, 2d");
+      "architecture-beta\n group api(cloud)");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
@@ -775,6 +775,31 @@ int main(int argc, char** argv) {
             QStringLiteral("Mindmap frontmatter title must remain invisible"));
   }
 
+  // Gantt owns the visible chart title while shared metadata carries only its
+  // accessibility title/description. A frontmatter title is the fallback when
+  // no inline title directive exists and must not create a second title strip.
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "---\ntitle: Frontmatter Gantt\n---\n"
+        "gantt\ntitle Inline Gantt\naccTitle: Accessible plan\n"
+        "accDescr: Delivery schedule\ndateFormat YYYY-MM-DD\n"
+        "todayMarker off\nTask :task, 2024-01-01, 2d");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::gantt::GanttScene>(entry.scene);
+    require(entry.status == kReady && scene &&
+                scene->title == QLatin1String("Inline Gantt") &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle ==
+                    QLatin1String("Accessible plan") &&
+                entry.metadata.accessibleDescription ==
+                    QLatin1String("Delivery schedule") &&
+                entry.metadata.titleHeight == 0.0,
+            QStringLiteral("Gantt title/accessibility ownership drifted"));
+  }
+
   // Every native family is normalised into the same 1-based diagnostic model.
   {
     struct InvalidCase {
@@ -800,6 +825,8 @@ int main(int argc, char** argv) {
          QStringLiteral("packet"), QStringLiteral("packet-runtime-error"), 3},
         {QStringLiteral("kanban\n []"),
          QStringLiteral("kanban"), QStringLiteral("kanban-parse-error"), 2},
+        {QStringLiteral("gantt:"),
+         QStringLiteral("gantt"), QStringLiteral("gantt-parse-error"), 1},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -840,6 +867,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("kanban")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("mindmap")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("gantt")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1437,6 +1466,10 @@ int main(int argc, char** argv) {
                         "  done[Done]\n    task2[Ship]")},
         {QStringLiteral("mindmap"),
          QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
+        {QStringLiteral("gantt"),
+         QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
+                        "section Delivery\nBuild :build, 2024-01-01, 3d\n"
+                        "Ship :ship, after build, 2d")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

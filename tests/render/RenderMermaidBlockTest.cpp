@@ -637,11 +637,32 @@ int main(int argc, char** argv) {
             QStringLiteral("valid Mermaid must render after focus leaves"));
   }
 
+  // --- native Gantt diagrams use the same rendered-block product path ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\ngantt\ntitle Release plan\ndateFormat YYYY-MM-DD\n"
+        "todayMarker off\nsection Delivery\n"
+        "Build :build, 2024-01-01, 3d\n"
+        "Ship :ship, after build, 2d\n```\n"), false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Ready &&
+                block->mermaidDiagnosticMessage().isEmpty() &&
+                !block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("native Gantt fence must render without a diagnostic"));
+  }
+
   // --- unsupported Mermaid families keep source and explain why ---
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\ngantt\ntitle A\ndateFormat X\nsection S\nt1 :a, 1, 2d\n```\n"),
+        "```mermaid\narchitecture-beta\n group api(cloud)\n```\n"),
         false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;

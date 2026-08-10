@@ -124,6 +124,10 @@ int main(int argc, char** argv) {
                       "  done[Done]\n    task2[Ship]")},
       {QStringLiteral("mindmap"), QStringLiteral("mindmap"),
        QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
+      {QStringLiteral("gantt"), QStringLiteral("gantt"),
+       QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
+                      "section Delivery\nBuild :build, 2024-01-01, 3d\n"
+                      "Ship :ship, after build, 2d")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -224,6 +228,11 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"mindmap\": {\"useMaxWidth\": false}}}%%\n"
           "mindmap\n  root((Root))\n    Child"),
+      QStringLiteral(
+          "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
+          "\"useWidth\": 640}}}%%\n"
+          "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
+          "Task :task, 2024-01-01, 2d"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);
@@ -312,6 +321,27 @@ int main(int argc, char** argv) {
               packetAria.contains("aria-labelledby=") &&
               packetAria.contains("aria-describedby="),
           QStringLiteral("Packet SVG accessibility metadata drifted"));
+
+  const QByteArray ganttAria = renderSvg(QStringLiteral(
+      "gantt\ntitle Release plan\naccTitle: Gantt accessible\n"
+      "accDescr: Gantt description\ndateFormat YYYY-MM-DD\n"
+      "todayMarker off\nTask :task, 2024-01-01, 2d")).svg;
+  require(ganttAria.contains("Release plan") &&
+              ganttAria.contains("Gantt accessible</title>") &&
+              ganttAria.contains("Gantt description</desc>") &&
+              ganttAria.contains("aria-labelledby=") &&
+              ganttAria.contains("aria-describedby="),
+          QStringLiteral("Gantt SVG title/accessibility metadata drifted"));
+
+  const QByteArray ganttLinks = renderSvg(QStringLiteral(
+      "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
+      "Safe :safe, 2024-01-01, 1d\n"
+      "Blocked :blocked, 2024-01-02, 1d\n"
+      "click safe href \"https://example.org/gantt\"\n"
+      "click blocked href \"javascript:alert(1)\"")).svg;
+  require(ganttLinks.contains("href=\"https://example.org/gantt\"") &&
+              !ganttLinks.contains("javascript:"),
+          QStringLiteral("Gantt SVG link sanitization drifted"));
 
   // Kanban has no title/accessibility grammar and ignores frontmatter title in
   // 11.16.0. It keeps only the root graphics-document role/roledescription;

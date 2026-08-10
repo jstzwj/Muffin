@@ -3,6 +3,7 @@
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
+#include "mermaid/gantt/GanttScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
@@ -151,8 +152,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 245,
-          QStringLiteral("Expected 245 classified config rows, found %1")
+  require(entries.size() == 262,
+          QStringLiteral("Expected 262 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -207,6 +208,7 @@ int main(int argc, char** argv) {
   require(familyCounts == QMap<QString, int>{{QStringLiteral("class"), 14},
                                              {QStringLiteral("er"), 13},
                                              {QStringLiteral("flowchart"), 14},
+                                             {QStringLiteral("gantt"), 17},
                                              {QStringLiteral("journey"), 26},
                                              {QStringLiteral("kanban"), 5},
                                              {QStringLiteral("mindmap"), 5},
@@ -821,6 +823,50 @@ int main(int argc, char** argv) {
               "mindmap\n  root((Root))\n"
               "    A[alpha beta gamma delta epsilon]\n    B[Beta]")),
           QStringLiteral("Mindmap live config did not affect PNG output"));
+
+  // Gantt is the only Mermaid family that consumes BaseDiagramConfig.useWidth.
+  // Pin all 17 declared fields through the source-entry adapter and typed scene.
+  const QString ganttSource = QStringLiteral(
+      "%%{init: {\"gantt\": {\"useWidth\": 640, "
+      "\"useMaxWidth\": false, \"titleTopMargin\": 17, "
+      "\"barHeight\": 28, \"barGap\": 9, \"topPadding\": 61, "
+      "\"rightPadding\": 81, \"leftPadding\": 91, "
+      "\"gridLineStartPadding\": 23, \"fontSize\": 13, "
+      "\"sectionFontSize\": 15, \"numberSectionStyles\": 3, "
+      "\"axisFormat\": \"%m/%d\", \"tickInterval\": \"2day\", "
+      "\"topAxis\": true, \"displayMode\": \"compact\", "
+      "\"weekday\": \"monday\"}}}%%\n"
+      "gantt\ntitle Plan\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
+      "section Delivery\nBuild :build, 2024-01-01, 3d\n"
+      "Ship :ship, after build, 2d");
+  const MermaidRenderEntry ganttEntry = render(ganttSource);
+  const auto* ganttScene =
+      dynamic_cast<const muffin::mermaid::gantt::GanttScene*>(
+          ganttEntry.scene.get());
+  require(ganttEntry.status == MermaidRenderStatus::Ready && ganttScene &&
+              !ganttEntry.metadata.svgUseMaxWidth &&
+              ganttScene->config.useWidth == 640.0 &&
+              ganttScene->config.titleTopMargin == 17.0 &&
+              ganttScene->config.barHeight == 28.0 &&
+              ganttScene->config.barGap == 9.0 &&
+              ganttScene->config.topPadding == 61.0 &&
+              ganttScene->config.rightPadding == 81.0 &&
+              ganttScene->config.leftPadding == 91.0 &&
+              ganttScene->config.gridLineStartPadding == 23.0 &&
+              ganttScene->config.fontSize == 13.0 &&
+              ganttScene->config.sectionFontSize == 15.0 &&
+              ganttScene->config.numberSectionStyles == 3 &&
+              ganttScene->config.axisFormat == QLatin1String("%m/%d") &&
+              ganttScene->config.tickInterval == QLatin1String("2day") &&
+              ganttScene->config.topAxis &&
+              ganttScene->config.displayMode == QLatin1String("compact") &&
+              ganttScene->config.weekday == QLatin1String("monday"),
+          QStringLiteral("Gantt live config did not reach the scene"));
+  require(pngImage(ganttSource) != pngImage(QStringLiteral(
+              "gantt\ntitle Plan\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
+              "section Delivery\nBuild :build, 2024-01-01, 3d\n"
+              "Ship :ship, after build, 2d")),
+          QStringLiteral("Gantt live config did not affect PNG output"));
 
   // CSS ex/ch resolution must measure the same full font fallback list that
   // the scene painter uses. A missing first family must therefore fall through

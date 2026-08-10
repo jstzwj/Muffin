@@ -500,6 +500,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/PacketDiagramAdapter.cpp
   src/mermaid/editor/KanbanDiagramAdapter.cpp
   src/mermaid/editor/MindmapDiagramAdapter.cpp
+  src/mermaid/editor/GanttDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -637,6 +638,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/mindmap/MindmapScene.h
   src/mermaid/mindmap/MindmapScenePainter.cpp
   src/mermaid/mindmap/MindmapScenePainter.h
+  src/mermaid/gantt/GanttDiagram.cpp
+  src/mermaid/gantt/GanttDiagram.h
+  src/mermaid/gantt/GanttScene.cpp
+  src/mermaid/gantt/GanttScene.h
+  src/mermaid/gantt/GanttScenePainter.cpp
+  src/mermaid/gantt/GanttScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

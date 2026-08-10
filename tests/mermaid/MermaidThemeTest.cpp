@@ -132,6 +132,29 @@ QStringList packetFields() {
           QStringLiteral("blockFillColor")};
 }
 
+QStringList ganttFields() {
+  return {QStringLiteral("sectionBkgColor"),
+          QStringLiteral("altSectionBkgColor"),
+          QStringLiteral("sectionBkgColor2"),
+          QStringLiteral("excludeBkgColor"),
+          QStringLiteral("taskBorderColor"),
+          QStringLiteral("taskBkgColor"),
+          QStringLiteral("taskTextColor"),
+          QStringLiteral("taskTextDarkColor"),
+          QStringLiteral("taskTextOutsideColor"),
+          QStringLiteral("taskTextLightColor"),
+          QStringLiteral("taskTextClickableColor"),
+          QStringLiteral("activeTaskBorderColor"),
+          QStringLiteral("activeTaskBkgColor"),
+          QStringLiteral("gridColor"),
+          QStringLiteral("doneTaskBkgColor"),
+          QStringLiteral("doneTaskBorderColor"),
+          QStringLiteral("critBorderColor"),
+          QStringLiteral("critBkgColor"),
+          QStringLiteral("todayLineColor"),
+          QStringLiteral("vertLineColor")};
+}
+
 QJsonObject packetStyleDefaults() {
   return {{QStringLiteral("byteFontSize"), QStringLiteral("10px")},
           {QStringLiteral("startByteColor"), QStringLiteral("black")},
@@ -177,6 +200,7 @@ QStringList fieldsForTheme(FlowThemeId id) {
   // unset at TCL=12 for everyone, so they are not part of the golden.)
   f.append(QStringLiteral("cScale12"));
   f.append(journeyFields());
+  f.append(ganttFields());
   if (pieQuadrantImplemented(id)) {
     f.append(pieQuadrantFields());
     f.append(pieQuadrantScalarFields());

@@ -35,6 +35,7 @@
 #include "mermaid/packet/PacketDiagram.h"
 #include "mermaid/kanban/KanbanDiagram.h"
 #include "mermaid/mindmap/MindmapDiagram.h"
+#include "mermaid/gantt/GanttDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -527,6 +528,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("packet-beta"));
     diagnostic.expected.append(QStringLiteral("kanban"));
     diagnostic.expected.append(QStringLiteral("mindmap"));
+    diagnostic.expected.append(QStringLiteral("gantt"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -730,6 +732,27 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         source, pre, type, QStringLiteral("parse"), std::move(code),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
         error.line, error.column, QString(), error.token, {}));
+  } catch (const gantt::GanttParseError& error) {
+    QString code;
+    switch (error.kind) {
+      case gantt::GanttErrorKind::Lexer:
+        code = QStringLiteral("gantt-lexer-error");
+        break;
+      case gantt::GanttErrorKind::Parser:
+        code = QStringLiteral("gantt-parse-error");
+        break;
+      case gantt::GanttErrorKind::Runtime:
+        code = QStringLiteral("gantt-runtime-error");
+        break;
+    }
+    const qsizetype offset = error.line > 0 && error.column > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       error.column)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"), std::move(code),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), QString(), {}));
   } catch (const std::exception& error) {
     MermaidDiagnostic diagnostic;
     diagnostic.diagramType = type;

@@ -364,6 +364,7 @@ void populateQuadrant(FlowThemeVariables& t, const QString& primary);
 void populateJourneyFillTypes(FlowThemeVariables& t, const QString& primary,
                               const QString& secondary, bool unconditional);
 void populateXYChart(FlowThemeId id, FlowThemeVariables& t);
+void populateGantt(FlowThemeId id, FlowThemeVariables& t);
 
 // Mindmap classic root colors are borrowed from the first git palette slot.
 // Keep the per-theme update semantics here: Default calls this twice, so its
@@ -897,6 +898,130 @@ void populatePacket(FlowThemeId id, FlowThemeVariables& t) {
   t.packet.blockFillColor = id == FlowThemeId::Dark ? t.background : t.mainBkg;
 }
 
+void populateGantt(FlowThemeId id, FlowThemeVariables& t) {
+  // Most themes share Mermaid's base `x = x || derived` block. The four
+  // standalone themes below replace a subset with literal palettes in their
+  // own updateColors implementations.
+  assignIfEmpty(t.sectionBkgColor, t.tertiaryColor);
+  assignIfEmpty(t.altSectionBkgColor, QStringLiteral("white"));
+  assignIfEmpty(t.sectionBkgColor2, t.primaryColor);
+  assignIfEmpty(t.excludeBkgColor, QStringLiteral("#eeeeee"));
+  assignIfEmpty(t.taskBorderColor, t.primaryBorderColor);
+  assignIfEmpty(t.taskBkgColor, t.primaryColor);
+  assignIfEmpty(t.activeTaskBorderColor, t.primaryColor);
+  assignIfEmpty(t.activeTaskBkgColor, lighten(t.primaryColor, 23));
+  assignIfEmpty(t.gridColor, QStringLiteral("lightgrey"));
+  assignIfEmpty(t.doneTaskBkgColor, QStringLiteral("lightgrey"));
+  assignIfEmpty(t.doneTaskBorderColor, QStringLiteral("grey"));
+  assignIfEmpty(t.critBorderColor, QStringLiteral("#ff8888"));
+  assignIfEmpty(t.critBkgColor, QStringLiteral("red"));
+  assignIfEmpty(t.todayLineColor, QStringLiteral("red"));
+  assignIfEmpty(t.vertLineColor, QStringLiteral("navy"));
+  assignIfEmpty(t.taskTextColor, t.textColor);
+  assignIfEmpty(t.taskTextOutsideColor, t.textColor);
+  assignIfEmpty(t.taskTextLightColor, t.textColor);
+  assignIfEmpty(t.taskTextDarkColor, t.textColor);
+  assignIfEmpty(t.taskTextClickableColor, QStringLiteral("#003163"));
+
+  if (id == FlowThemeId::Dark) {
+    t.sectionBkgColor = QStringLiteral("hsl(52.9411764706, 28.813559322%, 58.431372549%)");
+    t.altSectionBkgColor = t.background;
+    t.sectionBkgColor2 = QStringLiteral("#EAE8D9");
+    t.excludeBkgColor = QStringLiteral("hsl(52.9411764706, 28.813559322%, 48.431372549%)");
+    t.taskBorderColor = QStringLiteral("#ffffff");
+    t.taskBkgColor = lighten(t.mainBkg, 23);
+    t.taskTextColor = QStringLiteral("hsl(28.5714285714, 17.3553719008%, 86.2745098039%)");
+    t.taskTextLightColor = t.mainContrastColor;
+    t.taskTextOutsideColor = t.taskTextLightColor;
+    t.activeTaskBorderColor = QStringLiteral("#ffffff");
+    t.activeTaskBkgColor = QStringLiteral("#81B1DB");
+    t.gridColor = t.mainContrastColor;
+    t.doneTaskBkgColor = t.mainContrastColor;
+    t.doneTaskBorderColor = QStringLiteral("grey");
+    t.critBorderColor = QStringLiteral("#E83737");
+    t.critBkgColor = QStringLiteral("#E83737");
+    t.todayLineColor = QStringLiteral("#DB5757");
+    t.vertLineColor = QStringLiteral("#00BFFF");
+  } else if (id == FlowThemeId::Default) {
+    t.sectionBkgColor = QStringLiteral("rgba(102, 102, 255, 0.49)");
+    t.altSectionBkgColor = QStringLiteral("white");
+    t.sectionBkgColor2 = QStringLiteral("#fff400");
+    t.taskBorderColor = QStringLiteral("#534fbc");
+    t.taskBkgColor = QStringLiteral("#8a90dd");
+    t.taskTextLightColor = QStringLiteral("white");
+    t.taskTextColor = QStringLiteral("white");
+    t.taskTextDarkColor = QStringLiteral("black");
+    t.taskTextOutsideColor = QStringLiteral("black");
+    t.activeTaskBorderColor = QStringLiteral("#534fbc");
+    t.activeTaskBkgColor = QStringLiteral("#bfc7ff");
+  } else if (id == FlowThemeId::Forest) {
+    t.sectionBkgColor = QStringLiteral("#6eaa49");
+    t.altSectionBkgColor = QStringLiteral("white");
+    t.sectionBkgColor2 = QStringLiteral("#6eaa49");
+    t.taskBorderColor = QStringLiteral("#13540c");
+    t.taskBkgColor = QStringLiteral("#487e3a");
+    t.taskTextLightColor = QStringLiteral("white");
+    t.taskTextColor = QStringLiteral("white");
+    t.taskTextDarkColor = QStringLiteral("black");
+    t.taskTextOutsideColor = QStringLiteral("black");
+    t.activeTaskBorderColor = t.taskBorderColor;
+    t.activeTaskBkgColor = t.mainBkg;
+    t.vertLineColor = QStringLiteral("#00BFFF");
+  } else if (id == FlowThemeId::Neutral) {
+    t.sectionBkgColor = lighten(t.contrast, 30);
+    t.altSectionBkgColor = QStringLiteral("white");
+    t.sectionBkgColor2 = t.sectionBkgColor;
+    t.taskBorderColor = darken(t.contrast, 10);
+    t.taskBkgColor = t.contrast;
+    t.taskTextColor = QStringLiteral("white");
+    t.taskTextLightColor = QStringLiteral("white");
+    t.taskTextColor = QStringLiteral("white");
+    t.taskTextDarkColor = t.text;
+    t.taskTextOutsideColor = t.text;
+    t.activeTaskBorderColor = t.taskBorderColor;
+    t.activeTaskBkgColor = t.mainBkg;
+    t.gridColor = lighten(t.border1, 30);
+    t.doneTaskBkgColor = QStringLiteral("#bbb");
+    t.doneTaskBorderColor = t.lineColor;
+    t.critBkgColor = QStringLiteral("#d42");
+    t.critBorderColor = darken(t.critBkgColor, 10);
+    t.todayLineColor = t.critBkgColor;
+    t.vertLineColor = t.critBkgColor;
+  } else if (id == FlowThemeId::Neo || id == FlowThemeId::Redux ||
+             id == FlowThemeId::ReduxColor) {
+    t.sectionBkgColor = QStringLiteral("hsl(60, 90%, 100%)");
+    t.altSectionBkgColor = QStringLiteral("white");
+    t.sectionBkgColor2 = QStringLiteral("#ECECFE");
+    t.taskBkgColor = QStringLiteral("#ECECFE");
+    t.taskBorderColor = id == FlowThemeId::Redux
+                            ? QStringLiteral("hsl(247.5, 0%, 9.2156862745%)")
+                            : QStringLiteral("hsl(0, 0%, 70%)");
+    t.taskTextColor = id == FlowThemeId::Neo
+                          ? QStringLiteral("#333") : QStringLiteral("#28253D");
+    t.taskTextOutsideColor = t.taskTextColor;
+    t.taskTextLightColor = t.taskTextColor;
+    t.taskTextDarkColor = t.taskTextColor;
+    t.activeTaskBorderColor = QStringLiteral("#ECECFE");
+    t.activeTaskBkgColor = QStringLiteral("hsl(240, 90%, 100%)");
+    t.vertLineColor = t.taskBorderColor;
+  } else if (id == FlowThemeId::NeoDark ||
+             id == FlowThemeId::ReduxDark ||
+             id == FlowThemeId::ReduxDarkColor) {
+    t.sectionBkgColor = QStringLiteral("hsl(20, 1.5873015873%, 12.3529411765%)");
+    t.altSectionBkgColor = QStringLiteral("white");
+    t.sectionBkgColor2 = QStringLiteral("#1f2020");
+    t.taskBorderColor = QStringLiteral("#cccccc");
+    t.taskBkgColor = QStringLiteral("#1f2020");
+    t.taskTextColor = QStringLiteral("#ccc");
+    t.taskTextOutsideColor = QStringLiteral("#ccc");
+    t.taskTextLightColor = QStringLiteral("#ccc");
+    t.taskTextDarkColor = QStringLiteral("#ccc");
+    t.activeTaskBorderColor = QStringLiteral("#1f2020");
+    t.activeTaskBkgColor = QStringLiteral("hsl(180, 1.5873015873%, 35.3529411765%)");
+    t.vertLineColor = t.taskBorderColor;
+  }
+}
+
 void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   switch (id) {
     case FlowThemeId::Base:
@@ -920,6 +1045,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   }
   populateMindmapRoot(id, t);
   populatePacket(id, t);
+  populateGantt(id, t);
   populateXYChart(id, t);
 }
 
@@ -1042,6 +1168,25 @@ QString FlowThemeVariables::get(const QString& key) const {
   }
   if (key == QStringLiteral("mainContrastColor")) return mainContrastColor;
   if (key == QStringLiteral("taskTextDarkColor")) return taskTextDarkColor;
+  if (key == QStringLiteral("sectionBkgColor")) return sectionBkgColor;
+  if (key == QStringLiteral("altSectionBkgColor")) return altSectionBkgColor;
+  if (key == QStringLiteral("sectionBkgColor2")) return sectionBkgColor2;
+  if (key == QStringLiteral("excludeBkgColor")) return excludeBkgColor;
+  if (key == QStringLiteral("taskBorderColor")) return taskBorderColor;
+  if (key == QStringLiteral("taskBkgColor")) return taskBkgColor;
+  if (key == QStringLiteral("taskTextColor")) return taskTextColor;
+  if (key == QStringLiteral("taskTextOutsideColor")) return taskTextOutsideColor;
+  if (key == QStringLiteral("taskTextLightColor")) return taskTextLightColor;
+  if (key == QStringLiteral("taskTextClickableColor")) return taskTextClickableColor;
+  if (key == QStringLiteral("activeTaskBorderColor")) return activeTaskBorderColor;
+  if (key == QStringLiteral("activeTaskBkgColor")) return activeTaskBkgColor;
+  if (key == QStringLiteral("gridColor")) return gridColor;
+  if (key == QStringLiteral("doneTaskBkgColor")) return doneTaskBkgColor;
+  if (key == QStringLiteral("doneTaskBorderColor")) return doneTaskBorderColor;
+  if (key == QStringLiteral("critBorderColor")) return critBorderColor;
+  if (key == QStringLiteral("critBkgColor")) return critBkgColor;
+  if (key == QStringLiteral("todayLineColor")) return todayLineColor;
+  if (key == QStringLiteral("vertLineColor")) return vertLineColor;
   if (key == QStringLiteral("pieTitleTextColor")) return pieTitleTextColor;
   if (key == QStringLiteral("pieSectionTextColor")) return pieSectionTextColor;
   if (key == QStringLiteral("pieLegendTextColor")) return pieLegendTextColor;
@@ -1138,6 +1283,25 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   }
   if (key == QStringLiteral("mainContrastColor")) mainContrastColor = value;
   else if (key == QStringLiteral("taskTextDarkColor")) taskTextDarkColor = value;
+  else if (key == QStringLiteral("sectionBkgColor")) sectionBkgColor = value;
+  else if (key == QStringLiteral("altSectionBkgColor")) altSectionBkgColor = value;
+  else if (key == QStringLiteral("sectionBkgColor2")) sectionBkgColor2 = value;
+  else if (key == QStringLiteral("excludeBkgColor")) excludeBkgColor = value;
+  else if (key == QStringLiteral("taskBorderColor")) taskBorderColor = value;
+  else if (key == QStringLiteral("taskBkgColor")) taskBkgColor = value;
+  else if (key == QStringLiteral("taskTextColor")) taskTextColor = value;
+  else if (key == QStringLiteral("taskTextOutsideColor")) taskTextOutsideColor = value;
+  else if (key == QStringLiteral("taskTextLightColor")) taskTextLightColor = value;
+  else if (key == QStringLiteral("taskTextClickableColor")) taskTextClickableColor = value;
+  else if (key == QStringLiteral("activeTaskBorderColor")) activeTaskBorderColor = value;
+  else if (key == QStringLiteral("activeTaskBkgColor")) activeTaskBkgColor = value;
+  else if (key == QStringLiteral("gridColor")) gridColor = value;
+  else if (key == QStringLiteral("doneTaskBkgColor")) doneTaskBkgColor = value;
+  else if (key == QStringLiteral("doneTaskBorderColor")) doneTaskBorderColor = value;
+  else if (key == QStringLiteral("critBorderColor")) critBorderColor = value;
+  else if (key == QStringLiteral("critBkgColor")) critBkgColor = value;
+  else if (key == QStringLiteral("todayLineColor")) todayLineColor = value;
+  else if (key == QStringLiteral("vertLineColor")) vertLineColor = value;
   else if (key == QStringLiteral("pieTitleTextColor")) pieTitleTextColor = value;
   else if (key == QStringLiteral("pieSectionTextColor")) pieSectionTextColor = value;
   else if (key == QStringLiteral("pieLegendTextColor")) pieLegendTextColor = value;

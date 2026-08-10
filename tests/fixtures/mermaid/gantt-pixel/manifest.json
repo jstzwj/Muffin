@@ -1,0 +1,53 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "license": "MIT",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "ganttModuleSha256": "83047b0ef2a8047f43dccfea4793807f25b29ead644539a4788dfba04548adc8",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "font": "Noto Sans",
+    "fontSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "viewport": {
+      "width": 1600,
+      "height": 1000,
+      "deviceScaleFactor": 1
+    }
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"gantt\":{\"useWidth\":900},\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\ngantt\ntitle Release plan\ndateFormat YYYY-MM-DD\naxisFormat %m/%d\ntickInterval 2day\ntodayMarker off\nexcludes weekends\nsection Planning\nResearch :done, crit, research, 2024-01-01, 3d\nDesign with a long label :active, design, after research, 4d\nsection Delivery<br>Track\nMilestone :milestone, mark, 2024-01-10, 0d\nShip :ship, 2024-01-11, 2d\nVertical marker :vert, vertical, 2024-01-07, 1d",
+      "file": "default.png",
+      "width": 900,
+      "height": 196,
+      "sha256": "f5f4698c5ac968477140a18895c73b596fd7d64fdde88874d3677d3f7ec36e47"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\",\"gantt\":{\"useWidth\":900},\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\ngantt\ntitle Release plan\ndateFormat YYYY-MM-DD\naxisFormat %m/%d\ntickInterval 2day\ntodayMarker off\nexcludes weekends\nsection Planning\nResearch :done, crit, research, 2024-01-01, 3d\nDesign with a long label :active, design, after research, 4d\nsection Delivery<br>Track\nMilestone :milestone, mark, 2024-01-10, 0d\nShip :ship, 2024-01-11, 2d\nVertical marker :vert, vertical, 2024-01-07, 1d",
+      "file": "dark.png",
+      "width": 900,
+      "height": 196,
+      "sha256": "a36b5bba209088d537f7c4a87a36897e7096cefc74d67378adcb64b83f50ffd1"
+    },
+    {
+      "id": "forest",
+      "source": "%%{init: {\"theme\":\"forest\",\"fontFamily\":\"Noto Sans\",\"gantt\":{\"useWidth\":900},\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\ngantt\ntitle Release plan\ndateFormat YYYY-MM-DD\naxisFormat %m/%d\ntickInterval 2day\ntodayMarker off\nexcludes weekends\nsection Planning\nResearch :done, crit, research, 2024-01-01, 3d\nDesign with a long label :active, design, after research, 4d\nsection Delivery<br>Track\nMilestone :milestone, mark, 2024-01-10, 0d\nShip :ship, 2024-01-11, 2d\nVertical marker :vert, vertical, 2024-01-07, 1d",
+      "file": "forest.png",
+      "width": 900,
+      "height": 196,
+      "sha256": "a5e4969a16a0b4c2b8ede7d20ca2ecc1b5699323518d34ed8225c1cdb7164d34"
+    },
+    {
+      "id": "compact",
+      "source": "%%{init: {\"theme\":\"redux-color\",\"gantt\":{\"useWidth\":900,\"displayMode\":\"compact\"},\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\"}}}%%\ngantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nsection One\nA :a, 2024-01-01, 5d\nB :b, 2024-01-02, 2d\nC :c, 2024-01-05, 3d\nsection Two\nD :d, 2024-01-01, 2d\nE :e, 2024-01-04, 2d",
+      "file": "compact.png",
+      "width": 900,
+      "height": 172,
+      "sha256": "534c2a07663d8d830a486ded38d7cc0b76d34a85c9a43bfd858f82d04d74ead0"
+    }
+  ],
+  "fixtureSha256": "461864a1105aa8d855e0b73d8c357c9201e111500e7150494260818fa9479ec2"
+}

@@ -492,6 +492,25 @@ const familyPolicies = {
       "Declared by MindmapDiagramConfig but never read; Mindmap selects the renderer from the top-level layout key.",
     ),
   },
+  gantt: {
+    useWidth: parity("layout", "paint", "viewport", "export"),
+    useMaxWidth: parity("viewport", "export"),
+    titleTopMargin: parity("layout", "paint", "viewport", "export"),
+    barHeight: parity("layout", "paint", "viewport", "export"),
+    barGap: parity("layout", "paint", "viewport", "export"),
+    topPadding: parity("layout", "paint", "viewport", "export"),
+    rightPadding: parity("layout", "paint", "viewport", "export"),
+    leftPadding: parity("layout", "paint", "viewport", "export"),
+    gridLineStartPadding: parity("layout", "paint", "viewport", "export"),
+    fontSize: parity("text", "layout", "paint", "viewport", "export"),
+    sectionFontSize: parity("text", "layout", "paint", "viewport", "export"),
+    numberSectionStyles: parity("paint", "export"),
+    axisFormat: parity("text", "paint", "export"),
+    tickInterval: parity("text", "layout", "paint", "export"),
+    topAxis: parity("layout", "paint", "viewport", "export"),
+    displayMode: parity("layout", "paint", "viewport", "export"),
+    weekday: parity("layout", "paint", "export"),
+  },
   requirement: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -557,6 +576,7 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "gantt",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -578,6 +598,7 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "gantt",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -603,6 +624,7 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "gantt",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -666,6 +688,7 @@ const shared = [
       "timeline", "packet",
       "kanban",
       "mindmap",
+      "gantt",
     ],
     ...unsupported(
       ["parsed"],
@@ -690,6 +713,7 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "gantt",
     ],
     ...policy(
       "security-fixed",
@@ -721,6 +745,7 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "gantt",
     ],
     ...parity("export"),
   },
@@ -742,6 +767,7 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "gantt",
     ],
     ...parity("export"),
   },
@@ -763,6 +789,7 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "gantt",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -817,6 +844,7 @@ const interfaces = {
   packet: "PacketDiagramConfig",
   kanban: "KanbanDiagramConfig",
   mindmap: "MindmapDiagramConfig",
+  gantt: "GanttDiagramConfig",
 };
 
 const entries = [];

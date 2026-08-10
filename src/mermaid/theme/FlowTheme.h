@@ -116,6 +116,28 @@ struct FlowThemeVariables {
   // text; dark = invert(mainContrastColor)). Exposed via get()/set() so a
   // source-entry override propagates to the pie title/legend.
   QString taskTextDarkColor;
+  // Gantt themeVariables. These are top-level scalars in Mermaid's theme
+  // model and are replayed after updateColors, so explicit source overrides
+  // win over every derived default.
+  QString sectionBkgColor;
+  QString altSectionBkgColor;
+  QString sectionBkgColor2;
+  QString excludeBkgColor;
+  QString taskBorderColor;
+  QString taskBkgColor;
+  QString taskTextColor;
+  QString taskTextOutsideColor;
+  QString taskTextLightColor;
+  QString taskTextClickableColor;
+  QString activeTaskBorderColor;
+  QString activeTaskBkgColor;
+  QString gridColor;
+  QString doneTaskBkgColor;
+  QString doneTaskBorderColor;
+  QString critBorderColor;
+  QString critBkgColor;
+  QString todayLineColor;
+  QString vertLineColor;
   qreal strokeWidth = 1.0;
   bool useGradient = true;
   QString gradientStart;

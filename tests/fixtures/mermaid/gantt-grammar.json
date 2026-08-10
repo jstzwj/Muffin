@@ -1,0 +1,3055 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "license": "MIT",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "ganttModuleSha256": "83047b0ef2a8047f43dccfea4793807f25b29ead644539a4788dfba04548adc8"
+  },
+  "cases": [
+    {
+      "id": "basic",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nsection Alpha\nOne :a, 2024-01-01, 2d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [
+          "Alpha"
+        ],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "Alpha",
+            "type": "Alpha",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704211200000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "header-only",
+      "source": "gantt",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "header-inline",
+      "source": "gantt dateFormat YYYY-MM-DD\nA :a, 2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "A ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "leading-whitespace",
+      "source": " \n\tgantt\nA :2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "A ",
+            "classes": [],
+            "id": "task1",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T08:00:00.000",
+            "endTime": "2024-01-02T08:00:00.000",
+            "startEpoch": 1704067200000,
+            "endEpoch": 1704153600000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "leading-bom",
+      "source": "﻿gantt\nA :2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "A ",
+            "classes": [],
+            "id": "task1",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T08:00:00.000",
+            "endTime": "2024-01-02T08:00:00.000",
+            "startEpoch": 1704067200000,
+            "endEpoch": 1704153600000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "directive-before-header",
+      "source": "%%{init:{\"theme\":\"dark\"}}%%\ngantt\nA :2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "A ",
+            "classes": [],
+            "id": "task1",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T08:00:00.000",
+            "endTime": "2024-01-02T08:00:00.000",
+            "startEpoch": 1704067200000,
+            "endEpoch": 1704153600000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "comment-before-header",
+      "source": "%% comment\ngantt\nA :2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "A ",
+            "classes": [],
+            "id": "task1",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T08:00:00.000",
+            "endTime": "2024-01-02T08:00:00.000",
+            "startEpoch": 1704067200000,
+            "endEpoch": 1704153600000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "statements",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\ntitle Project plan\naccTitle: Accessible plan\naccDescr { First line\n  Second line }\naxisFormat %m/%d\ntickInterval 2day\ninclusiveEndDates\nweekday monday\nweekend friday\nexcludes weekends, 2024-01-03\nincludes 2024-01-06\ntodayMarker stroke:#f00,stroke-width:3px\nsection Alpha\nOne :done, crit, a, 2024-01-01, 2d",
+      "accept": true,
+      "expectedDb": {
+        "title": "Project plan",
+        "accTitle": "Accessible plan",
+        "accDescr": "First line\nSecond line",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "%m/%d",
+        "tickInterval": "2day",
+        "todayMarker": "stroke:#f00,stroke-width:3px",
+        "includes": [
+          "2024-01-06"
+        ],
+        "excludes": [
+          "weekends",
+          "2024-01-03"
+        ],
+        "sections": [
+          "Alpha"
+        ],
+        "inclusiveEndDates": true,
+        "topAxis": false,
+        "weekday": "monday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "Alpha",
+            "type": "Alpha",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": "2024-01-03T00:00:00.000",
+            "raw": {
+              "data": ":done, crit, a, 2024-01-01, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": true,
+            "crit": true,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704297600000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "runtime-top-axis-upstream-bug",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\ntopAxis\nOne :a, 2024-01-01, 1d",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "yy.TopAxis is not a function"
+      }
+    },
+    {
+      "id": "repeated-settings",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\ndateFormat DD/MM/YYYY\ndateFormat YYYY-MM-DD\naxisFormat %Y\naxisFormat %m\ntickInterval 1day\ntickInterval 2week\nexcludes monday, tuesday\nexcludes tuesday, 2024-01-03\nincludes 2024-01-03\nsection A\nOne :2024-01-01, 2d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "%m",
+        "tickInterval": "2week",
+        "todayMarker": "off",
+        "includes": [
+          "2024-01-03"
+        ],
+        "excludes": [
+          "monday",
+          "tuesday",
+          "2024-01-03"
+        ],
+        "sections": [
+          "A"
+        ],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "A",
+            "type": "A",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": "2024-01-04T00:00:00.000",
+            "raw": {
+              "data": ":2024-01-01, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "task1",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704297600000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "sections-preserve-spacing",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nsection  Alpha  \n One   :a, 2024-01-01, 1d\nsection Beta<br>Line\nTwo :b, 2024-01-02, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [
+          " Alpha  ",
+          "Beta<br>Line"
+        ],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": " Alpha  ",
+            "type": " Alpha  ",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One   ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          },
+          {
+            "section": "Beta<br>Line",
+            "type": "Beta<br>Line",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":b, 2024-01-02, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-02"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "Two ",
+            "classes": [],
+            "id": "b",
+            "prevTaskId": "a",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-02T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
+            "startEpoch": 1704124800000,
+            "endEpoch": 1704211200000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "task-implicit-sequential",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :2024-01-01, 2d\nTwo :3d\nThree :1w",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":2024-01-01, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "task1",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704211200000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":3d",
+              "startTime": {
+                "type": "prevTaskEnd",
+                "id": "task1"
+              },
+              "endTime": {
+                "data": "3d"
+              }
+            },
+            "task": "Two ",
+            "classes": [],
+            "id": "task2",
+            "prevTaskId": "task1",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-03T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
+            "startEpoch": 1704211200000,
+            "endEpoch": 1704470400000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":1w",
+              "startTime": {
+                "type": "prevTaskEnd",
+                "id": "task2"
+              },
+              "endTime": {
+                "data": "1w"
+              }
+            },
+            "task": "Three ",
+            "classes": [],
+            "id": "task3",
+            "prevTaskId": "task2",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 2,
+            "startTime": "2024-01-06T00:00:00.000",
+            "endTime": "2024-01-13T00:00:00.000",
+            "startEpoch": 1704470400000,
+            "endEpoch": 1705075200000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "task-explicit-forms",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nTwo fields :2024-01-01, 2d\nThree fields :named, 2024-01-03, 2024-01-05\nOne field :1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":2024-01-01, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "Two fields ",
+            "classes": [],
+            "id": "task1",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704211200000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": true,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":named, 2024-01-03, 2024-01-05",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-03"
+              },
+              "endTime": {
+                "data": "2024-01-05"
+              }
+            },
+            "task": "Three fields ",
+            "classes": [],
+            "id": "named",
+            "prevTaskId": "task1",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-03T00:00:00.000",
+            "endTime": "2024-01-05T00:00:00.000",
+            "startEpoch": 1704211200000,
+            "endEpoch": 1704384000000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":1d",
+              "startTime": {
+                "type": "prevTaskEnd",
+                "id": "named"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One field ",
+            "classes": [],
+            "id": "task2",
+            "prevTaskId": "named",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 2,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704470400000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "tags-all",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nActive :active, a, 2024-01-01, 1d\nDone :done, b, 2024-01-02, 1d\nCritical :crit, c, 2024-01-03, 1d\nMilestone :milestone, m, 2024-01-04, 0d\nVertical :vert, v, 2024-01-05, 1d\nCombined :active, crit, done, z, 2024-01-06, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":active, a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "Active ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": true,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":done, b, 2024-01-02, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-02"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "Done ",
+            "classes": [],
+            "id": "b",
+            "prevTaskId": "a",
+            "active": false,
+            "done": true,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-02T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
+            "startEpoch": 1704124800000,
+            "endEpoch": 1704211200000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":crit, c, 2024-01-03, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-03"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "Critical ",
+            "classes": [],
+            "id": "c",
+            "prevTaskId": "b",
+            "active": false,
+            "done": false,
+            "crit": true,
+            "milestone": false,
+            "vert": false,
+            "order": 2,
+            "startTime": "2024-01-03T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
+            "startEpoch": 1704211200000,
+            "endEpoch": 1704297600000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":milestone, m, 2024-01-04, 0d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-04"
+              },
+              "endTime": {
+                "data": "0d"
+              }
+            },
+            "task": "Milestone ",
+            "classes": [],
+            "id": "m",
+            "prevTaskId": "c",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": true,
+            "vert": false,
+            "order": 3,
+            "startTime": "2024-01-04T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
+            "startEpoch": 1704297600000,
+            "endEpoch": 1704297600000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":vert, v, 2024-01-05, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-05"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "Vertical ",
+            "classes": [],
+            "id": "v",
+            "prevTaskId": "m",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": true,
+            "order": -1,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704470400000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":active, crit, done, z, 2024-01-06, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-06"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "Combined ",
+            "classes": [],
+            "id": "z",
+            "prevTaskId": "v",
+            "active": true,
+            "done": true,
+            "crit": true,
+            "milestone": false,
+            "vert": false,
+            "order": 4,
+            "startTime": "2024-01-06T00:00:00.000",
+            "endTime": "2024-01-07T00:00:00.000",
+            "startEpoch": 1704470400000,
+            "endEpoch": 1704556800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "tag-case-sensitive",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nTag :Done, active , x, 2024-01-01, 1d",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Cannot read properties of undefined (reading 'type')"
+      }
+    },
+    {
+      "id": "dependencies-after",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nFirst :a, 2024-01-01, 3d\nSecond :b, after a, 2d\nThird :c, after a b, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 3d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "3d"
+              }
+            },
+            "task": "First ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704297600000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":b, after a, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "after a"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "Second ",
+            "classes": [],
+            "id": "b",
+            "prevTaskId": "a",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-04T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
+            "startEpoch": 1704297600000,
+            "endEpoch": 1704470400000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":c, after a b, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "after a b"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "Third ",
+            "classes": [],
+            "id": "c",
+            "prevTaskId": "b",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 2,
+            "startTime": "2024-01-06T00:00:00.000",
+            "endTime": "2024-01-07T00:00:00.000",
+            "startEpoch": 1704470400000,
+            "endEpoch": 1704556800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "forward-dependency",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nFirst :a, after b, 1d\nSecond :b, 2024-01-03, 2d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, after b, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "after b"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "First ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704470400000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":b, 2024-01-03, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-03"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "Second ",
+            "classes": [],
+            "id": "b",
+            "prevTaskId": "a",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-03T00:00:00.000",
+            "endTime": "2024-01-05T00:00:00.000",
+            "startEpoch": 1704211200000,
+            "endEpoch": 1704384000000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "until-dependency",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nFirst :a, 2024-01-01, until b\nSecond :b, 2024-01-05, 2d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, until b",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "until b"
+              }
+            },
+            "task": "First ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-05T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704384000000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":b, 2024-01-05, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-05"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "Second ",
+            "classes": [],
+            "id": "b",
+            "prevTaskId": "a",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-07T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704556800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "duplicate-id-last-wins",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nFirst :same, 2024-01-01, 2d\nSecond :same, 2024-01-05, 2d\nAfter :after same, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":same, 2024-01-01, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "First ",
+            "classes": [],
+            "id": "same",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704211200000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":same, 2024-01-05, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-05"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "Second ",
+            "classes": [],
+            "id": "same",
+            "prevTaskId": "same",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-07T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704556800000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":after same, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "after same"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "After ",
+            "classes": [],
+            "id": "task1",
+            "prevTaskId": "same",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 2,
+            "startTime": "2024-01-07T00:00:00.000",
+            "endTime": "2024-01-08T00:00:00.000",
+            "startEpoch": 1704556800000,
+            "endEpoch": 1704643200000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "durations",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nMilliseconds :ms, 2024-01-01, 5ms\nSeconds :s, 2024-01-01, 5s\nMinutes :m, 2024-01-01, 5m\nHours :h, 2024-01-01, 5h\nDays :d, 2024-01-01, 1.5d\nWeeks :w, 2024-01-01, 2w\nMonths :M, 2024-01-01, 1M\nYears :y, 2024-01-01, 1y",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":ms, 2024-01-01, 5ms",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "5ms"
+              }
+            },
+            "task": "Milliseconds ",
+            "classes": [],
+            "id": "ms",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T00:00:00.005",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704038400005
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":s, 2024-01-01, 5s",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "5s"
+              }
+            },
+            "task": "Seconds ",
+            "classes": [],
+            "id": "s",
+            "prevTaskId": "ms",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T00:00:05.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704038405000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":m, 2024-01-01, 5m",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "5m"
+              }
+            },
+            "task": "Minutes ",
+            "classes": [],
+            "id": "m",
+            "prevTaskId": "s",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 2,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T00:05:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704038700000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":h, 2024-01-01, 5h",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "5h"
+              }
+            },
+            "task": "Hours ",
+            "classes": [],
+            "id": "h",
+            "prevTaskId": "m",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 3,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T05:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704056400000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":d, 2024-01-01, 1.5d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1.5d"
+              }
+            },
+            "task": "Days ",
+            "classes": [],
+            "id": "d",
+            "prevTaskId": "h",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 4,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704211200000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":w, 2024-01-01, 2w",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "2w"
+              }
+            },
+            "task": "Weeks ",
+            "classes": [],
+            "id": "w",
+            "prevTaskId": "d",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 5,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-15T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1705248000000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":M, 2024-01-01, 1M",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1M"
+              }
+            },
+            "task": "Months ",
+            "classes": [],
+            "id": "M",
+            "prevTaskId": "w",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 6,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-02-01T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1706716800000
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":y, 2024-01-01, 1y",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1y"
+              }
+            },
+            "task": "Years ",
+            "classes": [],
+            "id": "y",
+            "prevTaskId": "M",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 7,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2025-01-01T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1735660800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "inclusive-end-date",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\ninclusiveEndDates\nOne :a, 2024-01-01, 2024-01-02",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": true,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": true,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 2024-01-02",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "2024-01-02"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704211200000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "excludes-weekends",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nexcludes weekends\nOne :a, 2024-01-05, 3d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [
+          "weekends"
+        ],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": "2024-01-10T00:00:00.000",
+            "raw": {
+              "data": ":a, 2024-01-05, 3d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-05"
+              },
+              "endTime": {
+                "data": "3d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-10T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704816000000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "includes-overrides-excludes",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nexcludes weekends, 2024-01-08\nincludes 2024-01-06, 2024-01-08\nOne :a, 2024-01-05, 3d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [
+          "2024-01-06",
+          "2024-01-08"
+        ],
+        "excludes": [
+          "weekends",
+          "2024-01-08"
+        ],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": "2024-01-09T00:00:00.000",
+            "raw": {
+              "data": ":a, 2024-01-05, 3d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-05"
+              },
+              "endTime": {
+                "data": "3d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-09T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704729600000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "manual-end-bypasses-excludes",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nexcludes weekends\nOne :a, 2024-01-05, 2024-01-08",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [
+          "weekends"
+        ],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": true,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-05, 2024-01-08",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-05"
+              },
+              "endTime": {
+                "data": "2024-01-08"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-08T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704643200000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "custom-date-format",
+      "source": "gantt\ndateFormat DD/MM/YYYY\ntodayMarker off\nOne :a, 31/01/2024, 2d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "DD/MM/YYYY",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 31/01/2024, 2d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "31/01/2024"
+              },
+              "endTime": {
+                "data": "2d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-31T00:00:00.000",
+            "endTime": "2024-02-02T00:00:00.000",
+            "startEpoch": 1706630400000,
+            "endEpoch": 1706803200000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "timestamp-x",
+      "source": "gantt\ndateFormat x\ntodayMarker off\nOne :a, 1704067200000, 86400000ms",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "x",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 1704067200000, 86400000ms",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "1704067200000"
+              },
+              "endTime": {
+                "data": "86400000ms"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T08:00:00.000",
+            "endTime": "2024-01-02T08:00:00.000",
+            "startEpoch": 1704067200000,
+            "endEpoch": 1704153600000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "timestamp-X",
+      "source": "gantt\ndateFormat X\ntodayMarker off\nOne :a, 1704067200, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "X",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 1704067200, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "1704067200"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "1970-01-21T01:21:07.200",
+            "endTime": "1970-01-22T01:21:07.200",
+            "startEpoch": 1704067200,
+            "endEpoch": 1790467200
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "click-safe-link",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d\nclick a href \"https://example.com/path?q=1\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [
+          [
+            "a",
+            "https://example.com/path?q=1"
+          ]
+        ],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [
+              "clickable"
+            ],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "click-dangerous-link",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d\nclick a href \"javascript:alert(1)\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [
+          [
+            "a",
+            "about:blank"
+          ]
+        ],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [
+              "clickable"
+            ],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "click-callback-strict",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d\nclick a call callback(\"one, two\", three)",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [
+              "clickable"
+            ],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "click-missing-id",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d\nclick missing href \"https://example.com\"",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "metadata-sanitizer",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\ntitle <script>bad()</script><b onclick=bad()>Plan</b>\naccTitle: <img src=x onerror=bad()><i>AT</i>\naccDescr {<style>bad</style><u>AD</u>}\n<script>Task</script><b>Visible</b> :a, 2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "<b>Plan</b>",
+        "accTitle": "<img src=\"x\"><i>AT</i>",
+        "accDescr": "<u>AD</u>",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "<script>Task</script><b>Visible</b> ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "frontmatter-title",
+      "source": "---\ntitle: Front title\n---\ngantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "frontmatter-display-compact",
+      "source": "---\ndisplayMode: compact\n---\ngantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true,
+      "effectiveGanttConfig": {
+        "useMaxWidth": true,
+        "titleTopMargin": 25,
+        "barHeight": 20,
+        "barGap": 4,
+        "topPadding": 50,
+        "rightPadding": 75,
+        "leftPadding": 75,
+        "gridLineStartPadding": 35,
+        "fontSize": 11,
+        "sectionFontSize": 11,
+        "numberSectionStyles": 4,
+        "axisFormat": "%Y-%m-%d",
+        "topAxis": false,
+        "displayMode": "compact",
+        "weekday": "sunday"
+      }
+    },
+    {
+      "id": "config-init",
+      "source": "%%{init:{\"gantt\":{\"barHeight\":31,\"useMaxWidth\":false,\"displayMode\":\"compact\"}}}%%\ngantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true,
+      "effectiveGanttConfig": {
+        "useMaxWidth": false,
+        "titleTopMargin": 25,
+        "barHeight": 31,
+        "barGap": 4,
+        "topPadding": 50,
+        "rightPadding": 75,
+        "leftPadding": 75,
+        "gridLineStartPadding": 35,
+        "fontSize": 11,
+        "sectionFontSize": 11,
+        "numberSectionStyles": 4,
+        "axisFormat": "%Y-%m-%d",
+        "topAxis": false,
+        "displayMode": "compact",
+        "weekday": "sunday"
+      }
+    },
+    {
+      "id": "comments-and-semicolon",
+      "source": "gantt\n%% comment\ndateFormat YYYY-MM-DD;\nA :a, 2024-01-01, 1d;",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\n...teFormat YYYY-MM-DD;A :a, 2024-01-01, 1\n-----------------------^\nExpecting 'taskData', got 'NL'",
+        "line": 3,
+        "column": 22
+      }
+    },
+    {
+      "id": "empty-section",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nsection Empty",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [
+          "Empty"
+        ],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": []
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "no-section",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704124800000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "reverse-date",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-05, 2024-01-01",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": true,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-05, 2024-01-01",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-05"
+              },
+              "endTime": {
+                "data": "2024-01-01"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-01T00:00:00.000",
+            "startEpoch": 1704384000000,
+            "endEpoch": 1704038400000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "invalid-duration-falls-zero",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, bogus",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": true,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, 2024-01-01, bogus",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "2024-01-01"
+              },
+              "endTime": {
+                "data": "bogus"
+              }
+            },
+            "task": "One ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T00:00:00.000",
+            "startEpoch": 1704038400000,
+            "endEpoch": 1704038400000
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "reject-uppercase-detector",
+      "source": "GANTT\nA :2024-01-01, 1d",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: GANTT\nA :2024-01-01, 1d"
+      }
+    },
+    {
+      "id": "reject-prefix",
+      "source": "ganttx\nA :2024-01-01, 1d",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\nganttxA :2024-01-01\n^\nExpecting 'gantt', got 'taskTxt'",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-leading-hash",
+      "source": "# comment\ngantt\nA :2024-01-01, 1d",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: # comment\ngantt\nA :2024-01-01, 1d"
+      }
+    },
+    {
+      "id": "reject-colon-after-header",
+      "source": "gantt:\nA :2024-01-01, 1d",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\ngantt:A :2024-01-01, 1d\n-----^\nExpecting 'EOF', 'SPACE', 'NL', 'weekday_monday', 'weekday_tuesday', 'weekday_wednesday', 'weekday_thursday', 'weekday_friday', 'weekday_saturday', 'weekday_sunday', 'weekend_friday', 'weekend_saturday', 'dateFormat', 'inclusiveEndDates', 'topAxis', 'axisFormat', 'tickInterval', 'excludes', 'includes', 'todayMarker', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'taskTxt', 'click', got ':'",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-task-without-data",
+      "source": "gantt\nA",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\nganttA\n------^\nExpecting 'taskData', got 'NL'",
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-task-empty-data",
+      "source": "gantt\nA :",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\nganttA :\n-------^\nExpecting 'taskData', got ':'",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-section-empty",
+      "source": "gantt\nsection",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\nganttsection\n------------^\nExpecting 'taskData', got 'NL'",
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-dateformat-empty",
+      "source": "gantt\ndateFormat",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\nganttdateFormat\n---------------^\nExpecting 'taskData', got 'NL'",
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "runtime-invalid-date",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, definitely-invalid, 1d",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Invalid date:definitely-invalid"
+      }
+    },
+    {
+      "id": "runtime-first-one-field",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :1d",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Cannot read properties of undefined (reading 'endTime')"
+      }
+    },
+    {
+      "id": "runtime-bad-prev-reference-depth",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nA :a, after b, 1d\nB :b, after a, 1d",
+      "accept": true,
+      "expectedDb": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "dateFormat": "YYYY-MM-DD",
+        "axisFormat": "",
+        "tickInterval": null,
+        "todayMarker": "off",
+        "includes": [],
+        "excludes": [],
+        "sections": [],
+        "inclusiveEndDates": false,
+        "topAxis": false,
+        "weekday": "sunday",
+        "displayMode": "",
+        "links": [],
+        "tasks": [
+          {
+            "section": "",
+            "type": "",
+            "processed": false,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":a, after b, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "after b"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "A ",
+            "classes": [],
+            "id": "a",
+            "prevTaskId": null,
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 0,
+            "startTime": null,
+            "endTime": null,
+            "startEpoch": null,
+            "endEpoch": null
+          },
+          {
+            "section": "",
+            "type": "",
+            "processed": false,
+            "manualEndTime": false,
+            "renderEndTime": null,
+            "raw": {
+              "data": ":b, after a, 1d",
+              "startTime": {
+                "type": "getStartDate",
+                "startData": "after a"
+              },
+              "endTime": {
+                "data": "1d"
+              }
+            },
+            "task": "B ",
+            "classes": [],
+            "id": "b",
+            "prevTaskId": "a",
+            "active": false,
+            "done": false,
+            "crit": false,
+            "milestone": false,
+            "vert": false,
+            "order": 1,
+            "startTime": null,
+            "endTime": null,
+            "startEpoch": null,
+            "endEpoch": null
+          }
+        ]
+      },
+      "renderAccept": true
+    },
+    {
+      "id": "reject-unterminated-href",
+      "source": "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\nOne :a, 2024-01-01, 1d\nclick a href \"https://example.com",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 6:\n...https://example.com\n----------------------^\nExpecting 'EOF', 'SPACE', 'NL', 'weekday_monday', 'weekday_tuesday', 'weekday_wednesday', 'weekday_thursday', 'weekday_friday', 'weekday_saturday', 'weekday_sunday', 'weekend_friday', 'weekend_saturday', 'dateFormat', 'inclusiveEndDates', 'topAxis', 'axisFormat', 'tickInterval', 'excludes', 'includes', 'todayMarker', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'taskTxt', 'click', 'callbackname', got 'href'",
+        "line": 6,
+        "column": 15
+      }
+    },
+    {
+      "id": "reject-acc-block-unclosed",
+      "source": "gantt\naccDescr {value",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...nttaccDescr {value\n---------------------^\nExpecting 'EOF', 'SPACE', 'NL', 'weekday_monday', 'weekday_tuesday', 'weekday_wednesday', 'weekday_thursday', 'weekday_friday', 'weekday_saturday', 'weekday_sunday', 'weekend_friday', 'weekend_saturday', 'dateFormat', 'inclusiveEndDates', 'topAxis', 'axisFormat', 'tickInterval', 'excludes', 'includes', 'todayMarker', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'taskTxt', 'click', got '1'",
+        "line": 3,
+        "column": 1
+      }
+    }
+  ],
+  "fixtureSha256": "e729be9f115d34acc27167102e4b48f85eddb83589efb104bbb229b202bdac0a"
+}
