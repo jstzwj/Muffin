@@ -577,6 +577,7 @@ const shared = [
       "kanban",
       "mindmap",
       "gantt",
+      "info",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -599,6 +600,7 @@ const shared = [
       "kanban",
       "mindmap",
       "gantt",
+      "info",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -625,6 +627,7 @@ const shared = [
       "kanban",
       "mindmap",
       "gantt",
+      "info",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -689,6 +692,7 @@ const shared = [
       "kanban",
       "mindmap",
       "gantt",
+      "info",
     ],
     ...unsupported(
       ["parsed"],
@@ -714,6 +718,7 @@ const shared = [
       "kanban",
       "mindmap",
       "gantt",
+      "info",
     ],
     ...policy(
       "security-fixed",
@@ -746,6 +751,7 @@ const shared = [
       "kanban",
       "mindmap",
       "gantt",
+      "info",
     ],
     ...parity("export"),
   },
@@ -768,6 +774,7 @@ const shared = [
       "kanban",
       "mindmap",
       "gantt",
+      "info",
     ],
     ...parity("export"),
   },
@@ -790,6 +797,7 @@ const shared = [
       "kanban",
       "mindmap",
       "gantt",
+      "info",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -901,7 +909,7 @@ const payload = {
   },
   dimensions,
   scope: {
-    families: Object.keys(interfaces),
+    families: [...Object.keys(interfaces), "info"],
     note: "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred.",
   },
   summary,

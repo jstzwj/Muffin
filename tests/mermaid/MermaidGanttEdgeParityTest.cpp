@@ -51,7 +51,8 @@ int main(int argc, char** argv) {
   require(argc == 2, QStringLiteral("Expected Gantt config fixture"));
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), file.errorString());
-  const QByteArray bytes = file.readAll();
+  QByteArray bytes = file.readAll();
+  bytes.replace("\r\n", "\n");
   require(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() ==
               QByteArrayLiteral("7b0ffdba46af19361bf6758be2f4b8c7339f67b997157d54bd4df12eff64ffb9"),
           QStringLiteral("Gantt config fixture bytes changed"));

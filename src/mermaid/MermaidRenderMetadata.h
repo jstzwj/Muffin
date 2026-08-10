@@ -29,11 +29,12 @@ struct MermaidRenderMetadata {
   // SVG-only root element contract. These values are retained beside the
   // scene because they affect serialization, not QPainter geometry.
   bool svgUseMaxWidth = true;
+  bool svgEmitViewBox = true;
   bool svgArrowMarkerAbsolute = false;
   bool svgDeterministicIds = false;
   // Most families always expose an SVG <title>, falling back to "Mermaid
-  // diagram". Kanban 11.16.0 is the exception: it has no accessibility
-  // grammar and ignores frontmatter title, so its root has no labelledby.
+  // diagram". Families whose upstream renderer discards metadata set this
+  // false and retain only role/roledescription on the root.
   bool svgEmitAccessibleTitle = true;
   QString svgDeterministicIdSeed;
 

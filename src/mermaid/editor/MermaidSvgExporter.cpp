@@ -218,6 +218,17 @@ QByteArray normalizeSvg(const QByteArray& generated,
         break;
       case QXmlStreamReader::StartElement: {
         const bool root = !rootSeen;
+        // QSvgGenerator injects root-level placeholder metadata
+        // ("Qt SVG Document" / "Generated with Qt") even though Mermaid did
+        // not request it. Drop only those direct root children; accessible
+        // Mermaid metadata is emitted below and interaction-region <title>
+        // elements are written later by writeInteractions().
+        if (!root && depth == 1 &&
+            (reader.name() == QLatin1String("title") ||
+             reader.name() == QLatin1String("desc"))) {
+          reader.skipCurrentElement();
+          break;
+        }
         if (root) rootSeen = true;
         writer.writeStartElement(reader.qualifiedName().toString());
         writeNamespaces(writer, reader.namespaceDeclarations(), root);
@@ -232,10 +243,12 @@ QByteArray normalizeSvg(const QByteArray& generated,
           writer.writeAttribute(QStringLiteral("class"),
                                 QStringLiteral("mfn-mermaid ") +
                                     entry.metadata.cssClass);
-          writer.writeAttribute(QStringLiteral("viewBox"),
-                                QStringLiteral("0 0 %1 %2")
-                                    .arg(canvas.size.width())
-                                    .arg(canvas.size.height()));
+          if (entry.metadata.svgEmitViewBox) {
+            writer.writeAttribute(QStringLiteral("viewBox"),
+                                  QStringLiteral("0 0 %1 %2")
+                                      .arg(canvas.size.width())
+                                      .arg(canvas.size.height()));
+          }
           if (entry.metadata.svgUseMaxWidth) {
             writer.writeAttribute(QStringLiteral("width"), QStringLiteral("100%"));
             writer.writeAttribute(

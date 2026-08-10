@@ -36,6 +36,7 @@
 #include "mermaid/kanban/KanbanDiagram.h"
 #include "mermaid/mindmap/MindmapDiagram.h"
 #include "mermaid/gantt/GanttDiagram.h"
+#include "mermaid/info/InfoDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -529,6 +530,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("kanban"));
     diagnostic.expected.append(QStringLiteral("mindmap"));
     diagnostic.expected.append(QStringLiteral("gantt"));
+    diagnostic.expected.append(QStringLiteral("info"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -751,6 +753,18 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
                                  : -1;
     return errorEntry(parserDiagnostic(
         source, pre, type, QStringLiteral("parse"), std::move(code),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), QString(), {}));
+  } catch (const info::InfoParseError& error) {
+    const qsizetype offset = error.line > 0 && error.column > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       error.column)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"),
+        error.kind == info::InfoErrorKind::Lexer
+            ? QStringLiteral("info-lexer-error")
+            : QStringLiteral("info-parse-error"),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
         error.line, error.column, QString(), QString(), {}));
   } catch (const std::exception& error) {

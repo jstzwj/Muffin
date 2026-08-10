@@ -138,7 +138,8 @@ int main(int argc, char** argv) {
   require(argc == 2, QStringLiteral("Expected Gantt geometry fixture"));
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), file.errorString());
-  const QByteArray bytes = file.readAll();
+  QByteArray bytes = file.readAll();
+  bytes.replace("\r\n", "\n");
   require(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() ==
               QByteArrayLiteral("e094a61f7fab09f647160bceef1eef7169b0a52cf848b433fdc4f659df2f4feb"),
           QStringLiteral("Gantt geometry fixture bytes changed"));

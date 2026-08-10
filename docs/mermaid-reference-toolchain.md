@@ -68,15 +68,16 @@ references.
 - **Real-mermaid geometry oracles** — fail-on-divergence tests that assert
   Muffin's native geometry against captured mermaid 11.16.0 output, splitting
   font-independent parity (asserted) from font-coupled deltas (reported). All
-  fifteen native families are covered: flowchart (dagre-snapshots + geometry), ER
+  all seventeen native families are covered: flowchart (dagre-snapshots + geometry), ER
   (`er-geometry.json` + `MermaidErGeometryOracleTest`), class
   (`class-geometry.json` + `MermaidClassGeometryOracleTest`), state
   (`state-geometry.json` + `MermaidStateGeometryOracleTest`), and sequence
   (`sequence-geometry.json` + `MermaidSequenceGeometryOracleTest`, a pure
   structural oracle since the legacy renderer is positionally font-coupled),
-  Requirement, pie, quadrant, journey, radar, XYChart, Timeline, Packet, Kanban, and Mindmap (family-specific geometry and pixel
+  Requirement, pie, quadrant, journey, radar, XYChart, Timeline, Packet, Kanban,
+  Mindmap, Gantt, and Info (family-specific geometry and pixel
   fixtures).
-- `config-effect-matrix.json` covers all fifteen native families.
+- `config-effect-matrix.json` covers all seventeen native families.
 - Regenerating any drifted fixture (e.g. after a mermaid version bump, or when
   extending the case corpus).
 

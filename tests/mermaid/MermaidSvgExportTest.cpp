@@ -87,6 +87,7 @@ int main(int argc, char** argv) {
     QString name;
     QString cssClass;
     QString source;
+    bool emitsViewBox = true;
   };
   const QVector<FamilyCase> families = {
       {QStringLiteral("flowchart"), QStringLiteral("flowchart"),
@@ -128,6 +129,8 @@ int main(int argc, char** argv) {
        QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
                       "section Delivery\nBuild :build, 2024-01-01, 3d\n"
                       "Ship :ship, after build, 2d")},
+      {QStringLiteral("info"), QStringLiteral("info"),
+       QStringLiteral("info showInfo"), false},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -143,7 +146,8 @@ int main(int argc, char** argv) {
                     QLatin1String("max-width: ")) &&
                 root.value(QStringLiteral("role")) ==
                     QLatin1String("graphics-document document") &&
-                !root.value(QStringLiteral("viewBox")).isEmpty(),
+                (family.emitsViewBox ==
+                 !root.value(QStringLiteral("viewBox")).isEmpty()),
             family.name + QStringLiteral(" SVG root contract drifted"));
     requireRenderable(first.svg, family.name);
 
@@ -361,6 +365,16 @@ int main(int argc, char** argv) {
               !mindmapNoTitle.contains("aria-labelledby=") &&
               !mindmapNoTitle.contains("aria-describedby="),
           QStringLiteral("Mindmap frontmatter title must remain invisible"));
+
+  const QByteArray infoNoTitle = renderSvg(QStringLiteral(
+      "---\ntitle: Info frontmatter\n---\n"
+      "info\ntitle Inline\naccTitle: AT\naccDescr: AD")).svg;
+  require(!infoNoTitle.contains("Info frontmatter") &&
+              !infoNoTitle.contains("Inline") &&
+              !infoNoTitle.contains("aria-labelledby=") &&
+              !infoNoTitle.contains("aria-describedby=") &&
+              !infoNoTitle.contains("viewBox="),
+          QStringLiteral("Info metadata/viewBox must remain renderer-inert"));
 
   const QByteArray mindmapSafeLink = renderSvg(QStringLiteral(
       "mindmap\n  root((Root))\n"

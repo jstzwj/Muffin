@@ -140,7 +140,10 @@ int main(int argc, char** argv) {
   require(argc == 2, QStringLiteral("Expected Gantt grammar fixture"));
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), file.errorString());
-  const QByteArray bytes = file.readAll();
+  QByteArray bytes = file.readAll();
+  // The generator emits LF. Git may materialize JSON fixtures as CRLF on
+  // Windows; provenance must describe content, not checkout line endings.
+  bytes.replace("\r\n", "\n");
   require(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() ==
               QByteArrayLiteral("78f3c822ea3da724dbcae3d57c5278bb6f30ca13e3e65761cfe1ec39165502be"),
           QStringLiteral("Gantt grammar fixture bytes changed"));

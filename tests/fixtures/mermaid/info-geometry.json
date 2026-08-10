@@ -1,0 +1,512 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "infoModuleSha256": "b824d959dd8443f8dea0d2582d84ed9ff7e50394d00dcdee8fa3b4d495160900",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry SVG DOM, used style, fixed viewport, and inert metadata/config",
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "info-default",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "computed": {
+            "fill": "rgb(51, 51, 51)",
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "32px",
+            "fontWeight": "400",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "show-info",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo showInfo",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "info-show-info",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "computed": {
+            "fill": "rgb(51, 51, 51)",
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "32px",
+            "fontWeight": "400",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "metadata-inert",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo\ntitle Inline title\naccTitle: Accessible\naccDescr: Description",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "info-metadata-inert",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "computed": {
+            "fill": "rgb(51, 51, 51)",
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "32px",
+            "fontWeight": "400",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "frontmatter-inert",
+      "source": "---\ntitle: Front title\n---\n%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "info-frontmatter-inert",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "computed": {
+            "fill": "rgb(51, 51, 51)",
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "32px",
+            "fontWeight": "400",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\"}}%%\ninfo",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "info-dark",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "computed": {
+            "fill": "rgb(204, 204, 204)",
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "32px",
+            "fontWeight": "400",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "text-color",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"textColor\":\"#ff0000\"}}}%%\ninfo",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "info-text-color",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 36.53125,
+            "y": 6,
+            "width": 125.9375,
+            "height": 43
+          },
+          "computed": {
+            "fill": "rgb(255, 0, 0)",
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "32px",
+            "fontWeight": "400",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "font-family",
+      "source": "%%{init: {\"fontFamily\":\"monospace\",\"themeVariables\":{\"fontFamily\":\"monospace\"}}}%%\ninfo",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "info-font-family",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 29.625,
+            "y": 11,
+            "width": 140.75,
+            "height": 37
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 29.625,
+            "y": 11,
+            "width": 140.75,
+            "height": 37
+          },
+          "computed": {
+            "fill": "rgb(51, 51, 51)",
+            "fontFamily": "monospace",
+            "fontSize": "32px",
+            "fontWeight": "400",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "unrelated-config-inert",
+      "source": "%%{init: {\"useMaxWidth\":false,\"width\":999,\"height\":777}}%%\ninfo",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "info-unrelated-config-inert",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 37.4609375,
+            "y": 10,
+            "width": 124.296875,
+            "height": 37
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 37.4609375,
+            "y": 10,
+            "width": 124.296875,
+            "height": 37
+          },
+          "computed": {
+            "fill": "rgb(51, 51, 51)",
+            "fontFamily": "\"trebuchet ms\", verdana, arial, sans-serif",
+            "fontSize": "32px",
+            "fontWeight": "400",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "44ad70af6ce5f0b481967196724792f787932a2a431c8a0ca629a41fd7d61938"
+}

@@ -1,0 +1,32 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "infoModuleSha256": "b824d959dd8443f8dea0d2582d84ed9ff7e50394d00dcdee8fa3b4d495160900",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "transparent element screenshots at DPR 1",
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo",
+      "file": "default.png",
+      "width": 400,
+      "height": 150,
+      "sha256": "fb4bb1a0e2efaf96dd0cee85fdb8b723e538aaeb8e50ac251ee5daa63786a2f5"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\"}}%%\ninfo",
+      "file": "dark.png",
+      "width": 400,
+      "height": 150,
+      "sha256": "91630d1ab3cc12d890bf1fa92737e9e11be8c000d07d561cb018bcbca5ef6208"
+    }
+  ],
+  "fixtureSha256": "c5d8b87f2466925e155b781c49d839354f1cda9e456ebb748b3279a775f1e5d7"
+}

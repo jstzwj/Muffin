@@ -9,6 +9,7 @@
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/gantt/GanttScene.h"
+#include "mermaid/info/InfoScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/timeline/TimelineScene.h"
@@ -800,6 +801,30 @@ int main(int argc, char** argv) {
             QStringLiteral("Gantt title/accessibility ownership drifted"));
   }
 
+  // Info keeps a fixed 400x150 replaced-element viewport and discards all
+  // parsed/frontmatter metadata, matching the upstream diagram parser.
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(QStringLiteral(
+            "---\ntitle: Front\n---\ninfo\ntitle Inline\n"
+            "accTitle: AT\naccDescr: AD")),
+        QStringLiteral("---\ntitle: Front\n---\ninfo\ntitle Inline\n"
+                       "accTitle: AT\naccDescr: AD"));
+    const auto scene =
+        std::dynamic_pointer_cast<const muffin::mermaid::info::InfoScene>(
+            entry.scene);
+    require(entry.status == kReady && scene &&
+                entry.naturalSize == QSize(400, 150) &&
+                scene->text == QLatin1String("v11.16.0") &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle.isEmpty() &&
+                entry.metadata.accessibleDescription.isEmpty() &&
+                !entry.metadata.svgEmitAccessibleTitle &&
+                !entry.metadata.svgEmitViewBox,
+            QStringLiteral("Info fixed viewport/metadata contract drifted"));
+  }
+
   // Every native family is normalised into the same 1-based diagnostic model.
   {
     struct InvalidCase {
@@ -827,6 +852,8 @@ int main(int argc, char** argv) {
          QStringLiteral("kanban"), QStringLiteral("kanban-parse-error"), 2},
         {QStringLiteral("gantt:"),
          QStringLiteral("gantt"), QStringLiteral("gantt-parse-error"), 1},
+        {QStringLiteral("info\nunknown"),
+         QStringLiteral("info"), QStringLiteral("info-lexer-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -869,6 +896,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("mindmap")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("gantt")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("info")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1470,6 +1499,7 @@ int main(int argc, char** argv) {
          QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
                         "section Delivery\nBuild :build, 2024-01-01, 3d\n"
                         "Ship :ship, after build, 2d")},
+        {QStringLiteral("info"), QStringLiteral("info showInfo")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

@@ -27,6 +27,7 @@ const Diagram& packetDiagramAdapter();
 const Diagram& kanbanDiagramAdapter();
 const Diagram& mindmapDiagramAdapter();
 const Diagram& ganttDiagramAdapter();
+const Diagram& infoDiagramAdapter();
 
 // Returns the Diagram that handles the detected type id, or nullptr if the
 // type is not natively rendered. The registry is the single source of truth

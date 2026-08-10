@@ -1,0 +1,223 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "infoModuleSha256": "b824d959dd8443f8dea0d2582d84ed9ff7e50394d00dcdee8fa3b4d495160900",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry detector and Langium InfoGrammar acceptance/diagnostics",
+  "cases": [
+    {
+      "id": "plain",
+      "source": "info",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "show-info-inline",
+      "source": "info showInfo",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "show-info-next-line",
+      "source": "info\nshowInfo",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "leading-newlines-comments",
+      "source": " \n%% comment\ninfo\n",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\n---\ninfo",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "info\ntitle Inline\naccTitle: Accessible\naccDescr: Description",
+      "accept": true,
+      "ast": {
+        "title": "Inline",
+        "accTitle": "Accessible",
+        "accDescr": "Description"
+      }
+    },
+    {
+      "id": "metadata-inline",
+      "source": "info title Inline",
+      "accept": true,
+      "ast": {
+        "title": "Inline",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "metadata-after-show",
+      "source": "info showInfo title Visible",
+      "accept": true,
+      "ast": {
+        "title": "Visible",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "metadata-last-wins",
+      "source": "info\ntitle One\ntitle Two\naccTitle: A\naccTitle: B",
+      "accept": true,
+      "ast": {
+        "title": "Two",
+        "accTitle": "B",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "metadata-empty-title",
+      "source": "info\ntitle",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "metadata-accdescr-block",
+      "source": "info\naccDescr { First line\n  Second line }",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "First line\nSecond line"
+      }
+    },
+    {
+      "id": "inline-comment",
+      "source": "info %% trailing comment",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"theme\":\"dark\"}}%%\ninfo",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      }
+    },
+    {
+      "id": "reject-uppercase-detector",
+      "source": "INFO",
+      "accept": false,
+      "reject": {
+        "kind": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: INFO",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-prefix",
+      "source": "information",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 1, column 1: unexpected character: ->i<- at offset: 0, skipped 11 characters. Parse error on line ?, column ?: Expecting token of type 'info' but found ``.",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-unknown",
+      "source": "info\nunknown",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 1: unexpected character: ->u<- at offset: 5, skipped 7 characters.",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-repeat-show",
+      "source": "info\nshowInfo\nshowInfo",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 3, column 1: Expecting end of file but found `showInfo`.",
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-semicolon",
+      "source": "info;",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 1, column 1: unexpected character: ->i<- at offset: 0, skipped 5 characters. Parse error on line ?, column ?: Expecting token of type 'info' but found ``.",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-title-colon",
+      "source": "info\ntitle: Bad",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 6: unexpected character: ->:<- at offset: 10, skipped 1 characters. Lexer error on line 2, column 8: unexpected character: ->B<- at offset: 12, skipped 3 characters.",
+        "line": 2,
+        "column": 6
+      }
+    },
+    {
+      "id": "reject-garbage-after-show",
+      "source": "info showInfo garbage",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 1, column 15: unexpected character: ->g<- at offset: 14, skipped 7 characters.",
+        "line": 1,
+        "column": 15
+      }
+    }
+  ],
+  "fixtureSha256": "b559ee3e6394d827c2c4be61992afdce5443dd915ae33e7a66e3dc901ab9c1bc"
+}

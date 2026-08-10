@@ -2,10 +2,12 @@
 
 The flowchart execution contract and milestone history are maintained in
 [`mermaid-flowchart-remaining-plan.md`](mermaid-flowchart-remaining-plan.md).
+The complete 38-ID expansion and acceptance contract is maintained in
+[`mermaid-11.16-complete-parity-plan.md`](mermaid-11.16-complete-parity-plan.md).
 
 ## Current status (2026-08-11)
 
-Muffin renders sixteen Mermaid families through a native C++20/Qt pipeline:
+Muffin renders seventeen Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
@@ -23,21 +25,24 @@ Muffin renders sixteen Mermaid families through a native C++20/Qt pipeline:
 - Kanban diagram (`kanban`).
 - mindmap diagram (`mindmap`).
 - Gantt chart (`gantt`).
+- Info diagram (`info`).
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 227/227 tests, including the end-to-end
+currently 231/231 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All sixteen native families now share `MermaidRenderMetadata` for the diagram
+All seventeen native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
 precedence. Timeline and Kanban are upstream exceptions: Timeline paints only
 its inline `title`, while Kanban has no title grammar and ignores frontmatter
 title entirely. Mindmap likewise has no title/accessibility grammar and ignores
-frontmatter title rather than painting the common title band. The common title painter is used by the editor, print/PDF block
+frontmatter title rather than painting the common title band. Info accepts the
+shared metadata grammar but its upstream parser discards the AST, so both inline
+and frontmatter metadata remain invisible. The common title painter is used by the editor, print/PDF block
 path, PNG export, and SVG export; title growth is included in scaling,
 dirty-viewport culling, and flowchart link hit testing. HTML export now embeds
 the native SVG fragment instead of a raster `<img>`. Its root carries
@@ -46,7 +51,8 @@ Mermaid-compatible `role`, `aria-roledescription`, `aria-labelledby`, and
 
 `MermaidSvgExporter` sends each immutable scene through its production painter
 and Qt's SVG generator, then normalizes the root contract. Output is directly
-embeddable XML with a stable ID, family class, viewBox, `useMaxWidth` sizing,
+embeddable XML with a stable ID, family class, upstream-compatible viewBox
+presence, `useMaxWidth` sizing,
 accessibility nodes, and sanitized Flowchart/forced-Sequence link overlays.
 `deterministicIds` and `deterministicIDSeed` match the Mermaid 11.16 ID counter
 contract. HTML uses per-document instance indices to avoid duplicate IDs, and
@@ -130,7 +136,7 @@ assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 
 The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
 and whole-diagram painter are now native and covered by structural and pixel
-oracles. All sixteen native scenes are integrated into the editor and print/PDF path
+oracles. All seventeen native scenes are integrated into the editor and print/PDF path
 through `MermaidRenderCache`. The legacy flat
 `WorkGraph` implementation remains as inactive reference code; the active path
 always delegates to the compound Dagre pipeline.
@@ -443,7 +449,7 @@ variant through config, per-edge metadata, scene paint, interaction geometry,
 and PNG export. The interaction/animation milestone is also complete: safe
 Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
 Sequence participant menus, and `sequence.forceMenus` all reach their runtime
-consumers. Native SVG export is now complete at the product boundary: all sixteen
+consumers. Native SVG export is now complete at the product boundary: all seventeen
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
 `deterministicIds`, `deterministicIDSeed`, and the effective family
@@ -506,7 +512,8 @@ The remaining boundaries are explicit rather than hidden parity claims:
 
 ### Family expansion status
 
-Pie, quadrant, journey, radar, XYChart, Timeline, Packet, Kanban, Mindmap, and Gantt are now native. Each was implemented probe-first
+Pie, quadrant, journey, radar, XYChart, Timeline, Packet, Kanban, Mindmap, Gantt,
+and Info are now native. Each was implemented probe-first
 against Mermaid 11.16.0 and ships with grammar/database coverage, immutable
 geometry fixtures, native painter tests, deterministic PNG/SVG integration, and
 configuration-matrix rows. Journey additionally freezes JavaScript scalar
@@ -529,6 +536,9 @@ Gantt freezes its Jison database and date arithmetic, task dependency and
 exclude/include semantics, D3-style time ticks, section/task/milestone/vertical
 marker geometry, 11-theme paint model, safe task links, accessibility metadata,
 and fixed/max-width export behavior.
+Info freezes its Langium grammar and diagnostic locations, fixed version label,
+400x150 replaced-element viewport, theme/font behavior, renderer-inert
+`showInfo`, discarded metadata AST, and intentionally absent SVG viewBox.
 
 The next family must start with a fresh Gate-0 survey. Formula-driven families
 remain preferable before additional force-layout families: architecture uses Cytoscape `fcose`,

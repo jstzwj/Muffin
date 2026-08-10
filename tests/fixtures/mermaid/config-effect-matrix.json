@@ -30,7 +30,8 @@
       "packet",
       "kanban",
       "mindmap",
-      "gantt"
+      "gantt",
+      "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
@@ -63,7 +64,8 @@
         "packet",
         "kanban",
         "mindmap",
-        "gantt"
+        "gantt",
+        "info"
       ],
       "status": "parity",
       "upstream": [
@@ -101,7 +103,8 @@
         "packet",
         "kanban",
         "mindmap",
-        "gantt"
+        "gantt",
+        "info"
       ],
       "status": "partial",
       "upstream": [
@@ -140,7 +143,8 @@
         "packet",
         "kanban",
         "mindmap",
-        "gantt"
+        "gantt",
+        "info"
       ],
       "status": "parity",
       "upstream": [
@@ -348,7 +352,8 @@
         "packet",
         "kanban",
         "mindmap",
-        "gantt"
+        "gantt",
+        "info"
       ],
       "status": "unsupported",
       "upstream": [
@@ -377,7 +382,8 @@
         "packet",
         "kanban",
         "mindmap",
-        "gantt"
+        "gantt",
+        "info"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -428,7 +434,8 @@
         "packet",
         "kanban",
         "mindmap",
-        "gantt"
+        "gantt",
+        "info"
       ],
       "status": "parity",
       "upstream": [
@@ -458,7 +465,8 @@
         "packet",
         "kanban",
         "mindmap",
-        "gantt"
+        "gantt",
+        "info"
       ],
       "status": "parity",
       "upstream": [
@@ -488,7 +496,8 @@
         "packet",
         "kanban",
         "mindmap",
-        "gantt"
+        "gantt",
+        "info"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5510,5 +5519,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "3d837738e3e3c387e7fe8a7892f6ca32857206914c0b4130c57a429686731762"
+  "fixtureSha256": "5c8975b54bc0ebfd7c81cc4dba52a3bf5e82b99f6592dc76fa17a976a3b61631"
 }

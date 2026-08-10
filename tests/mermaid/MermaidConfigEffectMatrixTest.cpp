@@ -4,6 +4,7 @@
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/gantt/GanttScene.h"
+#include "mermaid/info/InfoScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
@@ -240,6 +241,18 @@ int main(int argc, char** argv) {
             QStringLiteral("Global %1 scope must cover every native family")
                 .arg(path));
   }
+
+  const MermaidRenderEntry infoEntry = render(QStringLiteral(
+      "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{"
+      "\"textColor\":\"#ff0000\"}}}%%\ninfo"));
+  const auto* infoScene =
+      dynamic_cast<const muffin::mermaid::info::InfoScene*>(
+          infoEntry.scene.get());
+  require(infoEntry.status == MermaidRenderStatus::Ready && infoScene &&
+              infoScene->style.fontFamily == QLatin1String("Noto Sans") &&
+              infoScene->style.textColor == QLatin1String("#ff0000") &&
+              !infoEntry.metadata.svgEmitViewBox,
+          QStringLiteral("Info shared font/theme/SVG config did not reach the scene"));
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
