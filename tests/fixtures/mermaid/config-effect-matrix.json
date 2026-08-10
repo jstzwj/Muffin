@@ -25,17 +25,18 @@
       "quadrantChart",
       "journey",
       "radar",
-      "xyChart"
+      "xyChart",
+      "timeline"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 112,
+    "parity": 116,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 47,
+    "upstream-inert": 67,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -53,7 +54,8 @@
         "quadrantChart",
         "journey",
         "radar",
-        "xyChart"
+        "xyChart",
+        "timeline"
       ],
       "status": "parity",
       "upstream": [
@@ -86,7 +88,8 @@
         "quadrantChart",
         "journey",
         "radar",
-        "xyChart"
+        "xyChart",
+        "timeline"
       ],
       "status": "partial",
       "upstream": [
@@ -120,7 +123,8 @@
         "quadrantChart",
         "journey",
         "radar",
-        "xyChart"
+        "xyChart",
+        "timeline"
       ],
       "status": "parity",
       "upstream": [
@@ -171,7 +175,8 @@
       "families": [
         "flowchart",
         "class",
-        "state"
+        "state",
+        "timeline"
       ],
       "status": "partial",
       "upstream": [
@@ -190,7 +195,7 @@
         "interaction",
         "export"
       ],
-      "note": "Flowchart is complete; state currently uses look for marker selection and class retains it without rough painting."
+      "note": "Flowchart and Timeline are complete; state currently uses look for marker selection and class retains it without rough painting."
     },
     {
       "path": "handDrawnSeed",
@@ -290,7 +295,8 @@
         "quadrantChart",
         "journey",
         "radar",
-        "xyChart"
+        "xyChart",
+        "timeline"
       ],
       "status": "unsupported",
       "upstream": [
@@ -314,7 +320,8 @@
         "quadrantChart",
         "journey",
         "radar",
-        "xyChart"
+        "xyChart",
+        "timeline"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -360,7 +367,8 @@
         "quadrantChart",
         "journey",
         "radar",
-        "xyChart"
+        "xyChart",
+        "timeline"
       ],
       "status": "parity",
       "upstream": [
@@ -385,7 +393,8 @@
         "quadrantChart",
         "journey",
         "radar",
-        "xyChart"
+        "xyChart",
+        "timeline"
       ],
       "status": "parity",
       "upstream": [
@@ -410,7 +419,8 @@
         "quadrantChart",
         "journey",
         "radar",
-        "xyChart"
+        "xyChart",
+        "timeline"
       ],
       "status": "unsupported",
       "upstream": [
@@ -4263,7 +4273,422 @@
         "export"
       ],
       "default": 50
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.diagramMarginX",
+      "field": "diagramMarginX",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": 50
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.diagramMarginY",
+      "field": "diagramMarginY",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": 10
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.leftMargin",
+      "field": "leftMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 150
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey field; Timeline uses fixed LR/TD node widths.",
+      "default": 150
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey field; Timeline measures node heights from text.",
+      "default": 50
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.padding",
+      "field": "padding",
+      "hasDefault": false,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ]
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.boxMargin",
+      "field": "boxMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": 10
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.boxTextMargin",
+      "field": "boxTextMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline uses fixed node padding.",
+      "default": 5
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.noteMargin",
+      "field": "noteMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": 10
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.messageMargin",
+      "field": "messageMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": 35
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.messageAlign",
+      "field": "messageAlign",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": "center"
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.bottomMarginAdj",
+      "field": "bottomMarginAdj",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": 1
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.rightAngles",
+      "field": "rightAngles",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey/Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": false
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.taskFontSize",
+      "field": "taskFontSize",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey field; Timeline labels use the root theme fontSize.",
+      "default": 14
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.taskFontFamily",
+      "field": "taskFontFamily",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey field; Timeline labels use the root theme fontFamily.",
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.taskMargin",
+      "field": "taskMargin",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey field; Timeline uses fixed LR/TD task spacing.",
+      "default": 50
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.activationWidth",
+      "field": "activationWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Sequence field; Timeline 11.16.0 never consumes it.",
+      "default": 10
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.textPlacement",
+      "field": "textPlacement",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Copied Journey field; Timeline uses its SVG text/wrap path directly.",
+      "default": "fo"
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.actorColours",
+      "field": "actorColours",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Array-valued copied Journey config is removed by the Mermaid source-entry sanitizer and is not consumed by Timeline.",
+      "default": [
+        "#8FBC8F",
+        "#7CFC00",
+        "#00FFFF",
+        "#20B2AA",
+        "#B0E0E6",
+        "#FFFFE0"
+      ]
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.sectionFills",
+      "field": "sectionFills",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Array-valued copied Journey config is removed by the Mermaid source-entry sanitizer and is not consumed by Timeline.",
+      "default": [
+        "#191970",
+        "#8B008B",
+        "#4B0082",
+        "#2F4F4F",
+        "#800000",
+        "#8B4513",
+        "#00008B"
+      ]
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.sectionColours",
+      "field": "sectionColours",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Array-valued copied Journey config is removed by the Mermaid source-entry sanitizer and is not consumed by Timeline.",
+      "default": [
+        "#fff"
+      ]
+    },
+    {
+      "family": "timeline",
+      "interface": "TimelineDiagramConfig",
+      "path": "timeline.disableMulticolor",
+      "field": "disableMulticolor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": false
     }
   ],
-  "fixtureSha256": "a79728f315c2692b3eb26ed131422a7ead89c6e32fb0bf1bbba8ae595e735b09"
+  "fixtureSha256": "1e3a93ae2c21466f3ee89c680629bd59ce89146475b76f3b6f0489ec03383c68"
 }

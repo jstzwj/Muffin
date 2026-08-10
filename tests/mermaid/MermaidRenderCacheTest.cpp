@@ -8,6 +8,7 @@
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/xychart/XYChartScene.h"
+#include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
@@ -428,6 +429,60 @@ int main(int argc, char** argv) {
             QStringLiteral("XYChart title ownership/accessibility metadata drifted"));
   }
 
+  // Timeline parser positions originate in preprocessed code. Preserve the
+  // original line and offset through frontmatter, directives, and comments.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: Ignored timeline frontmatter\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\ntimeline\n: orphan event");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.code == QLatin1String("timeline-runtime-error") &&
+                entry.diagnostic.span.offset ==
+                    decorated.indexOf(QStringLiteral(": orphan event")) &&
+                entry.diagnostic.span.line == 7 &&
+                entry.diagnostic.span.column == 1,
+            QStringLiteral("Timeline diagnostics must map original line and column"));
+  }
+
+  // Timeline paints only its inline title. Frontmatter title is intentionally
+  // ignored by the upstream family, while shared ARIA metadata remains live.
+  {
+    const QString source = QStringLiteral(
+        "---\ntitle: Ignored frontmatter title\n---\ntimeline\n"
+        "title Inline timeline\naccTitle: Timeline accessible\n"
+        "accDescr: Timeline description\nsection S\nTask : Event");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::timeline::TimelineScene>(entry.scene);
+    require(entry.status == kReady && scene &&
+                scene->title == QLatin1String("Inline timeline") &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle ==
+                    QLatin1String("Timeline accessible") &&
+                entry.metadata.accessibleDescription ==
+                    QLatin1String("Timeline description"),
+            QStringLiteral("Timeline title ownership/accessibility metadata drifted"));
+
+    const QString frontmatterOnly = QStringLiteral(
+        "---\ntitle: Invisible timeline title\n---\n"
+        "timeline\nsection S\nTask : Event");
+    const MermaidRenderEntry noInlineTitle = cache.getSync(
+        MermaidRenderCache::makeKey(frontmatterOnly), frontmatterOnly);
+    const auto noInlineScene = std::dynamic_pointer_cast<
+        const muffin::mermaid::timeline::TimelineScene>(noInlineTitle.scene);
+    require(noInlineTitle.status == kReady && noInlineScene &&
+                noInlineScene->title.isEmpty() &&
+                noInlineTitle.metadata.title.isEmpty() &&
+                noInlineTitle.metadata.titleHeight == 0.0,
+            QStringLiteral("Timeline must ignore a frontmatter-only visible title"));
+  }
+
   // populateCommonDb ignores a falsy final AST title. An empty source title,
   // even after a non-empty one, therefore leaves the frontmatter title intact.
   {
@@ -482,6 +537,8 @@ int main(int argc, char** argv) {
          QStringLiteral("radar"), QStringLiteral("radar-parse-error"), 2},
         {QStringLiteral("xychart-beta\nbar"),
          QStringLiteral("xychart"), QStringLiteral("xychart-parse-error"), 2},
+        {QStringLiteral("timeline\n: orphan event"),
+         QStringLiteral("timeline"), QStringLiteral("timeline-runtime-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -514,6 +571,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("radar-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("xychart-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("timeline")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1102,6 +1161,8 @@ int main(int argc, char** argv) {
         {QStringLiteral("xychart"),
          QStringLiteral("xychart-beta\nx-axis [A,B,C]\ny-axis 0 --> 3\n"
                         "bar [1,2,3]\nline [3,2,1]")},
+        {QStringLiteral("timeline"),
+         QStringLiteral("timeline\nsection S\nTask : Event")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

@@ -31,6 +31,7 @@
 #include "mermaid/journey/JourneyDiagram.h"
 #include "mermaid/radar/RadarDiagram.h"
 #include "mermaid/xychart/XYChartDiagram.h"
+#include "mermaid/timeline/TimelineDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -47,11 +48,39 @@
 #include <QRegularExpression>
 #include <QtConcurrent>
 
+#include <cmath>
 #include <optional>
+#include <stdexcept>
 #include <utility>
 
 namespace muffin::mermaid::editor {
 namespace {
+
+void enforceUpstreamThemeColorLimit(const QJsonObject& config) {
+  const QJsonValue raw = config.value(QStringLiteral("themeVariables"))
+                             .toObject()
+                             .value(QStringLiteral("THEME_COLOR_LIMIT"));
+  if (raw.isUndefined() || raw.isNull()) return;
+  const double limit = jsNumberValue(raw);
+  if (!(limit > 12.0)) return;
+
+  const flowtheme::FlowThemeId theme = themeIdFromName(themeFromConfig(config));
+  // Redux does not index the missing derived cScale channels, so finite values
+  // above 12 are accepted. Infinity would make upstream's CSS-generation loop
+  // non-terminating; reject it as the native resource-safe equivalent.
+  if (theme == flowtheme::FlowThemeId::Redux && std::isfinite(limit)) return;
+  if (theme == flowtheme::FlowThemeId::Dark && limit <= 13.0) return;
+
+  const bool failsInInvert =
+      theme == flowtheme::FlowThemeId::Neutral ||
+      theme == flowtheme::FlowThemeId::ReduxColor ||
+      theme == flowtheme::FlowThemeId::ReduxDarkColor ||
+      theme == flowtheme::FlowThemeId::Dark;
+  throw std::runtime_error(
+      failsInInvert
+          ? "Cannot read properties of undefined (reading 'r')"
+          : "Cannot read properties of undefined (reading 'l')");
+}
 
 // Rasterizes any family's scene to a DPR-aware QImage through the uniform
 // MermaidScene pointer — no family dispatch. The scene supplies its render
@@ -490,6 +519,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         QStringLiteral("pie"), QStringLiteral("quadrantChart"),
         QStringLiteral("journey"), QStringLiteral("radar-beta")};
     diagnostic.expected.append(QStringLiteral("xychart-beta"));
+    diagnostic.expected.append(QStringLiteral("timeline"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -508,6 +538,13 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   }
 
   try {
+    // Mermaid calculates the selected theme before invoking the diagram
+    // parser/renderer. Several 11.16 themes index a finite cScale array while
+    // doing so and throw for source THEME_COLOR_LIMIT values beyond their
+    // actual palette boundary. Preserve that observable failure instead of
+    // letting the native model's defensive fixed-array clamp render a diagram
+    // that upstream rejects.
+    enforceUpstreamThemeColorLimit(pre.config);
     MermaidRenderEntry entry = diagram->render(pre, type, theme);
     // cssClass is a Diagram-contract value (not renderMetadata's job), so write
     // it at the single dispatch site — a new family cannot forget it.
@@ -601,6 +638,18 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     return errorEntry(parserDiagnostic(
         source, pre, type, QStringLiteral("parse"),
         QStringLiteral("xychart-parse-error"),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), QString(), {}));
+  } catch (const timeline::TimelineParseError& error) {
+    const qsizetype offset = error.line > 0 && error.column > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       error.column)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"),
+        error.kind == timeline::TimelineErrorKind::Runtime
+            ? QStringLiteral("timeline-runtime-error")
+            : QStringLiteral("timeline-parse-error"),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
         error.line, error.column, QString(), QString(), {}));
   } catch (const std::exception& error) {

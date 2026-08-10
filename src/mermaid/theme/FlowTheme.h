@@ -5,9 +5,9 @@
 // with a constructor (raw field literals, some derived via khroma) + an
 // `updateColors()` derivation + a `calculate(overrides)` two-pass driver.
 //
-// Scope: the flowchart renderer (chunk-YI7H2ERT.mjs getStyles) reads ~15
-// themeVariables fields and all cScale/cScaleInv/cScalePeer/cScaleLabel palettes
-// are ported for all 11 registered themes.
+// Scope: the shared fields consumed by the native Flowchart, Requirement, Pie,
+// Quadrant, Journey, Radar, XYChart, and Timeline renderers, including all
+// cScale/cScaleInv/cScalePeer/cScaleLabel palettes for all 11 themes.
 //
 // Critical fidelity note: the `default` theme's constructor calls
 // `this.updateColors()` (chunk line 1641), and `getThemeVariables` then calls
@@ -53,7 +53,7 @@ struct XYChartThemeVariables {
 // Unknown names map to Default (mermaid's default).
 FlowThemeId parseThemeId(const QString& name);
 
-// The flowchart-relevant themeVariables subset. Colors are stored as the exact
+// The native-renderer themeVariables subset. Colors are stored as the exact
 // khroma-format strings (hsl(...)/#hex/rgba(...)) so the golden compares
 // byte-for-byte; the painter converts via color::toQColor at render time.
 struct FlowThemeVariables {
@@ -70,6 +70,9 @@ struct FlowThemeVariables {
   QString arrowheadColor;
   QString fontFamily;
   QString fontSize;
+  // Timeline's Redux stylesheet consumes this for node labels. Classic/Neo
+  // themes resolve to "normal"; the four Redux variants resolve to "600".
+  QString fontWeight;
   QString labelBackground;
   QString textColor;
   QString titleColor;

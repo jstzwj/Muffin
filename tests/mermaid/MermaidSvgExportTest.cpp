@@ -115,6 +115,8 @@ int main(int argc, char** argv) {
       {QStringLiteral("xychart"), QStringLiteral("xychart"),
        QStringLiteral("xychart-beta\ntitle Sales\nx-axis [Jan, Feb, Mar]\n"
                       "y-axis 0 --> 100\nbar [20, 50, 80]\nline [10, 60, 90]")},
+      {QStringLiteral("timeline"), QStringLiteral("timeline"),
+       QStringLiteral("timeline\ntitle Releases\nsection 2026\nAlpha : API ready\nBeta : Ship")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -203,6 +205,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"radar\": {\"useMaxWidth\": false}}}%%\n"
           "radar-beta\naxis A,B,C\ncurve C {1,2,3}"),
+      QStringLiteral(
+          "%%{init: {\"timeline\": {\"useMaxWidth\": false}}}%%\n"
+          "timeline\nsection S\nTask : Event"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);
@@ -269,6 +274,17 @@ int main(int argc, char** argv) {
               xyChartAria.contains("aria-labelledby=") &&
               xyChartAria.contains("aria-describedby="),
           QStringLiteral("XYChart SVG accessibility metadata drifted"));
+
+  const QByteArray timelineAria = renderSvg(QStringLiteral(
+      "timeline\naccTitle: Timeline accessible\n"
+      "accDescr: Timeline description\nsection S\nTask : Event")).svg;
+  require(timelineAria.contains("<title") &&
+              timelineAria.contains("Timeline accessible</title>") &&
+              timelineAria.contains("<desc") &&
+              timelineAria.contains("Timeline description</desc>") &&
+              timelineAria.contains("aria-labelledby=") &&
+              timelineAria.contains("aria-describedby="),
+          QStringLiteral("Timeline SVG accessibility metadata drifted"));
 
   require(MermaidRenderCache::renderMermaidSourceToSvg(
               QStringLiteral("flowchart TB\nA -->"))

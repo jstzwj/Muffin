@@ -2,6 +2,7 @@
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/radar/RadarScene.h"
+#include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 
 #include <QByteArray>
@@ -146,8 +147,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 202,
-          QStringLiteral("Expected 202 classified config rows, found %1")
+  require(entries.size() == 226,
+          QStringLiteral("Expected 226 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -209,6 +210,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("requirement"), 11},
                                              {QStringLiteral("sequence"), 37},
                                              {QStringLiteral("state"), 22},
+                                             {QStringLiteral("timeline"), 24},
                                              {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
@@ -247,6 +249,21 @@ int main(int argc, char** argv) {
                   QLatin1String("parity") &&
               byPath.value(QStringLiteral("xyChart.useMaxWidth"))
                       .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("timeline.leftMargin"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("timeline.padding"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("timeline.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("timeline.disableMulticolor"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("timeline.taskFontSize"))
+                      .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert"),
           QStringLiteral("Critical config status rows drifted"));
   for (const QString& path : {
@@ -256,7 +273,8 @@ int main(int argc, char** argv) {
            QStringLiteral("journey.useMaxWidth"),
            QStringLiteral("quadrantChart.useMaxWidth"),
            QStringLiteral("sequence.useMaxWidth"),
-           QStringLiteral("state.useMaxWidth")}) {
+           QStringLiteral("state.useMaxWidth"),
+           QStringLiteral("timeline.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())
@@ -572,6 +590,49 @@ int main(int argc, char** argv) {
               "xychart-beta\ntitle Sales\nx-axis [A,B,C]\n"
               "y-axis 0 --> 3\nbar [1,2,3]")),
           QStringLiteral("XYChart live config did not affect PNG output"));
+
+  // Timeline consumes four family-specific fields. The remaining inherited
+  // Journey/Sequence-shaped fields are accepted but renderer-inert upstream.
+  const QString timelineSource = QStringLiteral(
+      "%%{init: {\"timeline\": {\"useMaxWidth\": false, "
+      "\"leftMargin\": 210, \"padding\": 17, "
+      "\"disableMulticolor\": true}}}%%\n"
+      "timeline\ntitle Releases\nAlpha : API ready\nBeta : Ship");
+  const MermaidRenderEntry timelineEntry = render(timelineSource);
+  const auto* timelineScene =
+      dynamic_cast<const muffin::mermaid::timeline::TimelineScene*>(
+          timelineEntry.scene.get());
+  require(timelineEntry.status == MermaidRenderStatus::Ready &&
+              timelineScene && !timelineEntry.metadata.svgUseMaxWidth &&
+              timelineScene->config.leftMargin == 210.0 &&
+              timelineScene->config.padding == 17.0 &&
+              timelineScene->config.disableMulticolor,
+          QStringLiteral("Timeline live config did not reach the scene"));
+  require(pngImage(timelineSource) != pngImage(QStringLiteral(
+              "timeline\ntitle Releases\nAlpha : API ready\nBeta : Ship")),
+          QStringLiteral("Timeline live config did not affect PNG output"));
+  const MermaidRenderEntry reduxTimeline = render(QStringLiteral(
+      "%%{init: {\"theme\": \"redux-color\", \"themeVariables\": {"
+      "\"strokeWidth\": \"7px\"}}}%%\n"
+      "timeline\nOne : first event"));
+  const auto* reduxTimelineScene =
+      dynamic_cast<const muffin::mermaid::timeline::TimelineScene*>(
+          reduxTimeline.scene.get());
+  require(reduxTimeline.status == MermaidRenderStatus::Ready &&
+              reduxTimelineScene && reduxTimelineScene->style.strokeWidth == 7.0 &&
+              reduxTimelineScene->style.nodeFontWeight == QFont::DemiBold,
+          QStringLiteral("Timeline Redux stroke width/font weight did not reach the scene"));
+  const MermaidRenderEntry timelineFont = render(QStringLiteral(
+      "%%{init: {\"fontFamily\": \"Noto Sans\", \"themeVariables\": {"
+      "\"fontFamily\": \"Courier New\"}}}%%\n"
+      "timeline\nOne"));
+  const auto* timelineFontScene =
+      dynamic_cast<const muffin::mermaid::timeline::TimelineScene*>(
+          timelineFont.scene.get());
+  require(timelineFont.status == MermaidRenderStatus::Ready &&
+              timelineFontScene &&
+              timelineFontScene->style.fontFamily == QLatin1String("Courier New"),
+          QStringLiteral("Timeline nested theme fontFamily precedence drifted"));
 
   // Unsupported engines must not silently produce a Dagre scene.
   for (const QString& source : {

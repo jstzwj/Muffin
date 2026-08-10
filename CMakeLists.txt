@@ -483,6 +483,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/JourneyDiagramAdapter.cpp
   src/mermaid/editor/RadarDiagramAdapter.cpp
   src/mermaid/editor/XYChartDiagramAdapter.cpp
+  src/mermaid/editor/TimelineDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -594,6 +595,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/xychart/XYChartScene.h
   src/mermaid/xychart/XYChartScenePainter.cpp
   src/mermaid/xychart/XYChartScenePainter.h
+  src/mermaid/timeline/TimelineDiagram.cpp
+  src/mermaid/timeline/TimelineDiagram.h
+  src/mermaid/timeline/TimelineScene.cpp
+  src/mermaid/timeline/TimelineScene.h
+  src/mermaid/timeline/TimelineScenePainter.cpp
+  src/mermaid/timeline/TimelineScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

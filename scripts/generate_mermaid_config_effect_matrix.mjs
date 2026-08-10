@@ -422,6 +422,38 @@ const familyPolicies = {
     chartOrientation: parity("layout", "paint", "export"),
     plotReservedSpacePercent: parity("layout", "paint", "export"),
   },
+  timeline: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    diagramMarginX: inert("Copied Journey/Sequence field; Timeline 11.16.0 never consumes it."),
+    diagramMarginY: inert("Copied Journey/Sequence field; Timeline 11.16.0 never consumes it."),
+    leftMargin: parity(...layout),
+    width: inert("Copied Journey field; Timeline uses fixed LR/TD node widths."),
+    height: inert("Copied Journey field; Timeline measures node heights from text."),
+    padding: parity("viewport", "export"),
+    boxMargin: inert("Copied Journey/Sequence field; Timeline 11.16.0 never consumes it."),
+    boxTextMargin: inert("Copied Journey/Sequence field; Timeline uses fixed node padding."),
+    noteMargin: inert("Copied Journey/Sequence field; Timeline 11.16.0 never consumes it."),
+    messageMargin: inert("Copied Journey/Sequence field; Timeline 11.16.0 never consumes it."),
+    messageAlign: inert("Copied Journey/Sequence field; Timeline 11.16.0 never consumes it."),
+    bottomMarginAdj: inert("Copied Journey/Sequence field; Timeline 11.16.0 never consumes it."),
+    rightAngles: inert("Copied Journey/Sequence field; Timeline 11.16.0 never consumes it."),
+    taskFontSize: inert("Copied Journey field; Timeline labels use the root theme fontSize."),
+    taskFontFamily: inert("Copied Journey field; Timeline labels use the root theme fontFamily."),
+    taskMargin: inert("Copied Journey field; Timeline uses fixed LR/TD task spacing."),
+    activationWidth: inert("Copied Sequence field; Timeline 11.16.0 never consumes it."),
+    textPlacement: inert("Copied Journey field; Timeline uses its SVG text/wrap path directly."),
+    actorColours: inert(
+      "Array-valued copied Journey config is removed by the Mermaid source-entry sanitizer and is not consumed by Timeline.",
+    ),
+    sectionFills: inert(
+      "Array-valued copied Journey config is removed by the Mermaid source-entry sanitizer and is not consumed by Timeline.",
+    ),
+    sectionColours: inert(
+      "Array-valued copied Journey config is removed by the Mermaid source-entry sanitizer and is not consumed by Timeline.",
+    ),
+    disableMulticolor: parity("paint", "export"),
+  },
   requirement: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: inert(
@@ -483,6 +515,7 @@ const shared = [
       "journey",
       "radar",
       "xyChart",
+      "timeline",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -500,6 +533,7 @@ const shared = [
       "journey",
       "radar",
       "xyChart",
+      "timeline",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -521,6 +555,7 @@ const shared = [
       "journey",
       "radar",
       "xyChart",
+      "timeline",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -535,11 +570,11 @@ const shared = [
   },
   {
     path: "look",
-    families: ["flowchart", "class", "state"],
+    families: ["flowchart", "class", "state", "timeline"],
     ...partial(
       interactiveLayout,
       interactiveLayout,
-      "Flowchart is complete; state currently uses look for marker selection and class retains it without rough painting.",
+      "Flowchart and Timeline are complete; state currently uses look for marker selection and class retains it without rough painting.",
     ),
   },
   {
@@ -575,6 +610,7 @@ const shared = [
     families: [
       "flowchart", "sequence", "class", "state", "er", "requirement",
       "pie", "quadrantChart", "journey", "radar", "xyChart",
+      "timeline",
     ],
     ...unsupported(
       ["parsed"],
@@ -595,6 +631,7 @@ const shared = [
       "journey",
       "radar",
       "xyChart",
+      "timeline",
     ],
     ...policy(
       "security-fixed",
@@ -622,6 +659,7 @@ const shared = [
       "journey",
       "radar",
       "xyChart",
+      "timeline",
     ],
     ...parity("export"),
   },
@@ -639,6 +677,7 @@ const shared = [
       "journey",
       "radar",
       "xyChart",
+      "timeline",
     ],
     ...parity("export"),
   },
@@ -656,6 +695,7 @@ const shared = [
       "journey",
       "radar",
       "xyChart",
+      "timeline",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -706,6 +746,7 @@ const interfaces = {
   journey: "JourneyDiagramConfig",
   radar: "RadarDiagramConfig",
   xyChart: "XYChartConfig",
+  timeline: "TimelineDiagramConfig",
 };
 
 const entries = [];

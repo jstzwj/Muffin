@@ -1,0 +1,2356 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "module": "dist/mermaid.esm.mjs",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b"
+  },
+  "oracle": "source-entry detector + generated timeline Jison + first-read timelineDb + render metadata/config",
+  "generator": "scripts/generate_mermaid_timeline_grammar_fixture.mjs",
+  "cases": [
+    {
+      "id": "basic",
+      "source": "timeline\nA\n: E\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": [
+              "E"
+            ]
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "E",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "header-lr",
+      "source": "timeline LR\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "header-td",
+      "source": "timeline TD\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "TD",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "header-direction-case-insensitive",
+      "source": "timeline tD\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "TD",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "header-extra-is-task",
+      "source": "timeline LR junk\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "junk",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "junk",
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "header-horizontal-is-task",
+      "source": "timeline horizontal\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "horizontal",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "horizontal",
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "header-js-ascii-boundary",
+      "source": "timelineé\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "é",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "é",
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "empty-document",
+      "source": "timeline",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": []
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": []
+      }
+    },
+    {
+      "id": "leading-space-newline",
+      "source": " \n\ttimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "leading-nbsp-detector",
+      "source": " timeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "leading-bom",
+      "source": "﻿timeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "directive-before-header",
+      "source": "%%{init:{\"theme\":\"dark\"}}%%\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "percent-comment-before-header",
+      "source": "%% comment\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "title",
+      "source": "timeline\ntitle Heading\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "Heading",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "Heading"
+        ]
+      }
+    },
+    {
+      "id": "title-last-wins",
+      "source": "timeline\ntitle First\ntitle Second\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "Second",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "Second"
+        ]
+      }
+    },
+    {
+      "id": "title-spacing-preserved",
+      "source": "timeline\ntitle  Heading  \nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": " Heading  ",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          " Heading  "
+        ]
+      }
+    },
+    {
+      "id": "title-tab",
+      "source": "timeline\ntitle\tHeading\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "Heading",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "Heading"
+        ]
+      }
+    },
+    {
+      "id": "ecmascript-whitespace-title",
+      "source": "timeline\n ﻿title  Heading ﻿\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": " Heading ﻿",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          " Heading ﻿"
+        ]
+      }
+    },
+    {
+      "id": "title-crosses-newline",
+      "source": "timeline\ntitle\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "A",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": []
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "bare-title-is-task",
+      "source": "timeline\ntitle",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "title",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "title"
+        ]
+      }
+    },
+    {
+      "id": "frontmatter-title-db-inert",
+      "source": "---\ntitle: Front\n---\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "inline-title-wins-frontmatter",
+      "source": "---\ntitle: Front\n---\ntimeline\ntitle Inline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "Inline",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "Inline"
+        ]
+      }
+    },
+    {
+      "id": "section-and-binding",
+      "source": "timeline\nsection S\nA\nsection T\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [
+          "S",
+          "T"
+        ],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "S",
+            "type": "S",
+            "task": "A",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "T",
+            "type": "T",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "S",
+          "A",
+          "T",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "duplicate-sections",
+      "source": "timeline\nsection S\nA\nsection S\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [
+          "S",
+          "S"
+        ],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "S",
+            "type": "S",
+            "task": "A",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "S",
+            "type": "S",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "S",
+          "A",
+          "B",
+          "S",
+          "A",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "section-spacing-preserved",
+      "source": "timeline\nsection  S  \nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [
+          " S  "
+        ],
+        "tasks": [
+          {
+            "id": 0,
+            "section": " S  ",
+            "type": " S  ",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "S",
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "section-tab",
+      "source": "timeline\nsection\tS\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [
+          "S"
+        ],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "S",
+            "type": "S",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "S",
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "section-crosses-newline",
+      "source": "timeline\nsection\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [
+          "A"
+        ],
+        "tasks": []
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "bare-section-is-task",
+      "source": "timeline\nsection",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "section",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "section"
+        ]
+      }
+    },
+    {
+      "id": "section-hash-is-text",
+      "source": "timeline\nsection S#x\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [
+          "S#x"
+        ],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "S#x",
+            "type": "S#x",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "S#x",
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "task-trailing-space",
+      "source": "timeline\nA  ",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A  ",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "task-semicolon-literal",
+      "source": "timeline;A",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": ";A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          ";A"
+        ]
+      }
+    },
+    {
+      "id": "task-quotes-html-literal",
+      "source": "timeline\n\"<b>A</b>\"",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "\"<b>A</b>\"",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "\"<b>A</b>\""
+        ]
+      }
+    },
+    {
+      "id": "hash-comment-truncates-task",
+      "source": "timeline\nA # tail\n# whole\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A ",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "single-percent-comment-after-header",
+      "source": "timeline\n% ignored\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "one-char-percent-comment-quirk",
+      "source": "timeline\nA%% ignored\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "two-char-percent-not-comment",
+      "source": "timeline\nAB%% kept\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "AB%% kept",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "AB%%   kept",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "spaced-percent-not-comment",
+      "source": "timeline\nA %% kept\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A %% kept",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A   %%   kept",
+          "B"
+        ]
+      }
+    },
+    {
+      "id": "event-same-line",
+      "source": "timeline\nA : E",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A ",
+            "score": 0,
+            "events": [
+              "E"
+            ]
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "E"
+        ]
+      }
+    },
+    {
+      "id": "event-two-spaces-preserved",
+      "source": "timeline\nA\n:  E",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": [
+              " E"
+            ]
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "E"
+        ]
+      }
+    },
+    {
+      "id": "event-tab",
+      "source": "timeline\nA\n:\tE",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": [
+              "E"
+            ]
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "E"
+        ]
+      }
+    },
+    {
+      "id": "event-inner-colons",
+      "source": "timeline\nA\n: E:x\n: F: G",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": [
+              "E:x",
+              "F",
+              "G"
+            ]
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "E:x",
+          "F",
+          "G"
+        ]
+      }
+    },
+    {
+      "id": "event-hash-is-text",
+      "source": "timeline\nA\n: E#x",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": [
+              "E#x"
+            ]
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "E#x"
+        ]
+      }
+    },
+    {
+      "id": "event-crosses-newline",
+      "source": "timeline\nA\n:\nE",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": [
+              "E"
+            ]
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "E"
+        ]
+      }
+    },
+    {
+      "id": "event-after-new-section-attaches-last-task",
+      "source": "timeline\nsection A\nT\nsection B\n: E\nU",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [
+          "A",
+          "B"
+        ],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "A",
+            "type": "A",
+            "task": "T",
+            "score": 0,
+            "events": [
+              "E"
+            ]
+          },
+          {
+            "id": 1,
+            "section": "B",
+            "type": "B",
+            "task": "U",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "T",
+          "E",
+          "B",
+          "U"
+        ]
+      }
+    },
+    {
+      "id": "acc-single-line",
+      "source": "timeline\naccTitle:  AT  \naccDescr:  AD  \nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "AT",
+        "accDescr": "AD",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "acc-ecmascript-trim",
+      "source": "timeline\naccTitle: ﻿ AT  ﻿\naccDescr: ﻿ AD  ﻿\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "AT",
+        "accDescr": "AD",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "acc-values-cross-newline",
+      "source": "timeline\naccTitle:\nAT\naccDescr:\nAD\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "AT",
+        "accDescr": "AD",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "acc-block",
+      "source": "timeline\naccDescr {  first\n second  }\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "first\nsecond",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "acc-block-common-db-deindent",
+      "source": "timeline\naccDescr {\n  first\n\tsecond\n ﻿third\n\n  fourth\n}\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "first\nsecond\nthird\nfourth",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "acc-empty-block",
+      "source": "timeline\naccDescr {}\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "acc-block-tail-is-task",
+      "source": "timeline\naccDescr {D}Tail",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "D",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "Tail",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "Tail"
+        ]
+      }
+    },
+    {
+      "id": "metadata-sanitize-active-content",
+      "source": "timeline\ntitle <script>alert(1)</script><style>bad</style><b onclick=\"bad()\">Title</b>\naccTitle: <script>bad</script>  <img src=x onerror=\"bad()\"><i>AT</i>\naccDescr {<script>bad()</script><style>bad</style><u>AD</u>}\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "<b>Title</b>",
+        "accTitle": "<img src=\"x\"><i>AT</i>",
+        "accDescr": "<u>AD</u>",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "<b>Title</b>"
+        ]
+      }
+    },
+    {
+      "id": "metadata-sanitize-unclosed-script",
+      "source": "timeline\ntitle <script>bad",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": []
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": []
+      }
+    },
+    {
+      "id": "metadata-sanitize-unclosed-style",
+      "source": "timeline\naccTitle: <style>bad\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "metadata-sanitize-urls-and-safe-markup",
+      "source": "timeline\ntitle <a href=\"javascript:alert(1)\">Bad</a><a href=\"https://example.com\">Good</a>\naccTitle: <strong class=\"ok\">AT</strong>\naccDescr: <em id=\"safe\">AD</em>\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "<a>Bad</a><a href=\"https://example.com\">Good</a>",
+        "accTitle": "<strong class=\"ok\">AT</strong>",
+        "accDescr": "<em id=\"safe\">AD</em>",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "<a>Bad</a><a href=\"https://example.com\">Good</a>"
+        ]
+      }
+    },
+    {
+      "id": "ascii-casefold-section",
+      "source": "timeline\nſection Weird\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "ſection Weird",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "ſection   Weird",
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "ascii-casefold-acc-descr",
+      "source": "timeline\naccDeſcr: value\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "accDeſcr",
+            "score": 0,
+            "events": [
+              "value"
+            ]
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "accDeſcr",
+          "value",
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "config-init-number",
+      "source": "%%{init:{\"timeline\":{\"leftMargin\":77,\"padding\":33,\"useMaxWidth\":false,\"disableMulticolor\":true}}}%%\ntimeline\nA\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "B"
+        ]
+      },
+      "effectiveTimelineConfig": {
+        "leftMargin": 77,
+        "padding": 33,
+        "useMaxWidth": false,
+        "disableMulticolor": true
+      }
+    },
+    {
+      "id": "config-init-string-coercion",
+      "source": "%%{init:{\"timeline\":{\"leftMargin\":\"77\",\"padding\":\"33\",\"useMaxWidth\":\"false\",\"disableMulticolor\":\"false\"}}}%%\ntimeline\nA\nB",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          },
+          {
+            "id": 1,
+            "section": "",
+            "type": "",
+            "task": "B",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A",
+          "B"
+        ]
+      },
+      "effectiveTimelineConfig": {
+        "leftMargin": "77",
+        "padding": "33",
+        "useMaxWidth": "false",
+        "disableMulticolor": "false"
+      }
+    },
+    {
+      "id": "config-init-zero",
+      "source": "%%{init:{\"timeline\":{\"leftMargin\":0,\"padding\":0,\"useMaxWidth\":0,\"disableMulticolor\":0}}}%%\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      },
+      "effectiveTimelineConfig": {
+        "leftMargin": 0,
+        "padding": 0,
+        "useMaxWidth": 0,
+        "disableMulticolor": 0
+      }
+    },
+    {
+      "id": "config-init-null-defaults",
+      "source": "%%{init:{\"timeline\":{\"leftMargin\":null,\"padding\":null,\"useMaxWidth\":null,\"disableMulticolor\":null}}}%%\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      },
+      "effectiveTimelineConfig": {
+        "leftMargin": 150,
+        "useMaxWidth": true,
+        "disableMulticolor": false
+      }
+    },
+    {
+      "id": "config-frontmatter",
+      "source": "---\nconfig:\n  timeline:\n    leftMargin: 81\n    padding: 31\n    useMaxWidth: false\n    disableMulticolor: true\n---\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      },
+      "effectiveTimelineConfig": {
+        "leftMargin": 81,
+        "padding": 31,
+        "useMaxWidth": false,
+        "disableMulticolor": true
+      }
+    },
+    {
+      "id": "config-multiple-init-last-wins",
+      "source": "%%{init:{\"timeline\":{\"leftMargin\":61}}}%%\n%%{init:{\"timeline\":{\"leftMargin\":72}}}%%\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      },
+      "effectiveTimelineConfig": {
+        "leftMargin": 72,
+        "useMaxWidth": true,
+        "disableMulticolor": false
+      }
+    },
+    {
+      "id": "config-init-wins-frontmatter",
+      "source": "---\nconfig:\n  timeline:\n    leftMargin: 81\n---\n%%{init:{\"timeline\":{\"leftMargin\":92}}}%%\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      },
+      "effectiveTimelineConfig": {
+        "leftMargin": 92,
+        "useMaxWidth": true,
+        "disableMulticolor": false
+      }
+    },
+    {
+      "id": "config-top-level-ignored",
+      "source": "%%{init:{\"leftMargin\":77,\"padding\":33,\"useMaxWidth\":false}}%%\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      },
+      "effectiveTimelineConfig": {
+        "leftMargin": 150,
+        "useMaxWidth": true,
+        "disableMulticolor": false
+      }
+    },
+    {
+      "id": "reject-uppercase-detector",
+      "source": "TIMELINE\nA",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: TIMELINE\nA"
+      }
+    },
+    {
+      "id": "reject-leading-hash-detector",
+      "source": "# comment\ntimeline\nA",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: # comment\ntimeline\nA"
+      }
+    },
+    {
+      "id": "reject-leading-single-percent-detector",
+      "source": "% comment\ntimeline\nA",
+      "accept": false,
+      "reject": {
+        "class": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: % comment\ntimeline\nA"
+      }
+    },
+    {
+      "id": "leading-newline-preprocessed",
+      "source": "\ntimeline\nA",
+      "accept": true,
+      "expectedDb": {
+        "direction": "LR",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "sections": [],
+        "tasks": [
+          {
+            "id": 0,
+            "section": "",
+            "type": "",
+            "task": "A",
+            "score": 0,
+            "events": []
+          }
+        ]
+      },
+      "expectedRender": {
+        "accept": true,
+        "svgTitles": [],
+        "svgDescriptions": [],
+        "texts": [
+          "A"
+        ]
+      }
+    },
+    {
+      "id": "reject-adjacent-header",
+      "source": "timelinex\nA",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\ntimelinexA\n^\nExpecting 'timeline', 'timeline_lr', 'timeline_td', got 'period'",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-header-ascii-word",
+      "source": "timeline_\nA",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\ntimeline_A\n^\nExpecting 'timeline', 'timeline_lr', 'timeline_td', got 'period'",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-second-header",
+      "source": "timeline\nTIMELINE",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\ntimelineTIMELINE\n--------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got 'timeline'",
+        "line": 2,
+        "column": 9
+      }
+    },
+    {
+      "id": "reject-colon-without-space",
+      "source": "timeline\nA:B",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\ntimelineA:B\n---------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got 'INVALID'",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-colon-after-header",
+      "source": "timeline:B",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 1:\ntimeline:B\n--------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got 'INVALID'",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-colon-decorated-frontmatter",
+      "source": "---\ntitle: Front\n---\ntimeline\nA:B",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\ntimelineA:B\n---------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got 'INVALID'",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-colon-decorated-directive",
+      "source": "%%{init:{\"theme\":\"dark\"}}%%\ntimeline\nA:B",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 2:\ntimelineA:B\n---------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got 'INVALID'",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-empty-event",
+      "source": "timeline\nA\n: ",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\ntimelineA: \n---------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got 'INVALID'",
+        "line": 3,
+        "column": 2
+      }
+    },
+    {
+      "id": "runtime-event-before-task",
+      "source": "timeline\n: E",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Cannot read properties of undefined (reading 'events')"
+      }
+    },
+    {
+      "id": "runtime-event-after-section-before-task",
+      "source": "timeline\nsection S\n: E",
+      "accept": false,
+      "reject": {
+        "class": "runtime",
+        "message": "Cannot read properties of undefined (reading 'events')"
+      }
+    },
+    {
+      "id": "reject-acc-title-eof",
+      "source": "timeline\naccTitle:",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\ntimelineaccTitle:\n-----------------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got '1'",
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-acc-descr-eof",
+      "source": "timeline\naccDescr:",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\ntimelineaccDescr:\n-----------------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got '1'",
+        "line": 3,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-acc-block-unclosed",
+      "source": "timeline\naccDescr { value",
+      "accept": false,
+      "reject": {
+        "class": "parser",
+        "message": "Parse error on line 3:\n...neaccDescr { value\n---------------------^\nExpecting 'EOF', 'SPACE', 'NEWLINE', 'title', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'section', 'period', 'event', got '1'",
+        "line": 3,
+        "column": 1
+      }
+    }
+  ],
+  "fixtureSha256": "4f434c4d40dfdaac2d1320e3e9b53fcb4bdaba7bbf09751687f43f0a312f4bdc"
+}

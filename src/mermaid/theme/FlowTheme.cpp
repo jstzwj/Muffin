@@ -49,6 +49,7 @@ void applyBase(FlowThemeVariables& t) {
   t.strokeWidth = 1;
   t.fontFamily = QStringLiteral("\"trebuchet ms\", verdana, arial, sans-serif");
   t.fontSize = QStringLiteral("16px");
+  t.fontWeight = QStringLiteral("normal");
 }
 
 void applyDark(FlowThemeVariables& t) {
@@ -67,6 +68,7 @@ void applyDark(FlowThemeVariables& t) {
   t.arrowheadColor = QStringLiteral("calculated");
   t.fontFamily = QStringLiteral("\"trebuchet ms\", verdana, arial, sans-serif");
   t.fontSize = QStringLiteral("16px");
+  t.fontWeight = QStringLiteral("normal");
   t.labelBackground = QStringLiteral("#181818");
   t.textColor = QStringLiteral("#ccc");
   t.themeColorLimit = 12;
@@ -102,6 +104,7 @@ void applyDefault(FlowThemeVariables& t) {
   t.arrowheadColor = QStringLiteral("#333333");
   t.fontFamily = QStringLiteral("\"trebuchet ms\", verdana, arial, sans-serif");
   t.fontSize = QStringLiteral("16px");
+  t.fontWeight = QStringLiteral("normal");
   t.labelBackground = QStringLiteral("rgba(232,232,232, 0.8)");
   t.textColor = QStringLiteral("#333");
   t.themeColorLimit = 12;
@@ -129,6 +132,7 @@ void applyForest(FlowThemeVariables& t) {
   t.arrowheadColor = QStringLiteral("green");
   t.fontFamily = QStringLiteral("\"trebuchet ms\", verdana, arial, sans-serif");
   t.fontSize = QStringLiteral("16px");
+  t.fontWeight = QStringLiteral("normal");
   t.tertiaryColor = lighten(QStringLiteral("#cde498"), 10);
   t.primaryBorderColor = mkBorder(t.primaryColor, false);
   t.primaryTextColor = invert(t.primaryColor);
@@ -163,6 +167,7 @@ void applyNeutral(FlowThemeVariables& t) {
   t.arrowheadColor = QStringLiteral("#333333");
   t.fontFamily = QStringLiteral("\"trebuchet ms\", verdana, arial, sans-serif");
   t.fontSize = QStringLiteral("16px");
+  t.fontWeight = QStringLiteral("normal");
   t.themeColorLimit = 12;
   t.strokeWidth = 1;
   t.nodeBkg = QStringLiteral("calculated");
@@ -184,6 +189,7 @@ void applyNeo(FlowThemeVariables& t) {
   t.primaryBorderColor = mkBorder(t.primaryColor, false);
   t.fontFamily = QStringLiteral("arial, sans-serif");
   t.fontSize = QStringLiteral("14px");
+  t.fontWeight = QStringLiteral("normal");
   t.nodeBorder = QStringLiteral("#000000");
   t.tertiaryColor = QStringLiteral("#ffffff");
   t.useGradient = true;
@@ -205,6 +211,7 @@ void applyNeoDark(FlowThemeVariables& t) {
   t.arrowheadColor = invert(t.background);
   t.fontFamily = QStringLiteral("arial, sans-serif");
   t.fontSize = QStringLiteral("14px");
+  t.fontWeight = QStringLiteral("normal");
   t.labelBackground = QStringLiteral("#181818");
   t.textColor = QStringLiteral("#ccc");
   t.themeColorLimit = 12;
@@ -228,6 +235,7 @@ void applyRedux(FlowThemeVariables& t) {
   t.primaryBorderColor = mkBorder(QStringLiteral("#28253D"), false);
   t.fontFamily = QStringLiteral("\"Recursive Variable\", arial, sans-serif");
   t.fontSize = QStringLiteral("14px");
+  t.fontWeight = QStringLiteral("600");
   t.nodeBorder = QStringLiteral("#28253D");
   t.tertiaryColor = QStringLiteral("#ffffff");
   t.clusterBkg = QStringLiteral("#F9F9FB");
@@ -249,6 +257,7 @@ void applyReduxDark(FlowThemeVariables& t) {
   t.arrowheadColor = invert(t.background);
   t.fontFamily = QStringLiteral("\"Recursive Variable\", arial, sans-serif");
   t.fontSize = QStringLiteral("14px");
+  t.fontWeight = QStringLiteral("600");
   t.labelBackground = QStringLiteral("#111113");
   t.textColor = QStringLiteral("#ccc");
   t.themeColorLimit = 12;
@@ -281,6 +290,7 @@ void applyReduxColor(FlowThemeVariables& t) {
   t.primaryBorderColor = mkBorder(t.primaryColor, false);
   t.fontFamily = QStringLiteral("\"Recursive Variable\", arial, sans-serif");
   t.fontSize = QStringLiteral("14px");
+  t.fontWeight = QStringLiteral("600");
   t.nodeBorder = QStringLiteral("#28253D");
   t.tertiaryColor = QStringLiteral("#ffffff");
   // colorIndex palette (chunk-CHAKFXHA.mjs:3936-3987): 12 Tailwind *-400 border
@@ -892,6 +902,7 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("arrowheadColor")) return arrowheadColor;
   if (key == QStringLiteral("fontFamily")) return fontFamily;
   if (key == QStringLiteral("fontSize")) return fontSize;
+  if (key == QStringLiteral("fontWeight")) return fontWeight;
   if (key == QStringLiteral("labelBackground")) return labelBackground;
   if (key == QStringLiteral("textColor")) return textColor;
   if (key == QStringLiteral("titleColor")) return titleColor;
@@ -972,6 +983,7 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("arrowheadColor")) arrowheadColor = value;
   else if (key == QStringLiteral("fontFamily")) fontFamily = value;
   else if (key == QStringLiteral("fontSize")) fontSize = value;
+  else if (key == QStringLiteral("fontWeight")) fontWeight = value;
   else if (key == QStringLiteral("labelBackground")) labelBackground = value;
   else if (key == QStringLiteral("textColor")) textColor = value;
   else if (key == QStringLiteral("titleColor")) titleColor = value;

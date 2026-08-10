@@ -49,6 +49,7 @@ const QStringList criticalFields() {
       QStringLiteral("lineColor"),    QStringLiteral("border1"),
       QStringLiteral("border2"),      QStringLiteral("arrowheadColor"),
       QStringLiteral("fontFamily"),   QStringLiteral("fontSize"),
+      QStringLiteral("fontWeight"),
       QStringLiteral("labelBackground"), QStringLiteral("textColor"),
       QStringLiteral("titleColor"),   QStringLiteral("edgeLabelBackground"),
       QStringLiteral("clusterBkg"),   QStringLiteral("clusterBorder"),
@@ -206,6 +207,30 @@ void compareXYChart(const FlowThemeVariables& theme,
 QHash<QString, QString> sourceThemeOverrides(const QString& source) {
   return muffin::mermaid::editor::themeOverrides(
       muffin::mermaid::preprocessDiagram(source).config);
+}
+
+void checkFontWeightOverrides() {
+  QHash<QString, QString> direct;
+  direct.insert(QStringLiteral("fontWeight"), QStringLiteral("800"));
+  require(resolveFlowTheme(FlowThemeId::Redux, direct).fontWeight ==
+              QLatin1String("800"),
+          QStringLiteral("Direct fontWeight override did not win"));
+
+  const QString initSource = QStringLiteral(
+      "%%{init: {\"theme\":\"redux\",\"themeVariables\":{\"fontWeight\":800}}}%%\n"
+      "timeline\nTask");
+  require(resolveFlowTheme(FlowThemeId::Redux,
+                           sourceThemeOverrides(initSource)).fontWeight ==
+              QLatin1String("800"),
+          QStringLiteral("Source-entry fontWeight override did not win"));
+
+  const QString frontmatterSource = QStringLiteral(
+      "---\nconfig:\n  theme: redux\n  themeVariables:\n"
+      "    fontWeight: 800\n---\ntimeline\nTask");
+  require(resolveFlowTheme(FlowThemeId::Redux,
+                           sourceThemeOverrides(frontmatterSource)).fontWeight ==
+              QLatin1String("800"),
+          QStringLiteral("Frontmatter fontWeight override did not win"));
 }
 
 void checkXYChartThemes(const QJsonObject& fixture) {
@@ -702,6 +727,7 @@ int main(int argc, char** argv) {
   checkTclNoOverflow();
   checkThemeOverridesTclJs();
   checkScalarDependencyOverrides();
+  checkFontWeightOverrides();
 
   QFile xyChartFile(
       QFileInfo(fixturePath).dir().filePath(QStringLiteral("xychart-theme.json")));

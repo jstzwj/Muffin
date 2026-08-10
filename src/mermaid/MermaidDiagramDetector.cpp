@@ -15,11 +15,20 @@ bool starts(const QString& text, const QString& expression,
   return QRegularExpression(expression, options).match(text).hasMatch();
 }
 
+bool isEcmaScriptWhitespace(QChar ch) {
+  const ushort u = ch.unicode();
+  return (u >= 0x0009 && u <= 0x000d) || u == 0x0020 || u == 0x00a0 ||
+         u == 0x1680 || (u >= 0x2000 && u <= 0x200a) || u == 0x2028 ||
+         u == 0x2029 || u == 0x202f || u == 0x205f || u == 0x3000 ||
+         u == 0xfeff;
+}
+
 QString stripDetectionPreamble(QString text) {
-  // JavaScript's `\s` includes the byte-order mark. PCRE2's `\s` as used by
-  // QRegularExpression does not, so normalize only the leading BOM before
-  // applying the upstream detector expressions.
-  if (text.startsWith(QChar(0xfeff))) text[0] = QLatin1Char(' ');
+  // Mermaid detectors use JavaScript `^\s*`; PCRE2's `\s` does not cover the
+  // same Unicode set. Normalize only the leading prefix consumed by that
+  // expression, leaving diagram contents byte-for-byte intact.
+  for (qsizetype i = 0; i < text.size() && isEcmaScriptWhitespace(text.at(i)); ++i)
+    text[i] = QLatin1Char(' ');
   static const QRegularExpression frontMatter(
       QStringLiteral(R"(^([^\S\n\r]*)-{3}\s*[\n\r](.*?)[\n\r]\1-{3}\s*[\n\r]+)"),
       QRegularExpression::DotMatchesEverythingOption);

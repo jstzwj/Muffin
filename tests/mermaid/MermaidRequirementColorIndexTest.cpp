@@ -27,7 +27,7 @@
 // -> RequirementScene) under frontmatter-declared themes. §1-7 built-in palette
 // cycling; §8-11 the 3-layer paint cascade (invalid-under-palette, per-property
 // split, no-palette contrast, full keyword matrix); §12-13 THEME_COLOR_LIMIT
-// (=2 rule count, and JS Number()+ceil semantics incl. array.toString()/null/large);
+// (=2 rule count, JS Number()+ceil semantics, and theme-construction overflow);
 // §14 source-entry custom arrays are IGNORED (regression guard).
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
@@ -147,6 +147,26 @@ editor::MermaidRenderEntry renderThemeTvEntry(editor::MermaidRenderCache& cache,
           QStringLiteral("requirement under '%1' (tv=%2) did not render: %3")
               .arg(theme, tvJson, entry.errorMessage));
   return entry;
+}
+
+void requireThemeConstructionError(editor::MermaidRenderCache& cache,
+                                   const QString& theme,
+                                   const QString& tvJson,
+                                   const QString& channel) {
+  const QString src = QStringLiteral(
+      "%%{init: {\"theme\": \"%1\", \"themeVariables\": %2}}%%\n"
+      "requirementDiagram\n%3")
+                          .arg(theme, tvJson, reqsBody(1));
+  const auto entry = cache.getSync(cache.makeKey(src), src);
+  const QString expectedMessage =
+      QStringLiteral("Cannot read properties of undefined (reading '%1')")
+          .arg(channel);
+  require(entry.status == editor::MermaidRenderStatus::Error &&
+              entry.diagnostic.stage == QLatin1String("render") &&
+              entry.diagnostic.code == QLatin1String("native-render-failed") &&
+              entry.diagnostic.message == expectedMessage,
+          QStringLiteral("theme construction must fail for %1 %2: %3")
+              .arg(theme, tvJson, entry.errorMessage));
 }
 
 // Generic per-node color assertion (fill / outline / divider strokes + visibility).
@@ -468,7 +488,7 @@ int main(int argc, char** argv) {
   // (max_digits10 stringification, not truncated to "2"), [true]->"true"->NaN, [null]->""->0,
   // [[2]]->"2"->2, [x,y]->NaN. Probe: 2.5/"2.5"->3, true->1,
   // false/"abc"/[]/[1,2]/[true]/[false]/[null]/[[2,3]]/{}->0, "0x2"/"0b10"/"0o2"/[2]/[[2]]->2,
-  // ["2.5"]/[2.0000001]->3, null/absent/large + valid-huge-radix->12. Built-in redux palette.
+  // ["2.5"]/[2.0000001]->3 and null/absent->12. Built-in redux palette.
   {
     struct Case { QString lit; int rules; };
     const Case cases[] = {
@@ -511,12 +531,30 @@ int main(int argc, char** argv) {
     };
     allTwelve(QStringLiteral("null"), QStringLiteral("{\"THEME_COLOR_LIMIT\":null}"));      // null -> keep default 12
     allTwelve(QStringLiteral("absent"), QString());                                          // absent -> default 12
-    allTwelve(QStringLiteral("large"), QStringLiteral("{\"THEME_COLOR_LIMIT\":2147483648}")); // huge -> all 12 (no overflow)
-    // Valid-but-huge radix literals (out of qulonglong range): positive finite -> all 12.
-    // parseJsRadixInt saturates rather than returning 0 (which would disable the palette).
-    allTwelve(QStringLiteral("hex-huge"), QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0x10000000000000000\"}"));  // 2^64
-    allTwelve(QStringLiteral("bin-huge"), QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0b1111111111111111111111111111111111111111111111111111111111111111\"}"));  // 2^64-1
-    allTwelve(QStringLiteral("oct-huge"), QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0o4000000000000000000000\"}"));  // 4*8^21
+    // Theme.calculate() runs before the diagram parser. redux-color's
+    // cScaleInv derivation indexes beyond cScale11 when Number(TCL)>12, so real
+    // Mermaid rejects these values before genColor can apply a saturated rule
+    // count. The former "all 12" assertions were native-only inferences.
+    requireThemeConstructionError(
+        cache, QStringLiteral("redux-color"),
+        QStringLiteral("{\"THEME_COLOR_LIMIT\":2147483648}"),
+        QStringLiteral("r"));
+    requireThemeConstructionError(
+        cache, QStringLiteral("redux-color"),
+        QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0x10000000000000000\"}"),
+        QStringLiteral("r"));
+    requireThemeConstructionError(
+        cache, QStringLiteral("redux-color"),
+        QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0b1111111111111111111111111111111111111111111111111111111111111111\"}"),
+        QStringLiteral("r"));
+    requireThemeConstructionError(
+        cache, QStringLiteral("redux-color"),
+        QStringLiteral("{\"THEME_COLOR_LIMIT\":\"0o4000000000000000000000\"}"),
+        QStringLiteral("r"));
+    requireThemeConstructionError(
+        cache, QStringLiteral("default"),
+        QStringLiteral("{\"THEME_COLOR_LIMIT\":\"Infinity\"}"),
+        QStringLiteral("l"));
   }
 
   // ===== 14. Source-entry custom arrays are IGNORED (regression guard, review-fix 4) =====
