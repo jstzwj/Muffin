@@ -131,6 +131,8 @@ int main(int argc, char** argv) {
                       "Ship :ship, after build, 2d")},
       {QStringLiteral("info"), QStringLiteral("info"),
        QStringLiteral("info showInfo"), false},
+      {QStringLiteral("treeView"), QStringLiteral("treeView"),
+       QStringLiteral("treeView-beta\nproject/\n  src/\n    main.cpp\n  README.md")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -233,6 +235,9 @@ int main(int argc, char** argv) {
           "%%{init: {\"mindmap\": {\"useMaxWidth\": false}}}%%\n"
           "mindmap\n  root((Root))\n    Child"),
       QStringLiteral(
+          "%%{init: {\"treeView\": {\"useMaxWidth\": false}}}%%\n"
+          "treeView-beta\nproject/\n  child"),
+      QStringLiteral(
           "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
           "\"useWidth\": 640}}}%%\n"
           "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
@@ -325,6 +330,25 @@ int main(int argc, char** argv) {
               packetAria.contains("aria-labelledby=") &&
               packetAria.contains("aria-describedby="),
           QStringLiteral("Packet SVG accessibility metadata drifted"));
+
+  const QByteArray treeViewAria = renderSvg(QStringLiteral(
+      "---\ntitle: Invisible frontmatter tree title\n---\n"
+      "treeView-beta\ntitle Invisible inline tree title\n"
+      "accTitle: Tree accessible\naccDescr: Tree description\n"
+      "root/\n  child")).svg;
+  require(treeViewAria.contains("Tree accessible</title>") &&
+              treeViewAria.contains("Tree description</desc>") &&
+              treeViewAria.contains("aria-labelledby=") &&
+              treeViewAria.contains("aria-describedby=") &&
+              !treeViewAria.contains("Invisible frontmatter tree title") &&
+              !treeViewAria.contains("Invisible inline tree title"),
+          QStringLiteral("TreeView SVG title/accessibility metadata drifted"));
+
+  const QByteArray treeViewIcons = renderSvg(QStringLiteral(
+      "%%{init: {\"treeView\": {\"showIcons\": true}}}%%\n"
+      "treeView-beta\nroot/\n  child.txt")).svg;
+  require(!treeViewIcons.contains("<use"),
+          QStringLiteral("TreeView stripped-icon SVG quirk drifted"));
 
   const QByteArray ganttAria = renderSvg(QStringLiteral(
       "gantt\ntitle Release plan\naccTitle: Gantt accessible\n"

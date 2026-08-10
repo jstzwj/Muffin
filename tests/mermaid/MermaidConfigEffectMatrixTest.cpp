@@ -8,6 +8,7 @@
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
+#include "mermaid/treeview/TreeViewScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 
 #include <QByteArray>
@@ -153,8 +154,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 262,
-          QStringLiteral("Expected 262 classified config rows, found %1")
+  require(entries.size() == 272,
+          QStringLiteral("Expected 272 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -221,6 +222,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("sequence"), 37},
                                              {QStringLiteral("state"), 22},
                                              {QStringLiteral("timeline"), 24},
+                                             {QStringLiteral("treeView"), 10},
                                              {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
@@ -329,6 +331,18 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("mindmap.layoutAlgorithm"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("treeView.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("treeView.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("treeView.rowIndent"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("treeView.showIcons"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -353,7 +367,8 @@ int main(int argc, char** argv) {
            QStringLiteral("state.useMaxWidth"),
            QStringLiteral("timeline.useMaxWidth"),
            QStringLiteral("packet.useMaxWidth"),
-           QStringLiteral("mindmap.useMaxWidth")}) {
+           QStringLiteral("mindmap.useMaxWidth"),
+           QStringLiteral("treeView.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())
@@ -836,6 +851,39 @@ int main(int argc, char** argv) {
               "mindmap\n  root((Root))\n"
               "    A[alpha beta gamma delta epsilon]\n    B[Beta]")),
           QStringLiteral("Mindmap live config did not affect PNG output"));
+
+  // TreeView preserves JavaScript scalar coercion and uses all icon mapping
+  // fields while reproducing the upstream bug that strips the final <use>
+  // elements. The 18px icon reservation therefore remains observable in the
+  // layout even though no icon glyph is painted.
+  const QString treeViewSource = QStringLiteral(
+      "%%{init: {\"treeView\": {\"useWidth\": 999, "
+      "\"useMaxWidth\": false, \"rowIndent\": 22, \"paddingX\": 8, "
+      "\"paddingY\": 7, \"lineThickness\": 3, \"showIcons\": true, "
+      "\"defaultIconPack\": \"mdi\", "
+      "\"filenameIcons\": {\"README.md\": \"none\"}, "
+      "\"extensionIcons\": {\".js\": \"code\"}}}}%%\n"
+      "treeView-beta\nproject/\n  README.md\n  app.js");
+  const MermaidRenderEntry treeViewEntry = render(treeViewSource);
+  const auto* treeViewScene =
+      dynamic_cast<const muffin::mermaid::treeview::TreeViewScene*>(
+          treeViewEntry.scene.get());
+  require(treeViewEntry.status == MermaidRenderStatus::Ready && treeViewScene &&
+              !treeViewEntry.metadata.svgUseMaxWidth &&
+              treeViewScene->config.rowIndent.toDouble() == 22.0 &&
+              treeViewScene->config.paddingX.toDouble() == 8.0 &&
+              treeViewScene->config.paddingY.toDouble() == 7.0 &&
+              treeViewScene->config.lineThickness.toDouble() == 3.0 &&
+              treeViewScene->nodes.size() == 4 &&
+              treeViewScene->nodes.at(0).iconReserved &&
+              treeViewScene->nodes.at(1).iconReserved &&
+              !treeViewScene->nodes.at(2).iconReserved &&
+              treeViewScene->nodes.at(3).iconReserved &&
+              treeViewScene->nodes.at(3).iconName == QLatin1String("mdi:code"),
+          QStringLiteral("TreeView live config/icon mapping did not reach the scene"));
+  require(pngImage(treeViewSource) != pngImage(QStringLiteral(
+              "treeView-beta\nproject/\n  README.md\n  app.js")),
+          QStringLiteral("TreeView live config did not affect PNG output"));
 
   // Gantt is the only Mermaid family that consumes BaseDiagramConfig.useWidth.
   // Pin all 17 declared fields through the source-entry adapter and typed scene.

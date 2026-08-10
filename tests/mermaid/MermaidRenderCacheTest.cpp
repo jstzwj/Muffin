@@ -14,6 +14,7 @@
 #include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
+#include "mermaid/treeview/TreeViewScene.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 
@@ -825,6 +826,54 @@ int main(int argc, char** argv) {
             QStringLiteral("Info fixed viewport/metadata contract drifted"));
   }
 
+  // TreeView creates a normal typed scene, ignores both inline and
+  // frontmatter visual titles, and retains common accessibility metadata.
+  {
+    MermaidRenderCache cache;
+    const QString source = QStringLiteral(
+        "---\ntitle: Invisible frontmatter title\n---\n"
+        "treeView-beta\ntitle Invisible inline title\n"
+        "accTitle: Accessible tree\naccDescr: Tree description\n"
+        "project/\n  README.md");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::treeview::TreeViewScene>(entry.scene);
+    require(entry.status == kReady && scene && scene->nodes.size() == 3 &&
+                entry.naturalSize.width() > 0 &&
+                entry.naturalSize.height() > 0 &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.titleHeight == 0.0 &&
+                entry.metadata.accessibleTitle ==
+                    QLatin1String("Accessible tree") &&
+                entry.metadata.accessibleDescription ==
+                    QLatin1String("Tree description"),
+            QStringLiteral("TreeView scene/title/accessibility contract drifted"));
+  }
+
+  // TreeView parser offsets are measured after preprocessing. Preserve the
+  // exact typed lexer failure while restoring the source location around
+  // removed frontmatter, directives, and comments.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: Ignored tree title\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\ntreeView-beta\n\"root");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.stage == QLatin1String("parse") &&
+                entry.diagnostic.code ==
+                    QLatin1String("treeview-lexer-error") &&
+                entry.diagnostic.message ==
+                    QLatin1String("Parsing failed: Lexer error on line 2, column 1: unexpected character: ->\"<- at offset: 14, skipped 1 characters.") &&
+                entry.diagnostic.span.offset == decorated.lastIndexOf('"') &&
+                entry.diagnostic.span.line == 7 &&
+                entry.diagnostic.span.column == 1,
+            QStringLiteral("TreeView decorated lexer diagnostic drifted"));
+  }
+
   // Every native family is normalised into the same 1-based diagnostic model.
   {
     struct InvalidCase {
@@ -854,6 +903,8 @@ int main(int argc, char** argv) {
          QStringLiteral("gantt"), QStringLiteral("gantt-parse-error"), 1},
         {QStringLiteral("info\nunknown"),
          QStringLiteral("info"), QStringLiteral("info-lexer-error"), 2},
+        {QStringLiteral("treeView-beta\n\"root"),
+         QStringLiteral("treeView"), QStringLiteral("treeview-lexer-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -898,6 +949,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("gantt")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("info")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("treeView-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1500,6 +1553,8 @@ int main(int argc, char** argv) {
                         "section Delivery\nBuild :build, 2024-01-01, 3d\n"
                         "Ship :ship, after build, 2d")},
         {QStringLiteral("info"), QStringLiteral("info showInfo")},
+        {QStringLiteral("treeView"),
+         QStringLiteral("treeView-beta\nproject/\n  src/\n    main.cpp\n  README.md")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

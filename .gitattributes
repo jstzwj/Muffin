@@ -1,0 +1,4 @@
+# Generated Mermaid oracle files are byte-hashed by their tests. Keep the
+# generator's UTF-8/LF bytes stable even when core.autocrlf is enabled.
+tests/fixtures/mermaid/*.json -text
+tests/fixtures/mermaid/**/*.json -text

@@ -30,18 +30,19 @@
       "packet",
       "kanban",
       "mindmap",
+      "treeView",
       "gantt",
       "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 146,
+    "parity": 155,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 73,
+    "upstream-inert": 74,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -65,7 +66,8 @@
         "kanban",
         "mindmap",
         "gantt",
-        "info"
+        "info",
+        "treeView"
       ],
       "status": "parity",
       "upstream": [
@@ -104,7 +106,8 @@
         "kanban",
         "mindmap",
         "gantt",
-        "info"
+        "info",
+        "treeView"
       ],
       "status": "partial",
       "upstream": [
@@ -144,7 +147,8 @@
         "kanban",
         "mindmap",
         "gantt",
-        "info"
+        "info",
+        "treeView"
       ],
       "status": "parity",
       "upstream": [
@@ -353,7 +357,8 @@
         "kanban",
         "mindmap",
         "gantt",
-        "info"
+        "info",
+        "treeView"
       ],
       "status": "unsupported",
       "upstream": [
@@ -383,7 +388,8 @@
         "kanban",
         "mindmap",
         "gantt",
-        "info"
+        "info",
+        "treeView"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -435,7 +441,8 @@
         "kanban",
         "mindmap",
         "gantt",
-        "info"
+        "info",
+        "treeView"
       ],
       "status": "parity",
       "upstream": [
@@ -466,7 +473,8 @@
         "kanban",
         "mindmap",
         "gantt",
-        "info"
+        "info",
+        "treeView"
       ],
       "status": "parity",
       "upstream": [
@@ -497,7 +505,8 @@
         "kanban",
         "mindmap",
         "gantt",
-        "info"
+        "info",
+        "treeView"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5138,6 +5147,225 @@
       "default": "cose-bilkent"
     },
     {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.useWidth",
+      "field": "useWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.rowIndent",
+      "field": "rowIndent",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.paddingX",
+      "field": "paddingX",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.paddingY",
+      "field": "paddingY",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 5
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.lineThickness",
+      "field": "lineThickness",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 1
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.showIcons",
+      "field": "showIcons",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "note": "Icons reserve the upstream 18px slot and affect sizing even though Mermaid 11.16.0 strips the generated <use> elements from the final SVG.",
+      "default": false
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.defaultIconPack",
+      "field": "defaultIconPack",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": ""
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.filenameIcons",
+      "field": "filenameIcons",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": {}
+    },
+    {
+      "family": "treeView",
+      "interface": "TreeViewDiagramConfig",
+      "path": "treeView.extensionIcons",
+      "field": "extensionIcons",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": {}
+    },
+    {
       "family": "gantt",
       "interface": "GanttDiagramConfig",
       "path": "gantt.useWidth",
@@ -5519,5 +5747,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "5c8975b54bc0ebfd7c81cc4dba52a3bf5e82b99f6592dc76fa17a976a3b61631"
+  "fixtureSha256": "bd97b2bacbcf4ea94bde39ec0d2fbc47fc720d5f6ea31d27b3167f41a17ea0e6"
 }

@@ -8,6 +8,7 @@
 #include <QVector>
 
 #include <memory>
+#include <optional>
 
 class QColor;
 class QPainter;
@@ -216,6 +217,16 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
                                   qsizetype start, qsizetype length,
                                   const QString& fontFamily,
                                   qreal fontPixelSize);
+
+// Shapes directly in OpenType design units and scales only after GPOS. This
+// matches Chromium/HarfBuzz CSS advances; QGlyphRun positions have already
+// been rounded by DirectWrite and can differ by one LayoutUnit (1/64 px).
+std::optional<qreal> measureOpenTypeDesignAdvance(
+    const FlowLabelDocument& label, qsizetype start, qsizetype length,
+    const QString& fontFamily, qreal fontPixelSize);
+std::optional<qreal> measureOpenTypeDesignAdvance(
+    const FlowLabelDocument& label, const QString& fontFamily,
+    qreal fontPixelSize);
 
 // The font used for every text metric/advance/paint in FlowLabel: the
 // MermaidFontRegistry family stack, pixel-rounded size, PreferNoHinting, the

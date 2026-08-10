@@ -16,6 +16,9 @@
 #include <QRegularExpression>
 #include <QRawFont>
 
+#include <hb.h>
+#include <hb-ot.h>
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -875,6 +878,120 @@ qreal measureFlowTextAdvanceWidth(const FlowLabelDocument& label,
                                   qreal fontPixelSize) {
   QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
   return shapeTextRange(label, start, length, font).width;
+}
+
+namespace {
+
+struct FlowHarfBuzzRawFont {
+  QRawFont raw;
+};
+
+void destroyFlowHarfBuzzTable(void* data) {
+  delete static_cast<QByteArray*>(data);
+}
+
+hb_blob_t* referenceFlowHarfBuzzTable(hb_face_t*, hb_tag_t tag,
+                                      void* userData) {
+  const auto* source = static_cast<const FlowHarfBuzzRawFont*>(userData);
+  const char bytes[] = {char((tag >> 24) & 0xff),
+                        char((tag >> 16) & 0xff),
+                        char((tag >> 8) & 0xff), char(tag & 0xff)};
+  auto* table = new QByteArray(source->raw.fontTable(QByteArray(bytes, 4)));
+  if (table->isEmpty()) {
+    delete table;
+    return hb_blob_reference(hb_blob_get_empty());
+  }
+  return hb_blob_create(table->constData(), unsigned(table->size()),
+                        HB_MEMORY_MODE_READONLY, table,
+                        destroyFlowHarfBuzzTable);
+}
+
+void destroyFlowHarfBuzzFont(void* data) {
+  delete static_cast<FlowHarfBuzzRawFont*>(data);
+}
+
+bool flowRawFontSupportsRange(const QRawFont& raw, const QString& text,
+                              qsizetype start, qsizetype length) {
+  const qsizetype end = start + length;
+  for (qsizetype i = start; i < end; ++i) {
+    uint codepoint = text.at(i).unicode();
+    if (QChar::isHighSurrogate(codepoint) && i + 1 < end &&
+        QChar::isLowSurrogate(text.at(i + 1).unicode())) {
+      codepoint = QChar::surrogateToUcs4(text.at(i), text.at(++i));
+    }
+    if (!raw.supportsCharacter(codepoint)) return false;
+  }
+  return true;
+}
+
+}  // namespace
+
+std::optional<qreal> measureOpenTypeDesignAdvance(
+    const FlowLabelDocument& label, qsizetype start, qsizetype length,
+    const QString& fontFamily, qreal fontPixelSize) {
+  if (length <= 0) return 0.0;
+  constexpr qreal kReferenceSize = 16.0;
+  QFont font = flowLabelDocumentFont(label, fontFamily, kReferenceSize);
+  QRawFont raw = QRawFont::fromFont(font);
+  if (raw.familyName().contains(QStringLiteral("Noto Sans"),
+                                Qt::CaseInsensitive) &&
+      (font.weight() != QFont::Normal || font.italic())) {
+    // Mermaid's browser fixture registers only Regular. Chromium synthesizes
+    // weight/slant without changing that face's horizontal advance table.
+    font.setWeight(QFont::Normal);
+    font.setItalic(false);
+    raw = QRawFont::fromFont(font);
+  }
+  if (!raw.isValid() ||
+      !flowRawFontSupportsRange(raw, label.text, start, length)) {
+    return std::nullopt;
+  }
+
+  auto* source = new FlowHarfBuzzRawFont{raw};
+  hb_face_t* face = hb_face_create_for_tables(
+      referenceFlowHarfBuzzTable, source, destroyFlowHarfBuzzFont);
+  const unsigned upem = hb_face_get_upem(face);
+  if (upem == 0) {
+    hb_face_destroy(face);
+    return std::nullopt;
+  }
+  hb_font_t* hbFont = hb_font_create(face);
+  hb_ot_font_set_funcs(hbFont);
+  hb_font_set_scale(hbFont, int(upem), int(upem));
+  hb_buffer_t* buffer = hb_buffer_create();
+  const auto* utf16 = reinterpret_cast<const uint16_t*>(label.text.utf16());
+  hb_buffer_add_utf16(buffer, utf16, label.text.size(), unsigned(start),
+                      int(length));
+  hb_buffer_set_direction(buffer, label.direction == Qt::RightToLeft
+                                      ? HB_DIRECTION_RTL
+                                      : HB_DIRECTION_LTR);
+  hb_buffer_guess_segment_properties(buffer);
+  hb_shape(hbFont, buffer, nullptr, 0);
+
+  unsigned glyphCount = 0;
+  const hb_glyph_position_t* positions =
+      hb_buffer_get_glyph_positions(buffer, &glyphCount);
+  qint64 designAdvance = 0;
+  for (unsigned i = 0; i < glyphCount; ++i)
+    designAdvance += positions[i].x_advance;
+  hb_buffer_destroy(buffer);
+  hb_font_destroy(hbFont);
+  hb_face_destroy(face);
+
+  qreal result = std::abs(qreal(designAdvance)) * fontPixelSize / qreal(upem);
+  const QString segment = label.text.mid(start, length);
+  if (label.letterSpacingPx != 0.0)
+    result += label.letterSpacingPx * segment.toUcs4().size();
+  if (label.wordSpacingPx != 0.0)
+    result += label.wordSpacingPx * segment.count(QLatin1Char(' '));
+  return result;
+}
+
+std::optional<qreal> measureOpenTypeDesignAdvance(
+    const FlowLabelDocument& label, const QString& fontFamily,
+    qreal fontPixelSize) {
+  return measureOpenTypeDesignAdvance(label, 0, label.text.size(), fontFamily,
+                                      fontPixelSize);
 }
 
 FlowLabelFontMetrics flowLabelFontBoundingMetrics(

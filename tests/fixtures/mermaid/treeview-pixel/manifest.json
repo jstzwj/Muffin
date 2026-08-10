@@ -1,0 +1,42 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "treeViewModuleSha256": "00d8b483476a98b844bfedad281bc25bb97b527aa71b4cce6fc57447a4a50b70",
+    "parserTreeViewSha256": "e9ab827a620482e7b69e23bc176d23dabf15b34402fae2ce58da9583cf655daf",
+    "parserSupportSha256": "06f44cd8c6afc77ea44e174f7af983c8a91368e50d32a55d4bcdd71df92c55e2",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "transparent TreeView element screenshots at DPR 1",
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreeView-beta\nproject/ :::highlight ## Workspace\n  src/\n    main.cpp\n    util.js\n  README.md",
+      "file": "canonical.png",
+      "width": 243,
+      "height": 192,
+      "sha256": "6883faba98acff3d6593ba7db0ced1b9e9037011f7ffac7a5751d9dd455378b4"
+    },
+    {
+      "id": "built-in-icons",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"treeView\":{\"showIcons\":true}}}%%\ntreeView-beta\nroot/\n  file.txt\n  hidden icon()\n  explicit icon(folder)",
+      "file": "built-in-icons.png",
+      "width": 111,
+      "height": 160,
+      "sha256": "c204a0eb4d95fafcc9c5a850ae6776c3074edcf0971a3031f21b1dadebfc084a"
+    },
+    {
+      "id": "styled",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"treeView\":{\"labelColor\":\"#b91c1c\",\"lineColor\":\"#166534\",\"iconColor\":\"#1d4ed8\",\"descriptionColor\":\"#7e22ce\",\"highlightBg\":\"rgba(250, 204, 21, 0.35)\",\"highlightStroke\":\"#a16207\"}},\"treeView\":{\"showIcons\":true}}}%%\ntreeView-beta\nproject/ :::highlight ## Workspace\n  src/\n    main.cpp\n    util.js\n  README.md",
+      "file": "styled.png",
+      "width": 261,
+      "height": 192,
+      "sha256": "30cc47e7189249cd9275a9c47867214cfbf8c29558581670bd62b00d7f957856"
+    }
+  ],
+  "fixtureSha256": "f1ad85d187c5871854bdc933fbf6a28261985488f30c67c5e921af9dd223d2ea"
+}

@@ -1,0 +1,1624 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "treeViewModuleSha256": "00d8b483476a98b844bfedad281bc25bb97b527aa71b4cce6fc57447a4a50b70",
+    "parserTreeViewSha256": "e9ab827a620482e7b69e23bc176d23dabf15b34402fae2ce58da9583cf655daf",
+    "parserSupportSha256": "06f44cd8c6afc77ea44e174f7af983c8a91368e50d32a55d4bcdd71df92c55e2",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry detector, box-drawing preprocessor, Langium AST, DB tree, and diagnostics",
+  "cases": [
+    {
+      "id": "empty-tree",
+      "source": "treeView-beta",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": []
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": []
+        }
+      }
+    },
+    {
+      "id": "canonical",
+      "source": "treeView-beta\nproject/\n  src/\n    main.cpp\n  README.md",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "project/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": 2,
+            "name": "src/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": 4,
+            "name": "main.cpp",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": 2,
+            "name": "README.md",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "project",
+              "nodeType": "directory",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": [
+                {
+                  "id": 2,
+                  "level": 2,
+                  "name": "src",
+                  "nodeType": "directory",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": [
+                    {
+                      "id": 3,
+                      "level": 4,
+                      "name": "main.cpp",
+                      "nodeType": "file",
+                      "icon": null,
+                      "cssClass": null,
+                      "description": null,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": 4,
+                  "level": 2,
+                  "name": "README.md",
+                  "nodeType": "file",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "same-line-node",
+      "source": "treeView-beta root/",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 1, column 1: Expecting token of type 'treeView-beta' but found `treeView-beta root/`.",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "tabs-and-spaces",
+      "source": "treeView-beta\nroot/\n\tfile-a\n  file-b",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": 1,
+            "name": "file-a",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": 2,
+            "name": "file-b",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "directory",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": [
+                {
+                  "id": 2,
+                  "level": 1,
+                  "name": "file-a",
+                  "nodeType": "file",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": [
+                    {
+                      "id": 3,
+                      "level": 2,
+                      "name": "file-b",
+                      "nodeType": "file",
+                      "icon": null,
+                      "cssClass": null,
+                      "description": null,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "quoted-names",
+      "source": "treeView-beta\n\"spaced file.txt\"\n' single quoted / '",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "spaced file.txt",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": " single quoted / ",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "spaced file.txt",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            },
+            {
+              "id": 2,
+              "level": 0,
+              "name": " single quoted / ",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty-quoted",
+      "source": "treeView-beta\n\"\"\n''",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            },
+            {
+              "id": 2,
+              "level": 0,
+              "name": "",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bare-internal-spaces",
+      "source": "treeView-beta\nalpha   beta   ",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "alpha   beta",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "alpha   beta",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "directory",
+      "source": "treeView-beta\nfolder/\n  child",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "folder/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": 2,
+            "name": "child",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "folder",
+              "nodeType": "directory",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": [
+                {
+                  "id": 2,
+                  "level": 2,
+                  "name": "child",
+                  "nodeType": "file",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "annotations",
+      "source": "treeView-beta\nroot/ :::highlight icon(folder) ## Root description",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root/",
+            "classAnnotation": "highlight",
+            "iconAnnotation": "folder",
+            "descAnnotation": "Root description"
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "directory",
+              "icon": "folder",
+              "cssClass": "highlight",
+              "description": "Root description",
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "annotation-order",
+      "source": "treeView-beta\nfile icon(file) :::highlight ## Desc",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "file",
+            "classAnnotation": "highlight",
+            "iconAnnotation": "file",
+            "descAnnotation": "Desc"
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "file",
+              "nodeType": "file",
+              "icon": "file",
+              "cssClass": "highlight",
+              "description": "Desc",
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "description-greedy",
+      "source": "treeView-beta\nfile ## Desc :::highlight icon(file)",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "file",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": "Desc :::highlight icon(file)"
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "file",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": "Desc :::highlight icon(file)",
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty-icon",
+      "source": "treeView-beta\nfile icon()",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "file",
+            "classAnnotation": null,
+            "iconAnnotation": "",
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "file",
+              "nodeType": "file",
+              "icon": "none",
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "qualified-icon",
+      "source": "treeView-beta\nfile icon(logos:github-icon)",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "file",
+            "classAnnotation": null,
+            "iconAnnotation": "logos:github-icon",
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "file",
+              "nodeType": "file",
+              "icon": "logos:github-icon",
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "class-hyphen",
+      "source": "treeView-beta\nfile :::my-class",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "file",
+            "classAnnotation": "my-class",
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "file",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": "my-class",
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "comments",
+      "source": "\n%% before\ntreeView-beta\n%% middle\nroot\n%% after",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "treeView-beta\ntitle Inline\naccTitle: Accessible\naccDescr: Description\nroot",
+      "accept": true,
+      "ast": {
+        "title": "Inline",
+        "accTitle": "Accessible",
+        "accDescr": "Description",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "Inline",
+        "accTitle": "Accessible",
+        "accDescr": "Description",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "metadata-block",
+      "source": "treeView-beta\naccDescr { First line\n  Second line }\nroot",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "First line\nSecond line",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "First line\nSecond line",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "metadata-last-wins",
+      "source": "treeView-beta\ntitle One\ntitle Two\naccTitle: A\naccTitle: B\nroot",
+      "accept": true,
+      "ast": {
+        "title": "Two",
+        "accTitle": "B",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "Two",
+        "accTitle": "B",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\n---\ntreeView-beta\nroot",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"theme\":\"dark\"}}%%\ntreeView-beta\nroot",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "semicolon-is-name",
+      "source": "treeView-beta\nroot;",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root;",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root;",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "hash-is-name",
+      "source": "treeView-beta\n#file",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "#file",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "#file",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "box-thin",
+      "source": "treeView-beta\nproject/\n├── src/\n│   ├── main.cpp\n│   └── app.cpp\n└── README.md",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "project/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "├── src/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "│   ├── main.cpp",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "│   └── app.cpp",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "└── README.md",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "project",
+              "nodeType": "directory",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": [
+                {
+                  "id": 2,
+                  "level": 4,
+                  "name": "src",
+                  "nodeType": "directory",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": [
+                    {
+                      "id": 3,
+                      "level": 8,
+                      "name": "main.cpp",
+                      "nodeType": "file",
+                      "icon": null,
+                      "cssClass": null,
+                      "description": null,
+                      "children": []
+                    },
+                    {
+                      "id": 4,
+                      "level": 8,
+                      "name": "app.cpp",
+                      "nodeType": "file",
+                      "icon": null,
+                      "cssClass": null,
+                      "description": null,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": 5,
+                  "level": 4,
+                  "name": "README.md",
+                  "nodeType": "file",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "box-heavy",
+      "source": "treeView-beta\nproject/\n┣━━ src/\n┃   ┗━━ main.cpp\n┗━━ README.md",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "project/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "┣━━ src/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "┃   ┗━━ main.cpp",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "┗━━ README.md",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "project",
+              "nodeType": "directory",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": [
+                {
+                  "id": 2,
+                  "level": 4,
+                  "name": "src",
+                  "nodeType": "directory",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": [
+                    {
+                      "id": 3,
+                      "level": 8,
+                      "name": "main.cpp",
+                      "nodeType": "file",
+                      "icon": null,
+                      "cssClass": null,
+                      "description": null,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": 4,
+                  "level": 4,
+                  "name": "README.md",
+                  "nodeType": "file",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "box-tabs-metadata-comment",
+      "source": "treeView-beta\ntitle Box tree\nproject/\n├── src/\n│\t├── main.cpp\n%% hidden\n│\t└── app.cpp",
+      "accept": true,
+      "ast": {
+        "title": "Box tree",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "project/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "├── src/",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "│\t├── main.cpp",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "│\t└── app.cpp",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "Box tree",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "project",
+              "nodeType": "directory",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": [
+                {
+                  "id": 2,
+                  "level": 4,
+                  "name": "src",
+                  "nodeType": "directory",
+                  "icon": null,
+                  "cssClass": null,
+                  "description": null,
+                  "children": [
+                    {
+                      "id": 3,
+                      "level": 8,
+                      "name": "main.cpp",
+                      "nodeType": "file",
+                      "icon": null,
+                      "cssClass": null,
+                      "description": null,
+                      "children": []
+                    },
+                    {
+                      "id": 4,
+                      "level": 8,
+                      "name": "app.cpp",
+                      "nodeType": "file",
+                      "icon": null,
+                      "cssClass": null,
+                      "description": null,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reject-uppercase-detector",
+      "source": "TREEVIEW-BETA\nroot",
+      "accept": false,
+      "reject": {
+        "kind": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: TREEVIEW-BETA root",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-prefix",
+      "source": "treeView-betamax\nroot",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parsing failed: Parse error on line 1, column 1: Expecting token of type 'treeView-beta' but found `treeView-betamax`.",
+        "line": 1,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-wrong-header",
+      "source": "treeView\nroot",
+      "accept": false,
+      "reject": {
+        "kind": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: treeView root",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-unclosed-double",
+      "source": "treeView-beta\n\"root",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 1: unexpected character: ->\"<- at offset: 14, skipped 1 characters.",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-unclosed-single",
+      "source": "treeView-beta\n'root",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 1: unexpected character: ->'<- at offset: 14, skipped 1 characters.",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-leading-quote-tail",
+      "source": "treeView-beta\n\"root\"tail",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "root",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          },
+          {
+            "indent": null,
+            "name": "tail",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "root",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            },
+            {
+              "id": 2,
+              "level": 0,
+              "name": "tail",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reject-annotation-only",
+      "source": "treeView-beta\n:::highlight",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 1: unexpected character: ->:<- at offset: 14, skipped 1 characters.",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-icon-only",
+      "source": "treeView-beta\nicon(file)",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 1: unexpected character: ->i<- at offset: 14, skipped 1 characters.",
+        "line": 2,
+        "column": 1
+      }
+    },
+    {
+      "id": "reject-invalid-class",
+      "source": "treeView-beta\nfile :::9bad",
+      "accept": true,
+      "ast": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "nodes": [
+          {
+            "indent": null,
+            "name": "file :::9bad",
+            "classAnnotation": null,
+            "iconAnnotation": null,
+            "descAnnotation": null
+          }
+        ]
+      },
+      "db": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "root": {
+          "id": 0,
+          "level": -1,
+          "name": "/",
+          "nodeType": "directory",
+          "icon": null,
+          "cssClass": null,
+          "description": null,
+          "children": [
+            {
+              "id": 1,
+              "level": 0,
+              "name": "file :::9bad",
+              "nodeType": "file",
+              "icon": null,
+              "cssClass": null,
+              "description": null,
+              "children": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "reject-invalid-icon",
+      "source": "treeView-beta\nfile icon(a:b:c)",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Parsing failed: Lexer error on line 2, column 6: unexpected character: ->i<- at offset: 19, skipped 1 characters.",
+        "line": 2,
+        "column": 6
+      }
+    },
+    {
+      "id": "reject-box-empty",
+      "source": "treeView-beta\nroot/\n└──",
+      "accept": false,
+      "reject": {
+        "kind": "preprocess",
+        "message": "Line 3: Empty node — expected a filename or directory name after the box-drawing prefix",
+        "line": 3,
+        "column": 0
+      }
+    },
+    {
+      "id": "reject-box-indented-plain",
+      "source": "treeView-beta\nroot/\n├── child\n    plain",
+      "accept": false,
+      "reject": {
+        "kind": "preprocess",
+        "message": "Line 4: Unexpected indentation without box-drawing characters. In box-drawing format, use ├── or └── prefixes for indented nodes.",
+        "line": 4,
+        "column": 0
+      }
+    }
+  ],
+  "fixtureSha256": "e5eeb0749d306f415b312caad20261de4283574275ebce2c9a88dc1f01dc0848"
+}

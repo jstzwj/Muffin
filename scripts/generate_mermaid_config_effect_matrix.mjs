@@ -492,6 +492,21 @@ const familyPolicies = {
       "Declared by MindmapDiagramConfig but never read; Mindmap selects the renderer from the top-level layout key.",
     ),
   },
+  treeView: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    rowIndent: parity(...layout),
+    paddingX: parity(...layout),
+    paddingY: parity(...layout),
+    lineThickness: parity(...layout),
+    showIcons: {
+      ...parity("layout", "paint", "viewport", "export"),
+      note: "Icons reserve the upstream 18px slot and affect sizing even though Mermaid 11.16.0 strips the generated <use> elements from the final SVG.",
+    },
+    defaultIconPack: parity("layout", "paint", "viewport", "export"),
+    filenameIcons: parity("layout", "paint", "viewport", "export"),
+    extensionIcons: parity("layout", "paint", "viewport", "export"),
+  },
   gantt: {
     useWidth: parity("layout", "paint", "viewport", "export"),
     useMaxWidth: parity("viewport", "export"),
@@ -578,6 +593,7 @@ const shared = [
       "mindmap",
       "gantt",
       "info",
+      "treeView",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -601,6 +617,7 @@ const shared = [
       "mindmap",
       "gantt",
       "info",
+      "treeView",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -628,6 +645,7 @@ const shared = [
       "mindmap",
       "gantt",
       "info",
+      "treeView",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -693,6 +711,7 @@ const shared = [
       "mindmap",
       "gantt",
       "info",
+      "treeView",
     ],
     ...unsupported(
       ["parsed"],
@@ -719,6 +738,7 @@ const shared = [
       "mindmap",
       "gantt",
       "info",
+      "treeView",
     ],
     ...policy(
       "security-fixed",
@@ -752,6 +772,7 @@ const shared = [
       "mindmap",
       "gantt",
       "info",
+      "treeView",
     ],
     ...parity("export"),
   },
@@ -775,6 +796,7 @@ const shared = [
       "mindmap",
       "gantt",
       "info",
+      "treeView",
     ],
     ...parity("export"),
   },
@@ -798,6 +820,7 @@ const shared = [
       "mindmap",
       "gantt",
       "info",
+      "treeView",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -852,6 +875,7 @@ const interfaces = {
   packet: "PacketDiagramConfig",
   kanban: "KanbanDiagramConfig",
   mindmap: "MindmapDiagramConfig",
+  treeView: "TreeViewDiagramConfig",
   gantt: "GanttDiagramConfig",
 };
 

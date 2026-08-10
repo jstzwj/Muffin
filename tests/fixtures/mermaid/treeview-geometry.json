@@ -1,0 +1,3863 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "treeViewModuleSha256": "00d8b483476a98b844bfedad281bc25bb97b527aa71b4cce6fc57447a4a50b70",
+    "parserTreeViewSha256": "e9ab827a620482e7b69e23bc176d23dabf15b34402fae2ce58da9583cf655daf",
+    "parserSupportSha256": "06f44cd8c6afc77ea44e174f7af983c8a91368e50d32a55d4bcdd71df92c55e2",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry SVG DOM, preorder geometry, icons, descriptions, highlights, and metadata",
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreeView-beta\nproject/ :::highlight ## Workspace\n  src/\n    main.cpp\n    util.js\n  README.md",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-canonical",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 242.8019256591797 192",
+            "style": "max-width: 242.8019256591797px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.280215263366699,
+            "width": 250.8019256591797,
+            "height": 182.00180053710938
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 242.796875,
+            "height": 191.984375
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.280215263366699,
+            "width": 250.8019256591797,
+            "height": 182.00180053710938
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 2.9998373985290527,
+                "y": 3.280215263366699,
+                "width": 10.000814437866211,
+                "height": 22.00179100036621
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "5",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.953609466552734,
+              "bbox": {
+                "x": 2.9998373985290527,
+                "y": 3.280215263366699,
+                "width": 10.000814437866211,
+                "height": 22.00179100036621
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 15,
+                "y": 33,
+                "width": 225.8019256591797,
+                "height": 30
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir highlight",
+                "x": "20",
+                "y": "48"
+              },
+              "value": "project",
+              "textLength": 52.3948860168457,
+              "bbox": {
+                "x": 20.000001907348633,
+                "y": 35.280216217041016,
+                "width": 53.61518859863281,
+                "height": 22.00179100036621
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-description",
+                "x": "144.25",
+                "y": "48"
+              },
+              "value": "Workspace",
+              "textLength": 82.5379638671875,
+              "bbox": {
+                "x": 144.25001525878906,
+                "y": 35.280216217041016,
+                "width": 83.51276397705078,
+                "height": 22.00179100036621
+              },
+              "computed": {
+                "fill": "rgb(106, 153, 85)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "italic",
+                "whiteSpace": "pre"
+              }
+            },
+            "icon": null,
+            "highlight": {
+              "attrs": {
+                "x": "15",
+                "y": "33",
+                "width": "225.8019256591797",
+                "height": "30",
+                "rx": "3",
+                "class": "treeView-highlight-bg"
+              },
+              "bbox": {
+                "x": 15,
+                "y": 33,
+                "width": 225.8019256591797,
+                "height": 30
+              },
+              "computed": {
+                "fill": "rgba(255, 193, 7, 0.15)",
+                "stroke": "rgb(255, 193, 7)",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 33.99992370605469,
+                "y": 67.28022003173828,
+                "width": 23.94521713256836,
+                "height": 22.00179100036621
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "35",
+                "y": "80"
+              },
+              "value": "src",
+              "textLength": 21.626760482788086,
+              "bbox": {
+                "x": 33.99992370605469,
+                "y": 67.28022003173828,
+                "width": 23.94521713256836,
+                "height": 22.00179100036621
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 50.000003814697266,
+                "y": 99.28022003173828,
+                "width": 69.728271484375,
+                "height": 22.00179100036621
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "50",
+                "y": "112"
+              },
+              "value": "main.cpp",
+              "textLength": 69.56816101074219,
+              "bbox": {
+                "x": 50.000003814697266,
+                "y": 99.28022003173828,
+                "width": 69.728271484375,
+                "height": 22.00179100036621
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 50.000003814697266,
+                "y": 131.28021240234375,
+                "width": 40.31903076171875,
+                "height": 22.00179100036621
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "50",
+                "y": "144"
+              },
+              "value": "util.js",
+              "textLength": 39.98762893676758,
+              "bbox": {
+                "x": 50.000003814697266,
+                "y": 131.28021240234375,
+                "width": 40.31903076171875,
+                "height": 22.00179100036621
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 35.000003814697266,
+                "y": 163.2802276611328,
+                "width": 93.21072387695312,
+                "height": 22.00179100036621
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "35",
+                "y": "176"
+              },
+              "value": "README.md",
+              "textLength": 93.21070861816406,
+              "bbox": {
+                "x": 35.000003814697266,
+                "y": 163.2802276611328,
+                "width": 93.21072387695312,
+                "height": 22.00179100036621
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "80",
+              "x2": "30",
+              "y2": "80",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 80,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "35",
+              "y1": "112",
+              "x2": "45",
+              "y2": "112",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 35,
+              "y": 112,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "35",
+              "y1": "144",
+              "x2": "45",
+              "y2": "144",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 35,
+              "y": 144,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "35",
+              "y1": "96",
+              "x2": "35",
+              "y2": "144.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 35,
+              "y": 96,
+              "width": 0,
+              "height": 48.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "176",
+              "x2": "30",
+              "y2": "176",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 176,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "64",
+              "x2": "20",
+              "y2": "176.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 112.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "empty-tree",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreeView-beta",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-empty-tree",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 20 32",
+            "style": "max-width: 20px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28125,
+            "width": 23,
+            "height": 22
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 20,
+            "height": 32
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28125,
+            "width": 23,
+            "height": 22
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 3,
+                "y": 3.28125,
+                "width": 10,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "5",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.953125,
+              "bbox": {
+                "x": 3,
+                "y": 3.28125,
+                "width": 10,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "quoted-whitespace",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreeView-beta\n\" alpha   beta \"\n  ' child name '",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-quoted-whitespace",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 131 96",
+            "style": "max-width: 131px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28125,
+            "width": 136,
+            "height": 86
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 131,
+            "height": 96
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28125,
+            "width": 136,
+            "height": 86
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 3,
+                "y": 3.28125,
+                "width": 10,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "5",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.953125,
+              "bbox": {
+                "x": 3,
+                "y": 3.28125,
+                "width": 10,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 20,
+                "y": 35.28125,
+                "width": 96.234375,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "20",
+                "y": "48"
+              },
+              "value": " alpha   beta ",
+              "textLength": 96.234375,
+              "bbox": {
+                "x": 20,
+                "y": 35.28125,
+                "width": 96.234375,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 35,
+                "y": 67.28125,
+                "width": 91,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "35",
+                "y": "80"
+              },
+              "value": " child name ",
+              "textLength": 91,
+              "bbox": {
+                "x": 35,
+                "y": 67.28125,
+                "width": 91,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "80",
+              "x2": "30",
+              "y2": "80",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 80,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "64",
+              "x2": "20",
+              "y2": "80.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "descriptions",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreeView-beta\nroot/ ## Root details\n  short ## One\n  a-very-long-label ## Two",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-descriptions",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 273.1042785644531 128",
+            "style": "max-width: 273.1042785644531px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.2796971797943115,
+            "width": 278.064697265625,
+            "height": 118.002685546875
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 273.09375,
+            "height": 127.984375
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.2796971797943115,
+            "width": 278.064697265625,
+            "height": 118.002685546875
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 2.999755859375,
+                "y": 3.2796971797943115,
+                "width": 10.001220703125,
+                "height": 22.002685546875
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "5",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.953851699829102,
+              "bbox": {
+                "x": 2.999755859375,
+                "y": 3.2796971797943115,
+                "width": 10.001220703125,
+                "height": 22.002685546875
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 20,
+                "y": 35.27969741821289,
+                "width": 248.064697265625,
+                "height": 22.002685546875
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "20",
+                "y": "48"
+              },
+              "value": "root",
+              "textLength": 31.410083770751953,
+              "bbox": {
+                "x": 20,
+                "y": 35.27969741821289,
+                "width": 32.635955810546875,
+                "height": 22.002685546875
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-description",
+                "x": "176.984375",
+                "y": "48"
+              },
+              "value": "Root details",
+              "textLength": 88.74520874023438,
+              "bbox": {
+                "x": 176.984375,
+                "y": 35.27969741821289,
+                "width": 91.08032989501953,
+                "height": 22.002685546875
+              },
+              "computed": {
+                "fill": "rgb(106, 153, 85)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "italic",
+                "whiteSpace": "pre"
+              }
+            },
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 35,
+                "y": 67.27969360351562,
+                "width": 174.35830688476562,
+                "height": 22.002685546875
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "35",
+                "y": "80"
+              },
+              "value": "short",
+              "textLength": 39.59858322143555,
+              "bbox": {
+                "x": 35,
+                "y": 67.27969360351562,
+                "width": 39.823692321777344,
+                "height": 22.002685546875
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-description",
+                "x": "176.984375",
+                "y": "80"
+              },
+              "value": "One",
+              "textLength": 31.39445686340332,
+              "bbox": {
+                "x": 176.984375,
+                "y": 67.27969360351562,
+                "width": 32.373931884765625,
+                "height": 22.002685546875
+              },
+              "computed": {
+                "fill": "rgb(106, 153, 85)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "italic",
+                "whiteSpace": "pre"
+              }
+            },
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 35,
+                "y": 99.27969360351562,
+                "width": 174.12705993652344,
+                "height": 22.002685546875
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "35",
+                "y": "112"
+              },
+              "value": "a-very-long-label",
+              "textLength": 125.92162322998047,
+              "bbox": {
+                "x": 35,
+                "y": 99.27969360351562,
+                "width": 125.92161560058594,
+                "height": 22.002685546875
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-description",
+                "x": "176.984375",
+                "y": "112"
+              },
+              "value": "Two",
+              "textLength": 30.83188819885254,
+              "bbox": {
+                "x": 176.984375,
+                "y": 99.27969360351562,
+                "width": 32.14268493652344,
+                "height": 22.002685546875
+              },
+              "computed": {
+                "fill": "rgb(106, 153, 85)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "italic",
+                "whiteSpace": "pre"
+              }
+            },
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "80",
+              "x2": "30",
+              "y2": "80",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 80,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "112",
+              "x2": "30",
+              "y2": "112",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 112,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "64",
+              "x2": "20",
+              "y2": "112.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 48.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "highlight-nested",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreeView-beta\nroot/\n  child :::highlight\n    grandchild",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-highlight-nested",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 145.5 128",
+            "style": "max-width: 145.5px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28125,
+            "width": 153.5,
+            "height": 118
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 145.5,
+            "height": 128
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28125,
+            "width": 153.5,
+            "height": 118
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 3,
+                "y": 3.28125,
+                "width": 10,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "5",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.953125,
+              "bbox": {
+                "x": 3,
+                "y": 3.28125,
+                "width": 10,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 20,
+                "y": 35.28125,
+                "width": 32.64796447753906,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "20",
+                "y": "48"
+              },
+              "value": "root",
+              "textLength": 31.4375,
+              "bbox": {
+                "x": 20,
+                "y": 35.28125,
+                "width": 32.64796447753906,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 30,
+                "y": 65,
+                "width": 113.5,
+                "height": 30
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label highlight",
+                "x": "35",
+                "y": "80"
+              },
+              "value": "child",
+              "textLength": 35.671875,
+              "bbox": {
+                "x": 35,
+                "y": 67.28125,
+                "width": 35.671875,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": {
+              "attrs": {
+                "x": "30",
+                "y": "65",
+                "width": "113.5",
+                "height": "30",
+                "rx": "3",
+                "class": "treeView-highlight-bg"
+              },
+              "bbox": {
+                "x": 30,
+                "y": 65,
+                "width": 113.5,
+                "height": 30
+              },
+              "computed": {
+                "fill": "rgba(255, 193, 7, 0.15)",
+                "stroke": "rgb(255, 193, 7)",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "normal"
+              }
+            }
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 50,
+                "y": 99.28125,
+                "width": 80.5,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "50",
+                "y": "112"
+              },
+              "value": "grandchild",
+              "textLength": 80.5,
+              "bbox": {
+                "x": 50,
+                "y": 99.28125,
+                "width": 80.5,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "80",
+              "x2": "30",
+              "y2": "80",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 80,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "35",
+              "y1": "112",
+              "x2": "45",
+              "y2": "112",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 35,
+              "y": 112,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "35",
+              "y1": "96",
+              "x2": "35",
+              "y2": "112.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 35,
+              "y": 96,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "64",
+              "x2": "20",
+              "y2": "80.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "built-in-icons",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"treeView\":{\"showIcons\":true}}}%%\ntreeView-beta\nroot/\n  file.txt\n  hidden icon()\n  explicit icon(folder)",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-built-in-icons",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 111.07192993164062 160",
+            "style": "max-width: 111.07192993164062px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28000807762146,
+            "width": 116.04772186279297,
+            "height": 150.0021514892578
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 111.0625,
+            "height": 159.984375
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "defs",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28000807762146,
+            "width": 116.04772186279297,
+            "height": 150.0021514892578
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 20.999805450439453,
+                "y": 3.28000807762146,
+                "width": 10.0009765625,
+                "height": 22.002147674560547
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "23",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.95370626449585,
+              "bbox": {
+                "x": 20.999805450439453,
+                "y": 3.28000807762146,
+                "width": 10.0009765625,
+                "height": 22.002147674560547
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 37.999996185302734,
+                "y": 35.28001022338867,
+                "width": 32.635162353515625,
+                "height": 22.002147674560547
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "38",
+                "y": "48"
+              },
+              "value": "root",
+              "textLength": 31.409317016601562,
+              "bbox": {
+                "x": 37.999996185302734,
+                "y": 35.28001022338867,
+                "width": 32.635162353515625,
+                "height": 22.002147674560547
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 51.99990463256836,
+                "y": 67.2800064086914,
+                "width": 48.290863037109375,
+                "height": 22.002147674560547
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "53",
+                "y": "80"
+              },
+              "value": "file.txt",
+              "textLength": 47.06709671020508,
+              "bbox": {
+                "x": 51.99990463256836,
+                "y": 67.2800064086914,
+                "width": 48.290863037109375,
+                "height": 22.002147674560547
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 35,
+                "y": 99.2800064086914,
+                "width": 52.58325958251953,
+                "height": 22.002147674560547
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "35",
+                "y": "112"
+              },
+              "value": "hidden",
+              "textLength": 52.58325958251953,
+              "bbox": {
+                "x": 35,
+                "y": 99.2800064086914,
+                "width": 52.58325958251953,
+                "height": 22.002147674560547
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 53,
+                "y": 131.28001403808594,
+                "width": 53.04772186279297,
+                "height": 22.002147674560547
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "53",
+                "y": "144"
+              },
+              "value": "explicit",
+              "textLength": 52.833282470703125,
+              "bbox": {
+                "x": 53,
+                "y": 131.28001403808594,
+                "width": 53.04772186279297,
+                "height": 22.002147674560547
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "80",
+              "x2": "30",
+              "y2": "80",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 80,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "112",
+              "x2": "30",
+              "y2": "112",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 112,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "144",
+              "x2": "30",
+              "y2": "144",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 144,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "64",
+              "x2": "20",
+              "y2": "144.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 80.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [
+          {
+            "attrs": {
+              "id": "tv-icon-treeview-geometry-built-in-icons-mermaid-treeview-folder"
+            },
+            "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M10.59 4.59A2 2 0 0 0 9.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.17z\"></path></svg>"
+          },
+          {
+            "attrs": {
+              "id": "tv-icon-treeview-geometry-built-in-icons-mermaid-treeview-file"
+            },
+            "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.83a2 2 0 0 0-.59-1.42l-4.82-4.82A2 2 0 0 0 13.17 2H6Zm7.5 1.9l4.6 4.6h-3.6a1 1 0 0 1-1-1V3.9Z\" clip-rule=\"evenodd\"></path></svg>"
+          }
+        ],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "detected-icons",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"treeView\":{\"showIcons\":true,\"filenameIcons\":{\"README\":\"folder\"},\"extensionIcons\":{\".js\":\"file\",\"txt\":\"none\"}}}}%%\ntreeView-beta\nroot/\n  README\n  app.JS\n  notes.txt",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-detected-icons",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 122.26397705078125 160",
+            "style": "max-width: 122.26397705078125px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.2787652015686035,
+            "width": 127.24198150634766,
+            "height": 150.0043182373047
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 122.25,
+            "height": 159.96875
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "defs",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.2787652015686035,
+            "width": 127.24198150634766,
+            "height": 150.0043182373047
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 20.999610900878906,
+                "y": 3.2787652015686035,
+                "width": 10.001954078674316,
+                "height": 22.00429916381836
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "23",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.954288005828857,
+              "bbox": {
+                "x": 20.999610900878906,
+                "y": 3.2787652015686035,
+                "width": 10.001954078674316,
+                "height": 22.00429916381836
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 38,
+                "y": 35.27876663208008,
+                "width": 32.63834762573242,
+                "height": 22.00429916381836
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "38",
+                "y": "48"
+              },
+              "value": "root",
+              "textLength": 31.412385940551758,
+              "bbox": {
+                "x": 38,
+                "y": 35.27876663208008,
+                "width": 32.63834762573242,
+                "height": 22.00429916381836
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 53,
+                "y": 67.27877044677734,
+                "width": 64.24198150634766,
+                "height": 22.00429916381836
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "53",
+                "y": "80"
+              },
+              "value": "README",
+              "textLength": 64.13752746582031,
+              "bbox": {
+                "x": 53,
+                "y": 67.27877044677734,
+                "width": 64.24198150634766,
+                "height": 22.00429916381836
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 53,
+                "y": 99.27877044677734,
+                "width": 46.29769515991211,
+                "height": 22.00429916381836
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "53",
+                "y": "112"
+              },
+              "value": "app.JS",
+              "textLength": 46.087127685546875,
+              "bbox": {
+                "x": 53,
+                "y": 99.27877044677734,
+                "width": 46.29769515991211,
+                "height": 22.00429916381836
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 35,
+                "y": 131.27877807617188,
+                "width": 66.53511047363281,
+                "height": 22.00429916381836
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "35",
+                "y": "144"
+              },
+              "value": "notes.txt",
+              "textLength": 66.30982971191406,
+              "bbox": {
+                "x": 35,
+                "y": 131.27877807617188,
+                "width": 66.53511047363281,
+                "height": 22.00429916381836
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "80",
+              "x2": "30",
+              "y2": "80",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 80,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "112",
+              "x2": "30",
+              "y2": "112",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 112,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "144",
+              "x2": "30",
+              "y2": "144",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 144,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "64",
+              "x2": "20",
+              "y2": "144.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 80.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [
+          {
+            "attrs": {
+              "id": "tv-icon-treeview-geometry-detected-icons-mermaid-treeview-folder"
+            },
+            "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" d=\"M10.59 4.59A2 2 0 0 0 9.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.17z\"></path></svg>"
+          },
+          {
+            "attrs": {
+              "id": "tv-icon-treeview-geometry-detected-icons-mermaid-treeview-file"
+            },
+            "html": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\"><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.83a2 2 0 0 0-.59-1.42l-4.82-4.82A2 2 0 0 0 13.17 2H6Zm7.5 1.9l4.6 4.6h-3.6a1 1 0 0 1-1-1V3.9Z\" clip-rule=\"evenodd\"></path></svg>"
+          }
+        ],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "box-drawing",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreeView-beta\nproject/\n├── src/\n│   ├── main.cpp\n│   └── app.cpp\n└── README.md",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-box-drawing",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 133.25 192",
+            "style": "max-width: 133.25px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28125,
+            "width": 138.25,
+            "height": 182
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 133.25,
+            "height": 192
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.28125,
+            "width": 138.25,
+            "height": 182
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 3,
+                "y": 3.28125,
+                "width": 10,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "5",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.953125,
+              "bbox": {
+                "x": 3,
+                "y": 3.28125,
+                "width": 10,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 20,
+                "y": 35.28125,
+                "width": 53.63993835449219,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "20",
+                "y": "48"
+              },
+              "value": "project",
+              "textLength": 52.421875,
+              "bbox": {
+                "x": 20,
+                "y": 35.28125,
+                "width": 53.63993835449219,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 34,
+                "y": 67.28125,
+                "width": 23.95196533203125,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "35",
+                "y": "80"
+              },
+              "value": "src",
+              "textLength": 21.640625,
+              "bbox": {
+                "x": 34,
+                "y": 67.28125,
+                "width": 23.95196533203125,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 50,
+                "y": 99.28125,
+                "width": 69.75994873046875,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "50",
+                "y": "112"
+              },
+              "value": "main.cpp",
+              "textLength": 69.609375,
+              "bbox": {
+                "x": 50,
+                "y": 99.28125,
+                "width": 69.75994873046875,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 50,
+                "y": 131.28125,
+                "width": 60.46397399902344,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "50",
+                "y": "144"
+              },
+              "value": "app.cpp",
+              "textLength": 60.3125,
+              "bbox": {
+                "x": 50,
+                "y": 131.28125,
+                "width": 60.46397399902344,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 35,
+                "y": 163.28125,
+                "width": 93.25,
+                "height": 22
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "35",
+                "y": "176"
+              },
+              "value": "README.md",
+              "textLength": 93.25,
+              "bbox": {
+                "x": 35,
+                "y": 163.28125,
+                "width": 93.25,
+                "height": 22
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "80",
+              "x2": "30",
+              "y2": "80",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 80,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "35",
+              "y1": "112",
+              "x2": "45",
+              "y2": "112",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 35,
+              "y": 112,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "35",
+              "y1": "144",
+              "x2": "45",
+              "y2": "144",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 35,
+              "y": 144,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "35",
+              "y1": "96",
+              "x2": "35",
+              "y2": "144.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 35,
+              "y": 96,
+              "width": 0,
+              "height": 48.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "176",
+              "x2": "30",
+              "y2": "176",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 176,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "20",
+              "y1": "64",
+              "x2": "20",
+              "y2": "176.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 20,
+              "y": 64,
+              "width": 0,
+              "height": 112.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreeView-beta\ntitle Inline\naccTitle: Accessible\naccDescr: Description\nroot",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-metadata",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 56.64796447753906 64",
+            "style": "max-width: 56.64796447753906px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView",
+            "aria-describedby": "chart-desc-treeview-geometry-metadata",
+            "aria-labelledby": "chart-title-treeview-geometry-metadata"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.278144359588623,
+            "width": 61.63970184326172,
+            "height": 54.00537109375
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 56.640625,
+            "height": 63.984375
+          }
+        },
+        "childTags": [
+          "title",
+          "desc",
+          "style",
+          "g",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.278144359588623,
+            "width": 61.63970184326172,
+            "height": 54.00537109375
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 2.99951171875,
+                "y": 3.278144359588623,
+                "width": 10.002442359924316,
+                "height": 22.005373001098633
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "5",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.954578876495361,
+              "bbox": {
+                "x": 2.99951171875,
+                "y": 3.278144359588623,
+                "width": 10.002442359924316,
+                "height": 22.005373001098633
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 20.000001907348633,
+                "y": 35.27814483642578,
+                "width": 31.639699935913086,
+                "height": 22.005373001098633
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "20",
+                "y": "48"
+              },
+              "value": "root",
+              "textLength": 31.41391944885254,
+              "bbox": {
+                "x": 20.000001907348633,
+                "y": 35.27814483642578,
+                "width": 31.639699935913086,
+                "height": 22.005373001098633
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [],
+        "metadata": {
+          "title": "Accessible",
+          "desc": "Description",
+          "ariaLabelledby": "chart-title-treeview-geometry-metadata",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\nconfig:\n  {\n    \"fontFamily\": \"Noto Sans\"\n  }\n---\ntreeView-beta\nroot",
+      "expected": {
+        "root": {
+          "attrs": {
+            "id": "treeview-geometry-frontmatter",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "viewBox": "-0.5 0 56.64796447753906 64",
+            "style": "max-width: 56.64796447753906px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "treeView"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.278144359588623,
+            "width": 61.63970184326172,
+            "height": 54.00537109375
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 56.640625,
+            "height": 63.984375
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "tree": {
+          "attrs": {
+            "class": "tree-view"
+          },
+          "bbox": {
+            "x": -10,
+            "y": 3.278144359588623,
+            "width": 61.63970184326172,
+            "height": 54.00537109375
+          }
+        },
+        "labels": [
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 2.99951171875,
+                "y": 3.278144359588623,
+                "width": 10.002442359924316,
+                "height": 22.005373001098633
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label treeView-node-dir",
+                "x": "5",
+                "y": "16"
+              },
+              "value": "/",
+              "textLength": 5.954578876495361,
+              "bbox": {
+                "x": 2.99951171875,
+                "y": 3.278144359588623,
+                "width": 10.002442359924316,
+                "height": 22.005373001098633
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "700",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          },
+          {
+            "group": {
+              "attrs": {},
+              "bbox": {
+                "x": 20.000001907348633,
+                "y": 35.27814483642578,
+                "width": 31.639699935913086,
+                "height": 22.005373001098633
+              }
+            },
+            "label": {
+              "attrs": {
+                "dominant-baseline": "middle",
+                "class": "treeView-node-label",
+                "x": "20",
+                "y": "48"
+              },
+              "value": "root",
+              "textLength": 31.41391944885254,
+              "bbox": {
+                "x": 20.000001907348633,
+                "y": 35.27814483642578,
+                "width": 31.639699935913086,
+                "height": 22.005373001098633
+              },
+              "computed": {
+                "fill": "rgb(0, 0, 0)",
+                "stroke": "none",
+                "strokeWidth": "1px",
+                "color": "rgb(0, 0, 0)",
+                "fontFamily": "\"Noto Sans\"",
+                "fontSize": "16px",
+                "fontWeight": "400",
+                "fontStyle": "normal",
+                "whiteSpace": "pre"
+              }
+            },
+            "description": null,
+            "icon": null,
+            "highlight": null
+          }
+        ],
+        "lines": [
+          {
+            "attrs": {
+              "x1": "-10",
+              "y1": "16",
+              "x2": "0",
+              "y2": "16",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": -10,
+              "y": 16,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "48",
+              "x2": "15",
+              "y2": "48",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 48,
+              "width": 10,
+              "height": 0
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          },
+          {
+            "attrs": {
+              "x1": "5",
+              "y1": "32",
+              "x2": "5",
+              "y2": "48.5",
+              "stroke-width": "1",
+              "class": "treeView-node-line"
+            },
+            "bbox": {
+              "x": 5,
+              "y": 32,
+              "width": 0,
+              "height": 16.5
+            },
+            "computed": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "color": "rgb(0, 0, 0)",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "fontWeight": "400",
+              "fontStyle": "normal",
+              "whiteSpace": "normal"
+            }
+          }
+        ],
+        "defs": [],
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "ec9783ecf6be9b126d9968fea67ef849697c82347933ab331369244f5d1b497f"
+}
