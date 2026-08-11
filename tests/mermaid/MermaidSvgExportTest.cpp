@@ -125,6 +125,8 @@ int main(int argc, char** argv) {
                       "  done[Done]\n    task2[Ship]")},
       {QStringLiteral("mindmap"), QStringLiteral("mindmap"),
        QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
+      {QStringLiteral("block"), QStringLiteral("block"),
+       QStringLiteral("block-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B")},
       {QStringLiteral("gantt"), QStringLiteral("gantt"),
        QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
                       "section Delivery\nBuild :build, 2024-01-01, 3d\n"
@@ -254,6 +256,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"mindmap\": {\"useMaxWidth\": false}}}%%\n"
           "mindmap\n  root((Root))\n    Child"),
+      QStringLiteral(
+          "%%{init: {\"block\": {\"useMaxWidth\": false}}}%%\n"
+          "block-beta\nA[\"Alpha\"]"),
       QStringLiteral(
           "%%{init: {\"treeView\": {\"useMaxWidth\": false}}}%%\n"
           "treeView-beta\nproject/\n  child"),
@@ -459,6 +464,14 @@ int main(int argc, char** argv) {
               !mindmapNoTitle.contains("aria-labelledby=") &&
               !mindmapNoTitle.contains("aria-describedby="),
           QStringLiteral("Mindmap frontmatter title must remain invisible"));
+
+  const QByteArray blockNoTitle = renderSvg(QStringLiteral(
+      "---\ntitle: Block title\n---\n"
+      "block-beta\nA[\"Alpha\"]")).svg;
+  require(!blockNoTitle.contains("Block title") &&
+              !blockNoTitle.contains("aria-labelledby=") &&
+              !blockNoTitle.contains("aria-describedby="),
+          QStringLiteral("Block frontmatter title must remain invisible"));
 
   const QByteArray infoNoTitle = renderSvg(QStringLiteral(
       "---\ntitle: Info frontmatter\n---\n"

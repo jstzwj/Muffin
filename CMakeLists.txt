@@ -511,11 +511,13 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/CynefinDiagramAdapter.cpp
   src/mermaid/editor/WardleyDiagramAdapter.cpp
   src/mermaid/editor/ArchitectureDiagramAdapter.cpp
+  src/mermaid/editor/BlockDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
   src/mermaid/flowchart/Flowchart.h
   src/mermaid/flowchart/FlowLabel.cpp
+  src/mermaid/flowchart/BlinkSvgPathMetrics.cpp
   src/mermaid/flowchart/FlowLabel.h
   src/mermaid/flowchart/FlowchartTokenizer.cpp
   src/mermaid/flowchart/FlowchartTokenizer.h
@@ -722,6 +724,10 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/architecture/ArchitectureScene.h
   src/mermaid/architecture/ArchitectureScenePainter.cpp
   src/mermaid/architecture/ArchitectureScenePainter.h
+  src/mermaid/block/BlockDiagram.cpp
+  src/mermaid/block/BlockDiagram.h
+  src/mermaid/block/BlockScene.cpp
+  src/mermaid/block/BlockScene.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

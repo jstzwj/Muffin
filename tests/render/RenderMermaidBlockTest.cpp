@@ -658,11 +658,30 @@ int main(int argc, char** argv) {
             QStringLiteral("native Gantt fence must render without a diagnostic"));
   }
 
+  // --- native Block diagrams use the rendered-block product path ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\nblock-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B\n```\n"),
+        false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Ready &&
+                block->mermaidDiagnosticMessage().isEmpty() &&
+                !block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("native Block fence must render without a diagnostic"));
+  }
+
   // --- unsupported Mermaid families keep source and explain why ---
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\nblock-beta\ncolumns 1\nA\n```\n"),
+        "```mermaid\nswimlane-beta\nA: First lane\n```\n"),
         false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;

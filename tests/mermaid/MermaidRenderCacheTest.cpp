@@ -3,6 +3,7 @@
 // key stability.
 
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/block/BlockScene.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/eventmodeling/EventModelingScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
@@ -72,7 +73,7 @@ int main(int argc, char** argv) {
       "ORDER {\n  bigint id PK\n  string status\n}");
   // A family Mermaid detects but Muffin does not yet render natively.
   const QString unsupported = QStringLiteral(
-      "block-beta\ncolumns 1\nA");
+      "swimlane-beta\nA");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
@@ -779,6 +780,29 @@ int main(int argc, char** argv) {
             QStringLiteral("Mindmap frontmatter title must remain invisible"));
   }
 
+  // Block has no commonDb metadata productions. Frontmatter metadata remains
+  // invisible, while family config is projected into its typed scene.
+  {
+    MermaidRenderCache cache;
+    const QString body = QStringLiteral(
+        "%%{init: {\"block\": {\"useMaxWidth\": false, "
+        "\"padding\": 20}}}%%\n"
+        "block-beta\ncolumns 2\na[\"Alpha\"] b(\"Beta\")\na --> b");
+    const QString titled =
+        QStringLiteral("---\ntitle: Invisible block title\n---\n") + body;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(titled), titled);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::block::BlockScene>(entry.scene);
+    require(entry.status == kReady && scene && scene->nodes.size() == 2 &&
+                !scene->useMaxWidth && !entry.metadata.svgUseMaxWidth &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle.isEmpty() &&
+                entry.metadata.accessibleDescription.isEmpty() &&
+                entry.metadata.titleHeight == 0.0,
+            QStringLiteral("Block scene/config/metadata contract drifted"));
+  }
+
   // Gantt owns the visible chart title while shared metadata carries only its
   // accessibility title/description. A frontmatter title is the fallback when
   // no inline title directive exists and must not create a second title strip.
@@ -977,6 +1001,8 @@ int main(int argc, char** argv) {
          QStringLiteral("packet"), QStringLiteral("packet-runtime-error"), 3},
         {QStringLiteral("kanban\n []"),
          QStringLiteral("kanban"), QStringLiteral("kanban-parse-error"), 2},
+        {QStringLiteral("block-beta\na[A]"),
+         QStringLiteral("block"), QStringLiteral("block-lexer-error"), 2},
         {QStringLiteral("gantt:"),
          QStringLiteral("gantt"), QStringLiteral("gantt-parse-error"), 1},
         {QStringLiteral("info\nunknown"),
@@ -1032,6 +1058,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("kanban")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("mindmap")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("block-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("gantt")) &&
                 detected.diagnostic.expected.contains(
@@ -1647,6 +1675,8 @@ int main(int argc, char** argv) {
                         "  done[Done]\n    task2[Ship]")},
         {QStringLiteral("mindmap"),
          QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
+        {QStringLiteral("block"),
+         QStringLiteral("block-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B")},
         {QStringLiteral("gantt"),
          QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
                         "section Delivery\nBuild :build, 2024-01-01, 3d\n"

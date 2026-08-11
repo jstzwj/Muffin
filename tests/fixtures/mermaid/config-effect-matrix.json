@@ -30,6 +30,7 @@
       "packet",
       "kanban",
       "mindmap",
+      "block",
       "treeView",
       "eventmodeling",
       "ishikawa",
@@ -45,12 +46,12 @@
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 200,
+    "parity": 202,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 95,
+    "upstream-inert": 96,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -73,6 +74,7 @@
         "packet",
         "kanban",
         "mindmap",
+        "block",
         "gantt",
         "info",
         "treeView",
@@ -121,6 +123,7 @@
         "packet",
         "kanban",
         "mindmap",
+        "block",
         "gantt",
         "info",
         "treeView",
@@ -170,6 +173,7 @@
         "packet",
         "kanban",
         "mindmap",
+        "block",
         "gantt",
         "info",
         "treeView",
@@ -206,7 +210,8 @@
         "class",
         "requirement",
         "kanban",
-        "mindmap"
+        "mindmap",
+        "block"
       ],
       "status": "partial",
       "upstream": [
@@ -236,6 +241,7 @@
         "timeline",
         "kanban",
         "mindmap",
+        "block",
         "ishikawa",
         "venn"
       ],
@@ -264,6 +270,7 @@
         "flowchart",
         "kanban",
         "mindmap",
+        "block",
         "ishikawa",
         "venn"
       ],
@@ -391,6 +398,7 @@
         "packet",
         "kanban",
         "mindmap",
+        "block",
         "gantt",
         "info",
         "treeView",
@@ -430,6 +438,7 @@
         "packet",
         "kanban",
         "mindmap",
+        "block",
         "gantt",
         "info",
         "treeView",
@@ -491,6 +500,7 @@
         "packet",
         "kanban",
         "mindmap",
+        "block",
         "gantt",
         "info",
         "treeView",
@@ -531,6 +541,7 @@
         "packet",
         "kanban",
         "mindmap",
+        "block",
         "gantt",
         "info",
         "treeView",
@@ -571,6 +582,7 @@
         "packet",
         "kanban",
         "mindmap",
+        "block",
         "gantt",
         "info",
         "treeView",
@@ -5222,6 +5234,65 @@
       "default": "cose-bilkent"
     },
     {
+      "family": "block",
+      "interface": "BlockDiagramConfig",
+      "path": "block.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "block",
+      "interface": "BlockDiagramConfig",
+      "path": "block.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "block",
+      "interface": "BlockDiagramConfig",
+      "path": "block.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 8
+    },
+    {
       "family": "treeView",
       "interface": "TreeViewDiagramConfig",
       "path": "treeView.useWidth",
@@ -7117,5 +7188,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "474237ffd2393f85bd5c27de2ca858ef25f704fff73de9afc7c195c884ae8c9f"
+  "fixtureSha256": "e00228cc6ed41d754d50bce1f61a322be42ef284368ada2b647196d183c07382"
 }

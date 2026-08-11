@@ -1,5 +1,6 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/architecture/ArchitectureScene.h"
+#include "mermaid/block/BlockScene.h"
 #include "mermaid/cynefin/CynefinScene.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/eventmodeling/EventModelingScene.h"
@@ -162,8 +163,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 338,
-          QStringLiteral("Expected 338 classified config rows, found %1")
+  require(entries.size() == 341,
+          QStringLiteral("Expected 341 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -225,6 +226,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("journey"), 26},
                                              {QStringLiteral("kanban"), 5},
                                              {QStringLiteral("mindmap"), 5},
+                                             {QStringLiteral("block"), 3},
                                              {QStringLiteral("pie"), 6},
                                              {QStringLiteral("packet"), 8},
                                              {QStringLiteral("quadrantChart"), 20},
@@ -1197,6 +1199,36 @@ int main(int argc, char** argv) {
               "mindmap\n  root((Root))\n"
               "    A[alpha beta gamma delta epsilon]\n    B[Beta]")),
           QStringLiteral("Mindmap live config did not affect PNG output"));
+
+  const QString blockBody = QStringLiteral(
+      "block-beta\ncolumns 2\na[\"Alpha\"] b(\"Beta\")\na --> b");
+  const QString configuredBlockSource = QStringLiteral(
+      "%%{init: {\"block\": {\"useWidth\": 999, "
+      "\"useMaxWidth\": false, \"padding\": 20}}}%%\n") + blockBody;
+  const MermaidRenderEntry baselineBlock = render(blockBody);
+  const MermaidRenderEntry configuredBlock = render(configuredBlockSource);
+  const MermaidRenderEntry inertBlock = render(QStringLiteral(
+      "%%{init: {\"block\": {\"useWidth\": 999}}}%%\n") + blockBody);
+  const auto* baselineBlockScene =
+      dynamic_cast<const muffin::mermaid::block::BlockScene*>(
+          baselineBlock.scene.get());
+  const auto* configuredBlockScene =
+      dynamic_cast<const muffin::mermaid::block::BlockScene*>(
+          configuredBlock.scene.get());
+  const auto* inertBlockScene =
+      dynamic_cast<const muffin::mermaid::block::BlockScene*>(
+          inertBlock.scene.get());
+  require(baselineBlock.status == MermaidRenderStatus::Ready &&
+              configuredBlock.status == MermaidRenderStatus::Ready &&
+              inertBlock.status == MermaidRenderStatus::Ready &&
+              baselineBlockScene && configuredBlockScene && inertBlockScene &&
+              !configuredBlock.metadata.svgUseMaxWidth &&
+              configuredBlockScene->nodes.first().paintSize.width() >
+                  baselineBlockScene->nodes.first().paintSize.width() &&
+              inertBlockScene->bounds == baselineBlockScene->bounds,
+          QStringLiteral("Block live/inert config did not reach the scene"));
+  require(pngImage(configuredBlockSource) != pngImage(blockBody),
+          QStringLiteral("Block live config did not affect PNG output"));
 
   // TreeView preserves JavaScript scalar coercion and uses all icon mapping
   // fields while reproducing the upstream bug that strips the final <use>

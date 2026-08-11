@@ -7,7 +7,7 @@ The complete 38-ID expansion and acceptance contract is maintained in
 
 ## Current status (2026-08-11)
 
-Muffin renders twenty-six Mermaid families through a native C++20/Qt pipeline:
+Muffin renders twenty-seven Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
@@ -24,6 +24,7 @@ Muffin renders twenty-six Mermaid families through a native C++20/Qt pipeline:
 - packet diagram (`packet` and `packet-beta`).
 - Kanban diagram (`kanban`).
 - mindmap diagram (`mindmap`).
+- Block diagram (`block` and `block-beta`).
 - TreeView diagram (`treeView-beta`).
 - Event Modeling diagram (`eventmodeling`).
 - Ishikawa/fishbone diagram (`ishikawa`).
@@ -39,10 +40,10 @@ Muffin renders twenty-six Mermaid families through a native C++20/Qt pipeline:
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 268/268 tests, including the end-to-end
+currently 272/272 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All twenty-six native families now share `MermaidRenderMetadata` for the diagram
+All twenty-seven native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
@@ -152,7 +153,7 @@ assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 
 The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
 and whole-diagram painter are now native and covered by structural and pixel
-oracles. All twenty-four native scenes are integrated into the editor and print/PDF path
+oracles. All twenty-seven native scenes are integrated into the editor and print/PDF path
 through `MermaidRenderCache`. The legacy flat
 `WorkGraph` implementation remains as inactive reference code; the active path
 always delegates to the compound Dagre pipeline.
@@ -410,15 +411,15 @@ available.
 `RequirementDiagramConfig`, `PieDiagramConfig`, `QuadrantChartConfig`, and
 `JourneyDiagramConfig`, `RadarDiagramConfig`, `XYChartConfig`, and
 `TimelineDiagramConfig`, `PacketDiagramConfig`, `KanbanDiagramConfig`, and
-`MindmapDiagramConfig`, `TreeViewDiagramConfig`, `EventModelingDiagramConfig`,
+`MindmapDiagramConfig`, `BlockDiagramConfig`, `TreeViewDiagramConfig`, `EventModelingDiagramConfig`,
 `IshikawaDiagramConfig`, `VennDiagramConfig`, `SankeyDiagramConfig`,
 `TreemapDiagramConfig`, `CynefinDiagramConfig`, `WardleyDiagramConfig`,
 `ArchitectureDiagramConfig`, and `GanttDiagramConfig`
 declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 338
-rows: 322 family-interface fields and 16 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 341
+rows: 325 family-interface fields and 16 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -436,9 +437,9 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 200 | Audited upstream and native stages agree |
+| `parity` | 202 | Audited upstream and native stages agree |
 | `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 95 | Mermaid retains the option but 11.16.0 does not consume it |
+| `upstream-inert` | 96 | Mermaid retains the option but 11.16.0 does not consume it |
 | `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
 | `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
@@ -468,7 +469,7 @@ variant through config, per-edge metadata, scene paint, interaction geometry,
 and PNG export. The interaction/animation milestone is also complete: safe
 Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
 Sequence participant menus, and `sequence.forceMenus` all reach their runtime
-consumers. Native SVG export is now complete at the product boundary: all twenty-four
+consumers. Native SVG export is now complete at the product boundary: all twenty-seven
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
 `deterministicIds`, `deterministicIDSeed`, and the effective family

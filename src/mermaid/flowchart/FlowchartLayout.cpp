@@ -454,6 +454,16 @@ QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data, FlowTextO
   return result;
 }
 
+QPointF intersectFlowShape(const FlowVertex& vertex, const QRectF& nodeRect,
+                           const QPointF& toward, FlowLook look) {
+  d::DagreNodeLabel node;
+  node.x = nodeRect.center().x();
+  node.y = nodeRect.center().y();
+  node.width = nodeRect.width();
+  node.height = nodeRect.height();
+  return intersectNodeForShape(node, vertex.type, toward, look);
+}
+
 FlowLayoutResult layoutFlowchartNodes(const FlowchartData& data,
                                       const QMap<QString, QSizeF>& measuredNodes,
                                       FlowLayoutOptions options) {

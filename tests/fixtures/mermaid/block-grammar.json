@@ -1,0 +1,4638 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "blockModuleSha256": "2e993bfcf368ff51b44be0b4eea45d293fde010f1d5e79e3ed556fa648a77ba3",
+    "blockMapSha256": "11743524dc75ca380e817b58695c317e6ca17d1c875d1c3ad580dd4befaa3c9b",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "block-beta\ncolumns 3\nfrontend[\"Frontend\"] backend(\"Backend\") db[(\"Database\")]\nfrontend --> backend\nbackend --> db",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "frontend",
+              "type": "square",
+              "label": "Frontend",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "backend",
+              "type": "round",
+              "label": "Backend",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "db",
+              "type": "cylinder",
+              "label": "Database",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": 3,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "frontend",
+                  "type": "square",
+                  "label": "Frontend",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "backend",
+                  "type": "round",
+                  "label": "Backend",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "db",
+                  "type": "cylinder",
+                  "label": "Database",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "frontend",
+              "type": "square",
+              "label": "Frontend",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "backend",
+              "type": "round",
+              "label": "Backend",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "db",
+              "type": "cylinder",
+              "label": "Database",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-frontend-backend",
+              "start": "frontend",
+              "end": "backend",
+              "label": "",
+              "thickness": "normal",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": "arrow_point"
+            },
+            {
+              "id": "1-backend-db",
+              "start": "backend",
+              "end": "db",
+              "label": "",
+              "thickness": "normal",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": "arrow_point"
+            }
+          ],
+          "columns": 3,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "non-beta",
+      "source": "block\na",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "header-only",
+      "source": "block-beta",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nblock-beta\n----------^\nExpecting 'BLOCK_DIAGRAM_KEY', 'SPACE_BLOCK', 'COLUMNS', 'id-block', 'NODE_ID', 'classDef', 'class', 'style', got 'EOF'",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "header-newline",
+      "source": "block-beta\n",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nblock-beta\n----------^\nExpecting 'BLOCK_DIAGRAM_KEY', 'SPACE_BLOCK', 'COLUMNS', 'id-block', 'NODE_ID', 'classDef', 'class', 'style', got 'EOF'",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "uppercase-header",
+      "source": "BLOCK-BETA\na",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: BLOCK-BETA\na",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "block-betaX\na",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Lexical error on line 1. Unrecognized text.\nblock-betaXa\n-----^",
+          "kind": "Lexer",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "block-beta a",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "leading-blank",
+      "source": "\n\nblock-beta\na",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "comment",
+      "source": "%% before\nblock-beta\n%% body\na",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init:{\"block\":{\"padding\":12}}}%%\nblock-beta\na",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front title\nconfig:\n  fontFamily: Noto Sans\n  block:\n    padding: 18\n---\nblock-beta\na",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "acc-title-rejected",
+      "source": "block-beta\naccTitle: Accessible\na",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nblock-betaaccTitle: Accessible\n----------^\nExpecting 'BLOCK_DIAGRAM_KEY', 'SPACE_BLOCK', 'COLUMNS', 'id-block', 'NODE_ID', 'classDef', 'class', 'style', got 'acc_title'",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": "accTitle: "
+        }
+      }
+    },
+    {
+      "id": "acc-descr-rejected",
+      "source": "block-beta\naccDescr: Description\na",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nblock-betaaccDescr: Descriptio\n----------^\nExpecting 'BLOCK_DIAGRAM_KEY', 'SPACE_BLOCK', 'COLUMNS', 'id-block', 'NODE_ID', 'classDef', 'class', 'style', got 'acc_descr'",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": "accDescr: "
+        }
+      }
+    },
+    {
+      "id": "title-is-node",
+      "source": "block-beta\ntitle Inline",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "title",
+              "type": "na",
+              "label": "title",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "Inline",
+              "type": "na",
+              "label": "Inline",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "title",
+                  "type": "na",
+                  "label": "title",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "Inline",
+                  "type": "na",
+                  "label": "Inline",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "title",
+              "type": "na",
+              "label": "title",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "Inline",
+              "type": "na",
+              "label": "Inline",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "plain-node",
+      "source": "block-beta\na",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "quoted-square",
+      "source": "block-beta\na[\"Square\"]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "square",
+              "label": "Square",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "square",
+                  "label": "Square",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "square",
+              "label": "Square",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "markdown-square",
+      "source": "block-beta\na[\"`**Bold** label`\"]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nblock-betaa[\"`**Bold** label`\"]\n--------------^\nExpecting 'STR', got 'MD_STR'",
+          "kind": "Parser",
+          "line": 2,
+          "column": 2,
+          "token": "**Bold** label"
+        }
+      }
+    },
+    {
+      "id": "round",
+      "source": "block-beta\na(\"Round\")",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "round",
+              "label": "Round",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "round",
+                  "label": "Round",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "round",
+              "label": "Round",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "circle",
+      "source": "block-beta\na((\"Circle\"))",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "circle",
+              "label": "Circle",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "circle",
+                  "label": "Circle",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "circle",
+              "label": "Circle",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "double-circle",
+      "source": "block-beta\na(((\"Double\")))",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "doublecircle",
+              "label": "Double",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "doublecircle",
+                  "label": "Double",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "doublecircle",
+              "label": "Double",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "diamond",
+      "source": "block-beta\na{\"Diamond\"}",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "diamond",
+              "label": "Diamond",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "diamond",
+                  "label": "Diamond",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "diamond",
+              "label": "Diamond",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "hexagon",
+      "source": "block-beta\na{{\"Hexagon\"}}",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "hexagon",
+              "label": "Hexagon",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "hexagon",
+                  "label": "Hexagon",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "hexagon",
+              "label": "Hexagon",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "stadium",
+      "source": "block-beta\na([\"Stadium\"])",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "stadium",
+              "label": "Stadium",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "stadium",
+                  "label": "Stadium",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "stadium",
+              "label": "Stadium",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "subroutine",
+      "source": "block-beta\na[[\"Subroutine\"]]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "subroutine",
+              "label": "Subroutine",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "subroutine",
+                  "label": "Subroutine",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "subroutine",
+              "label": "Subroutine",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "cylinder",
+      "source": "block-beta\na[(\"Cylinder\")]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "cylinder",
+              "label": "Cylinder",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "cylinder",
+                  "label": "Cylinder",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "cylinder",
+              "label": "Cylinder",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "lean-right",
+      "source": "block-beta\na[/\"Right\"/]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "lean_right",
+              "label": "Right",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "lean_right",
+                  "label": "Right",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "lean_right",
+              "label": "Right",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "lean-left",
+      "source": "block-beta\na[\\\"Left\"\\]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "lean_left",
+              "label": "Left",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "lean_left",
+                  "label": "Left",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "lean_left",
+              "label": "Left",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "trapezoid",
+      "source": "block-beta\na[/\"Trap\"\\]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "trapezoid",
+              "label": "Trap",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "trapezoid",
+                  "label": "Trap",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "trapezoid",
+              "label": "Trap",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "inv-trapezoid",
+      "source": "block-beta\na[\\\"Inv\"/]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "inv_trapezoid",
+              "label": "Inv",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "inv_trapezoid",
+                  "label": "Inv",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "inv_trapezoid",
+              "label": "Inv",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "odd",
+      "source": "block-beta\na>\"Odd\"]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "rect_left_inv_arrow",
+              "label": "Odd",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "rect_left_inv_arrow",
+                  "label": "Odd",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "rect_left_inv_arrow",
+              "label": "Odd",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "block-arrow",
+      "source": "block-beta\na<[\"Arrow\"]>(right, down)",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "block_arrow",
+              "label": "Arrow",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": [
+                "right",
+                "down"
+              ],
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "block_arrow",
+                  "label": "Arrow",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": [
+                    "right",
+                    "down"
+                  ],
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "block_arrow",
+              "label": "Arrow",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": [
+                "right",
+                "down"
+              ],
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "columns",
+      "source": "block-beta\ncolumns 2\na b c",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "c",
+              "type": "na",
+              "label": "c",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": 2,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "c",
+                  "type": "na",
+                  "label": "c",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "c",
+              "type": "na",
+              "label": "c",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": 2,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "columns-auto",
+      "source": "block-beta\ncolumns auto\na b c",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "c",
+              "type": "na",
+              "label": "c",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "c",
+                  "type": "na",
+                  "label": "c",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "c",
+              "type": "na",
+              "label": "c",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "columns-zero",
+      "source": "block-beta\ncolumns 0\na",
+      "expected": {
+        "parse": true,
+        "render": false,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": 0,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": 1,
+          "classes": []
+        },
+        "error": {
+          "name": "Error",
+          "message": "Columns must be an integer !== 0."
+        }
+      }
+    },
+    {
+      "id": "node-width",
+      "source": "block-beta\ncolumns 3\na[\"Wide\"]:2 b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "square",
+              "label": "Wide",
+              "width": null,
+              "widthInColumns": 2,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": 3,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "square",
+                  "label": "Wide",
+                  "width": null,
+                  "widthInColumns": 2,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "square",
+              "label": "Wide",
+              "width": null,
+              "widthInColumns": 2,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": 3,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "space-one",
+      "source": "block-beta\ncolumns 3\na space b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "generated-1-0",
+              "type": "space",
+              "label": "generated-1",
+              "width": 1,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": 3,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "generated-1-0",
+                  "type": "space",
+                  "label": "generated-1",
+                  "width": 1,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "generated-1",
+              "type": "space",
+              "label": "generated-1",
+              "width": 1,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "generated-1-0",
+              "type": "space",
+              "label": "generated-1",
+              "width": 1,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": 3,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "space-many",
+      "source": "block-beta\ncolumns 4\na space:2 b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "generated-1-0",
+              "type": "space",
+              "label": "generated-1",
+              "width": 2,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "generated-1-1",
+              "type": "space",
+              "label": "generated-1",
+              "width": 2,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": 4,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "generated-1-0",
+                  "type": "space",
+                  "label": "generated-1",
+                  "width": 2,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "generated-1-1",
+                  "type": "space",
+                  "label": "generated-1",
+                  "width": 2,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "generated-1",
+              "type": "space",
+              "label": "generated-1",
+              "width": 2,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "generated-1-0",
+              "type": "space",
+              "label": "generated-1",
+              "width": 2,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "generated-1-1",
+              "type": "space",
+              "label": "generated-1",
+              "width": 2,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": 4,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "composite",
+      "source": "block-beta\nblock:g\n columns 1\n a[\"A\"]\n b[\"B\"]\nend",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "g",
+              "type": "composite",
+              "label": "",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": 1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "square",
+                  "label": "A",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "square",
+                  "label": "B",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "g",
+                  "type": "composite",
+                  "label": "",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": 1,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": [
+                    {
+                      "id": "a",
+                      "type": "square",
+                      "label": "A",
+                      "width": null,
+                      "widthInColumns": 1,
+                      "columns": null,
+                      "directions": null,
+                      "classes": [],
+                      "styles": [],
+                      "children": []
+                    },
+                    {
+                      "id": "b",
+                      "type": "square",
+                      "label": "B",
+                      "width": null,
+                      "widthInColumns": 1,
+                      "columns": null,
+                      "directions": null,
+                      "classes": [],
+                      "styles": [],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "g",
+              "type": "composite",
+              "label": "",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": 1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "square",
+                  "label": "A",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "square",
+                  "label": "B",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "square",
+              "label": "A",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "square",
+              "label": "B",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "anonymous-composite",
+      "source": "block-beta\nblock\n a\n b\nend",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "generated-1",
+              "type": "composite",
+              "label": "",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "generated-1",
+                  "type": "composite",
+                  "label": "",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": [
+                    {
+                      "id": "a",
+                      "type": "na",
+                      "label": "a",
+                      "width": null,
+                      "widthInColumns": 1,
+                      "columns": null,
+                      "directions": null,
+                      "classes": [],
+                      "styles": [],
+                      "children": []
+                    },
+                    {
+                      "id": "b",
+                      "type": "na",
+                      "label": "b",
+                      "width": null,
+                      "widthInColumns": 1,
+                      "columns": null,
+                      "directions": null,
+                      "classes": [],
+                      "styles": [],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "generated-1",
+              "type": "composite",
+              "label": "",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "nested-composite",
+      "source": "block-beta\nblock:outer\n block:inner\n  a\n end\n b\nend",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "outer",
+              "type": "composite",
+              "label": "",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "inner",
+                  "type": "composite",
+                  "label": "",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": [
+                    {
+                      "id": "a",
+                      "type": "na",
+                      "label": "a",
+                      "width": null,
+                      "widthInColumns": 1,
+                      "columns": null,
+                      "directions": null,
+                      "classes": [],
+                      "styles": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "outer",
+                  "type": "composite",
+                  "label": "",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": [
+                    {
+                      "id": "inner",
+                      "type": "composite",
+                      "label": "",
+                      "width": null,
+                      "widthInColumns": 1,
+                      "columns": null,
+                      "directions": null,
+                      "classes": [],
+                      "styles": [],
+                      "children": [
+                        {
+                          "id": "a",
+                          "type": "na",
+                          "label": "a",
+                          "width": null,
+                          "widthInColumns": 1,
+                          "columns": null,
+                          "directions": null,
+                          "classes": [],
+                          "styles": [],
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "b",
+                      "type": "na",
+                      "label": "b",
+                      "width": null,
+                      "widthInColumns": 1,
+                      "columns": null,
+                      "directions": null,
+                      "classes": [],
+                      "styles": [],
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "outer",
+              "type": "composite",
+              "label": "",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "inner",
+                  "type": "composite",
+                  "label": "",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": [
+                    {
+                      "id": "a",
+                      "type": "na",
+                      "label": "a",
+                      "width": null,
+                      "widthInColumns": 1,
+                      "columns": null,
+                      "directions": null,
+                      "classes": [],
+                      "styles": [],
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "inner",
+              "type": "composite",
+              "label": "",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "missing-end",
+      "source": "block-beta\nblock:g\na",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 3:\n...lock-betablock:ga\n--------------------^\nExpecting 'end', got 'EOF'",
+          "kind": "Parser",
+          "line": 3,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "extra-end",
+      "source": "block-beta\na\nend",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nblock-betaaend\n-----------^\nExpecting 'EOF', got 'end'",
+          "kind": "Parser",
+          "line": 2,
+          "column": 1,
+          "token": "end\n"
+        }
+      }
+    },
+    {
+      "id": "edge-solid",
+      "source": "block-beta\na --> b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-a-b",
+              "start": "a",
+              "end": "b",
+              "label": "",
+              "thickness": "normal",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": "arrow_point"
+            }
+          ],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "edge-open",
+      "source": "block-beta\na --- b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-a-b",
+              "start": "a",
+              "end": "b",
+              "label": "",
+              "thickness": "normal",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": ""
+            }
+          ],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "edge-thick",
+      "source": "block-beta\na ==> b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-a-b",
+              "start": "a",
+              "end": "b",
+              "label": "",
+              "thickness": "thick",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": "arrow_point"
+            }
+          ],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "edge-dotted",
+      "source": "block-beta\na -.-> b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-a-b",
+              "start": "a",
+              "end": "b",
+              "label": "",
+              "thickness": "normal",
+              "pattern": "dotted",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": "arrow_point"
+            }
+          ],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "edge-cross",
+      "source": "block-beta\na --x b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-a-b",
+              "start": "a",
+              "end": "b",
+              "label": "",
+              "thickness": "normal",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": "arrow_cross"
+            }
+          ],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "edge-circle",
+      "source": "block-beta\na --o b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-a-b",
+              "start": "a",
+              "end": "b",
+              "label": "",
+              "thickness": "normal",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": "arrow_circle"
+            }
+          ],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "edge-bidirectional",
+      "source": "block-beta\na <--> b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-a-b",
+              "start": "a",
+              "end": "b",
+              "label": "",
+              "thickness": "normal",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_point",
+              "arrowTypeEnd": "arrow_point"
+            }
+          ],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "edge-label",
+      "source": "block-beta\na -- \"flow\" --> b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": null,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "1-a-b",
+              "start": "a",
+              "end": "b",
+              "label": "flow",
+              "thickness": "normal",
+              "pattern": "solid",
+              "arrowTypeStart": "arrow_open",
+              "arrowTypeEnd": "arrow_point"
+            }
+          ],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "edge-markdown-label",
+      "source": "block-beta\na -- \"`**flow**`\" --> b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nblock-betaa -- \"`**flow**`\" --> b\n-----------------^\nExpecting 'LINK_LABEL', got 'MD_STR'",
+          "kind": "Parser",
+          "line": 2,
+          "column": 3,
+          "token": "**flow**"
+        }
+      }
+    },
+    {
+      "id": "style",
+      "source": "block-beta\na\nstyle a fill:#f00,stroke:#0f0,color:#00f",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [
+                "fill:#f00",
+                "stroke:#0f0",
+                "color:#00f"
+              ],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [
+                    "fill:#f00",
+                    "stroke:#0f0",
+                    "color:#00f"
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [
+                "fill:#f00",
+                "stroke:#0f0",
+                "color:#00f"
+              ],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "class-def",
+      "source": "block-beta\nclassDef hot fill:#f00,color:#fff\na\nclass a hot",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [
+                "hot"
+              ],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [
+                    "hot"
+                  ],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [
+                "hot"
+              ],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": [
+            {
+              "id": "hot",
+              "styles": [
+                "fill:#f00",
+                "color:#fff"
+              ],
+              "textStyles": [
+                "fill:#fff"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "class-before-node",
+      "source": "block-beta\nclass a hot\nclassDef hot fill:#f00\na",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": null,
+              "directions": null,
+              "classes": [
+                "hot"
+              ],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": [
+            {
+              "id": "hot",
+              "styles": [
+                "fill:#f00"
+              ],
+              "textStyles": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "style-missing-node",
+      "source": "block-beta\nstyle missing fill:#f00",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "TypeError",
+          "message": "Cannot set properties of undefined (setting 'styles')",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "duplicate-node",
+      "source": "block-beta\na[\"First\"] a[\"Second\"]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "square",
+              "label": "Second",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "square",
+                  "label": "Second",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "square",
+              "label": "Second",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "invalid-bare-label",
+      "source": "block-beta\na[Bare label]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Lexical error on line 2. Unrecognized text.\nblock-betaa[Bare label]\n------------^",
+          "kind": "Lexer",
+          "line": 2,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "unterminated-label",
+      "source": "block-beta\na[\"Open]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 3:\nblock-betaa[\"Open]\n------------------^\nExpecting 'NODE_DEND', got 'STR'",
+          "kind": "Parser",
+          "line": 2,
+          "column": 4,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "semicolon",
+      "source": "block-beta\na;",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a;",
+              "type": "na",
+              "label": "a;",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": -1,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a;",
+                  "type": "na",
+                  "label": "a;",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a;",
+              "type": "na",
+              "label": "a;",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": -1,
+          "classes": []
+        }
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "block-beta\r\ncolumns 2\r\na b\r\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "blocks": [
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "flat": [
+            {
+              "id": "root",
+              "type": "composite",
+              "label": null,
+              "width": null,
+              "widthInColumns": null,
+              "columns": 2,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": [
+                {
+                  "id": "a",
+                  "type": "na",
+                  "label": "a",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                },
+                {
+                  "id": "b",
+                  "type": "na",
+                  "label": "b",
+                  "width": null,
+                  "widthInColumns": 1,
+                  "columns": null,
+                  "directions": null,
+                  "classes": [],
+                  "styles": [],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "a",
+              "type": "na",
+              "label": "a",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            },
+            {
+              "id": "b",
+              "type": "na",
+              "label": "b",
+              "width": null,
+              "widthInColumns": 1,
+              "columns": null,
+              "directions": null,
+              "classes": [],
+              "styles": [],
+              "children": []
+            }
+          ],
+          "edges": [],
+          "columns": 2,
+          "classes": []
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "3bffe027123c3dece50b75cccb07eaa695b17d5d08782a2d1f5636d70ea099d3"
+}

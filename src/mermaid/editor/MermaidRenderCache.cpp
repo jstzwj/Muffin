@@ -46,6 +46,7 @@
 #include "mermaid/cynefin/CynefinDiagram.h"
 #include "mermaid/wardley/WardleyDiagram.h"
 #include "mermaid/architecture/ArchitectureDiagram.h"
+#include "mermaid/block/BlockDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -549,6 +550,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("cynefin-beta"));
     diagnostic.expected.append(QStringLiteral("wardley-beta"));
     diagnostic.expected.append(QStringLiteral("architecture-beta"));
+    diagnostic.expected.append(QStringLiteral("block-beta"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -742,6 +744,27 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         break;
       case mindmap::MindmapErrorKind::Runtime:
         code = QStringLiteral("mindmap-runtime-error");
+        break;
+    }
+    const qsizetype offset = error.line > 0 && error.column > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       error.column)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"), std::move(code),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), error.token, {}));
+  } catch (const block::BlockParseError& error) {
+    QString code;
+    switch (error.kind) {
+      case block::BlockErrorKind::Lexer:
+        code = QStringLiteral("block-lexer-error");
+        break;
+      case block::BlockErrorKind::Parser:
+        code = QStringLiteral("block-parse-error");
+        break;
+      case block::BlockErrorKind::Runtime:
+        code = QStringLiteral("block-runtime-error");
         break;
     }
     const qsizetype offset = error.line > 0 && error.column > 0

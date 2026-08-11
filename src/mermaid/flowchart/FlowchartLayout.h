@@ -112,6 +112,15 @@ QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph,
 QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data,
                                             FlowTextOptions options = {});
 
+// Shared generic-node intersection used by diagram families that reuse
+// Mermaid's dagre-wrapper shapes without using Dagre for placement (Block).
+// `nodeRect` is centred at its scene position and `toward` is the next point
+// on the edge. The result follows the same ellipse/polygon/rect dispatch and
+// diamond bias correction as the flowchart renderer.
+QPointF intersectFlowShape(const FlowVertex& vertex, const QRectF& nodeRect,
+                           const QPointF& toward,
+                           FlowLook look = FlowLook::Classic);
+
 FlowLayoutResult layoutFlowchartNodes(const FlowchartData& data,
                                       const QMap<QString, QSizeF>& measuredNodes,
                                       FlowLayoutOptions options = {});
