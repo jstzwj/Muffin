@@ -40,6 +40,7 @@
 #include "mermaid/treeview/TreeViewDiagram.h"
 #include "mermaid/eventmodeling/EventModelingDiagram.h"
 #include "mermaid/ishikawa/IshikawaDiagram.h"
+#include "mermaid/venn/VennDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -537,6 +538,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("treeView-beta"));
     diagnostic.expected.append(QStringLiteral("eventmodeling"));
     diagnostic.expected.append(QStringLiteral("ishikawa-beta"));
+    diagnostic.expected.append(QStringLiteral("venn-beta"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -823,6 +825,27 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         error.kind == ishikawa::IshikawaErrorKind::Lexer
             ? QStringLiteral("ishikawa-lexer-error")
             : QStringLiteral("ishikawa-parse-error"),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), error.token, {}));
+  } catch (const venn::VennParseError& error) {
+    QString code;
+    switch (error.kind) {
+      case venn::VennErrorKind::Lexer:
+        code = QStringLiteral("venn-lexer-error");
+        break;
+      case venn::VennErrorKind::Parser:
+        code = QStringLiteral("venn-parse-error");
+        break;
+      case venn::VennErrorKind::Runtime:
+        code = QStringLiteral("venn-runtime-error");
+        break;
+    }
+    const qsizetype offset =
+        error.line > 0 && error.column > 0
+            ? offsetForLineColumn(pre.code, error.line, error.column)
+            : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"), std::move(code),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
         error.line, error.column, QString(), error.token, {}));
   } catch (const std::exception& error) {

@@ -7,7 +7,7 @@ The complete 38-ID expansion and acceptance contract is maintained in
 
 ## Current status (2026-08-11)
 
-Muffin renders twenty Mermaid families through a native C++20/Qt pipeline:
+Muffin renders twenty-one Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
@@ -27,16 +27,17 @@ Muffin renders twenty Mermaid families through a native C++20/Qt pipeline:
 - TreeView diagram (`treeView-beta`).
 - Event Modeling diagram (`eventmodeling`).
 - Ishikawa/fishbone diagram (`ishikawa`).
+- Venn diagram (`venn-beta`).
 - Gantt chart (`gantt`).
 - Info diagram (`info`).
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 243/243 tests, including the end-to-end
+currently 248/248 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All twenty native families now share `MermaidRenderMetadata` for the diagram
+All twenty-one native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
@@ -50,7 +51,9 @@ inline and frontmatter metadata remain invisible. Event Modeling has no common
 metadata grammar and ignores frontmatter titles and accessibility metadata.
 Ishikawa draws its root label inside the fish head and likewise suppresses
 frontmatter/common accessibility metadata rather than adding a second title
-band. The common title painter is used by the editor, print/PDF block path, PNG
+band. Venn owns its inline title inside the family scene and, like upstream,
+does not project common accessibility metadata. The common title painter is
+used by the editor, print/PDF block path, PNG
 export, and SVG export; title growth is included in scaling,
 dirty-viewport culling, and flowchart link hit testing. HTML export now embeds
 the native SVG fragment instead of a raster `<img>`. Its root carries
@@ -144,7 +147,7 @@ assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 
 The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
 and whole-diagram painter are now native and covered by structural and pixel
-oracles. All twenty native scenes are integrated into the editor and print/PDF path
+oracles. All twenty-one native scenes are integrated into the editor and print/PDF path
 through `MermaidRenderCache`. The legacy flat
 `WorkGraph` implementation remains as inactive reference code; the active path
 always delegates to the compound Dagre pipeline.
@@ -403,12 +406,12 @@ available.
 `JourneyDiagramConfig`, `RadarDiagramConfig`, `XYChartConfig`, and
 `TimelineDiagramConfig`, `PacketDiagramConfig`, `KanbanDiagramConfig`, and
 `MindmapDiagramConfig`, `TreeViewDiagramConfig`, `EventModelingDiagramConfig`,
-`IshikawaDiagramConfig`, and `GanttDiagramConfig`
+`IshikawaDiagramConfig`, `VennDiagramConfig`, and `GanttDiagramConfig`
 declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 279
-rows: 263 family-interface fields and 16 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 285
+rows: 269 family-interface fields and 16 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -426,9 +429,9 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 159 | Audited upstream and native stages agree |
+| `parity` | 164 | Audited upstream and native stages agree |
 | `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 77 | Mermaid retains the option but 11.16.0 does not consume it |
+| `upstream-inert` | 78 | Mermaid retains the option but 11.16.0 does not consume it |
 | `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
 | `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
@@ -458,7 +461,7 @@ variant through config, per-edge metadata, scene paint, interaction geometry,
 and PNG export. The interaction/animation milestone is also complete: safe
 Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
 Sequence participant menus, and `sequence.forceMenus` all reach their runtime
-consumers. Native SVG export is now complete at the product boundary: all twenty
+consumers. Native SVG export is now complete at the product boundary: all twenty-one
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
 `deterministicIds`, `deterministicIDSeed`, and the effective family
@@ -522,7 +525,7 @@ The remaining boundaries are explicit rather than hidden parity claims:
 ### Family expansion status
 
 Pie, quadrant, journey, radar, XYChart, Timeline, Packet, Kanban, Mindmap,
-TreeView, Event Modeling, Ishikawa, Gantt, and Info are now native. Each was implemented probe-first
+TreeView, Event Modeling, Ishikawa, Venn, Gantt, and Info are now native. Each was implemented probe-first
 against Mermaid 11.16.0 and ships with grammar/database coverage, immutable
 geometry fixtures, native painter tests, deterministic PNG/SVG integration, and
 configuration-matrix rows. Journey additionally freezes JavaScript scalar
@@ -550,6 +553,10 @@ relation formulas, literal Trebuchet SVG measurement, namespace and reset quirks
 Ishikawa freezes its Jison indentation tree, alternating fishbone placement,
 RoughJS-compatible hand-drawn paths, Chromium text geometry, invisible
 frontmatter metadata, and padding/fixed-width export behavior.
+Venn freezes its Jison database, JavaScript scalar coercion, the exact
+`@upsetjs/venn.js` 2.0.0 greedy/Nelder-Mead layout, intersection arcs, text-node
+grid, classic/rough paint, theme cascade, zero-dimension viewport behavior, and
+fixed/max-width export behavior.
 Gantt freezes its Jison database and date arithmetic, task dependency and
 exclude/include semantics, D3-style time ticks, section/task/milestone/vertical
 marker geometry, 11-theme paint model, safe task links, accessibility metadata,
@@ -558,8 +565,8 @@ Info freezes its Langium grammar and diagnostic locations, fixed version label,
 400x150 replaced-element viewport, theme/font behavior, renderer-inert
 `showInfo`, discarded metadata AST, and intentionally absent SVG viewBox.
 
-The next family must start with a fresh Gate-0 survey. Formula-driven families
-remain preferable before additional force-layout families: architecture uses Cytoscape `fcose`,
+The next family is Sankey and must start with a fresh Gate-0 survey. Domain-layout
+families remain preferable before additional force-layout families: architecture uses Cytoscape `fcose`,
 and block diagrams use the custom recursive
 `layoutBlocks` pipeline. No family is treated as supported until its upstream
 oracle, native scene, pixel evidence, error paths, and export integration pass.

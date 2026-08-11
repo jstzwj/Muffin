@@ -986,6 +986,8 @@ int main(int argc, char** argv) {
         {QStringLiteral("eventmodeling\ntf 1000 evt A"),
          QStringLiteral("eventmodeling"),
          QStringLiteral("eventmodeling-parse-error"), 2},
+        {QStringLiteral("venn-beta\nset A: 1e3"),
+         QStringLiteral("venn"), QStringLiteral("venn-parse-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -1036,6 +1038,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("eventmodeling")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("ishikawa-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("venn-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1646,6 +1650,9 @@ int main(int argc, char** argv) {
                         "tf 3 evt Submitted ->> 2")},
         {QStringLiteral("ishikawa"),
          QStringLiteral("ishikawa\nEffect\n  Cause A\n  Cause B")},
+        {QStringLiteral("venn"),
+         QStringLiteral("venn-beta\nset A: 10\nset B: 8\n"
+                        "union A,B: 3")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

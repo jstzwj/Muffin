@@ -198,6 +198,13 @@ struct FlowThemeVariables {
   QString pieSectionTextSize = QStringLiteral("17px");
   QString pieLegendTextSize = QStringLiteral("17px");
 
+  // Venn's eight-set palette is defined only by Base, Dark, Default, Forest,
+  // and Neutral in Mermaid 11.16. The Neo/Redux family intentionally leaves
+  // these slots unset; the renderer preserves the resulting CSS fallback.
+  QString venn[8];
+  QString vennTitleTextColor;
+  QString vennSetTextColor;
+
   // Quadrant family themeVariables (quadrantChart). Derived per-theme in
   // updateColors via MermaidColor::adjust from primaryColor (RGB steps).
   QString quadrant[4];  // quadrant1..4Fill

@@ -11,6 +11,7 @@
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
 #include "mermaid/treeview/TreeViewScene.h"
+#include "mermaid/venn/VennScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 
 #include <QByteArray>
@@ -156,8 +157,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 279,
-          QStringLiteral("Expected 279 classified config rows, found %1")
+  require(entries.size() == 285,
+          QStringLiteral("Expected 285 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -227,6 +228,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("state"), 22},
                                              {QStringLiteral("timeline"), 24},
                                              {QStringLiteral("treeView"), 10},
+                                             {QStringLiteral("venn"), 6},
                                              {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
@@ -289,6 +291,25 @@ int main(int argc, char** argv) {
               ishikawaScene->style.look == QLatin1String("handDrawn") &&
               pngImage(ishikawaSource).size() == ishikawaEntry.naturalSize,
           QStringLiteral("Ishikawa live config did not reach scene/PNG export"));
+  const QString vennSource = QStringLiteral(
+      "%%{init: {\"venn\": {\"width\": 620, \"height\": 360, "
+      "\"padding\": 20, \"useDebugLayout\": true, "
+      "\"useMaxWidth\": false}, \"look\": \"handDrawn\", "
+      "\"handDrawnSeed\": 17}}%%\n"
+      "venn-beta\nset A: 10\nset B: 8\nunion A,B: 2\n"
+      "text A note[\"Inside\"]");
+  const MermaidRenderEntry vennEntry = render(vennSource);
+  const auto* vennScene =
+      dynamic_cast<const muffin::mermaid::venn::VennScene*>(
+          vennEntry.scene.get());
+  require(vennEntry.status == MermaidRenderStatus::Ready && vennScene &&
+              vennScene->bounds.size() == QSizeF(620.0, 360.0) &&
+              !vennScene->useMaxWidth && !vennEntry.metadata.svgUseMaxWidth &&
+              vennScene->useDebugLayout && !vennScene->debugCircles.isEmpty() &&
+              std::any_of(vennScene->areas.cbegin(), vennScene->areas.cend(),
+                          [](const auto& area) { return area.rough; }) &&
+              pngImage(vennSource).size() == vennEntry.naturalSize,
+          QStringLiteral("Venn live config did not reach scene/PNG export"));
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -398,6 +419,15 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("ishikawa.diagramPadding"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity") &&
+              byPath.value(QStringLiteral("venn.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("venn.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("venn.useDebugLayout"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -425,7 +455,8 @@ int main(int argc, char** argv) {
            QStringLiteral("mindmap.useMaxWidth"),
            QStringLiteral("treeView.useMaxWidth"),
            QStringLiteral("eventmodeling.useMaxWidth"),
-           QStringLiteral("ishikawa.useMaxWidth")}) {
+           QStringLiteral("ishikawa.useMaxWidth"),
+           QStringLiteral("venn.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())

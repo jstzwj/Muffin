@@ -255,6 +255,10 @@ QStringList fieldsForTheme(FlowThemeId id) {
   f.append(QStringLiteral("cScale12"));
   f.append(journeyFields());
   f.append(ganttFields());
+  for (int i = 1; i <= 8; ++i)
+    f.append(QStringLiteral("venn%1").arg(i));
+  f.append(QStringLiteral("vennTitleTextColor"));
+  f.append(QStringLiteral("vennSetTextColor"));
   if (pieQuadrantImplemented(id)) {
     f.append(pieQuadrantFields());
     f.append(pieQuadrantScalarFields());

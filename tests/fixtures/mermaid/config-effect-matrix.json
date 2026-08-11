@@ -33,18 +33,19 @@
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
       "gantt",
       "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 159,
+    "parity": 164,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 77,
+    "upstream-inert": 78,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -71,7 +72,8 @@
         "info",
         "treeView",
         "eventmodeling",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "parity",
       "upstream": [
@@ -113,7 +115,8 @@
         "info",
         "treeView",
         "eventmodeling",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "partial",
       "upstream": [
@@ -156,7 +159,8 @@
         "info",
         "treeView",
         "eventmodeling",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "parity",
       "upstream": [
@@ -213,7 +217,8 @@
         "timeline",
         "kanban",
         "mindmap",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "partial",
       "upstream": [
@@ -240,7 +245,8 @@
         "flowchart",
         "kanban",
         "mindmap",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "parity",
       "upstream": [
@@ -370,7 +376,8 @@
         "info",
         "treeView",
         "eventmodeling",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "unsupported",
       "upstream": [
@@ -403,7 +410,8 @@
         "info",
         "treeView",
         "eventmodeling",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -458,7 +466,8 @@
         "info",
         "treeView",
         "eventmodeling",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "parity",
       "upstream": [
@@ -492,7 +501,8 @@
         "info",
         "treeView",
         "eventmodeling",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "parity",
       "upstream": [
@@ -526,7 +536,8 @@
         "info",
         "treeView",
         "eventmodeling",
-        "ishikawa"
+        "ishikawa",
+        "venn"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5512,6 +5523,126 @@
       "default": 20
     },
     {
+      "family": "venn",
+      "interface": "VennDiagramConfig",
+      "path": "venn.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "venn",
+      "interface": "VennDiagramConfig",
+      "path": "venn.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "venn",
+      "interface": "VennDiagramConfig",
+      "path": "venn.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 800
+    },
+    {
+      "family": "venn",
+      "interface": "VennDiagramConfig",
+      "path": "venn.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 450
+    },
+    {
+      "family": "venn",
+      "interface": "VennDiagramConfig",
+      "path": "venn.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 8
+    },
+    {
+      "family": "venn",
+      "interface": "VennDiagramConfig",
+      "path": "venn.useDebugLayout",
+      "field": "useDebugLayout",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": false
+    },
+    {
       "family": "gantt",
       "interface": "GanttDiagramConfig",
       "path": "gantt.useWidth",
@@ -5893,5 +6024,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "e9c37fde4799c483a3abe2ee633d0fe8fd1ed21a826030b51835249ad98bd956"
+  "fixtureSha256": "e686cdc3d6bc8118032e3cd6e14e229cc6c6ed0c004a78ad761605347146883f"
 }

@@ -520,6 +520,14 @@ const familyPolicies = {
     useMaxWidth: parity("viewport", "export"),
     diagramPadding: parity("viewport", "export"),
   },
+  venn: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    width: parity("layout", "paint", "viewport", "export"),
+    height: parity("layout", "paint", "viewport", "export"),
+    padding: parity("layout", "paint", "export"),
+    useDebugLayout: parity("paint", "export"),
+  },
   gantt: {
     useWidth: parity("layout", "paint", "viewport", "export"),
     useMaxWidth: parity("viewport", "export"),
@@ -609,6 +617,7 @@ const shared = [
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -635,6 +644,7 @@ const shared = [
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -665,6 +675,7 @@ const shared = [
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -679,7 +690,7 @@ const shared = [
   },
   {
     path: "look",
-    families: ["flowchart", "class", "state", "timeline", "kanban", "mindmap", "ishikawa"],
+    families: ["flowchart", "class", "state", "timeline", "kanban", "mindmap", "ishikawa", "venn"],
     ...partial(
       interactiveLayout,
       interactiveLayout,
@@ -688,7 +699,7 @@ const shared = [
   },
   {
     path: "handDrawnSeed",
-    families: ["flowchart", "kanban", "mindmap", "ishikawa"],
+    families: ["flowchart", "kanban", "mindmap", "ishikawa", "venn"],
     ...parity("layout", "paint", "interaction", "export"),
   },
   {
@@ -733,6 +744,7 @@ const shared = [
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
     ],
     ...unsupported(
       ["parsed"],
@@ -762,6 +774,7 @@ const shared = [
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
     ],
     ...policy(
       "security-fixed",
@@ -798,6 +811,7 @@ const shared = [
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
     ],
     ...parity("export"),
   },
@@ -824,6 +838,7 @@ const shared = [
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
     ],
     ...parity("export"),
   },
@@ -850,6 +865,7 @@ const shared = [
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -907,6 +923,7 @@ const interfaces = {
   treeView: "TreeViewDiagramConfig",
   eventmodeling: "EventModelingDiagramConfig",
   ishikawa: "IshikawaDiagramConfig",
+  venn: "VennDiagramConfig",
   gantt: "GanttDiagramConfig",
 };
 

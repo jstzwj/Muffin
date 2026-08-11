@@ -139,6 +139,9 @@ int main(int argc, char** argv) {
                       "tf 3 evt Submitted ->> 2")},
       {QStringLiteral("ishikawa"), QStringLiteral("ishikawa"),
        QStringLiteral("ishikawa\nEffect\n  Cause A\n  Cause B")},
+      {QStringLiteral("venn"), QStringLiteral("venn"),
+       QStringLiteral("venn-beta\ntitle Sets\nset A: 10\nset B: 8\n"
+                      "union A,B: 3")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -249,6 +252,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"ishikawa\": {\"useMaxWidth\": false}}}%%\n"
           "ishikawa\nEffect\n  Cause A"),
+      QStringLiteral(
+          "%%{init: {\"venn\": {\"useMaxWidth\": false}}}%%\n"
+          "venn-beta\nset A: 10\nset B: 8\nunion A,B: 3"),
       QStringLiteral(
           "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
           "\"useWidth\": 640}}}%%\n"
@@ -428,6 +434,15 @@ int main(int argc, char** argv) {
               !ishikawaNoTitle.contains("aria-labelledby=") &&
               !ishikawaNoTitle.contains("aria-describedby="),
           QStringLiteral("Ishikawa frontmatter title must remain invisible"));
+
+  const QByteArray vennNoAria = renderSvg(QStringLiteral(
+      "---\ntitle: Venn frontmatter\n---\n"
+      "venn-beta\ntitle Visible Venn title\nset A: 10\nset B: 8\n"
+      "union A,B: 3")).svg;
+  require(!vennNoAria.contains("Venn frontmatter") &&
+              !vennNoAria.contains("aria-labelledby=") &&
+              !vennNoAria.contains("aria-describedby="),
+          QStringLiteral("Venn must own its title without common ARIA"));
 
   const QByteArray mindmapSafeLink = renderSvg(QStringLiteral(
       "mindmap\n  root((Root))\n"

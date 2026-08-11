@@ -1,0 +1,1392 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "vennModuleSha256": "382a5b11e80ff80f1481f88c113cc036879d160f7fcd1a029d0f4a08b7548eb7",
+    "vennEngine": "@upsetjs/venn.js@2.0.0",
+    "vennEngineSha256": "47e73982c0cf8a4e692c57a06656fc928aeced63267d9a1e6f48122c4127da30",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "header-only",
+      "source": "venn-beta",
+      "accept": true,
+      "db": {
+        "subsets": [],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": false,
+        "message": "Cannot read properties of undefined (reading 'set')"
+      }
+    },
+    {
+      "id": "header-newline",
+      "source": "venn-beta\n",
+      "accept": true,
+      "db": {
+        "subsets": [],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": false,
+        "message": "Cannot read properties of undefined (reading 'set')"
+      }
+    },
+    {
+      "id": "canonical",
+      "source": "venn-beta\ntitle Product fit\nset Users[\"Users\"]: 12\nset Needs[\"Needs\"]: 10\nset Product[\"Product\"]: 9\nunion Users,Needs[\"Demand\"]: 4\nunion Needs,Product[\"Solution\"]: 3\nunion Users,Product: 2\nunion Users,Needs,Product[\"Fit\"]: 1\ntext Users u1[\"Research\"]\ntext Users u2[\"Feedback\"]\ntext Users,Needs shared[\"Pain points\"]\nstyle Users fill:#4e79a7,stroke:#25476b,stroke-width:4,color:#ffffff,fill-opacity:0.18\nstyle Users,Needs fill:rgba(255,0,0,0.22),color:#222222",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "Users"
+            ],
+            "size": 12,
+            "label": "Users"
+          },
+          {
+            "sets": [
+              "Needs"
+            ],
+            "size": 10,
+            "label": "Needs"
+          },
+          {
+            "sets": [
+              "Product"
+            ],
+            "size": 9,
+            "label": "Product"
+          },
+          {
+            "sets": [
+              "Needs",
+              "Users"
+            ],
+            "size": 4,
+            "label": "Demand"
+          },
+          {
+            "sets": [
+              "Needs",
+              "Product"
+            ],
+            "size": 3,
+            "label": "Solution"
+          },
+          {
+            "sets": [
+              "Product",
+              "Users"
+            ],
+            "size": 2
+          },
+          {
+            "sets": [
+              "Needs",
+              "Product",
+              "Users"
+            ],
+            "size": 1,
+            "label": "Fit"
+          }
+        ],
+        "textNodes": [
+          {
+            "sets": [
+              "Users"
+            ],
+            "id": "u1",
+            "label": "Research"
+          },
+          {
+            "sets": [
+              "Users"
+            ],
+            "id": "u2",
+            "label": "Feedback"
+          },
+          {
+            "sets": [
+              "Needs",
+              "Users"
+            ],
+            "id": "shared",
+            "label": "Pain points"
+          }
+        ],
+        "styles": [
+          {
+            "targets": [
+              "Users"
+            ],
+            "styles": {
+              "fill": "#4e79a7",
+              "stroke": "#25476b",
+              "stroke-width": "4",
+              "color": "#ffffff",
+              "fill-opacity": "0.18"
+            }
+          },
+          {
+            "targets": [
+              "Needs",
+              "Users"
+            ],
+            "styles": {
+              "fill": "rgba(255,0,0,0.22)",
+              "color": "#222222"
+            }
+          }
+        ],
+        "title": "Product fit",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 7,
+        "textNodes": 3
+      }
+    },
+    {
+      "id": "uppercase-header",
+      "source": "VENN-BETA\nset A",
+      "accept": false,
+      "reject": {
+        "kind": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: VENN-BETA set A",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "mixed-header",
+      "source": "Venn-Beta\nset A",
+      "accept": false,
+      "reject": {
+        "kind": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: Venn-Beta set A",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "venn-betaX\nset A",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 1: venn-betaXset A ^ Expecting 'VENN', 'NEWLINE', got 'IDENTIFIER'",
+        "line": 1,
+        "column": 1,
+        "token": "IDENTIFIER"
+      }
+    },
+    {
+      "id": "non-beta",
+      "source": "venn\nset A",
+      "accept": false,
+      "reject": {
+        "kind": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: venn set A",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "venn-beta set A",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "set-minimal",
+      "source": "venn-beta\nset A",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "set-quoted-id",
+      "source": "venn-beta\nset \"A one\"",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A one"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "set-label",
+      "source": "venn-beta\nset A[Alpha]",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10,
+            "label": "Alpha"
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "set-quoted-label",
+      "source": "venn-beta\nset A[\"Alpha one\"]",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10,
+            "label": "Alpha one"
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "set-empty-label",
+      "source": "venn-beta\nset A[\"\"]",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "set-size",
+      "source": "venn-beta\nset A: 12",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 12
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "set-label-size",
+      "source": "venn-beta\nset A[Alpha]: 12.5",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 12.5,
+            "label": "Alpha"
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "signed-sizes",
+      "source": "venn-beta\nset A: -2\nset B: +.5",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": -2
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 0.5
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 2,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "size-exponent",
+      "source": "venn-beta\nset A: 1e3",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 2: venn-betaset A: 1e3 -----------------^ Expecting 'EOF', 'NEWLINE', 'TITLE', 'SET', 'UNION', 'TEXT', 'INDENT_TEXT', 'STYLE', got 'IDENTIFIER'",
+        "line": 2,
+        "column": 8,
+        "token": "IDENTIFIER"
+      }
+    },
+    {
+      "id": "size-trailing-dot",
+      "source": "venn-beta\nset A: 1.",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Lexical error on line 2. Unrecognized text. venn-betaset A: 1. -----------------^",
+        "line": 2,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "union-minimal",
+      "source": "venn-beta\nset A\nset B\nunion A,B",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "A",
+              "B"
+            ],
+            "size": 2.5
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 3,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "union-label-size",
+      "source": "venn-beta\nset A\nset B\nunion B,A[Both]: 2",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "A",
+              "B"
+            ],
+            "size": 2,
+            "label": "Both"
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 3,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "union-three",
+      "source": "venn-beta\nset A\nset B\nset C\nunion A,B,C[All]: 1",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "C"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "A",
+              "B",
+              "C"
+            ],
+            "size": 1,
+            "label": "All"
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 7,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "union-one",
+      "source": "venn-beta\nset A\nunion A",
+      "accept": false,
+      "reject": {
+        "kind": "runtime",
+        "message": "union requires multiple identifiers",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "union-unknown",
+      "source": "venn-beta\nset A\nunion A,B",
+      "accept": false,
+      "reject": {
+        "kind": "runtime",
+        "message": "unknown set identifier: B",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "union-before-set",
+      "source": "venn-beta\nunion A,B\nset A\nset B",
+      "accept": false,
+      "reject": {
+        "kind": "runtime",
+        "message": "unknown set identifier: A, B",
+        "line": 0,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "union-spaces",
+      "source": "venn-beta\nset A\nset B\nunion A , B",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "A",
+              "B"
+            ],
+            "size": 2.5
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 3,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "text-simple",
+      "source": "venn-beta\nset A\ntext A note",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [
+          {
+            "sets": [
+              "A"
+            ],
+            "id": "note"
+          }
+        ],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 1
+      }
+    },
+    {
+      "id": "text-label",
+      "source": "venn-beta\nset A\ntext A note[Label]",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [
+          {
+            "sets": [
+              "A"
+            ],
+            "id": "note",
+            "label": "Label"
+          }
+        ],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 1
+      }
+    },
+    {
+      "id": "text-union",
+      "source": "venn-beta\nset A\nset B\ntext A,B note[Shared]",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [
+          {
+            "sets": [
+              "A",
+              "B"
+            ],
+            "id": "note",
+            "label": "Shared"
+          }
+        ],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 2,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "text-quoted",
+      "source": "venn-beta\nset \"A one\"\ntext \"A one\" \"node one\"[\"Node label\"]",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A one"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [
+          {
+            "sets": [
+              "A one"
+            ],
+            "id": "node one",
+            "label": "Node label"
+          }
+        ],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 1
+      }
+    },
+    {
+      "id": "indented-text",
+      "source": "venn-beta\nset A\n  text note[Label]",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [
+          {
+            "sets": [
+              "A"
+            ],
+            "id": "note",
+            "label": "Label"
+          }
+        ],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 1
+      }
+    },
+    {
+      "id": "indented-bare",
+      "source": "venn-beta\nset A\n  note[Label]",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 3: venn-betaset A note[Label] ----------------^ Expecting 'EOF', 'NEWLINE', 'TITLE', 'SET', 'UNION', 'TEXT', 'INDENT_TEXT', 'STYLE', got 'IDENTIFIER'",
+        "line": 3,
+        "column": 6,
+        "token": "IDENTIFIER"
+      }
+    },
+    {
+      "id": "indented-two",
+      "source": "venn-beta\nset A\n  first[One]\n  second[Two]",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 3: venn-betaset A first[One] second[ ----------------^ Expecting 'EOF', 'NEWLINE', 'TITLE', 'SET', 'UNION', 'TEXT', 'INDENT_TEXT', 'STYLE', got 'IDENTIFIER'",
+        "line": 3,
+        "column": 6,
+        "token": "IDENTIFIER"
+      }
+    },
+    {
+      "id": "text-before-set",
+      "source": "venn-beta\n  note[Label]",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 2: venn-beta note[Label] -----------^ Expecting 'EOF', 'NEWLINE', 'TITLE', 'SET', 'UNION', 'TEXT', 'INDENT_TEXT', 'STYLE', got 'IDENTIFIER'",
+        "line": 2,
+        "column": 10,
+        "token": "IDENTIFIER"
+      }
+    },
+    {
+      "id": "style-fill",
+      "source": "venn-beta\nset A\nstyle A fill:#ff0000",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [
+          {
+            "targets": [
+              "A"
+            ],
+            "styles": {
+              "fill": "#ff0000"
+            }
+          }
+        ],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "style-many",
+      "source": "venn-beta\nset A\nstyle A fill:rgb(1, 2, 3),stroke-width: 4 px,color:\"red\"",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [
+          {
+            "targets": [
+              "A"
+            ],
+            "styles": {
+              "fill": "rgb(1, 2, 3)",
+              "stroke-width": "4 px",
+              "color": "red"
+            }
+          }
+        ],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "style-union",
+      "source": "venn-beta\nset A\nset B\nstyle B,A fill:rgba(1,2,3,.4)",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [
+          {
+            "targets": [
+              "A",
+              "B"
+            ],
+            "styles": {
+              "fill": "rgba(1,2,3,.4)"
+            }
+          }
+        ],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 2,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "style-repeat",
+      "source": "venn-beta\nset A\nstyle A fill:red\nstyle A stroke:blue",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [
+          {
+            "targets": [
+              "A"
+            ],
+            "styles": {
+              "fill": "red"
+            }
+          },
+          {
+            "targets": [
+              "A"
+            ],
+            "styles": {
+              "stroke": "blue"
+            }
+          }
+        ],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "style-no-set",
+      "source": "venn-beta\nstyle A fill:red",
+      "accept": true,
+      "db": {
+        "subsets": [],
+        "textNodes": [],
+        "styles": [
+          {
+            "targets": [
+              "A"
+            ],
+            "styles": {
+              "fill": "red"
+            }
+          }
+        ],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": false,
+        "message": "Cannot read properties of undefined (reading 'set')"
+      }
+    },
+    {
+      "id": "inline-title",
+      "source": "venn-beta\ntitle  Heading with spaces  \nset A",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": " Heading with spaces  ",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "repeated-title",
+      "source": "venn-beta\ntitle One\ntitle Two\nset A",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "Two",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "acc-looking",
+      "source": "venn-beta\naccTitle: A\naccDescr: D\nset A",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 2: venn-betaaccTitle: AaccDescr ---------^ Expecting 'EOF', 'NEWLINE', 'TITLE', 'SET', 'UNION', 'TEXT', 'INDENT_TEXT', 'STYLE', got 'IDENTIFIER'",
+        "line": 2,
+        "column": 10,
+        "token": "IDENTIFIER"
+      }
+    },
+    {
+      "id": "comments",
+      "source": "%% pre\nvenn-beta\n%% comment\nset A %% tail\nset B",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 2,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "semicolons",
+      "source": "venn-beta; set A; set B",
+      "accept": false,
+      "reject": {
+        "kind": "lexer",
+        "message": "Lexical error on line 1. Unrecognized text. venn-beta; set A; set B ---------^",
+        "line": 1,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "blank-lines",
+      "source": "\nvenn-beta\n\nset A\n\nset B\n",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 2,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "duplicate-set",
+      "source": "venn-beta\nset A:10\nset A:20",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 20
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 2,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "duplicate-union",
+      "source": "venn-beta\nset A\nset B\nunion A,B:2\nunion A,B:3",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "A",
+              "B"
+            ],
+            "size": 2
+          },
+          {
+            "sets": [
+              "A",
+              "B"
+            ],
+            "size": 3
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 4,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "sanitizer",
+      "source": "venn-beta\nset A[\"<script>x</script><b>A</b>\"]\ntext A n[\"<img src=x onerror=bad>N\"]",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10,
+            "label": "<script>x</script><b>A</b>"
+          }
+        ],
+        "textNodes": [
+          {
+            "sets": [
+              "A"
+            ],
+            "id": "n",
+            "label": "<img src=x onerror=bad>N"
+          }
+        ],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 1
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\n---\nvenn-beta\nset A",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "Front",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"theme\":\"dark\"}}%%\nvenn-beta\nset A",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 1,
+        "textNodes": 0
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "venn-beta\r\nset A\r\nset B\r\nunion A,B",
+      "accept": true,
+      "db": {
+        "subsets": [
+          {
+            "sets": [
+              "A"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "B"
+            ],
+            "size": 10
+          },
+          {
+            "sets": [
+              "A",
+              "B"
+            ],
+            "size": 2.5
+          }
+        ],
+        "textNodes": [],
+        "styles": [],
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "accept": true,
+        "areas": 3,
+        "textNodes": 0
+      }
+    }
+  ],
+  "fixtureSha256": "92ba76150149396c2bc0a5d16629e083543a9f2d59fcb05bda214886ce48d088"
+}

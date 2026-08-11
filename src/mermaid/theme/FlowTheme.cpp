@@ -365,6 +365,7 @@ void populateJourneyFillTypes(FlowThemeVariables& t, const QString& primary,
                               const QString& secondary, bool unconditional);
 void populateXYChart(FlowThemeId id, FlowThemeVariables& t);
 void populateGantt(FlowThemeId id, FlowThemeVariables& t);
+void populateVenn(FlowThemeId id, FlowThemeVariables& t);
 
 // Mindmap classic root colors are borrowed from the first git palette slot.
 // Keep the per-theme update semantics here: Default calls this twice, so its
@@ -413,6 +414,32 @@ void populateMindmapRoot(FlowThemeId id, FlowThemeVariables& t) {
       assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
       break;
   }
+}
+
+void populateVenn(FlowThemeId id, FlowThemeVariables& t) {
+  if (id == FlowThemeId::Dark) {
+    for (int i = 0; i < 8; ++i)
+      assignIfEmpty(t.venn[i], lighten(t.cScale[i], 30));
+  } else if (id == FlowThemeId::Neutral) {
+    for (int i = 0; i < 8; ++i)
+      assignIfEmpty(t.venn[i], t.cScale[i]);
+  } else if (id == FlowThemeId::Base || id == FlowThemeId::Default ||
+             id == FlowThemeId::Forest) {
+    const qreal tertiaryLightness = id == FlowThemeId::Default ? -40.0 : -30.0;
+    const QString values[8] = {
+        adjust(t.primaryColor, {.l = -30.0}),
+        adjust(t.secondaryColor, {.l = -30.0}),
+        adjust(t.tertiaryColor, {.l = tertiaryLightness}),
+        adjust(t.primaryColor, {.h = 60.0, .l = -30.0}),
+        adjust(t.primaryColor, {.h = -60.0, .l = -30.0}),
+        adjust(t.secondaryColor, {.h = 60.0, .l = -30.0}),
+        adjust(t.primaryColor, {.h = 120.0, .l = -30.0}),
+        adjust(t.secondaryColor, {.h = 120.0, .l = -30.0}),
+    };
+    for (int i = 0; i < 8; ++i) assignIfEmpty(t.venn[i], values[i]);
+  }
+  assignIfEmpty(t.vennTitleTextColor, t.titleColor);
+  assignIfEmpty(t.vennSetTextColor, t.textColor);
 }
 
 // Family A (base/neo/neo-dark/redux/redux-dark/redux-color/redux-dark-color):
@@ -1086,6 +1113,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   populateEventModeling(id, t);
   populateGantt(id, t);
   populateXYChart(id, t);
+  populateVenn(id, t);
 }
 
 // Whether the theme's constructor calls this.updateColors() (chunk line 1641).
@@ -1215,6 +1243,8 @@ QString FlowThemeVariables::get(const QString& key) const {
     if (key == QStringLiteral("fillType%1").arg(i)) return fillType[i];
   for (int i = 0; i < 12; ++i)
     if (key == QStringLiteral("pie%1").arg(i + 1)) return pie[i];
+  for (int i = 0; i < 8; ++i)
+    if (key == QStringLiteral("venn%1").arg(i + 1)) return venn[i];
   for (int i = 0; i < 4; ++i) {
     if (key == QStringLiteral("quadrant%1Fill").arg(i + 1)) return quadrant[i];
     if (key == QStringLiteral("quadrant%1TextFill").arg(i + 1)) return quadrantText[i];
@@ -1251,6 +1281,8 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("pieTitleTextSize")) return pieTitleTextSize;
   if (key == QStringLiteral("pieSectionTextSize")) return pieSectionTextSize;
   if (key == QStringLiteral("pieLegendTextSize")) return pieLegendTextSize;
+  if (key == QStringLiteral("vennTitleTextColor")) return vennTitleTextColor;
+  if (key == QStringLiteral("vennSetTextColor")) return vennSetTextColor;
   if (key == QStringLiteral("quadrantPointFill")) return quadrantPointFill;
   if (key == QStringLiteral("quadrantPointTextFill")) return quadrantPointTextFill;
   if (key == QStringLiteral("quadrantXAxisTextFill")) return quadrantXAxisTextFill;
@@ -1344,6 +1376,8 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
     if (key == QStringLiteral("fillType%1").arg(i)) { fillType[i] = value; return; }
   for (int i = 0; i < 12; ++i)
     if (key == QStringLiteral("pie%1").arg(i + 1)) { pie[i] = value; return; }
+  for (int i = 0; i < 8; ++i)
+    if (key == QStringLiteral("venn%1").arg(i + 1)) { venn[i] = value; return; }
   for (int i = 0; i < 4; ++i) {
     if (key == QStringLiteral("quadrant%1Fill").arg(i + 1)) { quadrant[i] = value; return; }
     if (key == QStringLiteral("quadrant%1TextFill").arg(i + 1)) { quadrantText[i] = value; return; }
@@ -1380,6 +1414,8 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("pieTitleTextSize")) pieTitleTextSize = value;
   else if (key == QStringLiteral("pieSectionTextSize")) pieSectionTextSize = value;
   else if (key == QStringLiteral("pieLegendTextSize")) pieLegendTextSize = value;
+  else if (key == QStringLiteral("vennTitleTextColor")) vennTitleTextColor = value;
+  else if (key == QStringLiteral("vennSetTextColor")) vennSetTextColor = value;
   else if (key == QStringLiteral("quadrantPointFill")) quadrantPointFill = value;
   else if (key == QStringLiteral("quadrantPointTextFill")) quadrantPointTextFill = value;
   else if (key == QStringLiteral("quadrantXAxisTextFill")) quadrantXAxisTextFill = value;

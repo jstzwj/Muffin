@@ -1,0 +1,41 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "vennModuleSha256": "382a5b11e80ff80f1481f88c113cc036879d160f7fcd1a029d0f4a08b7548eb7",
+    "vennEngine": "@upsetjs/venn.js@2.0.0",
+    "vennEngineSha256": "47e73982c0cf8a4e692c57a06656fc928aeced63267d9a1e6f48122c4127da30",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\nvenn-beta\ntitle Product fit\nset Users[\"Users\"]: 12\nset Needs[\"Needs\"]: 10\nset Product[\"Product\"]: 9\nunion Users,Needs[\"Demand\"]: 4\nunion Needs,Product[\"Solution\"]: 3\nunion Users,Product: 2\nunion Users,Needs,Product[\"Fit\"]: 1\ntext Users u1[\"Research\"]\ntext Users u2[\"Feedback\"]\ntext Users,Needs shared[\"Pain points\"]\nstyle Users fill:#4e79a7,stroke:#25476b,stroke-width:4,color:#ffffff,fill-opacity:0.18\nstyle Users,Needs fill:rgba(255,0,0,0.22),color:#222222",
+      "file": "default.png",
+      "sha256": "8481bcd9165956b20df57eecce6d78880398d5736a709c966f8446c8f1c8b2c0"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"theme\":\"dark\"}}%%\nvenn-beta\ntitle Product fit\nset Users[\"Users\"]: 12\nset Needs[\"Needs\"]: 10\nset Product[\"Product\"]: 9\nunion Users,Needs[\"Demand\"]: 4\nunion Needs,Product[\"Solution\"]: 3\nunion Users,Product: 2\nunion Users,Needs,Product[\"Fit\"]: 1\ntext Users u1[\"Research\"]\ntext Users u2[\"Feedback\"]\ntext Users,Needs shared[\"Pain points\"]\nstyle Users fill:#4e79a7,stroke:#25476b,stroke-width:4,color:#ffffff,fill-opacity:0.18\nstyle Users,Needs fill:rgba(255,0,0,0.22),color:#222222",
+      "file": "dark.png",
+      "sha256": "57367ec5075cca2ea1852ccd64b5c14b294eff44e8b99fb93e4cd4b40100afa6"
+    },
+    {
+      "id": "forest",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"theme\":\"forest\"}}%%\nvenn-beta\ntitle Product fit\nset Users[\"Users\"]: 12\nset Needs[\"Needs\"]: 10\nset Product[\"Product\"]: 9\nunion Users,Needs[\"Demand\"]: 4\nunion Needs,Product[\"Solution\"]: 3\nunion Users,Product: 2\nunion Users,Needs,Product[\"Fit\"]: 1\ntext Users u1[\"Research\"]\ntext Users u2[\"Feedback\"]\ntext Users,Needs shared[\"Pain points\"]\nstyle Users fill:#4e79a7,stroke:#25476b,stroke-width:4,color:#ffffff,fill-opacity:0.18\nstyle Users,Needs fill:rgba(255,0,0,0.22),color:#222222",
+      "file": "forest.png",
+      "sha256": "2a3f457dfb269c2700af874d90bc4e4fa167306d3711fb8f53c683b6c153692b"
+    },
+    {
+      "id": "hand-drawn",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"look\":\"handDrawn\",\"handDrawnSeed\":17}}%%\nvenn-beta\ntitle Product fit\nset Users[\"Users\"]: 12\nset Needs[\"Needs\"]: 10\nset Product[\"Product\"]: 9\nunion Users,Needs[\"Demand\"]: 4\nunion Needs,Product[\"Solution\"]: 3\nunion Users,Product: 2\nunion Users,Needs,Product[\"Fit\"]: 1\ntext Users u1[\"Research\"]\ntext Users u2[\"Feedback\"]\ntext Users,Needs shared[\"Pain points\"]\nstyle Users fill:#4e79a7,stroke:#25476b,stroke-width:4,color:#ffffff,fill-opacity:0.18\nstyle Users,Needs fill:rgba(255,0,0,0.22),color:#222222",
+      "file": "hand-drawn.png",
+      "sha256": "8656e159349840260e995ce49758d51bf4a597500231f92577b1c078a52c6797"
+    }
+  ],
+  "fixtureSha256": "8b4f5d9b2857009ccddced737c12b8e8b41824be5015eb68ad5a5bea630e447a"
+}
