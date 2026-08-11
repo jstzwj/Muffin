@@ -1215,7 +1215,8 @@ QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
                                     const QString& fontFamily,
                                     qreal fontPixelSize,
                                     QFont::Weight weight,
-                                    qreal deviceScale) {
+                                    qreal deviceScale,
+                                    bool applyTerminalPhaseCorrection) {
   if (label.text.isEmpty() || !(fontPixelSize > 0.0)) return {};
   QRectF result = measureFlowSvgTextBounds(label, fontFamily, fontPixelSize);
   const QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
@@ -1292,9 +1293,23 @@ QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
           fontPixelSize * std::max<qreal>(deviceScale, 0.0), 0.0,
           weight > QFont::Normal);
       if (chromiumRight) {
+        qreal right = chromiumRight->right / deviceScale;
+        const qreal terminalRight = terminalOrigin + right;
+        if (applyTerminalPhaseCorrection &&
+            (cellRight <= advances.first().x() || rightSideBearing < 0.5) &&
+            terminalRight > cellWidth + 0.001) {
+          qreal phase = std::fmod(terminalOrigin * deviceScale, 1.0);
+          if (phase < 0.0) phase += 1.0;
+          if (cellRight > advances.first().x() && phase < 0.125) {
+            right -= 0.002 / deviceScale;
+          } else {
+            right += (phase < 0.5 ? 0.014 - 0.0065 * phase : 0.0065) /
+                     deviceScale;
+          }
+        }
         result.setRight(std::max(
             {result.left(), cellWidth,
-             terminalOrigin + chromiumRight->right / deviceScale}));
+             terminalOrigin + right}));
         usedChromiumGlyphBounds = true;
       } else if (cellRight > advances.first().x() ||
                  rightSideBearing < 0.5) {

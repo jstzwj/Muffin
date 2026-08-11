@@ -163,8 +163,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 341,
-          QStringLiteral("Expected 341 classified config rows, found %1")
+  require(entries.size() == 347,
+          QStringLiteral("Expected 347 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -221,6 +221,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("er"), 13},
                                              {QStringLiteral("eventmodeling"), 4},
                                              {QStringLiteral("flowchart"), 14},
+                                             {QStringLiteral("swimlane"), 6},
                                              {QStringLiteral("gantt"), 17},
                                              {QStringLiteral("ishikawa"), 3},
                                              {QStringLiteral("journey"), 26},
@@ -523,8 +524,31 @@ int main(int argc, char** argv) {
               QLatin1String("parity") &&
               stringSet(byPath.value(QStringLiteral("flowchart.curve"))
                             .value(QStringLiteral("native")).toArray())
-                  .contains(QStringLiteral("interaction")),
+                  .contains(QStringLiteral("interaction")) &&
+              stringSet(byPath.value(QStringLiteral("flowchart.curve"))
+                            .value(QStringLiteral("families")).toArray()) ==
+                  QSet<QString>{QStringLiteral("flowchart"),
+                                QStringLiteral("swimlane")},
           QStringLiteral("Flowchart curve matrix row lost full native parity"));
+  require(byPath.value(QStringLiteral("swimlane.useWidth"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("swimlane.useMaxWidth"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("swimlane.lineHops"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              byPath.value(QStringLiteral("swimlane.ignoreCrossLaneEdges"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              byPath.value(QStringLiteral("swimlane.optimizeRanksByCrossings"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("swimlane.automaticLaneOrdering"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity"),
+          QStringLiteral("Swimlane config policy rows drifted"));
   require(byPath.value(QStringLiteral("sequence.forceMenus"))
                   .value(QStringLiteral("status")).toString() ==
               QLatin1String("parity") &&
@@ -767,6 +791,53 @@ int main(int argc, char** argv) {
     sawRoundedCorner = sawRoundedCorner || edge.path.contains(QLatin1Char('Q'));
   require(sawRoundedCorner && !pngImage(roundedFlow).isNull(),
           QStringLiteral("flowchart.curve rounded did not reach scene/PNG paint"));
+
+  const QString swimlaneBody = QStringLiteral(
+      "swimlane-beta TB\n"
+      "subgraph one[One]\n  A[Start] --> B[Done]\nend\n"
+      "subgraph two[Two]\n  C[Review] --> D[Ship]\nend\n"
+      "B --> C");
+  const MermaidRenderEntry nativeSwimlane = render(swimlaneBody);
+  const MermaidRenderEntry linearSwimlane = render(
+      QStringLiteral("%%{init: {\"flowchart\": {\"curve\": \"linear\"}}}%%\n") +
+      swimlaneBody);
+  const MermaidRenderEntry dagreSwimlane = render(
+      QStringLiteral("%%{init: {\"layout\": \"dagre\"}}%%\n") + swimlaneBody);
+  const auto* nativeSwimlaneScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          nativeSwimlane.scene.get());
+  const auto* linearSwimlaneScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          linearSwimlane.scene.get());
+  const auto* dagreSwimlaneScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          dagreSwimlane.scene.get());
+  require(nativeSwimlane.status == MermaidRenderStatus::Ready &&
+              linearSwimlane.status == MermaidRenderStatus::Ready &&
+              dagreSwimlane.status == MermaidRenderStatus::Ready &&
+              nativeSwimlaneScene && linearSwimlaneScene &&
+              dagreSwimlaneScene &&
+              std::any_of(nativeSwimlaneScene->clusters.cbegin(),
+                          nativeSwimlaneScene->clusters.cend(),
+                          [](const auto& cluster) { return cluster.swimlane; }) &&
+              std::none_of(dagreSwimlaneScene->clusters.cbegin(),
+                           dagreSwimlaneScene->clusters.cend(),
+                           [](const auto& cluster) { return cluster.swimlane; }) &&
+              std::none_of(linearSwimlaneScene->edges.cbegin(),
+                           linearSwimlaneScene->edges.cend(),
+                           [](const auto& edge) {
+                             return edge.path.contains(QLatin1Char('Q')) ||
+                                    edge.path.contains(QLatin1Char('C'));
+                           }),
+          QStringLiteral("Swimlane flowchart config or Dagre override drifted"));
+  const MermaidRenderEntry unsupportedSwimlane = render(
+      QStringLiteral("%%{init: {\"layout\": \"elk\"}}%%\n") + swimlaneBody);
+  require(unsupportedSwimlane.status == MermaidRenderStatus::Unsupported &&
+              unsupportedSwimlane.diagnostic.stage ==
+                  QLatin1String("configuration") &&
+              unsupportedSwimlane.diagnostic.code ==
+                  QLatin1String("unsupported-layout-engine"),
+          QStringLiteral("Swimlane unsupported layout must be explicit"));
 
   const QString edgeRoundedFlow = QStringLiteral(
       "flowchart LR\nA[Start] roundedEdge@--> B[Middle] --> C[End]\n"

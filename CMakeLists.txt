@@ -486,6 +486,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/MermaidDiagrams.cpp
   src/mermaid/editor/MermaidDiagrams.h
   src/mermaid/editor/FlowchartDiagramAdapter.cpp
+  src/mermaid/editor/SwimlaneDiagramAdapter.cpp
   src/mermaid/editor/SequenceDiagramAdapter.cpp
   src/mermaid/editor/ClassDiagramAdapter.cpp
   src/mermaid/editor/StateDiagramAdapter.cpp
@@ -522,6 +523,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/flowchart/FlowchartTokenizer.cpp
   src/mermaid/flowchart/FlowchartTokenizer.h
   src/mermaid/flowchart/FlowchartLayout.cpp
+  src/mermaid/flowchart/SwimlaneLayout.cpp
   src/mermaid/flowchart/FlowchartLayout.h
   src/mermaid/flowchart/FlowchartShapes.cpp
   src/mermaid/flowchart/FlowchartShapes.h

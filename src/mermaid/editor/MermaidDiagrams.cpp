@@ -14,7 +14,8 @@ namespace muffin::mermaid::editor {
 const Diagram* findMermaidDiagram(const QString& type) {
   static const QVector<const Diagram*> kAll = {
       &stateDiagramAdapter(),       &classDiagramAdapter(),   &sequenceDiagramAdapter(),
-      &flowchartDiagramAdapter(),   &erDiagramAdapter(),      &requirementDiagramAdapter(),
+      &flowchartDiagramAdapter(),   &swimlaneDiagramAdapter(), &erDiagramAdapter(),
+      &requirementDiagramAdapter(),
       &pieDiagramAdapter(),         &quadrantDiagramAdapter(), &journeyDiagramAdapter(),
       &radarDiagramAdapter(),       &xyChartDiagramAdapter(),   &timelineDiagramAdapter(),
       &packetDiagramAdapter(),      &kanbanDiagramAdapter(),

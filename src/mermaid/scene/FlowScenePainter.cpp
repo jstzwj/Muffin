@@ -204,7 +204,8 @@ void drawNodeShape(QPainter& painter, const FlowSceneNode& n, QRectF r,
     const QPen strokePen = painter.pen();
     painter.save();
     painter.translate(n.cx + offset.x(), n.cy + offset.y());
-    for (const FlowSceneShapePath& item : n.shapePaths) {
+    for (qsizetype itemIndex = 0; itemIndex < n.shapePaths.size(); ++itemIndex) {
+      const FlowSceneShapePath& item = n.shapePaths.at(itemIndex);
       QBrush itemBrush = fillBrush;
       if (!categoryMask && !forceSilhouette && !item.fillOverride.isEmpty())
         itemBrush = QBrush(qcolor(item.fillOverride));
@@ -242,9 +243,10 @@ void drawNodeShape(QPainter& painter, const FlowSceneNode& n, QRectF r,
           roughStroke = QPen(QColor(kCatBoundary),
                              std::max<qreal>(5.0, options.strokeWidth + 4.0));
         QPen fillSketch(categoryMask ? QColor(kCatBoundary) : itemBrush.color());
-        fillSketch.setWidthF(categoryMask ? 4.0
-                                          : pxSize(n.strokeWidth));
-        rough::drawRoughDrawable(painter, nodeRoughDrawable(n, item, options), itemBrush,
+        fillSketch.setWidthF(categoryMask ? 4.0 : options.fillWeight);
+        const rough::Drawable drawable = itemIndex < n.roughDrawables.size()
+            ? n.roughDrawables.at(itemIndex) : nodeRoughDrawable(n, item, options);
+        rough::drawRoughDrawable(painter, drawable, itemBrush,
                                  roughStroke, fillSketch);
       } else {
         painter.drawPath(item.path);
@@ -316,7 +318,7 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
   for (const FlowSceneCluster& c : scene.clusters) {
     const QRectF r(c.cx - c.width / 2.0, c.cy - c.height / 2.0, c.width, c.height);
     if (!mermaidPrimitiveIsVisible(r, options)) continue;
-    if (scene.look == flowchart::FlowLook::Neo) {
+    if (scene.look == flowchart::FlowLook::Neo && !c.swimlane) {
       painter.setPen(Qt::NoPen);
       for (int y = -4; y <= 4; ++y) {
         for (int x = -4; x <= 4; ++x) {
@@ -332,17 +334,61 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
     }
     QColor clusterFill = paletteColor(c.fill, kCatCluster);
     if (mode == PaintMode::Color && scene.look == flowchart::FlowLook::Neo &&
+        !c.swimlane &&
         !scene.useGradient)
       clusterFill = svgFilterQuantizedColor(clusterFill);
     painter.setBrush(clusterFill);
     QPen pen(paletteColor(c.stroke, kCatCluster)); pen.setWidthF(pxSize(c.strokeWidth));
-    if (mode == PaintMode::Color && scene.useGradient) {
+    if (mode == PaintMode::Color && scene.useGradient && !c.swimlane) {
       QLinearGradient gradient(r.left(), 0.0, r.right(), 0.0);
       gradient.setColorAt(0.0, qcolor(scene.gradientStart));
       gradient.setColorAt(1.0, qcolor(scene.gradientStop));
       pen.setBrush(gradient);
     }
     painter.setPen(pen);
+    if (c.swimlane) {
+      const qreal band = std::clamp(c.titleBandSize, 0.0,
+                                    c.titleOnLeft ? r.width() : r.height());
+      const QRectF titleRect = c.titleOnLeft
+          ? QRectF(r.left(), r.top(), band, r.height())
+          : QRectF(r.left(), r.top(), r.width(), band);
+      const QRectF bodyRect = c.titleOnLeft
+          ? QRectF(r.left() + band, r.top(), std::max<qreal>(0.0, r.width() - band), r.height())
+          : QRectF(r.left(), r.top() + band, r.width(), std::max<qreal>(0.0, r.height() - band));
+      if (scene.look == flowchart::FlowLook::HandDrawn) {
+        QPen hachurePen(mode == PaintMode::CategoryMask ? QColor(kCatBoundary)
+                                                         : clusterFill);
+        hachurePen.setWidthF(mode == PaintMode::CategoryMask ? 4.0 : 3.0);
+        rough::drawRoughDrawable(
+            painter, c.roughTitle,
+            clusterFill, pen, hachurePen);
+        rough::drawRoughDrawable(
+            painter, c.roughBody,
+            Qt::NoBrush, pen, Qt::NoPen);
+      } else {
+        painter.setBrush(clusterFill);
+        painter.drawRect(titleRect);
+        // The renderer writes fill="none" on the body presentation attribute,
+        // but the generated `.cluster rect` CSS declaration wins in the
+        // cascade. Chrome's used fill is therefore clusterBkg for classic/neo.
+        painter.setBrush(clusterFill);
+        painter.drawRect(bodyRect);
+      }
+      if (!c.label.text.isEmpty()) {
+        if (c.titleOnLeft) {
+          painter.save();
+          painter.translate(titleRect.center());
+          painter.rotate(-90.0);
+          const QRectF labelRect(-titleRect.height() / 2.0, -titleRect.width() / 2.0,
+                                 titleRect.height(), titleRect.width());
+          drawLabel(painter, c.label, labelRect, fontFamily, true, mode);
+          painter.restore();
+        } else {
+          drawLabel(painter, c.label, titleRect, fontFamily, true, mode);
+        }
+      }
+      continue;
+    }
     if (scene.look == flowchart::FlowLook::HandDrawn) {
       rough::Options roughOptions;
       roughOptions.seed = scene.handDrawnSeed;
@@ -404,7 +450,9 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
         roughOptions.seed = scene.handDrawnSeed;
         roughOptions.roughness = 0.3;
         roughOptions.strokeWidth = pxSize(e.strokeWidth);
-        rough::drawRoughDrawable(painter, rough::path(pp.path, roughOptions), Qt::NoBrush,
+        const rough::Drawable drawable = e.roughDrawable.sets.isEmpty()
+            ? rough::path(pp.path, roughOptions) : e.roughDrawable;
+        rough::drawRoughDrawable(painter, drawable, Qt::NoBrush,
                                  pen, Qt::NoPen);
       } else {
         painter.setPen(pen); painter.setBrush(Qt::NoBrush);

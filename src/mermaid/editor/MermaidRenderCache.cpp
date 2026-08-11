@@ -261,6 +261,26 @@ std::optional<MermaidRenderEntry> unsupportedLayoutConfiguration(
   QString section;
   if (type.startsWith(QLatin1String("flowchart")))
     section = QStringLiteral("flowchart");
+  else if (type == QLatin1String("swimlane")) {
+    const QString requested =
+        pre.config.value(QStringLiteral("layout")).toString();
+    if (requested.isEmpty() || requested == QLatin1String("swimlane") ||
+        requested == QLatin1String("dagre"))
+      return std::nullopt;
+    MermaidDiagnostic diagnostic;
+    diagnostic.diagramType = type;
+    diagnostic.stage = QStringLiteral("configuration");
+    diagnostic.code = QStringLiteral("unsupported-layout-engine");
+    diagnostic.message = QStringLiteral(
+        "Native Mermaid rendering does not support layout='%1'.")
+                             .arg(requested);
+    diagnostic.production = QStringLiteral("layout");
+    diagnostic.actual = requested;
+    diagnostic.expected = {QStringLiteral("swimlane"),
+                           QStringLiteral("dagre")};
+    return errorEntry(std::move(diagnostic),
+                      MermaidRenderStatus::Unsupported);
+  }
   else if (type == QLatin1String("class") ||
            type == QLatin1String("classDiagram"))
     section = QStringLiteral("class");
@@ -551,6 +571,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("wardley-beta"));
     diagnostic.expected.append(QStringLiteral("architecture-beta"));
     diagnostic.expected.append(QStringLiteral("block-beta"));
+    diagnostic.expected.append(QStringLiteral("swimlane-beta"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));

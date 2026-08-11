@@ -3,11 +3,13 @@
 
 #include "mermaid/flowchart/FlowchartShapes.h"
 #include "mermaid/scene/FlowMarkers.h"
+#include "mermaid/rough/RoughOps.h"
 #include "mermaid/theme/FlowStyleResolve.h"
 
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QRegularExpression>
 
 #include <cmath>
 
@@ -15,6 +17,95 @@ namespace muffin::mermaid::flowscene {
 namespace {
 
 qreal r3(qreal v) { return std::round(v * 1000.0) / 1000.0; }
+
+QPainterPath svgPath(const QString& d) {
+  QPainterPath path;
+  static const QRegularExpression token(
+      QStringLiteral("[MmLlCcQqZz]|-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?"));
+  QVector<QString> values;
+  auto it = token.globalMatch(d);
+  while (it.hasNext()) values.push_back(it.next().captured());
+  QPointF current, start;
+  char command = 0;
+  for (int i = 0; i < values.size();) {
+    if (values.at(i).at(0).isLetter()) {
+      command = values.at(i++).at(0).toLatin1();
+      if (command == 'Z' || command == 'z') {
+        path.closeSubpath();
+        current = start;
+      }
+      continue;
+    }
+    const bool relative = command >= 'a' && command <= 'z';
+    auto point = [&](int offset) {
+      QPointF p(values.at(i + offset).toDouble(), values.at(i + offset + 1).toDouble());
+      return relative ? current + p : p;
+    };
+    if (command == 'M' || command == 'm') {
+      current = point(0); start = current; path.moveTo(current); i += 2;
+      command = command == 'M' ? 'L' : 'l';
+    } else if (command == 'L' || command == 'l') {
+      current = point(0); path.lineTo(current); i += 2;
+    } else if (command == 'Q' || command == 'q') {
+      const QPointF control = point(0), end = point(2);
+      path.quadTo(control, end); current = end; i += 4;
+    } else if (command == 'C' || command == 'c') {
+      const QPointF c1 = point(0), c2 = point(2), end = point(4);
+      path.cubicTo(c1, c2, end); current = end; i += 6;
+    } else {
+      ++i;
+    }
+  }
+  return path;
+}
+
+QString roughPathData(const rough::Drawable& drawable) {
+  QString result;
+  auto number = [](qreal value) { return QString::number(value, 'g', 17); };
+  for (const rough::OpSet& set : drawable.sets) {
+    if (set.type != rough::OpSetType::Path) continue;
+    for (const rough::Op& op : set.ops) {
+      if (!result.isEmpty()) result += QLatin1Char(' ');
+      if (op.type == rough::OpType::Move)
+        result += QStringLiteral("M%1 %2").arg(number(op.data.value(0)), number(op.data.value(1)));
+      else if (op.type == rough::OpType::LineTo)
+        result += QStringLiteral("L%1 %2").arg(number(op.data.value(0)), number(op.data.value(1)));
+      else
+        result += QStringLiteral("C%1 %2, %3 %4, %5 %6")
+            .arg(number(op.data.value(0)), number(op.data.value(1)),
+                 number(op.data.value(2)), number(op.data.value(3)),
+                 number(op.data.value(4)), number(op.data.value(5)));
+    }
+  }
+  return result;
+}
+
+bool axisAlignedRectangle(const QPainterPath& path) {
+  if (path.elementCount() != 5) return false;
+  const QRectF bounds = path.boundingRect();
+  for (int i = 0; i < path.elementCount(); ++i) {
+    const auto e = path.elementAt(i);
+    if (e.type == QPainterPath::CurveToElement ||
+        !((e.x == bounds.left() || e.x == bounds.right()) &&
+          (e.y == bounds.top() || e.y == bounds.bottom()))) return false;
+  }
+  return true;
+}
+
+rough::Drawable roughNodeDrawable(const FlowSceneNode& node,
+                                  const FlowSceneShapePath& item,
+                                  const rough::Options& options) {
+  const QRectF bounds = item.path.boundingRect();
+  if (axisAlignedRectangle(item.path))
+    return rough::rectangle(bounds.x(), bounds.y(), bounds.width(), bounds.height(), options);
+  if (node.shapeKind == QLatin1String("ellipse") && item.path.elementCount() > 5)
+    return rough::ellipse(bounds.center().x(), bounds.center().y(),
+                          bounds.width(), bounds.height(), options);
+  if (node.shapeKind == QLatin1String("polygon") &&
+      node.shapePaths.size() == 1 && !node.points.isEmpty())
+    return rough::polygon(node.points, options);
+  return rough::path(item.path, options);
+}
 
 QRectF edgePaintBounds(const flowchart::FlowLayoutEdge& edge) {
   QRectF bounds;
@@ -371,6 +462,11 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
                          flowchart::FlowLook look,
                          quint32 handDrawnSeed) {
   FlowScene scene;
+  const bool swimlaneScene = std::any_of(
+      layout.clusters.cbegin(), layout.clusters.cend(),
+      [](const flowchart::FlowLayoutCluster& cluster) {
+        return cluster.swimlane;
+      });
   scene.background = theme.background;
   scene.look = look;
   scene.handDrawnSeed = handDrawnSeed;
@@ -398,11 +494,15 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     FlowSceneCluster sc;
     sc.id = c.id;
     sc.cx = c.x; sc.cy = c.y; sc.width = c.width; sc.height = c.height;
+    sc.swimlane = c.swimlane;
+    sc.titleOnLeft = c.titleOnLeft;
+    sc.titleBandSize = c.titleBandSize;
     sc.fill = theme.clusterBkg;
     // Neo's cluster CSS shares the node border token; clusterBorder is used by
     // the classic flowchart stylesheet only.
-    sc.stroke = look == flowchart::FlowLook::Neo ? theme.nodeBorder
-                                                  : theme.clusterBorder;
+    sc.stroke = c.swimlane ? theme.clusterBorder
+                           : (look == flowchart::FlowLook::Neo ? theme.nodeBorder
+                                                               : theme.clusterBorder);
     sc.strokeWidth = clusterStrokeWidth;
     if (const flowchart::FlowSubgraph* s = subgraphById.value(c.id)) {
       sc.label.text = s->title;
@@ -422,6 +522,42 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       }
     }
     prepareSceneLabel(sc.label);
+    // Mermaid's synthesized default lane does not inherit the diagram look;
+    // it remains a classic SVG cluster even in hand-drawn diagrams. Explicit
+    // subgraphs carry `look: handDrawn` and receive RoughJS geometry.
+    if (look == flowchart::FlowLook::HandDrawn && sc.swimlane &&
+        sc.id != QLatin1String("__swimlane_default__")) {
+      const QRectF laneRect(sc.cx - sc.width / 2.0, sc.cy - sc.height / 2.0,
+                            sc.width, sc.height);
+      const qreal band = std::clamp(
+          sc.titleBandSize, 0.0,
+          sc.titleOnLeft ? laneRect.width() : laneRect.height());
+      const QRectF titleRect = sc.titleOnLeft
+          ? QRectF(laneRect.left(), laneRect.top(), band, laneRect.height())
+          : QRectF(laneRect.left(), laneRect.top(), laneRect.width(), band);
+      const QRectF bodyRect = sc.titleOnLeft
+          ? QRectF(laneRect.left() + band, laneRect.top(),
+                   std::max<qreal>(0.0, laneRect.width() - band), laneRect.height())
+          : QRectF(laneRect.left(), laneRect.top() + band, laneRect.width(),
+                   std::max<qreal>(0.0, laneRect.height() - band));
+      rough::Options titleOptions;
+      titleOptions.seed = handDrawnSeed;
+      titleOptions.roughness = 0.7;
+      titleOptions.strokeWidth = 1.3;
+      titleOptions.fill = QStringLiteral("#000");
+      titleOptions.fillWeight = 3.0;
+      titleOptions.hachureGap = 5.2;
+      rough::Options bodyOptions = titleOptions;
+      bodyOptions.fill = QStringLiteral("none");
+      sc.roughTitle = rough::rectangle(titleRect.x(), titleRect.y(),
+                                       titleRect.width(), titleRect.height(),
+                                       titleOptions);
+      sc.roughBody = rough::rectangle(bodyRect.x(), bodyRect.y(),
+                                      bodyRect.width(), bodyRect.height(),
+                                      bodyOptions);
+      sc.paintedBounds = rough::tightBounds(sc.roughTitle).united(
+          rough::tightBounds(sc.roughBody));
+    }
     scene.clusters.append(sc);
   }
 
@@ -479,6 +615,20 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       se.strokeWidth = QString::number(theme.strokeWidth) + QStringLiteral("px");
     }
     prepareSceneLabel(se.label);
+    if (swimlaneScene && look == flowchart::FlowLook::HandDrawn &&
+        !se.path.isEmpty()) {
+      rough::Options options;
+      options.seed = handDrawnSeed;
+      options.roughness = 0.3;
+      bool widthOk = false;
+      options.strokeWidth = se.strokeWidth.endsWith(QLatin1String("px"))
+          ? se.strokeWidth.chopped(2).toDouble(&widthOk) : se.strokeWidth.toDouble(&widthOk);
+      if (!widthOk) options.strokeWidth = 1.0;
+      se.roughDrawable = rough::path(svgPath(se.path), options);
+      se.renderedPath = roughPathData(se.roughDrawable);
+      se.path = se.renderedPath;
+      se.pathBounds = rough::tightBounds(se.roughDrawable);
+    }
     scene.edges.append(se);
   }
 
@@ -488,19 +638,48 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
   for (const flowchart::FlowLayoutNode& n : layout.nodes) {
     FlowSceneNode sn;
     sn.id = n.id;
-    sn.cx = n.x; sn.cy = n.y; sn.width = n.width; sn.height = n.height;
+    sn.cx = n.x; sn.cy = n.y;
+    sn.width = n.renderWidth > 0.0 ? n.renderWidth : n.width;
+    sn.height = n.renderHeight > 0.0 ? n.renderHeight : n.height;
     if (const flowchart::FlowVertex* v = vertexById.value(n.id)) {
       sn.shapeType = flowchart::canonicalShape(v->type);
       const flowstyle::ResolvedNodeStyle rs = flowstyle::resolveNodeStyle(*v, data.classes, theme);
       sn.fill = rs.fill; sn.stroke = rs.stroke; sn.strokeWidth = rs.strokeWidth;
       const flowchart::FlowShapeGeometry geom =
-          flowchart::flowShapeGeometry(*v, QSizeF(n.width, n.height), look);
+          // In hand-drawn mode Mermaid inserts the RoughJS node once, then
+          // feeds that rendered group's bbox into layout. Layout may enlarge
+          // n.width/n.height, but the already-created node is not regenerated
+          // at the enlarged size. renderWidth/renderHeight preserve that
+          // insertion-time geometry.
+          flowchart::flowShapeGeometry(*v, QSizeF(sn.width, sn.height), look);
       sn.shapeKind = geom.kind;
       sn.cornerRadius = geom.cornerRadius;
       sn.radiusX = geom.radiusX;
       sn.radiusY = geom.radiusY;
       sn.points = geom.points;
       sn.shapePaths = buildShapePaths(sn);
+      if (swimlaneScene && look == flowchart::FlowLook::HandDrawn) {
+        rough::Options options;
+        options.seed = handDrawnSeed;
+        options.roughness = 0.7;
+        options.strokeWidth = 1.3;
+        options.fillStyle = QStringLiteral("hachure");
+        options.fillWeight = 4.0;
+        options.hachureGap = 5.2;
+        bool initialized = false;
+        for (const FlowSceneShapePath& item : sn.shapePaths) {
+          options.stroke = item.stroke ? QStringLiteral("#000") : QStringLiteral("none");
+          options.fill = item.fill ? QStringLiteral("#000") : QString{};
+          rough::Drawable drawable = roughNodeDrawable(sn, item, options);
+          const QRectF itemBounds = rough::tightBounds(drawable);
+          if (itemBounds.isValid()) {
+            sn.paintedBounds = initialized ? sn.paintedBounds.united(itemBounds) : itemBounds;
+            initialized = true;
+          }
+          sn.roughDrawables.push_back(std::move(drawable));
+        }
+        if (initialized) sn.paintedBounds.translate(sn.cx, sn.cy);
+      }
       sn.label.text = v->text;
       if (sn.shapeType == QLatin1String("framed_circle") ||
           sn.shapeType == QLatin1String("small_circle") ||
@@ -566,16 +745,49 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       sn.tooltip = data.tooltips.value(v->id);
     }
     scene.nodes.append(sn);
-    const qreal left = n.x - n.width / 2.0, right = n.x + n.width / 2.0;
-    const qreal top = n.y - n.height / 2.0, bottom = n.y + n.height / 2.0;
+    const QRectF nodeBounds = look == flowchart::FlowLook::HandDrawn &&
+                                     !scene.nodes.last().paintedBounds.isNull()
+        ? scene.nodes.last().paintedBounds
+        : QRectF(n.x - n.width / 2.0, n.y - n.height / 2.0, n.width, n.height);
+    const qreal left = nodeBounds.left(), right = nodeBounds.right();
+    const qreal top = nodeBounds.top(), bottom = nodeBounds.bottom();
     if (first) { minX = left; maxX = right; minY = top; maxY = bottom; first = false; }
     else { minX = std::min(minX, left); maxX = std::max(maxX, right); minY = std::min(minY, top); maxY = std::max(maxY, bottom); }
   }
   for (const FlowSceneCluster& c : scene.clusters) {
-    const qreal left = c.cx - c.width / 2.0, right = c.cx + c.width / 2.0;
-    const qreal top = c.cy - c.height / 2.0, bottom = c.cy + c.height / 2.0;
+    QRectF clusterBounds(c.cx - c.width / 2.0, c.cy - c.height / 2.0,
+                         c.width, c.height);
+    if (look == flowchart::FlowLook::HandDrawn && c.swimlane && c.paintedBounds.isValid())
+      clusterBounds = c.paintedBounds;
+    const qreal left = clusterBounds.left(), right = clusterBounds.right();
+    const qreal top = clusterBounds.top(), bottom = clusterBounds.bottom();
     if (first) { minX = left; maxX = right; minY = top; maxY = bottom; first = false; }
     else { minX = std::min(minX, left); maxX = std::max(maxX, right); minY = std::min(minY, top); maxY = std::max(maxY, bottom); }
+  }
+  auto includeScenePoint = [&](const QPointF& point) {
+    if (first) {
+      minX = maxX = point.x();
+      minY = maxY = point.y();
+      first = false;
+    } else {
+      minX = std::min(minX, point.x());
+      maxX = std::max(maxX, point.x());
+      minY = std::min(minY, point.y());
+      maxY = std::max(maxY, point.y());
+    }
+  };
+  for (const flowchart::FlowLayoutEdge& edge : layout.edges) {
+    for (const QPointF& point : edge.points) includeScenePoint(point);
+    for (const QVector<QPointF>& segment : edge.segments)
+      for (const QPointF& point : segment) includeScenePoint(point);
+    if (edge.hasLabelPosition && edge.labelSize.isValid()) {
+      const QRectF labelBounds(
+          edge.labelX - edge.labelSize.width() / 2.0,
+          edge.labelY - edge.labelSize.height() / 2.0,
+          edge.labelSize.width(), edge.labelSize.height());
+      includeScenePoint(labelBounds.topLeft());
+      includeScenePoint(labelBounds.bottomRight());
+    }
   }
   scene.bounds = QRectF(minX, minY, maxX - minX, maxY - minY);
   scene.interactionRegions_.reserve(scene.nodes.size());
@@ -609,6 +821,11 @@ QJsonObject FlowScene::toJsonObject() const {
     o[QStringLiteral("id")] = c.id;
     o[QStringLiteral("cx")] = r3(c.cx); o[QStringLiteral("cy")] = r3(c.cy);
     o[QStringLiteral("width")] = r3(c.width); o[QStringLiteral("height")] = r3(c.height);
+    if (c.swimlane) {
+      o[QStringLiteral("swimlane")] = true;
+      o[QStringLiteral("titleOnLeft")] = c.titleOnLeft;
+      o[QStringLiteral("titleBandSize")] = r3(c.titleBandSize);
+    }
     o[QStringLiteral("fill")] = c.fill; o[QStringLiteral("stroke")] = c.stroke;
     o[QStringLiteral("strokeWidth")] = c.strokeWidth;
     o[QStringLiteral("label")] = labelJson(c.label);

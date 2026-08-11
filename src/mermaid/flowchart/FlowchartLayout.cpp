@@ -47,17 +47,6 @@ void clipMarker(QVector<QPointF>& points, qreal distance) {
 // lines and centred markers (cross, circle) are NOT shortened — the marker is
 // drawn on top at the endpoint. Distances are the empirically-matched refX
 // equivalents (golden-verified for arrow_point/cross/circle/open).
-void clipForMarkers(QVector<QPointF>& points, const QString& type) {
-  const bool filled = type == QLatin1String("arrow_point") ||
-                      type == QLatin1String("double_arrow_point");
-  if (filled) clipMarker(points, 4.0);
-  if (type == QLatin1String("double_arrow_point") && points.size() >= 2) {
-    const QPointF delta = points.first() - points.at(1);
-    const qreal length = std::hypot(delta.x(), delta.y());
-    if (length > 4.0 && !qFuzzyIsNull(length)) points.first() -= delta * (4.0 / length);
-  }
-}
-
 // --- per-shape border intersection (mermaid dagre-wrapper intersect/*) ---
 // mermaid's renderer drops dagre's rect-intersected edge endpoints and
 // re-intersects the first/last interior point against each node's shape via
@@ -190,6 +179,17 @@ QPointF intersectNodeForShape(const d::DagreNodeLabel& node, const QString& type
 
 }  // namespace
 
+void clipFlowEdgeForMarkers(QVector<QPointF>& points, const QString& type) {
+  const bool filled = type == QLatin1String("arrow_point") ||
+                      type == QLatin1String("double_arrow_point");
+  if (filled) clipMarker(points, 4.0);
+  if (type == QLatin1String("double_arrow_point") && points.size() >= 2) {
+    const QPointF delta = points.first() - points.at(1);
+    const qreal length = std::hypot(delta.x(), delta.y());
+    if (length > 4.0 && !qFuzzyIsNull(length)) points.first() -= delta * (4.0 / length);
+  }
+}
+
 // measureLabel is exported (external linkage) so FlowchartShapes.cpp can measure
 // a label for shapes whose outline depends on it (bang, cloud).
 QSizeF measureLabel(const QString& text, const FlowTextOptions& options) {
@@ -198,10 +198,34 @@ QSizeF measureLabel(const QString& text, const FlowTextOptions& options) {
 
 QSizeF measureLabel(const QString& text, const QString& labelType,
                     const FlowTextOptions& options) {
-  FlowLabelDocument document = parseFlowLabel(text, labelType);
+  FlowLabelDocument document = options.htmlLabels
+      ? parseFlowLabel(text, labelType)
+      : parseFlowSvgLabel(text, labelType);
   prepareFlowLabelMath(document, options.fontPixelSize);
-  return measureFlowLabel(document, options.fontFamily,
-                          options.fontPixelSize, options.lineHeight);
+  QSizeF result;
+  if (options.htmlLabels) {
+    result = measureFlowLabel(document, options.fontFamily,
+                              options.fontPixelSize, options.lineHeight);
+    if (options.chromiumInlineWidth) {
+      const qreal inlineWidth = measureChromiumInlineLayoutWidth(
+          document, options.fontFamily, options.fontPixelSize);
+      // Math spans are painted as independent boxes and are not represented
+      // by the plain-text HarfBuzz advance.
+      result.setWidth(document.math.isEmpty()
+                          ? inlineWidth
+                          : std::max(result.width(), inlineWidth));
+    }
+  } else {
+    const QRectF visual = measureChromiumSvgTextBounds(
+        document, options.fontFamily, options.fontPixelSize, QFont::Normal,
+        1.0, options.chromiumSvgTerminalPhase);
+    result = visual.size();
+    result.setWidth(std::max(
+        visual.width(), measureChromiumInlineLayoutWidth(
+                            document, options.fontFamily,
+                            options.fontPixelSize)));
+  }
+  return result;
 }
 
 FlowEdgeLabelLayout layoutFlowchartEdgeLabel(
@@ -588,6 +612,8 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
   gl.edgesep = options.edgeSpacing;
   gl.ranksep = options.rankSpacing;
   gl.nodePadding = options.nodePadding;
+  gl.marginx = options.diagramPadding;
+  gl.marginy = options.diagramPadding;
   g.setGraph(gl);
 
   // flowDb.getData() emits cluster nodes first, in reverse declaration order,
@@ -753,11 +779,13 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
 
   FlowLayoutResult result;
   QPointF origin(0.0, 0.0);
-  for (const FlowVertex& vertex : data.vertices)
-    if (const d::DagreNodeLabel* n = g.node(vertex.id)) {
-      origin = QPointF(n->x.value_or(0.0), n->y.value_or(0.0));
-      break;
-    }
+  if (!options.preserveDagreCoordinates) {
+    for (const FlowVertex& vertex : data.vertices)
+      if (const d::DagreNodeLabel* n = g.node(vertex.id)) {
+        origin = QPointF(n->x.value_or(0.0), n->y.value_or(0.0));
+        break;
+      }
+  }
 
   for (const FlowVertex& v : data.vertices) {
     if (claimedVertices.contains(v.id)) continue;
@@ -901,7 +929,7 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
           out.labelY -= origin.y();
         }
         QVector<QPointF> rendered = out.points;
-        clipForMarkers(rendered, fe.type);
+        clipFlowEdgeForMarkers(rendered, fe.type);
         const QString curve = !fe.interpolate.isEmpty()
                                   ? fe.interpolate
                                   : (!data.defaultEdgeInterpolate.isEmpty()
@@ -960,7 +988,7 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
       }
     }
     QVector<QPointF> rendered = out.points;
-    clipForMarkers(rendered, fe.type);
+    clipFlowEdgeForMarkers(rendered, fe.type);
     const QString curve = !fe.interpolate.isEmpty()
                               ? fe.interpolate
                               : (!data.defaultEdgeInterpolate.isEmpty()
@@ -1059,7 +1087,8 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     if (clustersById.contains(it->id)) ordered.clusters.push_back(clustersById.take(it->id));
 
   QPointF finalOrigin;
-  if (!ordered.nodes.isEmpty()) finalOrigin = QPointF(ordered.nodes.first().x, ordered.nodes.first().y);
+  if (!options.preserveDagreCoordinates && !ordered.nodes.isEmpty())
+    finalOrigin = QPointF(ordered.nodes.first().x, ordered.nodes.first().y);
   if (!finalOrigin.isNull()) {
     for (FlowLayoutNode& node : ordered.nodes) {
       node.x -= finalOrigin.x();
@@ -1084,7 +1113,7 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
   for (FlowLayoutEdge& edge : ordered.edges) {
     QVector<QPointF> rendered = edge.points;
     const FlowEdge* semantic = semanticEdges.value(edge.id);
-    if (semantic) clipForMarkers(rendered, semantic->type);
+    if (semantic) clipFlowEdgeForMarkers(rendered, semantic->type);
     const QString curve = semantic && !semantic->interpolate.isEmpty()
                               ? semantic->interpolate
                               : (!data.defaultEdgeInterpolate.isEmpty()

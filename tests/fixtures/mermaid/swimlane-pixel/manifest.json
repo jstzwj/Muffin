@@ -1,0 +1,58 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "swimlaneLayoutSha256": "da16cc93e8359e7c7479e6e5ee4572f90eda7f76b73905a3e7354804ad476a35",
+    "swimlaneLayoutMapSha256": "91f3efc6e897559e7923a432cad3fea28106f70d3305ddd091cc256dd15328e4",
+    "swimlaneDiagramSha256": "85a5cfcf634e50a645de2a7a6057b07a3bc3dbf7746b352ee514e9dfcbf00060",
+    "swimlaneDiagramMapSha256": "2700c58b9d34fe3b2b027b4371483117c29535bfb305570524340b0c306041e6",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "file": "default.png",
+      "width": 446,
+      "height": 350,
+      "sha256": "66c39895de57bb89be7d934ec7c060ce9e5af9e73bc8a8390df62e1f8a8cd8a7"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"theme\":\"dark\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "file": "dark.png",
+      "width": 446,
+      "height": 350,
+      "sha256": "310917310ab92f93937d9bb21631d08ff716281a9248f536f9f8e38a32336ad5"
+    },
+    {
+      "id": "neo",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"look\":\"neo\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "file": "neo.png",
+      "width": 390,
+      "height": 332,
+      "sha256": "5e719c9fafc389e5144b0c42f2ad5a1799ab03451101a7fd21c8668afe40d1f2"
+    },
+    {
+      "id": "hand",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"look\":\"handDrawn\",\"handDrawnSeed\":7}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "file": "hand.png",
+      "width": 455,
+      "height": 362,
+      "sha256": "3d00e554a3e8b5ce6205cac4b52e45650445d574afe6abd5c4ef5aeba5806445"
+    },
+    {
+      "id": "crossing",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta TB\nsubgraph one[One]\n a1[A1] --> a2[A2]\nend\nsubgraph two[Two]\n b1[B1] --> b2[B2]\nend\na1 --> b2\nb1 --> a2",
+      "file": "crossing.png",
+      "width": 375,
+      "height": 255,
+      "sha256": "96de5f3a9e91c2d4fcd1b7587a3dafc5bf470a4ba186e943d9768d29cae28138"
+    }
+  ],
+  "fixtureSha256": "b23e1c605c700bcbb9d30e479e236e6752da23ba17d2d291efbb533a8362777f"
+}

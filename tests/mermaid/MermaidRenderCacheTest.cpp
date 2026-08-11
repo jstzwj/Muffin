@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
       "ORDER {\n  bigint id PK\n  string status\n}");
   // A family Mermaid detects but Muffin does not yet render natively.
   const QString unsupported = QStringLiteral(
-      "swimlane-beta\nA");
+      "gitGraph\ncommit id: \"A\"");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
@@ -803,6 +803,30 @@ int main(int argc, char** argv) {
             QStringLiteral("Block scene/config/metadata contract drifted"));
   }
 
+  // --- getSync: swimlane-beta reuses Flowchart syntax but owns its layout ---
+  {
+    const QString source = QStringLiteral(
+        "swimlane-beta TB\n"
+        "subgraph sales[Sales]\n  a[Lead] --> b[Quote]\nend\n"
+        "subgraph legal[Legal]\n  c[Review] --> d[Approve]\nend\n"
+        "b --> c\n");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    require(entry.status == kReady && entry.scene != nullptr,
+            QStringLiteral("swimlane-beta must render through the native adapter"));
+    const auto* scene =
+        dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(entry.scene.get());
+    require(scene != nullptr && scene->nodes.size() == 4 && scene->edges.size() == 3,
+            QStringLiteral("swimlane must expose the shared FlowScene semantic content"));
+    int lanes = 0;
+    for (const auto& cluster : scene->clusters)
+      if (cluster.swimlane && cluster.titleBandSize > 0.0) ++lanes;
+    require(lanes == 2 && entry.naturalSize.width() > 0 &&
+                entry.naturalSize.height() > 0,
+            QStringLiteral("swimlane layout must materialize both titled lanes"));
+  }
+
   // Gantt owns the visible chart title while shared metadata carries only its
   // accessibility title/description. A frontmatter title is the fallback when
   // no inline title directive exists and must not create a second title strip.
@@ -1003,6 +1027,8 @@ int main(int argc, char** argv) {
          QStringLiteral("kanban"), QStringLiteral("kanban-parse-error"), 2},
         {QStringLiteral("block-beta\na[A]"),
          QStringLiteral("block"), QStringLiteral("block-lexer-error"), 2},
+        {QStringLiteral("swimlane-beta\nA -->"),
+         QStringLiteral("swimlane"), QStringLiteral("missing-link-endpoint"), 2},
         {QStringLiteral("gantt:"),
          QStringLiteral("gantt"), QStringLiteral("gantt-parse-error"), 1},
         {QStringLiteral("info\nunknown"),
@@ -1060,6 +1086,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("mindmap")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("block-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("swimlane-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("gantt")) &&
                 detected.diagnostic.expected.contains(
@@ -1677,6 +1705,9 @@ int main(int argc, char** argv) {
          QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
         {QStringLiteral("block"),
          QStringLiteral("block-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B")},
+        {QStringLiteral("swimlane"),
+         QStringLiteral("swimlane-beta TB\nsubgraph one[One]\n"
+                        "  A[Start] --> B[Done]\nend")},
         {QStringLiteral("gantt"),
          QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
                         "section Delivery\nBuild :build, 2024-01-01, 3d\n"

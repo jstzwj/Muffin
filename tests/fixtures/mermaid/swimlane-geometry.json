@@ -1,0 +1,6193 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "swimlaneLayoutSha256": "da16cc93e8359e7c7479e6e5ee4572f90eda7f76b73905a3e7354804ad476a35",
+    "swimlaneLayoutMapSha256": "91f3efc6e897559e7923a432cad3fea28106f70d3305ddd091cc256dd15328e4",
+    "swimlaneDiagramSha256": "85a5cfcf634e50a645de2a7a6057b07a3bc3dbf7746b352ee514e9dfcbf00060",
+    "swimlaneDiagramMapSha256": "2700c58b9d34fe3b2b027b4371483117c29535bfb305570524340b0c306041e6",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical-tb",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-canonical-tb",
+            "class": "flowchart",
+            "viewBox": "-222.796875 -44 445.59375 350",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 445.59375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -214.796875,
+            "y": -36,
+            "width": 429.59375,
+            "height": 334
+          },
+          "client": {
+            "width": 445.59375,
+            "height": 350
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -7.921875,
+              "y": -36,
+              "width": 222.71875,
+              "height": 334
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(83.2578125, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-7.921875",
+                  "y": "-12",
+                  "width": "222.71875",
+                  "height": "310",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -12,
+                  "width": 222.71875,
+                  "height": 310
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-7.921875",
+                  "y": "-36",
+                  "width": "222.71875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -36,
+                  "width": 222.71875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -214.796875,
+              "y": -36,
+              "width": 206.875,
+              "height": 334
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-130.6484375, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-214.796875",
+                  "y": "-12",
+                  "width": "206.875",
+                  "height": "310",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -214.796875,
+                  "y": -12,
+                  "width": 206.875,
+                  "height": 310
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-214.796875",
+                  "y": "-36",
+                  "width": "206.875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -214.796875,
+                  "y": -36,
+                  "width": 206.875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-canonical-tb-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(-111.359375, 27)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-canonical-tb-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(-111.359375, 131)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-canonical-tb-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(103.4375, 131)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-canonical-tb-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(103.4375, 235)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-canonical-tb-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-111.359375,54L-111.359375,100",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-tb_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -111.359375,
+              "y": 54,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-canonical-tb-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M103.4375,158L103.4375,204",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-tb_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 103.4375,
+              "y": 158,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-canonical-tb-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-57.921875,131L43.3359375,131",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-tb_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -57.921875,
+              "y": 131,
+              "width": 101.2578125,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "canonical-lr",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta LR\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "LR",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-canonical-lr",
+            "class": "flowchart",
+            "viewBox": "-66.1171875 -71 631.0257568359375 356.796875",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 631.0257568359375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -58.1171875,
+            "y": -63,
+            "width": 615.0257568359375,
+            "height": 340.796875
+          },
+          "client": {
+            "width": 631.015625,
+            "height": 356.78125
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -58.1171875,
+              "y": 107.3984375,
+              "width": 615.0257568359375,
+              "height": 170.3984375
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(-42.1171875, 192.59765625) rotate(-90) translate(-20.1796875, -12)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-26.1171875",
+                  "y": "107.3984375",
+                  "width": "583.0257783112702",
+                  "height": "170.3984375",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -26.1171875,
+                  "y": 107.3984375,
+                  "width": 583.0257568359375,
+                  "height": 170.3984375
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-58.1171875",
+                  "y": "107.3984375",
+                  "width": "32",
+                  "height": "170.3984375",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -58.1171875,
+                  "y": 107.3984375,
+                  "width": 32,
+                  "height": 170.3984375
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -58.1171875,
+              "y": -63,
+              "width": 615.0257568359375,
+              "height": 170.3984375
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-42.1171875, 22.19921875) rotate(-90) translate(-19.2890625, -12)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-26.1171875",
+                  "y": "-63",
+                  "width": "583.0257783112702",
+                  "height": "170.3984375",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -26.1171875,
+                  "y": -63,
+                  "width": 583.0257568359375,
+                  "height": 170.3984375
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-58.1171875",
+                  "y": "-63",
+                  "width": "32",
+                  "height": "170.3984375",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -58.1171875,
+                  "y": -63,
+                  "width": 32,
+                  "height": 170.3984375
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-canonical-lr-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(36, 0)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-canonical-lr-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(247.34754322193288, 0)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-canonical-lr-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(247.34754322193288, 214.796875)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-canonical-lr-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(485.54921581127024, 214.796875)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-canonical-lr-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M84.1171875,0L189.91004322193288,0",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-lr_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 84.1171875,
+              "y": 0,
+              "width": 105.79286193847656,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-canonical-lr-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M303.4491057219329,214.796875L420.18984081127024,214.796875",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-lr_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 303.4490966796875,
+              "y": 214.796875,
+              "width": 116.74075317382812,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-canonical-lr-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M247.34754322193288,27L247.34754322193288,183.796875",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-lr_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 247.34754943847656,
+              "y": 27,
+              "width": 0,
+              "height": 156.796875
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "canonical-rl",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta RL\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "RL",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-canonical-rl",
+            "class": "flowchart",
+            "viewBox": "-43.359375 -71 631.0257568359375 356.796875",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 631.0257568359375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -35.359375,
+            "y": -63,
+            "width": 615.0257568359375,
+            "height": 340.796875
+          },
+          "client": {
+            "width": 631.015625,
+            "height": 356.78125
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -35.359375,
+              "y": 107.3984375,
+              "width": 615.0257568359375,
+              "height": 170.3984375
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(251.9738266556351, 107.3984375)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-35.359375",
+                  "y": "131.3984375",
+                  "width": "615.0257783112702",
+                  "height": "146.3984375",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -35.359375,
+                  "y": 131.3984375,
+                  "width": 615.0257568359375,
+                  "height": 146.3984375
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-35.359375",
+                  "y": "107.3984375",
+                  "width": "615.0257783112702",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -35.359375,
+                  "y": 107.3984375,
+                  "width": 615.0257568359375,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -35.359375,
+              "y": -63,
+              "width": 615.0257568359375,
+              "height": 170.3984375
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(252.8644516556351, -63)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-35.359375",
+                  "y": "-39",
+                  "width": "615.0257783112702",
+                  "height": "146.3984375",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -35.359375,
+                  "y": -39,
+                  "width": 615.0257568359375,
+                  "height": 146.3984375
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-35.359375",
+                  "y": "-63",
+                  "width": "615.0257783112702",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -35.359375,
+                  "y": -63,
+                  "width": 615.0257568359375,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-canonical-rl-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(485.5492158112702, 0)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-canonical-rl-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(274.2016725893373, 0)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-canonical-rl-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(274.2016725893373, 214.796875)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-canonical-rl-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(35.99999999999994, 214.796875)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-canonical-rl-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M437.4320283112702,0L331.6391725893373,-4.898587196589413e-16",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-rl_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 331.63916015625,
+              "y": -4.898587410340671e-16,
+              "width": 105.79287719726562,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-canonical-rl-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M218.1001100893373,214.796875L101.35937499999994,214.796875",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-rl_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 101.359375,
+              "y": 214.796875,
+              "width": 116.74073791503906,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-canonical-rl-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M274.2016725893373,27L274.2016725893373,183.796875",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-rl_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 274.20166015625,
+              "y": 27,
+              "width": 0,
+              "height": 156.796875
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "canonical-bt",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta BT\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "BT",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-canonical-bt",
+            "class": "flowchart",
+            "viewBox": "-222.796875 -44 445.59375 350",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 445.59375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -214.796875,
+            "y": -36,
+            "width": 429.59375,
+            "height": 334
+          },
+          "client": {
+            "width": 445.59375,
+            "height": 350
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -7.921875,
+              "y": -36,
+              "width": 222.71875,
+              "height": 334
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(83.2578125, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-7.921875",
+                  "y": "-12",
+                  "width": "222.71875",
+                  "height": "310",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -12,
+                  "width": 222.71875,
+                  "height": 310
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-7.921875",
+                  "y": "-36",
+                  "width": "222.71875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -36,
+                  "width": 222.71875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -214.796875,
+              "y": -36,
+              "width": 206.875,
+              "height": 334
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-130.6484375, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-214.796875",
+                  "y": "-12",
+                  "width": "206.875",
+                  "height": "310",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -214.796875,
+                  "y": -12,
+                  "width": 206.875,
+                  "height": 310
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-214.796875",
+                  "y": "-36",
+                  "width": "206.875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -214.796875,
+                  "y": -36,
+                  "width": 206.875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-canonical-bt-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(-111.359375, 235)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-canonical-bt-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(-111.359375, 131)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-canonical-bt-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(103.4375, 131)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-canonical-bt-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(103.4375, 27)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-canonical-bt-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-111.359375,208L-111.359375,162",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-bt_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -111.359375,
+              "y": 162,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-canonical-bt-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M103.4375,104L103.4375,58",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-bt_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 103.4375,
+              "y": 58,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-canonical-bt-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-57.921875,131L43.3359375,131",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-canonical-bt_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -57.921875,
+              "y": 131,
+              "width": 101.2578125,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "default-lane",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta\nA --> B --> C",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "A",
+              "labelType": "text",
+              "domId": "flowchart-A-0",
+              "styles": [],
+              "classes": [],
+              "text": "A",
+              "props": {}
+            },
+            {
+              "id": "B",
+              "labelType": "text",
+              "domId": "flowchart-B-1",
+              "styles": [],
+              "classes": [],
+              "text": "B",
+              "props": {}
+            },
+            {
+              "id": "C",
+              "labelType": "text",
+              "domId": "flowchart-C-2",
+              "styles": [],
+              "classes": [],
+              "text": "C",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "A",
+              "end": "B",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_A_B_0"
+            },
+            {
+              "start": "B",
+              "end": "C",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_B_C_0"
+            }
+          ],
+          "subgraphs": []
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-default-lane",
+            "class": "flowchart",
+            "viewBox": "-63.203125 -44 126.40625 350",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 126.40625px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -55.203125,
+            "y": -36,
+            "width": 110.40625,
+            "height": 334
+          },
+          "client": {
+            "width": 126.40625,
+            "height": 350
+          }
+        },
+        "clusters": [
+          {
+            "id": "__swimlane_default__",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -55.203125,
+              "y": -36,
+              "width": 110.40625,
+              "height": 334
+            },
+            "label": {
+              "text": "",
+              "transform": "translate(0, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 0,
+                "height": 0
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-55.203125",
+                  "y": "-36",
+                  "width": "110.40625",
+                  "height": "334",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -55.203125,
+                  "y": -36,
+                  "width": 110.40625,
+                  "height": 334
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-55.203125",
+                  "y": "-36",
+                  "width": "110.40625",
+                  "height": "0",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -55.203125,
+                  "y": -36,
+                  "width": 110.40625,
+                  "height": 0
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-default-lane-flowchart-A-0",
+            "class": "node default",
+            "transform": "translate(0, 27)",
+            "bbox": {
+              "x": -35.1171875,
+              "y": -27,
+              "width": 70.234375,
+              "height": 54
+            },
+            "text": "A"
+          },
+          {
+            "id": "swimlane-default-lane-flowchart-B-1",
+            "class": "node default",
+            "transform": "translate(0, 131)",
+            "bbox": {
+              "x": -35.203125,
+              "y": -27,
+              "width": 70.40625,
+              "height": 54
+            },
+            "text": "B"
+          },
+          {
+            "id": "swimlane-default-lane-flowchart-C-2",
+            "class": "node default",
+            "transform": "translate(0, 235)",
+            "bbox": {
+              "x": -35.0625,
+              "y": -27,
+              "width": 70.125,
+              "height": 54
+            },
+            "text": "C"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-default-lane-L_A_B_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M0,54L-2.4492935982947064e-16,100",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-default-lane_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -2.4492937051703357e-16,
+              "y": 54,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-default-lane-L_B_C_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M0,158L-2.4492935982947064e-16,204",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-default-lane_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -2.4492937051703357e-16,
+              "y": 158,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "mixed-loose",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c\nx[Loose] --> d",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "x",
+              "labelType": "text",
+              "domId": "flowchart-x-6",
+              "styles": [],
+              "classes": [],
+              "text": "Loose",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            },
+            {
+              "start": "x",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_x_d_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-mixed-loose",
+            "class": "flowchart",
+            "viewBox": "-275.015625 -44 650.03125 350",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 650.03125px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -267.015625,
+            "y": -36,
+            "width": 634.03125,
+            "height": 334
+          },
+          "client": {
+            "width": 650.03125,
+            "height": 350
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": 144.296875,
+              "y": -36,
+              "width": 222.71875,
+              "height": 334
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(235.4765625, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "144.296875",
+                  "y": "-12",
+                  "width": "222.71875",
+                  "height": "310",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": 144.296875,
+                  "y": -12,
+                  "width": 222.71875,
+                  "height": 310
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "144.296875",
+                  "y": "-36",
+                  "width": "222.71875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": 144.296875,
+                  "y": -36,
+                  "width": 222.71875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -62.578125,
+              "y": -36,
+              "width": 206.875,
+              "height": 334
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(21.5703125, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-62.578125",
+                  "y": "-12",
+                  "width": "206.875",
+                  "height": "310",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -62.578125,
+                  "y": -12,
+                  "width": 206.875,
+                  "height": 310
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-62.578125",
+                  "y": "-36",
+                  "width": "206.875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -62.578125,
+                  "y": -36,
+                  "width": 206.875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "__swimlane_default__",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -267.015625,
+              "y": -36,
+              "width": 204.4375,
+              "height": 334
+            },
+            "label": {
+              "text": "",
+              "transform": "translate(-164.796875, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 0,
+                "height": 0
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-267.015625",
+                  "y": "-36",
+                  "width": "204.4375",
+                  "height": "334",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -267.015625,
+                  "y": -36,
+                  "width": 204.4375,
+                  "height": 334
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-267.015625",
+                  "y": "-36",
+                  "width": "204.4375",
+                  "height": "0",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -267.015625,
+                  "y": -36,
+                  "width": 204.4375,
+                  "height": 0
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-mixed-loose-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(40.859375, 27)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-mixed-loose-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(40.859375, 131)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-mixed-loose-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(255.65625, 131)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-mixed-loose-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(255.65625, 235)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          },
+          {
+            "id": "swimlane-mixed-loose-flowchart-x-6",
+            "class": "node default",
+            "transform": "translate(-164.796875, 27)",
+            "bbox": {
+              "x": -52.21875,
+              "y": -27,
+              "width": 104.4375,
+              "height": 54
+            },
+            "text": "Loose"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-mixed-loose-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M40.859375,54L40.859375,100",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-mixed-loose_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 40.859375,
+              "y": 54,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-mixed-loose-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M255.65625,158L255.65625,204",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-mixed-loose_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 255.65625,
+              "y": 158,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-mixed-loose-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M94.296875,131L195.5546875,131",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-mixed-loose_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 94.296875,
+              "y": 131,
+              "width": 101.2578125,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-mixed-loose-L_x_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-164.796875,54L-164.796875,180.92893218813452Q-164.796875,188 -157.72580718813452,188L238.58518218813452,188Q245.65625,188 245.65625,195.07106781186548L245.65625,204",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-mixed-loose_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -164.796875,
+              "y": 54,
+              "width": 410.453125,
+              "height": 150
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "nested",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta\nsubgraph outer[Outer]\n subgraph inner[Inner]\n  A --> B\n end\n C --> B\nend",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "A",
+              "labelType": "text",
+              "domId": "flowchart-A-0",
+              "styles": [],
+              "classes": [],
+              "text": "A",
+              "props": {}
+            },
+            {
+              "id": "B",
+              "labelType": "text",
+              "domId": "flowchart-B-1",
+              "styles": [],
+              "classes": [],
+              "text": "B",
+              "props": {}
+            },
+            {
+              "id": "C",
+              "labelType": "text",
+              "domId": "flowchart-C-2",
+              "styles": [],
+              "classes": [],
+              "text": "C",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "A",
+              "end": "B",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_A_B_0"
+            },
+            {
+              "start": "C",
+              "end": "B",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_C_B_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "inner",
+              "nodes": [
+                "B",
+                "A"
+              ],
+              "title": "Inner",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "outer",
+              "nodes": [
+                "inner",
+                "C"
+              ],
+              "title": "Outer",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-nested",
+            "class": "flowchart",
+            "viewBox": "-13.203125 -12 126.265625 286",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 126.265625px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -5.203125,
+            "y": -4,
+            "width": 110.265625,
+            "height": 270
+          },
+          "client": {
+            "width": 126.265625,
+            "height": 286
+          }
+        },
+        "clusters": [
+          {
+            "id": "outer",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -5.0625,
+              "y": 68,
+              "width": 110.125,
+              "height": 126
+            },
+            "label": {
+              "text": "Outer",
+              "transform": "translate(28.1015625, 68)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 43.796875,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-5.0625",
+                  "y": "92",
+                  "width": "110.125",
+                  "height": "102",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -5.0625,
+                  "y": 92,
+                  "width": 110.125,
+                  "height": 102
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-5.0625",
+                  "y": "68",
+                  "width": "110.125",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -5.0625,
+                  "y": 68,
+                  "width": 110.125,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "swimlane-nested-inner",
+            "class": "cluster",
+            "bbox": {
+              "x": 10.796875,
+              "y": -4,
+              "width": 78.40625,
+              "height": 270
+            },
+            "label": {
+              "text": "Inner",
+              "transform": "translate(29.578125, -4)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.84375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": null,
+                  "x": "10.796875",
+                  "y": "-4",
+                  "width": "78.40625",
+                  "height": "270",
+                  "fill": null,
+                  "stroke": null
+                },
+                "bbox": {
+                  "x": 10.796875,
+                  "y": -4,
+                  "width": 78.40625,
+                  "height": 270
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-nested-flowchart-A-0",
+            "class": "node default",
+            "transform": "translate(50, 27)",
+            "bbox": {
+              "x": -35.1171875,
+              "y": -27,
+              "width": 70.234375,
+              "height": 54
+            },
+            "text": "A"
+          },
+          {
+            "id": "swimlane-nested-flowchart-B-1",
+            "class": "node default",
+            "transform": "translate(50, 235)",
+            "bbox": {
+              "x": -35.203125,
+              "y": -27,
+              "width": 70.40625,
+              "height": 54
+            },
+            "text": "B"
+          },
+          {
+            "id": "swimlane-nested-flowchart-C-2",
+            "class": "node default",
+            "transform": "translate(50, 131)",
+            "bbox": {
+              "x": -35.0625,
+              "y": -27,
+              "width": 70.125,
+              "height": 54
+            },
+            "text": "C"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-nested-L_A_B_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M14.8828125,27L1.8679428118654755,27Q-5.203125,27 -5.203125,34.071067811865476L-5.203125,227.92893218813452Q-5.203125,235 1.8679428118654755,235L10.796875,235",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-nested_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -5.203125,
+              "y": 27,
+              "width": 20.0859375,
+              "height": 208
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-nested-L_C_B_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M50,158L50,204",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-nested_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 50,
+              "y": 158,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "edge-label",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb -->|handoff| c",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "handoff",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-edge-label",
+            "class": "flowchart",
+            "viewBox": "-222.796875 -44 445.59375 454",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 445.59375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -214.796875,
+            "y": -36,
+            "width": 429.59375,
+            "height": 438
+          },
+          "client": {
+            "width": 445.59375,
+            "height": 454
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -7.921875,
+              "y": -36,
+              "width": 222.71875,
+              "height": 438
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(83.2578125, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-7.921875",
+                  "y": "-12",
+                  "width": "222.71875",
+                  "height": "414",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -12,
+                  "width": 222.71875,
+                  "height": 414
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-7.921875",
+                  "y": "-36",
+                  "width": "222.71875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -36,
+                  "width": 222.71875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -214.796875,
+              "y": -36,
+              "width": 206.875,
+              "height": 438
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-130.6484375, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-214.796875",
+                  "y": "-12",
+                  "width": "206.875",
+                  "height": "414",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -214.796875,
+                  "y": -12,
+                  "width": 206.875,
+                  "height": 414
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-214.796875",
+                  "y": "-36",
+                  "width": "206.875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -214.796875,
+                  "y": -36,
+                  "width": 206.875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-edge-label-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(-111.359375, 27)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-edge-label-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(-111.359375, 131)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-edge-label-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(103.4375, 235)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-edge-label-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(103.4375, 339)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-edge-label-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-111.359375,54L-111.359375,100",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-edge-label_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -111.359375,
+              "y": 54,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-edge-label-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M103.4375,262L103.4375,308",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-edge-label_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 103.4375,
+              "y": 262,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-edge-label-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-57.921875,131L96.36643218813452,131Q103.4375,131 103.4375,138.07106781186548L103.4375,204",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-edge-label_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -57.921875,
+              "y": 131,
+              "width": 161.359375,
+              "height": 73
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [
+          {
+            "transform": "translate(22.7578125, 131)",
+            "bbox": {
+              "x": -29.640625,
+              "y": -12,
+              "width": 59.28125,
+              "height": 24
+            },
+            "text": "handoff"
+          }
+        ],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "cycle",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c\nd --> a",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            },
+            {
+              "start": "d",
+              "end": "a",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_d_a_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-cycle",
+            "class": "flowchart",
+            "viewBox": "-172.796875 -44 445.59375 350",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 445.59375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -164.796875,
+            "y": -36,
+            "width": 429.59375,
+            "height": 334
+          },
+          "client": {
+            "width": 445.59375,
+            "height": 350
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": 42.078125,
+              "y": -36,
+              "width": 222.71875,
+              "height": 334
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(133.2578125, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "42.078125",
+                  "y": "-12",
+                  "width": "222.71875",
+                  "height": "310",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": 42.078125,
+                  "y": -12,
+                  "width": 222.71875,
+                  "height": 310
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "42.078125",
+                  "y": "-36",
+                  "width": "222.71875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": 42.078125,
+                  "y": -36,
+                  "width": 222.71875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -164.796875,
+              "y": -36,
+              "width": 206.875,
+              "height": 334
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-80.6484375, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-164.796875",
+                  "y": "-12",
+                  "width": "206.875",
+                  "height": "310",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -164.796875,
+                  "y": -12,
+                  "width": 206.875,
+                  "height": 310
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-164.796875",
+                  "y": "-36",
+                  "width": "206.875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -164.796875,
+                  "y": -36,
+                  "width": 206.875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-cycle-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(-61.359375, 27)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-cycle-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(-61.359375, 131)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-cycle-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(153.4375, 131)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-cycle-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(153.4375, 235)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-cycle-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-61.359375,54L-61.359375,100",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-cycle_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -61.359375,
+              "y": 54,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-cycle-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M153.4375,158L153.4375,204",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-cycle_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 153.4375,
+              "y": 158,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-cycle-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-7.921875,131L93.3359375,131",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-cycle_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -7.921875,
+              "y": 131,
+              "width": 101.2578125,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-cycle-L_d_a_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M92.078125,235L-122.40549468813452,235Q-129.4765625,235 -129.4765625,227.92893218813452L-129.4765625,34.071067811865476Q-129.4765625,27 -122.40549468813452,27L-113.4765625,27",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-cycle_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -129.4765625,
+              "y": 27,
+              "width": 221.5546875,
+              "height": 208
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "crossing",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nswimlane-beta TB\nsubgraph one[One]\n a1[A1] --> a2[A2]\nend\nsubgraph two[Two]\n b1[B1] --> b2[B2]\nend\na1 --> b2\nb1 --> a2",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a1",
+              "labelType": "text",
+              "domId": "flowchart-a1-0",
+              "styles": [],
+              "classes": [],
+              "text": "A1",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "a2",
+              "labelType": "text",
+              "domId": "flowchart-a2-1",
+              "styles": [],
+              "classes": [],
+              "text": "A2",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b1",
+              "labelType": "text",
+              "domId": "flowchart-b1-2",
+              "styles": [],
+              "classes": [],
+              "text": "B1",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b2",
+              "labelType": "text",
+              "domId": "flowchart-b2-3",
+              "styles": [],
+              "classes": [],
+              "text": "B2",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a1",
+              "end": "a2",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a1_a2_0"
+            },
+            {
+              "start": "b1",
+              "end": "b2",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b1_b2_0"
+            },
+            {
+              "start": "a1",
+              "end": "b2",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a1_b2_0"
+            },
+            {
+              "start": "b1",
+              "end": "a2",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b1_a2_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "one",
+              "nodes": [
+                "a2",
+                "a1"
+              ],
+              "title": "One",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "two",
+              "nodes": [
+                "b2",
+                "b1"
+              ],
+              "title": "Two",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-crossing",
+            "class": "flowchart",
+            "viewBox": "-187.4765625 -53 374.953125 255",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 374.953125px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -179.4765625,
+            "y": -45,
+            "width": 358.953125,
+            "height": 239
+          },
+          "client": {
+            "width": 374.953125,
+            "height": 255
+          }
+        },
+        "clusters": [
+          {
+            "id": "two",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -0.0859375,
+              "y": -45,
+              "width": 179.5625,
+              "height": 239
+            },
+            "label": {
+              "text": "Two",
+              "transform": "translate(74.2734375, -45)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 30.84375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-0.0859375",
+                  "y": "-21",
+                  "width": "179.5625",
+                  "height": "215",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -0.0859375,
+                  "y": -21,
+                  "width": 179.5625,
+                  "height": 215
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-0.0859375",
+                  "y": "-45",
+                  "width": "179.5625",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -0.0859375,
+                  "y": -45,
+                  "width": 179.5625,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "one",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -179.4765625,
+              "y": -45,
+              "width": 179.390625,
+              "height": 239
+            },
+            "label": {
+              "text": "One",
+              "transform": "translate(-105.4921875, -45)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 31.421875,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-179.4765625",
+                  "y": "-21",
+                  "width": "179.390625",
+                  "height": "215",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -179.4765625,
+                  "y": -21,
+                  "width": 179.390625,
+                  "height": 215
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-179.4765625",
+                  "y": "-45",
+                  "width": "179.390625",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -179.4765625,
+                  "y": -45,
+                  "width": 179.390625,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-crossing-flowchart-a1-0",
+            "class": "node default",
+            "transform": "translate(-89.78125, 27)",
+            "bbox": {
+              "x": -39.6953125,
+              "y": -27,
+              "width": 79.390625,
+              "height": 54
+            },
+            "text": "A1"
+          },
+          {
+            "id": "swimlane-crossing-flowchart-a2-1",
+            "class": "node default",
+            "transform": "translate(-89.78125, 131)",
+            "bbox": {
+              "x": -39.6953125,
+              "y": -27,
+              "width": 79.390625,
+              "height": 54
+            },
+            "text": "A2"
+          },
+          {
+            "id": "swimlane-crossing-flowchart-b1-2",
+            "class": "node default",
+            "transform": "translate(89.6953125, 27)",
+            "bbox": {
+              "x": -39.78125,
+              "y": -27,
+              "width": 79.5625,
+              "height": 54
+            },
+            "text": "B1"
+          },
+          {
+            "id": "swimlane-crossing-flowchart-b2-3",
+            "class": "node default",
+            "transform": "translate(89.6953125, 131)",
+            "bbox": {
+              "x": -39.78125,
+              "y": -27,
+              "width": 79.5625,
+              "height": 54
+            },
+            "text": "B2"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-crossing-L_a1_a2_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-89.78125,54L-89.78125,100",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-crossing_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -89.78125,
+              "y": 54,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-crossing-L_b1_b2_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M89.6953125,54L89.6953125,100",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-crossing_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 89.6953125,
+              "y": 54,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-crossing-L_a1_b2_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-89.78125,0L-89.78125,-12.928932188134524Q-89.78125,-20 -82.71018218813452,-20L142.40549468813452,-20Q149.4765625,-20 149.4765625,-12.928932188134524L149.4765625,123.92893218813452Q149.4765625,131 142.40549468813452,131L133.4765625,131",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-crossing_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -89.78125,
+              "y": -20,
+              "width": 239.2578125,
+              "height": 151
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-crossing-L_b1_a2_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M49.9140625,27L36.985130311865476,27Q29.9140625,27 29.9140625,34.071067811865476L29.9140625,56.928932188134524Q29.9140625,64 22.842994688134524,64L-72.71018218813452,64Q-79.78125,64 -79.78125,71.07106781186548L-79.78125,100",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-crossing_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -79.78125,
+              "y": 27,
+              "width": 129.6953125,
+              "height": 73
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "html-false",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"htmlLabels\":false}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-html-false",
+            "class": "flowchart",
+            "viewBox": "-223.296875 -44 446.59375 344",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 446.59375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -215.296875,
+            "y": -36,
+            "width": 430.59375,
+            "height": 328
+          },
+          "client": {
+            "width": 446.59375,
+            "height": 344
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -8.421875,
+              "y": -36,
+              "width": 223.71875,
+              "height": 328
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(83.2578125, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-8.421875",
+                  "y": "-12",
+                  "width": "223.71875",
+                  "height": "304",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -8.421875,
+                  "y": -12,
+                  "width": 223.71875,
+                  "height": 304
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-8.421875",
+                  "y": "-36",
+                  "width": "223.71875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -8.421875,
+                  "y": -36,
+                  "width": 223.71875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -215.296875,
+              "y": -36,
+              "width": 206.875,
+              "height": 328
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-131.1484375, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-215.296875",
+                  "y": "-12",
+                  "width": "206.875",
+                  "height": "304",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -215.296875,
+                  "y": -12,
+                  "width": 206.875,
+                  "height": 304
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-215.296875",
+                  "y": "-36",
+                  "width": "206.875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -215.296875,
+                  "y": -36,
+                  "width": 206.875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-html-false-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(-111.859375, 26)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -26,
+              "width": 96.234375,
+              "height": 52
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-html-false-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(-111.859375, 128)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -26,
+              "width": 106.875,
+              "height": 52
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-html-false-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(103.4375, 128)",
+            "bbox": {
+              "x": -56.30796813964844,
+              "y": -26,
+              "width": 112.61593627929688,
+              "height": 52
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-html-false-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(103.4375, 230)",
+            "bbox": {
+              "x": -61.859375,
+              "y": -26,
+              "width": 123.71875,
+              "height": 52
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-html-false-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-111.859375,52L-111.859375,98",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-html-false_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -111.859375,
+              "y": 52,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-html-false-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M103.4375,154L103.4375,200",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-html-false_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 103.4375,
+              "y": 154,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-html-false-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-58.421875,128L43.12953186035156,128",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-html-false_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -58.421875,
+              "y": 128,
+              "width": 101.55140686035156,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "look-neo",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"look\":\"neo\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-look-neo",
+            "class": "flowchart",
+            "viewBox": "-194.796875 -44 389.59375 332",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 389.59375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -186.796875,
+            "y": -36,
+            "width": 373.59375,
+            "height": 316
+          },
+          "client": {
+            "width": 389.59375,
+            "height": 332
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -7.921875,
+              "y": -36,
+              "width": 194.71875,
+              "height": 316
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(69.2578125, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-7.921875",
+                  "y": "-12",
+                  "width": "194.71875",
+                  "height": "292",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -12,
+                  "width": 194.71875,
+                  "height": 292
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-7.921875",
+                  "y": "-36",
+                  "width": "194.71875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -36,
+                  "width": 194.71875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -186.796875,
+              "y": -36,
+              "width": 178.875,
+              "height": 316
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-116.6484375, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-186.796875",
+                  "y": "-12",
+                  "width": "178.875",
+                  "height": "292",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -186.796875,
+                  "y": -12,
+                  "width": 178.875,
+                  "height": 292
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-186.796875",
+                  "y": "-36",
+                  "width": "178.875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -186.796875,
+                  "y": -36,
+                  "width": 178.875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-look-neo-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(-97.359375, 24)",
+            "bbox": {
+              "x": -34.1171875,
+              "y": -24,
+              "width": 68.234375,
+              "height": 48
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-look-neo-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(-97.359375, 122)",
+            "bbox": {
+              "x": -39.4375,
+              "y": -24,
+              "width": 78.875,
+              "height": 48
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-look-neo-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(89.4375, 122)",
+            "bbox": {
+              "x": -42.1015625,
+              "y": -24,
+              "width": 84.203125,
+              "height": 48
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-look-neo-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(89.4375, 220)",
+            "bbox": {
+              "x": -47.359375,
+              "y": -24,
+              "width": 94.71875,
+              "height": 48
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-look-neo-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-97.359375,48L-97.359375,94",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-look-neo_swimlane-pointEnd-margin)"
+            },
+            "bbox": {
+              "x": -97.359375,
+              "y": 48,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-look-neo-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M89.4375,146L89.4375,192",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-look-neo_swimlane-pointEnd-margin)"
+            },
+            "bbox": {
+              "x": 89.4375,
+              "y": 146,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-look-neo-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-57.921875,122L43.3359375,122",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-look-neo_swimlane-pointEnd-margin)"
+            },
+            "bbox": {
+              "x": -57.921875,
+              "y": 122,
+              "width": 101.2578125,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "look-hand",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"look\":\"handDrawn\",\"handDrawnSeed\":7}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-look-hand",
+            "class": "flowchart",
+            "viewBox": "-227.03590393066406 -45.697593688964844 454.572021484375 361.54486083984375",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 454.572021484375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -219.03590393066406,
+            "y": -37.697593688964844,
+            "width": 438.572021484375,
+            "height": 345.54486083984375
+          },
+          "client": {
+            "width": 454.5625,
+            "height": 361.53125
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -9.263392448425293,
+              "y": -37.697593688964844,
+              "width": 228.7995147705078,
+              "height": 345.54486083984375
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(84.56436538696289, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": []
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -219.03590393066406,
+              "y": -37.40418243408203,
+              "width": 212.91661071777344,
+              "height": 345.14703369140625
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-131.9549903869629, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": []
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-look-hand-flowchart-a-0",
+            "class": "rough-node default",
+            "transform": "translate(-112.66592788696289, 28.48976707458496)",
+            "bbox": {
+              "x": -49.516597747802734,
+              "y": -28.639371871948242,
+              "width": 98.93113708496094,
+              "height": 56.97953414916992
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-look-hand-flowchart-b-1",
+            "class": "rough-node default",
+            "transform": "translate(-112.66592788696289, 135.32835960388184)",
+            "bbox": {
+              "x": -54.836910247802734,
+              "y": -28.254802703857422,
+              "width": 109.48810577392578,
+              "height": 56.66862869262695
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-look-hand-flowchart-c-2",
+            "class": "rough-node default",
+            "transform": "translate(104.74405288696289, 135.32835960388184)",
+            "bbox": {
+              "x": -57.58808517456055,
+              "y": -28.278688430786133,
+              "width": 114.9033432006836,
+              "height": 56.69765090942383
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-look-hand-flowchart-d-3",
+            "class": "rough-node default",
+            "transform": "translate(104.74405288696289, 242.04908752441406)",
+            "bbox": {
+              "x": -62.758785247802734,
+              "y": -28.403644561767578,
+              "width": 125.33185577392578,
+              "height": 56.743804931640625
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-look-hand-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid transition edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-113.26567464675755 56.603692101500926 C-112.11111993506962 66.226544051921, -112.61589663342052 75.35488821272925, -113.13247666563839 102.61794981267303 M-112.82812556969002 56.93519122796133 C-112.88758381761669 72.9686832791097, -112.42901027061103 89.05275106344288, -112.684713888634 102.77495859162882",
+              "stroke": "#000",
+              "stroke-width": "1",
+              "marker-start": null,
+              "marker-end": "url(#swimlane-look-hand_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -113.26567840576172,
+              "y": 56.60369110107422,
+              "width": 0.7007598876953125,
+              "height": 46.1712646484375
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-look-hand-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid transition edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M104.14430612716824 163.30134301092477 C105.29885254774801 172.92129228301346, 104.79407584939712 182.04673376549036, 104.27750410828739 209.30108961369842 M104.58185520423577 163.63284213738515 C104.52237945584021 179.6612630895339, 104.98095300284587 195.74025977486744, 104.72526688529179 209.45809839265422",
+              "stroke": "#000",
+              "stroke-width": "1",
+              "marker-start": null,
+              "marker-end": "url(#swimlane-look-hand_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 104.14430236816406,
+              "y": 163.3013458251953,
+              "width": 0.7007522583007812,
+              "height": 46.15675354003906
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-look-hand-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid transition edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-58.521621759794655 134.95251755621285 C-37.14732165005463 135.54755866584793, -17.406061968476237 135.47155256924646, 42.8258325079456 134.9522641589865 M-58.084072682727125 135.28401668267324 C-22.828362425739737 135.5340879588652, 13.000873355387057 135.53777546875958, 43.27359528494999 135.1092729379423",
+              "stroke": "#000",
+              "stroke-width": "1",
+              "marker-start": null,
+              "marker-end": "url(#swimlane-look-hand_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -58.52162170410156,
+              "y": 134.9522705078125,
+              "width": 101.79521942138672,
+              "height": 0.5029296875
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "layout-dagre",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"layout\":\"dagre\"}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-layout-dagre",
+            "class": "flowchart",
+            "viewBox": "0 0 208.71875 482",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 208.71875px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": 8,
+            "y": 8,
+            "width": 192.71875,
+            "height": 466
+          },
+          "client": {
+            "width": 208.71875,
+            "height": 482
+          }
+        },
+        "clusters": [
+          {
+            "id": "swimlane-layout-dagre-legal",
+            "class": "cluster",
+            "bbox": {
+              "x": 8,
+              "y": 266,
+              "width": 192.71875,
+              "height": 208
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(84.1796875, 266)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": null,
+                  "x": "8",
+                  "y": "266",
+                  "width": "192.71875",
+                  "height": "208",
+                  "fill": null,
+                  "stroke": null
+                },
+                "bbox": {
+                  "x": 8,
+                  "y": 266,
+                  "width": 192.71875,
+                  "height": 208
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "swimlane-layout-dagre-sales",
+            "class": "cluster",
+            "bbox": {
+              "x": 15.921875,
+              "y": 8,
+              "width": 176.875,
+              "height": 208
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(85.0703125, 8)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": null,
+                  "x": "15.921875",
+                  "y": "8",
+                  "width": "176.875",
+                  "height": "208",
+                  "fill": null,
+                  "stroke": null
+                },
+                "bbox": {
+                  "x": 15.921875,
+                  "y": 8,
+                  "width": 176.875,
+                  "height": 208
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-layout-dagre-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(104.359375, 60)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-layout-dagre-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(104.359375, 164)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-layout-dagre-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(104.359375, 318)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-layout-dagre-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(104.359375, 422)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-layout-dagre-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M104.359,87L104.359,91.167C104.359,95.333,104.359,103.667,104.359,111.333C104.359,119,104.359,126,104.359,129.5L104.359,133",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-layout-dagre_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 104.35900115966797,
+              "y": 87,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-layout-dagre-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M104.359,345L104.359,349.167C104.359,353.333,104.359,361.667,104.359,369.333C104.359,377,104.359,384,104.359,387.5L104.359,391",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-layout-dagre_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 104.35900115966797,
+              "y": 345,
+              "width": 0,
+              "height": 46
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-layout-dagre-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M104.359,191L104.359,195.167C104.359,199.333,104.359,207.667,104.359,216C104.359,224.333,104.359,232.667,104.359,241C104.359,249.333,104.359,257.667,104.359,265.333C104.359,273,104.359,280,104.359,283.5L104.359,287",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-layout-dagre_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 104.35900115966797,
+              "y": 191,
+              "width": 0,
+              "height": 96
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [
+          {
+            "transform": null,
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "text": ""
+          },
+          {
+            "transform": null,
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "text": ""
+          },
+          {
+            "transform": null,
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "text": ""
+          }
+        ],
+        "order": [
+          "clusters",
+          "edgePaths",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    },
+    {
+      "id": "spacing",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"flowchart\":{\"nodeSpacing\":80,\"rankSpacing\":90}}}%%\nswimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "db": {
+          "direction": "TB",
+          "vertices": [
+            {
+              "id": "a",
+              "labelType": "text",
+              "domId": "flowchart-a-0",
+              "styles": [],
+              "classes": [],
+              "text": "Lead",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "b",
+              "labelType": "text",
+              "domId": "flowchart-b-1",
+              "styles": [],
+              "classes": [],
+              "text": "Quote",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "c",
+              "labelType": "text",
+              "domId": "flowchart-c-2",
+              "styles": [],
+              "classes": [],
+              "text": "Review",
+              "type": "square",
+              "props": {}
+            },
+            {
+              "id": "d",
+              "labelType": "text",
+              "domId": "flowchart-d-3",
+              "styles": [],
+              "classes": [],
+              "text": "Approve",
+              "type": "square",
+              "props": {}
+            }
+          ],
+          "edges": [
+            {
+              "start": "a",
+              "end": "b",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_a_b_0"
+            },
+            {
+              "start": "c",
+              "end": "d",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_c_d_0"
+            },
+            {
+              "start": "b",
+              "end": "c",
+              "type": "arrow_point",
+              "text": "",
+              "labelType": "text",
+              "classes": [],
+              "isUserDefinedId": false,
+              "stroke": "normal",
+              "length": 1,
+              "id": "L_b_c_0"
+            }
+          ],
+          "subgraphs": [
+            {
+              "id": "sales",
+              "nodes": [
+                "b",
+                "a"
+              ],
+              "title": "Sales",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            },
+            {
+              "id": "legal",
+              "nodes": [
+                "d",
+                "c"
+              ],
+              "title": "Legal",
+              "classes": [],
+              "hasExplicitDir": false,
+              "labelType": "text"
+            }
+          ]
+        },
+        "root": {
+          "attrs": {
+            "id": "swimlane-spacing",
+            "class": "flowchart",
+            "viewBox": "-282.796875 -44 565.59375 430",
+            "width": "100%",
+            "height": null,
+            "style": "max-width: 565.59375px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "swimlane"
+          },
+          "bbox": {
+            "x": -274.796875,
+            "y": -36,
+            "width": 549.59375,
+            "height": 414
+          },
+          "client": {
+            "width": 565.59375,
+            "height": 430
+          }
+        },
+        "clusters": [
+          {
+            "id": "legal",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -7.921875,
+              "y": -36,
+              "width": 282.71875,
+              "height": 414
+            },
+            "label": {
+              "text": "Legal",
+              "transform": "translate(113.2578125, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 40.359375,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-7.921875",
+                  "y": "-12",
+                  "width": "282.71875",
+                  "height": "390",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -12,
+                  "width": 282.71875,
+                  "height": 390
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-7.921875",
+                  "y": "-36",
+                  "width": "282.71875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -7.921875,
+                  "y": -36,
+                  "width": 282.71875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          },
+          {
+            "id": "sales",
+            "class": "cluster swimlane",
+            "bbox": {
+              "x": -274.796875,
+              "y": -36,
+              "width": 266.875,
+              "height": 414
+            },
+            "label": {
+              "text": "Sales",
+              "transform": "translate(-160.6484375, -36)",
+              "bbox": {
+                "x": 0,
+                "y": 0,
+                "width": 38.578125,
+                "height": 24
+              }
+            },
+            "rects": [
+              {
+                "attrs": {
+                  "class": "swimlane-body",
+                  "x": "-274.796875",
+                  "y": "-12",
+                  "width": "266.875",
+                  "height": "390",
+                  "fill": "none",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -274.796875,
+                  "y": -12,
+                  "width": 266.875,
+                  "height": 390
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              },
+              {
+                "attrs": {
+                  "class": "swimlane-title",
+                  "x": "-274.796875",
+                  "y": "-36",
+                  "width": "266.875",
+                  "height": "24",
+                  "fill": "#ffffde",
+                  "stroke": "#aaaa33"
+                },
+                "bbox": {
+                  "x": -274.796875,
+                  "y": -36,
+                  "width": 266.875,
+                  "height": 24
+                },
+                "computed": {
+                  "fill": "rgb(255, 255, 222)",
+                  "stroke": "rgb(170, 170, 51)",
+                  "strokeWidth": "1px",
+                  "fontFamily": "\"Noto Sans\"",
+                  "fontSize": "16px",
+                  "color": "rgb(0, 0, 0)",
+                  "filter": "none"
+                }
+              }
+            ]
+          }
+        ],
+        "nodes": [
+          {
+            "id": "swimlane-spacing-flowchart-a-0",
+            "class": "node default",
+            "transform": "translate(-141.359375, 27)",
+            "bbox": {
+              "x": -48.1171875,
+              "y": -27,
+              "width": 96.234375,
+              "height": 54
+            },
+            "text": "Lead"
+          },
+          {
+            "id": "swimlane-spacing-flowchart-b-1",
+            "class": "node default",
+            "transform": "translate(-141.359375, 171)",
+            "bbox": {
+              "x": -53.4375,
+              "y": -27,
+              "width": 106.875,
+              "height": 54
+            },
+            "text": "Quote"
+          },
+          {
+            "id": "swimlane-spacing-flowchart-c-2",
+            "class": "node default",
+            "transform": "translate(133.4375, 171)",
+            "bbox": {
+              "x": -56.1015625,
+              "y": -27,
+              "width": 112.203125,
+              "height": 54
+            },
+            "text": "Review"
+          },
+          {
+            "id": "swimlane-spacing-flowchart-d-3",
+            "class": "node default",
+            "transform": "translate(133.4375, 315)",
+            "bbox": {
+              "x": -61.359375,
+              "y": -27,
+              "width": 122.71875,
+              "height": 54
+            },
+            "text": "Approve"
+          }
+        ],
+        "edges": [
+          {
+            "attrs": {
+              "id": "swimlane-spacing-L_a_b_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-141.359375,54L-141.359375,140",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-spacing_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -141.359375,
+              "y": 54,
+              "width": 0,
+              "height": 86
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-spacing-L_c_d_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M133.4375,198L133.4375,284",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-spacing_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": 133.4375,
+              "y": 198,
+              "width": 0,
+              "height": 86
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          },
+          {
+            "attrs": {
+              "id": "swimlane-spacing-L_b_c_0",
+              "class": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+              "d": "M-87.921875,171L73.3359375,171",
+              "stroke": null,
+              "stroke-width": null,
+              "marker-start": null,
+              "marker-end": "url(#swimlane-spacing_swimlane-pointEnd)"
+            },
+            "bbox": {
+              "x": -87.921875,
+              "y": 171,
+              "width": 161.2578125,
+              "height": 0
+            },
+            "computed": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "16px",
+              "color": "rgb(0, 0, 0)",
+              "filter": "none"
+            }
+          }
+        ],
+        "edgeLabels": [],
+        "order": [
+          "clusters",
+          "edges edgePath",
+          "edgeLabels",
+          "nodes"
+        ]
+      }
+    }
+  ],
+  "fixtureSha256": "c0071bf69acd0b3c8b4ff72691e4b3772b2e3171c8e6faf120151196c3821643"
+}

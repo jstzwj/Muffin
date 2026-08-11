@@ -12,6 +12,7 @@ namespace muffin::mermaid::editor {
 // and stays family-agnostic — so adding a family touches one adapter TU + this
 // registry + CMake + the accessor declaration, but no consumer code.
 const Diagram& flowchartDiagramAdapter();
+const Diagram& swimlaneDiagramAdapter();
 const Diagram& sequenceDiagramAdapter();
 const Diagram& classDiagramAdapter();
 const Diagram& stateDiagramAdapter();

@@ -16,6 +16,7 @@
   "scope": {
     "families": [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -46,12 +47,12 @@
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 202,
+    "parity": 205,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 96,
+    "upstream-inert": 99,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -60,6 +61,7 @@
       "path": "theme",
       "families": [
         "flowchart",
+        "swimlane",
         "sequence",
         "class",
         "state",
@@ -109,6 +111,7 @@
       "path": "themeVariables.*",
       "families": [
         "flowchart",
+        "swimlane",
         "sequence",
         "class",
         "state",
@@ -159,6 +162,7 @@
       "path": "fontFamily",
       "families": [
         "flowchart",
+        "swimlane",
         "sequence",
         "class",
         "state",
@@ -207,6 +211,7 @@
       "path": "htmlLabels",
       "families": [
         "flowchart",
+        "swimlane",
         "class",
         "requirement",
         "kanban",
@@ -236,6 +241,7 @@
       "path": "look",
       "families": [
         "flowchart",
+        "swimlane",
         "class",
         "state",
         "timeline",
@@ -268,6 +274,7 @@
       "path": "handDrawnSeed",
       "families": [
         "flowchart",
+        "swimlane",
         "kanban",
         "mindmap",
         "block",
@@ -319,6 +326,7 @@
       "path": "layout",
       "families": [
         "flowchart",
+        "swimlane",
         "class",
         "state",
         "mindmap"
@@ -340,7 +348,7 @@
         "interaction",
         "export"
       ],
-      "note": "Dagre is supported by all four families. Flowchart/class/state reject unsupported engines; Mindmap falls back to cose-bilkent for unknown or unregistered names."
+      "note": "Dagre is supported by all five families. Flowchart/class/state reject unsupported engines; Swimlane accepts its native engine or Dagre; Mindmap falls back to cose-bilkent for unknown or unregistered names."
     },
     {
       "path": "wrap",
@@ -389,6 +397,7 @@
         "state",
         "er",
         "requirement",
+        "swimlane",
         "pie",
         "quadrantChart",
         "journey",
@@ -424,6 +433,7 @@
       "path": "securityLevel",
       "families": [
         "flowchart",
+        "swimlane",
         "sequence",
         "class",
         "state",
@@ -486,6 +496,7 @@
       "path": "deterministicIds",
       "families": [
         "flowchart",
+        "swimlane",
         "sequence",
         "class",
         "state",
@@ -527,6 +538,7 @@
       "path": "deterministicIDSeed",
       "families": [
         "flowchart",
+        "swimlane",
         "sequence",
         "class",
         "state",
@@ -568,6 +580,7 @@
       "path": "themeCSS",
       "families": [
         "flowchart",
+        "swimlane",
         "sequence",
         "class",
         "state",
@@ -638,6 +651,11 @@
         "viewport",
         "export"
       ],
+      "families": [
+        "flowchart",
+        "swimlane"
+      ],
+      "note": "Swimlane reuses flowchart root sizing; swimlane.useMaxWidth itself is inert.",
       "default": true
     },
     {
@@ -658,6 +676,10 @@
         "paint",
         "viewport",
         "export"
+      ],
+      "families": [
+        "flowchart",
+        "swimlane"
       ],
       "default": 25
     },
@@ -716,6 +738,10 @@
         "viewport",
         "export"
       ],
+      "families": [
+        "flowchart",
+        "swimlane"
+      ],
       "default": 8
     },
     {
@@ -762,6 +788,10 @@
         "interaction",
         "export"
       ],
+      "families": [
+        "flowchart",
+        "swimlane"
+      ],
       "default": 50
     },
     {
@@ -787,6 +817,10 @@
         "interaction",
         "export"
       ],
+      "families": [
+        "flowchart",
+        "swimlane"
+      ],
       "default": 50
     },
     {
@@ -811,6 +845,10 @@
         "viewport",
         "interaction",
         "export"
+      ],
+      "families": [
+        "flowchart",
+        "swimlane"
       ],
       "default": "basis"
     },
@@ -838,6 +876,10 @@
         "viewport",
         "interaction",
         "export"
+      ],
+      "families": [
+        "flowchart",
+        "swimlane"
       ],
       "default": 15
     },
@@ -907,6 +949,126 @@
         "parsed"
       ],
       "note": "Subgraph direction inheritance is parsed but not forwarded.",
+      "default": false
+    },
+    {
+      "family": "swimlane",
+      "interface": "SwimlaneDiagramConfig",
+      "path": "swimlane.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "swimlane",
+      "interface": "SwimlaneDiagramConfig",
+      "path": "swimlane.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Swimlane 11.16.0 configures its SVG from flowchart.useMaxWidth; the same-named Swimlane field is retained but inert.",
+      "default": true
+    },
+    {
+      "family": "swimlane",
+      "interface": "SwimlaneDiagramConfig",
+      "path": "swimlane.lineHops",
+      "field": "lineHops",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "arc"
+    },
+    {
+      "family": "swimlane",
+      "interface": "SwimlaneDiagramConfig",
+      "path": "swimlane.ignoreCrossLaneEdges",
+      "field": "ignoreCrossLaneEdges",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "swimlane",
+      "interface": "SwimlaneDiagramConfig",
+      "path": "swimlane.optimizeRanksByCrossings",
+      "field": "optimizeRanksByCrossings",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The 11.16.0 crossing lift is unreachable after longest-path initialization: every node has lower-bound >= current rank.",
+      "default": true
+    },
+    {
+      "family": "swimlane",
+      "interface": "SwimlaneDiagramConfig",
+      "path": "swimlane.automaticLaneOrdering",
+      "field": "automaticLaneOrdering",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
+      ],
       "default": false
     },
     {
@@ -7188,5 +7350,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "e00228cc6ed41d754d50bce1f61a322be42ef284368ada2b647196d183c07382"
+  "fixtureSha256": "1760437a070900447264709a38d64b22aa4de98d16c12c24939e8d11684d6a79"
 }

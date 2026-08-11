@@ -681,7 +681,7 @@ int main(int argc, char** argv) {
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\nswimlane-beta\nA: First lane\n```\n"),
+        "```mermaid\ngitGraph\ncommit id: \"A\"\n```\n"),
         false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;

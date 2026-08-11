@@ -17,6 +17,7 @@
 #include "mermaid/flowchart/Flowchart.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/flowchart/FlowchartLayout.h"
+#include "mermaid/rough/RoughOps.h"
 #include "mermaid/theme/FlowTheme.h"
 
 #include <QRectF>
@@ -66,6 +67,8 @@ struct FlowSceneNode {
   qreal radiusX = 0.0, radiusY = 0.0;
   QVector<QPointF> points;  // polygon outline (centred at origin)
   QVector<FlowSceneShapePath> shapePaths;  // ordered like upstream SVG children
+  QVector<rough::Drawable> roughDrawables;
+  QRectF paintedBounds;
   // Edge endpoints + tangents for marker orientation (painter-only).
 };
 
@@ -79,6 +82,8 @@ struct FlowSceneEdge {
   QString markerStart;
   FlowSceneLabel label;   // text empty if the edge has no label
   QSizeF labelSize;
+  rough::Drawable roughDrawable;
+  QString renderedPath;
   // Painter-only bounds. Keeping path and label separate lets viewport paint
   // skip path parsing without hiding an independently visible label.
   QRectF pathBounds;
@@ -96,10 +101,20 @@ struct FlowSceneCluster {
   QString id;
   qreal cx = 0.0, cy = 0.0;  // center
   qreal width = 0.0, height = 0.0;
+  bool swimlane = false;
+  bool titleOnLeft = false;
+  qreal titleBandSize = 0.0;
   QString fill;
   QString stroke;
   QString strokeWidth;
   FlowSceneLabel label;
+  // Hand-drawn swimlanes are generated once and shared by measurement and
+  // painting. Re-running RoughJS-compatible generation in the painter would
+  // make the SVG getBBox contract and the painted pixels two independent
+  // computations.
+  rough::Drawable roughTitle;
+  rough::Drawable roughBody;
+  QRectF paintedBounds;
 };
 
 struct FlowScene : MermaidScene {

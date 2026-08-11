@@ -127,6 +127,9 @@ int main(int argc, char** argv) {
        QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
       {QStringLiteral("block"), QStringLiteral("block"),
        QStringLiteral("block-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B")},
+      {QStringLiteral("swimlane"), QStringLiteral("flowchart"),
+       QStringLiteral("swimlane-beta TB\nsubgraph one[One]\n"
+                      "  A[Start] --> B[Done]\nend")},
       {QStringLiteral("gantt"), QStringLiteral("gantt"),
        QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
                       "section Delivery\nBuild :build, 2024-01-01, 3d\n"
@@ -259,6 +262,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"block\": {\"useMaxWidth\": false}}}%%\n"
           "block-beta\nA[\"Alpha\"]"),
+      QStringLiteral(
+          "%%{init: {\"flowchart\": {\"useMaxWidth\": false}}}%%\n"
+          "swimlane-beta\nA --> B"),
       QStringLiteral(
           "%%{init: {\"treeView\": {\"useMaxWidth\": false}}}%%\n"
           "treeView-beta\nproject/\n  child"),

@@ -87,8 +87,15 @@ const textLayout = ["text", "layout", "paint", "viewport", "export"];
 const familyPolicies = {
   flowchart: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
-    useMaxWidth: parity("viewport", "export"),
-    titleTopMargin: parity("paint", "viewport", "export"),
+    useMaxWidth: {
+      ...parity("viewport", "export"),
+      families: ["flowchart", "swimlane"],
+      note: "Swimlane reuses flowchart root sizing; swimlane.useMaxWidth itself is inert.",
+    },
+    titleTopMargin: {
+      ...parity("paint", "viewport", "export"),
+      families: ["flowchart", "swimlane"],
+    },
     subGraphTitleMargin: unsupported(
       ["layout", "viewport", "export"],
       "Cluster title margins are not forwarded to native compound layout.",
@@ -97,15 +104,30 @@ const familyPolicies = {
       ["export"],
       "Only meaningful for SVG marker URL serialization.",
     ),
-    diagramPadding: parity("viewport", "export"),
+    diagramPadding: {
+      ...parity("viewport", "export"),
+      families: ["flowchart", "swimlane"],
+    },
     htmlLabels: unsupported(
       textLayout,
       "Deprecated upstream alias; native flow labels currently use one structured text path.",
     ),
-    nodeSpacing: parity(...interactiveLayout),
-    rankSpacing: parity(...interactiveLayout),
-    curve: parity(...interactiveLayout),
-    padding: parity("text", ...interactiveLayout),
+    nodeSpacing: {
+      ...parity(...interactiveLayout),
+      families: ["flowchart", "swimlane"],
+    },
+    rankSpacing: {
+      ...parity(...interactiveLayout),
+      families: ["flowchart", "swimlane"],
+    },
+    curve: {
+      ...parity(...interactiveLayout),
+      families: ["flowchart", "swimlane"],
+    },
+    padding: {
+      ...parity("text", ...interactiveLayout),
+      families: ["flowchart", "swimlane"],
+    },
     defaultRenderer: partial(
       interactiveLayout,
       interactiveLayout,
@@ -119,6 +141,18 @@ const familyPolicies = {
       interactiveLayout,
       "Subgraph direction inheritance is parsed but not forwarded.",
     ),
+  },
+  swimlane: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: inert(
+      "Swimlane 11.16.0 configures its SVG from flowchart.useMaxWidth; the same-named Swimlane field is retained but inert.",
+    ),
+    lineHops: parity(...layout),
+    ignoreCrossLaneEdges: parity(...interactiveLayout),
+    optimizeRanksByCrossings: inert(
+      "The 11.16.0 crossing lift is unreachable after longest-path initialization: every node has lower-bound >= current rank.",
+    ),
+    automaticLaneOrdering: parity(...interactiveLayout),
   },
   sequence: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
@@ -705,6 +739,7 @@ const shared = [
     path: "theme",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -738,6 +773,7 @@ const shared = [
     path: "themeVariables.*",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -775,6 +811,7 @@ const shared = [
     path: "fontFamily",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -805,7 +842,7 @@ const shared = [
   },
   {
     path: "htmlLabels",
-    families: ["flowchart", "class", "requirement", "kanban", "mindmap", "block"],
+    families: ["flowchart", "swimlane", "class", "requirement", "kanban", "mindmap", "block"],
     ...partial(
       textLayout,
       textLayout,
@@ -814,7 +851,7 @@ const shared = [
   },
   {
     path: "look",
-    families: ["flowchart", "class", "state", "timeline", "kanban", "mindmap", "block", "ishikawa", "venn"],
+    families: ["flowchart", "swimlane", "class", "state", "timeline", "kanban", "mindmap", "block", "ishikawa", "venn"],
     ...partial(
       interactiveLayout,
       interactiveLayout,
@@ -823,7 +860,7 @@ const shared = [
   },
   {
     path: "handDrawnSeed",
-    families: ["flowchart", "kanban", "mindmap", "block", "ishikawa", "venn"],
+    families: ["flowchart", "swimlane", "kanban", "mindmap", "block", "ishikawa", "venn"],
     ...parity("layout", "paint", "interaction", "export"),
   },
   {
@@ -834,11 +871,11 @@ const shared = [
   },
   {
     path: "layout",
-    families: ["flowchart", "class", "state", "mindmap"],
+    families: ["flowchart", "swimlane", "class", "state", "mindmap"],
     ...partial(
       interactiveLayout,
       interactiveLayout,
-      "Dagre is supported by all four families. Flowchart/class/state reject unsupported engines; Mindmap falls back to cose-bilkent for unknown or unregistered names.",
+      "Dagre is supported by all five families. Flowchart/class/state reject unsupported engines; Swimlane accepts its native engine or Dagre; Mindmap falls back to cose-bilkent for unknown or unregistered names.",
     ),
   },
   {
@@ -859,6 +896,7 @@ const shared = [
     path: "maxTextSize",
     families: [
       "flowchart", "sequence", "class", "state", "er", "requirement",
+      "swimlane",
       "pie", "quadrantChart", "journey", "radar", "xyChart",
       "timeline", "packet",
       "kanban",
@@ -885,6 +923,7 @@ const shared = [
     path: "securityLevel",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -928,6 +967,7 @@ const shared = [
     path: "deterministicIds",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -961,6 +1001,7 @@ const shared = [
     path: "deterministicIDSeed",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -994,6 +1035,7 @@ const shared = [
     path: "themeCSS",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -1060,6 +1102,7 @@ function interfaceProperties(name) {
 const baseFields = interfaceProperties("BaseDiagramConfig");
 const interfaces = {
   flowchart: "FlowchartDiagramConfig",
+  swimlane: "SwimlaneDiagramConfig",
   sequence: "SequenceDiagramConfig",
   class: "ClassDiagramConfig",
   state: "StateDiagramConfig",
