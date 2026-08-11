@@ -7,7 +7,7 @@ The complete 38-ID expansion and acceptance contract is maintained in
 
 ## Current status (2026-08-11)
 
-Muffin renders twenty-four Mermaid families through a native C++20/Qt pipeline:
+Muffin renders twenty-five Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
@@ -31,13 +31,14 @@ Muffin renders twenty-four Mermaid families through a native C++20/Qt pipeline:
 - Sankey diagram (`sankey` and `sankey-beta`).
 - Treemap diagram (`treemap` and `treemap-beta`).
 - Cynefin diagram (`cynefin-beta`).
+- Wardley map (`wardley-beta`).
 - Gantt chart (`gantt`).
 - Info diagram (`info`).
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 260/260 tests, including the end-to-end
+currently 264/264 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
 All twenty-four native families now share `MermaidRenderMetadata` for the diagram
@@ -410,12 +411,12 @@ available.
 `TimelineDiagramConfig`, `PacketDiagramConfig`, `KanbanDiagramConfig`, and
 `MindmapDiagramConfig`, `TreeViewDiagramConfig`, `EventModelingDiagramConfig`,
 `IshikawaDiagramConfig`, `VennDiagramConfig`, `SankeyDiagramConfig`,
-`TreemapDiagramConfig`, `CynefinDiagramConfig`, and `GanttDiagramConfig`
+`TreemapDiagramConfig`, `CynefinDiagramConfig`, `WardleyDiagramConfig`, and `GanttDiagramConfig`
 declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 317
-rows: 301 family-interface fields and 16 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 327
+rows: 311 family-interface fields and 16 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 

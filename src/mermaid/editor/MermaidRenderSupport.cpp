@@ -122,6 +122,21 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
     if (raw.isString() || !value.isEmpty())
       result.insert(QStringLiteral("cynefin.") + field, value);
   }
+  static const QStringList wardleyFields = {
+      QStringLiteral("backgroundColor"), QStringLiteral("axisColor"),
+      QStringLiteral("axisTextColor"), QStringLiteral("gridColor"),
+      QStringLiteral("componentFill"), QStringLiteral("componentStroke"),
+      QStringLiteral("componentLabelColor"), QStringLiteral("linkStroke"),
+      QStringLiteral("evolutionStroke")};
+  const QJsonObject wardley =
+      values.value(QStringLiteral("wardley")).toObject();
+  for (const QString& field : wardleyFields) {
+    if (!wardley.contains(field)) continue;
+    const QJsonValue raw = wardley.value(field);
+    const QString value = configString(raw);
+    if (raw.isString() || !value.isEmpty())
+      result.insert(QStringLiteral("wardley.") + field, value);
+  }
   // THEME_COLOR_LIMIT is an integer palette size, not a free-form string: route
   // it through jsThemeColorLimit so the value carried into FlowThemeVariables::
   // set() is upstream's JS Number()+ceil result (e.g. 2.5 -> 3, "0x2" -> 2), not

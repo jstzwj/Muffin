@@ -990,6 +990,8 @@ int main(int argc, char** argv) {
          QStringLiteral("venn"), QStringLiteral("venn-parse-error"), 2},
         {QStringLiteral("cynefin-beta\ncomplex\nA"),
          QStringLiteral("cynefin"), QStringLiteral("cynefin-lexer-error"), 3},
+        {QStringLiteral("wardley-beta\nsize [480.5,320]"),
+         QStringLiteral("wardley"), QStringLiteral("wardley-parse-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -1668,6 +1670,10 @@ int main(int argc, char** argv) {
         {QStringLiteral("cynefin"),
          QStringLiteral("%%{init: {\"cynefin\": {\"seed\": 17}}}%%\n"
                         "cynefin-beta\nclear\n  \"Standardise\"")},
+        {QStringLiteral("wardley"),
+         QStringLiteral("wardley-beta\ntitle Platform map\n"
+                        "component User [0.9,0.1]\n"
+                        "component Service [0.5,0.5]\nUser -> Service")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

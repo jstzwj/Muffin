@@ -37,6 +37,7 @@
       "sankey",
       "treemap",
       "cynefin",
+      "wardley-beta",
       "gantt",
       "info"
     ],
@@ -48,7 +49,7 @@
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 84,
+    "upstream-inert": 94,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -79,7 +80,8 @@
         "venn",
         "sankey",
         "treemap",
-        "cynefin"
+        "cynefin",
+        "wardley-beta"
       ],
       "status": "parity",
       "upstream": [
@@ -125,7 +127,8 @@
         "venn",
         "sankey",
         "treemap",
-        "cynefin"
+        "cynefin",
+        "wardley-beta"
       ],
       "status": "partial",
       "upstream": [
@@ -392,7 +395,8 @@
         "venn",
         "sankey",
         "treemap",
-        "cynefin"
+        "cynefin",
+        "wardley-beta"
       ],
       "status": "unsupported",
       "upstream": [
@@ -429,7 +433,8 @@
         "venn",
         "sankey",
         "treemap",
-        "cynefin"
+        "cynefin",
+        "wardley-beta"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -488,7 +493,8 @@
         "venn",
         "sankey",
         "treemap",
-        "cynefin"
+        "cynefin",
+        "wardley-beta"
       ],
       "status": "parity",
       "upstream": [
@@ -526,7 +532,8 @@
         "venn",
         "sankey",
         "treemap",
-        "cynefin"
+        "cynefin",
+        "wardley-beta"
       ],
       "status": "parity",
       "upstream": [
@@ -564,7 +571,8 @@
         "venn",
         "sankey",
         "treemap",
-        "cynefin"
+        "cynefin",
+        "wardley-beta"
       ],
       "status": "unsupported",
       "upstream": [
@@ -6340,6 +6348,156 @@
       "default": 0
     },
     {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth; Wardley's source config object is removed by the 11.16 source-entry sanitizer."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed by the 11.16 source-entry sanitizer."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.width",
+      "field": "width",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed; only the diagram-local size statement changes width."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.height",
+      "field": "height",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed; only the diagram-local size statement changes height."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.padding",
+      "field": "padding",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed by the 11.16 source-entry sanitizer."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.nodeRadius",
+      "field": "nodeRadius",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed by the 11.16 source-entry sanitizer."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.nodeLabelOffset",
+      "field": "nodeLabelOffset",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed by the 11.16 source-entry sanitizer."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.axisFontSize",
+      "field": "axisFontSize",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed by the 11.16 source-entry sanitizer."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.labelFontSize",
+      "field": "labelFontSize",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed by the 11.16 source-entry sanitizer."
+    },
+    {
+      "family": "wardley-beta",
+      "interface": "WardleyDiagramConfig",
+      "path": "wardley-beta.showGrid",
+      "field": "showGrid",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Wardley's source config object is removed by the 11.16 source-entry sanitizer."
+    },
+    {
       "family": "gantt",
       "interface": "GanttDiagramConfig",
       "path": "gantt.useWidth",
@@ -6721,5 +6879,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "0dec54affbeb8506d7a15841db8da9f8921f4cf796cceee4b9a3b5813d404cff"
+  "fixtureSha256": "4a50fb697362b347432df1684b0f50317bf42f0a12c0a5382e3710a472825b10"
 }

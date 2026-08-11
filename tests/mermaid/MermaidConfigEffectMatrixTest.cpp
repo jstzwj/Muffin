@@ -15,6 +15,7 @@
 #include "mermaid/venn/VennScene.h"
 #include "mermaid/sankey/SankeyScene.h"
 #include "mermaid/treemap/TreemapScene.h"
+#include "mermaid/wardley/WardleyScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 
 #include <QByteArray>
@@ -160,8 +161,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 317,
-          QStringLiteral("Expected 317 classified config rows, found %1")
+  require(entries.size() == 327,
+          QStringLiteral("Expected 327 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -235,6 +236,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("sankey"), 13},
                                              {QStringLiteral("treemap"), 11},
                                              {QStringLiteral("cynefin"), 8},
+                                             {QStringLiteral("wardley-beta"), 10},
                                              {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
@@ -249,9 +251,12 @@ int main(int argc, char** argv) {
            QStringLiteral("deterministicIds"),
            QStringLiteral("deterministicIDSeed"),
            QStringLiteral("themeCSS")}) {
+    QSet<QString> expectedScope = scopedFamilies;
+    if (path == QLatin1String("fontFamily"))
+      expectedScope.remove(QStringLiteral("wardley-beta"));
     require(stringSet(byPath.value(path)
                           .value(QStringLiteral("families")).toArray()) ==
-                scopedFamilies,
+                expectedScope,
             QStringLiteral("Global %1 scope must cover every native family")
                 .arg(path));
   }
@@ -445,6 +450,33 @@ int main(int argc, char** argv) {
               cynefinFallbackEntry.naturalSize == cynefinEntry.naturalSize,
           QStringLiteral("Cynefin CSS font-family fallback list drifted"));
 
+  const QString wardleySource = QStringLiteral(
+      "%%{init: {\"wardley-beta\":{\"width\":480,\"height\":320,"
+      "\"padding\":10,\"nodeRadius\":12,\"nodeLabelOffset\":20,"
+      "\"axisFontSize\":22,\"labelFontSize\":18,\"showGrid\":true,"
+      "\"useMaxWidth\":false},\"themeVariables\":{\"wardley\":{"
+      "\"backgroundColor\":\"#010203\",\"axisColor\":\"#070809\","
+      "\"componentFill\":\"#040506\",\"annotationFill\":\"#ff00ff\"}}}}%%\n"
+      "wardley-beta\ncomponent A [0.5,0.5]");
+  const MermaidRenderEntry wardleyEntry = render(wardleySource);
+  const auto* wardleyScene =
+      dynamic_cast<const muffin::mermaid::wardley::WardleyScene*>(
+          wardleyEntry.scene.get());
+  require(wardleyEntry.status == MermaidRenderStatus::Ready && wardleyScene &&
+              wardleyScene->config.width == 900.0 &&
+              wardleyScene->config.height == 600.0 &&
+              wardleyScene->config.padding == 48.0 &&
+              wardleyScene->config.nodeRadius == 6.0 &&
+              !wardleyScene->config.showGrid && wardleyScene->useMaxWidth &&
+              wardleyEntry.metadata.svgUseMaxWidth &&
+              wardleyScene->style.backgroundColor == QLatin1String("#010203") &&
+              wardleyScene->style.axisColor == QLatin1String("#070809") &&
+              wardleyScene->style.componentFill == QLatin1String("#040506") &&
+              wardleyScene->style.annotationFill == QLatin1String("white") &&
+              wardleyEntry.naturalSize == QSize(900, 600) &&
+              pngImage(wardleySource).size() == wardleyEntry.naturalSize,
+          QStringLiteral("Wardley source-inert config/live theme projection drifted"));
+
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -596,6 +628,15 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("cynefin.seed"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity") &&
+              byPath.value(QStringLiteral("wardley-beta.width"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("wardley-beta.showGrid"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("wardley-beta.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),

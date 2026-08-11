@@ -149,6 +149,10 @@ int main(int argc, char** argv) {
       {QStringLiteral("cynefin"), QStringLiteral("cynefin"),
        QStringLiteral("%%{init: {\"cynefin\": {\"seed\": 17}}}%%\n"
                       "cynefin-beta\nclear\n  \"Standardise\"")},
+      {QStringLiteral("wardley"), QStringLiteral("wardley"),
+       QStringLiteral("wardley-beta\ntitle Platform map\n"
+                      "component User [0.9,0.1]\n"
+                      "component Service [0.5,0.5]\nUser -> Service")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -375,6 +379,16 @@ int main(int argc, char** argv) {
               cynefinAria.contains("aria-labelledby=") &&
               cynefinAria.contains("aria-describedby="),
           QStringLiteral("Cynefin title/accessibility metadata drifted"));
+
+  const QByteArray wardleyAria = renderSvg(QStringLiteral(
+      "wardley-beta\ntitle Visible map\naccTitle: Wardley accessible\n"
+      "accDescr: Wardley description\ncomponent A [0.5,0.5]")).svg;
+  require(wardleyAria.contains("Visible map") &&
+              wardleyAria.contains("Wardley accessible</title>") &&
+              wardleyAria.contains("Wardley description</desc>") &&
+              wardleyAria.contains("aria-labelledby=") &&
+              wardleyAria.contains("aria-describedby="),
+          QStringLiteral("Wardley title/accessibility metadata drifted"));
 
   const QByteArray packetAria = renderSvg(QStringLiteral(
       "packet-beta\naccTitle: Packet accessible\n"

@@ -29,20 +29,20 @@ registered Mermaid algorithm has not been ported.
 
 ## Registered diagram inventory
 
-Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 27 IDs as 24
+Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 28 IDs as 25
 logical families:
 
 `flowchart-v2`, `flowchart`, `sequence`, `classDiagram`, `class`,
 `stateDiagram`, `state`, `er`, `gantt`, `info`, `pie`, `requirement`,
 `timeline`, `journey`, `quadrantChart`, `radar`, `xychart`, `packet`, `kanban`,
 `mindmap`, `treeView`, `eventmodeling`, `ishikawa`, `venn`, `sankey`, and
-`treemap`, and `cynefin`.
+`treemap`, `cynefin`, and `wardley`.
 
-The 11 remaining IDs are:
+The 10 remaining IDs are:
 
 `flowchart-elk`, `architecture`, `c4`, `swimlane`, `git`, `block`,
 `railroad`, `railroad-ebnf`,
-`railroad-abnf`, `railroad-peg`, and `wardley`.
+`railroad-abnf`, and `railroad-peg`.
 
 ## Delivery order
 
@@ -62,9 +62,9 @@ annotation primitives without introducing another general graph engine.
 
 ### Phase 2: data and domain-layout families
 
-Sankey, Treemap, and Cynefin are complete. Implement `wardley`. Port its
-exact domain algorithms and ordering rules; use structured parsers and upstream
-scales rather than string or pixel heuristics.
+Sankey, Treemap, Cynefin, and Wardley are complete. Their domain algorithms,
+ordering rules, parser transforms, and upstream scales are frozen by real
+Mermaid 11.16.0 structure and pixel oracles.
 
 ### Phase 3: structural and board families
 

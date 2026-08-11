@@ -186,6 +186,43 @@ void checkEventModelingThemeOverrides() {
           QStringLiteral("Event Modeling frontmatter theme overrides drifted"));
 }
 
+void checkWardleyThemeOverrides() {
+  const QStringList fields = {
+      QStringLiteral("backgroundColor"), QStringLiteral("axisColor"),
+      QStringLiteral("axisTextColor"), QStringLiteral("gridColor"),
+      QStringLiteral("componentFill"), QStringLiteral("componentStroke"),
+      QStringLiteral("componentLabelColor"), QStringLiteral("linkStroke"),
+      QStringLiteral("evolutionStroke"), QStringLiteral("annotationStroke"),
+      QStringLiteral("annotationTextColor"), QStringLiteral("annotationFill")};
+  QHash<QString, QString> direct;
+  for (qsizetype i = 0; i < fields.size(); ++i)
+    direct.insert(QStringLiteral("wardley.") + fields.at(i),
+                  QStringLiteral("#%1a0b").arg(i + 1, 2, 16,
+                                                   QLatin1Char('0')));
+  const FlowThemeVariables directTheme =
+      resolveFlowTheme(FlowThemeId::Default, direct);
+  for (auto it = direct.cbegin(); it != direct.cend(); ++it)
+    require(directTheme.get(it.key()) == it.value(),
+            QStringLiteral("Wardley direct override lost %1").arg(it.key()));
+
+  const QString initSource = QStringLiteral(
+      "%%{init:{\"themeVariables\":{\"wardley\":{"
+      "\"backgroundColor\":\"#123456\","
+      "\"evolutionStroke\":\"#654321\","
+      "\"annotationStroke\":\"#abcdef\","
+      "\"annotationTextColor\":\"#fedcba\","
+      "\"annotationFill\":\"#102030\"}}}}%%\n"
+      "wardley-beta\ncomponent A [0.5,0.5]");
+  const FlowThemeVariables sourceTheme = resolveFlowTheme(
+      FlowThemeId::Default, sourceThemeOverrides(initSource));
+  require(sourceTheme.wardley.backgroundColor == QLatin1String("#123456") &&
+              sourceTheme.wardley.evolutionStroke == QLatin1String("#654321") &&
+              sourceTheme.wardley.annotationStroke == QLatin1String("#333333") &&
+              sourceTheme.wardley.annotationTextColor == QLatin1String("#131300") &&
+              sourceTheme.wardley.annotationFill == QLatin1String("white"),
+          QStringLiteral("Wardley source-entry theme sanitizer drifted"));
+}
+
 QStringList ganttFields() {
   return {QStringLiteral("sectionBkgColor"),
           QStringLiteral("altSectionBkgColor"),
@@ -943,6 +980,7 @@ int main(int argc, char** argv) {
   checkFontWeightOverrides();
   checkPacketThemeOverrides();
   checkEventModelingThemeOverrides();
+  checkWardleyThemeOverrides();
 
   QFile xyChartFile(
       QFileInfo(fixturePath).dir().filePath(QStringLiteral("xychart-theme.json")));

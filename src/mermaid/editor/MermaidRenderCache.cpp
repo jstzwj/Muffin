@@ -44,6 +44,7 @@
 #include "mermaid/sankey/SankeyDiagram.h"
 #include "mermaid/treemap/TreemapDiagram.h"
 #include "mermaid/cynefin/CynefinDiagram.h"
+#include "mermaid/wardley/WardleyDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -545,6 +546,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("sankey-beta"));
     diagnostic.expected.append(QStringLiteral("treemap-beta"));
     diagnostic.expected.append(QStringLiteral("cynefin-beta"));
+    diagnostic.expected.append(QStringLiteral("wardley-beta"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -907,6 +909,27 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         break;
       case cynefin::CynefinErrorKind::Runtime:
         code = QStringLiteral("cynefin-runtime-error");
+        break;
+    }
+    const qsizetype offset =
+        error.line > 0 && error.column > 0
+            ? offsetForLineColumn(pre.code, error.line, error.column)
+            : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"), std::move(code),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), error.token, {}));
+  } catch (const wardley::WardleyParseError& error) {
+    QString code;
+    switch (error.kind) {
+      case wardley::WardleyErrorKind::Lexer:
+        code = QStringLiteral("wardley-lexer-error");
+        break;
+      case wardley::WardleyErrorKind::Parser:
+        code = QStringLiteral("wardley-parse-error");
+        break;
+      case wardley::WardleyErrorKind::Runtime:
+        code = QStringLiteral("wardley-runtime-error");
         break;
     }
     const qsizetype offset =

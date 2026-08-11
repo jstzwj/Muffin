@@ -1171,6 +1171,36 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   populateXYChart(id, t);
   populateCynefin(id, t);
   populateVenn(id, t);
+  const auto wardleyFallback = [](QString& value,
+                                  const QString& replacement) {
+    if (value.isEmpty()) value = replacement;
+  };
+  wardleyFallback(t.wardley.backgroundColor, t.background);
+  const bool wardleyBlackLine =
+      id == FlowThemeId::Neo || id == FlowThemeId::NeoDark ||
+      id == FlowThemeId::Redux || id == FlowThemeId::ReduxDark ||
+      id == FlowThemeId::ReduxColor || id == FlowThemeId::ReduxDarkColor;
+  wardleyFallback(t.wardley.axisColor,
+                  wardleyBlackLine ? QStringLiteral("#000") : t.lineColor);
+  wardleyFallback(t.wardley.axisTextColor, t.primaryTextColor);
+  wardleyFallback(t.wardley.gridColor, t.gridColor);
+  wardleyFallback(t.wardley.componentFill,
+                  id == FlowThemeId::Dark
+                      ? t.mainBkg
+                      : wardleyBlackLine ? QStringLiteral("#fff")
+                                         : t.background);
+  wardleyFallback(t.wardley.componentStroke,
+                  wardleyBlackLine ? QStringLiteral("#000") : t.lineColor);
+  wardleyFallback(t.wardley.componentLabelColor, t.primaryTextColor);
+  wardleyFallback(t.wardley.linkStroke,
+                  wardleyBlackLine ? QStringLiteral("#000") : t.lineColor);
+  wardleyFallback(t.wardley.evolutionStroke,
+                  id == FlowThemeId::Dark ? QStringLiteral("#ff6b6b")
+                                          : QStringLiteral("#dc3545"));
+  wardleyFallback(t.wardley.annotationStroke, t.lineColor);
+  wardleyFallback(t.wardley.annotationTextColor, t.primaryTextColor);
+  wardleyFallback(t.wardley.annotationFill,
+                  id == FlowThemeId::Dark ? t.mainBkg : t.background);
 }
 
 // Whether the theme's constructor calls this.updateColors() (chunk line 1641).
@@ -1384,6 +1414,18 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("cynefin.confusionBg")) return cynefin.confusionBg;
   if (key == QStringLiteral("cynefin.textColor")) return cynefin.textColor;
   if (key == QStringLiteral("cynefin.labelColor")) return cynefin.labelColor;
+  if (key == QStringLiteral("wardley.backgroundColor")) return wardley.backgroundColor;
+  if (key == QStringLiteral("wardley.axisColor")) return wardley.axisColor;
+  if (key == QStringLiteral("wardley.axisTextColor")) return wardley.axisTextColor;
+  if (key == QStringLiteral("wardley.gridColor")) return wardley.gridColor;
+  if (key == QStringLiteral("wardley.componentFill")) return wardley.componentFill;
+  if (key == QStringLiteral("wardley.componentStroke")) return wardley.componentStroke;
+  if (key == QStringLiteral("wardley.componentLabelColor")) return wardley.componentLabelColor;
+  if (key == QStringLiteral("wardley.linkStroke")) return wardley.linkStroke;
+  if (key == QStringLiteral("wardley.evolutionStroke")) return wardley.evolutionStroke;
+  if (key == QStringLiteral("wardley.annotationStroke")) return wardley.annotationStroke;
+  if (key == QStringLiteral("wardley.annotationTextColor")) return wardley.annotationTextColor;
+  if (key == QStringLiteral("wardley.annotationFill")) return wardley.annotationFill;
   return QString();
 }
 
@@ -1532,6 +1574,18 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("cynefin.confusionBg")) cynefin.confusionBg = value;
   else if (key == QStringLiteral("cynefin.textColor")) cynefin.textColor = value;
   else if (key == QStringLiteral("cynefin.labelColor")) cynefin.labelColor = value;
+  else if (key == QStringLiteral("wardley.backgroundColor")) wardley.backgroundColor = value;
+  else if (key == QStringLiteral("wardley.axisColor")) wardley.axisColor = value;
+  else if (key == QStringLiteral("wardley.axisTextColor")) wardley.axisTextColor = value;
+  else if (key == QStringLiteral("wardley.gridColor")) wardley.gridColor = value;
+  else if (key == QStringLiteral("wardley.componentFill")) wardley.componentFill = value;
+  else if (key == QStringLiteral("wardley.componentStroke")) wardley.componentStroke = value;
+  else if (key == QStringLiteral("wardley.componentLabelColor")) wardley.componentLabelColor = value;
+  else if (key == QStringLiteral("wardley.linkStroke")) wardley.linkStroke = value;
+  else if (key == QStringLiteral("wardley.evolutionStroke")) wardley.evolutionStroke = value;
+  else if (key == QStringLiteral("wardley.annotationStroke")) wardley.annotationStroke = value;
+  else if (key == QStringLiteral("wardley.annotationTextColor")) wardley.annotationTextColor = value;
+  else if (key == QStringLiteral("wardley.annotationFill")) wardley.annotationFill = value;
 }
 
 }  // namespace muffin::mermaid::flowtheme

@@ -1,0 +1,48 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "wardleyModuleSha256": "7688a218dfc9e1eccdb8fca61d89414723ab05f3aced6f970a4ca6464e9ca3ee",
+    "parserModuleSha256": "f541603e5c4d057f0c557f0873bd5b3be3c9878caed7ef2b6ee4e6699206dd3d",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\nwardley-beta\ntitle Platform Landscape\naccTitle: Platform map\naccDescr: Dependencies and evolution\nsize [900,600]\nevolution Genesis @0.18 -> Custom Built @0.42 -> Product @0.72 -> Commodity @1.0\nanchor User [0.95,0.08]\ncomponent Platform [0.82,0.34] label [12,-14] (build) inertia\ncomponent Service [0.62,0.58] (buy)\ncomponent Supplier [0.44,0.78] (outsource)\ncomponent Market [0.30,0.90] (market)\nUser -> Platform\nPlatform +'depends'> Service ; ignored because flow label wins\nService -.-> Supplier ; contract\nSupplier +<> Market\nevolve Service 0.88\nnote 'Important dependency' [0.72,0.43]\nannotations [0.18,0.78]\nannotation 1, [0.55,0.53] 'Watch the transition'\naccelerator Adoption [0.28,0.18]\ndeaccelerator Regulation [0.35,0.75]\npipeline Platform {\n  component Prototype [0.12] label [-4,12]\n  component Productised [0.52]\n  component Utility [0.86]\n}",
+      "file": "default.png",
+      "width": 900,
+      "height": 600,
+      "sha256": "fa26ad868606575600204abd15f962637f94dfd92c98ad0b287a8f437f2bff53"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"theme\":\"dark\"}}%%\nwardley-beta\ntitle Platform Landscape\naccTitle: Platform map\naccDescr: Dependencies and evolution\nsize [900,600]\nevolution Genesis @0.18 -> Custom Built @0.42 -> Product @0.72 -> Commodity @1.0\nanchor User [0.95,0.08]\ncomponent Platform [0.82,0.34] label [12,-14] (build) inertia\ncomponent Service [0.62,0.58] (buy)\ncomponent Supplier [0.44,0.78] (outsource)\ncomponent Market [0.30,0.90] (market)\nUser -> Platform\nPlatform +'depends'> Service ; ignored because flow label wins\nService -.-> Supplier ; contract\nSupplier +<> Market\nevolve Service 0.88\nnote 'Important dependency' [0.72,0.43]\nannotations [0.18,0.78]\nannotation 1, [0.55,0.53] 'Watch the transition'\naccelerator Adoption [0.28,0.18]\ndeaccelerator Regulation [0.35,0.75]\npipeline Platform {\n  component Prototype [0.12] label [-4,12]\n  component Productised [0.52]\n  component Utility [0.86]\n}",
+      "file": "dark.png",
+      "width": 900,
+      "height": 600,
+      "sha256": "8b67794e69460fe6de52fd44272737d99dcca48004241a256034c2dc6623e453"
+    },
+    {
+      "id": "forest",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"theme\":\"forest\"}}%%\nwardley-beta\ntitle Platform Landscape\naccTitle: Platform map\naccDescr: Dependencies and evolution\nsize [900,600]\nevolution Genesis @0.18 -> Custom Built @0.42 -> Product @0.72 -> Commodity @1.0\nanchor User [0.95,0.08]\ncomponent Platform [0.82,0.34] label [12,-14] (build) inertia\ncomponent Service [0.62,0.58] (buy)\ncomponent Supplier [0.44,0.78] (outsource)\ncomponent Market [0.30,0.90] (market)\nUser -> Platform\nPlatform +'depends'> Service ; ignored because flow label wins\nService -.-> Supplier ; contract\nSupplier +<> Market\nevolve Service 0.88\nnote 'Important dependency' [0.72,0.43]\nannotations [0.18,0.78]\nannotation 1, [0.55,0.53] 'Watch the transition'\naccelerator Adoption [0.28,0.18]\ndeaccelerator Regulation [0.35,0.75]\npipeline Platform {\n  component Prototype [0.12] label [-4,12]\n  component Productised [0.52]\n  component Utility [0.86]\n}",
+      "file": "forest.png",
+      "width": 900,
+      "height": 600,
+      "sha256": "1a71ca153913cfc7b82e6dc9cfb9b97358f45fa3f1dcc31ecf519946008924b9"
+    },
+    {
+      "id": "strategies",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\nwardley-beta\ncomponent A [0.9,0.1] (build)\ncomponent B [0.7,0.3] (buy)\ncomponent C [0.5,0.5] (outsource)\ncomponent D [0.3,0.7] (market)",
+      "file": "strategies.png",
+      "width": 900,
+      "height": 600,
+      "sha256": "6aaf351b7e20f0f481b2443da6a3e7916e2daaebed7ee5cefc52bf7159482884"
+    }
+  ],
+  "fixtureSha256": "d0663619648a95475b7a19ed9998c42bbef01860babc564c96ca25f6a9451b41"
+}

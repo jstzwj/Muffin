@@ -87,6 +87,24 @@ struct CynefinThemeVariables {
   QString labelColor;
 };
 
+// Wardley maps use a nested twelve-field theme object. Dark is the only
+// built-in theme whose component/annotation fill and evolution accent differ
+// from the common derivation.
+struct WardleyThemeVariables {
+  QString backgroundColor;
+  QString axisColor;
+  QString axisTextColor;
+  QString gridColor;
+  QString componentFill;
+  QString componentStroke;
+  QString componentLabelColor;
+  QString linkStroke;
+  QString evolutionStroke;
+  QString annotationStroke;
+  QString annotationTextColor;
+  QString annotationFill;
+};
+
 // Parse a mermaid theme name ("default", "neo-dark", ...) → FlowThemeId.
 // Unknown names map to Default (mermaid's default).
 FlowThemeId parseThemeId(const QString& name);
@@ -249,6 +267,9 @@ struct FlowThemeVariables {
 
   // The fixed-layout Cynefin renderer consumes all fifteen nested fields.
   CynefinThemeVariables cynefin;
+
+  // The fixed-coordinate Wardley renderer consumes all twelve nested fields.
+  WardleyThemeVariables wardley;
 
   // requirementDiagram / er / rect `colorIndex` palette (chunk-CHAKFXHA.mjs:
   // only redux-color defines both; redux-dark-color defines borderColorArray
