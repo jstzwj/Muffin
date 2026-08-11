@@ -662,7 +662,7 @@ int main(int argc, char** argv) {
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\narchitecture-beta\n group api(cloud)\n```\n"),
+        "```mermaid\nblock-beta\ncolumns 1\nA\n```\n"),
         false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;

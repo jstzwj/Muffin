@@ -365,6 +365,7 @@ void populateJourneyFillTypes(FlowThemeVariables& t, const QString& primary,
                               const QString& secondary, bool unconditional);
 void populateXYChart(FlowThemeId id, FlowThemeVariables& t);
 void populateGantt(FlowThemeId id, FlowThemeVariables& t);
+void populateArchitecture(FlowThemeId id, FlowThemeVariables& t);
 void populateVenn(FlowThemeId id, FlowThemeVariables& t);
 
 // Mindmap classic root colors are borrowed from the first git palette slot.
@@ -1166,6 +1167,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   }
   populateMindmapRoot(id, t);
   populatePacket(id, t);
+  populateArchitecture(id, t);
   populateEventModeling(id, t);
   populateGantt(id, t);
   populateXYChart(id, t);
@@ -1201,6 +1203,52 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   wardleyFallback(t.wardley.annotationTextColor, t.primaryTextColor);
   wardleyFallback(t.wardley.annotationFill,
                   id == FlowThemeId::Dark ? t.mainBkg : t.background);
+}
+
+void populateArchitecture(FlowThemeId id, FlowThemeVariables& t) {
+  QString edge;
+  QString group;
+  switch (id) {
+    case FlowThemeId::Base:
+      edge = QStringLiteral("#777");
+      group = QStringLiteral("#000");
+      break;
+    case FlowThemeId::Dark:
+      edge = QStringLiteral("lightgrey");
+      group = QStringLiteral("#cccccc");
+      break;
+    case FlowThemeId::Default:
+      edge = QStringLiteral("#333333");
+      group = QStringLiteral("hsl(240, 60%, 86.2745098039%)");
+      break;
+    case FlowThemeId::Forest:
+      edge = QStringLiteral("#000000");
+      group = QStringLiteral("hsl(78.1578947368, 18.4615384615%, 64.5098039216%)");
+      break;
+    case FlowThemeId::Neutral:
+      edge = QStringLiteral("#666");
+      group = QStringLiteral("hsl(0, 0%, 83.3333333333%)");
+      break;
+    case FlowThemeId::Neo:
+    case FlowThemeId::ReduxColor:
+      edge = QStringLiteral("#000000");
+      group = QStringLiteral("hsl(0, 0%, 70%)");
+      break;
+    case FlowThemeId::Redux:
+      edge = QStringLiteral("#000000");
+      group = QStringLiteral("hsl(247.5, 0%, 9.2156862745%)");
+      break;
+    case FlowThemeId::NeoDark:
+    case FlowThemeId::ReduxDark:
+    case FlowThemeId::ReduxDarkColor:
+      edge = group = QStringLiteral("#cccccc");
+      break;
+  }
+  assignIfEmpty(t.archEdgeColor, edge);
+  assignIfEmpty(t.archEdgeArrowColor, edge);
+  assignIfEmpty(t.archEdgeWidth, QStringLiteral("3"));
+  assignIfEmpty(t.archGroupBorderColor, group);
+  assignIfEmpty(t.archGroupBorderWidth, QStringLiteral("2px"));
 }
 
 // Whether the theme's constructor calls this.updateColors() (chunk line 1641).
@@ -1318,6 +1366,11 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("gradientStart")) return gradientStart;
   if (key == QStringLiteral("gradientStop")) return gradientStop;
   if (key == QStringLiteral("dropShadow")) return dropShadow;
+  if (key == QStringLiteral("archEdgeColor")) return archEdgeColor;
+  if (key == QStringLiteral("archEdgeArrowColor")) return archEdgeArrowColor;
+  if (key == QStringLiteral("archEdgeWidth")) return archEdgeWidth;
+  if (key == QStringLiteral("archGroupBorderColor")) return archGroupBorderColor;
+  if (key == QStringLiteral("archGroupBorderWidth")) return archGroupBorderWidth;
   if (key == QStringLiteral("THEME_COLOR_LIMIT")) return QString::number(themeColorLimit);
   for (int i = 0; i < 13; ++i) {
     if (key == QStringLiteral("cScale%1").arg(i)) return cScale[i];
@@ -1476,6 +1529,11 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("gradientStart")) gradientStart = value;
   else if (key == QStringLiteral("gradientStop")) gradientStop = value;
   else if (key == QStringLiteral("dropShadow")) dropShadow = value;
+  else if (key == QStringLiteral("archEdgeColor")) archEdgeColor = value;
+  else if (key == QStringLiteral("archEdgeArrowColor")) archEdgeArrowColor = value;
+  else if (key == QStringLiteral("archEdgeWidth")) archEdgeWidth = value;
+  else if (key == QStringLiteral("archGroupBorderColor")) archGroupBorderColor = value;
+  else if (key == QStringLiteral("archGroupBorderWidth")) archGroupBorderWidth = value;
   else if (key == QStringLiteral("THEME_COLOR_LIMIT")) themeColorLimit = value.toInt();
   // Indexed palette and family overrides are separate from the scalar chain;
   // return as soon as the matching slot is found.

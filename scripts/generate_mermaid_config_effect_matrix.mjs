@@ -585,6 +585,19 @@ const familyPolicies = {
     boundaryAmplitude: parity("layout", "paint", "viewport", "export"),
     seed: parity("layout", "paint", "export"),
   },
+  architecture: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    padding: parity("layout", "viewport", "export"),
+    iconSize: parity("layout", "paint", "viewport", "export"),
+    fontSize: parity("text", "layout", "paint", "viewport", "export"),
+    randomize: parity("layout", "viewport", "export"),
+    nodeSeparation: parity("layout", "viewport", "export"),
+    idealEdgeLengthMultiplier: parity("layout", "viewport", "export"),
+    edgeElasticity: parity("layout", "viewport", "export"),
+    numIter: parity("layout", "viewport", "export"),
+    seed: parity("layout", "viewport", "export"),
+  },
   "wardley-beta": {
     useWidth: inert(
       "Only Gantt consumes BaseDiagramConfig.useWidth; Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
@@ -711,6 +724,7 @@ const shared = [
       "treemap",
       "cynefin",
       "wardley-beta",
+      "architecture",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -742,6 +756,7 @@ const shared = [
       "treemap",
       "cynefin",
       "wardley-beta",
+      "architecture",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -776,6 +791,7 @@ const shared = [
       "sankey",
       "treemap",
       "cynefin",
+      "architecture",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -849,6 +865,7 @@ const shared = [
       "treemap",
       "cynefin",
       "wardley-beta",
+      "architecture",
     ],
     ...unsupported(
       ["parsed"],
@@ -883,6 +900,7 @@ const shared = [
       "treemap",
       "cynefin",
       "wardley-beta",
+      "architecture",
     ],
     ...policy(
       "security-fixed",
@@ -924,6 +942,7 @@ const shared = [
       "treemap",
       "cynefin",
       "wardley-beta",
+      "architecture",
     ],
     ...parity("export"),
   },
@@ -955,6 +974,7 @@ const shared = [
       "treemap",
       "cynefin",
       "wardley-beta",
+      "architecture",
     ],
     ...parity("export"),
   },
@@ -986,6 +1006,7 @@ const shared = [
       "treemap",
       "cynefin",
       "wardley-beta",
+      "architecture",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -1047,6 +1068,7 @@ const interfaces = {
   sankey: "SankeyDiagramConfig",
   treemap: "TreemapDiagramConfig",
   cynefin: "CynefinDiagramConfig",
+  architecture: "ArchitectureDiagramConfig",
   "wardley-beta": "WardleyDiagramConfig",
   gantt: "GanttDiagramConfig",
 };

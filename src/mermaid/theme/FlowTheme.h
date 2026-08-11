@@ -188,6 +188,14 @@ struct FlowThemeVariables {
   QString dropShadow;
   int themeColorLimit = 12;
 
+  // Architecture stylesheet variables. Widths stay as CSS strings until the
+  // scene resolves their used values.
+  QString archEdgeColor;
+  QString archEdgeArrowColor;
+  QString archEdgeWidth;
+  QString archGroupBorderColor;
+  QString archGroupBorderWidth;
+
   // Event Modeling uses fourteen top-level theme variables. All themes except
   // the standalone dark theme inherit the light literals; dark derives its
   // four colored boxes and swimlanes from its own background palette.

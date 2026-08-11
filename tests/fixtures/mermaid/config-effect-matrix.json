@@ -37,6 +37,7 @@
       "sankey",
       "treemap",
       "cynefin",
+      "architecture",
       "wardley-beta",
       "gantt",
       "info"
@@ -44,12 +45,12 @@
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 190,
+    "parity": 200,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 94,
+    "upstream-inert": 95,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -81,7 +82,8 @@
         "sankey",
         "treemap",
         "cynefin",
-        "wardley-beta"
+        "wardley-beta",
+        "architecture"
       ],
       "status": "parity",
       "upstream": [
@@ -128,7 +130,8 @@
         "sankey",
         "treemap",
         "cynefin",
-        "wardley-beta"
+        "wardley-beta",
+        "architecture"
       ],
       "status": "partial",
       "upstream": [
@@ -175,7 +178,8 @@
         "venn",
         "sankey",
         "treemap",
-        "cynefin"
+        "cynefin",
+        "architecture"
       ],
       "status": "parity",
       "upstream": [
@@ -396,7 +400,8 @@
         "sankey",
         "treemap",
         "cynefin",
-        "wardley-beta"
+        "wardley-beta",
+        "architecture"
       ],
       "status": "unsupported",
       "upstream": [
@@ -434,7 +439,8 @@
         "sankey",
         "treemap",
         "cynefin",
-        "wardley-beta"
+        "wardley-beta",
+        "architecture"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -494,7 +500,8 @@
         "sankey",
         "treemap",
         "cynefin",
-        "wardley-beta"
+        "wardley-beta",
+        "architecture"
       ],
       "status": "parity",
       "upstream": [
@@ -533,7 +540,8 @@
         "sankey",
         "treemap",
         "cynefin",
-        "wardley-beta"
+        "wardley-beta",
+        "architecture"
       ],
       "status": "parity",
       "upstream": [
@@ -572,7 +580,8 @@
         "sankey",
         "treemap",
         "cynefin",
-        "wardley-beta"
+        "wardley-beta",
+        "architecture"
       ],
       "status": "unsupported",
       "upstream": [
@@ -6348,6 +6357,235 @@
       "default": 0
     },
     {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "default": 40
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.iconSize",
+      "field": "iconSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 80
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.fontSize",
+      "field": "fontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 16
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.randomize",
+      "field": "randomize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.nodeSeparation",
+      "field": "nodeSeparation",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "default": 75
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.idealEdgeLengthMultiplier",
+      "field": "idealEdgeLengthMultiplier",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "default": 1.5
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.edgeElasticity",
+      "field": "edgeElasticity",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "default": 0.45
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.numIter",
+      "field": "numIter",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "default": 2500
+    },
+    {
+      "family": "architecture",
+      "interface": "ArchitectureDiagramConfig",
+      "path": "architecture.seed",
+      "field": "seed",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
+      ],
+      "default": 1
+    },
+    {
       "family": "wardley-beta",
       "interface": "WardleyDiagramConfig",
       "path": "wardley-beta.useWidth",
@@ -6879,5 +7117,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "4a50fb697362b347432df1684b0f50317bf42f0a12c0a5382e3710a472825b10"
+  "fixtureSha256": "474237ffd2393f85bd5c27de2ca858ef25f704fff73de9afc7c195c884ae8c9f"
 }

@@ -7,7 +7,7 @@ The complete 38-ID expansion and acceptance contract is maintained in
 
 ## Current status (2026-08-11)
 
-Muffin renders twenty-five Mermaid families through a native C++20/Qt pipeline:
+Muffin renders twenty-six Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
@@ -32,16 +32,17 @@ Muffin renders twenty-five Mermaid families through a native C++20/Qt pipeline:
 - Treemap diagram (`treemap` and `treemap-beta`).
 - Cynefin diagram (`cynefin-beta`).
 - Wardley map (`wardley-beta`).
+- Architecture diagram (`architecture-beta`).
 - Gantt chart (`gantt`).
 - Info diagram (`info`).
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 264/264 tests, including the end-to-end
+currently 268/268 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All twenty-four native families now share `MermaidRenderMetadata` for the diagram
+All twenty-six native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
@@ -411,12 +412,13 @@ available.
 `TimelineDiagramConfig`, `PacketDiagramConfig`, `KanbanDiagramConfig`, and
 `MindmapDiagramConfig`, `TreeViewDiagramConfig`, `EventModelingDiagramConfig`,
 `IshikawaDiagramConfig`, `VennDiagramConfig`, `SankeyDiagramConfig`,
-`TreemapDiagramConfig`, `CynefinDiagramConfig`, `WardleyDiagramConfig`, and `GanttDiagramConfig`
+`TreemapDiagramConfig`, `CynefinDiagramConfig`, `WardleyDiagramConfig`,
+`ArchitectureDiagramConfig`, and `GanttDiagramConfig`
 declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 327
-rows: 311 family-interface fields and 16 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 338
+rows: 322 family-interface fields and 16 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -434,9 +436,9 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 190 | Audited upstream and native stages agree |
+| `parity` | 200 | Audited upstream and native stages agree |
 | `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 84 | Mermaid retains the option but 11.16.0 does not consume it |
+| `upstream-inert` | 95 | Mermaid retains the option but 11.16.0 does not consume it |
 | `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
 | `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
@@ -583,9 +585,10 @@ Info freezes its Langium grammar and diagnostic locations, fixed version label,
 400x150 replaced-element viewport, theme/font behavior, renderer-inert
 `showInfo`, discarded metadata AST, and intentionally absent SVG viewBox.
 
-The next bounded domain family is Wardley and must start with a
-fresh Gate-0 survey. Domain-layout families remain preferable before additional
-force-layout families: architecture uses Cytoscape `fcose`,
-and block diagrams use the custom recursive
-`layoutBlocks` pipeline. No family is treated as supported until its upstream
+Architecture freezes its Langium grammar/database, Cytoscape 3.34 + fCoSE 2.2
+non-random and spectral-randomized layouts, compound groups, directional ports,
+orthogonal routing, icons, labels, all 11 themes, diagnostics, metadata, and
+fixed/max-width export behavior. The next structural family is Block, whose
+custom recursive `layoutBlocks` pipeline requires a fresh Gate-0 survey. No
+family is treated as supported until its upstream
 oracle, native scene, pixel evidence, error paths, and export integration pass.

@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
       "ORDER {\n  bigint id PK\n  string status\n}");
   // A family Mermaid detects but Muffin does not yet render natively.
   const QString unsupported = QStringLiteral(
-      "architecture-beta\n group api(cloud)");
+      "block-beta\ncolumns 1\nA");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {

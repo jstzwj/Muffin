@@ -1,0 +1,1636 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "architectureModuleSha256": "d6f8424fba961c50f2cfcbd4e1c5f53f37311d83cc768bcf41afd8874c0454ba",
+    "parserModuleSha256": "08628d5e6194206bf5f1d5afb9c456db355492cd4245d13b55303fa3d2267387",
+    "grammarModuleSha256": "f541603e5c4d057f0c557f0873bd5b3be3c9878caed7ef2b6ee4e6699206dd3d",
+    "cytoscapeVersion": "3.34.0",
+    "fcoseVersion": "2.2.0",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "architecture-beta\ngroup platform(cloud)[Platform]\nservice user(internet)[User]\nservice api(server)[API] in platform\nservice db(database)[Database] in platform\njunction hub in platform\nuser:R --> L:api\napi:B -- T:db\nhub:R -- L:api\nalign row hub api",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "user",
+              "type": "service",
+              "icon": "internet",
+              "iconText": null,
+              "title": "User",
+              "in": null
+            },
+            {
+              "id": "api",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "API",
+              "in": "platform"
+            },
+            {
+              "id": "db",
+              "type": "service",
+              "icon": "database",
+              "iconText": null,
+              "title": "Database",
+              "in": "platform"
+            }
+          ],
+          "junctions": [
+            {
+              "id": "hub",
+              "type": "junction",
+              "in": "platform"
+            }
+          ],
+          "groups": [
+            {
+              "id": "platform",
+              "icon": "cloud",
+              "title": "Platform",
+              "in": null
+            }
+          ],
+          "edges": [
+            {
+              "lhsId": "user",
+              "lhsDir": "R",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "api",
+              "rhsDir": "L",
+              "rhsInto": true,
+              "rhsGroup": false
+            },
+            {
+              "lhsId": "api",
+              "lhsDir": "B",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "db",
+              "rhsDir": "T",
+              "rhsInto": false,
+              "rhsGroup": false
+            },
+            {
+              "lhsId": "hub",
+              "lhsDir": "R",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "api",
+              "rhsDir": "L",
+              "rhsInto": false,
+              "rhsGroup": false
+            }
+          ],
+          "alignments": [
+            {
+              "direction": "row",
+              "members": [
+                "hub",
+                "api"
+              ]
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "header-only",
+      "source": "architecture-beta",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "header-newline",
+      "source": "architecture-beta\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "wrong-header",
+      "source": "architecture\nservice a(server)[A]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 1, column 1: Expecting token of type 'architecture-beta' but found `architecture`.\nParse error on line 1, column 13: Expecting token of type ':' but found `\n`.",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "uppercase-header",
+      "source": "ARCHITECTURE-BETA\nservice a(server)[A]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: ARCHITECTURE-BETA\nservice a(server)[A]",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "mixed-header",
+      "source": "Architecture-Beta\nservice a(server)[A]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: Architecture-Beta\nservice a(server)[A]",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "architecture-betaX\nservice a(server)[A]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 1, column 1: Expecting token of type 'architecture-beta' but found `architecture-betaX`.\nParse error on line 1, column 19: Expecting token of type ':' but found `\n`.",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "architecture-beta service a(server)[A]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "leading-blank",
+      "source": "\n\narchitecture-beta\nservice a(server)[A]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "comment",
+      "source": "%% before\narchitecture-beta\n%% body\nservice a(server)[A]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init:{\"architecture\":{\"padding\":12}}}%%\narchitecture-beta\nservice a(server)[A]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\nconfig:\n  architecture: {\"padding\":12}\n---\narchitecture-beta\nservice a(server)[A]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "architecture-beta\ntitle Inline\naccTitle: Accessible\naccDescr: Description\nservice a(server)[A]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "Inline",
+          "accTitle": "Accessible",
+          "accDescr": "Description"
+        }
+      }
+    },
+    {
+      "id": "acc-block",
+      "source": "architecture-beta\naccDescr {first\n  second}\nservice a(server)[A]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": "first\nsecond"
+        }
+      }
+    },
+    {
+      "id": "group-minimal",
+      "source": "architecture-beta\ngroup g",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [],
+          "junctions": [],
+          "groups": [
+            {
+              "id": "g",
+              "icon": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "group-icon-title",
+      "source": "architecture-beta\ngroup g(cloud)[Cloud Group]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [],
+          "junctions": [],
+          "groups": [
+            {
+              "id": "g",
+              "icon": "cloud",
+              "title": "Cloud Group",
+              "in": null
+            }
+          ],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "group-quoted-title",
+      "source": "architecture-beta\ngroup g(cloud)[\"Quoted title\"]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [],
+          "junctions": [],
+          "groups": [
+            {
+              "id": "g",
+              "icon": "cloud",
+              "title": "Quoted title",
+              "in": null
+            }
+          ],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "group-nested",
+      "source": "architecture-beta\ngroup outer(cloud)[Outer]\ngroup inner(server)[Inner] in outer",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [],
+          "junctions": [],
+          "groups": [
+            {
+              "id": "outer",
+              "icon": "cloud",
+              "title": "Outer",
+              "in": null
+            },
+            {
+              "id": "inner",
+              "icon": "server",
+              "title": "Inner",
+              "in": "outer"
+            }
+          ],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "group-before-parent",
+      "source": "architecture-beta\ngroup inner(server)[Inner] in outer\ngroup outer(cloud)[Outer]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The group [inner]'s parent does not exist. Please make sure the parent is created before this group",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "group-self",
+      "source": "architecture-beta\ngroup g in g",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The group [g] cannot be placed within itself",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "duplicate-group",
+      "source": "architecture-beta\ngroup g\ngroup g",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The group id [g] is already in use by another group",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "service-minimal",
+      "source": "architecture-beta\nservice a",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "service-icon",
+      "source": "architecture-beta\nservice a(server)",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "service-text-icon",
+      "source": "architecture-beta\nservice a \"TXT\" [Service]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": "TXT",
+              "title": "Service",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "service-title",
+      "source": "architecture-beta\nservice a[Service Label]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": "Service Label",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "service-escaped-title",
+      "source": "architecture-beta\nservice a[\"It\\\"s API\"]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": "It\"s API",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "service-in-group",
+      "source": "architecture-beta\ngroup g\nservice a(server)[A] in g",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": "g"
+            }
+          ],
+          "junctions": [],
+          "groups": [
+            {
+              "id": "g",
+              "icon": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "service-parent-missing",
+      "source": "architecture-beta\nservice a(server)[A] in g",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The service [a]'s parent does not exist. Please make sure the parent is created before this service",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "service-parent-node",
+      "source": "architecture-beta\nservice a\nservice b in a",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The service [b]'s parent is not a group",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "service-self",
+      "source": "architecture-beta\nservice a in a",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The service [a] cannot be placed within itself",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "duplicate-service",
+      "source": "architecture-beta\nservice a\nservice a",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The service id [a] is already in use by another node",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "junction",
+      "source": "architecture-beta\njunction j",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [],
+          "junctions": [
+            {
+              "id": "j",
+              "type": "junction",
+              "in": null
+            }
+          ],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "junction-in-group",
+      "source": "architecture-beta\ngroup g\njunction j in g",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [],
+          "junctions": [
+            {
+              "id": "j",
+              "type": "junction",
+              "in": "g"
+            }
+          ],
+          "groups": [
+            {
+              "id": "g",
+              "icon": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "duplicate-cross-type",
+      "source": "architecture-beta\ngroup same\nservice same",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The service id [same] is already in use by another group",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "edge-horizontal",
+      "source": "architecture-beta\nservice a\nservice b\na:R -- L:b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "R",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "b",
+              "rhsDir": "L",
+              "rhsInto": false,
+              "rhsGroup": false
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-vertical",
+      "source": "architecture-beta\nservice a\nservice b\na:B -- T:b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "B",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "b",
+              "rhsDir": "T",
+              "rhsInto": false,
+              "rhsGroup": false
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-bend",
+      "source": "architecture-beta\nservice a\nservice b\na:R -- T:b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "R",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "b",
+              "rhsDir": "T",
+              "rhsInto": false,
+              "rhsGroup": false
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-title",
+      "source": "architecture-beta\nservice a\nservice b\na:R -[flow]- L:b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "R",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "b",
+              "rhsDir": "L",
+              "rhsInto": false,
+              "rhsGroup": false,
+              "title": "flow"
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-arrows",
+      "source": "architecture-beta\nservice a\nservice b\na:R <--> L:b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "R",
+              "lhsInto": true,
+              "lhsGroup": false,
+              "rhsId": "b",
+              "rhsDir": "L",
+              "rhsInto": true,
+              "rhsGroup": false
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-left-arrow",
+      "source": "architecture-beta\nservice a\nservice b\na:R <-- L:b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "R",
+              "lhsInto": true,
+              "lhsGroup": false,
+              "rhsId": "b",
+              "rhsDir": "L",
+              "rhsInto": false,
+              "rhsGroup": false
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-right-arrow",
+      "source": "architecture-beta\nservice a\nservice b\na:R --> L:b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "R",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "b",
+              "rhsDir": "L",
+              "rhsInto": true,
+              "rhsGroup": false
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-group-modifiers",
+      "source": "architecture-beta\ngroup g1\ngroup g2\nservice a in g1\nservice b in g2\na{group}:R --> L:b{group}",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": "g1"
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": "g2"
+            }
+          ],
+          "junctions": [],
+          "groups": [
+            {
+              "id": "g1",
+              "icon": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "g2",
+              "icon": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "R",
+              "lhsInto": false,
+              "lhsGroup": true,
+              "rhsId": "b",
+              "rhsDir": "L",
+              "rhsInto": true,
+              "rhsGroup": true
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-missing-left",
+      "source": "architecture-beta\nservice b\na:R -- L:b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The left-hand id [a] does not yet exist. Please create the service/group before declaring an edge to it.",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "edge-missing-right",
+      "source": "architecture-beta\nservice a\na:R -- L:b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "The right-hand id [b] does not yet exist. Please create the service/group before declaring an edge to it.",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "edge-same-port",
+      "source": "architecture-beta\nservice a\nservice b\na:R -- R:b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [
+            {
+              "lhsId": "a",
+              "lhsDir": "R",
+              "lhsInto": false,
+              "lhsGroup": false,
+              "rhsId": "b",
+              "rhsDir": "R",
+              "rhsInto": false,
+              "rhsGroup": false
+            }
+          ],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "edge-lower-direction",
+      "source": "architecture-beta\nservice a\nservice b\na:r -- l:b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 4, column 3: Expecting token of type 'ARROW_DIRECTION' but found `r`.\nParse error on line 4, column 5: Expecting: one of these possible Token sequences:\n  1. [NEWLINE]\n  2. [EOF]\nbut found: '--'\nParse error on line 4, column 10: Expecting token of type 'ARROW_DIRECTION' but found `b`.",
+          "kind": "Parser",
+          "line": 4,
+          "column": 3,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "align-row",
+      "source": "architecture-beta\nservice a\nservice b\nalign row a b",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [
+            {
+              "direction": "row",
+              "members": [
+                "a",
+                "b"
+              ]
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "align-column",
+      "source": "architecture-beta\nservice a\nservice b\nservice c\nalign column a b c",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "b",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            },
+            {
+              "id": "c",
+              "type": "service",
+              "icon": null,
+              "iconText": null,
+              "title": null,
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [
+            {
+              "direction": "column",
+              "members": [
+                "a",
+                "b",
+                "c"
+              ]
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "align-one",
+      "source": "architecture-beta\nservice a\nalign row a",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 3, column 12: Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[ID]>\nbut found: '\n'",
+          "kind": "Parser",
+          "line": 3,
+          "column": 12,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "align-missing",
+      "source": "architecture-beta\nservice a\nalign row a missing",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "align row references [missing], which is not a service or junction",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "align-duplicate",
+      "source": "architecture-beta\nservice a\nservice b\nalign row a a b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "align row lists [a] more than once",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "id-hyphen",
+      "source": "architecture-beta\nservice api-v2(server)[API V2]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "api-v2",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "API V2",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "id-leading-hyphen",
+      "source": "architecture-beta\nservice -api(server)[API]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 9: Expecting token of type 'ID' but found `-`.",
+          "kind": "Parser",
+          "line": 2,
+          "column": 9,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "icon-pack",
+      "source": "architecture-beta\nservice a(logos:aws)[AWS]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "logos:aws",
+              "iconText": null,
+              "title": "AWS",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "unknown-icon",
+      "source": "architecture-beta\nservice a(does-not-exist)[Unknown]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "does-not-exist",
+              "iconText": null,
+              "title": "Unknown",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "bad-title-punctuation",
+      "source": "architecture-beta\nservice a[API / DB]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 10: unexpected character: ->[<- at offset: 27, skipped 1 characters.\nLexer error on line 2, column 15: unexpected character: ->/<- at offset: 32, skipped 1 characters.\nLexer error on line 2, column 19: unexpected character: ->]<- at offset: 36, skipped 1 characters. Parse error on line 2, column 11: Expecting: one of these possible Token sequences:\n  1. [NEWLINE]\n  2. [EOF]\nbut found: 'API'\nParse error on line 2, column 17: Expecting token of type ':' but found `DB`.",
+          "kind": "Lexer",
+          "line": 2,
+          "column": 11,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "semicolon",
+      "source": "architecture-beta\nservice a;",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 10: unexpected character: ->;<- at offset: 27, skipped 1 characters. ",
+          "kind": "Lexer",
+          "line": 2,
+          "column": 10,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "architecture-beta\r\nservice a(server)[A]\r\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "services": [
+            {
+              "id": "a",
+              "type": "service",
+              "icon": "server",
+              "iconText": null,
+              "title": "A",
+              "in": null
+            }
+          ],
+          "junctions": [],
+          "groups": [],
+          "edges": [],
+          "alignments": [],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "3f542aecad06f85e6d3e8736e4c31dfee89dad23401e88f4d34e4c3e37e264a1"
+}

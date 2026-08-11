@@ -1,4 +1,5 @@
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/architecture/ArchitectureScene.h"
 #include "mermaid/cynefin/CynefinScene.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/eventmodeling/EventModelingScene.h"
@@ -161,8 +162,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 327,
-          QStringLiteral("Expected 327 classified config rows, found %1")
+  require(entries.size() == 338,
+          QStringLiteral("Expected 338 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -215,6 +216,7 @@ int main(int argc, char** argv) {
     }
   }
   require(familyCounts == QMap<QString, int>{{QStringLiteral("class"), 14},
+                                             {QStringLiteral("architecture"), 11},
                                              {QStringLiteral("er"), 13},
                                              {QStringLiteral("eventmodeling"), 4},
                                              {QStringLiteral("flowchart"), 14},
@@ -477,6 +479,37 @@ int main(int argc, char** argv) {
               pngImage(wardleySource).size() == wardleyEntry.naturalSize,
           QStringLiteral("Wardley source-inert config/live theme projection drifted"));
 
+  const QString architectureSource = QStringLiteral(
+      "%%{init:{\"fontFamily\":\"Noto Sans\",\"architecture\":{"
+      "\"useMaxWidth\":false,\"padding\":18,\"iconSize\":52,"
+      "\"fontSize\":21,\"randomize\":false,\"nodeSeparation\":32,"
+      "\"idealEdgeLengthMultiplier\":2.25,\"edgeElasticity\":0.2,"
+      "\"numIter\":600,\"seed\":9},\"themeVariables\":{"
+      "\"archEdgeColor\":\"#112233\","
+      "\"archEdgeArrowColor\":\"#445566\","
+      "\"archGroupBorderColor\":\"#778899\"}}}%%\n"
+      "architecture-beta\nservice a(server)[A]\nservice b(database)[B]\n"
+      "a:R --> L:b");
+  const MermaidRenderEntry architectureEntry = render(architectureSource);
+  const auto* architectureScene =
+      dynamic_cast<const muffin::mermaid::architecture::ArchitectureScene*>(
+          architectureEntry.scene.get());
+  require(architectureEntry.status == MermaidRenderStatus::Ready &&
+              architectureScene && !architectureScene->useMaxWidth &&
+              !architectureEntry.metadata.svgUseMaxWidth &&
+              architectureScene->config.padding == QJsonValue(18.0) &&
+              architectureScene->config.iconSize == QJsonValue(52.0) &&
+              architectureScene->config.fontSize == QJsonValue(21.0) &&
+              architectureScene->config.nodeSeparation == QJsonValue(32.0) &&
+              architectureScene->config.seed == QJsonValue(9.0) &&
+              architectureScene->style.edgeColor == QLatin1String("#112233") &&
+              architectureScene->style.arrowColor == QLatin1String("#445566") &&
+              architectureScene->style.groupBorderColor ==
+                  QLatin1String("#778899") &&
+              pngImage(architectureSource).size() ==
+                  architectureEntry.naturalSize,
+          QStringLiteral("Architecture config/theme production projection drifted"));
+
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -637,6 +670,18 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("wardley-beta.useMaxWidth"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("architecture.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("architecture.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("architecture.padding"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("architecture.randomize"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -668,7 +713,8 @@ int main(int argc, char** argv) {
            QStringLiteral("venn.useMaxWidth"),
            QStringLiteral("sankey.useMaxWidth"),
            QStringLiteral("treemap.useMaxWidth"),
-           QStringLiteral("cynefin.useMaxWidth")}) {
+           QStringLiteral("cynefin.useMaxWidth"),
+           QStringLiteral("architecture.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())

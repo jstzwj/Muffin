@@ -147,11 +147,11 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 `OrderedMap` 承载，原先推测的「ER dagre QHash 抖动」并不存在；0.01 是几何
 oracle 的坐标容差，不是随机性掩码。ER 已加入字节级 SVG 双渲染确定性测试。
 
-**2026-08-11 现状**：二十五个生产图族均通过单一 scene 指针和 `Diagram` registry
-进入族无关的 editor/PNG/SVG/canvas/interaction 路径；二十五个 adapter 分离在各自
-TU。新增的 Pie、Quadrant、Journey、Radar、XYChart、Timeline、Packet、Kanban、Mindmap、TreeView、Event Modeling、Ishikawa、Venn、Sankey、Treemap、Cynefin、Wardley、Gantt 和 Info 均有真实 Mermaid 11.16.0 语法、几何和像素
-oracle。完整 Release 门禁为 264/264。配置矩阵现为 327 行（190 parity /
-8 partial / 7 unsupported / 94 upstream-inert / 5 deferred /
+**2026-08-11 现状**：二十六个生产图族均通过单一 scene 指针和 `Diagram` registry
+进入族无关的 editor/PNG/SVG/canvas/interaction 路径；二十六个 adapter 分离在各自
+TU。新增的 Pie、Quadrant、Journey、Radar、XYChart、Timeline、Packet、Kanban、Mindmap、TreeView、Event Modeling、Ishikawa、Venn、Sankey、Treemap、Cynefin、Wardley、Architecture、Gantt 和 Info 均有真实 Mermaid 11.16.0 语法、几何和像素
+oracle。完整 Release 门禁为 268/268。配置矩阵现为 338 行（200 parity /
+8 partial / 7 unsupported / 95 upstream-inert / 5 deferred /
 19 legacy-only / 3 api-only / 1 security-fixed）。Requirement 的全局
 `htmlLabels:false` 保持 partial；外部 `mermaid.initialize()` 配置不属于当前
 Markdown source API。

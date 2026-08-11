@@ -510,6 +510,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/TreemapDiagramAdapter.cpp
   src/mermaid/editor/CynefinDiagramAdapter.cpp
   src/mermaid/editor/WardleyDiagramAdapter.cpp
+  src/mermaid/editor/ArchitectureDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -711,6 +712,16 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/wardley/WardleyScene.h
   src/mermaid/wardley/WardleyScenePainter.cpp
   src/mermaid/wardley/WardleyScenePainter.h
+  src/mermaid/architecture/ArchitectureDiagram.cpp
+  src/mermaid/architecture/ArchitectureDiagram.h
+  src/mermaid/architecture/ArchitectureFcoseLayout.cpp
+  src/mermaid/architecture/ArchitectureFcoseLayout.h
+  src/mermaid/architecture/ArchitectureSpectralLayout.cpp
+  src/mermaid/architecture/ArchitectureSpectralLayout.h
+  src/mermaid/architecture/ArchitectureScene.cpp
+  src/mermaid/architecture/ArchitectureScene.h
+  src/mermaid/architecture/ArchitectureScenePainter.cpp
+  src/mermaid/architecture/ArchitectureScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp
