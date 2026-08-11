@@ -102,7 +102,6 @@ int main(int argc, char** argv) {
     require(scene, id + QStringLiteral("/scene"));
 
     const QJsonObject expected = fixture.value(QStringLiteral("expected")).toObject();
-    const bool lineHopCase = id.startsWith(QLatin1String("line-hops-"));
     const QJsonObject rootAttrs = expected.value(QStringLiteral("root")).toObject()
                                       .value(QStringLiteral("attrs")).toObject();
     require(entry.metadata.svgUseMaxWidth ==
@@ -111,20 +110,18 @@ int main(int argc, char** argv) {
     const QVector<qreal> viewBox = numbers(rootAttrs.value(QStringLiteral("viewBox")).toString());
     require(viewBox.size() == 4, id + QStringLiteral("/viewBox"));
     const qreal padding = entry.metadata.diagramPadding;
-    if (!lineHopCase) {
-      near(scene->bounds.x(), viewBox[0] + padding, kGeometryTolerance,
-           id + QStringLiteral("/bounds-x"));
-      near(scene->bounds.y(), viewBox[1] + padding, kGeometryTolerance,
-           id + QStringLiteral("/bounds-y"));
-      near(scene->bounds.width(), viewBox[2] - 2 * padding, kGeometryTolerance,
-           id + QStringLiteral("/bounds-w"));
-      near(scene->bounds.height(), viewBox[3] - 2 * padding, kGeometryTolerance,
-           id + QStringLiteral("/bounds-h"));
-    }
+    near(scene->bounds.x(), viewBox[0] + padding, kGeometryTolerance,
+         id + QStringLiteral("/bounds-x"));
+    near(scene->bounds.y(), viewBox[1] + padding, kGeometryTolerance,
+         id + QStringLiteral("/bounds-y"));
+    near(scene->bounds.width(), viewBox[2] - 2 * padding, kGeometryTolerance,
+         id + QStringLiteral("/bounds-w"));
+    near(scene->bounds.height(), viewBox[3] - 2 * padding, kGeometryTolerance,
+         id + QStringLiteral("/bounds-h"));
 
     const QJsonArray expectedNodes = expected.value(QStringLiteral("nodes")).toArray();
     require(scene->nodes.size() == expectedNodes.size(), id + QStringLiteral("/node-count"));
-    for (qsizetype i = 0; !lineHopCase && i < scene->nodes.size(); ++i) {
+    for (qsizetype i = 0; i < scene->nodes.size(); ++i) {
       const auto& node = scene->nodes.at(i);
       const QJsonObject oracle = expectedNodes.at(i).toObject();
       const QVector<qreal> transform = numbers(oracle.value(QStringLiteral("transform")).toString());
@@ -146,22 +143,20 @@ int main(int argc, char** argv) {
       const QJsonObject oracle = clusterValue.toObject();
       const auto* cluster = clusterById(*scene, oracle.value(QStringLiteral("id")).toString());
       require(cluster, id + QStringLiteral("/cluster-id"));
-      if (!lineHopCase) {
-        const QJsonObject box = oracle.value(QStringLiteral("bbox")).toObject();
-        const QRectF actual = cluster->paintedBounds.isValid()
-            ? cluster->paintedBounds
-            : QRectF(cluster->cx - cluster->width / 2.0,
-                     cluster->cy - cluster->height / 2.0,
-                     cluster->width, cluster->height);
-        near(actual.x(), box.value(QStringLiteral("x")).toDouble(),
-             kGeometryTolerance, id + QStringLiteral("/cluster-x"));
-        near(actual.y(), box.value(QStringLiteral("y")).toDouble(),
-             kGeometryTolerance, id + QStringLiteral("/cluster-y"));
-        near(actual.width(), box.value(QStringLiteral("width")).toDouble(),
-             kGeometryTolerance, id + QStringLiteral("/cluster-w"));
-        near(actual.height(), box.value(QStringLiteral("height")).toDouble(),
-             kGeometryTolerance, id + QStringLiteral("/cluster-h"));
-      }
+      const QJsonObject box = oracle.value(QStringLiteral("bbox")).toObject();
+      const QRectF actual = cluster->paintedBounds.isValid()
+          ? cluster->paintedBounds
+          : QRectF(cluster->cx - cluster->width / 2.0,
+                   cluster->cy - cluster->height / 2.0,
+                   cluster->width, cluster->height);
+      near(actual.x(), box.value(QStringLiteral("x")).toDouble(),
+           kGeometryTolerance, id + QStringLiteral("/cluster-x"));
+      near(actual.y(), box.value(QStringLiteral("y")).toDouble(),
+           kGeometryTolerance, id + QStringLiteral("/cluster-y"));
+      near(actual.width(), box.value(QStringLiteral("width")).toDouble(),
+           kGeometryTolerance, id + QStringLiteral("/cluster-w"));
+      near(actual.height(), box.value(QStringLiteral("height")).toDouble(),
+           kGeometryTolerance, id + QStringLiteral("/cluster-h"));
       const QJsonArray rects = oracle.value(QStringLiteral("rects")).toArray();
       if (!rects.isEmpty()) {
         const QJsonObject computed = rects.first().toObject()
@@ -182,17 +177,15 @@ int main(int argc, char** argv) {
       const QJsonObject computed = oracle.value(QStringLiteral("computed")).toObject();
       require(samePaint(edge.stroke, computed.value(QStringLiteral("stroke")).toString()),
               id + QStringLiteral("/edge%1-stroke").arg(i));
-      if (!lineHopCase) {
-        const QVector<qreal> actualPath = numbers(edge.path);
-        const QVector<qreal> expectedPath = numbers(attrs.value(QStringLiteral("d")).toString());
-        require(actualPath.size() == expectedPath.size(),
-                id + QStringLiteral("/edge%1-structure: %2 != %3\n%4\n%5")
-                         .arg(i).arg(actualPath.size()).arg(expectedPath.size())
-                         .arg(edge.path, attrs.value(QStringLiteral("d")).toString()));
-        for (qsizetype j = 0; j < actualPath.size(); ++j) {
-          near(actualPath[j], expectedPath[j], 0.001,
-               id + QStringLiteral("/edge%1/%2").arg(i).arg(j));
-        }
+      const QVector<qreal> actualPath = numbers(edge.path);
+      const QVector<qreal> expectedPath = numbers(attrs.value(QStringLiteral("d")).toString());
+      require(actualPath.size() == expectedPath.size(),
+              id + QStringLiteral("/edge%1-structure: %2 != %3\n%4\n%5")
+                       .arg(i).arg(actualPath.size()).arg(expectedPath.size())
+                       .arg(edge.path, attrs.value(QStringLiteral("d")).toString()));
+      for (qsizetype j = 0; j < actualPath.size(); ++j) {
+        near(actualPath[j], expectedPath[j], 0.001,
+             id + QStringLiteral("/edge%1/%2").arg(i).arg(j));
       }
     }
 
