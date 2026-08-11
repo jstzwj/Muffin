@@ -1,0 +1,50 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "treemapModuleSha256": "ba9be795c170a8ee77d1183f6554aa48c3090f9c116e901c2ee675770642ddc3",
+    "parserModuleSha256": "c3d546a632223958abd37439b23ca6c586e2c6f43306619ea9a6843cdc993e10",
+    "engine": "d3-hierarchy@3.1.2",
+    "engineSha256": "4409a95e3886ae711cbc66c6c45dc1015372abc89297c3a3f084bef3750c48c9",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreemap-beta\n\"Portfolio\"\n  \"Products\"\n    \"Alpha\": 35\n    \"Beta\": 20\n  \"Services\"\n    \"Consulting\": 25\n    \"Support\": 20",
+      "file": "default.png",
+      "width": 996,
+      "height": 371,
+      "sha256": "b7bf9984032ecef0f11c15858b0c5362543f111bcf0e364516aadb39adc2f62c"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"theme\":\"dark\"}}%%\ntreemap-beta\n\"Portfolio\"\n  \"Products\"\n    \"Alpha\": 35\n    \"Beta\": 20\n  \"Services\"\n    \"Consulting\": 25\n    \"Support\": 20",
+      "file": "dark.png",
+      "width": 996,
+      "height": 371,
+      "sha256": "2e94940d4b73f0a89d48156c6689a48be34fb0aec61393172cf72779142cd7ab"
+    },
+    {
+      "id": "forest",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"theme\":\"forest\"}}%%\ntreemap-beta\n\"Portfolio\"\n  \"Products\"\n    \"Alpha\": 35\n    \"Beta\": 20\n  \"Services\"\n    \"Consulting\": 25\n    \"Support\": 20",
+      "file": "forest.png",
+      "width": 996,
+      "height": 371,
+      "sha256": "b6b452836526354f63297dc972970ccbd4502e5a5161410339cc83994687e6c1"
+    },
+    {
+      "id": "class-styles",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ntreemap-beta\nclassDef hot fill:#ff0000,stroke:#00ff00,color:#0000ff,stroke-width:7px;\n\"Root\"\n  \"A\": 6:::hot\n  \"B\": 4",
+      "file": "class-styles.png",
+      "width": 996,
+      "height": 371,
+      "sha256": "8def97fcbd8b4e9519db400936a72404d6833dcf9aee8980a5da9a9e6c842a84"
+    }
+  ],
+  "fixtureSha256": "cf336cbceb2711f54afc7fd88e9f8814fea08f72ee82d7ecdaffffad6ea40901"
+}

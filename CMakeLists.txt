@@ -507,6 +507,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/IshikawaDiagramAdapter.cpp
   src/mermaid/editor/VennDiagramAdapter.cpp
   src/mermaid/editor/SankeyDiagramAdapter.cpp
+  src/mermaid/editor/TreemapDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -690,6 +691,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/sankey/SankeyScene.h
   src/mermaid/sankey/SankeyScenePainter.cpp
   src/mermaid/sankey/SankeyScenePainter.h
+  src/mermaid/treemap/TreemapDiagram.cpp
+  src/mermaid/treemap/TreemapDiagram.h
+  src/mermaid/treemap/TreemapScene.cpp
+  src/mermaid/treemap/TreemapScene.h
+  src/mermaid/treemap/TreemapScenePainter.cpp
+  src/mermaid/treemap/TreemapScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

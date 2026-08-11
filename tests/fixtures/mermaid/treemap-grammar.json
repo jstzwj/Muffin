@@ -1,0 +1,1304 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "treemapModuleSha256": "ba9be795c170a8ee77d1183f6554aa48c3090f9c116e901c2ee675770642ddc3",
+    "parserModuleSha256": "c3d546a632223958abd37439b23ca6c586e2c6f43306619ea9a6843cdc993e10",
+    "engine": "d3-hierarchy@3.1.2",
+    "engineSha256": "4409a95e3886ae711cbc66c6c45dc1015372abc89297c3a3f084bef3750c48c9",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "treemap-beta\n\"Portfolio\"\n  \"Products\"\n    \"Alpha\": 35\n    \"Beta\": 20\n  \"Services\"\n    \"Consulting\": 25\n    \"Support\": 20",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Portfolio",
+              "children": [
+                {
+                  "name": "Products",
+                  "children": [
+                    {
+                      "name": "Alpha",
+                      "value": 35
+                    },
+                    {
+                      "name": "Beta",
+                      "value": 20
+                    }
+                  ]
+                },
+                {
+                  "name": "Services",
+                  "children": [
+                    {
+                      "name": "Consulting",
+                      "value": 25
+                    },
+                    {
+                      "name": "Support",
+                      "value": 20
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Products",
+              "children": [
+                {
+                  "name": "Alpha",
+                  "value": 35
+                },
+                {
+                  "name": "Beta",
+                  "value": 20
+                }
+              ]
+            },
+            {
+              "name": "Alpha",
+              "value": 35
+            },
+            {
+              "name": "Beta",
+              "value": 20
+            },
+            {
+              "name": "Services",
+              "children": [
+                {
+                  "name": "Consulting",
+                  "value": 25
+                },
+                {
+                  "name": "Support",
+                  "value": 20
+                }
+              ]
+            },
+            {
+              "name": "Consulting",
+              "value": 25
+            },
+            {
+              "name": "Support",
+              "value": 20
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Portfolio",
+                "children": [
+                  {
+                    "name": "Products",
+                    "children": [
+                      {
+                        "name": "Alpha",
+                        "value": 35
+                      },
+                      {
+                        "name": "Beta",
+                        "value": 20
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Services",
+                    "children": [
+                      {
+                        "name": "Consulting",
+                        "value": 25
+                      },
+                      {
+                        "name": "Support",
+                        "value": 20
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "non-beta",
+      "source": "treemap\n\"Portfolio\"\n  \"Products\"\n    \"Alpha\": 35\n    \"Beta\": 20\n  \"Services\"\n    \"Consulting\": 25\n    \"Support\": 20",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Portfolio",
+              "children": [
+                {
+                  "name": "Products",
+                  "children": [
+                    {
+                      "name": "Alpha",
+                      "value": 35
+                    },
+                    {
+                      "name": "Beta",
+                      "value": 20
+                    }
+                  ]
+                },
+                {
+                  "name": "Services",
+                  "children": [
+                    {
+                      "name": "Consulting",
+                      "value": 25
+                    },
+                    {
+                      "name": "Support",
+                      "value": 20
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Products",
+              "children": [
+                {
+                  "name": "Alpha",
+                  "value": 35
+                },
+                {
+                  "name": "Beta",
+                  "value": 20
+                }
+              ]
+            },
+            {
+              "name": "Alpha",
+              "value": 35
+            },
+            {
+              "name": "Beta",
+              "value": 20
+            },
+            {
+              "name": "Services",
+              "children": [
+                {
+                  "name": "Consulting",
+                  "value": 25
+                },
+                {
+                  "name": "Support",
+                  "value": 20
+                }
+              ]
+            },
+            {
+              "name": "Consulting",
+              "value": 25
+            },
+            {
+              "name": "Support",
+              "value": 20
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Portfolio",
+                "children": [
+                  {
+                    "name": "Products",
+                    "children": [
+                      {
+                        "name": "Alpha",
+                        "value": 35
+                      },
+                      {
+                        "name": "Beta",
+                        "value": 20
+                      }
+                    ]
+                  },
+                  {
+                    "name": "Services",
+                    "children": [
+                      {
+                        "name": "Consulting",
+                        "value": 25
+                      },
+                      {
+                        "name": "Support",
+                        "value": 20
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "uppercase",
+      "source": "TREEMAP-BETA\n\"Portfolio\"\n  \"Products\"\n    \"Alpha\": 35\n    \"Beta\": 20\n  \"Services\"\n    \"Consulting\": 25\n    \"Support\": 20",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: TREEMAP-BETA\n\"Portfolio\"\n  \"Products\"\n    \"Alpha\": 35\n    \"Beta\": 20\n  \"Services\"\n    \"Consulting\": 25\n    \"Support\": 20",
+          "line": 0,
+          "column": 0
+        }
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "treemap-betaX\n\"Root\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 1, column 13: Expecting token of type 'EOF' but found `X`.",
+          "line": 1,
+          "column": 13
+        }
+      }
+    },
+    {
+      "id": "header-only",
+      "source": "treemap-beta",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [],
+          "root": {
+            "name": "",
+            "children": []
+          }
+        }
+      }
+    },
+    {
+      "id": "header-newline",
+      "source": "treemap-beta\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [],
+          "root": {
+            "name": "",
+            "children": []
+          }
+        }
+      }
+    },
+    {
+      "id": "single-section",
+      "source": "treemap-beta\n\"Root\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Root",
+              "children": []
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Root",
+                "children": []
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "single-leaf",
+      "source": "treemap-beta\n\"A\": 10",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 10
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 10
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "treemap-beta \"A\": 10",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 10
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 10
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "unquoted",
+      "source": "treemap-beta\nRoot\n  A: 10",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 1: Expecting token of type 'EOF' but found `Root`.\nParse error on line 3, column 3: Expecting: one of these possible Token sequences:\n  1. [STRING2]\n  2. [CLASS_DEF]\nbut found: 'A'\nParse error on line 3, column 6: Expecting: one of these possible Token sequences:\n  1. [STRING2]\n  2. [CLASS_DEF]\nbut found: '10'",
+          "line": 2,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "single-quotes",
+      "source": "treemap-beta\n'Root'\n  'A': 10",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Root",
+              "children": [
+                {
+                  "name": "A",
+                  "value": 10
+                }
+              ]
+            },
+            {
+              "name": "A",
+              "value": 10
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Root",
+                "children": [
+                  {
+                    "name": "A",
+                    "value": 10
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "empty-name",
+      "source": "treemap-beta\n\"\"\n  \"A\": 10",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "",
+              "children": [
+                {
+                  "name": "A",
+                  "value": 10
+                }
+              ]
+            },
+            {
+              "name": "A",
+              "value": 10
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "",
+                "children": [
+                  {
+                    "name": "A",
+                    "value": 10
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "quoted-newline",
+      "source": "treemap-beta\n\"A\nB\": 10",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A\nB",
+              "value": 10
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A\nB",
+                "value": 10
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "escaped-quote",
+      "source": "treemap-beta\n\"A\\\"B\": 10",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 6: unexpected character: ->\"<- at offset: 18, skipped 1 characters. Parse error on line 2, column 5: Expecting token of type 'EOF' but found `B`.\nParse error on line 2, column 9: Expecting: one of these possible Token sequences:\n  1. [STRING2]\n  2. [CLASS_DEF]\nbut found: '10'",
+          "line": 2,
+          "column": 5
+        }
+      }
+    },
+    {
+      "id": "decimal",
+      "source": "treemap-beta\n\"A\": .5",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 0.5
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 0.5
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "comma-number",
+      "source": "treemap-beta\n\"A\": 1,234.5",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 1234.5
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 1234.5
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "underscore-number",
+      "source": "treemap-beta\n\"A\": 1_000",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 1
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "signed-number",
+      "source": "treemap-beta\n\"A\": -2",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 6: unexpected character: ->-<- at offset: 18, skipped 1 characters. ",
+          "line": 2,
+          "column": 6
+        }
+      }
+    },
+    {
+      "id": "exponent-number",
+      "source": "treemap-beta\n\"A\": 1e2",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 7: Expecting end of file but found `e2`.",
+          "line": 2,
+          "column": 7
+        }
+      }
+    },
+    {
+      "id": "malformed-number",
+      "source": "treemap-beta\n\"A\": ...",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": null
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "missing-value",
+      "source": "treemap-beta\n\"A\":",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 4: Expecting end of file but found `:`.",
+          "line": 2,
+          "column": 4
+        }
+      }
+    },
+    {
+      "id": "multiple-roots",
+      "source": "treemap-beta\n\"A\": 1\n\"B\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 1
+            },
+            {
+              "name": "B",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 1
+              },
+              {
+                "name": "B",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "irregular-indent",
+      "source": "treemap-beta\n\"Root\"\n   \"A\"\n \"B\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Root",
+              "children": [
+                {
+                  "name": "A",
+                  "children": []
+                },
+                {
+                  "name": "B",
+                  "value": 2
+                }
+              ]
+            },
+            {
+              "name": "A",
+              "children": []
+            },
+            {
+              "name": "B",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Root",
+                "children": [
+                  {
+                    "name": "A",
+                    "children": []
+                  },
+                  {
+                    "name": "B",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "tabs",
+      "source": "treemap-beta\n\"Root\"\n\t\"A\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Root",
+              "children": [
+                {
+                  "name": "A",
+                  "value": 2
+                }
+              ]
+            },
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Root",
+                "children": [
+                  {
+                    "name": "A",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "class-section",
+      "source": "treemap-beta\n\"Root\":::group\n  \"A\": 2\nclassDef group fill:#f00,color:#fff;",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Root",
+              "children": [
+                {
+                  "name": "A",
+                  "value": 2
+                }
+              ],
+              "classSelector": "group",
+              "cssCompiledStyles": [
+                "fill:#f00",
+                "color:#fff"
+              ]
+            },
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Root",
+                "children": [
+                  {
+                    "name": "A",
+                    "value": 2
+                  }
+                ],
+                "classSelector": "group",
+                "cssCompiledStyles": [
+                  "fill:#f00",
+                  "color:#fff"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "class-leaf-before",
+      "source": "treemap-beta\nclassDef hot fill:#f00,color:#fff;\n\"A\": 2:::hot",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "classSelector": "hot",
+              "cssCompiledStyles": [
+                "fill:#f00",
+                "color:#fff"
+              ],
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "classSelector": "hot",
+                "cssCompiledStyles": [
+                  "fill:#f00",
+                  "color:#fff"
+                ],
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "class-leaf-after",
+      "source": "treemap-beta\n\"A\": 2:::hot\nclassDef hot fill:#f00,color:#fff;",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "classSelector": "hot",
+              "cssCompiledStyles": [
+                "fill:#f00",
+                "color:#fff"
+              ],
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "classSelector": "hot",
+                "cssCompiledStyles": [
+                  "fill:#f00",
+                  "color:#fff"
+                ],
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "bad-class-name",
+      "source": "treemap-beta\nclassDef 3x fill:#f00;\n\"A\":2",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 18: unexpected character: ->#<- at offset: 30, skipped 1 characters. Parse error on line 2, column 1: Expecting token of type 'EOF' but found `classDef`.\nParse error on line 2, column 10: Expecting: one of these possible Token sequences:\n  1. [STRING2]\n  2. [CLASS_DEF]\nbut found: '3'\nParse error on line 2, column 13: Expecting: one of these possible Token sequences:\n  1. [STRING2]\n  2. [CLASS_DEF]\nbut found: 'fill'",
+          "line": 2,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "title",
+      "source": "treemap-beta\ntitle Inline Heading\n\"A\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "Inline Heading",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "treemap-beta\naccTitle: AT\naccDescr: AD\n\"A\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "AT",
+          "accDescr": "AD",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "acc-block",
+      "source": "treemap-beta\naccDescr {first\n  second}\n\"A\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "first\nsecond",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "comment-before",
+      "source": "%% comment\ntreemap-beta\n\"A\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "comment-body",
+      "source": "treemap-beta\n%% comment\n\"A\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "blank-lines",
+      "source": "\n treemap-beta\n\n \"Root\"\n\n   \"A\": 2\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Root",
+              "children": [
+                {
+                  "name": "A",
+                  "value": 2
+                }
+              ]
+            },
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Root",
+                "children": [
+                  {
+                    "name": "A",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "treemap-beta\r\n\"Root\"\r\n  \"A\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "Root",
+              "children": [
+                {
+                  "name": "A",
+                  "value": 2
+                }
+              ]
+            },
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "Root",
+                "children": [
+                  {
+                    "name": "A",
+                    "value": 2
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "semicolon",
+      "source": "treemap-beta\n\"A\": 2;",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 7: unexpected character: ->;<- at offset: 19, skipped 1 characters. ",
+          "line": 2,
+          "column": 7
+        }
+      }
+    },
+    {
+      "id": "literal-markup",
+      "source": "treemap-beta\n\"<script>x</script><b>A</b>\": 2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "<script>x</script><b>A</b>",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "<script>x</script><b>A</b>",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\nconfig:\n  {\n    \"treemap\": {\n      \"showValues\": false\n    }\n  }\n---\ntreemap-beta\n\"A\":2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"treemap\":{\"padding\":3}}}%%\ntreemap-beta\n\"A\":2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "nodes": [
+            {
+              "name": "A",
+              "value": 2
+            }
+          ],
+          "root": {
+            "name": "",
+            "children": [
+              {
+                "name": "A",
+                "value": 2
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "86381f50f147c463bcfc43fd492b430cf819a9bce59b0a265dedac28bdc02d75"
+}

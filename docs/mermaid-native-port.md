@@ -7,7 +7,7 @@ The complete 38-ID expansion and acceptance contract is maintained in
 
 ## Current status (2026-08-11)
 
-Muffin renders twenty-two Mermaid families through a native C++20/Qt pipeline:
+Muffin renders twenty-three Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - sequence diagram;
@@ -29,16 +29,17 @@ Muffin renders twenty-two Mermaid families through a native C++20/Qt pipeline:
 - Ishikawa/fishbone diagram (`ishikawa`).
 - Venn diagram (`venn-beta`).
 - Sankey diagram (`sankey` and `sankey-beta`).
+- Treemap diagram (`treemap` and `treemap-beta`).
 - Gantt chart (`gantt`).
 - Info diagram (`info`).
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 252/252 tests, including the end-to-end
+currently 256/256 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All twenty-two native families now share `MermaidRenderMetadata` for the diagram
+All twenty-three native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
@@ -148,7 +149,7 @@ assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 
 The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
 and whole-diagram painter are now native and covered by structural and pixel
-oracles. All twenty-two native scenes are integrated into the editor and print/PDF path
+oracles. All twenty-three native scenes are integrated into the editor and print/PDF path
 through `MermaidRenderCache`. The legacy flat
 `WorkGraph` implementation remains as inactive reference code; the active path
 always delegates to the compound Dagre pipeline.
@@ -407,12 +408,13 @@ available.
 `JourneyDiagramConfig`, `RadarDiagramConfig`, `XYChartConfig`, and
 `TimelineDiagramConfig`, `PacketDiagramConfig`, `KanbanDiagramConfig`, and
 `MindmapDiagramConfig`, `TreeViewDiagramConfig`, `EventModelingDiagramConfig`,
-`IshikawaDiagramConfig`, `VennDiagramConfig`, `SankeyDiagramConfig`, and `GanttDiagramConfig`
+`IshikawaDiagramConfig`, `VennDiagramConfig`, `SankeyDiagramConfig`,
+`TreemapDiagramConfig`, and `GanttDiagramConfig`
 declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 298
-rows: 282 family-interface fields and 16 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 309
+rows: 293 family-interface fields and 16 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -462,7 +464,7 @@ variant through config, per-edge metadata, scene paint, interaction geometry,
 and PNG export. The interaction/animation milestone is also complete: safe
 Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
 Sequence participant menus, and `sequence.forceMenus` all reach their runtime
-consumers. Native SVG export is now complete at the product boundary: all twenty-two
+consumers. Native SVG export is now complete at the product boundary: all twenty-three
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
 `deterministicIds`, `deterministicIDSeed`, and the effective family
@@ -562,6 +564,10 @@ Sankey freezes its CSV/Jison database, JavaScript `parseFloat` and scalar
 coercion, the exact `d3-sankey` 0.12.3 six-pass breadth relaxation/collision
 layout, D3 Tableau colors and gradient links, legacy/outlined labels, cycle
 errors, theme cascade, and fixed/max-width export behavior.
+Treemap freezes its indentation grammar/database, class cascade, JavaScript
+number coercion, the exact `d3-hierarchy` 3.1.2 squarify/padding/rounding layout,
+ordinal theme consumption, tile-derived label/value sizing, D3 value formats,
+in-scene title/accessibility metadata, and fixed/max-width export behavior.
 Gantt freezes its Jison database and date arithmetic, task dependency and
 exclude/include semantics, D3-style time ticks, section/task/milestone/vertical
 marker geometry, 11-theme paint model, safe task links, accessibility metadata,
@@ -570,8 +576,9 @@ Info freezes its Langium grammar and diagnostic locations, fixed version label,
 400x150 replaced-element viewport, theme/font behavior, renderer-inert
 `showInfo`, discarded metadata AST, and intentionally absent SVG viewBox.
 
-The next family is Treemap and must start with a fresh Gate-0 survey. Domain-layout
-families remain preferable before additional force-layout families: architecture uses Cytoscape `fcose`,
+The next bounded domain families are Wardley and Cynefin and must start with a
+fresh Gate-0 survey. Domain-layout families remain preferable before additional
+force-layout families: architecture uses Cytoscape `fcose`,
 and block diagrams use the custom recursive
 `layoutBlocks` pipeline. No family is treated as supported until its upstream
 oracle, native scene, pixel evidence, error paths, and export integration pass.

@@ -2,7 +2,7 @@
   "upstream": {
     "package": "mermaid",
     "version": "11.16.0",
-    "configTypeSha256": "be369beb8545de3e1d35c387d7ce0f328fb672f7c347e6540617a40d1b7244c0"
+    "configTypeSha256": "a2610a126de56484377ec98301b03da01b269b824206fe195d3e038b89d9365e"
   },
   "dimensions": [
     "parsed",
@@ -35,18 +35,19 @@
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
       "gantt",
       "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 176,
+    "parity": 183,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 79,
+    "upstream-inert": 83,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -75,7 +76,8 @@
         "eventmodeling",
         "ishikawa",
         "venn",
-        "sankey"
+        "sankey",
+        "treemap"
       ],
       "status": "parity",
       "upstream": [
@@ -119,7 +121,8 @@
         "eventmodeling",
         "ishikawa",
         "venn",
-        "sankey"
+        "sankey",
+        "treemap"
       ],
       "status": "partial",
       "upstream": [
@@ -164,7 +167,8 @@
         "eventmodeling",
         "ishikawa",
         "venn",
-        "sankey"
+        "sankey",
+        "treemap"
       ],
       "status": "parity",
       "upstream": [
@@ -382,7 +386,8 @@
         "eventmodeling",
         "ishikawa",
         "venn",
-        "sankey"
+        "sankey",
+        "treemap"
       ],
       "status": "unsupported",
       "upstream": [
@@ -417,7 +422,8 @@
         "eventmodeling",
         "ishikawa",
         "venn",
-        "sankey"
+        "sankey",
+        "treemap"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -474,7 +480,8 @@
         "eventmodeling",
         "ishikawa",
         "venn",
-        "sankey"
+        "sankey",
+        "treemap"
       ],
       "status": "parity",
       "upstream": [
@@ -510,7 +517,8 @@
         "eventmodeling",
         "ishikawa",
         "venn",
-        "sankey"
+        "sankey",
+        "treemap"
       ],
       "status": "parity",
       "upstream": [
@@ -546,7 +554,8 @@
         "eventmodeling",
         "ishikawa",
         "venn",
-        "sankey"
+        "sankey",
+        "treemap"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5932,6 +5941,224 @@
       ]
     },
     {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.diagramPadding",
+      "field": "diagramPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": 8
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.showValues",
+      "field": "showValues",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.nodeWidth",
+      "field": "nodeWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 100
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.nodeHeight",
+      "field": "nodeHeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 40
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.borderWidth",
+      "field": "borderWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Treemap 11.16.0 declares borderWidth but its styles use fixed section/leaf widths.",
+      "default": 1
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.valueFontSize",
+      "field": "valueFontSize",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Treemap 11.16.0 declares valueFontSize but derives value text size from each tile.",
+      "default": 12
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.labelFontSize",
+      "field": "labelFontSize",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Treemap 11.16.0 declares labelFontSize but derives label text size from each tile.",
+      "default": 14
+    },
+    {
+      "family": "treemap",
+      "interface": "TreemapDiagramConfig",
+      "path": "treemap.valueFormat",
+      "field": "valueFormat",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": ","
+    },
+    {
       "family": "gantt",
       "interface": "GanttDiagramConfig",
       "path": "gantt.useWidth",
@@ -6313,5 +6540,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "919930dd8f66830453d5095728181657612ff9cd79a4afba4224d9930d5e609d"
+  "fixtureSha256": "c79308c95741543067fd6be9f77ddb435d9d2e3089b2b27f70e63d2fb29f2512"
 }

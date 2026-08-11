@@ -1042,6 +1042,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("venn-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("sankey-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("treemap-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1657,6 +1659,8 @@ int main(int argc, char** argv) {
                         "union A,B: 3")},
         {QStringLiteral("sankey"),
          QStringLiteral("sankey-beta\nA,B,8\nB,C,5\nB,D,3")},
+        {QStringLiteral("treemap"),
+         QStringLiteral("treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

@@ -68,16 +68,16 @@ references.
 - **Real-mermaid geometry oracles** — fail-on-divergence tests that assert
   Muffin's native geometry against captured mermaid 11.16.0 output, splitting
   font-independent parity (asserted) from font-coupled deltas (reported). All
-  twenty-two native families are covered: flowchart (dagre-snapshots + geometry), ER
+  twenty-three native families are covered: flowchart (dagre-snapshots + geometry), ER
   (`er-geometry.json` + `MermaidErGeometryOracleTest`), class
   (`class-geometry.json` + `MermaidClassGeometryOracleTest`), state
   (`state-geometry.json` + `MermaidStateGeometryOracleTest`), and sequence
   (`sequence-geometry.json` + `MermaidSequenceGeometryOracleTest`, a pure
   structural oracle since the legacy renderer is positionally font-coupled),
   Requirement, pie, quadrant, journey, radar, XYChart, Timeline, Packet, Kanban,
-  Mindmap, TreeView, Event Modeling, Ishikawa, Venn, Sankey, Gantt, and Info (family-specific geometry and pixel
+  Mindmap, TreeView, Event Modeling, Ishikawa, Venn, Sankey, Treemap, Gantt, and Info (family-specific geometry and pixel
   fixtures).
-- `config-effect-matrix.json` covers all twenty-two native families.
+- `config-effect-matrix.json` covers all twenty-three native families.
 - Regenerating any drifted fixture (e.g. after a mermaid version bump, or when
   extending the case corpus).
 
@@ -88,7 +88,8 @@ Flowchart: `geometry`, `scene`, `db`, `label`, `pixel` (`golden-pixel`),
 Class: `db`, `layout`, `label`, `pixel`, `differential-fuzz`, `geometry`.
 Sequence / state: `db`, `layout`, `label`, `pixel`, `differential-fuzz`,
 `geometry` (sequence also `mathml-box`). ER: `geometry` (+ Muffin self-snapshot
-`er-scene`). Requirement, pie, quadrant, journey, radar, XYChart, Timeline, Packet, Kanban, and Mindmap add their own parser,
+`er-scene`). Requirement, pie, quadrant, journey, radar, XYChart, Timeline,
+Packet, Kanban, Mindmap, and Treemap add their own parser,
 geometry, structure, and pixel fixtures; the journey and radar generators pin Chrome
 and bundled-font hashes.
 Plus `config-effect-matrix`, `compatibility`, `error`, `rough-ops`, `katex-golden`.

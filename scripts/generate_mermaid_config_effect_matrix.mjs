@@ -18,7 +18,20 @@ if (packageJson.version !== "11.16.0") {
 }
 
 const configTypesPath = path.join(mermaidRoot, "dist", "config.type.d.ts");
-const configTypes = fs.readFileSync(configTypesPath, "utf8");
+// Treemap's diagram-local config interface is not emitted into Mermaid's main
+// generated config.type.d.ts in 11.16.0. Keep it in the same upstream-driven
+// interface audit by reading the shipped diagram declaration as well.
+const treemapTypesPath = path.join(
+  mermaidRoot,
+  "dist",
+  "diagrams",
+  "treemap",
+  "types.d.ts",
+);
+const configTypes =
+  fs.readFileSync(configTypesPath, "utf8") +
+  "\n" +
+  fs.readFileSync(treemapTypesPath, "utf8");
 const { defaultConfig } = await import(
   pathToFileURL(
     path.join(
@@ -543,6 +556,25 @@ const familyPolicies = {
     labelStyle: parity("text", "paint", "viewport", "export"),
     nodeColors: parity("paint", "export"),
   },
+  treemap: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    padding: parity("layout", "paint", "viewport", "export"),
+    diagramPadding: parity("viewport", "export"),
+    showValues: parity("text", "layout", "paint", "viewport", "export"),
+    nodeWidth: parity("layout", "paint", "viewport", "export"),
+    nodeHeight: parity("layout", "paint", "viewport", "export"),
+    borderWidth: inert(
+      "Treemap 11.16.0 declares borderWidth but its styles use fixed section/leaf widths.",
+    ),
+    valueFontSize: inert(
+      "Treemap 11.16.0 declares valueFontSize but derives value text size from each tile.",
+    ),
+    labelFontSize: inert(
+      "Treemap 11.16.0 declares labelFontSize but derives label text size from each tile.",
+    ),
+    valueFormat: parity("text", "paint", "viewport", "export"),
+  },
   gantt: {
     useWidth: parity("layout", "paint", "viewport", "export"),
     useMaxWidth: parity("viewport", "export"),
@@ -634,6 +666,7 @@ const shared = [
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -662,6 +695,7 @@ const shared = [
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -694,6 +728,7 @@ const shared = [
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -764,6 +799,7 @@ const shared = [
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
     ],
     ...unsupported(
       ["parsed"],
@@ -795,6 +831,7 @@ const shared = [
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
     ],
     ...policy(
       "security-fixed",
@@ -833,6 +870,7 @@ const shared = [
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
     ],
     ...parity("export"),
   },
@@ -861,6 +899,7 @@ const shared = [
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
     ],
     ...parity("export"),
   },
@@ -889,6 +928,7 @@ const shared = [
       "ishikawa",
       "venn",
       "sankey",
+      "treemap",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -948,6 +988,7 @@ const interfaces = {
   ishikawa: "IshikawaDiagramConfig",
   venn: "VennDiagramConfig",
   sankey: "SankeyDiagramConfig",
+  treemap: "TreemapDiagramConfig",
   gantt: "GanttDiagramConfig",
 };
 

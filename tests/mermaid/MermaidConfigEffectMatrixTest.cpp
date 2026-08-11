@@ -13,6 +13,7 @@
 #include "mermaid/treeview/TreeViewScene.h"
 #include "mermaid/venn/VennScene.h"
 #include "mermaid/sankey/SankeyScene.h"
+#include "mermaid/treemap/TreemapScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 
 #include <QByteArray>
@@ -158,8 +159,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 298,
-          QStringLiteral("Expected 298 classified config rows, found %1")
+  require(entries.size() == 309,
+          QStringLiteral("Expected 309 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -231,6 +232,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("treeView"), 10},
                                              {QStringLiteral("venn"), 6},
                                              {QStringLiteral("sankey"), 13},
+                                             {QStringLiteral("treemap"), 11},
                                              {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
@@ -335,6 +337,48 @@ int main(int argc, char** argv) {
               sankeyScene->links.first().stroke == QLatin1String("#ff0000") &&
               pngImage(sankeySource).size() == sankeyEntry.naturalSize,
           QStringLiteral("Sankey live config did not reach scene/PNG export"));
+  const QString treemapSource = QStringLiteral(
+      "%%{init: {\"fontFamily\":\"Noto Sans\",\"treemap\": {"
+      "\"padding\": 3, \"diagramPadding\": 30, \"showValues\": false, "
+      "\"nodeWidth\": 48, \"nodeHeight\": 28, \"useMaxWidth\": false, "
+      "\"valueFormat\": \"$,.2f\"}, \"themeVariables\": {\"treemap\": {"
+      "\"titleColor\": \"#ff0000\", \"titleFontSize\": \"24px\"}}}}%%\n"
+      "treemap-beta\ntitle Revenue Map\n\"Root\"\n  \"A\": 1234.5\n  \"B\": 500");
+  const MermaidRenderEntry treemapEntry = render(treemapSource);
+  const auto* treemapScene =
+      dynamic_cast<const muffin::mermaid::treemap::TreemapScene*>(
+          treemapEntry.scene.get());
+  const QSize treemapPngSize = pngImage(treemapSource).size();
+  require(treemapEntry.status == MermaidRenderStatus::Ready && treemapScene &&
+              treemapScene->configuredWidth == 480.0 &&
+              treemapScene->configuredHeight == 310.0 &&
+              !treemapScene->useMaxWidth &&
+              !treemapEntry.metadata.svgUseMaxWidth &&
+              treemapScene->title.fill == QLatin1String("#ff0000") &&
+              treemapScene->title.fontSize == 24.0 &&
+              !treemapScene->leaves.isEmpty() &&
+              !treemapScene->leaves.first().value.visible &&
+              treemapPngSize == treemapEntry.naturalSize,
+          QStringLiteral("Treemap live config did not reach scene/PNG export: "
+                         "status=%1 scene=%2 configured=%3x%4 useMax=%5 "
+                         "metadataUseMax=%6 title=%7/%8 leaves=%9 valueVisible=%10 "
+                         "png=%11x%12 natural=%13x%14")
+              .arg(static_cast<int>(treemapEntry.status))
+              .arg(treemapScene != nullptr)
+              .arg(treemapScene ? treemapScene->configuredWidth : -1.0)
+              .arg(treemapScene ? treemapScene->configuredHeight : -1.0)
+              .arg(treemapScene ? treemapScene->useMaxWidth : true)
+              .arg(treemapEntry.metadata.svgUseMaxWidth)
+              .arg(treemapScene ? treemapScene->title.fill : QString())
+              .arg(treemapScene ? treemapScene->title.fontSize : -1.0)
+              .arg(treemapScene ? treemapScene->leaves.size() : -1)
+              .arg(treemapScene && !treemapScene->leaves.isEmpty()
+                       ? treemapScene->leaves.first().value.visible
+                       : true)
+              .arg(treemapPngSize.width())
+              .arg(treemapPngSize.height())
+              .arg(treemapEntry.naturalSize.width())
+              .arg(treemapEntry.naturalSize.height()));
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -462,6 +506,18 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("sankey.nodeColors"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity") &&
+              byPath.value(QStringLiteral("treemap.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("treemap.showValues"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("treemap.valueFormat"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("treemap.borderWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -491,7 +547,8 @@ int main(int argc, char** argv) {
            QStringLiteral("eventmodeling.useMaxWidth"),
            QStringLiteral("ishikawa.useMaxWidth"),
            QStringLiteral("venn.useMaxWidth"),
-           QStringLiteral("sankey.useMaxWidth")}) {
+           QStringLiteral("sankey.useMaxWidth"),
+           QStringLiteral("treemap.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())

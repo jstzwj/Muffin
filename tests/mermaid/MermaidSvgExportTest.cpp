@@ -144,6 +144,8 @@ int main(int argc, char** argv) {
                       "union A,B: 3")},
       {QStringLiteral("sankey"), QStringLiteral("sankey"),
        QStringLiteral("sankey-beta\nA,B,8\nB,C,5\nB,D,3")},
+      {QStringLiteral("treemap"), QStringLiteral("treemap"),
+       QStringLiteral("treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -261,6 +263,9 @@ int main(int argc, char** argv) {
           "%%{init: {\"sankey\": {\"useMaxWidth\": false}}}%%\n"
           "sankey-beta\nA,B,8\nB,C,5\nB,D,3"),
       QStringLiteral(
+          "%%{init: {\"treemap\": {\"useMaxWidth\": false}}}%%\n"
+          "treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5"),
+      QStringLiteral(
           "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
           "\"useWidth\": 640}}}%%\n"
           "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
@@ -342,6 +347,16 @@ int main(int argc, char** argv) {
               timelineAria.contains("aria-labelledby=") &&
               timelineAria.contains("aria-describedby="),
           QStringLiteral("Timeline SVG accessibility metadata drifted"));
+
+  const QByteArray treemapAria = renderSvg(QStringLiteral(
+      "treemap-beta\ntitle Visible map\naccTitle: Treemap accessible\n"
+      "accDescr: Treemap description\n\"Root\"\n  \"A\": 8\n  \"B\": 5")).svg;
+  require(treemapAria.contains("Visible map") &&
+              treemapAria.contains("Treemap accessible</title>") &&
+              treemapAria.contains("Treemap description</desc>") &&
+              treemapAria.contains("aria-labelledby=") &&
+              treemapAria.contains("aria-describedby="),
+          QStringLiteral("Treemap title/accessibility metadata drifted"));
 
   const QByteArray packetAria = renderSvg(QStringLiteral(
       "packet-beta\naccTitle: Packet accessible\n"
