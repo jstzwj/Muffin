@@ -146,6 +146,9 @@ int main(int argc, char** argv) {
        QStringLiteral("sankey-beta\nA,B,8\nB,C,5\nB,D,3")},
       {QStringLiteral("treemap"), QStringLiteral("treemap"),
        QStringLiteral("treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5")},
+      {QStringLiteral("cynefin"), QStringLiteral("cynefin"),
+       QStringLiteral("%%{init: {\"cynefin\": {\"seed\": 17}}}%%\n"
+                      "cynefin-beta\nclear\n  \"Standardise\"")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -266,6 +269,9 @@ int main(int argc, char** argv) {
           "%%{init: {\"treemap\": {\"useMaxWidth\": false}}}%%\n"
           "treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5"),
       QStringLiteral(
+          "%%{init: {\"cynefin\": {\"useMaxWidth\": false, "
+          "\"seed\": 17}}}%%\ncynefin-beta\nclear\n  \"Standardise\""),
+      QStringLiteral(
           "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
           "\"useWidth\": 640}}}%%\n"
           "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
@@ -357,6 +363,18 @@ int main(int argc, char** argv) {
               treemapAria.contains("aria-labelledby=") &&
               treemapAria.contains("aria-describedby="),
           QStringLiteral("Treemap title/accessibility metadata drifted"));
+
+  const QByteArray cynefinAria = renderSvg(QStringLiteral(
+      "%%{init: {\"cynefin\": {\"seed\": 17}}}%%\n"
+      "cynefin-beta\ntitle Visible landscape\n"
+      "accTitle: Cynefin accessible\naccDescr: Cynefin description\n"
+      "clear\n  \"Standardise\"")).svg;
+  require(cynefinAria.contains("Visible landscape") &&
+              cynefinAria.contains("Cynefin accessible</title>") &&
+              cynefinAria.contains("Cynefin description</desc>") &&
+              cynefinAria.contains("aria-labelledby=") &&
+              cynefinAria.contains("aria-describedby="),
+          QStringLiteral("Cynefin title/accessibility metadata drifted"));
 
   const QByteArray packetAria = renderSvg(QStringLiteral(
       "packet-beta\naccTitle: Packet accessible\n"

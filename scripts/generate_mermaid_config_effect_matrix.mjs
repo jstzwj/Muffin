@@ -575,6 +575,16 @@ const familyPolicies = {
     ),
     valueFormat: parity("text", "paint", "viewport", "export"),
   },
+  cynefin: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    width: parity("layout", "paint", "viewport", "export"),
+    height: parity("layout", "paint", "viewport", "export"),
+    padding: parity("layout", "paint", "viewport", "export"),
+    showDomainDescriptions: parity("text", "layout", "paint", "viewport", "export"),
+    boundaryAmplitude: parity("layout", "paint", "viewport", "export"),
+    seed: parity("layout", "paint", "export"),
+  },
   gantt: {
     useWidth: parity("layout", "paint", "viewport", "export"),
     useMaxWidth: parity("viewport", "export"),
@@ -667,6 +677,7 @@ const shared = [
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -696,6 +707,7 @@ const shared = [
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -729,6 +741,7 @@ const shared = [
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -800,6 +813,7 @@ const shared = [
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
     ],
     ...unsupported(
       ["parsed"],
@@ -832,6 +846,7 @@ const shared = [
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
     ],
     ...policy(
       "security-fixed",
@@ -871,6 +886,7 @@ const shared = [
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
     ],
     ...parity("export"),
   },
@@ -900,6 +916,7 @@ const shared = [
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
     ],
     ...parity("export"),
   },
@@ -929,6 +946,7 @@ const shared = [
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -989,6 +1007,7 @@ const interfaces = {
   venn: "VennDiagramConfig",
   sankey: "SankeyDiagramConfig",
   treemap: "TreemapDiagramConfig",
+  cynefin: "CynefinDiagramConfig",
   gantt: "GanttDiagramConfig",
 };
 

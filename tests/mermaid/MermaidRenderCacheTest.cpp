@@ -988,6 +988,8 @@ int main(int argc, char** argv) {
          QStringLiteral("eventmodeling-parse-error"), 2},
         {QStringLiteral("venn-beta\nset A: 1e3"),
          QStringLiteral("venn"), QStringLiteral("venn-parse-error"), 2},
+        {QStringLiteral("cynefin-beta\ncomplex\nA"),
+         QStringLiteral("cynefin"), QStringLiteral("cynefin-lexer-error"), 3},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -1044,6 +1046,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("sankey-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("treemap-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("cynefin-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1661,6 +1665,9 @@ int main(int argc, char** argv) {
          QStringLiteral("sankey-beta\nA,B,8\nB,C,5\nB,D,3")},
         {QStringLiteral("treemap"),
          QStringLiteral("treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5")},
+        {QStringLiteral("cynefin"),
+         QStringLiteral("%%{init: {\"cynefin\": {\"seed\": 17}}}%%\n"
+                        "cynefin-beta\nclear\n  \"Standardise\"")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

@@ -911,6 +911,62 @@ void populateXYChart(FlowThemeId id, FlowThemeVariables& t) {
   assignIfEmpty(t.xyChart.plotColorPalette, palette);
 }
 
+void populateCynefin(FlowThemeId id, FlowThemeVariables& t) {
+  const bool stylesheetDefaults =
+      id == FlowThemeId::Neo || id == FlowThemeId::NeoDark ||
+      id == FlowThemeId::Redux || id == FlowThemeId::ReduxDark ||
+      id == FlowThemeId::ReduxColor || id == FlowThemeId::ReduxDarkColor;
+  if (stylesheetDefaults) {
+    assignIfEmpty(t.cynefin.domainFontSize, QStringLiteral("16"));
+    assignIfEmpty(t.cynefin.itemFontSize, QStringLiteral("12"));
+    assignIfEmpty(t.cynefin.boundaryColor, QStringLiteral("#333333"));
+    assignIfEmpty(t.cynefin.boundaryWidth, QStringLiteral("2"));
+    assignIfEmpty(t.cynefin.cliffColor, QStringLiteral("#8B0000"));
+    assignIfEmpty(t.cynefin.cliffWidth, QStringLiteral("4"));
+    assignIfEmpty(t.cynefin.arrowColor, QStringLiteral("#333333"));
+    assignIfEmpty(t.cynefin.arrowWidth, QStringLiteral("2"));
+    assignIfEmpty(t.cynefin.complexBg, QStringLiteral("#E8F5E9"));
+    assignIfEmpty(t.cynefin.complicatedBg, QStringLiteral("#E3F2FD"));
+    assignIfEmpty(t.cynefin.chaoticBg, QStringLiteral("#FBE9E7"));
+    assignIfEmpty(t.cynefin.clearBg, QStringLiteral("#FFF8E1"));
+    assignIfEmpty(t.cynefin.confusionBg, QStringLiteral("#F3E5F5"));
+    assignIfEmpty(t.cynefin.textColor, QStringLiteral("#333333"));
+    assignIfEmpty(t.cynefin.labelColor, QStringLiteral("#131300"));
+    return;
+  }
+  assignIfEmpty(t.cynefin.domainFontSize, QStringLiteral("16"));
+  assignIfEmpty(t.cynefin.itemFontSize, QStringLiteral("12"));
+  assignIfEmpty(t.cynefin.boundaryColor, t.lineColor);
+  assignIfEmpty(t.cynefin.boundaryWidth, QStringLiteral("2"));
+  assignIfEmpty(t.cynefin.cliffWidth, QStringLiteral("4"));
+  assignIfEmpty(t.cynefin.arrowColor, t.lineColor);
+  assignIfEmpty(t.cynefin.arrowWidth, QStringLiteral("2"));
+  assignIfEmpty(t.cynefin.textColor, t.textColor);
+  assignIfEmpty(t.cynefin.labelColor, t.primaryTextColor);
+  if (id == FlowThemeId::Dark) {
+    assignIfEmpty(t.cynefin.cliffColor, QStringLiteral("#FF6B6B"));
+    assignIfEmpty(t.cynefin.complexBg, QStringLiteral("#1B5E20"));
+    assignIfEmpty(t.cynefin.complicatedBg, QStringLiteral("#0D47A1"));
+    assignIfEmpty(t.cynefin.chaoticBg, QStringLiteral("#BF360C"));
+    assignIfEmpty(t.cynefin.clearBg, QStringLiteral("#F57F17"));
+    assignIfEmpty(t.cynefin.confusionBg, QStringLiteral("#4A148C"));
+  } else if (id == FlowThemeId::Forest) {
+    assignIfEmpty(t.cynefin.cliffColor, QStringLiteral("#8B4513"));
+    assignIfEmpty(t.cynefin.complexBg, QStringLiteral("#C8E6C9"));
+    assignIfEmpty(t.cynefin.complicatedBg, QStringLiteral("#DCEDC8"));
+    assignIfEmpty(t.cynefin.chaoticBg, QStringLiteral("#FFE0B2"));
+    assignIfEmpty(t.cynefin.clearBg, QStringLiteral("#FFF9C4"));
+    assignIfEmpty(t.cynefin.confusionBg, QStringLiteral("#D7CCC8"));
+  } else {
+    assignIfEmpty(t.cynefin.cliffColor, QStringLiteral("#8B0000"));
+    assignIfEmpty(t.cynefin.complexBg, QStringLiteral("#E8F5E9"));
+    assignIfEmpty(t.cynefin.complicatedBg, QStringLiteral("#E3F2FD"));
+    assignIfEmpty(t.cynefin.chaoticBg, QStringLiteral("#FBE9E7"));
+    assignIfEmpty(t.cynefin.clearBg, QStringLiteral("#FFF8E1"));
+    assignIfEmpty(t.cynefin.confusionBg, QStringLiteral("#F3E5F5"));
+  }
+}
+
 void populatePacket(FlowThemeId id, FlowThemeVariables& t) {
   if (id != FlowThemeId::Dark && id != FlowThemeId::Forest) return;
   // Both upstream updateColors implementations assign a fresh object, not a
@@ -1113,6 +1169,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   populateEventModeling(id, t);
   populateGantt(id, t);
   populateXYChart(id, t);
+  populateCynefin(id, t);
   populateVenn(id, t);
 }
 
@@ -1312,6 +1369,21 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("packet.blockStrokeColor")) return packet.blockStrokeColor;
   if (key == QStringLiteral("packet.blockStrokeWidth")) return packet.blockStrokeWidth;
   if (key == QStringLiteral("packet.blockFillColor")) return packet.blockFillColor;
+  if (key == QStringLiteral("cynefin.domainFontSize")) return cynefin.domainFontSize;
+  if (key == QStringLiteral("cynefin.itemFontSize")) return cynefin.itemFontSize;
+  if (key == QStringLiteral("cynefin.boundaryColor")) return cynefin.boundaryColor;
+  if (key == QStringLiteral("cynefin.boundaryWidth")) return cynefin.boundaryWidth;
+  if (key == QStringLiteral("cynefin.cliffColor")) return cynefin.cliffColor;
+  if (key == QStringLiteral("cynefin.cliffWidth")) return cynefin.cliffWidth;
+  if (key == QStringLiteral("cynefin.arrowColor")) return cynefin.arrowColor;
+  if (key == QStringLiteral("cynefin.arrowWidth")) return cynefin.arrowWidth;
+  if (key == QStringLiteral("cynefin.complexBg")) return cynefin.complexBg;
+  if (key == QStringLiteral("cynefin.complicatedBg")) return cynefin.complicatedBg;
+  if (key == QStringLiteral("cynefin.chaoticBg")) return cynefin.chaoticBg;
+  if (key == QStringLiteral("cynefin.clearBg")) return cynefin.clearBg;
+  if (key == QStringLiteral("cynefin.confusionBg")) return cynefin.confusionBg;
+  if (key == QStringLiteral("cynefin.textColor")) return cynefin.textColor;
+  if (key == QStringLiteral("cynefin.labelColor")) return cynefin.labelColor;
   return QString();
 }
 
@@ -1445,6 +1517,21 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("packet.blockStrokeColor")) packet.blockStrokeColor = value;
   else if (key == QStringLiteral("packet.blockStrokeWidth")) packet.blockStrokeWidth = value;
   else if (key == QStringLiteral("packet.blockFillColor")) packet.blockFillColor = value;
+  else if (key == QStringLiteral("cynefin.domainFontSize")) cynefin.domainFontSize = value;
+  else if (key == QStringLiteral("cynefin.itemFontSize")) cynefin.itemFontSize = value;
+  else if (key == QStringLiteral("cynefin.boundaryColor")) cynefin.boundaryColor = value;
+  else if (key == QStringLiteral("cynefin.boundaryWidth")) cynefin.boundaryWidth = value;
+  else if (key == QStringLiteral("cynefin.cliffColor")) cynefin.cliffColor = value;
+  else if (key == QStringLiteral("cynefin.cliffWidth")) cynefin.cliffWidth = value;
+  else if (key == QStringLiteral("cynefin.arrowColor")) cynefin.arrowColor = value;
+  else if (key == QStringLiteral("cynefin.arrowWidth")) cynefin.arrowWidth = value;
+  else if (key == QStringLiteral("cynefin.complexBg")) cynefin.complexBg = value;
+  else if (key == QStringLiteral("cynefin.complicatedBg")) cynefin.complicatedBg = value;
+  else if (key == QStringLiteral("cynefin.chaoticBg")) cynefin.chaoticBg = value;
+  else if (key == QStringLiteral("cynefin.clearBg")) cynefin.clearBg = value;
+  else if (key == QStringLiteral("cynefin.confusionBg")) cynefin.confusionBg = value;
+  else if (key == QStringLiteral("cynefin.textColor")) cynefin.textColor = value;
+  else if (key == QStringLiteral("cynefin.labelColor")) cynefin.labelColor = value;
 }
 
 }  // namespace muffin::mermaid::flowtheme

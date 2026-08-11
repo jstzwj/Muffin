@@ -66,6 +66,27 @@ struct PacketThemeVariables {
   QString blockFillColor = QStringLiteral("#efefef");
 };
 
+// Cynefin's stylesheet is driven by one nested theme object. Numeric-looking
+// values remain strings here because source overrides are interpolated into
+// CSS by JavaScript before browser used-value resolution.
+struct CynefinThemeVariables {
+  QString domainFontSize;
+  QString itemFontSize;
+  QString boundaryColor;
+  QString boundaryWidth;
+  QString cliffColor;
+  QString cliffWidth;
+  QString arrowColor;
+  QString arrowWidth;
+  QString complexBg;
+  QString complicatedBg;
+  QString chaoticBg;
+  QString clearBg;
+  QString confusionBg;
+  QString textColor;
+  QString labelColor;
+};
+
 // Parse a mermaid theme name ("default", "neo-dark", ...) → FlowThemeId.
 // Unknown names map to Default (mermaid's default).
 FlowThemeId parseThemeId(const QString& name);
@@ -225,6 +246,9 @@ struct FlowThemeVariables {
   // Packet's nested stylesheet object. Dark and Forest replace six colors in
   // updateColors; the other themes retain PacketStyleOptions defaults.
   PacketThemeVariables packet;
+
+  // The fixed-layout Cynefin renderer consumes all fifteen nested fields.
+  CynefinThemeVariables cynefin;
 
   // requirementDiagram / er / rect `colorIndex` palette (chunk-CHAKFXHA.mjs:
   // only redux-color defines both; redux-dark-color defines borderColorArray

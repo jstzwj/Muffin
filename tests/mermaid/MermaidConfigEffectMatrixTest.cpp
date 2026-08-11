@@ -1,4 +1,5 @@
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/cynefin/CynefinScene.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/eventmodeling/EventModelingScene.h"
 #include "mermaid/journey/JourneyScene.h"
@@ -159,8 +160,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 309,
-          QStringLiteral("Expected 309 classified config rows, found %1")
+  require(entries.size() == 317,
+          QStringLiteral("Expected 317 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -233,6 +234,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("venn"), 6},
                                              {QStringLiteral("sankey"), 13},
                                              {QStringLiteral("treemap"), 11},
+                                             {QStringLiteral("cynefin"), 8},
                                              {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
@@ -379,6 +381,70 @@ int main(int argc, char** argv) {
               .arg(treemapPngSize.height())
               .arg(treemapEntry.naturalSize.width())
               .arg(treemapEntry.naturalSize.height()));
+  const QString cynefinSource = QStringLiteral(
+      "%%{init: {\"fontFamily\":\"Noto Sans\",\"cynefin\": {"
+      "\"width\": 480, \"height\": 360, \"padding\": 12, "
+      "\"useMaxWidth\": false, \"showDomainDescriptions\": false, "
+      "\"boundaryAmplitude\": 0, \"seed\": 17}, "
+      "\"themeVariables\": {\"cynefin\": {"
+      "\"boundaryColor\": \"#ff0000\", \"domainFontSize\": 22}}}}%%\n"
+      "cynefin-beta\nclear\n  \"Standardise\"");
+  const MermaidRenderEntry cynefinEntry = render(cynefinSource);
+  const QSize cynefinPngSize = pngImage(cynefinSource).size();
+  const auto* cynefinScene =
+      dynamic_cast<const muffin::mermaid::cynefin::CynefinScene*>(
+          cynefinEntry.scene.get());
+  require(cynefinEntry.status == MermaidRenderStatus::Ready && cynefinScene &&
+              cynefinScene->configuredWidth == 480.0 &&
+              cynefinScene->configuredHeight == 360.0 &&
+              cynefinScene->configuredPadding == 12.0 &&
+              !cynefinScene->useMaxWidth &&
+              !cynefinEntry.metadata.svgUseMaxWidth &&
+              cynefinScene->subtitles.isEmpty() &&
+              !cynefinScene->boundaries.isEmpty() &&
+              cynefinScene->boundaries.first().stroke == QLatin1String("#ff0000") &&
+              !cynefinScene->labels.isEmpty() &&
+              cynefinScene->labels.first().fontSize == 22.0 &&
+              cynefinPngSize == cynefinEntry.naturalSize,
+          QStringLiteral("Cynefin live config did not reach scene/PNG export: "
+                         "status=%1 scene=%2 size=%3x%4 padding=%5 useMax=%6 "
+                         "metadataUseMax=%7 subtitles=%8 boundaries=%9 "
+                         "stroke=%10 labels=%11 font=%12 png=%13x%14 natural=%15x%16")
+              .arg(static_cast<int>(cynefinEntry.status))
+              .arg(cynefinScene != nullptr)
+              .arg(cynefinScene ? cynefinScene->configuredWidth : -1.0)
+              .arg(cynefinScene ? cynefinScene->configuredHeight : -1.0)
+              .arg(cynefinScene ? cynefinScene->configuredPadding : -1.0)
+              .arg(cynefinScene ? cynefinScene->useMaxWidth : true)
+              .arg(cynefinEntry.metadata.svgUseMaxWidth)
+              .arg(cynefinScene ? cynefinScene->subtitles.size() : -1)
+              .arg(cynefinScene ? cynefinScene->boundaries.size() : -1)
+              .arg(cynefinScene && !cynefinScene->boundaries.isEmpty()
+                       ? cynefinScene->boundaries.first().stroke
+                       : QString())
+              .arg(cynefinScene ? cynefinScene->labels.size() : -1)
+              .arg(cynefinScene && !cynefinScene->labels.isEmpty()
+                       ? cynefinScene->labels.first().fontSize
+                       : -1.0)
+              .arg(cynefinPngSize.width())
+              .arg(cynefinPngSize.height())
+              .arg(cynefinEntry.naturalSize.width())
+              .arg(cynefinEntry.naturalSize.height()));
+  const QString cynefinFallbackSource =
+      QString(cynefinSource).replace(
+          QStringLiteral("\"fontFamily\":\"Noto Sans\""),
+          QStringLiteral("\"fontFamily\":\"DefinitelyMissing, Noto Sans\""));
+  const MermaidRenderEntry cynefinFallbackEntry = render(cynefinFallbackSource);
+  const auto* cynefinFallbackScene =
+      dynamic_cast<const muffin::mermaid::cynefin::CynefinScene*>(
+          cynefinFallbackEntry.scene.get());
+  require(cynefinFallbackEntry.status == MermaidRenderStatus::Ready &&
+              cynefinFallbackScene && cynefinScene &&
+              cynefinFallbackScene->labels.first().bounds ==
+                  cynefinScene->labels.first().bounds &&
+              cynefinFallbackEntry.naturalSize == cynefinEntry.naturalSize,
+          QStringLiteral("Cynefin CSS font-family fallback list drifted"));
+
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -518,6 +584,18 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("treemap.borderWidth"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("cynefin.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("cynefin.showDomainDescriptions"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("cynefin.boundaryAmplitude"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("cynefin.seed"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -548,7 +626,8 @@ int main(int argc, char** argv) {
            QStringLiteral("ishikawa.useMaxWidth"),
            QStringLiteral("venn.useMaxWidth"),
            QStringLiteral("sankey.useMaxWidth"),
-           QStringLiteral("treemap.useMaxWidth")}) {
+           QStringLiteral("treemap.useMaxWidth"),
+           QStringLiteral("cynefin.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())

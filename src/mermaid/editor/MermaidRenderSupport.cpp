@@ -105,6 +105,23 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config) {
         result.insert(QStringLiteral("packet.") + field, value);
     }
   }
+  static const QStringList cynefinFields = {
+      QStringLiteral("domainFontSize"), QStringLiteral("itemFontSize"),
+      QStringLiteral("boundaryColor"), QStringLiteral("boundaryWidth"),
+      QStringLiteral("cliffColor"), QStringLiteral("cliffWidth"),
+      QStringLiteral("arrowColor"), QStringLiteral("arrowWidth"),
+      QStringLiteral("complexBg"), QStringLiteral("complicatedBg"),
+      QStringLiteral("chaoticBg"), QStringLiteral("clearBg"),
+      QStringLiteral("confusionBg"), QStringLiteral("textColor"),
+      QStringLiteral("labelColor")};
+  const QJsonObject cynefin = values.value(QStringLiteral("cynefin")).toObject();
+  for (const QString& field : cynefinFields) {
+    if (!cynefin.contains(field)) continue;
+    const QJsonValue raw = cynefin.value(field);
+    const QString value = configString(raw);
+    if (raw.isString() || !value.isEmpty())
+      result.insert(QStringLiteral("cynefin.") + field, value);
+  }
   // THEME_COLOR_LIMIT is an integer palette size, not a free-form string: route
   // it through jsThemeColorLimit so the value carried into FlowThemeVariables::
   // set() is upstream's JS Number()+ceil result (e.g. 2.5 -> 3, "0x2" -> 2), not

@@ -36,18 +36,19 @@
       "venn",
       "sankey",
       "treemap",
+      "cynefin",
       "gantt",
       "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 183,
+    "parity": 190,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 83,
+    "upstream-inert": 84,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -77,7 +78,8 @@
         "ishikawa",
         "venn",
         "sankey",
-        "treemap"
+        "treemap",
+        "cynefin"
       ],
       "status": "parity",
       "upstream": [
@@ -122,7 +124,8 @@
         "ishikawa",
         "venn",
         "sankey",
-        "treemap"
+        "treemap",
+        "cynefin"
       ],
       "status": "partial",
       "upstream": [
@@ -168,7 +171,8 @@
         "ishikawa",
         "venn",
         "sankey",
-        "treemap"
+        "treemap",
+        "cynefin"
       ],
       "status": "parity",
       "upstream": [
@@ -387,7 +391,8 @@
         "ishikawa",
         "venn",
         "sankey",
-        "treemap"
+        "treemap",
+        "cynefin"
       ],
       "status": "unsupported",
       "upstream": [
@@ -423,7 +428,8 @@
         "ishikawa",
         "venn",
         "sankey",
-        "treemap"
+        "treemap",
+        "cynefin"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -481,7 +487,8 @@
         "ishikawa",
         "venn",
         "sankey",
-        "treemap"
+        "treemap",
+        "cynefin"
       ],
       "status": "parity",
       "upstream": [
@@ -518,7 +525,8 @@
         "ishikawa",
         "venn",
         "sankey",
-        "treemap"
+        "treemap",
+        "cynefin"
       ],
       "status": "parity",
       "upstream": [
@@ -555,7 +563,8 @@
         "ishikawa",
         "venn",
         "sankey",
-        "treemap"
+        "treemap",
+        "cynefin"
       ],
       "status": "unsupported",
       "upstream": [
@@ -6159,6 +6168,178 @@
       "default": ","
     },
     {
+      "family": "cynefin",
+      "interface": "CynefinDiagramConfig",
+      "path": "cynefin.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "cynefin",
+      "interface": "CynefinDiagramConfig",
+      "path": "cynefin.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "cynefin",
+      "interface": "CynefinDiagramConfig",
+      "path": "cynefin.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 800
+    },
+    {
+      "family": "cynefin",
+      "interface": "CynefinDiagramConfig",
+      "path": "cynefin.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 600
+    },
+    {
+      "family": "cynefin",
+      "interface": "CynefinDiagramConfig",
+      "path": "cynefin.padding",
+      "field": "padding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 40
+    },
+    {
+      "family": "cynefin",
+      "interface": "CynefinDiagramConfig",
+      "path": "cynefin.showDomainDescriptions",
+      "field": "showDomainDescriptions",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "cynefin",
+      "interface": "CynefinDiagramConfig",
+      "path": "cynefin.boundaryAmplitude",
+      "field": "boundaryAmplitude",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 8
+    },
+    {
+      "family": "cynefin",
+      "interface": "CynefinDiagramConfig",
+      "path": "cynefin.seed",
+      "field": "seed",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "export"
+      ],
+      "default": 0
+    },
+    {
       "family": "gantt",
       "interface": "GanttDiagramConfig",
       "path": "gantt.useWidth",
@@ -6540,5 +6721,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "c79308c95741543067fd6be9f77ddb435d9d2e3089b2b27f70e63d2fb29f2512"
+  "fixtureSha256": "0dec54affbeb8506d7a15841db8da9f8921f4cf796cceee4b9a3b5813d404cff"
 }

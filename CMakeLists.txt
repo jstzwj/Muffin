@@ -508,6 +508,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/VennDiagramAdapter.cpp
   src/mermaid/editor/SankeyDiagramAdapter.cpp
   src/mermaid/editor/TreemapDiagramAdapter.cpp
+  src/mermaid/editor/CynefinDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -697,6 +698,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/treemap/TreemapScene.h
   src/mermaid/treemap/TreemapScenePainter.cpp
   src/mermaid/treemap/TreemapScenePainter.h
+  src/mermaid/cynefin/CynefinDiagram.cpp
+  src/mermaid/cynefin/CynefinDiagram.h
+  src/mermaid/cynefin/CynefinScene.cpp
+  src/mermaid/cynefin/CynefinScene.h
+  src/mermaid/cynefin/CynefinScenePainter.cpp
+  src/mermaid/cynefin/CynefinScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

@@ -12,7 +12,7 @@
 | **几何/布局** | 节点、边、簇的坐标与 dagre/ELK 输出一致 | dagre-snapshots JSON oracle |
 | **结构/语义** | SVG 的元素树、class、可访问性属性对齐 | 语义 SVG diff（结构 + 容差） |
 | **视觉** | 像素级在容差内一致 | golden pixel 对比 |
-| **配置** | 每个 config key 的效果与上游一致 | config-effect-matrix（309 行，逐 key 标 parity/partial/deferred） |
+| **配置** | 每个 config key 的效果与上游一致 | config-effect-matrix（317 行，逐 key 标 parity/partial/deferred） |
 
 **不追求「字节同」的 SVG**：Muffin 的 SVG 由 `QSvgGenerator`（经 painter）产出，再由 `MermaidSvgExporter` 归一化成 mermaid 形态。字节级与 mermaid 手写 SVG 不同是必然的；parity 以**视觉 + 结构 + 几何**为准。
 
@@ -147,11 +147,11 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 `OrderedMap` 承载，原先推测的「ER dagre QHash 抖动」并不存在；0.01 是几何
 oracle 的坐标容差，不是随机性掩码。ER 已加入字节级 SVG 双渲染确定性测试。
 
-**2026-08-11 现状**：二十个生产图族均通过单一 scene 指针和 `Diagram` registry
-进入族无关的 editor/PNG/SVG/canvas/interaction 路径；二十个 adapter 分离在各自
-TU。新增的 Pie、Quadrant、Journey、Radar、XYChart、Timeline、Packet、Kanban、Mindmap、TreeView、Event Modeling、Ishikawa、Gantt 和 Info 均有真实 Mermaid 11.16.0 语法、几何和像素
-oracle。完整 Release 门禁为 256/256。配置矩阵现为 309 行（183 parity /
-8 partial / 7 unsupported / 83 upstream-inert / 5 deferred /
+**2026-08-11 现状**：二十四个生产图族均通过单一 scene 指针和 `Diagram` registry
+进入族无关的 editor/PNG/SVG/canvas/interaction 路径；二十四个 adapter 分离在各自
+TU。新增的 Pie、Quadrant、Journey、Radar、XYChart、Timeline、Packet、Kanban、Mindmap、TreeView、Event Modeling、Ishikawa、Venn、Sankey、Treemap、Cynefin、Gantt 和 Info 均有真实 Mermaid 11.16.0 语法、几何和像素
+oracle。完整 Release 门禁为 260/260。配置矩阵现为 317 行（190 parity /
+8 partial / 7 unsupported / 84 upstream-inert / 5 deferred /
 19 legacy-only / 3 api-only / 1 security-fixed）。Requirement 的全局
 `htmlLabels:false` 保持 partial；外部 `mermaid.initialize()` 配置不属于当前
 Markdown source API。
@@ -162,7 +162,7 @@ Markdown source API。
 
 5 步架构落地后，parity 的剩余工作不是「更多架构」，而是**把 ER 的「真-mermaid geometry oracle + fail-on-divergence」模式上提到其余图族**——parity 证据真正沉淀的地方。每族：generator（headless Chrome 捕获真 mermaid 11.16.0 几何）+ fixture（冻结）+ oracle test（断言 font 无关 parity，报告 font 耦合 delta）。
 
-**canonical reference 已升级**：`C:\Users\jstzw\Documents\github\mermaid-cli` 是上游 mermaid-cli 源码 clone（自带 `node_modules/mermaid@11.16.0`、`dagre-d3-es`、puppeteer shim、`#container` index.html），生成器开箱即用，无需 setup 脚本。三个 geometry 生成器（flowchart/er/class）支持 `MERMAID_REFERENCE_ROOT` 环境变量覆盖路径。
+**canonical reference 已升级**：`G:\github\mermaid-cli` 是上游 mermaid-cli 源码 clone（自带 `node_modules/mermaid@11.16.0`、`dagre-d3-es`、puppeteer shim、`#container` index.html），生成器开箱即用，无需 setup 脚本。生成器支持 `MERMAID_REFERENCE_ROOT` 环境变量覆盖路径。
 
 **font 无关 vs 耦合的判定**（class oracle 实测确认）：**高度**依赖字体 ascent/descent，Qt 与 Chrome 间稳定（≤0.5px）→ 可断言；**宽度**依赖 per-glyph advance，差 ~1px/文本 → 仅报告。这与 ER 的宽度耦合是同一面墙的较温和形式。
 

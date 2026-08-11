@@ -43,6 +43,7 @@
 #include "mermaid/venn/VennDiagram.h"
 #include "mermaid/sankey/SankeyDiagram.h"
 #include "mermaid/treemap/TreemapDiagram.h"
+#include "mermaid/cynefin/CynefinDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -543,6 +544,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("venn-beta"));
     diagnostic.expected.append(QStringLiteral("sankey-beta"));
     diagnostic.expected.append(QStringLiteral("treemap-beta"));
+    diagnostic.expected.append(QStringLiteral("cynefin-beta"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -884,6 +886,27 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         break;
       case treemap::TreemapErrorKind::Runtime:
         code = QStringLiteral("treemap-runtime-error");
+        break;
+    }
+    const qsizetype offset =
+        error.line > 0 && error.column > 0
+            ? offsetForLineColumn(pre.code, error.line, error.column)
+            : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"), std::move(code),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), error.token, {}));
+  } catch (const cynefin::CynefinParseError& error) {
+    QString code;
+    switch (error.kind) {
+      case cynefin::CynefinErrorKind::Lexer:
+        code = QStringLiteral("cynefin-lexer-error");
+        break;
+      case cynefin::CynefinErrorKind::Parser:
+        code = QStringLiteral("cynefin-parse-error");
+        break;
+      case cynefin::CynefinErrorKind::Runtime:
+        code = QStringLiteral("cynefin-runtime-error");
         break;
     }
     const qsizetype offset =
