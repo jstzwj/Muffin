@@ -6,6 +6,7 @@
 #include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/gantt/GanttScene.h"
 #include "mermaid/info/InfoScene.h"
+#include "mermaid/ishikawa/IshikawaScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
@@ -155,8 +156,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 276,
-          QStringLiteral("Expected 276 classified config rows, found %1")
+  require(entries.size() == 279,
+          QStringLiteral("Expected 279 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -213,6 +214,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("eventmodeling"), 4},
                                              {QStringLiteral("flowchart"), 14},
                                              {QStringLiteral("gantt"), 17},
+                                             {QStringLiteral("ishikawa"), 3},
                                              {QStringLiteral("journey"), 26},
                                              {QStringLiteral("kanban"), 5},
                                              {QStringLiteral("mindmap"), 5},
@@ -271,6 +273,22 @@ int main(int argc, char** argv) {
               eventScene->boxes.size() == 1 &&
               eventScene->boxes.first().fill == QLatin1String("#123456"),
           QStringLiteral("Event Modeling live config/theme did not reach the scene"));
+  const QString ishikawaSource = QStringLiteral(
+      "%%{init: {\"ishikawa\": {\"diagramPadding\": 80, "
+      "\"useMaxWidth\": false}, \"look\": \"handDrawn\", "
+      "\"handDrawnSeed\": 17}}%%\n"
+      "ishikawa\nEffect\n  Cause A\n  Cause B");
+  const MermaidRenderEntry ishikawaEntry = render(ishikawaSource);
+  const auto* ishikawaScene =
+      dynamic_cast<const muffin::mermaid::ishikawa::IshikawaScene*>(
+          ishikawaEntry.scene.get());
+  require(ishikawaEntry.status == MermaidRenderStatus::Ready &&
+              ishikawaScene && ishikawaScene->padding == 80.0 &&
+              !ishikawaScene->useMaxWidth &&
+              !ishikawaEntry.metadata.svgUseMaxWidth &&
+              ishikawaScene->style.look == QLatin1String("handDrawn") &&
+              pngImage(ishikawaSource).size() == ishikawaEntry.naturalSize,
+          QStringLiteral("Ishikawa live config did not reach scene/PNG export"));
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -371,6 +389,15 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("eventmodeling.rowHeight"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("ishikawa.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("ishikawa.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("ishikawa.diagramPadding"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -397,7 +424,8 @@ int main(int argc, char** argv) {
            QStringLiteral("packet.useMaxWidth"),
            QStringLiteral("mindmap.useMaxWidth"),
            QStringLiteral("treeView.useMaxWidth"),
-           QStringLiteral("eventmodeling.useMaxWidth")}) {
+           QStringLiteral("eventmodeling.useMaxWidth"),
+           QStringLiteral("ishikawa.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())

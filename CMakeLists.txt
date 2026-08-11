@@ -504,6 +504,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/InfoDiagramAdapter.cpp
   src/mermaid/editor/TreeViewDiagramAdapter.cpp
   src/mermaid/editor/EventModelingDiagramAdapter.cpp
+  src/mermaid/editor/IshikawaDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -665,6 +666,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/eventmodeling/EventModelingScene.h
   src/mermaid/eventmodeling/EventModelingScenePainter.cpp
   src/mermaid/eventmodeling/EventModelingScenePainter.h
+  src/mermaid/ishikawa/IshikawaDiagram.cpp
+  src/mermaid/ishikawa/IshikawaDiagram.h
+  src/mermaid/ishikawa/IshikawaScene.cpp
+  src/mermaid/ishikawa/IshikawaScene.h
+  src/mermaid/ishikawa/IshikawaScenePainter.cpp
+  src/mermaid/ishikawa/IshikawaScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp

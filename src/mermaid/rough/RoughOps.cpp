@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <optional>
 
 // Algorithm ported from RoughJS 4.6.6 (MIT), renderer.ts and hachure-fill 0.5.2.
@@ -345,7 +346,7 @@ QVector<Op> bezierTo(QPointF c1, QPointF c2, QPointF end,
   return ops;
 }
 
-OpSet svgPath(const QPainterPath& source, State& state) {
+OpSet svgPath(const QPainterPath& source, State& state, bool closed) {
   OpSet set;
   QPointF current, first;
   for (int i = 0; i < source.elementCount(); ++i) {
@@ -361,7 +362,11 @@ OpSet svgPath(const QPainterPath& source, State& state) {
       current = QPointF(end.x, end.y);
     }
   }
-  (void)first;
+  const bool closingLineMaterialized =
+      source.elementCount() > 1 && source.elementAt(source.elementCount() - 1).isLineTo() &&
+      current == first;
+  if (closed && !closingLineMaterialized)
+    set.ops += doubleLine(current, first, state);
   return set;
 }
 
@@ -430,7 +435,8 @@ void simplifyPoints(const QVector<QPointF>& points, qsizetype start, qsizetype e
 }
 
 QVector<QVector<QPointF>> pointsOnPath(const QPainterPath& source,
-                                      qreal tolerance, qreal distance) {
+                                      qreal tolerance, qreal distance,
+                                      bool closed) {
   QVector<QVector<QPointF>> sets;
   QVector<QPointF> currentPoints, pendingCurve;
   QPointF start;
@@ -468,7 +474,13 @@ QVector<QVector<QPointF>> pointsOnPath(const QPainterPath& source,
       pendingCurve.append(QPointF(end.x, end.y));
     }
   }
-  appendPoints();
+  appendCurve();
+  const bool closingLineMaterialized =
+      source.elementCount() > 1 && source.elementAt(source.elementCount() - 1).isLineTo() &&
+      !currentPoints.isEmpty() && currentPoints.last() == start;
+  if (closed && !closingLineMaterialized && !currentPoints.isEmpty())
+    currentPoints.append(start);
+  if (!currentPoints.isEmpty()) sets.append(currentPoints);
   if (distance <= 0.0) return sets;
   QVector<QVector<QPointF>> simplified;
   for (const auto& set : sets) {
@@ -592,11 +604,11 @@ Drawable arc(qreal x, qreal y, qreal width, qreal height,
   return {QStringLiteral("arc"), sets, options};
 }
 
-Drawable path(const QPainterPath& source, Options options) {
+Drawable path(const QPainterPath& source, Options options, bool closed) {
   State state{options};
   const QVector<QVector<QPointF>> pointSets =
-      pointsOnPath(source, 1.0, (1.0 + options.roughness) / 2.0);
-  const OpSet outline = svgPath(source, state);
+      pointsOnPath(source, 1.0, (1.0 + options.roughness) / 2.0, closed);
+  const OpSet outline = svgPath(source, state, closed);
   QVector<OpSet> sets;
   if (!options.fill.isEmpty() && options.fill != QLatin1String("transparent") &&
       options.fill != QLatin1String("none")) {
@@ -606,7 +618,7 @@ Drawable path(const QPainterPath& source, Options options) {
         fillState.options.disableMultiStroke = true;
         fillState.options.roughness = options.roughness == 0 ? 0
             : options.roughness + options.fillShapeRoughnessGain;
-        OpSet fill = svgPath(source, fillState);
+        OpSet fill = svgPath(source, fillState, closed);
         fill.type = OpSetType::FillPath;
         bool first = true;
         fill.ops.erase(std::remove_if(fill.ops.begin(), fill.ops.end(), [&](const Op& op) {
@@ -636,6 +648,93 @@ QPainterPath toPainterPath(const OpSet& set) {
       path.cubicTo(op.data[0], op.data[1], op.data[2], op.data[3], op.data[4], op.data[5]);
   }
   return path;
+}
+
+namespace {
+
+qreal cubicCoordinate(qreal p0, qreal p1, qreal p2, qreal p3, qreal t) {
+  const qreal u = 1.0 - t;
+  return u * u * u * p0 + 3.0 * u * u * t * p1 +
+         3.0 * u * t * t * p2 + t * t * t * p3;
+}
+
+void includePoint(QRectF& bounds, bool& initialized, const QPointF& point) {
+  if (!std::isfinite(point.x()) || !std::isfinite(point.y())) return;
+  if (!initialized) {
+    bounds = QRectF(point, QSizeF());
+    initialized = true;
+    return;
+  }
+  const qreal left = std::min(bounds.left(), point.x());
+  const qreal top = std::min(bounds.top(), point.y());
+  const qreal right = std::max(bounds.right(), point.x());
+  const qreal bottom = std::max(bounds.bottom(), point.y());
+  bounds = QRectF(left, top, right - left, bottom - top);
+}
+
+void includeCubic(QRectF& bounds, bool& initialized, const QPointF& p0,
+                  const QPointF& p1, const QPointF& p2,
+                  const QPointF& p3) {
+  includePoint(bounds, initialized, p0);
+  includePoint(bounds, initialized, p3);
+  auto includeRoots = [&](qreal v0, qreal v1, qreal v2, qreal v3) {
+    const qreal a = -v0 + 3.0 * v1 - 3.0 * v2 + v3;
+    const qreal b = 2.0 * (v0 - 2.0 * v1 + v2);
+    const qreal c = v1 - v0;
+    auto include = [&](qreal t) {
+      if (!(t > 0.0 && t < 1.0)) return;
+      includePoint(bounds, initialized,
+                   QPointF(cubicCoordinate(p0.x(), p1.x(), p2.x(), p3.x(), t),
+                           cubicCoordinate(p0.y(), p1.y(), p2.y(), p3.y(), t)));
+    };
+    if (std::abs(a) <= std::numeric_limits<qreal>::epsilon()) {
+      if (std::abs(b) > std::numeric_limits<qreal>::epsilon()) include(-c / b);
+      return;
+    }
+    const qreal discriminant = b * b - 4.0 * a * c;
+    if (discriminant < 0.0) return;
+    const qreal root = std::sqrt(discriminant);
+    include((-b + root) / (2.0 * a));
+    if (root != 0.0) include((-b - root) / (2.0 * a));
+  };
+  includeRoots(p0.x(), p1.x(), p2.x(), p3.x());
+  includeRoots(p0.y(), p1.y(), p2.y(), p3.y());
+}
+
+}  // namespace
+
+QRectF tightBounds(const OpSet& set) {
+  QRectF bounds;
+  bool initialized = false;
+  QPointF current;
+  for (const Op& op : set.ops) {
+    if (op.type == OpType::Move && op.data.size() == 2) {
+      current = QPointF(op.data[0], op.data[1]);
+      includePoint(bounds, initialized, current);
+    } else if (op.type == OpType::LineTo && op.data.size() == 2) {
+      current = QPointF(op.data[0], op.data[1]);
+      includePoint(bounds, initialized, current);
+    } else if (op.type == OpType::BcurveTo && op.data.size() == 6) {
+      const QPointF control1(op.data[0], op.data[1]);
+      const QPointF control2(op.data[2], op.data[3]);
+      const QPointF end(op.data[4], op.data[5]);
+      includeCubic(bounds, initialized, current, control1, control2, end);
+      current = end;
+    }
+  }
+  return bounds;
+}
+
+QRectF tightBounds(const Drawable& drawable) {
+  QRectF bounds;
+  bool initialized = false;
+  for (const OpSet& set : drawable.sets) {
+    const QRectF setBounds = tightBounds(set);
+    if (!setBounds.isValid() && set.ops.isEmpty()) continue;
+    includePoint(bounds, initialized, setBounds.topLeft());
+    includePoint(bounds, initialized, setBounds.bottomRight());
+  }
+  return bounds;
 }
 
 QString opTypeName(OpType type) {

@@ -11,6 +11,7 @@
 #include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/gantt/GanttScene.h"
 #include "mermaid/info/InfoScene.h"
+#include "mermaid/ishikawa/IshikawaScene.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/timeline/TimelineScene.h"
@@ -873,6 +874,61 @@ int main(int argc, char** argv) {
             QStringLiteral("Event Modeling scene/metadata contract drifted"));
   }
 
+  // Ishikawa owns the root label inside the fish head. Frontmatter and
+  // metadata-looking nodes must not create a second title strip or SVG ARIA.
+  {
+    MermaidRenderCache cache;
+    const QString body = QStringLiteral(
+        "ishikawa\nEffect\n  Cause A\n  Cause B");
+    const QString titled =
+        QStringLiteral("---\ntitle: Invisible Ishikawa title\n---\n") + body;
+    const MermaidRenderEntry base = cache.getSync(
+        MermaidRenderCache::makeKey(body), body);
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(titled), titled);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::ishikawa::IshikawaScene>(entry.scene);
+    require(base.status == kReady && entry.status == kReady && scene &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle.isEmpty() &&
+                entry.metadata.accessibleDescription.isEmpty() &&
+                !entry.metadata.svgEmitAccessibleTitle &&
+                entry.metadata.titleHeight == 0.0 &&
+                entry.naturalSize == base.naturalSize,
+            QStringLiteral("Ishikawa frontmatter title must remain invisible"));
+  }
+
+  // Preserve the exact upstream Jison error while mapping its accumulated
+  // SPACELINE caret back to the physical offending token in decorated source.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: Ignored fish title\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\nishikawa\n  \nEffect");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.stage == QLatin1String("parse") &&
+                entry.diagnostic.code ==
+                    QLatin1String("ishikawa-parse-error") &&
+                entry.diagnostic.message ==
+                    QLatin1String("Parse error on line 3: ishikawa Effect ----------^ Expecting 'SPACELINE', 'NL', 'EOF', got 'TEXT'") &&
+                entry.diagnostic.actual == QLatin1String("TEXT") &&
+                entry.diagnostic.span.offset ==
+                    decorated.lastIndexOf(QStringLiteral("Effect")) &&
+                entry.diagnostic.span.line == 8 &&
+                entry.diagnostic.span.column == 1,
+            QStringLiteral(
+                "Ishikawa decorated parser diagnostic drifted: "
+                "stage=%1 code=%2 message=%3 actual=%4 offset=%5 line=%6 column=%7")
+                .arg(entry.diagnostic.stage, entry.diagnostic.code,
+                     entry.diagnostic.message, entry.diagnostic.actual)
+                .arg(entry.diagnostic.span.offset)
+                .arg(entry.diagnostic.span.line)
+                .arg(entry.diagnostic.span.column));
+  }
+
   // TreeView parser offsets are measured after preprocessing. Preserve the
   // exact typed lexer failure while restoring the source location around
   // removed frontmatter, directives, and comments.
@@ -978,6 +1034,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("treeView-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("eventmodeling")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("ishikawa-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1586,6 +1644,8 @@ int main(int argc, char** argv) {
          QStringLiteral("eventmodeling\ntf 1 ui Start\n"
                         "tf 2 cmd Submit ->> 1\n"
                         "tf 3 evt Submitted ->> 2")},
+        {QStringLiteral("ishikawa"),
+         QStringLiteral("ishikawa\nEffect\n  Cause A\n  Cause B")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

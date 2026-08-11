@@ -137,6 +137,8 @@ int main(int argc, char** argv) {
        QStringLiteral("eventmodeling\ntf 1 ui Start\n"
                       "tf 2 cmd Submit ->> 1\n"
                       "tf 3 evt Submitted ->> 2")},
+      {QStringLiteral("ishikawa"), QStringLiteral("ishikawa"),
+       QStringLiteral("ishikawa\nEffect\n  Cause A\n  Cause B")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -244,6 +246,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"eventmodeling\": {\"useMaxWidth\": false}}}%%\n"
           "eventmodeling\ntf 1 evt Created"),
+      QStringLiteral(
+          "%%{init: {\"ishikawa\": {\"useMaxWidth\": false}}}%%\n"
+          "ishikawa\nEffect\n  Cause A"),
       QStringLiteral(
           "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
           "\"useWidth\": 640}}}%%\n"
@@ -414,6 +419,15 @@ int main(int argc, char** argv) {
               !eventNoTitle.contains("aria-labelledby=") &&
               !eventNoTitle.contains("aria-describedby="),
           QStringLiteral("Event Modeling frontmatter title must remain invisible"));
+
+  const QByteArray ishikawaNoTitle = renderSvg(QStringLiteral(
+      "---\ntitle: Ishikawa frontmatter\n---\n"
+      "ishikawa\nEffect\n  title Metadata-looking cause\n"
+      "  accTitle: Still a cause")).svg;
+  require(!ishikawaNoTitle.contains("Ishikawa frontmatter") &&
+              !ishikawaNoTitle.contains("aria-labelledby=") &&
+              !ishikawaNoTitle.contains("aria-describedby="),
+          QStringLiteral("Ishikawa frontmatter title must remain invisible"));
 
   const QByteArray mindmapSafeLink = renderSvg(QStringLiteral(
       "mindmap\n  root((Root))\n"

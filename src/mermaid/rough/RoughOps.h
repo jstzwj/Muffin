@@ -53,9 +53,12 @@ Drawable polygon(const QVector<QPointF>& points, Options options = {});
 Drawable ellipse(qreal x, qreal y, qreal width, qreal height, Options options = {});
 Drawable arc(qreal x, qreal y, qreal width, qreal height,
              qreal start, qreal stop, bool closed, Options options = {});
-Drawable path(const QPainterPath& source, Options options = {});
+Drawable path(const QPainterPath& source, Options options = {},
+              bool closed = false);
 
 QPainterPath toPainterPath(const OpSet& set);
+QRectF tightBounds(const OpSet& set);
+QRectF tightBounds(const Drawable& drawable);
 QString opTypeName(OpType type);
 QString opSetTypeName(OpSetType type);
 

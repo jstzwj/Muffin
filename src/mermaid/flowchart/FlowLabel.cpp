@@ -9,20 +9,33 @@
 #include <QByteArray>
 #include <QFontMetricsF>
 #include <QGlyphRun>
+#include <QDir>
+#include <QFile>
 #include <QMap>
 #include <QPainter>
 #include <QPainterPath>
 #include <QRectF>
 #include <QRegularExpression>
 #include <QRawFont>
+#include <QTransform>
+#include <QTemporaryFile>
 
 #include <hb.h>
 #include <hb-ot.h>
+
+#ifdef Q_OS_WIN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <dwrite.h>
+#include <windows.h>
+#endif
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -926,9 +939,100 @@ bool flowRawFontSupportsRange(const QRawFont& raw, const QString& text,
 
 }  // namespace
 
-std::optional<qreal> measureOpenTypeDesignAdvance(
+namespace {
+
+struct ChromiumGlyphBounds {
+  qreal left = 0.0;
+  qreal right = 0.0;
+};
+
+#ifdef Q_OS_WIN
+class BundledNotoDWriteFace {
+public:
+  BundledNotoDWriteFace()
+      : temporary_(QDir::tempPath() +
+                   QStringLiteral("/muffin-noto-XXXXXX.ttf")) {
+    QFile resource(QStringLiteral(":/mermaid/fonts/NotoSans-Regular.ttf"));
+    if (!resource.open(QIODevice::ReadOnly) || !temporary_.open()) return;
+    if (temporary_.write(resource.readAll()) < 0 || !temporary_.flush()) return;
+    if (FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED,
+                                   __uuidof(IDWriteFactory),
+                                   reinterpret_cast<IUnknown**>(&factory_))))
+      return;
+    const std::wstring path = temporary_.fileName().toStdWString();
+    if (FAILED(factory_->CreateFontFileReference(path.c_str(), nullptr,
+                                                 &file_)))
+      return;
+    IDWriteFontFile* files[] = {file_};
+    factory_->CreateFontFace(DWRITE_FONT_FACE_TYPE_TRUETYPE, 1, files, 0,
+                             DWRITE_FONT_SIMULATIONS_NONE, &regularFace_);
+    factory_->CreateFontFace(DWRITE_FONT_FACE_TYPE_TRUETYPE, 1, files, 0,
+                             DWRITE_FONT_SIMULATIONS_BOLD, &boldFace_);
+  }
+
+  ~BundledNotoDWriteFace() {
+    if (boldFace_) boldFace_->Release();
+    if (regularFace_) regularFace_->Release();
+    if (file_) file_->Release();
+    if (factory_) factory_->Release();
+  }
+
+  std::optional<ChromiumGlyphBounds> glyphBounds(
+      quint32 glyph, qreal fontPixelSize, qreal phase, bool bold) const {
+    IDWriteFontFace* face = bold ? boldFace_ : regularFace_;
+    if (!factory_ || !face) return std::nullopt;
+    UINT16 glyphId = UINT16(glyph);
+    FLOAT advance = 0.0f;
+    DWRITE_GLYPH_OFFSET offset{};
+    DWRITE_GLYPH_RUN run{face, FLOAT(fontPixelSize), 1, &glyphId, &advance,
+                         &offset, FALSE, 0};
+    DWRITE_MATRIX matrix{1, 0, 0, 1, FLOAT(phase), 0};
+    IDWriteGlyphRunAnalysis* analysis = nullptr;
+    if (FAILED(factory_->CreateGlyphRunAnalysis(
+            &run, 1.0f, &matrix, DWRITE_RENDERING_MODE_NATURAL,
+            DWRITE_MEASURING_MODE_NATURAL, 0, 0, &analysis)))
+      return std::nullopt;
+    RECT bounds{};
+    const HRESULT result = analysis->GetAlphaTextureBounds(
+        DWRITE_TEXTURE_CLEARTYPE_3x1, &bounds);
+    analysis->Release();
+    if (FAILED(result)) return std::nullopt;
+    return ChromiumGlyphBounds{qreal(bounds.left), qreal(bounds.right)};
+  }
+
+private:
+  QTemporaryFile temporary_;
+  IDWriteFactory* factory_ = nullptr;
+  IDWriteFontFile* file_ = nullptr;
+  IDWriteFontFace* regularFace_ = nullptr;
+  IDWriteFontFace* boldFace_ = nullptr;
+};
+
+std::optional<ChromiumGlyphBounds> chromiumGlyphBounds(
+    const QRawFont& raw, quint32 glyph, qreal fontPixelSize, qreal phase,
+    bool bold) {
+  if (!raw.familyName().contains(QStringLiteral("Noto Sans"),
+                                 Qt::CaseInsensitive))
+    return std::nullopt;
+  static const BundledNotoDWriteFace face;
+  return face.glyphBounds(glyph, fontPixelSize, phase, bold);
+}
+#else
+std::optional<ChromiumGlyphBounds> chromiumGlyphBounds(
+    const QRawFont& raw, quint32 glyph, qreal, qreal, bool) {
+  const QRectF bounds = raw.boundingRect(glyph);
+  return bounds.isValid()
+      ? std::optional<ChromiumGlyphBounds>(
+            ChromiumGlyphBounds{bounds.left(), bounds.right()})
+      : std::nullopt;
+}
+#endif
+
+std::optional<qreal> measureOpenTypeDesignAdvanceImpl(
     const FlowLabelDocument& label, qsizetype start, qsizetype length,
-    const QString& fontFamily, qreal fontPixelSize) {
+    const QString& fontFamily, qreal fontPixelSize, bool disableKerning,
+    quint32* terminalGlyph = nullptr, qreal* terminalOrigin = nullptr,
+    qreal deviceScale = 0.0) {
   if (length <= 0) return 0.0;
   constexpr qreal kReferenceSize = 16.0;
   QFont font = flowLabelDocumentFont(label, fontFamily, kReferenceSize);
@@ -957,7 +1061,12 @@ std::optional<qreal> measureOpenTypeDesignAdvance(
   }
   hb_font_t* hbFont = hb_font_create(face);
   hb_ot_font_set_funcs(hbFont);
-  hb_font_set_scale(hbFont, int(upem), int(upem));
+  const bool useDeviceScale = deviceScale > 0.0 &&
+                              std::isfinite(deviceScale);
+  const int scale = useDeviceScale
+      ? std::max(1, int(std::floor(fontPixelSize * deviceScale * 128.0)))
+      : int(upem);
+  hb_font_set_scale(hbFont, scale, scale);
   hb_buffer_t* buffer = hb_buffer_create();
   const auto* utf16 = reinterpret_cast<const uint16_t*>(label.text.utf16());
   hb_buffer_add_utf16(buffer, utf16, label.text.size(), unsigned(start),
@@ -966,19 +1075,40 @@ std::optional<qreal> measureOpenTypeDesignAdvance(
                                       ? HB_DIRECTION_RTL
                                       : HB_DIRECTION_LTR);
   hb_buffer_guess_segment_properties(buffer);
-  hb_shape(hbFont, buffer, nullptr, 0);
+  hb_feature_t feature{};
+  const hb_feature_t* features = nullptr;
+  unsigned featureCount = 0;
+  if (disableKerning && hb_feature_from_string("kern=0", -1, &feature)) {
+    features = &feature;
+    featureCount = 1;
+  }
+  hb_shape(hbFont, buffer, features, featureCount);
 
   unsigned glyphCount = 0;
   const hb_glyph_position_t* positions =
       hb_buffer_get_glyph_positions(buffer, &glyphCount);
+  const hb_glyph_info_t* infos = hb_buffer_get_glyph_infos(buffer, nullptr);
   qint64 designAdvance = 0;
-  for (unsigned i = 0; i < glyphCount; ++i)
+  qint64 lastOrigin = 0;
+  for (unsigned i = 0; i < glyphCount; ++i) {
+    if (i + 1 == glyphCount)
+      lastOrigin = designAdvance + positions[i].x_offset;
     designAdvance += positions[i].x_advance;
+  }
+  if (glyphCount > 0) {
+    if (terminalGlyph) *terminalGlyph = infos[glyphCount - 1].codepoint;
+    if (terminalOrigin)
+      *terminalOrigin = useDeviceScale
+          ? std::abs(qreal(lastOrigin)) / (128.0 * deviceScale)
+          : std::abs(qreal(lastOrigin)) * fontPixelSize / qreal(upem);
+  }
   hb_buffer_destroy(buffer);
   hb_font_destroy(hbFont);
   hb_face_destroy(face);
 
-  qreal result = std::abs(qreal(designAdvance)) * fontPixelSize / qreal(upem);
+  qreal result = useDeviceScale
+      ? std::abs(qreal(designAdvance)) / (128.0 * deviceScale)
+      : std::abs(qreal(designAdvance)) * fontPixelSize / qreal(upem);
   const QString segment = label.text.mid(start, length);
   if (label.letterSpacingPx != 0.0)
     result += label.letterSpacingPx * segment.toUcs4().size();
@@ -987,11 +1117,184 @@ std::optional<qreal> measureOpenTypeDesignAdvance(
   return result;
 }
 
+}  // namespace
+
+std::optional<qreal> measureOpenTypeDesignAdvance(
+    const FlowLabelDocument& label, qsizetype start, qsizetype length,
+    const QString& fontFamily, qreal fontPixelSize) {
+  return measureOpenTypeDesignAdvanceImpl(label, start, length, fontFamily,
+                                          fontPixelSize, false);
+}
+
 std::optional<qreal> measureOpenTypeDesignAdvance(
     const FlowLabelDocument& label, const QString& fontFamily,
     qreal fontPixelSize) {
   return measureOpenTypeDesignAdvance(label, 0, label.text.size(), fontFamily,
                                       fontPixelSize);
+}
+
+QRectF measureChromiumSvgTextLayoutBounds(const FlowLabelDocument& label,
+                                          const QString& fontFamily,
+                                          qreal fontPixelSize,
+                                          qreal deviceScale) {
+  if (label.text.isEmpty() || !(fontPixelSize > 0.0)) return {};
+  const QRectF metrics =
+      measureFlowSvgTextBounds(label, fontFamily, fontPixelSize);
+  const QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
+  const qreal fallback = QFontMetricsF(font).horizontalAdvance(label.text);
+  const qreal measured = measureOpenTypeDesignAdvanceImpl(
+      label, 0, label.text.size(), fontFamily, fontPixelSize, false, nullptr,
+      nullptr, deviceScale).value_or(fallback);
+  const qreal advance =
+      std::ceil(measured * deviceScale * 64.0 - 1e-9) /
+      (deviceScale * 64.0);
+  return {0.0, metrics.top(), std::max<qreal>(0.0, advance),
+          metrics.height()};
+}
+
+QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
+                                    const QString& fontFamily,
+                                    qreal fontPixelSize,
+                                    QFont::Weight weight,
+                                    qreal deviceScale) {
+  if (label.text.isEmpty() || !(fontPixelSize > 0.0)) return {};
+  QRectF result = measureFlowSvgTextBounds(label, fontFamily, fontPixelSize);
+  const QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
+  QTextLayout layout(label.text, font);
+  QTextOption option;
+  option.setUseDesignMetrics(true);
+  option.setTextDirection(label.direction);
+  layout.setTextOption(option);
+  layout.beginLayout();
+  QTextLine line = layout.createLine();
+  if (line.isValid()) line.setLineWidth(std::numeric_limits<qreal>::max());
+  layout.endLayout();
+  if (!line.isValid()) return result;
+
+  const qreal strikeAdvance = line.naturalTextWidth();
+  quint32 terminalGlyph = 0;
+  qreal terminalOrigin = 0.0;
+  const qreal measuredAdvance =
+      measureOpenTypeDesignAdvanceImpl(label, 0, label.text.size(), fontFamily,
+                                       fontPixelSize, false, &terminalGlyph,
+                                       &terminalOrigin, deviceScale)
+          .value_or(strikeAdvance);
+  const qreal designAdvance =
+      std::ceil(measuredAdvance * deviceScale * 64.0 - 1e-9) /
+      (deviceScale * 64.0);
+  const qreal cellWidth = designAdvance;
+  if (result.width() - cellWidth <= fontPixelSize / 128.0) {
+    result.setLeft(0.0);
+    result.setWidth(cellWidth);
+  }
+
+  const QList<QGlyphRun> runs =
+      line.glyphRuns(0, -1, QTextLayout::RetrieveAll);
+  if (runs.isEmpty() || label.direction == Qt::RightToLeft) return result;
+  const QGlyphRun& firstRun = runs.first();
+  const QList<quint32> firstGlyphs = firstRun.glyphIndexes();
+  const QRawFont firstRaw = firstRun.rawFont();
+  if (!firstGlyphs.isEmpty() && firstRaw.isValid()) {
+    const auto chromiumFirst = chromiumGlyphBounds(
+        firstRaw, firstGlyphs.first(),
+        fontPixelSize * std::max<qreal>(deviceScale, 0.0), 0.0,
+        weight > QFont::Normal);
+    const QRectF outline =
+        firstRaw.pathForGlyph(firstGlyphs.first()).boundingRect();
+    if (outline.isValid())
+      result.setLeft(std::min(result.left(),
+                              std::min<qreal>(0.0,
+                                  std::round(outline.left()) - 1.0)));
+    if (chromiumFirst) {
+      qreal firstLeft = chromiumFirst->left / deviceScale;
+      if (weight > QFont::Normal && chromiumFirst->left < 0.0)
+        firstLeft -= 1.0 / deviceScale;
+      result.setLeft(std::min(result.left(), firstLeft));
+    }
+  }
+  if (result.left() < 0.0)
+    result.setLeft(std::floor(result.left() * deviceScale) / deviceScale);
+
+  const QGlyphRun& lastRun = runs.last();
+  const QList<quint32> glyphs = lastRun.glyphIndexes();
+  const QList<QPointF> positions = lastRun.positions();
+  const QRawFont raw = lastRun.rawFont();
+  bool usedChromiumGlyphBounds = false;
+  if (!glyphs.isEmpty() && glyphs.size() == positions.size() && raw.isValid()) {
+    const quint32 glyph = glyphs.last();
+    const QRectF outline = raw.pathForGlyph(glyph).boundingRect();
+    const QList<QPointF> advances = raw.advancesForGlyphIndexes({glyph});
+    if (outline.isValid() && !advances.isEmpty()) {
+      const qreal cellRight = std::ceil(outline.right());
+      const qreal rightSideBearing =
+          advances.first().x() - outline.right();
+      const auto chromiumRight = chromiumGlyphBounds(
+          raw, terminalGlyph,
+          fontPixelSize * std::max<qreal>(deviceScale, 0.0), 0.0,
+          weight > QFont::Normal);
+      if (chromiumRight) {
+        result.setRight(std::max(
+            {result.left(), cellWidth,
+             terminalOrigin + chromiumRight->right / deviceScale}));
+        usedChromiumGlyphBounds = true;
+      } else if (cellRight > advances.first().x() ||
+                 rightSideBearing < 0.5) {
+        const qreal origin = positions.last().x();
+        qreal phase = std::fmod(origin, 1.0);
+        if (phase < 0.0) phase += 1.0;
+        qreal correctedRight = result.right();
+        if (cellRight <= advances.first().x()) {
+          correctedRight = origin + cellRight + 1.0 +
+              (phase < 0.5 ? 0.014 - 0.0065 * phase : 0.0065);
+        } else if (phase < 0.125) {
+          correctedRight -= 0.002;
+        } else {
+          correctedRight = origin + cellRight +
+              (phase < 0.5 ? 0.014 - 0.0065 * phase : 0.0065);
+        }
+        // Blink's visual fringe may extend the ShapeResult cell, but it never
+        // contracts the cell that participates in SVG getBBox/layout.
+        result.setRight(std::max({result.left(), cellWidth, correctedRight}));
+      }
+    }
+  }
+  if (weight > QFont::Normal) {
+    QRectF outlineBounds;
+    bool hasOutline = false;
+    for (const QGlyphRun& run : runs) {
+      const QList<quint32> runGlyphs = run.glyphIndexes();
+      const QList<QPointF> runPositions = run.positions();
+      const QRawFont runRaw = run.rawFont();
+      if (!runRaw.isValid() || runGlyphs.size() != runPositions.size())
+        continue;
+      for (qsizetype i = 0; i < runGlyphs.size(); ++i) {
+        QTransform transform;
+        transform.translate(runPositions.at(i).x(), runPositions.at(i).y());
+        const QRectF glyphBounds = transform
+            .map(runRaw.pathForGlyph(runGlyphs.at(i))).boundingRect();
+        if (!glyphBounds.isValid()) continue;
+        outlineBounds = hasOutline ? outlineBounds.united(glyphBounds)
+                                   : glyphBounds;
+        hasOutline = true;
+      }
+    }
+    qreal boldLeft = result.left();
+    qreal boldRight = result.right();
+    if (!usedChromiumGlyphBounds && result.left() < 0.0) boldLeft -= 1.0;
+    if (!usedChromiumGlyphBounds && result.right() > cellWidth + 0.01)
+      boldRight += 1.0;
+    if (hasOutline) {
+      boldLeft = std::min(boldLeft, outlineBounds.left() - 1.0);
+    }
+    if (!usedChromiumGlyphBounds && hasOutline) {
+      boldRight = std::max(boldRight, outlineBounds.right() + 1.0);
+    }
+    result.setLeft(std::min<qreal>(0.0, boldLeft));
+    result.setRight(std::max(result.left(), boldRight));
+  }
+  if (result.left() < 0.0)
+    result.setLeft(std::floor(result.left() * deviceScale) / deviceScale);
+  return result;
 }
 
 FlowLabelFontMetrics flowLabelFontBoundingMetrics(

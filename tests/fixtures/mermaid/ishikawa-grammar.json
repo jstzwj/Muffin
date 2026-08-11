@@ -1,0 +1,805 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "ishikawaModuleSha256": "1cc5d5c76ee381aad9b17580ebda09e2913674ccc4366a95ca507e4cb1747844",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "source-entry detector, Jison tree DB, sanitizer, metadata, and diagnostics",
+  "cases": [
+    {
+      "id": "header-only",
+      "source": "ishikawa",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 2: ishikawa --------^ Expecting 'SPACELINE', 'SPACELIST', 'TEXT', got 'EOF'",
+        "line": 2,
+        "column": 9,
+        "token": "EOF"
+      }
+    },
+    {
+      "id": "header-newline",
+      "source": "ishikawa\n",
+      "accept": true,
+      "db": {
+        "root": null,
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 0,
+        "svgText": []
+      }
+    },
+    {
+      "id": "root-only",
+      "source": "ishikawa\nEffect",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": []
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect"
+        ]
+      }
+    },
+    {
+      "id": "beta",
+      "source": "ishikawa-beta\nEffect\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "uppercase",
+      "source": "ISHIKAWA-BETA\nEffect\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "same-line-root",
+      "source": "ishikawa Effect",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": []
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect"
+        ]
+      }
+    },
+    {
+      "id": "canonical",
+      "source": "ishikawa\nDelayed release\n    People\n        Missing reviewer\n        Training gap\n    Process\n        Manual approval\n    Platform\n        Slow build\n        Flaky tests\n    Policy\n        Change freeze",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Delayed release",
+          "children": [
+            {
+              "text": "People",
+              "children": [
+                {
+                  "text": "Missing reviewer",
+                  "children": []
+                },
+                {
+                  "text": "Training gap",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "text": "Process",
+              "children": [
+                {
+                  "text": "Manual approval",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "text": "Platform",
+              "children": [
+                {
+                  "text": "Slow build",
+                  "children": []
+                },
+                {
+                  "text": "Flaky tests",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "text": "Policy",
+              "children": [
+                {
+                  "text": "Change freeze",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "title": "Delayed release",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Delayedrelease",
+          "People",
+          "Training gap",
+          "Missingreviewer",
+          "Process",
+          "Manual approval",
+          "Platform",
+          "Flaky tests",
+          "Slow build",
+          "Policy",
+          "Change freeze"
+        ]
+      }
+    },
+    {
+      "id": "unindented-causes",
+      "source": "ishikawa\nEffect\nCause A\nCause B",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause A",
+              "children": []
+            },
+            {
+              "text": "Cause B",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause A",
+          "Cause B"
+        ]
+      }
+    },
+    {
+      "id": "effect-more-indented",
+      "source": "ishikawa\n      Effect\n  Cause A\n    Child",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause A",
+              "children": [
+                {
+                  "text": "Child",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause A",
+          "Child"
+        ]
+      }
+    },
+    {
+      "id": "first-cause-base",
+      "source": "ishikawa\nEffect\n    Cause A\n      Child\n  Cause B",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause A",
+              "children": [
+                {
+                  "text": "Child",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "text": "Cause B",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause A",
+          "Child",
+          "Cause B"
+        ]
+      }
+    },
+    {
+      "id": "deep-tree",
+      "source": "ishikawa\nE\n A\n  B\n   C\n    D\n E2",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "E",
+          "children": [
+            {
+              "text": "A",
+              "children": [
+                {
+                  "text": "B",
+                  "children": [
+                    {
+                      "text": "C",
+                      "children": [
+                        {
+                          "text": "D",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "text": "E2",
+              "children": []
+            }
+          ]
+        },
+        "title": "E",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "E",
+          "A",
+          "B",
+          "C",
+          "D",
+          "E2"
+        ]
+      }
+    },
+    {
+      "id": "tab-level",
+      "source": "ishikawa\nEffect\n\tCause\n\t\tChild",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": [
+                {
+                  "text": "Child",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause",
+          "Child"
+        ]
+      }
+    },
+    {
+      "id": "comments",
+      "source": "%% pre\nishikawa\nEffect\n%% comment\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "inline-percent",
+      "source": "ishikawa\nEffect %% literal\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect %% literal",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect %% literal",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect %%literal",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "blank-between",
+      "source": "ishikawa\nEffect\n\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "leading-blank",
+      "source": "\n\nishikawa\nEffect",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": []
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect"
+        ]
+      }
+    },
+    {
+      "id": "leading-comment-blank",
+      "source": "%% one\n\nishikawa\nEffect",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": []
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect"
+        ]
+      }
+    },
+    {
+      "id": "trailing-spaces",
+      "source": "ishikawa\nEffect   \n  Cause   ",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "metadata-looking",
+      "source": "ishikawa\ntitle Heading\n  accTitle: A\n  accDescr: D",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "title Heading",
+          "children": [
+            {
+              "text": "accTitle: A",
+              "children": []
+            },
+            {
+              "text": "accDescr: D",
+              "children": []
+            }
+          ]
+        },
+        "title": "title Heading",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "titleHeading",
+          "accTitle: A",
+          "accDescr: D"
+        ]
+      }
+    },
+    {
+      "id": "sanitizer",
+      "source": "ishikawa\n<script>bad</script><b>Effect</b><img src=x onerror=bad>\n  <style>x</style><i>Cause</i>",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "<b>Effect</b><img src=\"x\">",
+          "children": [
+            {
+              "text": "<i>Cause</i>",
+              "children": []
+            }
+          ]
+        },
+        "title": "<b>Effect</b><img src=\"x\">",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "<b>Effect</b><imgsrc=\"x\">",
+          "<i>Cause</i>"
+        ]
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front title\n---\nishikawa\nEffect\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"theme\":\"dark\"}}%%\nishikawa\nEffect\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "unicode",
+      "source": "ishikawa\n效果\n  人员\n    审核",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "效果",
+          "children": [
+            {
+              "text": "人员",
+              "children": [
+                {
+                  "text": "审核",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "title": "效果",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "效果",
+          "人员",
+          "审核"
+        ]
+      }
+    },
+    {
+      "id": "prefix-reject",
+      "source": "ishikawaX\nEffect",
+      "accept": false,
+      "reject": {
+        "kind": "no-diagram",
+        "message": "No diagram type detected matching given configuration for text: ishikawaX Effect",
+        "line": null,
+        "column": 0,
+        "token": ""
+      }
+    },
+    {
+      "id": "hyphen-reject",
+      "source": "ishikawa-gamma\nEffect",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "-gamma",
+          "children": [
+            {
+              "text": "Effect",
+              "children": []
+            }
+          ]
+        },
+        "title": "-gamma",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "-gamma",
+          "Effect"
+        ]
+      }
+    },
+    {
+      "id": "header-twice",
+      "source": "ishikawa\nEffect\nishikawa\n  Cause",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 3: ishikawaEffectishikawa Cause --------------^ Expecting 'SPACELINE', 'NL', 'EOF', 'SPACELIST', 'TEXT', got 'ISHIKAWA'",
+        "line": 3,
+        "column": 7,
+        "token": "ISHIKAWA"
+      }
+    },
+    {
+      "id": "semicolon-literal",
+      "source": "ishikawa\nEffect; literal\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect; literal",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect; literal",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect;literal",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "only-comment",
+      "source": "ishikawa\n%% nothing",
+      "accept": true,
+      "db": {
+        "root": null,
+        "title": "",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 0,
+        "svgText": []
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "ishikawa\r\nEffect\r\n  Cause",
+      "accept": true,
+      "db": {
+        "root": {
+          "text": "Effect",
+          "children": [
+            {
+              "text": "Cause",
+              "children": []
+            }
+          ]
+        },
+        "title": "Effect",
+        "accTitle": "",
+        "accDescr": ""
+      },
+      "rendered": {
+        "ishikawaGroups": 1,
+        "svgText": [
+          "Effect",
+          "Cause"
+        ]
+      }
+    },
+    {
+      "id": "spaceline-after-header",
+      "source": "ishikawa\n  \nEffect",
+      "accept": false,
+      "reject": {
+        "kind": "parser",
+        "message": "Parse error on line 3: ishikawa Effect ----------^ Expecting 'SPACELINE', 'NL', 'EOF', got 'TEXT'",
+        "line": 3,
+        "column": 9,
+        "token": "TEXT"
+      }
+    }
+  ],
+  "fixtureSha256": "c111ef042cef8c257123dcae7fef7bd13c696322fb824a9a69b1104c46b76919"
+}

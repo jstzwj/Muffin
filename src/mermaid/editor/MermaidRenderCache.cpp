@@ -39,6 +39,7 @@
 #include "mermaid/info/InfoDiagram.h"
 #include "mermaid/treeview/TreeViewDiagram.h"
 #include "mermaid/eventmodeling/EventModelingDiagram.h"
+#include "mermaid/ishikawa/IshikawaDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -535,6 +536,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("info"));
     diagnostic.expected.append(QStringLiteral("treeView-beta"));
     diagnostic.expected.append(QStringLiteral("eventmodeling"));
+    diagnostic.expected.append(QStringLiteral("ishikawa-beta"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -805,6 +807,24 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
             : QStringLiteral("eventmodeling-parse-error"),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
         error.line, error.column, QString(), QString(), {}));
+  } catch (const ishikawa::IshikawaParseError& error) {
+    qsizetype offset =
+        error.line > 0 && error.column > 0
+            ? offsetForLineColumn(pre.code, error.line, error.column)
+            : -1;
+    // Jison's Ishikawa grammar reports its caret after the accumulated
+    // SPACELINE token, which can exceed the physical token line. Preserve the
+    // parser's exact line/column in IshikawaParseError while anchoring the UI
+    // diagnostic to the actual offending token line in decorated source.
+    if (offset < 0 && error.line > 0)
+      offset = offsetForLineColumn(pre.code, error.line, 1);
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"),
+        error.kind == ishikawa::IshikawaErrorKind::Lexer
+            ? QStringLiteral("ishikawa-lexer-error")
+            : QStringLiteral("ishikawa-parse-error"),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), error.token, {}));
   } catch (const std::exception& error) {
     MermaidDiagnostic diagnostic;
     diagnostic.diagramType = type;

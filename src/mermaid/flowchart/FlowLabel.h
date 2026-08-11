@@ -228,6 +228,17 @@ std::optional<qreal> measureOpenTypeDesignAdvance(
     const FlowLabelDocument& label, const QString& fontFamily,
     qreal fontPixelSize);
 
+// Chromium's post-layout SVGTextElement.getBBox() for one unformatted line.
+// It combines Blink's 1/64px ShapeResult cell with Skia's leading/trailing
+// antialias cells; DirectWrite/QFontMetrics alone loses both edge cases.
+QRectF measureChromiumSvgTextBounds(
+    const FlowLabelDocument& label, const QString& fontFamily,
+    qreal fontPixelSize, QFont::Weight weight = QFont::Normal,
+    qreal deviceScale = 1.0);
+QRectF measureChromiumSvgTextLayoutBounds(
+    const FlowLabelDocument& label, const QString& fontFamily,
+    qreal fontPixelSize, qreal deviceScale = 1.0);
+
 // The font used for every text metric/advance/paint in FlowLabel: the
 // MermaidFontRegistry family stack, pixel-rounded size, PreferNoHinting, the
 // base weight and style, and letter/word spacing — all applied at once. Exposed

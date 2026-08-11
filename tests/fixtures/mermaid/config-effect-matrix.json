@@ -32,18 +32,19 @@
       "mindmap",
       "treeView",
       "eventmodeling",
+      "ishikawa",
       "gantt",
       "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 157,
+    "parity": 159,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 76,
+    "upstream-inert": 77,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -69,7 +70,8 @@
         "gantt",
         "info",
         "treeView",
-        "eventmodeling"
+        "eventmodeling",
+        "ishikawa"
       ],
       "status": "parity",
       "upstream": [
@@ -110,7 +112,8 @@
         "gantt",
         "info",
         "treeView",
-        "eventmodeling"
+        "eventmodeling",
+        "ishikawa"
       ],
       "status": "partial",
       "upstream": [
@@ -152,7 +155,8 @@
         "gantt",
         "info",
         "treeView",
-        "eventmodeling"
+        "eventmodeling",
+        "ishikawa"
       ],
       "status": "parity",
       "upstream": [
@@ -208,7 +212,8 @@
         "state",
         "timeline",
         "kanban",
-        "mindmap"
+        "mindmap",
+        "ishikawa"
       ],
       "status": "partial",
       "upstream": [
@@ -227,14 +232,15 @@
         "interaction",
         "export"
       ],
-      "note": "Flowchart, Timeline, Kanban, and Mindmap are complete; state currently uses look for marker selection and class retains it without rough painting."
+      "note": "Flowchart, Timeline, Kanban, Mindmap, and Ishikawa are complete; state currently uses look for marker selection and class retains it without rough painting."
     },
     {
       "path": "handDrawnSeed",
       "families": [
         "flowchart",
         "kanban",
-        "mindmap"
+        "mindmap",
+        "ishikawa"
       ],
       "status": "parity",
       "upstream": [
@@ -363,7 +369,8 @@
         "gantt",
         "info",
         "treeView",
-        "eventmodeling"
+        "eventmodeling",
+        "ishikawa"
       ],
       "status": "unsupported",
       "upstream": [
@@ -395,7 +402,8 @@
         "gantt",
         "info",
         "treeView",
-        "eventmodeling"
+        "eventmodeling",
+        "ishikawa"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -449,7 +457,8 @@
         "gantt",
         "info",
         "treeView",
-        "eventmodeling"
+        "eventmodeling",
+        "ishikawa"
       ],
       "status": "parity",
       "upstream": [
@@ -482,7 +491,8 @@
         "gantt",
         "info",
         "treeView",
-        "eventmodeling"
+        "eventmodeling",
+        "ishikawa"
       ],
       "status": "parity",
       "upstream": [
@@ -515,7 +525,8 @@
         "gantt",
         "info",
         "treeView",
-        "eventmodeling"
+        "eventmodeling",
+        "ishikawa"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5448,6 +5459,59 @@
       "default": 32
     },
     {
+      "family": "ishikawa",
+      "interface": "IshikawaDiagramConfig",
+      "path": "ishikawa.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "ishikawa",
+      "interface": "IshikawaDiagramConfig",
+      "path": "ishikawa.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "ishikawa",
+      "interface": "IshikawaDiagramConfig",
+      "path": "ishikawa.diagramPadding",
+      "field": "diagramPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": 20
+    },
+    {
       "family": "gantt",
       "interface": "GanttDiagramConfig",
       "path": "gantt.useWidth",
@@ -5829,5 +5893,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "978a16a1b6e03a9c24a262fcfc2100b0988db3ebea4e82ca6304f49ac76499b1"
+  "fixtureSha256": "e9c37fde4799c483a3abe2ee633d0fe8fd1ed21a826030b51835249ad98bd956"
 }

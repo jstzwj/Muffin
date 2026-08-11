@@ -1,0 +1,40 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "ishikawaModuleSha256": "1cc5d5c76ee381aad9b17580ebda09e2913674ccc4366a95ca507e4cb1747844",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "oracle": "transparent Ishikawa element screenshots at DPR 1",
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\nishikawa\nDelayed release\n    People\n        Missing reviewer\n        Training gap\n    Process\n        Manual approval\n    Platform\n        Slow build\n        Flaky tests\n    Policy\n        Change freeze",
+      "file": "canonical.png",
+      "width": 449,
+      "height": 583,
+      "sha256": "be7f34c96c56a7774cbf82119685d5dfd5b541f0a33f80c1e937d248043ff485"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\"}}%%\nishikawa\nDelayed release\n    People\n        Missing reviewer\n        Training gap\n    Process\n        Manual approval\n    Platform\n        Slow build\n        Flaky tests\n    Policy\n        Change freeze",
+      "file": "dark.png",
+      "width": 449,
+      "height": 583,
+      "sha256": "de4125e9d056018c88e6eef4e5e5c3cf30b009ddbc48b7ea3ea6a2cc930fe97f"
+    },
+    {
+      "id": "hand-drawn",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"look\":\"handDrawn\",\"handDrawnSeed\":17}}%%\nishikawa\nEffect\n  Cause A\n    Child\n  Cause B",
+      "file": "hand-drawn.png",
+      "width": 255,
+      "height": 604,
+      "sha256": "151ac2e92f120400c8821cd2d7628eead870248e29e5eea862994bbb90b394ff"
+    }
+  ],
+  "fixtureSha256": "31aa81eed01b0b1d843256a31dac6a0edddc38f550ba89c63092cd5f152ea145"
+}

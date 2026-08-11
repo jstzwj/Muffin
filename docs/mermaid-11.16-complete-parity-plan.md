@@ -29,18 +29,18 @@ registered Mermaid algorithm has not been ported.
 
 ## Registered diagram inventory
 
-Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 22 IDs as 19
+Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 23 IDs as 20
 logical families:
 
 `flowchart-v2`, `flowchart`, `sequence`, `classDiagram`, `class`,
 `stateDiagram`, `state`, `er`, `gantt`, `info`, `pie`, `requirement`,
 `timeline`, `journey`, `quadrantChart`, `radar`, `xychart`, `packet`, `kanban`,
-`mindmap`, `treeView`, and `eventmodeling`.
+`mindmap`, `treeView`, `eventmodeling`, and `ishikawa`.
 
-The 16 remaining IDs are:
+The 15 remaining IDs are:
 
 `flowchart-elk`, `architecture`, `c4`, `swimlane`, `git`, `sankey`, `block`,
-`ishikawa`, `treemap`, `railroad`, `railroad-ebnf`,
+`treemap`, `railroad`, `railroad-ebnf`,
 `railroad-abnf`, `railroad-peg`, `venn`, `wardley`, and `cynefin`.
 
 ## Delivery order
@@ -55,8 +55,8 @@ The 16 remaining IDs are:
 
 ### Phase 1: bounded and formula-driven families
 
-Info, TreeView, and Event Modeling are complete. Implement `ishikawa` and
-`venn`. These have bounded or explicit layout rules and establish reusable set and
+Info, TreeView, Event Modeling, and Ishikawa are complete. Implement `venn`.
+These have bounded or explicit layout rules and establish reusable set and
 annotation primitives without introducing another general graph engine.
 
 ### Phase 2: data and domain-layout families

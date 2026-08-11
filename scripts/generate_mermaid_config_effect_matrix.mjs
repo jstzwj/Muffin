@@ -515,6 +515,11 @@ const familyPolicies = {
       "Event Modeling 11.16.0 declares rowHeight but uses fixed swimlane and box geometry.",
     ),
   },
+  ishikawa: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    diagramPadding: parity("viewport", "export"),
+  },
   gantt: {
     useWidth: parity("layout", "paint", "viewport", "export"),
     useMaxWidth: parity("viewport", "export"),
@@ -603,6 +608,7 @@ const shared = [
       "info",
       "treeView",
       "eventmodeling",
+      "ishikawa",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -628,6 +634,7 @@ const shared = [
       "info",
       "treeView",
       "eventmodeling",
+      "ishikawa",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -657,6 +664,7 @@ const shared = [
       "info",
       "treeView",
       "eventmodeling",
+      "ishikawa",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -671,16 +679,16 @@ const shared = [
   },
   {
     path: "look",
-    families: ["flowchart", "class", "state", "timeline", "kanban", "mindmap"],
+    families: ["flowchart", "class", "state", "timeline", "kanban", "mindmap", "ishikawa"],
     ...partial(
       interactiveLayout,
       interactiveLayout,
-      "Flowchart, Timeline, Kanban, and Mindmap are complete; state currently uses look for marker selection and class retains it without rough painting.",
+      "Flowchart, Timeline, Kanban, Mindmap, and Ishikawa are complete; state currently uses look for marker selection and class retains it without rough painting.",
     ),
   },
   {
     path: "handDrawnSeed",
-    families: ["flowchart", "kanban", "mindmap"],
+    families: ["flowchart", "kanban", "mindmap", "ishikawa"],
     ...parity("layout", "paint", "interaction", "export"),
   },
   {
@@ -724,6 +732,7 @@ const shared = [
       "info",
       "treeView",
       "eventmodeling",
+      "ishikawa",
     ],
     ...unsupported(
       ["parsed"],
@@ -752,6 +761,7 @@ const shared = [
       "info",
       "treeView",
       "eventmodeling",
+      "ishikawa",
     ],
     ...policy(
       "security-fixed",
@@ -787,6 +797,7 @@ const shared = [
       "info",
       "treeView",
       "eventmodeling",
+      "ishikawa",
     ],
     ...parity("export"),
   },
@@ -812,6 +823,7 @@ const shared = [
       "info",
       "treeView",
       "eventmodeling",
+      "ishikawa",
     ],
     ...parity("export"),
   },
@@ -837,6 +849,7 @@ const shared = [
       "info",
       "treeView",
       "eventmodeling",
+      "ishikawa",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -893,12 +906,13 @@ const interfaces = {
   mindmap: "MindmapDiagramConfig",
   treeView: "TreeViewDiagramConfig",
   eventmodeling: "EventModelingDiagramConfig",
+  ishikawa: "IshikawaDiagramConfig",
   gantt: "GanttDiagramConfig",
 };
 
 const entries = [];
 for (const [family, interfaceName] of Object.entries(interfaces)) {
-  const fields = [...baseFields, ...interfaceProperties(interfaceName)];
+  const fields = [...new Set([...baseFields, ...interfaceProperties(interfaceName)])];
   const policies = familyPolicies[family];
   const missing = fields.filter((field) => !policies[field]);
   const extra = Object.keys(policies).filter((field) => !fields.includes(field));
@@ -929,6 +943,14 @@ const withParsed = (entry) => ({
   native: ["parsed", ...entry.native.filter((value) => value !== "parsed")],
 });
 const normalizedEntries = [...shared, ...entries].map(withParsed);
+const duplicatePaths = normalizedEntries
+  .map((entry) => entry.path)
+  .filter((entryPath, index, paths) => paths.indexOf(entryPath) !== index);
+if (duplicatePaths.length) {
+  throw new Error(
+    `duplicate config paths: ${[...new Set(duplicatePaths)].join(", ")}`,
+  );
+}
 for (const entry of normalizedEntries) {
   for (const side of ["upstream", "native"]) {
     const unknown = entry[side].filter((effect) => !dimensions.includes(effect));
