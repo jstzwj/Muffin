@@ -11,6 +11,7 @@
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/gantt/GanttScene.h"
+#include "mermaid/gitgraph/GitGraphScene.h"
 #include "mermaid/info/InfoScene.h"
 #include "mermaid/ishikawa/IshikawaScene.h"
 #include "mermaid/radar/RadarScene.h"
@@ -71,9 +72,11 @@ int main(int argc, char** argv) {
       "ORDER ||--|{ LINE-ITEM : contains\n"
       "CUSTOMER {\n  string name PK\n  int age\n}\n"
       "ORDER {\n  bigint id PK\n  string status\n}");
+  const QString gitGraph = QStringLiteral(
+      "gitGraph\ncommit id: \"A\"\ncommit id: \"B\"");
   // A family Mermaid detects but Muffin does not yet render natively.
   const QString unsupported = QStringLiteral(
-      "gitGraph\ncommit id: \"A\"");
+      "C4Context\nPerson(user, User)");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
@@ -1027,6 +1030,9 @@ int main(int argc, char** argv) {
          QStringLiteral("kanban"), QStringLiteral("kanban-parse-error"), 2},
         {QStringLiteral("block-beta\na[A]"),
          QStringLiteral("block"), QStringLiteral("block-lexer-error"), 2},
+        {QStringLiteral("gitGraph\ncommit id: \"a\";"),
+         QStringLiteral("gitGraph"),
+         QStringLiteral("gitgraph-lexer-error"), 2},
         {QStringLiteral("swimlane-beta\nA -->"),
          QStringLiteral("swimlane"), QStringLiteral("missing-link-endpoint"), 2},
         {QStringLiteral("gantt:"),
@@ -1087,6 +1093,8 @@ int main(int argc, char** argv) {
                 detected.diagnostic.expected.contains(
                     QStringLiteral("block-beta")) &&
                 detected.diagnostic.expected.contains(
+                    QStringLiteral("gitGraph")) &&
+                detected.diagnostic.expected.contains(
                     QStringLiteral("swimlane-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("gantt")) &&
@@ -1134,6 +1142,20 @@ int main(int argc, char** argv) {
     require(sequenceScene->participants.size() == 2 && sequenceScene->messages.size() == 1 &&
                 e.naturalSize.width() > 0 && e.naturalSize.height() > 0,
             QStringLiteral("sequenceDiagram scene must contain participant/message geometry"));
+  }
+
+  // --- getSync: GitGraph is supported through the shared cache path ---
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(gitGraph), gitGraph);
+    const auto* scene =
+        dynamic_cast<const muffin::mermaid::gitgraph::GitGraphScene*>(
+            entry.scene.get());
+    require(entry.status == kReady && scene && !scene->primitives.isEmpty() &&
+                entry.naturalSize.width() > 0 &&
+                entry.naturalSize.height() > 0,
+            QStringLiteral("gitGraph should produce a native scene"));
   }
 
   // --- getSync: an unknown native family reports Unsupported with context ---
@@ -1705,6 +1727,10 @@ int main(int argc, char** argv) {
          QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
         {QStringLiteral("block"),
          QStringLiteral("block-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B")},
+        {QStringLiteral("gitGraph"),
+         QStringLiteral("gitGraph\ncommit id: \"root\"\nbranch feature\n"
+                        "commit id: \"feature-1\"\ncheckout main\n"
+                        "merge feature id: \"release\"")},
         {QStringLiteral("swimlane"),
          QStringLiteral("swimlane-beta TB\nsubgraph one[One]\n"
                         "  A[Start] --> B[Done]\nend")},

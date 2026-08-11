@@ -367,54 +367,102 @@ void populateXYChart(FlowThemeId id, FlowThemeVariables& t);
 void populateGantt(FlowThemeId id, FlowThemeVariables& t);
 void populateArchitecture(FlowThemeId id, FlowThemeVariables& t);
 void populateVenn(FlowThemeId id, FlowThemeVariables& t);
+void populateGitGraph(FlowThemeId id, FlowThemeVariables& t);
 
-// Mindmap classic root colors are borrowed from the first git palette slot.
-// Keep the per-theme update semantics here: Default calls this twice, so its
-// existing git0 is darkened twice; every other built-in theme calls it once.
-void populateMindmapRoot(FlowThemeId id, FlowThemeVariables& t) {
-  switch (id) {
-    case FlowThemeId::Base:
-      assignIfEmpty(t.git0, t.primaryColor);
-      t.git0 = darken(t.git0, 25);
-      assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
-      break;
-    case FlowThemeId::Dark:
-      t.git0 = lighten(t.secondaryColor, 20);
-      assignIfEmpty(t.gitBranchLabel0, t.taskTextDarkColor);
-      break;
-    case FlowThemeId::Default:
-      assignIfEmpty(t.git0, t.primaryColor);
-      t.git0 = darken(t.git0, 25);
-      assignIfEmpty(t.gitBranchLabel0, QStringLiteral("#ffffff"));
-      break;
-    case FlowThemeId::Forest:
-      assignIfEmpty(t.git0, t.primaryColor);
-      t.git0 = darken(t.git0, 25);
-      assignIfEmpty(t.gitBranchLabel0, QStringLiteral("#ffffff"));
-      break;
-    case FlowThemeId::Neutral:
-      t.git0 = darken(t.pie[0], 25);
-      t.gitBranchLabel0 = t.text;
-      break;
-    case FlowThemeId::Neo:
-    case FlowThemeId::Redux:
-    case FlowThemeId::ReduxColor:
-      assignIfEmpty(t.git0, QStringLiteral("#ECECFE"));
-      t.git0 = darken(t.git0, 25);
-      assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
-      break;
-    case FlowThemeId::NeoDark:
-      assignIfEmpty(t.git0, QStringLiteral("#0b0000"));
-      t.git0 = lighten(t.git0, 25);
-      assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
-      break;
-    case FlowThemeId::ReduxDark:
-    case FlowThemeId::ReduxDarkColor:
-      assignIfEmpty(t.git0, t.primaryColor);
-      t.git0 = darken(t.git0, 25);
-      assignIfEmpty(t.gitBranchLabel0, t.primaryTextColor);
-      break;
+void populateGitGraph(FlowThemeId id, FlowThemeVariables& t) {
+  if (t.git[0].isEmpty() && !t.git0.isEmpty()) t.git[0] = t.git0;
+  if (t.gitBranchLabel[0].isEmpty() && !t.gitBranchLabel0.isEmpty())
+    t.gitBranchLabel[0] = t.gitBranchLabel0;
+
+  if (id == FlowThemeId::Dark) {
+    const int amounts[8] = {20, 20, 20, 20, 20, 10, 10, 20};
+    const QString fallbacks[8] = {
+        t.secondaryColor, t.pie[1].isEmpty() ? t.secondaryColor : t.pie[1],
+        t.pie[2].isEmpty() ? t.tertiaryColor : t.pie[2],
+        t.pie[3].isEmpty() ? adjust(t.primaryColor, {.h = -30.0}) : t.pie[3],
+        t.pie[4].isEmpty() ? adjust(t.primaryColor, {.h = -60.0}) : t.pie[4],
+        t.pie[5].isEmpty() ? adjust(t.primaryColor, {.h = -90.0}) : t.pie[5],
+        t.pie[6].isEmpty() ? adjust(t.primaryColor, {.h = 60.0}) : t.pie[6],
+        t.pie[7].isEmpty() ? adjust(t.primaryColor, {.h = 120.0}) : t.pie[7]};
+    for (int i = 0; i < 8; ++i) t.git[i] = lighten(fallbacks[i], amounts[i]);
+  } else if (id == FlowThemeId::Neutral) {
+    t.git[0] = darken(t.pie[0], 25);
+    for (int i = 1; i < 8; ++i) t.git[i] = t.pie[i];
+  } else {
+    QString primary = t.primaryColor;
+    QString secondary = t.secondaryColor;
+    QString tertiary = t.tertiaryColor;
+    bool lightenPalette = false;
+    if (id == FlowThemeId::Neo || id == FlowThemeId::Redux ||
+        id == FlowThemeId::ReduxColor) {
+      primary = QStringLiteral("#ECECFE");
+      secondary = QStringLiteral("#E9E9F1");
+      tertiary = adjust(primary, {.h = 180.0, .l = 5.0});
+    } else if (id == FlowThemeId::NeoDark) {
+      const QString values[8] = {
+          QStringLiteral("#0b0000"), QStringLiteral("#4d1037"),
+          QStringLiteral("#3f5258"), QStringLiteral("#4f2f1b"),
+          QStringLiteral("#6e0a0a"), QStringLiteral("#3b0048"),
+          QStringLiteral("#995a01"), QStringLiteral("#154706")};
+      for (int i = 0; i < 8; ++i) assignIfEmpty(t.git[i], values[i]);
+      lightenPalette = true;
+    }
+    if (id != FlowThemeId::NeoDark) {
+      const QString values[8] = {
+          primary, secondary, tertiary,
+          adjust(primary, {.h = -30.0}), adjust(primary, {.h = -60.0}),
+          adjust(primary, {.h = -90.0}), adjust(primary, {.h = 60.0}),
+          adjust(primary, {.h = 120.0})};
+      for (int i = 0; i < 8; ++i) assignIfEmpty(t.git[i], values[i]);
+    }
+    for (QString& color : t.git)
+      color = lightenPalette ? lighten(color, 25) : darken(color, 25);
   }
+
+  for (int i = 0; i < 8; ++i) {
+    const QString inverse = id == FlowThemeId::Default && i == 0
+                                ? darken(invert(t.git[i]), 25)
+                                : invert(t.git[i]);
+    assignIfEmpty(t.gitInv[i], inverse);
+  }
+
+  QString labelColor = t.primaryTextColor;
+  if (id == FlowThemeId::Dark)
+    labelColor = QStringLiteral("lightgrey");
+  else if (id == FlowThemeId::NeoDark || id == FlowThemeId::ReduxDark ||
+           id == FlowThemeId::ReduxDarkColor)
+    labelColor = QStringLiteral("#e0dfdf");
+  else if (id == FlowThemeId::Default || id == FlowThemeId::Forest)
+    labelColor = QStringLiteral("black");
+  else if (id == FlowThemeId::Neutral)
+    labelColor = t.text;
+
+  if (id == FlowThemeId::Neutral) {
+    for (int i = 0; i < 8; ++i)
+      t.gitBranchLabel[i] = (i == 1 || i == 3) ? QStringLiteral("white")
+                                               : labelColor;
+  } else if (id == FlowThemeId::Dark || id == FlowThemeId::Default ||
+             id == FlowThemeId::Forest) {
+    for (int i = 0; i < 8; ++i)
+      assignIfEmpty(t.gitBranchLabel[i],
+                    (i == 0 || i == 3) ? invert(labelColor) : labelColor);
+  } else {
+    for (QString& color : t.gitBranchLabel) assignIfEmpty(color, labelColor);
+  }
+
+  assignIfEmpty(t.tagLabelColor, t.primaryTextColor);
+  assignIfEmpty(t.tagLabelBackground, t.primaryColor);
+  assignIfEmpty(t.tagLabelBorder, t.primaryBorderColor);
+  assignIfEmpty(t.tagLabelFontSize, QStringLiteral("10px"));
+  assignIfEmpty(t.commitLabelColor, invert(t.secondaryColor));
+  assignIfEmpty(t.commitLabelBackground, t.secondaryColor);
+  assignIfEmpty(t.commitLabelFontSize, QStringLiteral("10px"));
+  if (id == FlowThemeId::Redux || id == FlowThemeId::ReduxDark ||
+      id == FlowThemeId::ReduxColor || id == FlowThemeId::ReduxDarkColor)
+    assignIfEmpty(t.commitLineColor, QStringLiteral("#BDBCCC"));
+
+  t.git0 = t.git[0];
+  t.gitBranchLabel0 = t.gitBranchLabel[0];
 }
 
 void populateVenn(FlowThemeId id, FlowThemeVariables& t) {
@@ -1165,7 +1213,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::Dark: updateColorsDark(t); break;
     case FlowThemeId::Neutral: updateColorsNeutral(t); break;
   }
-  populateMindmapRoot(id, t);
+  populateGitGraph(id, t);
   populatePacket(id, t);
   populateArchitecture(id, t);
   populateEventModeling(id, t);
@@ -1361,6 +1409,20 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("defaultLinkColor")) return defaultLinkColor;
   if (key == QStringLiteral("git0")) return git0;
   if (key == QStringLiteral("gitBranchLabel0")) return gitBranchLabel0;
+  for (int i = 0; i < 8; ++i) {
+    if (key == QStringLiteral("git%1").arg(i)) return git[i];
+    if (key == QStringLiteral("gitInv%1").arg(i)) return gitInv[i];
+    if (key == QStringLiteral("gitBranchLabel%1").arg(i))
+      return gitBranchLabel[i];
+  }
+  if (key == QStringLiteral("commitLineColor")) return commitLineColor;
+  if (key == QStringLiteral("commitLabelColor")) return commitLabelColor;
+  if (key == QStringLiteral("commitLabelBackground")) return commitLabelBackground;
+  if (key == QStringLiteral("commitLabelFontSize")) return commitLabelFontSize;
+  if (key == QStringLiteral("tagLabelColor")) return tagLabelColor;
+  if (key == QStringLiteral("tagLabelBackground")) return tagLabelBackground;
+  if (key == QStringLiteral("tagLabelBorder")) return tagLabelBorder;
+  if (key == QStringLiteral("tagLabelFontSize")) return tagLabelFontSize;
   if (key == QStringLiteral("strokeWidth")) return QString::number(strokeWidth);
   if (key == QStringLiteral("useGradient")) return useGradient ? QStringLiteral("true") : QStringLiteral("false");
   if (key == QStringLiteral("gradientStart")) return gradientStart;
@@ -1483,6 +1545,31 @@ QString FlowThemeVariables::get(const QString& key) const {
 }
 
 void FlowThemeVariables::set(const QString& key, const QString& value) {
+  for (int i = 0; i < 8; ++i) {
+    if (key == QStringLiteral("git%1").arg(i)) {
+      git[i] = value;
+      if (i == 0) git0 = value;
+      return;
+    }
+    if (key == QStringLiteral("gitInv%1").arg(i)) {
+      gitInv[i] = value;
+      return;
+    }
+    if (key == QStringLiteral("gitBranchLabel%1").arg(i)) {
+      gitBranchLabel[i] = value;
+      if (i == 0) gitBranchLabel0 = value;
+      return;
+    }
+  }
+  if (key == QStringLiteral("commitLineColor")) { commitLineColor = value; return; }
+  if (key == QStringLiteral("commitLabelColor")) { commitLabelColor = value; return; }
+  if (key == QStringLiteral("commitLabelBackground")) { commitLabelBackground = value; return; }
+  if (key == QStringLiteral("commitLabelFontSize")) { commitLabelFontSize = value; return; }
+  if (key == QStringLiteral("tagLabelColor")) { tagLabelColor = value; return; }
+  if (key == QStringLiteral("tagLabelBackground")) { tagLabelBackground = value; return; }
+  if (key == QStringLiteral("tagLabelBorder")) { tagLabelBorder = value; return; }
+  if (key == QStringLiteral("tagLabelFontSize")) { tagLabelFontSize = value; return; }
+
   if (key == QStringLiteral("background")) background = value;
   else if (key == QStringLiteral("primaryColor")) primaryColor = value;
   else if (key == QStringLiteral("secondaryColor")) secondaryColor = value;
@@ -1522,8 +1609,6 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("nodeBkg")) nodeBkg = value;
   else if (key == QStringLiteral("nodeBorder")) nodeBorder = value;
   else if (key == QStringLiteral("defaultLinkColor")) defaultLinkColor = value;
-  else if (key == QStringLiteral("git0")) git0 = value;
-  else if (key == QStringLiteral("gitBranchLabel0")) gitBranchLabel0 = value;
   else if (key == QStringLiteral("strokeWidth")) strokeWidth = value.toDouble();
   else if (key == QStringLiteral("useGradient")) useGradient = value.compare(QStringLiteral("true"), Qt::CaseInsensitive) == 0;
   else if (key == QStringLiteral("gradientStart")) gradientStart = value;

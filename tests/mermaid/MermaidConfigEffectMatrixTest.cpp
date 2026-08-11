@@ -8,6 +8,7 @@
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/gantt/GanttScene.h"
+#include "mermaid/gitgraph/GitGraphScene.h"
 #include "mermaid/info/InfoScene.h"
 #include "mermaid/ishikawa/IshikawaScene.h"
 #include "mermaid/radar/RadarScene.h"
@@ -163,8 +164,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 347,
-          QStringLiteral("Expected 347 classified config rows, found %1")
+  require(entries.size() == 359,
+          QStringLiteral("Expected 359 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -228,6 +229,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("kanban"), 5},
                                              {QStringLiteral("mindmap"), 5},
                                              {QStringLiteral("block"), 3},
+                                             {QStringLiteral("gitGraph"), 12},
                                              {QStringLiteral("pie"), 6},
                                              {QStringLiteral("packet"), 8},
                                              {QStringLiteral("quadrantChart"), 20},
@@ -610,6 +612,15 @@ int main(int argc, char** argv) {
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity") &&
               byPath.value(QStringLiteral("mindmap.layoutAlgorithm"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("gitGraph.parallelCommits"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("gitGraph.nodeLabel"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("gitGraph.arrowMarkerAbsolute"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
               byPath.value(QStringLiteral("treeView.useWidth"))
@@ -1300,6 +1311,34 @@ int main(int argc, char** argv) {
           QStringLiteral("Block live/inert config did not reach the scene"));
   require(pngImage(configuredBlockSource) != pngImage(blockBody),
           QStringLiteral("Block live config did not affect PNG output"));
+
+  const QString gitGraphBody = QStringLiteral(
+      "gitGraph LR:\ncommit id: \"root\"\nbranch alpha\n"
+      "commit id: \"alpha-1\"\ncheckout main\nbranch beta\n"
+      "commit id: \"beta-1\"");
+  const QString configuredGitGraphSource = QStringLiteral(
+      "%%{init: {\"gitGraph\": {\"useMaxWidth\": false, "
+      "\"diagramPadding\": 20, \"parallelCommits\": true}}}%%\n") +
+      gitGraphBody;
+  const MermaidRenderEntry baselineGitGraph = render(gitGraphBody);
+  const MermaidRenderEntry configuredGitGraph =
+      render(configuredGitGraphSource);
+  const auto* baselineGitGraphScene =
+      dynamic_cast<const muffin::mermaid::gitgraph::GitGraphScene*>(
+          baselineGitGraph.scene.get());
+  const auto* configuredGitGraphScene =
+      dynamic_cast<const muffin::mermaid::gitgraph::GitGraphScene*>(
+          configuredGitGraph.scene.get());
+  require(baselineGitGraph.status == MermaidRenderStatus::Ready &&
+              configuredGitGraph.status == MermaidRenderStatus::Ready &&
+              baselineGitGraphScene && configuredGitGraphScene &&
+              !configuredGitGraph.metadata.svgUseMaxWidth &&
+              configuredGitGraphScene->config.parallelCommits &&
+              configuredGitGraphScene->config.diagramPadding == 20.0 &&
+              configuredGitGraphScene->bounds != baselineGitGraphScene->bounds,
+          QStringLiteral("GitGraph live config did not reach the scene"));
+  require(pngImage(configuredGitGraphSource) != pngImage(gitGraphBody),
+          QStringLiteral("GitGraph live config did not affect PNG output"));
 
   // TreeView preserves JavaScript scalar coercion and uses all icon mapping
   // fields while reproducing the upstream bug that strips the final <use>

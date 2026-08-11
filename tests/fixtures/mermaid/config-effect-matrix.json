@@ -32,6 +32,7 @@
       "kanban",
       "mindmap",
       "block",
+      "gitGraph",
       "treeView",
       "eventmodeling",
       "ishikawa",
@@ -47,12 +48,12 @@
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 205,
+    "parity": 214,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 99,
+    "upstream-inert": 102,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -77,6 +78,7 @@
         "kanban",
         "mindmap",
         "block",
+        "gitGraph",
         "gantt",
         "info",
         "treeView",
@@ -127,6 +129,7 @@
         "kanban",
         "mindmap",
         "block",
+        "gitGraph",
         "gantt",
         "info",
         "treeView",
@@ -178,6 +181,7 @@
         "kanban",
         "mindmap",
         "block",
+        "gitGraph",
         "gantt",
         "info",
         "treeView",
@@ -408,6 +412,7 @@
         "kanban",
         "mindmap",
         "block",
+        "gitGraph",
         "gantt",
         "info",
         "treeView",
@@ -449,6 +454,7 @@
         "kanban",
         "mindmap",
         "block",
+        "gitGraph",
         "gantt",
         "info",
         "treeView",
@@ -512,6 +518,7 @@
         "kanban",
         "mindmap",
         "block",
+        "gitGraph",
         "gantt",
         "info",
         "treeView",
@@ -554,6 +561,7 @@
         "kanban",
         "mindmap",
         "block",
+        "gitGraph",
         "gantt",
         "info",
         "treeView",
@@ -596,6 +604,7 @@
         "kanban",
         "mindmap",
         "block",
+        "gitGraph",
         "gantt",
         "info",
         "treeView",
@@ -5455,6 +5464,257 @@
       "default": 8
     },
     {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.titleTopMargin",
+      "field": "titleTopMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 25
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.diagramPadding",
+      "field": "diagramPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": 8
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.nodeLabel",
+      "field": "nodeLabel",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "GitGraphDiagramConfig retains the legacy nodeLabel object, but the 11.16.0 renderer never reads it.",
+      "default": {
+        "width": 75,
+        "height": 100,
+        "x": -25,
+        "y": 0
+      }
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.mainBranchName",
+      "field": "mainBranchName",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "main"
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.mainBranchOrder",
+      "field": "mainBranchOrder",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 0
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.showCommitLabel",
+      "field": "showCommitLabel",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.showBranches",
+      "field": "showBranches",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.rotateCommitLabel",
+      "field": "rotateCommitLabel",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.parallelCommits",
+      "field": "parallelCommits",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": false
+    },
+    {
+      "family": "gitGraph",
+      "interface": "GitGraphDiagramConfig",
+      "path": "gitGraph.arrowMarkerAbsolute",
+      "field": "arrowMarkerAbsolute",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "GitGraph 11.16.0 draws paths directly and does not serialize SVG arrow-marker URLs.",
+      "default": false
+    },
+    {
       "family": "treeView",
       "interface": "TreeViewDiagramConfig",
       "path": "treeView.useWidth",
@@ -7350,5 +7610,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "1760437a070900447264709a38d64b22aa4de98d16c12c24939e8d11684d6a79"
+  "fixtureSha256": "f428072883f8c5dd5cbcba869a04e1e9aa2a1ce2bbe5a58154c6d3665307b56f"
 }

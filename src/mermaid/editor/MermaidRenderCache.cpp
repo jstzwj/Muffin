@@ -35,6 +35,7 @@
 #include "mermaid/packet/PacketDiagram.h"
 #include "mermaid/kanban/KanbanDiagram.h"
 #include "mermaid/mindmap/MindmapDiagram.h"
+#include "mermaid/gitgraph/GitGraphDiagram.h"
 #include "mermaid/gantt/GanttDiagram.h"
 #include "mermaid/info/InfoDiagram.h"
 #include "mermaid/treeview/TreeViewDiagram.h"
@@ -559,6 +560,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("packet-beta"));
     diagnostic.expected.append(QStringLiteral("kanban"));
     diagnostic.expected.append(QStringLiteral("mindmap"));
+    diagnostic.expected.append(QStringLiteral("gitGraph"));
     diagnostic.expected.append(QStringLiteral("gantt"));
     diagnostic.expected.append(QStringLiteral("info"));
     diagnostic.expected.append(QStringLiteral("treeView-beta"));
@@ -786,6 +788,27 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         break;
       case block::BlockErrorKind::Runtime:
         code = QStringLiteral("block-runtime-error");
+        break;
+    }
+    const qsizetype offset = error.line > 0 && error.column > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       error.column)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"), std::move(code),
+        QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), error.token, {}));
+  } catch (const gitgraph::GitGraphParseError& error) {
+    QString code;
+    switch (error.kind) {
+      case gitgraph::GitGraphErrorKind::Lexer:
+        code = QStringLiteral("gitgraph-lexer-error");
+        break;
+      case gitgraph::GitGraphErrorKind::Parser:
+        code = QStringLiteral("gitgraph-parse-error");
+        break;
+      case gitgraph::GitGraphErrorKind::Runtime:
+        code = QStringLiteral("gitgraph-runtime-error");
         break;
     }
     const qsizetype offset = error.line > 0 && error.column > 0

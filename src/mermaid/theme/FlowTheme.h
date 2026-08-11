@@ -141,11 +141,22 @@ struct FlowThemeVariables {
   QString nodeBkg;
   QString nodeBorder;
   QString defaultLinkColor;
-  // Mindmap's classic root node uses the first git palette entry and its
-  // corresponding branch-label color. These are derived by each theme's
-  // updateColors() implementation and remain directly overrideable.
+  // GitGraph owns an eight-color branch palette, its inverse palette and the
+  // branch-label palette. Mindmap's classic root consumes slot zero, so the
+  // legacy scalar aliases remain synchronized with the first array entries.
   QString git0;
   QString gitBranchLabel0;
+  QString git[8];
+  QString gitInv[8];
+  QString gitBranchLabel[8];
+  QString commitLineColor;
+  QString commitLabelColor;
+  QString commitLabelBackground;
+  QString commitLabelFontSize;
+  QString tagLabelColor;
+  QString tagLabelBackground;
+  QString tagLabelBorder;
+  QString tagLabelFontSize;
   QString mainContrastColor;  // dark + dark-variant FamilyA themes
   QString contrast;           // neutral theme only
   QString text;               // neutral theme only

@@ -677,11 +677,31 @@ int main(int argc, char** argv) {
             QStringLiteral("native Block fence must render without a diagnostic"));
   }
 
+  // --- native GitGraph fences render through the editor block path ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\ngitGraph\ncommit id: \"A\"\n"
+        "branch feature\ncommit id: \"B\"\n```\n"),
+        false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Ready &&
+                block->mermaidDiagnosticMessage().isEmpty() &&
+                !block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("native GitGraph fence must render without a diagnostic"));
+  }
+
   // --- unsupported Mermaid families keep source and explain why ---
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\ngitGraph\ncommit id: \"A\"\n```\n"),
+        "```mermaid\nC4Context\nPerson(user, User)\n```\n"),
         false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;

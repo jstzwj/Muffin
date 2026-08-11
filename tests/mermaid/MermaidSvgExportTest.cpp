@@ -127,6 +127,10 @@ int main(int argc, char** argv) {
        QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
       {QStringLiteral("block"), QStringLiteral("block"),
        QStringLiteral("block-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B")},
+      {QStringLiteral("gitGraph"), QStringLiteral("gitGraph"),
+       QStringLiteral("gitGraph\ncommit id: \"root\"\nbranch feature\n"
+                      "commit id: \"feature-1\"\ncheckout main\n"
+                      "merge feature id: \"release\"")},
       {QStringLiteral("swimlane"), QStringLiteral("flowchart"),
        QStringLiteral("swimlane-beta TB\nsubgraph one[One]\n"
                       "  A[Start] --> B[Done]\nend")},
@@ -263,6 +267,9 @@ int main(int argc, char** argv) {
           "%%{init: {\"block\": {\"useMaxWidth\": false}}}%%\n"
           "block-beta\nA[\"Alpha\"]"),
       QStringLiteral(
+          "%%{init: {\"gitGraph\": {\"useMaxWidth\": false}}}%%\n"
+          "gitGraph\ncommit id: \"a\""),
+      QStringLiteral(
           "%%{init: {\"flowchart\": {\"useMaxWidth\": false}}}%%\n"
           "swimlane-beta\nA --> B"),
       QStringLiteral(
@@ -368,6 +375,17 @@ int main(int argc, char** argv) {
               timelineAria.contains("aria-labelledby=") &&
               timelineAria.contains("aria-describedby="),
           QStringLiteral("Timeline SVG accessibility metadata drifted"));
+
+  const QByteArray gitGraphAria = renderSvg(QStringLiteral(
+      "gitGraph\ntitle Release history\naccTitle: Git accessible\n"
+      "accDescr: Git description\ncommit id: \"root\"\n"
+      "commit id: \"release\"")).svg;
+  require(gitGraphAria.contains("Release history") &&
+              gitGraphAria.contains("Git accessible</title>") &&
+              gitGraphAria.contains("Git description</desc>") &&
+              gitGraphAria.contains("aria-labelledby=") &&
+              gitGraphAria.contains("aria-describedby="),
+          QStringLiteral("GitGraph title/accessibility metadata drifted"));
 
   const QByteArray treemapAria = renderSvg(QStringLiteral(
       "treemap-beta\ntitle Visible map\naccTitle: Treemap accessible\n"

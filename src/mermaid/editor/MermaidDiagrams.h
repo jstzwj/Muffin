@@ -27,6 +27,7 @@ const Diagram& timelineDiagramAdapter();
 const Diagram& packetDiagramAdapter();
 const Diagram& kanbanDiagramAdapter();
 const Diagram& mindmapDiagramAdapter();
+const Diagram& gitGraphDiagramAdapter();
 const Diagram& ganttDiagramAdapter();
 const Diagram& infoDiagramAdapter();
 const Diagram& treeViewDiagramAdapter();
