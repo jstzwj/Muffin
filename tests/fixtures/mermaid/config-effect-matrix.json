@@ -34,18 +34,19 @@
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
       "gantt",
       "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 164,
+    "parity": 176,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 78,
+    "upstream-inert": 79,
     "api-only": 3,
     "legacy-only": 19
   },
@@ -73,7 +74,8 @@
         "treeView",
         "eventmodeling",
         "ishikawa",
-        "venn"
+        "venn",
+        "sankey"
       ],
       "status": "parity",
       "upstream": [
@@ -116,7 +118,8 @@
         "treeView",
         "eventmodeling",
         "ishikawa",
-        "venn"
+        "venn",
+        "sankey"
       ],
       "status": "partial",
       "upstream": [
@@ -160,7 +163,8 @@
         "treeView",
         "eventmodeling",
         "ishikawa",
-        "venn"
+        "venn",
+        "sankey"
       ],
       "status": "parity",
       "upstream": [
@@ -377,7 +381,8 @@
         "treeView",
         "eventmodeling",
         "ishikawa",
-        "venn"
+        "venn",
+        "sankey"
       ],
       "status": "unsupported",
       "upstream": [
@@ -411,7 +416,8 @@
         "treeView",
         "eventmodeling",
         "ishikawa",
-        "venn"
+        "venn",
+        "sankey"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -467,7 +473,8 @@
         "treeView",
         "eventmodeling",
         "ishikawa",
-        "venn"
+        "venn",
+        "sankey"
       ],
       "status": "parity",
       "upstream": [
@@ -502,7 +509,8 @@
         "treeView",
         "eventmodeling",
         "ishikawa",
-        "venn"
+        "venn",
+        "sankey"
       ],
       "status": "parity",
       "upstream": [
@@ -537,7 +545,8 @@
         "treeView",
         "eventmodeling",
         "ishikawa",
-        "venn"
+        "venn",
+        "sankey"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5643,6 +5652,286 @@
       "default": false
     },
     {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 600
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 400
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.linkColor",
+      "field": "linkColor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "gradient"
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.nodeAlignment",
+      "field": "nodeAlignment",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "justify"
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.showValues",
+      "field": "showValues",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.prefix",
+      "field": "prefix",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": ""
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.suffix",
+      "field": "suffix",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": ""
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.nodeWidth",
+      "field": "nodeWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.nodePadding",
+      "field": "nodePadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 12
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.labelStyle",
+      "field": "labelStyle",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "legacy"
+    },
+    {
+      "family": "sankey",
+      "interface": "SankeyDiagramConfig",
+      "path": "sankey.nodeColors",
+      "field": "nodeColors",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ]
+    },
+    {
       "family": "gantt",
       "interface": "GanttDiagramConfig",
       "path": "gantt.useWidth",
@@ -6024,5 +6313,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "e686cdc3d6bc8118032e3cd6e14e229cc6c6ed0c004a78ad761605347146883f"
+  "fixtureSha256": "919930dd8f66830453d5095728181657612ff9cd79a4afba4224d9930d5e609d"
 }

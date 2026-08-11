@@ -12,6 +12,7 @@
 #include "mermaid/packet/PacketScene.h"
 #include "mermaid/treeview/TreeViewScene.h"
 #include "mermaid/venn/VennScene.h"
+#include "mermaid/sankey/SankeyScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 
 #include <QByteArray>
@@ -157,8 +158,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 285,
-          QStringLiteral("Expected 285 classified config rows, found %1")
+  require(entries.size() == 298,
+          QStringLiteral("Expected 298 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -229,6 +230,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("timeline"), 24},
                                              {QStringLiteral("treeView"), 10},
                                              {QStringLiteral("venn"), 6},
+                                             {QStringLiteral("sankey"), 13},
                                              {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
@@ -310,6 +312,29 @@ int main(int argc, char** argv) {
                           [](const auto& area) { return area.rough; }) &&
               pngImage(vennSource).size() == vennEntry.naturalSize,
           QStringLiteral("Venn live config did not reach scene/PNG export"));
+  const QString sankeySource = QStringLiteral(
+      "%%{init: {\"fontFamily\":\"Noto Sans\",\"sankey\": {"
+      "\"width\": 420, \"height\": 260, \"nodeWidth\": 24, "
+      "\"nodePadding\": 4, \"nodeAlignment\": \"right\", "
+      "\"showValues\": false, \"linkColor\": \"source\", "
+      "\"labelStyle\": \"outlined\", \"useMaxWidth\": false, "
+      "\"nodeColors\": {\"A\": \"#ff0000\"}}}}%%\n"
+      "sankey-beta\nA,B,8\nB,C,5\nB,D,3");
+  const MermaidRenderEntry sankeyEntry = render(sankeySource);
+  const auto* sankeyScene =
+      dynamic_cast<const muffin::mermaid::sankey::SankeyScene*>(
+          sankeyEntry.scene.get());
+  require(sankeyEntry.status == MermaidRenderStatus::Ready && sankeyScene &&
+              sankeyScene->configuredWidth == 420.0 &&
+              sankeyScene->configuredHeight == 260.0 &&
+              !sankeyScene->useMaxWidth &&
+              !sankeyEntry.metadata.svgUseMaxWidth &&
+              sankeyScene->outlinedLabels &&
+              sankeyScene->nodes.first().color == QLatin1String("#ff0000") &&
+              sankeyScene->nodes.first().x1 - sankeyScene->nodes.first().x0 == 24.0 &&
+              sankeyScene->links.first().stroke == QLatin1String("#ff0000") &&
+              pngImage(sankeySource).size() == sankeyEntry.naturalSize,
+          QStringLiteral("Sankey live config did not reach scene/PNG export"));
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -428,6 +453,15 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("venn.useDebugLayout"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity") &&
+              byPath.value(QStringLiteral("sankey.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("sankey.nodeAlignment"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("sankey.nodeColors"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -456,7 +490,8 @@ int main(int argc, char** argv) {
            QStringLiteral("treeView.useMaxWidth"),
            QStringLiteral("eventmodeling.useMaxWidth"),
            QStringLiteral("ishikawa.useMaxWidth"),
-           QStringLiteral("venn.useMaxWidth")}) {
+           QStringLiteral("venn.useMaxWidth"),
+           QStringLiteral("sankey.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())

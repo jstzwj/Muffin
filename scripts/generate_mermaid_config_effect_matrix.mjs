@@ -528,6 +528,21 @@ const familyPolicies = {
     padding: parity("layout", "paint", "export"),
     useDebugLayout: parity("paint", "export"),
   },
+  sankey: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    width: parity("layout", "paint", "viewport", "export"),
+    height: parity("layout", "paint", "viewport", "export"),
+    linkColor: parity("paint", "export"),
+    nodeAlignment: parity("layout", "paint", "viewport", "export"),
+    showValues: parity("text", "layout", "paint", "viewport", "export"),
+    prefix: parity("text", "paint", "viewport", "export"),
+    suffix: parity("text", "paint", "viewport", "export"),
+    nodeWidth: parity("layout", "paint", "viewport", "export"),
+    nodePadding: parity("layout", "paint", "viewport", "export"),
+    labelStyle: parity("text", "paint", "viewport", "export"),
+    nodeColors: parity("paint", "export"),
+  },
   gantt: {
     useWidth: parity("layout", "paint", "viewport", "export"),
     useMaxWidth: parity("viewport", "export"),
@@ -618,6 +633,7 @@ const shared = [
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -645,6 +661,7 @@ const shared = [
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
     ],
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
@@ -676,6 +693,7 @@ const shared = [
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -745,6 +763,7 @@ const shared = [
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
     ],
     ...unsupported(
       ["parsed"],
@@ -775,6 +794,7 @@ const shared = [
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
     ],
     ...policy(
       "security-fixed",
@@ -812,6 +832,7 @@ const shared = [
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
     ],
     ...parity("export"),
   },
@@ -839,6 +860,7 @@ const shared = [
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
     ],
     ...parity("export"),
   },
@@ -866,6 +888,7 @@ const shared = [
       "eventmodeling",
       "ishikawa",
       "venn",
+      "sankey",
     ],
     ...unsupported(
       ["paint", "export"],
@@ -924,6 +947,7 @@ const interfaces = {
   eventmodeling: "EventModelingDiagramConfig",
   ishikawa: "IshikawaDiagramConfig",
   venn: "VennDiagramConfig",
+  sankey: "SankeyDiagramConfig",
   gantt: "GanttDiagramConfig",
 };
 

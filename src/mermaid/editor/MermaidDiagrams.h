@@ -32,6 +32,7 @@ const Diagram& treeViewDiagramAdapter();
 const Diagram& eventModelingDiagramAdapter();
 const Diagram& ishikawaDiagramAdapter();
 const Diagram& vennDiagramAdapter();
+const Diagram& sankeyDiagramAdapter();
 
 // Returns the Diagram that handles the detected type id, or nullptr if the
 // type is not natively rendered. The registry is the single source of truth

@@ -1040,6 +1040,8 @@ int main(int argc, char** argv) {
                     QStringLiteral("ishikawa-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("venn-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("sankey-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1653,6 +1655,8 @@ int main(int argc, char** argv) {
         {QStringLiteral("venn"),
          QStringLiteral("venn-beta\nset A: 10\nset B: 8\n"
                         "union A,B: 3")},
+        {QStringLiteral("sankey"),
+         QStringLiteral("sankey-beta\nA,B,8\nB,C,5\nB,D,3")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

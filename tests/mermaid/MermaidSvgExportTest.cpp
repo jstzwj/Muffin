@@ -142,6 +142,8 @@ int main(int argc, char** argv) {
       {QStringLiteral("venn"), QStringLiteral("venn"),
        QStringLiteral("venn-beta\ntitle Sets\nset A: 10\nset B: 8\n"
                       "union A,B: 3")},
+      {QStringLiteral("sankey"), QStringLiteral("sankey"),
+       QStringLiteral("sankey-beta\nA,B,8\nB,C,5\nB,D,3")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -255,6 +257,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"venn\": {\"useMaxWidth\": false}}}%%\n"
           "venn-beta\nset A: 10\nset B: 8\nunion A,B: 3"),
+      QStringLiteral(
+          "%%{init: {\"sankey\": {\"useMaxWidth\": false}}}%%\n"
+          "sankey-beta\nA,B,8\nB,C,5\nB,D,3"),
       QStringLiteral(
           "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
           "\"useWidth\": 640}}}%%\n"

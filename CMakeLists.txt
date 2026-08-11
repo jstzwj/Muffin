@@ -506,6 +506,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/EventModelingDiagramAdapter.cpp
   src/mermaid/editor/IshikawaDiagramAdapter.cpp
   src/mermaid/editor/VennDiagramAdapter.cpp
+  src/mermaid/editor/SankeyDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -550,6 +551,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/theme/FlowStyleResolve.h
   src/mermaid/theme/MermaidStyleResolve.cpp
   src/mermaid/theme/MermaidStyleResolve.h
+  src/mermaid/text/ChromiumTextMetrics.cpp
+  src/mermaid/text/ChromiumTextMetrics.h
   src/theme/CssCalc.cpp
   src/theme/CssCalc.h
   src/mermaid/security/MermaidSecurityPolicy.h
@@ -681,6 +684,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/venn/VennScene.h
   src/mermaid/venn/VennScenePainter.cpp
   src/mermaid/venn/VennScenePainter.h
+  src/mermaid/sankey/SankeyDiagram.cpp
+  src/mermaid/sankey/SankeyDiagram.h
+  src/mermaid/sankey/SankeyScene.cpp
+  src/mermaid/sankey/SankeyScene.h
+  src/mermaid/sankey/SankeyScenePainter.cpp
+  src/mermaid/sankey/SankeyScenePainter.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp
