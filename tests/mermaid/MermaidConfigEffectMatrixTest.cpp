@@ -13,6 +13,7 @@
 #include "mermaid/info/InfoScene.h"
 #include "mermaid/ishikawa/IshikawaScene.h"
 #include "mermaid/radar/RadarScene.h"
+#include "mermaid/railroad/RailroadScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
 #include "mermaid/treeview/TreeViewScene.h"
@@ -165,8 +166,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 501,
-          QStringLiteral("Expected 501 classified config rows, found %1")
+  require(entries.size() == 527,
+          QStringLiteral("Expected 527 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -229,6 +230,7 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("journey"), 26},
                                              {QStringLiteral("kanban"), 5},
                                              {QStringLiteral("mindmap"), 5},
+                                             {QStringLiteral("railroad"), 26},
                                              {QStringLiteral("block"), 3},
                                               {QStringLiteral("gitGraph"), 12},
                                               {QStringLiteral("c4"), 142},
@@ -543,6 +545,26 @@ int main(int argc, char** argv) {
                   QLatin1String("#654321") &&
               pngImage(c4Source).size() == c4Entry.naturalSize,
           QStringLiteral("C4 config production projection drifted"));
+
+  const QString railroadSource = QStringLiteral(
+      "%%{init: {\"railroad\": {\"useMaxWidth\": false, "
+      "\"padding\": 24, \"fontSize\": 20, "
+      "\"terminalFill\": \"#123456\", "
+      "\"ruleNameColor\": \"#654321\"}}}%%\n"
+      "railroad-ebnf-beta\nA = 'a';");
+  const MermaidRenderEntry railroadEntry = render(railroadSource);
+  const auto* railroadScene =
+      dynamic_cast<const muffin::mermaid::railroad::RailroadScene*>(
+          railroadEntry.scene.get());
+  require(railroadEntry.status == MermaidRenderStatus::Ready &&
+              railroadScene && !railroadScene->config.useMaxWidth &&
+              !railroadEntry.metadata.svgUseMaxWidth &&
+              railroadScene->config.padding == 24.0 &&
+              railroadScene->config.fontSize == 20.0 &&
+              railroadScene->config.terminalFill == QLatin1String("#123456") &&
+              railroadScene->config.ruleNameColor == QLatin1String("#654321") &&
+              pngImage(railroadSource).size() == railroadEntry.naturalSize,
+          QStringLiteral("Railroad config production projection drifted"));
 
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();

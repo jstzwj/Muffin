@@ -80,6 +80,16 @@ const interactiveLayout = [
   "export",
 ];
 const textLayout = ["text", "layout", "paint", "viewport", "export"];
+const railroadFamilies = [
+  "railroad",
+  "railroadEbnf",
+  "railroadAbnf",
+  "railroadPeg",
+];
+const allRailroad = (classification) => ({
+  ...classification,
+  families: railroadFamilies,
+});
 
 const c4ShapeTypes = [
   "person", "external_person", "system", "external_system",
@@ -579,6 +589,34 @@ const familyPolicies = {
     layoutAlgorithm: inert(
       "Declared by MindmapDiagramConfig but never read; Mindmap selects the renderer from the top-level layout key.",
     ),
+  },
+  railroad: {
+    useWidth: allRailroad(inert("Only Gantt consumes BaseDiagramConfig.useWidth.")),
+    useMaxWidth: allRailroad(parity("viewport", "export")),
+    compactMode: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    padding: allRailroad(parity("layout", "paint", "viewport", "export")),
+    verticalSeparation: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    horizontalSeparation: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    arcRadius: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    fontSize: allRailroad(parity(...textLayout)),
+    fontFamily: allRailroad(parity(...textLayout)),
+    terminalFill: allRailroad(parity("paint", "export")),
+    terminalStroke: allRailroad(parity("paint", "export")),
+    terminalTextColor: allRailroad(parity("text", "paint", "export")),
+    nonTerminalFill: allRailroad(parity("paint", "export")),
+    nonTerminalStroke: allRailroad(parity("paint", "export")),
+    nonTerminalTextColor: allRailroad(parity("text", "paint", "export")),
+    lineColor: allRailroad(parity("paint", "export")),
+    strokeWidth: allRailroad(parity("paint", "export")),
+    markerFill: allRailroad(parity("paint", "export")),
+    commentFill: allRailroad(inert("Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.")),
+    commentStroke: allRailroad(inert("Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.")),
+    commentTextColor: allRailroad(inert("Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.")),
+    specialFill: allRailroad(parity("paint", "export")),
+    specialStroke: allRailroad(parity("paint", "export")),
+    ruleNameColor: allRailroad(parity("text", "paint", "export")),
+    showMarkers: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    markerRadius: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
   },
   block: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
@@ -1146,6 +1184,24 @@ const shared = [
   },
 ];
 
+// Railroad has four independent parser/detector frontends over one renderer
+// and one `railroad` config object. Shared top-level configuration therefore
+// reaches all four dialects, while the interface rows below remain unique.
+const railroadSharedPaths = new Set([
+  "theme",
+  "themeVariables.*",
+  "fontFamily",
+  "maxTextSize",
+  "securityLevel",
+  "deterministicIds",
+  "deterministicIDSeed",
+  "themeCSS",
+]);
+for (const entry of shared) {
+  if (railroadSharedPaths.has(entry.path))
+    entry.families.push(...railroadFamilies);
+}
+
 function interfaceProperties(name) {
   const marker = `export interface ${name}`;
   const start = configTypes.indexOf(marker);
@@ -1193,6 +1249,7 @@ const interfaces = {
   packet: "PacketDiagramConfig",
   kanban: "KanbanDiagramConfig",
   mindmap: "MindmapDiagramConfig",
+  railroad: "RailroadDiagramConfig",
   block: "BlockDiagramConfig",
   gitGraph: "GitGraphDiagramConfig",
   c4: "C4DiagramConfig",
@@ -1270,7 +1327,13 @@ const payload = {
   },
   dimensions,
   scope: {
-    families: [...Object.keys(interfaces), "info"],
+    families: [
+      ...Object.keys(interfaces),
+      "railroadEbnf",
+      "railroadAbnf",
+      "railroadPeg",
+      "info",
+    ],
     note: "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred.",
   },
   summary,

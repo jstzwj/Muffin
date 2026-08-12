@@ -29,21 +29,19 @@ registered Mermaid algorithm has not been ported.
 
 ## Registered diagram inventory
 
-Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 33 IDs as 30
-logical families:
+Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 37 IDs, including
+all four Railroad grammar frontends:
 
 `flowchart-v2`, `flowchart`, `sequence`, `classDiagram`, `class`,
 `stateDiagram`, `state`, `er`, `gantt`, `info`, `pie`, `requirement`,
 `timeline`, `journey`, `quadrantChart`, `radar`, `xychart`, `packet`, `kanban`,
 `mindmap`, `block`, `treeView`, `eventmodeling`, `ishikawa`, `venn`, `sankey`,
-`treemap`, `cynefin`, `wardley`, `architecture`, `git`, and `c4`.
+`treemap`, `cynefin`, `wardley`, `architecture`, `git`, `c4`, `railroad`,
+`railroad-ebnf`, `railroad-abnf`, and `railroad-peg`.
 
 `swimlane` is also native through the `swimlane-beta` source header.
 
-The 5 remaining IDs are:
-
-`flowchart-elk`, `railroad`, `railroad-ebnf`,
-`railroad-abnf`, and `railroad-peg`.
+The only remaining ID is `flowchart-elk`.
 
 ## Delivery order
 
@@ -75,7 +73,7 @@ semantics. Shared primitives may be reused only after their contracts match.
 
 ### Phase 4: railroad grammar family
 
-Implement the shared railroad scene/layout engine, then four independent
+Complete. The shared railroad scene/layout engine has four independent
 frontends: `railroad`, `railroad-ebnf`, `railroad-abnf`, and `railroad-peg`.
 Their grammars and diagnostics remain separate even when drawing primitives are
 shared.

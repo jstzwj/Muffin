@@ -167,6 +167,14 @@ int main(int argc, char** argv) {
        QStringLiteral("wardley-beta\ntitle Platform map\n"
                       "component User [0.9,0.1]\n"
                       "component Service [0.5,0.5]\nUser -> Service")},
+      {QStringLiteral("railroad"), QStringLiteral("railroad"),
+       QStringLiteral("railroad-beta\nA=terminal('a');")},
+      {QStringLiteral("railroad-ebnf"), QStringLiteral("railroad"),
+       QStringLiteral("railroad-ebnf-beta\nA='a' | B;")},
+      {QStringLiteral("railroad-abnf"), QStringLiteral("railroad"),
+       QStringLiteral("railroad-abnf-beta\nA=\"a\" / B;")},
+      {QStringLiteral("railroad-peg"), QStringLiteral("railroad"),
+       QStringLiteral("railroad-peg-beta\nA<-'a'/B;")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -306,6 +314,9 @@ int main(int argc, char** argv) {
           "\"useWidth\": 640}}}%%\n"
           "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
           "Task :task, 2024-01-01, 2d"),
+      QStringLiteral(
+          "%%{init: {\"railroad\": {\"useMaxWidth\": false}}}%%\n"
+          "railroad-ebnf-beta\nA='a' | B;"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);
@@ -426,6 +437,15 @@ int main(int argc, char** argv) {
               wardleyAria.contains("aria-labelledby=") &&
               wardleyAria.contains("aria-describedby="),
           QStringLiteral("Wardley title/accessibility metadata drifted"));
+
+  const QByteArray railroadAria = renderSvg(QStringLiteral(
+      "railroad-ebnf-beta\naccTitle: Railroad accessible\n"
+      "accDescr: Railroad description\nA='a' | B;")).svg;
+  require(railroadAria.contains("Railroad accessible</title>") &&
+              railroadAria.contains("Railroad description</desc>") &&
+              railroadAria.contains("aria-labelledby=") &&
+              railroadAria.contains("aria-describedby="),
+          QStringLiteral("Railroad SVG accessibility metadata drifted"));
 
   const QByteArray packetAria = renderSvg(QStringLiteral(
       "packet-beta\naccTitle: Packet accessible\n"

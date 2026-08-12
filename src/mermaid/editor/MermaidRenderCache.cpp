@@ -49,6 +49,7 @@
 #include "mermaid/architecture/ArchitectureDiagram.h"
 #include "mermaid/block/BlockDiagram.h"
 #include "mermaid/c4/C4Diagram.h"
+#include "mermaid/railroad/RailroadDiagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -580,6 +581,10 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("C4Deployment"));
     diagnostic.expected.append(QStringLiteral("block-beta"));
     diagnostic.expected.append(QStringLiteral("swimlane-beta"));
+    diagnostic.expected.append(QStringLiteral("railroad-beta"));
+    diagnostic.expected.append(QStringLiteral("railroad-ebnf-beta"));
+    diagnostic.expected.append(QStringLiteral("railroad-abnf-beta"));
+    diagnostic.expected.append(QStringLiteral("railroad-peg-beta"));
     diagnostic.span = mappedSourceSpan(
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
@@ -825,6 +830,29 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     return errorEntry(parserDiagnostic(
         source, pre, type, QStringLiteral("parse"), std::move(code),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), error.token, {}));
+  } catch (const railroad::RailroadParseError& error) {
+    QString suffix;
+    switch (error.kind) {
+      case railroad::RailroadErrorKind::Lexer:
+        suffix = QStringLiteral("lexer-error");
+        break;
+      case railroad::RailroadErrorKind::Parser:
+        suffix = QStringLiteral("parse-error");
+        break;
+      case railroad::RailroadErrorKind::Runtime:
+        suffix = QStringLiteral("runtime-error");
+        break;
+    }
+    const qsizetype offset = error.line > 0 && error.column > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       error.column)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"),
+        QStringLiteral("railroad-") + suffix,
+        QString::fromUtf8(error.what()), offset,
+        offset >= 0 ? qMax<qsizetype>(1, error.token.size()) : 0,
         error.line, error.column, QString(), error.token, {}));
   } catch (const gitgraph::GitGraphParseError& error) {
     QString code;

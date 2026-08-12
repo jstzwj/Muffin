@@ -69,7 +69,11 @@ void applyDark(FlowThemeVariables& t) {
   t.secondaryColor = lighten(t.primaryColor, 16);
   t.tertiaryColor = adjust(t.primaryColor, {.h = -160.0});
   t.primaryBorderColor = invert(t.background);
+  t.secondaryBorderColor = mkBorder(t.secondaryColor, false);
+  t.tertiaryBorderColor = mkBorder(t.tertiaryColor, false);
   t.primaryTextColor = invert(t.primaryColor);
+  t.secondaryTextColor = invert(t.secondaryColor);
+  t.tertiaryTextColor = invert(t.tertiaryColor);
   t.mainBkg = QStringLiteral("#1f2020");
   t.secondBkg = QStringLiteral("calculated");
   t.mainContrastColor = QStringLiteral("lightgrey");
@@ -104,7 +108,11 @@ void applyDefault(FlowThemeVariables& t) {
   t.secondaryColor = QStringLiteral("#ffffde");  // constructor overrides the adjust above
   t.tertiaryColor = adjust(t.primaryColor, {.h = -160.0});
   t.primaryBorderColor = mkBorder(t.primaryColor, false);
+  t.secondaryBorderColor = mkBorder(t.secondaryColor, false);
+  t.tertiaryBorderColor = mkBorder(t.tertiaryColor, false);
   t.primaryTextColor = invert(t.primaryColor);
+  t.secondaryTextColor = invert(t.secondaryColor);
+  t.tertiaryTextColor = invert(t.tertiaryColor);
   t.lineColor = invert(t.background);
   t.textColor = invert(t.background);
   t.background = QStringLiteral("white");
@@ -150,7 +158,13 @@ void applyForest(FlowThemeVariables& t) {
   t.fontWeight = QStringLiteral("normal");
   t.tertiaryColor = lighten(QStringLiteral("#cde498"), 10);
   t.primaryBorderColor = mkBorder(t.primaryColor, false);
+  t.secondaryBorderColor = mkBorder(t.secondaryColor, false);
+  t.tertiaryBorderColor = mkBorder(t.tertiaryColor, false);
   t.primaryTextColor = invert(t.primaryColor);
+  t.secondaryTextColor = invert(t.secondaryColor);
+  // Forest 11.16.0 intentionally derives tertiary text from primaryColor,
+  // unlike the other built-in constructors.
+  t.tertiaryTextColor = invert(t.primaryColor);
   t.lineColor = invert(t.background);
   t.textColor = invert(t.background);
   t.themeColorLimit = 12;
@@ -173,7 +187,11 @@ void applyNeutral(FlowThemeVariables& t) {
   t.background = QStringLiteral("#ffffff");
   t.tertiaryColor = adjust(t.primaryColor, {.h = -160.0});
   t.primaryBorderColor = mkBorder(t.primaryColor, false);
+  t.secondaryBorderColor = mkBorder(t.secondaryColor, false);
+  t.tertiaryBorderColor = mkBorder(t.tertiaryColor, false);
   t.primaryTextColor = invert(t.primaryColor);
+  t.secondaryTextColor = invert(t.secondaryColor);
+  t.tertiaryTextColor = invert(t.tertiaryColor);
   t.lineColor = invert(t.background);
   t.textColor = invert(t.background);
   t.mainBkg = QStringLiteral("#eee");
@@ -501,7 +519,10 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   assignIfEmpty(t.tertiaryColor, adjust(t.primaryColor, {.h = 180.0, .l = 5.0}));
   const QString tertiaryBorderColor = mkBorder(t.tertiaryColor, false);
   assignIfEmpty(t.primaryBorderColor, mkBorder(t.primaryColor, false));
-  const QString tertiaryTextColor = invert(t.tertiaryColor);
+  assignIfEmpty(t.secondaryBorderColor, mkBorder(t.secondaryColor, false));
+  assignIfEmpty(t.tertiaryBorderColor, tertiaryBorderColor);
+  assignIfEmpty(t.secondaryTextColor, invert(t.secondaryColor));
+  assignIfEmpty(t.tertiaryTextColor, invert(t.tertiaryColor));
   assignIfEmpty(t.lineColor, invert(t.background));
   assignIfEmpty(t.arrowheadColor, invert(t.background));
   assignIfEmpty(t.textColor, t.primaryTextColor);
@@ -515,7 +536,7 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   assignIfEmpty(t.clusterBkg, t.tertiaryColor);
   assignIfEmpty(t.clusterBorder, tertiaryBorderColor);
   assignIfEmpty(t.defaultLinkColor, t.lineColor);
-  assignIfEmpty(t.titleColor, tertiaryTextColor);
+  assignIfEmpty(t.titleColor, t.tertiaryTextColor);
   assignIfEmpty(t.edgeLabelBackground, t.secondaryColor);  // darkMode false
   assignIfEmpty(t.nodeTextColor, t.primaryTextColor);
   // The light non-base themes (neo/redux/redux-color) bind a LOCAL primaryColor
@@ -1403,6 +1424,10 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("clusterBorder")) return clusterBorder;
   if (key == QStringLiteral("primaryBorderColor")) return primaryBorderColor;
   if (key == QStringLiteral("primaryTextColor")) return primaryTextColor;
+  if (key == QStringLiteral("secondaryBorderColor")) return secondaryBorderColor;
+  if (key == QStringLiteral("secondaryTextColor")) return secondaryTextColor;
+  if (key == QStringLiteral("tertiaryBorderColor")) return tertiaryBorderColor;
+  if (key == QStringLiteral("tertiaryTextColor")) return tertiaryTextColor;
   if (key == QStringLiteral("nodeTextColor")) return nodeTextColor;
   if (key == QStringLiteral("nodeBkg")) return nodeBkg;
   if (key == QStringLiteral("nodeBorder")) return nodeBorder;
@@ -1605,6 +1630,10 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("clusterBorder")) clusterBorder = value;
   else if (key == QStringLiteral("primaryBorderColor")) primaryBorderColor = value;
   else if (key == QStringLiteral("primaryTextColor")) primaryTextColor = value;
+  else if (key == QStringLiteral("secondaryBorderColor")) secondaryBorderColor = value;
+  else if (key == QStringLiteral("secondaryTextColor")) secondaryTextColor = value;
+  else if (key == QStringLiteral("tertiaryBorderColor")) tertiaryBorderColor = value;
+  else if (key == QStringLiteral("tertiaryTextColor")) tertiaryTextColor = value;
   else if (key == QStringLiteral("nodeTextColor")) nodeTextColor = value;
   else if (key == QStringLiteral("nodeBkg")) nodeBkg = value;
   else if (key == QStringLiteral("nodeBorder")) nodeBorder = value;

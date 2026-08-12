@@ -1,0 +1,58 @@
+{
+  "provenance": {
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "chrome": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "fontSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "dialectModules": {
+      "railroad": {
+        "name": "railroadDiagram-RFXS5EU6.mjs",
+        "sha256": "070c34a3c52bcf70f45f37d1ea3a8f9c8881a565ecac10d9c777133a7c93bda6"
+      },
+      "railroadEbnf": {
+        "name": "ebnfDiagram-CCIWWBDH.mjs",
+        "sha256": "76620e31e376bdb16c9e7e2cbf5009ef9aa7bb620eff92d8764f40d3ca868d8c"
+      },
+      "railroadAbnf": {
+        "name": "abnfDiagram-VRR7QNED.mjs",
+        "sha256": "7104d15f869ae8944eef735784b7b677aecb35edded748476e47ad69e03d5641"
+      },
+      "railroadPeg": {
+        "name": "pegDiagram-2B236MQR.mjs",
+        "sha256": "46306a1b083db2c918f32e9b13009075f53d02acfba41c44a6e6c098646284ba"
+      }
+    },
+    "sharedModule": {
+      "name": "chunk-MOJQB5TN.mjs",
+      "sha256": "3c6b785a3e3755b7ea2e22a1b84e03d5af6b3d121a4d015295161762afac9165"
+    }
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"14px\"},\"railroad\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":14}}}%%\nrailroad-ebnf-beta\nroot = \"if\", condition, [\"else\"], (\"yes\" | \"no\"), { ? token ? }, item+;\nexcept ::= letter - \"x\";",
+      "file": "default.png",
+      "width": 652.515625,
+      "height": 201.484375,
+      "sha256": "f71e2cbdfd392000d30cd102238edccb384d3ba4091d041df3f8c7a247b5458f"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"14px\"},\"railroad\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":14}}}%%\nrailroad-ebnf-beta\nroot = \"if\", condition, [\"else\"], (\"yes\" | \"no\"), { ? token ? }, item+;\nexcept ::= letter - \"x\";",
+      "file": "dark.png",
+      "width": 652.515625,
+      "height": 201.484375,
+      "sha256": "6b66d2b1f0ef5969a00a2a0af06f755d90d587b783d1365a160823a754ea6e45"
+    },
+    {
+      "id": "forest",
+      "source": "%%{init: {\"theme\":\"forest\",\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"14px\"},\"railroad\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":14}}}%%\nrailroad-peg-beta\nroot <- \"if\" condition \"else\"? (\"yes\" / \"no\") item* .+;\nlook <- &\"a\" !forbidden value;",
+      "file": "forest.png",
+      "width": 618.71875,
+      "height": 201.484375,
+      "sha256": "991e4e0c0c22078ef68567ca30f82b0b933aff713c526d24aa56feec7a74a2c4"
+    }
+  ],
+  "fixtureSha256": "4f3e334582b5779b3d42200840a7338f98ade441c7bf02f4833899135ea884ad"
+}

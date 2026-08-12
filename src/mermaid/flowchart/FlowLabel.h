@@ -241,7 +241,8 @@ qreal measureChromiumInlineLayoutWidth(
 QRectF measureChromiumSvgTextBounds(
     const FlowLabelDocument& label, const QString& fontFamily,
     qreal fontPixelSize, QFont::Weight weight = QFont::Normal,
-    qreal deviceScale = 1.0, bool applyTerminalPhaseCorrection = false);
+    qreal deviceScale = 1.0, bool applyTerminalPhaseCorrection = false,
+    bool exactMeasurementNode = false);
 QRectF measureChromiumSvgTextLayoutBounds(
     const FlowLabelDocument& label, const QString& fontFamily,
     qreal fontPixelSize, qreal deviceScale = 1.0);

@@ -54,6 +54,8 @@ const QStringList criticalFields() {
       QStringLiteral("titleColor"),   QStringLiteral("edgeLabelBackground"),
       QStringLiteral("clusterBkg"),   QStringLiteral("clusterBorder"),
       QStringLiteral("primaryBorderColor"), QStringLiteral("primaryTextColor"),
+      QStringLiteral("secondaryBorderColor"), QStringLiteral("secondaryTextColor"),
+      QStringLiteral("tertiaryBorderColor"), QStringLiteral("tertiaryTextColor"),
       QStringLiteral("nodeTextColor"), QStringLiteral("nodeBkg"),
       QStringLiteral("nodeBorder"),   QStringLiteral("defaultLinkColor"),
       QStringLiteral("git0"),         QStringLiteral("gitBranchLabel0"),

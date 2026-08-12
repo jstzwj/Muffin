@@ -111,6 +111,11 @@ muffin_add_test(NAME MuffinMermaidC4ParserTest SOURCE tests/mermaid/MermaidC4Par
 muffin_add_test(NAME MuffinMermaidC4GeometryOracleTest SOURCE tests/mermaid/MermaidC4GeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/c4-geometry.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidC4EdgeParityTest SOURCE tests/mermaid/MermaidC4GeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/c4-config.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidC4PixelTest SOURCE tests/mermaid/MermaidC4PixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/c4-pixel/manifest.json RESOURCE_LOCK)
+
+muffin_add_test(NAME MuffinMermaidRailroadParserTest SOURCE tests/mermaid/MermaidRailroadParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/railroad-grammar.json)
+muffin_add_test(NAME MuffinMermaidRailroadGeometryOracleTest SOURCE tests/mermaid/MermaidRailroadGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/railroad-geometry.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidRailroadEdgeParityTest SOURCE tests/mermaid/MermaidRailroadGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/railroad-config.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidRailroadPixelTest SOURCE tests/mermaid/MermaidRailroadPixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/railroad-pixel/manifest.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidGanttParserTest SOURCE tests/mermaid/MermaidGanttParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/gantt-grammar.json)
 muffin_add_test(NAME MuffinMermaidGanttGeometryOracleTest SOURCE tests/mermaid/MermaidGanttGeometryOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/gantt-geometry.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidGanttPixelTest SOURCE tests/mermaid/MermaidGanttPixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/gantt-pixel/manifest.json RESOURCE_LOCK)

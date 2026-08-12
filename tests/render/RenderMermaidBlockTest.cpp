@@ -697,11 +697,11 @@ int main(int argc, char** argv) {
             QStringLiteral("native GitGraph fence must render without a diagnostic"));
   }
 
-  // --- unsupported Mermaid families keep source and explain why ---
+  // --- detected but not-yet-native Mermaid families keep source and explain why ---
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\nrailroad-beta\nA ::= 'a'\n```\n"),
+        "```mermaid\nflowchart-elk LR\nA --> B\n```\n"),
         false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;

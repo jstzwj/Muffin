@@ -137,6 +137,10 @@ struct FlowThemeVariables {
   QString clusterBorder;
   QString primaryBorderColor;
   QString primaryTextColor;
+  QString secondaryBorderColor;
+  QString secondaryTextColor;
+  QString tertiaryBorderColor;
+  QString tertiaryTextColor;
   QString nodeTextColor;
   QString nodeBkg;
   QString nodeBorder;

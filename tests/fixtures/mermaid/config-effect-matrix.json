@@ -31,6 +31,7 @@
       "packet",
       "kanban",
       "mindmap",
+      "railroad",
       "block",
       "gitGraph",
       "c4",
@@ -44,17 +45,20 @@
       "architecture",
       "wardley-beta",
       "gantt",
+      "railroadEbnf",
+      "railroadAbnf",
+      "railroadPeg",
       "info"
     ],
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 331,
+    "parity": 347,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 105,
+    "upstream-inert": 115,
     "api-only": 25,
     "legacy-only": 19
   },
@@ -91,7 +95,11 @@
         "treemap",
         "cynefin",
         "wardley-beta",
-        "architecture"
+        "architecture",
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
       ],
       "status": "parity",
       "upstream": [
@@ -143,7 +151,11 @@
         "treemap",
         "cynefin",
         "wardley-beta",
-        "architecture"
+        "architecture",
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
       ],
       "status": "partial",
       "upstream": [
@@ -195,7 +207,11 @@
         "sankey",
         "treemap",
         "cynefin",
-        "architecture"
+        "architecture",
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
       ],
       "status": "parity",
       "upstream": [
@@ -429,7 +445,11 @@
         "treemap",
         "cynefin",
         "wardley-beta",
-        "architecture"
+        "architecture",
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
       ],
       "status": "unsupported",
       "upstream": [
@@ -472,7 +492,11 @@
         "treemap",
         "cynefin",
         "wardley-beta",
-        "architecture"
+        "architecture",
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
       ],
       "status": "security-fixed",
       "upstream": [
@@ -537,7 +561,11 @@
         "treemap",
         "cynefin",
         "wardley-beta",
-        "architecture"
+        "architecture",
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
       ],
       "status": "parity",
       "upstream": [
@@ -581,7 +609,11 @@
         "treemap",
         "cynefin",
         "wardley-beta",
-        "architecture"
+        "architecture",
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
       ],
       "status": "parity",
       "upstream": [
@@ -625,7 +657,11 @@
         "treemap",
         "cynefin",
         "wardley-beta",
-        "architecture"
+        "architecture",
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
       ],
       "status": "unsupported",
       "upstream": [
@@ -5413,6 +5449,622 @@
       ],
       "note": "Declared by MindmapDiagramConfig but never read; Mindmap selects the renderer from the top-level layout key.",
       "default": "cose-bilkent"
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.useWidth",
+      "field": "useWidth",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": false,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.compactMode",
+      "field": "compactMode",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the Mermaid 11.16.0 source-entry config sanitizer.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.padding",
+      "field": "padding",
+      "hasDefault": false,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.verticalSeparation",
+      "field": "verticalSeparation",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the Mermaid 11.16.0 source-entry config sanitizer.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.horizontalSeparation",
+      "field": "horizontalSeparation",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the Mermaid 11.16.0 source-entry config sanitizer.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.arcRadius",
+      "field": "arcRadius",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the Mermaid 11.16.0 source-entry config sanitizer.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.fontSize",
+      "field": "fontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.fontFamily",
+      "field": "fontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.terminalFill",
+      "field": "terminalFill",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.terminalStroke",
+      "field": "terminalStroke",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.terminalTextColor",
+      "field": "terminalTextColor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.nonTerminalFill",
+      "field": "nonTerminalFill",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.nonTerminalStroke",
+      "field": "nonTerminalStroke",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.nonTerminalTextColor",
+      "field": "nonTerminalTextColor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.lineColor",
+      "field": "lineColor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.strokeWidth",
+      "field": "strokeWidth",
+      "hasDefault": false,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.markerFill",
+      "field": "markerFill",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.commentFill",
+      "field": "commentFill",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.commentStroke",
+      "field": "commentStroke",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.commentTextColor",
+      "field": "commentTextColor",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.specialFill",
+      "field": "specialFill",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.specialStroke",
+      "field": "specialStroke",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.ruleNameColor",
+      "field": "ruleNameColor",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "paint",
+        "export"
+      ],
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.showMarkers",
+      "field": "showMarkers",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the Mermaid 11.16.0 source-entry config sanitizer.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
+    },
+    {
+      "family": "railroad",
+      "interface": "RailroadDiagramConfig",
+      "path": "railroad.markerRadius",
+      "field": "markerRadius",
+      "hasDefault": false,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Removed by the Mermaid 11.16.0 source-entry config sanitizer.",
+      "families": [
+        "railroad",
+        "railroadEbnf",
+        "railroadAbnf",
+        "railroadPeg"
+      ]
     },
     {
       "family": "block",
@@ -10770,5 +11422,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "ddcee5be29637b439b765db16ead2100af9c6fc969d3a4794a11b258c22819ab"
+  "fixtureSha256": "ccbc77cb61a8112d2be0dfe9ec45c4eb4bbe49c5384d65ed0198134cfe02e7b2"
 }

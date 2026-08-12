@@ -41,6 +41,10 @@ const Diagram& cynefinDiagramAdapter();
 const Diagram& wardleyDiagramAdapter();
 const Diagram& architectureDiagramAdapter();
 const Diagram& blockDiagramAdapter();
+const Diagram& railroadDiagramAdapter();
+const Diagram& railroadEbnfDiagramAdapter();
+const Diagram& railroadAbnfDiagramAdapter();
+const Diagram& railroadPegDiagramAdapter();
 
 // Returns the Diagram that handles the detected type id, or nullptr if the
 // type is not natively rendered. The registry is the single source of truth

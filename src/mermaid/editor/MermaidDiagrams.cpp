@@ -27,7 +27,9 @@ const Diagram* findMermaidDiagram(const QString& type) {
       &vennDiagramAdapter(),       &sankeyDiagramAdapter(),
       &treemapDiagramAdapter(),     &cynefinDiagramAdapter(),
       &wardleyDiagramAdapter(),    &architectureDiagramAdapter(),
-      &blockDiagramAdapter()};
+      &blockDiagramAdapter(),
+      &railroadDiagramAdapter(),   &railroadEbnfDiagramAdapter(),
+      &railroadAbnfDiagramAdapter(), &railroadPegDiagramAdapter()};
   static const QHash<QString, const Diagram*> kByType = [] {
     QHash<QString, const Diagram*> registry;
     for (const Diagram* diagram : kAll)

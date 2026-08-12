@@ -1216,7 +1216,8 @@ QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
                                     qreal fontPixelSize,
                                     QFont::Weight weight,
                                     qreal deviceScale,
-                                    bool applyTerminalPhaseCorrection) {
+                                    bool applyTerminalPhaseCorrection,
+                                    bool exactMeasurementNode) {
   if (label.text.isEmpty() || !(fontPixelSize > 0.0)) return {};
   QRectF result = measureFlowSvgTextBounds(label, fontFamily, fontPixelSize);
   const QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
@@ -1237,7 +1238,8 @@ QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
   const qreal measuredAdvance =
       measureOpenTypeDesignAdvanceImpl(label, 0, label.text.size(), fontFamily,
                                        fontPixelSize, false, &terminalGlyph,
-                                       &terminalOrigin, deviceScale)
+                                       &terminalOrigin,
+                                       exactMeasurementNode ? 0.0 : deviceScale)
           .value_or(strikeAdvance);
   const qreal designAdvance =
       std::ceil(measuredAdvance * deviceScale * 64.0 - 1e-9) /
