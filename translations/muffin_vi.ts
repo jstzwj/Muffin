@@ -993,14 +993,23 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
         <translation type="vanished">Trình soạn thảo Markdown gốc nhanh được xây dựng bằng C++ và Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="93"/>
+        <location filename="../src/main.cpp" line="94"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Một trình chỉnh sửa Markdown gốc, nhanh và nhẹ được xây dựng bằng C++ và Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="100"/>
+        <location filename="../src/main.cpp" line="104"/>
+        <source>Open &lt;folder&gt; in the sidebar file browser.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="108"/>
+        <source>Markdown or text file (or folder) to open.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Markdown or text file to open.</source>
-        <translation>Tệp Markdown hoặc văn bản cần mở.</translation>
+        <translation type="vanished">Tệp Markdown hoặc văn bản cần mở.</translation>
     </message>
 </context>
 <context>
@@ -1349,7 +1358,7 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="149"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="266"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="267"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="354"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1326"/>
         <source>Properties</source>
@@ -1489,7 +1498,7 @@ Một trình soạn thảo Markdown gốc nhanh, nhẹ được xây dựng bằ
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="431"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="265"/>
         <source>Delete</source>
         <translation>Xóa</translation>
     </message>
@@ -2804,7 +2813,7 @@ Thời gian phân tích: %6 ms</translation>
         <translation>Không có gì để xuất</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="223"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="224"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="780"/>
         <source>Export As</source>
         <translation>Xuất thành</translation>
@@ -2825,13 +2834,13 @@ Thời gian phân tích: %6 ms</translation>
         <translation>Pandoc thất bại:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="232"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="233"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="844"/>
         <source>Export Failed</source>
         <translation>Xuất thất bại</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="236"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="237"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="848"/>
         <source>Exported to %1</source>
         <translation>Đã xuất ra %1</translation>
@@ -3121,51 +3130,51 @@ Bạn có muốn mở trang tải xuống không?</translation>
         <translation>Sao chép dạng</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="256"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
         <source>Open</source>
         <translation type="unfinished">Mở</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="272"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="258"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="273"/>
         <source>Open in New Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="259"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="274"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1114"/>
         <source>New File</source>
         <translation type="unfinished">Tệp mới</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="261"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="276"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1127"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1133"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="262"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1249"/>
         <source>Duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="268"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="277"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="270"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="279"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1342"/>
         <source>Reveal in File Manager</source>
         <translation type="unfinished"></translation>
@@ -3578,112 +3587,132 @@ Bạn có muốn mở trang tải xuống không?</translation>
 <context>
     <name>muffin::PrefsFilesPage</name>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="187"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="225"/>
         <source>Startup</source>
         <translation>Khi khởi động</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="192"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="230"/>
         <source>Open new file</source>
         <translation>Mở tệp mới</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="231"/>
         <source>Reopen last file</source>
         <translation>Mở lại tệp gần nhất</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="199"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="237"/>
         <source>Outline</source>
         <translation>Dàn ý</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="200"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="238"/>
         <source>Allow collapsing and expanding the outline view in the sidebar</source>
         <translation>Cho phép thu gọn và mở rộng chế độ xem dàn ý trong thanh bên</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="240"/>
         <source>Default File Type / Extension</source>
         <translation>Loại tệp / phần mở rộng mặc định</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="209"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="247"/>
         <source>Plain Text (.txt)</source>
         <translation>Văn bản thuần (.txt)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="215"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="253"/>
         <source>Save &amp; Restore</source>
         <translation>Lưu &amp; Khôi phục</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="254"/>
         <source>Auto Save</source>
         <translation>Tự động lưu</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="255"/>
         <source>Auto-save changes to the previous file when switching files</source>
         <translation>Tự động lưu thay đổi của tệp trước khi chuyển sang tệp khác</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="256"/>
         <source>Restore Unsaved Drafts</source>
         <translation>Khôi phục bản nháp chưa lưu</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="258"/>
         <source>Recently Used Files</source>
         <translation>Tệp đã dùng gần đây</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="259"/>
         <source>Record history files and folders</source>
         <translation>Ghi lại lịch sử tệp và thư mục</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="222"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="260"/>
         <source>Clear History</source>
         <translation>Xóa lịch sử</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="224"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="262"/>
         <source>When dragging files/folders into the window</source>
         <translation>Khi kéo tệp/thư mục vào cửa sổ</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="225"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="263"/>
         <source>When dragging a folder</source>
         <translation>Khi kéo một thư mục</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="230"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="241"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="253"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="279"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="291"/>
         <source>Open in Muffin</source>
         <translation>Mở trong Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="231"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="269"/>
         <source>Open in File Manager</source>
         <translation>Mở trong trình quản lý tệp</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="236"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="274"/>
         <source>When dragging a Markdown file</source>
         <translation>Khi kéo một tệp Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="242"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="252"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="290"/>
         <source>Import File</source>
         <translation>Nhập tệp</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="247"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="285"/>
         <source>When dragging an importable file</source>
         <translation>Khi kéo một tệp có thể nhập</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="298"/>
+        <source>Windows Integration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="300"/>
+        <source>Add &quot;Open with Muffin&quot; to File Explorer context menu for files and folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="302"/>
+        <source>Register Muffin as an editor for Markdown files (.md, .markdown, .mdx, .mkd, .mdown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="303"/>
+        <source>Set Muffin as Default…</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -1,6 +1,7 @@
 #include "app/MainWindow.h"
 
 #include "app/LanguageManager.h"
+#include "app/WindowsIntegration.h"
 #include "theme/FontRendering.h"
 
 #include <QApplication>
@@ -95,21 +96,50 @@ int main(int argc, char *argv[]) {
       "A fast, lightweight, native Markdown editor built with C++ and Qt 6."));
   parser.addHelpOption();
   parser.addVersionOption();
+  // --folder <path> is the form used by the Explorer "Open with Muffin" verb
+  // for directories and folder backgrounds (it passes %1 / %V). A positional
+  // directory argument is treated the same way for ergonomic command-line use.
+  const QCommandLineOption folderOption(
+      QStringLiteral("folder"),
+      QCoreApplication::translate("main", "Open <folder> in the sidebar file browser."), QStringLiteral("folder"));
+  parser.addOption(folderOption);
   parser.addPositionalArgument(
       QStringLiteral("file"),
-      QCoreApplication::translate("main", "Markdown or text file to open."));
+      QCoreApplication::translate("main", "Markdown or text file (or folder) to open."));
   parser.process(app);
 
   muffin::MainWindow window;
   const QStringList positionalArguments = parser.positionalArguments();
-  if (!positionalArguments.isEmpty()) {
-    window.openFile(QFileInfo(positionalArguments.first()).absoluteFilePath());
-  } else if (!window.offerDraftRecovery()) {
+  const QString folderArg = parser.value(folderOption);
+  bool openedSomething = false;
+  if (!folderArg.isEmpty()) {
+    window.openFolderAtPath(QFileInfo(folderArg).absoluteFilePath());
+    openedSomething = true;
+  } else if (!positionalArguments.isEmpty()) {
+    const QFileInfo firstArg(positionalArguments.first());
+    if (firstArg.isDir()) {
+      window.openFolderAtPath(firstArg.absoluteFilePath());
+    } else {
+      window.openFile(firstArg.absoluteFilePath());
+    }
+    openedSomething = true;
+  }
+  if (!openedSomething && !window.offerDraftRecovery()) {
     // No draft was restored (none existed, all discarded, or deferred) — fall
     // back to the configured startup behavior.
     window.restoreStartupFile();
   }
   window.show();
+
+#ifdef Q_OS_WIN
+  // If the installer registered Muffin and the user opted into "set as
+  // default", redirect them once to the system Default Apps page (Windows 8+
+  // forbids a silent default change). Clear the flag so it never repeats.
+  if (muffin::WindowsIntegration::shouldPromptForDefault()) {
+    muffin::WindowsIntegration::clearPromptForDefault();
+    muffin::WindowsIntegration::openDefaultAppsSettings();
+  }
+#endif
 
   return QApplication::exec();
 }

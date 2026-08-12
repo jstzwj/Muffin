@@ -50,6 +50,11 @@ public:
   explicit MainWindow(QWidget* parent = nullptr);
 
   bool openFile(QString path);
+  // Open <path> as the sidebar folder root (switches to the Files panel).
+  // Shared body of the File → Open Folder command and the new-window path,
+  // and the entry point for the command-line --folder argument and the
+  // Explorer "Open with Muffin" directory verb.
+  void openFolderAtPath(QString path);
   // Honor the "files/startupBehavior" preference when the app is launched
   // without a file argument: reopen the most-recently-used file, or leave the
   // default empty document. Called from main() so a command-line file still wins.
@@ -263,9 +268,6 @@ private:
   void revealPathInManager(QString path);
   void openFileInNewWindow(QString path);
   void openFolderInNewWindow(QString path);
-  // Shared body of openFolder() and the new-window path: sets the sidebar root
-  // and switches to the Files panel.
-  void openFolderAtPath(QString path);
   void insertTableWithDialog();
   void insertImageWithDialog();
   void insertLocalImageWithDialog();

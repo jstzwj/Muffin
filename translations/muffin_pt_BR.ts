@@ -993,14 +993,23 @@ Um editor Markdown nativo, rápido e leve, construído com C++ e Qt 6 Widgets.</
         <translation type="vanished">Um editor Markdown nativo rápido, criado com C++ e Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="93"/>
+        <location filename="../src/main.cpp" line="94"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Um editor Markdown nativo, rápido e leve, criado com C++ e Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="100"/>
+        <location filename="../src/main.cpp" line="104"/>
+        <source>Open &lt;folder&gt; in the sidebar file browser.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="108"/>
+        <source>Markdown or text file (or folder) to open.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Markdown or text file to open.</source>
-        <translation>Arquivo Markdown ou de texto a abrir.</translation>
+        <translation type="vanished">Arquivo Markdown ou de texto a abrir.</translation>
     </message>
 </context>
 <context>
@@ -1349,7 +1358,7 @@ Um editor Markdown nativo, rápido e leve, construído com C++ e Qt 6 Widgets.</
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="149"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="266"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="267"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="354"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1326"/>
         <source>Properties</source>
@@ -1489,7 +1498,7 @@ Um editor Markdown nativo, rápido e leve, construído com C++ e Qt 6 Widgets.</
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="431"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="265"/>
         <source>Delete</source>
         <translation>Excluir</translation>
     </message>
@@ -2810,7 +2819,7 @@ Tempo de análise: %6 ms</translation>
         <translation>Nada para exportar</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="223"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="224"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="780"/>
         <source>Export As</source>
         <translation>Exportar como</translation>
@@ -2831,13 +2840,13 @@ Tempo de análise: %6 ms</translation>
         <translation>O Pandoc falhou:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="232"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="233"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="844"/>
         <source>Export Failed</source>
         <translation>Falha na exportação</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="236"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="237"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="848"/>
         <source>Exported to %1</source>
         <translation>Exportado para %1</translation>
@@ -3127,51 +3136,51 @@ Gostaria de abrir a página de download?</translation>
         <translation>Copiar como</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="256"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
         <source>Open</source>
         <translation type="unfinished">Abrir</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="272"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="258"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="273"/>
         <source>Open in New Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="259"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="274"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1114"/>
         <source>New File</source>
         <translation type="unfinished">Novo arquivo</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="261"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="276"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1127"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1133"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="262"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1249"/>
         <source>Duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="268"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="277"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="270"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="279"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1342"/>
         <source>Reveal in File Manager</source>
         <translation type="unfinished"></translation>
@@ -3584,112 +3593,132 @@ Gostaria de abrir a página de download?</translation>
 <context>
     <name>muffin::PrefsFilesPage</name>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="187"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="225"/>
         <source>Startup</source>
         <translation>Inicialização</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="192"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="230"/>
         <source>Open new file</source>
         <translation>Abrir novo arquivo</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="231"/>
         <source>Reopen last file</source>
         <translation>Reabrir último arquivo</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="199"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="237"/>
         <source>Outline</source>
         <translation>Estrutura de tópicos</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="200"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="238"/>
         <source>Allow collapsing and expanding the outline view in the sidebar</source>
         <translation>Permitir recolher e expandir a exibição da estrutura de tópicos na barra lateral</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="240"/>
         <source>Default File Type / Extension</source>
         <translation>Tipo de arquivo / extensão padrão</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="209"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="247"/>
         <source>Plain Text (.txt)</source>
         <translation>Texto sem formatação (.txt)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="215"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="253"/>
         <source>Save &amp; Restore</source>
         <translation>Salvar e restaurar</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="254"/>
         <source>Auto Save</source>
         <translation>Salvar automaticamente</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="255"/>
         <source>Auto-save changes to the previous file when switching files</source>
         <translation>Salvar automaticamente as alterações do arquivo anterior ao trocar de arquivo</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="256"/>
         <source>Restore Unsaved Drafts</source>
         <translation>Restaurar rascunhos não salvos</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="258"/>
         <source>Recently Used Files</source>
         <translation>Arquivos usados recentemente</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="259"/>
         <source>Record history files and folders</source>
         <translation>Registrar histórico de arquivos e pastas</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="222"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="260"/>
         <source>Clear History</source>
         <translation>Limpar histórico</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="224"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="262"/>
         <source>When dragging files/folders into the window</source>
         <translation>Ao arrastar arquivos/pastas para a janela</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="225"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="263"/>
         <source>When dragging a folder</source>
         <translation>Ao arrastar uma pasta</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="230"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="241"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="253"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="279"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="291"/>
         <source>Open in Muffin</source>
         <translation>Abrir no Muffin</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="231"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="269"/>
         <source>Open in File Manager</source>
         <translation>Abrir no Gerenciador de Arquivos</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="236"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="274"/>
         <source>When dragging a Markdown file</source>
         <translation>Ao arrastar um arquivo Markdown</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="242"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="252"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="290"/>
         <source>Import File</source>
         <translation>Importar arquivo</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="247"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="285"/>
         <source>When dragging an importable file</source>
         <translation>Ao arrastar um arquivo importável</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="298"/>
+        <source>Windows Integration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="300"/>
+        <source>Add &quot;Open with Muffin&quot; to File Explorer context menu for files and folders</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="302"/>
+        <source>Register Muffin as an editor for Markdown files (.md, .markdown, .mdx, .mkd, .mdown)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="303"/>
+        <source>Set Muffin as Default…</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

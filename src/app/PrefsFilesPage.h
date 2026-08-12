@@ -46,6 +46,10 @@ private:
   QComboBox* dropMdCombo_ = nullptr;
   QLabel* dropImportLabel_ = nullptr;
   QComboBox* dropImportCombo_ = nullptr;
+  QLabel* winIntegrationLabel_ = nullptr;
+  QCheckBox* winContextMenuCheck_ = nullptr;
+  QCheckBox* winAssociateCheck_ = nullptr;
+  QPushButton* winSetDefaultButton_ = nullptr;
 };
 
 }  // namespace muffin

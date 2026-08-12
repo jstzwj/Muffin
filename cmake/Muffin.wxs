@@ -1,4 +1,5 @@
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package
     Name="Muffin"
     Manufacturer="Muffin"
@@ -11,6 +12,12 @@
 
     <MediaTemplate EmbedCab="yes" />
 
+    <!-- Interactive install wizard with a feature tree so users can opt out of
+         the shell-integration pieces. WixUI_FeatureTree shows: Welcome →
+         Customize (feature checkboxes) → Ready to Install. No license file or
+         install-folder prompt is required. -->
+    <ui:WixUI Id="WixUI_FeatureTree" />
+
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="Muffin">
         <Directory Id="PlatformsDir" Name="platforms" />
@@ -21,7 +28,12 @@
       </Directory>
     </StandardDirectory>
 
-    <Feature Id="MainFeature" Title="Muffin" Level="1">
+    <!-- The application itself is required (Absent=disallow); the two shell-
+         integration features below default to installed and can be unchecked
+         in the Customize step of the wizard, or toggled later from the app's
+         Files preferences page (which writes the same HKCU\SOFTWARE\Classes
+         keys the per-user components below install). -->
+    <Feature Id="MainFeature" Title="Muffin" Level="1" AllowAbsent="no">
       <ComponentGroupRef Id="MuffinMainFiles" />
       <ComponentGroupRef Id="MuffinPlatformsPlugins" />
       <ComponentGroupRef Id="MuffinStylesPlugins" />
@@ -29,6 +41,16 @@
       <ComponentGroupRef Id="MuffinTlsPlugins" />
       <ComponentGroupRef Id="MuffinNetworkinformationPlugins" />
       <ComponentRef Id="ApplicationShortcut" />
+
+      <Feature Id="ShellContextMenu" Title="Explorer context menu" Level="1"
+               Description="Adds &quot;Open with Muffin&quot; to the right-click menu for Markdown files, folders, and folder backgrounds.">
+        <ComponentGroupRef Id="MuffinContextMenu" />
+      </Feature>
+
+      <Feature Id="FileAssociations" Title="Associate Markdown files" Level="1"
+               Description="Registers Muffin as an editor for .md, .markdown, .mdx, .mkd, and .mdown files so it appears in &quot;Open with&quot;. The first launch then offers to make it the default editor.">
+        <ComponentGroupRef Id="MuffinFileAssociations" />
+      </Feature>
     </Feature>
 
     <!-- Start Menu shortcut -->
@@ -146,6 +168,87 @@
     <ComponentGroup Id="MuffinNetworkinformationPlugins" Directory="NetworkinformationDir">
       <Component Id="QNetworkListManager" Guid="*">
         <File Id="QNetworkListManagerDll" Source="$(var.DistDir)/networkinformation/qnetworklistmanager.dll" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- Per-user Explorer "Open with Muffin" verbs. Each component owns one
+       Muffin-authored subtree of HKCU\SOFTWARE\Classes so uninstall removes
+       exactly what we added (other apps' verbs are left untouched). Commands
+       quote the installed exe; folder backgrounds use %V (the open folder),
+       while files and folder selections use %1. -->
+  <Fragment>
+    <ComponentGroup Id="MuffinContextMenu" Directory="TARGETDIR">
+      <Component Id="CtxFile_md" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5001">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.md\shell\Muffin" Type="string" Value="Open with Muffin" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.md\shell\Muffin\Icon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.md\shell\Muffin\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; &quot;%1&quot;" />
+      </Component>
+      <Component Id="CtxFile_markdown" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5002">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.markdown\shell\Muffin" Type="string" Value="Open with Muffin" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.markdown\shell\Muffin\Icon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.markdown\shell\Muffin\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; &quot;%1&quot;" />
+      </Component>
+      <Component Id="CtxFile_mdx" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5003">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdx\shell\Muffin" Type="string" Value="Open with Muffin" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdx\shell\Muffin\Icon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdx\shell\Muffin\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; &quot;%1&quot;" />
+      </Component>
+      <Component Id="CtxFile_mkd" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5004">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mkd\shell\Muffin" Type="string" Value="Open with Muffin" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mkd\shell\Muffin\Icon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mkd\shell\Muffin\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; &quot;%1&quot;" />
+      </Component>
+      <Component Id="CtxFile_mdown" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5005">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdown\shell\Muffin" Type="string" Value="Open with Muffin" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdown\shell\Muffin\Icon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdown\shell\Muffin\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; &quot;%1&quot;" />
+      </Component>
+      <Component Id="CtxDirectory" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5006">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Directory\shell\Muffin" Type="string" Value="Open with Muffin" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Directory\shell\Muffin\Icon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Directory\shell\Muffin\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; --folder &quot;%1&quot;" />
+      </Component>
+      <Component Id="CtxDirectoryBackground" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5007">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Directory\Background\shell\Muffin" Type="string" Value="Open with Muffin" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Directory\Background\shell\Muffin\Icon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Directory\Background\shell\Muffin\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; --folder &quot;%V&quot;" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+
+  <!-- File association: registers the Muffin.md ProgID and lists it under each
+       extension's OpenWithProgids so Muffin shows up in "Open with" and can be
+       set as the default. OpenWithProgids values are authored as empty
+       REG_BINARY (WiX has no REG_NONE authoring); the Windows shell keys off
+       the value name, so this is accepted. The launch-prompt flag is read by
+       Muffin.exe at first run to redirect to the Default Apps page. -->
+  <Fragment>
+    <ComponentGroup Id="MuffinFileAssociations" Directory="TARGETDIR">
+      <Component Id="MuffinProgId" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5008">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md" Type="string" Value="Muffin Markdown Document" KeyPath="yes" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md" Name="FriendlyAppName" Type="string" Value="Muffin" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md\DefaultIcon" Type="string" Value="[INSTALLFOLDER]Muffin.exe,0" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md\shell\open" Type="string" Value="Open" />
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\Muffin.md\shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]Muffin.exe&quot; &quot;%1&quot;" />
+      </Component>
+      <Component Id="Assoc_md" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d5009">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.md\OpenWithProgids" Name="Muffin.md" Type="binary" Value="" KeyPath="yes" />
+      </Component>
+      <Component Id="Assoc_markdown" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d500a">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.markdown\OpenWithProgids" Name="Muffin.md" Type="binary" Value="" KeyPath="yes" />
+      </Component>
+      <Component Id="Assoc_mdx" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d500b">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdx\OpenWithProgids" Name="Muffin.md" Type="binary" Value="" KeyPath="yes" />
+      </Component>
+      <Component Id="Assoc_mkd" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d500c">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mkd\OpenWithProgids" Name="Muffin.md" Type="binary" Value="" KeyPath="yes" />
+      </Component>
+      <Component Id="Assoc_mdown" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d500d">
+        <RegistryValue Root="HKCU" Key="SOFTWARE\Classes\.mdown\OpenWithProgids" Name="Muffin.md" Type="binary" Value="" KeyPath="yes" />
+      </Component>
+      <Component Id="AssocPromptDefault" Guid="e94b1f8a-3c61-4d72-9e0a-1a2b3c4d500e">
+        <RegistryValue Root="HKCU" Key="Software\Muffin\Muffin\integration" Name="promptDefaultOnLaunch" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>

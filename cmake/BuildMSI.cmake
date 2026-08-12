@@ -47,6 +47,7 @@ message(STATUS "  Output:   ${MSI_OUTPUT}")
 execute_process(
   COMMAND "${WIX_COMMAND}" build
     -arch ${MSI_ARCH}
+    -ext WixToolset.UI.wixext
     -d MuffinVersion=${_msi_version}
     -d DistDir=${DIST_DIR}
     -out "${MSI_OUTPUT}"

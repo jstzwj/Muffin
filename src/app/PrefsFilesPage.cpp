@@ -1,5 +1,7 @@
 #include "app/PrefsFilesPage.h"
 
+#include "app/WindowsIntegration.h"
+
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHBoxLayout>
@@ -112,7 +114,6 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   // --- Card 6: Drag & Drop ---
   auto* dropCard = new QWidget(this);
   dropCard->setObjectName(QStringLiteral("settingsCard"));
-  dropCard->setProperty("lastSettingsRow", true);
   auto* dropLayout = new QVBoxLayout(dropCard);
   dropLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin, kRowVerticalMargin);
   dropLayout->setSpacing(kRowSpacing);
@@ -152,6 +153,29 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
   dropLayout->addLayout(dropImportRow);
   cardColumn->addWidget(dropCard);
 
+#ifdef Q_OS_WIN
+  // --- Card 7: Windows integration (Explorer verbs + file associations) ---
+  auto* winCard = new QWidget(this);
+  winCard->setObjectName(QStringLiteral("settingsCard"));
+  auto* winLayout = new QVBoxLayout(winCard);
+  winLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin, kRowHorizontalMargin,
+                                kRowVerticalMargin);
+  winLayout->setSpacing(kRowSpacing);
+  winIntegrationLabel_ = makeSectionLabel(winCard);
+  winContextMenuCheck_ = new QCheckBox(winCard);
+  winAssociateCheck_ = new QCheckBox(winCard);
+  winSetDefaultButton_ = makeButton(winCard);
+  winLayout->addWidget(winIntegrationLabel_);
+  winLayout->addSpacing(2);
+  winLayout->addWidget(winContextMenuCheck_);
+  winLayout->addWidget(winAssociateCheck_);
+  winLayout->addWidget(winSetDefaultButton_, 0, Qt::AlignLeft);
+  cardColumn->addWidget(winCard);
+  winCard->setProperty("lastSettingsRow", true);
+#else
+  dropCard->setProperty("lastSettingsRow", true);
+#endif
+
   layout->addStretch(1);
 
   retranslateUi();
@@ -181,6 +205,20 @@ muffin::PrefsFilesPage::PrefsFilesPage(QWidget* parent) : PreferencesPage(parent
           [](int index) { QSettings().setValue(QStringLiteral("files/dropImportable"), index); });
   connect(clearHistoryButton_, &QPushButton::clicked, this, &muffin::PrefsFilesPage::clearRecentFilesRequested);
   connect(restoreDraftButton_, &QPushButton::clicked, this, &muffin::PrefsFilesPage::restoreDraftsRequested);
+
+#ifdef Q_OS_WIN
+  // The registry is the single source of truth — each toggle re-applies the
+  // full desired state (on = write the Muffin keys, off = remove only them).
+  connect(winContextMenuCheck_, &QCheckBox::toggled, this, [this](bool on) {
+    WindowsIntegration::applyIntegration(on, winAssociateCheck_->isChecked());
+  });
+  connect(winAssociateCheck_, &QCheckBox::toggled, this, [this](bool on) {
+    WindowsIntegration::applyIntegration(winContextMenuCheck_->isChecked(), on);
+  });
+  connect(winSetDefaultButton_, &QPushButton::clicked, this, [] {
+    WindowsIntegration::openDefaultAppsSettings();
+  });
+#endif
 }
 
 void muffin::PrefsFilesPage::retranslateUi() {
@@ -255,6 +293,15 @@ void muffin::PrefsFilesPage::retranslateUi() {
     dropImportCombo_->setCurrentIndex(qBound(0, cur, dropImportCombo_->count() - 1));
     dropImportCombo_->blockSignals(false);
   }
+
+#ifdef Q_OS_WIN
+  winIntegrationLabel_->setText(tr("Windows Integration"));
+  winContextMenuCheck_->setText(
+      tr("Add \"Open with Muffin\" to File Explorer context menu for files and folders"));
+  winAssociateCheck_->setText(
+      tr("Register Muffin as an editor for Markdown files (.md, .markdown, .mdx, .mkd, .mdown)"));
+  winSetDefaultButton_->setText(tr("Set Muffin as Default…"));
+#endif
 }
 
 void muffin::PrefsFilesPage::loadSettings() {
@@ -310,4 +357,15 @@ void muffin::PrefsFilesPage::loadSettings() {
     dropImportCombo_->setCurrentIndex(qBound(0, dropImport, dropImportCombo_->count() - 1));
     dropImportCombo_->blockSignals(false);
   }
+
+#ifdef Q_OS_WIN
+  // Reflect the live registry state rather than a mirrored preference, so the
+  // checkboxes always agree with what Explorer actually sees.
+  winContextMenuCheck_->blockSignals(true);
+  winContextMenuCheck_->setChecked(WindowsIntegration::isContextMenuEnabled());
+  winContextMenuCheck_->blockSignals(false);
+  winAssociateCheck_->blockSignals(true);
+  winAssociateCheck_->setChecked(WindowsIntegration::isAssociationEnabled());
+  winAssociateCheck_->blockSignals(false);
+#endif
 }

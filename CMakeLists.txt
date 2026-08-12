@@ -882,6 +882,8 @@ add_executable(Muffin
   src/app/MarkdownSettings.h
   src/app/PrefsFilesPage.cpp
   src/app/PrefsFilesPage.h
+  src/app/WindowsIntegration.cpp
+  src/app/WindowsIntegration.h
   src/app/PrefsEditorPage.cpp
   src/app/PrefsEditorPage.h
   src/app/PrefsImagePage.cpp

@@ -997,14 +997,23 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation type="vanished">一款以 C++ 和 Qt 6 Widgets 建置的快速原生 Markdown 編輯器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="93"/>
+        <location filename="../src/main.cpp" line="94"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>一款使用 C++ 和 Qt 6 建置的快速、輕量級原生 Markdown 編輯器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="100"/>
+        <location filename="../src/main.cpp" line="104"/>
+        <source>Open &lt;folder&gt; in the sidebar file browser.</source>
+        <translation>在側邊欄檔案瀏覽器中開啟 &lt;folder&gt;。</translation>
+    </message>
+    <message>
+        <location filename="../src/main.cpp" line="108"/>
+        <source>Markdown or text file (or folder) to open.</source>
+        <translation>要開啟的 Markdown 或文字檔案（或資料夾）。</translation>
+    </message>
+    <message>
         <source>Markdown or text file to open.</source>
-        <translation>要開啟的 Markdown 或文字檔。</translation>
+        <translation type="vanished">要開啟的 Markdown 或文字檔。</translation>
     </message>
 </context>
 <context>
@@ -1353,7 +1362,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="149"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="266"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="267"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="354"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1326"/>
         <source>Properties</source>
@@ -1493,7 +1502,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="431"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="265"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
@@ -2812,7 +2821,7 @@ Parse time: %6 ms</source>
         <translation>沒有可匯出的內容</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="223"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="224"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="780"/>
         <source>Export As</source>
         <translation>匯出</translation>
@@ -2833,13 +2842,13 @@ Parse time: %6 ms</source>
         <translation>Pandoc 失敗：</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="232"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="233"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="844"/>
         <source>Export Failed</source>
         <translation>匯出失敗</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="236"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="237"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="848"/>
         <source>Exported to %1</source>
         <translation>已匯出到 %1</translation>
@@ -3129,51 +3138,51 @@ Would you like to open the download page?</source>
         <translation>複製為</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="256"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
         <source>Open</source>
         <translation type="unfinished">開啟</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="272"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="258"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="273"/>
         <source>Open in New Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="259"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="274"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1114"/>
         <source>New File</source>
         <translation type="unfinished">新增檔案</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="261"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="276"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1127"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1133"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="262"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1249"/>
         <source>Duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="268"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="277"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="270"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="279"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1342"/>
         <source>Reveal in File Manager</source>
         <translation type="unfinished"></translation>
@@ -3586,112 +3595,132 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::PrefsFilesPage</name>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="187"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="225"/>
         <source>Startup</source>
         <translation>啟動</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="192"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="230"/>
         <source>Open new file</source>
         <translation>開啟新檔案</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="193"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="231"/>
         <source>Reopen last file</source>
         <translation>重新開啟上次檔案</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="199"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="237"/>
         <source>Outline</source>
         <translation>大綱</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="200"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="238"/>
         <source>Allow collapsing and expanding the outline view in the sidebar</source>
         <translation>允許在側邊欄中摺疊和展開大綱檢視</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="202"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="240"/>
         <source>Default File Type / Extension</source>
         <translation>預設檔案類型 / 副檔名</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="209"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="247"/>
         <source>Plain Text (.txt)</source>
         <translation>純文字 (.txt)</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="215"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="253"/>
         <source>Save &amp; Restore</source>
         <translation>儲存與還原</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="216"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="254"/>
         <source>Auto Save</source>
         <translation>自動儲存</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="217"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="255"/>
         <source>Auto-save changes to the previous file when switching files</source>
         <translation>切換檔案時自動儲存前一個檔案的變更</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="218"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="256"/>
         <source>Restore Unsaved Drafts</source>
         <translation>還原未儲存的草稿</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="220"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="258"/>
         <source>Recently Used Files</source>
         <translation>最近使用的檔案</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="221"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="259"/>
         <source>Record history files and folders</source>
         <translation>記錄歷史檔案和資料夾</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="222"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="260"/>
         <source>Clear History</source>
         <translation>清除歷史記錄</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="224"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="262"/>
         <source>When dragging files/folders into the window</source>
         <translation>將檔案 / 資料夾拖入視窗時</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="225"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="263"/>
         <source>When dragging a folder</source>
         <translation>拖入資料夾時</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="230"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="241"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="253"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="268"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="279"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="291"/>
         <source>Open in Muffin</source>
         <translation>在 Muffin 中開啟</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="231"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="269"/>
         <source>Open in File Manager</source>
         <translation>在檔案管理器中開啟</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="236"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="274"/>
         <source>When dragging a Markdown file</source>
         <translation>拖入 Markdown 檔案時</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="242"/>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="252"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="280"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="290"/>
         <source>Import File</source>
         <translation>匯入檔案</translation>
     </message>
     <message>
-        <location filename="../src/app/PrefsFilesPage.cpp" line="247"/>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="285"/>
         <source>When dragging an importable file</source>
         <translation>拖入可匯入的檔案時</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="298"/>
+        <source>Windows Integration</source>
+        <translation>Windows 整合</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="300"/>
+        <source>Add &quot;Open with Muffin&quot; to File Explorer context menu for files and folders</source>
+        <translation>在檔案總管中為檔案和資料夾的右鍵選單新增「用 Muffin 開啟」</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="302"/>
+        <source>Register Muffin as an editor for Markdown files (.md, .markdown, .mdx, .mkd, .mdown)</source>
+        <translation>將 Muffin 註冊為 Markdown 檔案（.md、.markdown、.mdx、.mkd、.mdown）的編輯器</translation>
+    </message>
+    <message>
+        <location filename="../src/app/PrefsFilesPage.cpp" line="303"/>
+        <source>Set Muffin as Default…</source>
+        <translation>設為預設程式…</translation>
     </message>
 </context>
 <context>

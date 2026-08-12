@@ -173,7 +173,12 @@ jobs:
 
       - name: Install WiX Toolset
         if: runner.os == 'Windows'
-        run: dotnet tool install --global wix --version 4.0.5
+        run: |
+          dotnet tool install --global wix --version 4.0.5
+          # Pin the UI extension to the matching 4.0.5 (a bare 'wix extension
+          # add WixToolset.UI.wixext' grabs the latest, e.g. 7.x, which is
+          # incompatible with the wix 4.0.5 tool and fails the MSI build).
+          wix extension add WixToolset.UI.wixext/4.0.5
 
       - name: Locate macdeployqt
         if: runner.os == 'macOS'
