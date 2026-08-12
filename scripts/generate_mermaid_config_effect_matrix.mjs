@@ -81,6 +81,47 @@ const interactiveLayout = [
 ];
 const textLayout = ["text", "layout", "paint", "viewport", "export"];
 
+const c4ShapeTypes = [
+  "person", "external_person", "system", "external_system",
+  "system_db", "external_system_db", "system_queue", "external_system_queue",
+  "container", "external_container", "container_db", "external_container_db",
+  "container_queue", "external_container_queue", "component", "external_component",
+  "component_db", "external_component_db", "component_queue", "external_component_queue",
+];
+const c4Policies = {
+  useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+  useMaxWidth: parity("viewport", "export"),
+  diagramMarginX: parity(...layout),
+  diagramMarginY: parity(...layout),
+  c4ShapeMargin: parity(...layout),
+  c4ShapePadding: parity(...layout),
+  width: parity(...layout),
+  height: parity(...layout),
+  boxMargin: parity(...layout),
+  c4ShapeInRow: inert(
+    "The renderer reads C4DB's diagram-local value; source UpdateLayoutConfig changes it, but config.c4ShapeInRow does not.",
+  ),
+  nextLinePaddingX: parity(...layout),
+  c4BoundaryInRow: inert(
+    "The renderer reads C4DB's diagram-local value; source UpdateLayoutConfig changes it, but config.c4BoundaryInRow does not.",
+  ),
+  wrap: parity(...textLayout),
+  wrapPadding: parity(...textLayout),
+};
+for (const shape of [...c4ShapeTypes, "boundary", "message"]) {
+  c4Policies[`${shape}FontSize`] = parity(...textLayout);
+  c4Policies[`${shape}FontFamily`] = parity(...textLayout);
+  c4Policies[`${shape}FontWeight`] = parity(...textLayout);
+  c4Policies[`${shape}Font`] = apiOnly(
+    textLayout,
+    "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config.",
+  );
+}
+for (const shape of c4ShapeTypes) {
+  c4Policies[`${shape}_bg_color`] = parity("paint", "export");
+  c4Policies[`${shape}_border_color`] = parity("paint", "export");
+}
+
 // This table is the reviewed semantic policy. Interface membership and defaults
 // are generated from Mermaid itself below, so adding or removing an upstream
 // field makes generation fail until its effect is classified here.
@@ -562,6 +603,7 @@ const familyPolicies = {
       "GitGraph 11.16.0 draws paths directly and does not serialize SVG arrow-marker URLs.",
     ),
   },
+  c4: c4Policies,
   treeView: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: parity("viewport", "export"),
@@ -774,6 +816,7 @@ const shared = [
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
@@ -809,6 +852,7 @@ const shared = [
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
@@ -848,6 +892,7 @@ const shared = [
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
@@ -901,7 +946,7 @@ const shared = [
   },
   {
     path: "wrap",
-    families: ["sequence"],
+    families: ["sequence", "c4"],
     ...parity(...textLayout),
     note: "Includes the %%{wrap}%% directive promoted by Mermaid preprocessing.",
   },
@@ -924,6 +969,7 @@ const shared = [
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
@@ -962,6 +1008,7 @@ const shared = [
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
@@ -1007,6 +1054,7 @@ const shared = [
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
@@ -1042,6 +1090,7 @@ const shared = [
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
@@ -1077,6 +1126,7 @@ const shared = [
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
@@ -1145,6 +1195,7 @@ const interfaces = {
   mindmap: "MindmapDiagramConfig",
   block: "BlockDiagramConfig",
   gitGraph: "GitGraphDiagramConfig",
+  c4: "C4DiagramConfig",
   treeView: "TreeViewDiagramConfig",
   eventmodeling: "EventModelingDiagramConfig",
   ishikawa: "IshikawaDiagramConfig",

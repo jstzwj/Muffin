@@ -701,7 +701,7 @@ int main(int argc, char** argv) {
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\nC4Context\nPerson(user, User)\n```\n"),
+        "```mermaid\nrailroad-beta\nA ::= 'a'\n```\n"),
         false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;

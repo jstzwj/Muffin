@@ -131,6 +131,11 @@ int main(int argc, char** argv) {
        QStringLiteral("gitGraph\ncommit id: \"root\"\nbranch feature\n"
                       "commit id: \"feature-1\"\ncheckout main\n"
                       "merge feature id: \"release\"")},
+      {QStringLiteral("c4"), QStringLiteral("c4"),
+       QStringLiteral("C4Context\ntitle System context\n"
+                      "Person(user, \"User\")\n"
+                      "System(app, \"Application\")\n"
+                      "Rel(user, app, \"Uses\")")},
       {QStringLiteral("swimlane"), QStringLiteral("flowchart"),
        QStringLiteral("swimlane-beta TB\nsubgraph one[One]\n"
                       "  A[Start] --> B[Done]\nend")},
@@ -269,6 +274,9 @@ int main(int argc, char** argv) {
       QStringLiteral(
           "%%{init: {\"gitGraph\": {\"useMaxWidth\": false}}}%%\n"
           "gitGraph\ncommit id: \"a\""),
+      QStringLiteral(
+          "%%{init: {\"c4\": {\"useMaxWidth\": false}}}%%\n"
+          "C4Context\nPerson(user, \"User\")"),
       QStringLiteral(
           "%%{init: {\"flowchart\": {\"useMaxWidth\": false}}}%%\n"
           "swimlane-beta\nA --> B"),
@@ -429,6 +437,17 @@ int main(int argc, char** argv) {
               packetAria.contains("aria-labelledby=") &&
               packetAria.contains("aria-describedby="),
           QStringLiteral("Packet SVG accessibility metadata drifted"));
+
+  const QByteArray c4Aria = renderSvg(QStringLiteral(
+      "C4Context\ntitle Visible C4 title\n"
+      "accTitle: C4 accessible\naccDescr: C4 description\n"
+      "Person(user, \"User\")")).svg;
+  require(!c4Aria.contains("Visible C4 title") &&
+              c4Aria.contains("C4 accessible") &&
+              c4Aria.contains("C4 description</desc>") &&
+              !c4Aria.contains("aria-labelledby=") &&
+              c4Aria.contains("aria-describedby="),
+          QStringLiteral("C4 accTitle overwrite/accessibility quirk drifted"));
 
   const QByteArray treeViewAria = renderSvg(QStringLiteral(
       "---\ntitle: Invisible frontmatter tree title\n---\n"

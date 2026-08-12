@@ -20,6 +20,7 @@ const Diagram* findMermaidDiagram(const QString& type) {
       &radarDiagramAdapter(),       &xyChartDiagramAdapter(),   &timelineDiagramAdapter(),
       &packetDiagramAdapter(),      &kanbanDiagramAdapter(),
       &mindmapDiagramAdapter(),     &gitGraphDiagramAdapter(),
+      &c4DiagramAdapter(),
       &ganttDiagramAdapter(),
       &infoDiagramAdapter(),        &treeViewDiagramAdapter(),
       &eventModelingDiagramAdapter(), &ishikawaDiagramAdapter(),

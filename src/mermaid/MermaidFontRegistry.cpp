@@ -5,6 +5,8 @@
 #include <QFileInfo>
 #include <QSet>
 
+#include <algorithm>
+
 static void initMermaidFontsResource() {
   Q_INIT_RESOURCE(mermaid_fonts);
 }
@@ -80,8 +82,32 @@ QString MermaidFontRegistry::cssFamilyStack() {
 
 void MermaidFontRegistry::configureFont(QFont& font, const QString& familyExpression) {
   ensureLoaded();
-  if (familyExpression.contains(QStringLiteral("Noto Sans"), Qt::CaseInsensitive))
-    font.setFamilies(familyStack());
+  if (!familyExpression.contains(QStringLiteral("Noto Sans"),
+                                 Qt::CaseInsensitive))
+    return;
+
+  QStringList ordered;
+  for (QString family : familyExpression.split(QLatin1Char(','),
+                                                Qt::SkipEmptyParts)) {
+    family = family.trimmed();
+    if (family.size() >= 2 &&
+        ((family.front() == QLatin1Char('"') &&
+          family.back() == QLatin1Char('"')) ||
+         (family.front() == QLatin1Char('\'') &&
+          family.back() == QLatin1Char('\'')))) {
+      family = family.mid(1, family.size() - 2);
+    }
+    const auto known = std::find_if(
+        loadedFamilies().cbegin(), loadedFamilies().cend(),
+        [&](const QString& candidate) {
+          return candidate.compare(family, Qt::CaseInsensitive) == 0;
+        });
+    if (known != loadedFamilies().cend() && !ordered.contains(*known))
+      ordered.append(*known);
+  }
+  for (const QString& family : loadedFamilies())
+    if (!ordered.contains(family)) ordered.append(family);
+  if (!ordered.isEmpty()) font.setFamilies(ordered);
 }
 
 }  // namespace muffin::mermaid

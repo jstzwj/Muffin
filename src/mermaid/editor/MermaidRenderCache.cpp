@@ -48,6 +48,7 @@
 #include "mermaid/wardley/WardleyDiagram.h"
 #include "mermaid/architecture/ArchitectureDiagram.h"
 #include "mermaid/block/BlockDiagram.h"
+#include "mermaid/c4/C4Diagram.h"
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
@@ -572,6 +573,11 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.expected.append(QStringLiteral("cynefin-beta"));
     diagnostic.expected.append(QStringLiteral("wardley-beta"));
     diagnostic.expected.append(QStringLiteral("architecture-beta"));
+    diagnostic.expected.append(QStringLiteral("C4Context"));
+    diagnostic.expected.append(QStringLiteral("C4Container"));
+    diagnostic.expected.append(QStringLiteral("C4Component"));
+    diagnostic.expected.append(QStringLiteral("C4Dynamic"));
+    diagnostic.expected.append(QStringLiteral("C4Deployment"));
     diagnostic.expected.append(QStringLiteral("block-beta"));
     diagnostic.expected.append(QStringLiteral("swimlane-beta"));
     diagnostic.span = mappedSourceSpan(
@@ -776,6 +782,28 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     return errorEntry(parserDiagnostic(
         source, pre, type, QStringLiteral("parse"), std::move(code),
         QString::fromUtf8(error.what()), offset, offset >= 0 ? 1 : 0,
+        error.line, error.column, QString(), error.token, {}));
+  } catch (const c4::C4ParseError& error) {
+    QString code;
+    switch (error.kind) {
+      case c4::C4ErrorKind::Lexer:
+        code = QStringLiteral("c4-lexer-error");
+        break;
+      case c4::C4ErrorKind::Parser:
+        code = QStringLiteral("c4-parse-error");
+        break;
+      case c4::C4ErrorKind::Runtime:
+        code = QStringLiteral("c4-runtime-error");
+        break;
+    }
+    const qsizetype offset = error.line > 0 && error.column > 0
+                                 ? offsetForLineColumn(pre.code, error.line,
+                                                       error.column)
+                                 : -1;
+    return errorEntry(parserDiagnostic(
+        source, pre, type, QStringLiteral("parse"), std::move(code),
+        QString::fromUtf8(error.what()), offset,
+        offset >= 0 ? qMax<qsizetype>(1, error.token.size()) : 0,
         error.line, error.column, QString(), error.token, {}));
   } catch (const block::BlockParseError& error) {
     QString code;

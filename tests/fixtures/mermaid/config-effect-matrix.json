@@ -33,6 +33,7 @@
       "mindmap",
       "block",
       "gitGraph",
+      "c4",
       "treeView",
       "eventmodeling",
       "ishikawa",
@@ -48,13 +49,13 @@
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
   },
   "summary": {
-    "parity": 214,
+    "parity": 331,
     "partial": 8,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 102,
-    "api-only": 3,
+    "upstream-inert": 105,
+    "api-only": 25,
     "legacy-only": 19
   },
   "entries": [
@@ -79,6 +80,7 @@
         "mindmap",
         "block",
         "gitGraph",
+        "c4",
         "gantt",
         "info",
         "treeView",
@@ -130,6 +132,7 @@
         "mindmap",
         "block",
         "gitGraph",
+        "c4",
         "gantt",
         "info",
         "treeView",
@@ -182,6 +185,7 @@
         "mindmap",
         "block",
         "gitGraph",
+        "c4",
         "gantt",
         "info",
         "treeView",
@@ -357,7 +361,8 @@
     {
       "path": "wrap",
       "families": [
-        "sequence"
+        "sequence",
+        "c4"
       ],
       "status": "parity",
       "upstream": [
@@ -413,6 +418,7 @@
         "mindmap",
         "block",
         "gitGraph",
+        "c4",
         "gantt",
         "info",
         "treeView",
@@ -455,6 +461,7 @@
         "mindmap",
         "block",
         "gitGraph",
+        "c4",
         "gantt",
         "info",
         "treeView",
@@ -519,6 +526,7 @@
         "mindmap",
         "block",
         "gitGraph",
+        "c4",
         "gantt",
         "info",
         "treeView",
@@ -562,6 +570,7 @@
         "mindmap",
         "block",
         "gitGraph",
+        "c4",
         "gantt",
         "info",
         "treeView",
@@ -605,6 +614,7 @@
         "mindmap",
         "block",
         "gitGraph",
+        "c4",
         "gantt",
         "info",
         "treeView",
@@ -5715,6 +5725,3156 @@
       "default": false
     },
     {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.useWidth",
+      "field": "useWidth",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Only Gantt consumes BaseDiagramConfig.useWidth."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.useMaxWidth",
+      "field": "useMaxWidth",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.diagramMarginX",
+      "field": "diagramMarginX",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.diagramMarginY",
+      "field": "diagramMarginY",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.c4ShapeMargin",
+      "field": "c4ShapeMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 50
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.c4ShapePadding",
+      "field": "c4ShapePadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 20
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.width",
+      "field": "width",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 216
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.height",
+      "field": "height",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 60
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.boxMargin",
+      "field": "boxMargin",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.c4ShapeInRow",
+      "field": "c4ShapeInRow",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The renderer reads C4DB's diagram-local value; source UpdateLayoutConfig changes it, but config.c4ShapeInRow does not.",
+      "default": 4
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.nextLinePaddingX",
+      "field": "nextLinePaddingX",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 0
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.c4BoundaryInRow",
+      "field": "c4BoundaryInRow",
+      "hasDefault": true,
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "The renderer reads C4DB's diagram-local value; source UpdateLayoutConfig changes it, but config.c4BoundaryInRow does not.",
+      "default": 2
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.personFontSize",
+      "field": "personFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.personFontFamily",
+      "field": "personFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.personFontWeight",
+      "field": "personFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_personFontSize",
+      "field": "external_personFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_personFontFamily",
+      "field": "external_personFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_personFontWeight",
+      "field": "external_personFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.systemFontSize",
+      "field": "systemFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.systemFontFamily",
+      "field": "systemFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.systemFontWeight",
+      "field": "systemFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_systemFontSize",
+      "field": "external_systemFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_systemFontFamily",
+      "field": "external_systemFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_systemFontWeight",
+      "field": "external_systemFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_dbFontSize",
+      "field": "system_dbFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_dbFontFamily",
+      "field": "system_dbFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_dbFontWeight",
+      "field": "system_dbFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_dbFontSize",
+      "field": "external_system_dbFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_dbFontFamily",
+      "field": "external_system_dbFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_dbFontWeight",
+      "field": "external_system_dbFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_queueFontSize",
+      "field": "system_queueFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_queueFontFamily",
+      "field": "system_queueFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_queueFontWeight",
+      "field": "system_queueFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_queueFontSize",
+      "field": "external_system_queueFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_queueFontFamily",
+      "field": "external_system_queueFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_queueFontWeight",
+      "field": "external_system_queueFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.boundaryFontSize",
+      "field": "boundaryFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.boundaryFontFamily",
+      "field": "boundaryFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.boundaryFontWeight",
+      "field": "boundaryFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.messageFontSize",
+      "field": "messageFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 12
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.messageFontFamily",
+      "field": "messageFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.messageFontWeight",
+      "field": "messageFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.containerFontSize",
+      "field": "containerFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.containerFontFamily",
+      "field": "containerFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.containerFontWeight",
+      "field": "containerFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_containerFontSize",
+      "field": "external_containerFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_containerFontFamily",
+      "field": "external_containerFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_containerFontWeight",
+      "field": "external_containerFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_dbFontSize",
+      "field": "container_dbFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_dbFontFamily",
+      "field": "container_dbFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_dbFontWeight",
+      "field": "container_dbFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_dbFontSize",
+      "field": "external_container_dbFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_dbFontFamily",
+      "field": "external_container_dbFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_dbFontWeight",
+      "field": "external_container_dbFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_queueFontSize",
+      "field": "container_queueFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_queueFontFamily",
+      "field": "container_queueFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_queueFontWeight",
+      "field": "container_queueFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_queueFontSize",
+      "field": "external_container_queueFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_queueFontFamily",
+      "field": "external_container_queueFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_queueFontWeight",
+      "field": "external_container_queueFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.componentFontSize",
+      "field": "componentFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.componentFontFamily",
+      "field": "componentFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.componentFontWeight",
+      "field": "componentFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_componentFontSize",
+      "field": "external_componentFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_componentFontFamily",
+      "field": "external_componentFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_componentFontWeight",
+      "field": "external_componentFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_dbFontSize",
+      "field": "component_dbFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_dbFontFamily",
+      "field": "component_dbFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_dbFontWeight",
+      "field": "component_dbFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_dbFontSize",
+      "field": "external_component_dbFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_dbFontFamily",
+      "field": "external_component_dbFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_dbFontWeight",
+      "field": "external_component_dbFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_queueFontSize",
+      "field": "component_queueFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_queueFontFamily",
+      "field": "component_queueFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_queueFontWeight",
+      "field": "component_queueFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_queueFontSize",
+      "field": "external_component_queueFontSize",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 14
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_queueFontFamily",
+      "field": "external_component_queueFontFamily",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "\"Open Sans\", sans-serif"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_queueFontWeight",
+      "field": "external_component_queueFontWeight",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": "normal"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.wrap",
+      "field": "wrap",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": true
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.wrapPadding",
+      "field": "wrapPadding",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "default": 10
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.person_bg_color",
+      "field": "person_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#08427B"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.person_border_color",
+      "field": "person_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#073B6F"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_person_bg_color",
+      "field": "external_person_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#686868"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_person_border_color",
+      "field": "external_person_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#8A8A8A"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_bg_color",
+      "field": "system_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#1168BD"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_border_color",
+      "field": "system_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#3C7FC0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_db_bg_color",
+      "field": "system_db_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#1168BD"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_db_border_color",
+      "field": "system_db_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#3C7FC0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_queue_bg_color",
+      "field": "system_queue_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#1168BD"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_queue_border_color",
+      "field": "system_queue_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#3C7FC0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_bg_color",
+      "field": "external_system_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#999999"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_border_color",
+      "field": "external_system_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#8A8A8A"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_db_bg_color",
+      "field": "external_system_db_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#999999"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_db_border_color",
+      "field": "external_system_db_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#8A8A8A"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_queue_bg_color",
+      "field": "external_system_queue_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#999999"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_queue_border_color",
+      "field": "external_system_queue_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#8A8A8A"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_bg_color",
+      "field": "container_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#438DD5"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_border_color",
+      "field": "container_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#3C7FC0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_db_bg_color",
+      "field": "container_db_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#438DD5"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_db_border_color",
+      "field": "container_db_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#3C7FC0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_queue_bg_color",
+      "field": "container_queue_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#438DD5"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_queue_border_color",
+      "field": "container_queue_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#3C7FC0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_bg_color",
+      "field": "external_container_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#B3B3B3"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_border_color",
+      "field": "external_container_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#A6A6A6"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_db_bg_color",
+      "field": "external_container_db_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#B3B3B3"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_db_border_color",
+      "field": "external_container_db_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#A6A6A6"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_queue_bg_color",
+      "field": "external_container_queue_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#B3B3B3"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_queue_border_color",
+      "field": "external_container_queue_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#A6A6A6"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_bg_color",
+      "field": "component_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#85BBF0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_border_color",
+      "field": "component_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#78A8D8"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_db_bg_color",
+      "field": "component_db_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#85BBF0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_db_border_color",
+      "field": "component_db_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#78A8D8"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_queue_bg_color",
+      "field": "component_queue_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#85BBF0"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_queue_border_color",
+      "field": "component_queue_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#78A8D8"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_bg_color",
+      "field": "external_component_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#CCCCCC"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_border_color",
+      "field": "external_component_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#BFBFBF"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_db_bg_color",
+      "field": "external_component_db_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#CCCCCC"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_db_border_color",
+      "field": "external_component_db_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#BFBFBF"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_queue_bg_color",
+      "field": "external_component_queue_bg_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#CCCCCC"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_queue_border_color",
+      "field": "external_component_queue_border_color",
+      "hasDefault": true,
+      "status": "parity",
+      "upstream": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "native": [
+        "parsed",
+        "paint",
+        "export"
+      ],
+      "default": "#BFBFBF"
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.personFont",
+      "field": "personFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_personFont",
+      "field": "external_personFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.systemFont",
+      "field": "systemFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_systemFont",
+      "field": "external_systemFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_dbFont",
+      "field": "system_dbFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_dbFont",
+      "field": "external_system_dbFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.system_queueFont",
+      "field": "system_queueFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_system_queueFont",
+      "field": "external_system_queueFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.containerFont",
+      "field": "containerFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_containerFont",
+      "field": "external_containerFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_dbFont",
+      "field": "container_dbFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_dbFont",
+      "field": "external_container_dbFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.container_queueFont",
+      "field": "container_queueFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_container_queueFont",
+      "field": "external_container_queueFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.componentFont",
+      "field": "componentFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_componentFont",
+      "field": "external_componentFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_dbFont",
+      "field": "component_dbFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_dbFont",
+      "field": "external_component_dbFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.component_queueFont",
+      "field": "component_queueFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.external_component_queueFont",
+      "field": "external_component_queueFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.boundaryFont",
+      "field": "boundaryFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
+      "family": "c4",
+      "interface": "C4DiagramConfig",
+      "path": "c4.messageFont",
+      "field": "messageFont",
+      "hasDefault": true,
+      "status": "api-only",
+      "upstream": [
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config."
+    },
+    {
       "family": "treeView",
       "interface": "TreeViewDiagramConfig",
       "path": "treeView.useWidth",
@@ -7610,5 +10770,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "f428072883f8c5dd5cbcba869a04e1e9aa2a1ce2bbe5a58154c6d3665307b56f"
+  "fixtureSha256": "ddcee5be29637b439b765db16ead2100af9c6fc969d3a4794a11b258c22819ab"
 }

@@ -29,21 +29,20 @@ registered Mermaid algorithm has not been ported.
 
 ## Registered diagram inventory
 
-Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 32 IDs as 29
+Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 33 IDs as 30
 logical families:
 
 `flowchart-v2`, `flowchart`, `sequence`, `classDiagram`, `class`,
 `stateDiagram`, `state`, `er`, `gantt`, `info`, `pie`, `requirement`,
 `timeline`, `journey`, `quadrantChart`, `radar`, `xychart`, `packet`, `kanban`,
 `mindmap`, `block`, `treeView`, `eventmodeling`, `ishikawa`, `venn`, `sankey`,
-`treemap`, `cynefin`, `wardley`, `architecture`, and `git`.
+`treemap`, `cynefin`, `wardley`, `architecture`, `git`, and `c4`.
 
 `swimlane` is also native through the `swimlane-beta` source header.
 
-The 6 remaining IDs are:
+The 5 remaining IDs are:
 
-`flowchart-elk`, `c4`,
-`railroad`, `railroad-ebnf`,
+`flowchart-elk`, `railroad`, `railroad-ebnf`,
 `railroad-abnf`, and `railroad-peg`.
 
 ## Delivery order
@@ -70,7 +69,7 @@ Mermaid 11.16.0 structure and pixel oracles.
 
 ### Phase 3: structural and board families
 
-Architecture, Block, Swimlane, and GitGraph are complete. Implement `c4`. Preserve each
+Architecture, Block, Swimlane, GitGraph, and C4 are complete. Preserve each
 family's own recursive placement, routing, icon, grouping, and interaction
 semantics. Shared primitives may be reused only after their contracts match.
 

@@ -7,7 +7,7 @@ The complete 38-ID expansion and acceptance contract is maintained in
 
 ## Current status (2026-08-12)
 
-Muffin renders twenty-nine Mermaid families through a native C++20/Qt pipeline:
+Muffin renders thirty Mermaid families through a native C++20/Qt pipeline:
 
 - flowchart/graph;
 - Swimlane (`swimlane-beta`, native Sugiyama or explicit Dagre layout);
@@ -27,6 +27,8 @@ Muffin renders twenty-nine Mermaid families through a native C++20/Qt pipeline:
 - mindmap diagram (`mindmap`).
 - Block diagram (`block` and `block-beta`).
 - GitGraph (`gitGraph`, including LR/TB/BT and parallel commit layouts).
+- C4 diagrams (`C4Context`, `C4Container`, `C4Component`, `C4Dynamic`, and
+  `C4Deployment`).
 - TreeView diagram (`treeView-beta`).
 - Event Modeling diagram (`eventmodeling`).
 - Ishikawa/fishbone diagram (`ishikawa`).
@@ -42,10 +44,10 @@ Muffin renders twenty-nine Mermaid families through a native C++20/Qt pipeline:
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
 source fences instead of being approximated. The Windows Conan Release gate is
-currently 280/280 tests, including the end-to-end
+currently 284/284 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
-All twenty-nine native families now share `MermaidRenderMetadata` for the diagram
+All thirty native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
 content-canvas geometry. Frontmatter titles are applied before family parsing,
 so a sequence diagram's native `title` statement retains Mermaid's override
@@ -60,7 +62,9 @@ metadata grammar and ignores frontmatter titles and accessibility metadata.
 Ishikawa draws its root label inside the fish head and likewise suppresses
 frontmatter/common accessibility metadata rather than adding a second title
 band. Venn owns its inline title inside the family scene and, like upstream,
-does not project common accessibility metadata. The common title painter is
+does not project common accessibility metadata. C4 preserves an upstream DB
+quirk where `accTitle` overwrites the visible diagram title while the accessible
+title remains empty; `accDescr` still reaches the SVG description. The common title painter is
 used by the editor, print/PDF block path, PNG
 export, and SVG export; title growth is included in scaling,
 dirty-viewport culling, and flowchart link hit testing. HTML export now embeds
@@ -155,7 +159,7 @@ assignment, normalize/acyclic/coordinate-system/self-edge handling, and the
 
 The expanded catalogue, fill/stroke, markers, labels, fonts, CSS/theme mapping,
 and whole-diagram painter are now native and covered by structural and pixel
-oracles. All twenty-nine native scenes are integrated into the editor and print/PDF path
+oracles. All thirty native scenes are integrated into the editor and print/PDF path
 through `MermaidRenderCache`. The legacy flat
 `WorkGraph` implementation remains as inactive reference code; the active path
 always delegates to the compound Dagre pipeline.
@@ -416,12 +420,12 @@ available.
 `MindmapDiagramConfig`, `BlockDiagramConfig`, `TreeViewDiagramConfig`, `EventModelingDiagramConfig`,
 `IshikawaDiagramConfig`, `VennDiagramConfig`, `SankeyDiagramConfig`,
 `TreemapDiagramConfig`, `CynefinDiagramConfig`, `WardleyDiagramConfig`,
-`ArchitectureDiagramConfig`, `GitGraphDiagramConfig`, and `GanttDiagramConfig`
+`ArchitectureDiagramConfig`, `GitGraphDiagramConfig`, `C4DiagramConfig`, and `GanttDiagramConfig`
 declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 359
-rows: 343 family-interface fields and 16 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 501
+rows: 485 family-interface fields and 16 shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -439,13 +443,13 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 214 | Audited upstream and native stages agree |
+| `parity` | 331 | Audited upstream and native stages agree |
 | `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 102 | Mermaid retains the option but 11.16.0 does not consume it |
+| `upstream-inert` | 105 | Mermaid retains the option but 11.16.0 does not consume it |
 | `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
 | `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
-| `api-only` | 3 | Function-valued hooks cannot be expressed by Markdown JSON/YAML config |
+| `api-only` | 25 | Function-valued hooks cannot be expressed by Markdown JSON/YAML config |
 | `security-fixed` | 1 | Muffin intentionally keeps its strict desktop security policy |
 
 `MuffinMermaidConfigEffectMatrixTest` validates the generated fixture digest,
@@ -471,7 +475,7 @@ variant through config, per-edge metadata, scene paint, interaction geometry,
 and PNG export. The interaction/animation milestone is also complete: safe
 Flowchart links/tooltips, live fast/slow edge animation, deterministic exports,
 Sequence participant menus, and `sequence.forceMenus` all reach their runtime
-consumers. Native SVG export is now complete at the product boundary: all twenty-nine
+consumers. Native SVG export is now complete at the product boundary: all thirty
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
 `deterministicIds`, `deterministicIDSeed`, and the effective family
@@ -598,7 +602,11 @@ orthogonal routing, icons, labels, all 11 themes, diagnostics, metadata, and
 fixed/max-width export behavior. GitGraph freezes its Jison grammar/database,
 branch ordering, sequential and parent-driven parallel layouts in all three
 directions, merge/cherry-pick routing, labels/tags, 11 themes, diagnostics,
-metadata, and fixed/max-width export behavior. Block, Swimlane, and GitGraph
-are now complete; the next structural family is C4. No
+metadata, and fixed/max-width export behavior. C4 freezes its five diagram
+headers, recursive boundary placement, 20 element shapes, relationship routing,
+style-update commands, text wrapping, all 11 themes, diagnostics, metadata
+quirks, and fixed/max-width export behavior. Block, Swimlane, GitGraph, and C4
+are now complete; the remaining families are Flowchart ELK and the four
+Railroad grammar frontends. No
 family is treated as supported until its upstream
 oracle, native scene, pixel evidence, error paths, and export integration pass.

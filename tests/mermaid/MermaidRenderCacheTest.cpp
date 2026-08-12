@@ -4,6 +4,7 @@
 
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/block/BlockScene.h"
+#include "mermaid/c4/C4Scene.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/eventmodeling/EventModelingScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
@@ -75,8 +76,13 @@ int main(int argc, char** argv) {
   const QString gitGraph = QStringLiteral(
       "gitGraph\ncommit id: \"A\"\ncommit id: \"B\"");
   // A family Mermaid detects but Muffin does not yet render natively.
+  const QString c4Diagram = QStringLiteral(
+      "C4Context\ntitle System context\n"
+      "Person(user, \"User\", \"Uses the system\")\n"
+      "System(app, \"Application\", \"Serves requests\")\n"
+      "Rel(user, app, \"Uses\", \"HTTPS\")");
   const QString unsupported = QStringLiteral(
-      "C4Context\nPerson(user, User)");
+      "railroad-beta\nA ::= 'a'");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
@@ -1003,6 +1009,28 @@ int main(int argc, char** argv) {
             QStringLiteral("TreeView decorated lexer diagnostic drifted"));
   }
 
+  // C4 parser offsets are measured after preprocessing. Preserve the typed
+  // lexer error while mapping it back through frontmatter/directive/comment
+  // removal to the original source.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: C4 title\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\nC4Context\nUnknown(a,A)");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.stage == QLatin1String("parse") &&
+                entry.diagnostic.code == QLatin1String("c4-lexer-error") &&
+                entry.diagnostic.span.offset ==
+                    decorated.lastIndexOf(QStringLiteral("Unknown")) &&
+                entry.diagnostic.span.line == 7 &&
+                entry.diagnostic.span.column == 1,
+            QStringLiteral("C4 decorated lexer diagnostic drifted: %1")
+                .arg(entry.errorMessage));
+  }
+
   // Every native family is normalised into the same 1-based diagnostic model.
   {
     struct InvalidCase {
@@ -1033,6 +1061,8 @@ int main(int argc, char** argv) {
         {QStringLiteral("gitGraph\ncommit id: \"a\";"),
          QStringLiteral("gitGraph"),
          QStringLiteral("gitgraph-lexer-error"), 2},
+        {QStringLiteral("C4Context\nUnknown(a,A)"),
+         QStringLiteral("c4"), QStringLiteral("c4-lexer-error"), 2},
         {QStringLiteral("swimlane-beta\nA -->"),
          QStringLiteral("swimlane"), QStringLiteral("missing-link-endpoint"), 2},
         {QStringLiteral("gantt:"),
@@ -1095,6 +1125,8 @@ int main(int argc, char** argv) {
                 detected.diagnostic.expected.contains(
                     QStringLiteral("gitGraph")) &&
                 detected.diagnostic.expected.contains(
+                    QStringLiteral("C4Context")) &&
+                detected.diagnostic.expected.contains(
                     QStringLiteral("swimlane-beta")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("gantt")) &&
@@ -1156,6 +1188,20 @@ int main(int argc, char** argv) {
                 entry.naturalSize.width() > 0 &&
                 entry.naturalSize.height() > 0,
             QStringLiteral("gitGraph should produce a native scene"));
+  }
+
+  // --- getSync: C4 is supported through the shared cache path ---
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(c4Diagram), c4Diagram);
+    const auto* scene =
+        dynamic_cast<const muffin::mermaid::c4::C4Scene*>(entry.scene.get());
+    require(entry.status == kReady && scene && !scene->primitives.isEmpty() &&
+                entry.metadata.cssClass == QLatin1String("c4") &&
+                entry.naturalSize.width() > 0 &&
+                entry.naturalSize.height() > 0,
+            QStringLiteral("C4 should produce a native scene"));
   }
 
   // --- getSync: an unknown native family reports Unsupported with context ---
@@ -1731,6 +1777,10 @@ int main(int argc, char** argv) {
          QStringLiteral("gitGraph\ncommit id: \"root\"\nbranch feature\n"
                         "commit id: \"feature-1\"\ncheckout main\n"
                         "merge feature id: \"release\"")},
+        {QStringLiteral("c4"),
+         QStringLiteral("C4Context\nPerson(user, \"User\")\n"
+                        "System(app, \"Application\")\n"
+                        "Rel(user, app, \"Uses\")")},
         {QStringLiteral("swimlane"),
          QStringLiteral("swimlane-beta TB\nsubgraph one[One]\n"
                         "  A[Start] --> B[Done]\nend")},

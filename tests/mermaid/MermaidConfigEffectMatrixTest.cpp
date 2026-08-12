@@ -1,6 +1,7 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/architecture/ArchitectureScene.h"
 #include "mermaid/block/BlockScene.h"
+#include "mermaid/c4/C4Scene.h"
 #include "mermaid/cynefin/CynefinScene.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/eventmodeling/EventModelingScene.h"
@@ -164,8 +165,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 359,
-          QStringLiteral("Expected 359 classified config rows, found %1")
+  require(entries.size() == 501,
+          QStringLiteral("Expected 501 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -229,7 +230,8 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("kanban"), 5},
                                              {QStringLiteral("mindmap"), 5},
                                              {QStringLiteral("block"), 3},
-                                             {QStringLiteral("gitGraph"), 12},
+                                              {QStringLiteral("gitGraph"), 12},
+                                              {QStringLiteral("c4"), 142},
                                              {QStringLiteral("pie"), 6},
                                              {QStringLiteral("packet"), 8},
                                              {QStringLiteral("quadrantChart"), 20},
@@ -515,6 +517,33 @@ int main(int argc, char** argv) {
                   architectureEntry.naturalSize,
           QStringLiteral("Architecture config/theme production projection drifted"));
 
+  const QString c4Source = QStringLiteral(
+      "%%{init:{\"fontFamily\":\"Noto Sans\",\"c4\":{"
+      "\"useMaxWidth\":false,\"diagramMarginX\":24,"
+      "\"diagramMarginY\":18,\"width\":180,\"height\":70,"
+      "\"personFontFamily\":\"Noto Sans\",\"personFontSize\":20,"
+      "\"personFontWeight\":\"bold\",\"person_bg_color\":\"#123456\","
+      "\"person_border_color\":\"#654321\"}}}%%\n"
+      "C4Context\nPerson(user, \"User\")");
+  const MermaidRenderEntry c4Entry = render(c4Source);
+  const auto* c4Scene =
+      dynamic_cast<const muffin::mermaid::c4::C4Scene*>(c4Entry.scene.get());
+  require(c4Entry.status == MermaidRenderStatus::Ready && c4Scene &&
+              !c4Scene->useMaxWidth && !c4Entry.metadata.svgUseMaxWidth &&
+              c4Scene->config.diagramMarginX == 24.0 &&
+              c4Scene->config.diagramMarginY == 18.0 &&
+              c4Scene->config.width == 180.0 &&
+              c4Scene->config.height == 70.0 &&
+              c4Scene->config.fonts.value(QStringLiteral("person")).size == 20.0 &&
+              c4Scene->config.fonts.value(QStringLiteral("person")).weight ==
+                  QLatin1String("bold") &&
+              c4Scene->config.backgroundColors.value(QStringLiteral("person")) ==
+                  QLatin1String("#123456") &&
+              c4Scene->config.borderColors.value(QStringLiteral("person")) ==
+                  QLatin1String("#654321") &&
+              pngImage(c4Source).size() == c4Entry.naturalSize,
+          QStringLiteral("C4 config production projection drifted"));
+
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -623,6 +652,15 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("gitGraph.arrowMarkerAbsolute"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("c4.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("c4.c4ShapeInRow"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("c4.personFont"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("api-only") &&
               byPath.value(QStringLiteral("treeView.useWidth"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
@@ -744,6 +782,7 @@ int main(int argc, char** argv) {
            QStringLiteral("timeline.useMaxWidth"),
            QStringLiteral("packet.useMaxWidth"),
            QStringLiteral("mindmap.useMaxWidth"),
+           QStringLiteral("c4.useMaxWidth"),
            QStringLiteral("treeView.useMaxWidth"),
            QStringLiteral("eventmodeling.useMaxWidth"),
            QStringLiteral("ishikawa.useMaxWidth"),

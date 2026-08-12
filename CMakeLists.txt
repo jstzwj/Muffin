@@ -502,6 +502,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/KanbanDiagramAdapter.cpp
   src/mermaid/editor/MindmapDiagramAdapter.cpp
   src/mermaid/editor/GitGraphDiagramAdapter.cpp
+  src/mermaid/editor/C4DiagramAdapter.cpp
   src/mermaid/editor/GanttDiagramAdapter.cpp
   src/mermaid/editor/InfoDiagramAdapter.cpp
   src/mermaid/editor/TreeViewDiagramAdapter.cpp
@@ -660,6 +661,12 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/gitgraph/GitGraphScene.cpp
   src/mermaid/gitgraph/GitGraphScene.h
   src/mermaid/gitgraph/GitGraphScenePainter.cpp
+  src/mermaid/c4/C4Diagram.cpp
+  src/mermaid/c4/C4Diagram.h
+  src/mermaid/c4/C4Scene.cpp
+  src/mermaid/c4/C4Scene.h
+  src/mermaid/c4/C4ScenePainter.cpp
+  src/mermaid/c4/C4ScenePainter.h
   src/mermaid/gantt/GanttDiagram.cpp
   src/mermaid/gantt/GanttDiagram.h
   src/mermaid/gantt/GanttScene.cpp
