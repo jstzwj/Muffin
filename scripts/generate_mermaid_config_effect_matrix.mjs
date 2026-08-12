@@ -182,7 +182,7 @@ const familyPolicies = {
     defaultRenderer: partial(
       interactiveLayout,
       interactiveLayout,
-      "dagre-wrapper is supported; dagre-d3 and elk return an explicit unsupported diagnostic.",
+      "dagre-wrapper and Mermaid 11.16's unregistered-ELK Dagre fallback are supported; legacy dagre-d3 remains explicit unsupported.",
     ),
     wrappingWidth: unsupported(
       textLayout,
@@ -979,9 +979,22 @@ const shared = [
     ...partial(
       interactiveLayout,
       interactiveLayout,
-      "Dagre is supported by all five families. Flowchart/class/state reject unsupported engines; Swimlane accepts its native engine or Dagre; Mindmap falls back to cose-bilkent for unknown or unregistered names.",
+      "Dagre is supported by all five families. Flowchart also matches Mermaid 11.16's explicit ELK-to-Dagre fallback; class/state reject unsupported engines; Swimlane accepts its native engine or Dagre; Mindmap falls back to cose-bilkent for unknown or unregistered names.",
     ),
   },
+  ...[
+    "mergeEdges",
+    "nodePlacementStrategy",
+    "cycleBreakingStrategy",
+    "forceNodeModelOrder",
+    "considerModelOrder",
+  ].map((field) => ({
+    path: `elk.${field}`,
+    families: ["flowchart"],
+    ...inert(
+      "Mermaid 11.16 retains this external-ELK option, but the pinned runtime registers no ELK loader and renders through Dagre.",
+    ),
+  })),
   {
     path: "wrap",
     families: ["sequence", "c4"],

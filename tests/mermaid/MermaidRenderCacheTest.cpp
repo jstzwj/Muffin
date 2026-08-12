@@ -42,7 +42,6 @@ void require(bool condition, const QString& message) { if (!condition) fail(mess
 constexpr auto kReady = MermaidRenderStatus::Ready;
 constexpr auto kLoading = MermaidRenderStatus::Loading;
 constexpr auto kError = MermaidRenderStatus::Error;
-constexpr auto kUnsupported = MermaidRenderStatus::Unsupported;
 
 // Spin the event loop until `cache` signals renderReady for `key`, or timeout.
 bool waitForReady(MermaidRenderCache& cache, const MermaidRenderKey& key, int timeoutMs = 5000) {
@@ -76,13 +75,12 @@ int main(int argc, char** argv) {
       "ORDER {\n  bigint id PK\n  string status\n}");
   const QString gitGraph = QStringLiteral(
       "gitGraph\ncommit id: \"A\"\ncommit id: \"B\"");
-  // The only Mermaid 11.16 diagram ID not yet rendered natively.
   const QString c4Diagram = QStringLiteral(
       "C4Context\ntitle System context\n"
       "Person(user, \"User\", \"Uses the system\")\n"
       "System(app, \"Application\", \"Serves requests\")\n"
       "Rel(user, app, \"Uses\", \"HTTPS\")");
-  const QString unsupported = QStringLiteral(
+  const QString flowchartElk = QStringLiteral(
       "flowchart-elk LR\nA --> B");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
@@ -1205,13 +1203,15 @@ int main(int argc, char** argv) {
             QStringLiteral("C4 should produce a native scene"));
   }
 
-  // --- getSync: a detected but not-yet-native family reports Unsupported ---
+  // Mermaid 11.16's bundled runtime has no external ELK loader. Its explicit
+  // flowchart-elk ID therefore uses the unified parser and Dagre fallback.
   {
     MermaidRenderCache cache;
     const MermaidRenderEntry entry = cache.getSync(
-        MermaidRenderCache::makeKey(unsupported), unsupported);
-    require(entry.status == kUnsupported && !entry.errorMessage.isEmpty(),
-            QStringLiteral("unsupported family must carry an explanatory message"));
+        MermaidRenderCache::makeKey(flowchartElk), flowchartElk);
+    require(entry.status == kReady && entry.scene &&
+                entry.metadata.diagramType == QLatin1String("flowchart-elk"),
+            QStringLiteral("flowchart-elk must use the bundled Dagre fallback"));
   }
 
   // --- all four Railroad parser frontends share one native immutable scene ---

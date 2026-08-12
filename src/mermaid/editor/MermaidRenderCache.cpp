@@ -110,7 +110,13 @@ QImage renderMermaidSceneToImage(const std::shared_ptr<const MermaidScene>& scen
       scene->renderBounds().adjusted(-padding, -padding, padding, padding);
   const qreal w = std::max<qreal>(1.0, extent.width());
   const qreal h = std::max<qreal>(1.0, extent.height());
-  QImage image(qCeil(w * dpr), qCeil(h * dpr), QImage::Format_ARGB32_Premultiplied);
+  const int pixelWidth = scene->roundRasterExtentToNearestPixel()
+                             ? qMax(1, qRound(w * dpr))
+                             : qCeil(w * dpr);
+  const int pixelHeight = scene->roundRasterExtentToNearestPixel()
+                              ? qMax(1, qRound(h * dpr))
+                              : qCeil(h * dpr);
+  QImage image(pixelWidth, pixelHeight, QImage::Format_ARGB32_Premultiplied);
   image.fill(Qt::transparent);
   QPainter painter(&image);
   painter.setRenderHint(QPainter::Antialiasing, true);
@@ -296,6 +302,12 @@ std::optional<MermaidRenderEntry> unsupportedLayoutConfiguration(
   QString path = QStringLiteral("layout");
   QString actual = pre.config.value(path).toString();
   QString expected = QStringLiteral("dagre");
+  // Mermaid 11.16 moved ELK to an optional external package. The runtime
+  // pinned by this project does not register that package, so its unified
+  // renderer intentionally warns and resolves `elk` through Dagre.
+  if (section == QLatin1String("flowchart") &&
+      actual == QLatin1String("elk"))
+    return std::nullopt;
   if (actual.isEmpty() || actual == expected) {
     path = section + QStringLiteral(".defaultRenderer");
     actual = pre.config.value(section).toObject()
@@ -303,6 +315,9 @@ std::optional<MermaidRenderEntry> unsupportedLayoutConfiguration(
                  .toString();
     expected = QStringLiteral("dagre-wrapper");
   }
+  if (section == QLatin1String("flowchart") &&
+      actual == QLatin1String("elk"))
+    return std::nullopt;
   if (actual.isEmpty() || actual == expected) return std::nullopt;
 
   MermaidDiagnostic diagnostic;

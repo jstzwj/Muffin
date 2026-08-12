@@ -23,13 +23,13 @@ A diagram ID is native only after all of these gates pass:
    matrix and exercised through the real source-entry path;
 7. family tests plus the complete Conan Release build and CTest suite.
 
-Unsupported input remains editable source. Muffin must not silently substitute
-Dagre, a hand-written approximation, or a visually similar diagram when the
-registered Mermaid algorithm has not been ported.
+Unsupported input remains editable source. Muffin must not invent a substitute
+algorithm. An upstream-defined fallback is reproduced only when the pinned
+Mermaid runtime itself takes that path and an oracle locks the behavior.
 
 ## Registered diagram inventory
 
-Mermaid 11.16.0 registers 38 IDs. Muffin currently implements 37 IDs, including
+Mermaid 11.16.0 registers 38 IDs. Muffin implements all 38 IDs, including
 all four Railroad grammar frontends:
 
 `flowchart-v2`, `flowchart`, `sequence`, `classDiagram`, `class`,
@@ -40,8 +40,8 @@ all four Railroad grammar frontends:
 `railroad-ebnf`, `railroad-abnf`, and `railroad-peg`.
 
 `swimlane` is also native through the `swimlane-beta` source header.
-
-The only remaining ID is `flowchart-elk`.
+`flowchart-elk` is native through the normal Flowchart parser/scene and the
+fallback Mermaid 11.16 actually executes in this environment.
 
 ## Delivery order
 
@@ -80,10 +80,14 @@ shared.
 
 ### Phase 5: Flowchart ELK
 
-Port the exact ELK-backed flowchart path, including option projection,
-compound-node geometry, ports, edge sections, labels, and error behavior.
-`flowchart-elk` must never fall back to Dagre. The external ELK version and
-layout output become explicit reproducible oracles.
+Complete. Mermaid 11.16 moved ELK to an optional external package, but the
+locked `G:\github\mermaid-cli` runtime registers only Dagre, Swimlane, and
+cose-bilkent. Its renderer emits the upstream migration warning and resolves
+`flowchart-elk`, `layout: elk`, and `flowchart.defaultRenderer: elk` through
+Dagre. The dedicated oracle freezes that registered-layout inventory, seven
+detector/config routes, geometry/scene equivalence, and three browser PNGs.
+The retained `elk.*` options are classified upstream-inert in the 532-row
+matrix because no external loader consumes them.
 
 ### Phase 6: final global gate
 

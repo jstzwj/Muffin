@@ -1,5 +1,6 @@
 #include "mermaid/MermaidDiagramDetector.h"
 #include "mermaid/MermaidPreprocessor.h"
+#include "mermaid/editor/MermaidDiagrams.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -7,6 +8,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 
 #include <cstdlib>
 
@@ -31,6 +33,7 @@ QString compactJson(const QJsonValue& value) {
 
 void testDetection(const QJsonArray& cases) {
   require(cases.size() >= 45, QStringLiteral("Mermaid detection golden must cover every registered built-in family"));
+  QSet<QString> registeredIds;
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
@@ -43,10 +46,19 @@ void testDetection(const QJsonArray& cases) {
       require(actual == expected.toString(),
               QStringLiteral("Mermaid detector %1 mismatch: native=%2 upstream=%3")
                   .arg(id, actual, expected.toString()));
+      if (actual != QLatin1String("error") && actual != QLatin1String("---"))
+        registeredIds.insert(actual);
     } catch (const UnknownDiagramError&) {
       require(expected.isNull(), QStringLiteral("Mermaid detector %1 unexpectedly rejected a known diagram").arg(id));
     }
   }
+  require(registeredIds.size() == 38,
+          QStringLiteral("Expected all 38 Mermaid 11.16 detector IDs, found %1")
+              .arg(registeredIds.size()));
+  for (const QString& id : registeredIds)
+    require(editor::findMermaidDiagram(id) != nullptr,
+            QStringLiteral("Registered Mermaid ID has no native adapter: %1")
+                .arg(id));
 }
 
 void testPreprocess(const QJsonArray& cases) {

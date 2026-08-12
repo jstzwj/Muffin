@@ -26,7 +26,8 @@ namespace {
 // flowchart fallthrough, verbatim.
 struct FlowchartDiagramImpl : Diagram {
   QStringList ids() const override {
-    return {QStringLiteral("flowchart"), QStringLiteral("flowchart-v2")};
+    return {QStringLiteral("flowchart"), QStringLiteral("flowchart-v2"),
+            QStringLiteral("flowchart-elk")};
   }
   QString cssClass() const override { return QStringLiteral("flowchart"); }
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
@@ -82,8 +83,11 @@ struct FlowchartDiagramImpl : Diagram {
         chart.data(), layout, themeVars, look, handDrawnSeed);
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
-    entry.naturalSize = QSize(qCeil(scene.bounds.width()),
-                              qCeil(scene.bounds.height()));
+    // Chromium screenshots the fractional SVG client box at the nearest
+    // device pixel. Preserve the fractional scene for SVG/viewBox output, but
+    // use that replaced-element raster rule for the production PNG viewport.
+    entry.naturalSize = QSize(qRound(scene.bounds.width()),
+                              qRound(scene.bounds.height()));
     entry.scene = std::make_shared<const flowscene::FlowScene>(std::move(scene));
     finalizeReadyEntry(entry, std::move(metadata));
     return entry;

@@ -119,6 +119,7 @@ struct FlowSceneCluster {
 
 struct FlowScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
+  bool roundRasterExtentToNearestPixel() const override { return true; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   bool hasAnimation() const override {
     for (const auto& edge : edges)

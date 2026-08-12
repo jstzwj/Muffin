@@ -55,10 +55,10 @@
   "summary": {
     "parity": 347,
     "partial": 8,
+    "upstream-inert": 120,
     "unsupported": 7,
     "security-fixed": 1,
     "deferred": 5,
-    "upstream-inert": 115,
     "api-only": 25,
     "legacy-only": 19
   },
@@ -372,7 +372,77 @@
         "interaction",
         "export"
       ],
-      "note": "Dagre is supported by all five families. Flowchart/class/state reject unsupported engines; Swimlane accepts its native engine or Dagre; Mindmap falls back to cose-bilkent for unknown or unregistered names."
+      "note": "Dagre is supported by all five families. Flowchart also matches Mermaid 11.16's explicit ELK-to-Dagre fallback; class/state reject unsupported engines; Swimlane accepts its native engine or Dagre; Mindmap falls back to cose-bilkent for unknown or unregistered names."
+    },
+    {
+      "path": "elk.mergeEdges",
+      "families": [
+        "flowchart"
+      ],
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Mermaid 11.16 retains this external-ELK option, but the pinned runtime registers no ELK loader and renders through Dagre."
+    },
+    {
+      "path": "elk.nodePlacementStrategy",
+      "families": [
+        "flowchart"
+      ],
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Mermaid 11.16 retains this external-ELK option, but the pinned runtime registers no ELK loader and renders through Dagre."
+    },
+    {
+      "path": "elk.cycleBreakingStrategy",
+      "families": [
+        "flowchart"
+      ],
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Mermaid 11.16 retains this external-ELK option, but the pinned runtime registers no ELK loader and renders through Dagre."
+    },
+    {
+      "path": "elk.forceNodeModelOrder",
+      "families": [
+        "flowchart"
+      ],
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Mermaid 11.16 retains this external-ELK option, but the pinned runtime registers no ELK loader and renders through Dagre."
+    },
+    {
+      "path": "elk.considerModelOrder",
+      "families": [
+        "flowchart"
+      ],
+      "status": "upstream-inert",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Mermaid 11.16 retains this external-ELK option, but the pinned runtime registers no ELK loader and renders through Dagre."
     },
     {
       "path": "wrap",
@@ -961,7 +1031,7 @@
         "interaction",
         "export"
       ],
-      "note": "dagre-wrapper is supported; dagre-d3 and elk return an explicit unsupported diagnostic.",
+      "note": "dagre-wrapper and Mermaid 11.16's unregistered-ELK Dagre fallback are supported; legacy dagre-d3 remains explicit unsupported.",
       "default": "dagre-wrapper"
     },
     {
@@ -11422,5 +11492,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "ccbc77cb61a8112d2be0dfe9ec45c4eb4bbe49c5384d65ed0198134cfe02e7b2"
+  "fixtureSha256": "c9712dff62eb1504724af86350e09caa8e9e89589002d3fd659b4f306395932a"
 }

@@ -166,8 +166,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 527,
-          QStringLiteral("Expected 527 classified config rows, found %1")
+  require(entries.size() == 532,
+          QStringLiteral("Expected 532 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -583,6 +583,20 @@ int main(int argc, char** argv) {
                   QSet<QString>{QStringLiteral("flowchart"),
                                 QStringLiteral("swimlane")},
           QStringLiteral("Flowchart curve matrix row lost full native parity"));
+  for (const QString& path : {
+           QStringLiteral("elk.mergeEdges"),
+           QStringLiteral("elk.nodePlacementStrategy"),
+           QStringLiteral("elk.cycleBreakingStrategy"),
+           QStringLiteral("elk.forceNodeModelOrder"),
+           QStringLiteral("elk.considerModelOrder")}) {
+    require(byPath.value(path).value(QStringLiteral("status")).toString() ==
+                    QLatin1String("upstream-inert") &&
+                stringSet(byPath.value(path)
+                              .value(QStringLiteral("families")).toArray()) ==
+                    QSet<QString>{QStringLiteral("flowchart")},
+            QStringLiteral("ELK fallback config classification drifted: %1")
+                .arg(path));
+  }
   require(byPath.value(QStringLiteral("swimlane.useWidth"))
                   .value(QStringLiteral("status")).toString() ==
               QLatin1String("upstream-inert") &&
@@ -1580,13 +1594,21 @@ int main(int argc, char** argv) {
               noNodeShadow(shadowBogus),
           QStringLiteral("Mindmap dropShadow source used-value contract drifted"));
 
-  // Unsupported engines must not silently produce a Dagre scene.
+  // The bundled Mermaid 11.16 runtime deliberately resolves ELK to Dagre when
+  // the optional external loader is absent.
   for (const QString& source : {
            QStringLiteral(
                "%%{init: {\"layout\": \"elk\"}}%%\nflowchart TB\nA --> B"),
            QStringLiteral(
                "%%{init: {\"flowchart\": {\"defaultRenderer\": \"elk\"}}}%%\n"
-               "flowchart TB\nA --> B"),
+               "flowchart TB\nA --> B")}) {
+    const MermaidRenderEntry fallback = render(source);
+    require(fallback.status == MermaidRenderStatus::Ready && fallback.scene,
+            QStringLiteral("Flowchart ELK fallback stopped rendering"));
+  }
+
+  // Other unregistered family renderer selections remain explicit errors.
+  for (const QString& source : {
            QStringLiteral(
                "%%{init: {\"class\": {\"defaultRenderer\": \"elk\"}}}%%\n"
                "classDiagram\nclass A")}) {

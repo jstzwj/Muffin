@@ -697,7 +697,7 @@ int main(int argc, char** argv) {
             QStringLiteral("native GitGraph fence must render without a diagnostic"));
   }
 
-  // --- detected but not-yet-native Mermaid families keep source and explain why ---
+  // --- flowchart-elk uses Mermaid 11.16's bundled Dagre fallback ---
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
@@ -709,11 +709,11 @@ int main(int argc, char** argv) {
     layout.setMermaidSyncMode(true);
     layout.rebuild(session.document(), theme, 800.0);
     const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
-    require(block != nullptr && !block->isMermaidRendered() &&
-                block->mermaidState() == BlockLayout::MermaidState::Unsupported &&
-                !block->mermaidDiagnosticMessage().isEmpty() &&
-                block->mermaidDiagnosticRect(theme).isValid(),
-            QStringLiteral("unsupported Mermaid family must show a diagnostic panel"));
+    require(block != nullptr && block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Ready &&
+                block->mermaidDiagnosticMessage().isEmpty() &&
+                !block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("flowchart-elk must render through the Dagre fallback"));
   }
 
   // --- correcting invalid source removes the panel and restores rendering ---

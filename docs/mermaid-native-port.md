@@ -9,7 +9,8 @@ The complete 38-ID expansion and acceptance contract is maintained in
 
 Muffin renders thirty-one Mermaid families through a native C++20/Qt pipeline:
 
-- flowchart/graph;
+- flowchart/graph, including the `flowchart-elk` detector ID and Mermaid
+  11.16's bundled Dagre fallback when no external ELK loader is registered;
 - Swimlane (`swimlane-beta`, native Sugiyama or explicit Dagre layout);
 - sequence diagram;
 - class diagram;
@@ -44,9 +45,9 @@ Muffin renders thirty-one Mermaid families through a native C++20/Qt pipeline:
   `railroad-abnf-beta`, and `railroad-peg-beta`).
 
 Each supported family has parser/database, layout, immutable scene, structural,
-pixel, and editor-cache coverage. Unsupported Mermaid families remain editable
-source fences instead of being approximated. The Windows Conan Release gate is
-currently 288/288 tests, including the end-to-end
+pixel, and editor-cache coverage. All 38 Mermaid 11.16 detector IDs now resolve
+through a native adapter. The Windows Conan Release gate is currently 289/289
+tests, including the end-to-end
 `MuffinRenderMermaidBlockTest`.
 
 All thirty-one native families now share `MermaidRenderMetadata` for the diagram
@@ -427,8 +428,9 @@ available.
 declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 527
-rows: 511 family-interface fields and 16 shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 532
+rows: 511 family-interface fields, five external-ELK option fields, and 16
+shared root/theme/security fields.
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -448,7 +450,7 @@ The reviewed statuses are deliberately not a yes/no support flag:
 | --- | ---: | --- |
 | `parity` | 347 | Audited upstream and native stages agree |
 | `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 115 | Mermaid retains the option but 11.16.0 does not consume it |
+| `upstream-inert` | 120 | Mermaid retains the option but 11.16.0 does not consume it |
 | `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
 | `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
@@ -461,8 +463,9 @@ probes. The first audit also closed concrete gaps: Flowchart `diagramPadding`
 now reaches editor/PNG canvas geometry, State `nodeSpacing`/`rankSpacing` reach
 Dagre, Sequence honors root `%%{wrap}%%` and `showSequenceNumbers`, and
 unsupported root `layout` or family `defaultRenderer` engines return
-`configuration/unsupported-layout-engine` instead of silently rendering with
-Dagre.
+`configuration/unsupported-layout-engine`. Flowchart `elk` is the explicit
+upstream exception: this pinned Mermaid runtime has no external ELK loader and
+it intentionally warns, then renders through Dagre.
 
 Regenerate the immutable matrix only when reviewing a Mermaid baseline or its
 policy:
@@ -599,6 +602,11 @@ Info freezes its Langium grammar and diagnostic locations, fixed version label,
 400x150 replaced-element viewport, theme/font behavior, renderer-inert
 `showInfo`, discarded metadata AST, and intentionally absent SVG viewBox.
 
+Flowchart ELK is complete through the exact fallback bundled by the locked
+Mermaid runtime: no external ELK loader is registered, so Mermaid emits its
+migration warning and uses Dagre. Seven detector/config cases, immutable-scene
+equivalence, and three browser PNGs freeze that behavior.
+
 Architecture freezes its Langium grammar/database, Cytoscape 3.34 + fCoSE 2.2
 non-random and spectral-randomized layouts, compound groups, directional ports,
 orthogonal routing, icons, labels, all 11 themes, diagnostics, metadata, and
@@ -609,7 +617,6 @@ metadata, and fixed/max-width export behavior. C4 freezes its five diagram
 headers, recursive boundary placement, 20 element shapes, relationship routing,
 style-update commands, text wrapping, all 11 themes, diagnostics, metadata
 quirks, and fixed/max-width export behavior. Block, Swimlane, GitGraph, C4, and
-the four Railroad grammar frontends are now complete; the remaining registered
-diagram ID is Flowchart ELK. No
-family is treated as supported until its upstream
+the four Railroad grammar frontends are complete; all 38 registered IDs are
+native. No family is treated as supported until its upstream
 oracle, native scene, pixel evidence, error paths, and export integration pass.

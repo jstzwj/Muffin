@@ -62,6 +62,12 @@ struct MermaidScene {
   // bounds. SequenceScene overrides to its resolved viewport rect.
   virtual QRectF renderBounds() const { return sceneBounds(); }
 
+  // Browser SVG replaced elements normally rasterize their fractional CSS
+  // client box at the nearest device pixel. Most legacy native scenes retain
+  // their established ceil policy; unified Flowchart opts into the browser
+  // rule while keeping its floating-point SVG viewBox unchanged.
+  virtual bool roundRasterExtentToNearestPixel() const { return false; }
+
   // True if the scene has time-animated elements (e.g. animated flowchart edges).
   // Default false; FlowScene overrides. Drives the editor's repaint timer.
   virtual bool hasAnimation() const { return false; }
