@@ -3,6 +3,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/sankey/SankeyScenePainter.h"
 #include "mermaid/text/ChromiumTextMetrics.h"
+#include "mermaid/flowchart/FlowLabel.h"
 
 #include <QFontMetricsF>
 #include <QJsonArray>
@@ -87,26 +88,40 @@ QString collapsedSvgText(QString value) {
 
 QString svgNumber(double value) { return QString::number(value, 'g', 17); }
 
-QRectF labelBounds(const SankeySceneStyle &style, const QString &text,
-                   const QPointF &position, const QString &anchor,
-                   double dyEm) {
-  const auto font = editor::makeUnhintedCssPixelFont(style.fontFamily, 14.0);
-  const QFontMetricsF metrics(font.font);
-  const QString visible = collapsedSvgText(text);
+QRectF labelBounds(const SankeyLabelGeometry &label,
+                   const SankeySceneStyle &style) {
+  const QString family = label.fontFamily.isEmpty() ? style.fontFamily
+                                                     : label.fontFamily;
+  const auto font = editor::makeUnhintedCssPixelFont(family, label.fontSize);
+  QFont weighted = font.font;
+  weighted.setWeight(label.fontWeight);
+  const QFontMetricsF metrics(weighted);
+  const QString visible = collapsedSvgText(label.text);
   const double qtWidth = metrics.horizontalAdvance(visible) * font.scale;
   const double shaped =
-      textmetrics::harfBuzzAdvance(visible, style.fontFamily, 14.0)
+      textmetrics::harfBuzzAdvance(visible, family, label.fontSize,
+                                   label.fontWeight)
           .value_or(qtWidth);
   const double width = std::ceil(shaped * 64.0) / 64.0;
-  double left = position.x();
-  if (anchor == QLatin1String("end"))
-    left -= width;
-  else if (anchor == QLatin1String("middle"))
-    left -= width / 2.0;
+  flowchart::FlowLabelDocument document;
+  document.text = visible;
+  document.baseWeight = label.fontWeight;
+  QRectF horizontal = flowchart::measureChromiumSvgTextBounds(
+      document, family, label.fontSize, label.fontWeight);
+  if (horizontal.isEmpty()) horizontal = QRectF(0.0, 0.0, width, 0.0);
+  double origin = label.position.x();
+  if (label.anchor == QLatin1String("end"))
+    origin -= width;
+  else if (label.anchor == QLatin1String("middle"))
+    origin -= width / 2.0;
   // Bundled Noto Sans follows Blink's hhea metrics at 14 CSS pixels: 19px high,
   // with the alphabetic top 15px above the baseline.
-  const double top = position.y() + dyEm * 14.0 - 15.0;
-  return QRectF(left, top, width, 19.0);
+  const auto vertical = flowchart::flowLabelFontBoundingMetrics(
+      family, label.fontSize, label.fontWeight);
+  const double top = label.position.y() + label.dyEm * label.fontSize -
+                     vertical.ascent;
+  return QRectF(origin + horizontal.x(), top, horizontal.width(),
+                vertical.ascent + vertical.descent);
 }
 
 QJsonObject rectJson(const QRectF &r) {
@@ -521,18 +536,17 @@ SankeyScene buildSankeyScene(const SankeyData &data, SankeyConfig config,
       anchor = QStringLiteral("end");
     }
     QPointF pos(x, (node.y1 + node.y0) / 2);
-    QRectF box =
-        labelBounds(scene.style, text, pos, anchor, showValues ? 0 : .35);
     if (scene.outlinedLabels)
       backgroundLabels.append({node.index, text, pos, anchor,
-                               showValues ? 0 : .35, box, true, true, QString(),
+                               showValues ? 0 : .35, {}, true, true, QString(),
                                scene.style.mainBkg.isEmpty()
                                    ? scene.style.background
                                    : scene.style.mainBkg,
-                               4});
+                               4, scene.style.fontFamily, 14.0});
     foregroundLabels.append({node.index, text, pos, anchor,
-                             showValues ? 0 : .35, box, scene.outlinedLabels,
-                             false, scene.style.textColor, QString(), 0});
+                             showValues ? 0 : .35, {}, scene.outlinedLabels,
+                             false, scene.style.textColor, QString(), 0,
+                             scene.style.fontFamily, 14.0});
   }
   scene.labels = std::move(backgroundLabels);
   scene.labels += foregroundLabels;
@@ -563,6 +577,13 @@ SankeyScene buildSankeyScene(const SankeyData &data, SankeyConfig config,
          stroke, colors.value(source.id), colors.value(target.id)});
   }
 
+  refreshSankeyBounds(scene);
+  return scene;
+}
+
+void refreshSankeyBounds(SankeyScene &scene) {
+  for (auto &label : scene.labels)
+    label.bounds = labelBounds(label, scene.style);
   QRectF bounds;
   bool hasBounds = false;
   auto include = [&](const QRectF &rect) {
@@ -576,13 +597,13 @@ SankeyScene buildSankeyScene(const SankeyData &data, SankeyConfig config,
   };
   for (const auto &node : scene.nodes) {
     const QRectF rect(node.x0, node.y0, node.x1 - node.x0, node.y1 - node.y0);
-    if (rect.width() > 0.0 && rect.height() > 0.0)
+    if (node.hasBox && rect.width() > 0.0 && rect.height() > 0.0)
       include(rect);
   }
   for (const auto &link : scene.links)
-    include(link.path.boundingRect());
+    if (link.hasBox) include(link.path.boundingRect());
   for (const auto &label : scene.labels)
-    include(label.bounds);
+    if (label.hasBox) include(label.bounds);
   scene.bounds = bounds;
   scene.rasterBounds =
       QRectF(bounds.topLeft(),
@@ -591,7 +612,6 @@ SankeyScene buildSankeyScene(const SankeyData &data, SankeyConfig config,
       QStringLiteral("%1 %2 %3 %4")
           .arg(svgNumber(bounds.x()), svgNumber(bounds.y()),
                svgNumber(bounds.width()), svgNumber(bounds.height()));
-  return scene;
 }
 
 } // namespace muffin::mermaid::sankey

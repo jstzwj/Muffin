@@ -1,4 +1,6 @@
 #include "mermaid/state/StateScene.h"
+#include "mermaid/state/StateRough.h"
+#include "mermaid/scene/SvgPathParse.h"
 
 #include <QJsonObject>
 #include <QJsonArray>
@@ -82,9 +84,12 @@ StateScene buildStateScene(const StateLayoutInput& input,
                            const StatePlacementResult& placement,
                            StateSceneStyle style,
                            const QVector<style::ClassDef>& classDefs,
-                           const style::ThemeDefaults& themeDefaults) {
+                           const style::ThemeDefaults& themeDefaults,
+                           bool handDrawn, quint32 handDrawnSeed) {
   StateScene scene;
   scene.style = std::move(style);
+  scene.handDrawn = handDrawn;
+  scene.handDrawnSeed = handDrawnSeed;
   bool initialized = false;
   for (const StatePlacementCluster& placed : placement.clusters) {
     const StateLayoutNodeInput* source = inputNode(input, placed.id);
@@ -96,14 +101,39 @@ StateScene buildStateScene(const StateLayoutInput& input,
     node.descriptions = descriptions(source->description);
     node.cssClasses = source->cssClasses;
     node.styles = source->styles;
-    node.bounds = QRectF(placed.center - QPointF(placed.size.width() / 2.0,
-                                                 placed.size.height() / 2.0), placed.size);
+    const QSizeF logicalSize = placed.logicalSize.isValid() &&
+            !placed.logicalSize.isEmpty()
+        ? placed.logicalSize : placed.size;
+    node.bounds = QRectF(placed.center - QPointF(logicalSize.width() / 2.0,
+                                                 logicalSize.height() / 2.0),
+                         logicalSize);
     node.group = true;
-    applyStateNodeStyles(node, scene.style.compositeFill, scene.style.compositeStroke,
+    applyStateNodeStyles(node, scene.style.compositeTitleFill,
+                         scene.style.compositeStroke,
                          scene.style.textColor, scene.style.strokeWidth);
     node.labelDocument = prepareLabel(node.label, scene.style.fontSize);
+    const qreal titleHeight = flowchart::measureFlowLabel(
+        node.labelDocument, scene.style.fontFamily, scene.style.fontSize,
+        scene.style.lineHeight).height();
+    const qreal innerY = node.bounds.top() + titleHeight + 2.0;
+    node.innerBounds = QRectF(node.bounds.left(), innerY, node.bounds.width(),
+                             std::max<qreal>(
+                                 0.0, node.bounds.height() - titleHeight - 6.0));
+    node.innerFill = source->cssClasses.contains(
+                         QStringLiteral("statediagram-cluster-alt"))
+        ? scene.style.compositeAltFill : scene.style.compositeFill;
+    if (handDrawn) {
+      node.roughDrawables = stateRoughClusterDrawables(
+          node.bounds, titleHeight, handDrawnSeed,
+          source->cssClasses.contains(
+              QStringLiteral("statediagram-cluster-alt")),
+          node.fill, node.innerFill, node.stroke, node.strokeWidth);
+      node.paintedBounds = stateRoughBounds(node.roughDrawables);
+    }
     scene.clusters.append(node);
-    include(scene.bounds, initialized, node.bounds);
+    include(scene.bounds, initialized,
+            handDrawn && node.paintedBounds.isValid()
+                ? node.paintedBounds : node.bounds);
   }
   for (const StatePlacementNode& placed : placement.nodes) {
     const StateLayoutNodeInput* source = inputNode(input, placed.id);
@@ -122,13 +152,35 @@ StateScene buildStateScene(const StateLayoutInput& input,
                                                  placed.paintedSize.height() / 2.0),
                          placed.paintedSize);
     const bool note = node.shape == QLatin1String("note");
+    node.shapeVisible = scene.style.shapeVisible;
     applyStateNodeStyles(node,
         note ? scene.style.noteFill : scene.style.stateFill,
         note ? scene.style.noteStroke : scene.style.stateStroke,
         note ? scene.style.noteTextColor : scene.style.textColor,
         scene.style.strokeWidth);
+    if (handDrawn) {
+      const QRectF localBounds(-node.bounds.width() / 2.0,
+                               -node.bounds.height() / 2.0,
+                               node.bounds.width(), node.bounds.height());
+      node.roughDrawables = stateRoughNodeDrawables(
+          node.shape, localBounds, handDrawnSeed, node.strokeWidth);
+      if (!node.descriptions.isEmpty()) {
+        const qreal dividerY = localBounds.top() +
+            scene.style.lineHeight + 16.0;
+        node.roughDrawables.append(rough::roughNodeLineDrawable(
+            QPointF(localBounds.left(), dividerY),
+            QPointF(localBounds.right(), dividerY), handDrawnSeed,
+            qMax<qreal>(1.3, node.strokeWidth)));
+      }
+      for (rough::Drawable& drawable : node.roughDrawables)
+        drawable = rough::translatedDrawable(std::move(drawable),
+                                              node.bounds.center());
+      node.paintedBounds = stateRoughBounds(node.roughDrawables);
+    }
     scene.nodes.append(node);
-    include(scene.bounds, initialized, node.bounds);
+    include(scene.bounds, initialized,
+            handDrawn && node.paintedBounds.isValid()
+                ? node.paintedBounds : node.bounds);
   }
   for (const StatePlacementEdge& placed : placement.edges) {
     const auto it = std::find_if(input.edges.cbegin(), input.edges.cend(),
@@ -152,6 +204,11 @@ StateScene buildStateScene(const StateLayoutInput& input,
     edge.strokeDasharray = resolvedEdge.strokeDasharray;
     edge.labelDocument = prepareLabel(edge.label, scene.style.fontSize);
     edge.pathBounds = edgePaintBounds(edge.points, edge.segments);
+    if (handDrawn) {
+      edge.roughDrawable = rough::roughEdgeDrawable(
+          scene::parseSvgPath(edge.path), handDrawnSeed);
+      edge.pathBounds = rough::tightBounds(edge.roughDrawable);
+    }
     if (!edge.label.isEmpty() && edge.labelPosition) {
       edge.labelSize = flowchart::measureFlowLabel(
           edge.labelDocument, scene.style.fontFamily,
@@ -163,8 +220,12 @@ StateScene buildStateScene(const StateLayoutInput& input,
           edge.labelSize);
     }
     scene.edges.append(std::move(edge));
-    for (const QPointF& point : placed.points)
-      include(scene.bounds, initialized, QRectF(point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0)));
+    if (handDrawn && edge.pathBounds.isValid())
+      include(scene.bounds, initialized, edge.pathBounds);
+    else
+      for (const QPointF& point : placed.points)
+        include(scene.bounds, initialized, QRectF(
+            point - QPointF(0.5, 0.5), QSizeF(1.0, 1.0)));
   }
   if (initialized) scene.bounds.adjust(-8.0, -8.0, 8.0, 8.0);
   return scene;
@@ -253,6 +314,39 @@ QJsonObject StateScene::toJsonObject() const {
   o[QStringLiteral("edges")] = edgesArray;
 
   return o;
+}
+
+SvgMarkerProjection StateScene::svgMarkerProjection() const {
+  SvgMarkerProjection projection;
+  SvgMarkerDefinition definition;
+  definition.key = arrowMarkerId;
+  definition.idSuffix = QStringLiteral("_stateDiagram-") + arrowMarkerId;
+  definition.refX = arrowMarkerRef.x(); definition.refY = arrowMarkerRef.y();
+  definition.markerWidth = arrowMarkerSize.width();
+  definition.markerHeight = arrowMarkerSize.height();
+  definition.markerUnits = QStringLiteral("userSpaceOnUse");
+  definition.orient = arrowMarkerOrient;
+  SvgMarkerChild child;
+  child.tag = QStringLiteral("path");
+  child.path = QStringLiteral("M 19,7 L9,13 L14,7 L9,1 Z");
+  child.fill = style.transitionColor;
+  child.stroke = style.transitionColor;
+  definition.children.append(child);
+  projection.definitions.append(definition);
+  for (const StateSceneEdge& source : edges) {
+    if (source.markerEnd.isEmpty() || source.markerEnd == QLatin1String("none"))
+      continue;
+    SvgMarkerEdge edge;
+    edge.id = source.id;
+    edge.cssClass = QStringLiteral("transition");
+    edge.path = source.path;
+    edge.markerEnd = arrowMarkerId;
+    edge.stroke = source.stroke.isEmpty() ? style.transitionColor : source.stroke;
+    edge.strokeWidth = source.strokeWidth;
+    edge.strokeDasharray = source.strokeDasharray;
+    projection.edges.append(edge);
+  }
+  return projection;
 }
 
 }  // namespace muffin::mermaid::state

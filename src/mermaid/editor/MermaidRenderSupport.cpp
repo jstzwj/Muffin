@@ -3,11 +3,13 @@
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/MermaidPreprocessor.h"
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/flowchart/FlowLabel.h"
 #include "theme/CssCalc.h"
 
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QFontMetricsF>
+#include <QRawFont>
 #include <QRegularExpression>
 #include <QStringList>
 
@@ -411,6 +413,38 @@ qreal cssOpacity(const QString& value) {
   return std::clamp(percent ? n / 100.0 : n, 0.0, 1.0);
 }
 
+QStringList cssFamilyList(const QString& expression) {
+  QStringList result;
+  for (QString family : expression.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
+    family = family.trimmed();
+    if (family.size() >= 2 &&
+        ((family.front() == QLatin1Char('"') && family.back() == QLatin1Char('"')) ||
+         (family.front() == QLatin1Char('\'') && family.back() == QLatin1Char('\''))))
+      family = family.mid(1, family.size() - 2);
+    if (!family.isEmpty()) result.append(family);
+  }
+  if (result.isEmpty()) result.append(QStringLiteral("Noto Sans"));
+  return result;
+}
+
+QFont::Weight faceAwareMetricWeight(const QString& family,
+                                    QFont::Weight weight) {
+  if (weight == QFont::Normal) return weight;
+  // Chromium answers a weight request against the registered Regular webfont
+  // with synthesized bold — the physical face (vertical metrics, advances)
+  // stays Regular. Qt's font matching instead substitutes a real bold face of
+  // another family (Arial for the bundled Noto Sans), so measurement falls
+  // back to the Regular face whenever matching left the requested family.
+  // Probe with the exact font the measurement path builds.
+  const QFont probe = flowchart::makeFlowLabelFont(family, 16.0, weight);
+  const QRawFont raw = QRawFont::fromFont(probe);
+  const QString requested = cssFamilyList(family).first();
+  if (raw.isValid() && !raw.familyName().isEmpty() &&
+      raw.familyName().compare(requested, Qt::CaseInsensitive) != 0)
+    return QFont::Normal;
+  return weight;
+}
+
 qreal cssFontSizePx(const QString& value, const CssLengthContext& ctx) {
   const QString t = value.trimmed();
   const QString keyword = t.toLower();
@@ -569,6 +603,28 @@ bool truthyConfigValue(const QJsonValue& value) {
   }
 }
 
+bool evaluateConfigValue(const QJsonValue& value) {
+  if (value.isBool() && !value.toBool()) return false;
+  const auto jsString = [&](const auto& self, const QJsonValue& item) -> QString {
+    if (item.isString()) return item.toString();
+    if (item.isDouble()) return jsNumberToString(item.toDouble());
+    if (item.isBool())
+      return item.toBool() ? QStringLiteral("true") : QStringLiteral("false");
+    if (item.isNull()) return QStringLiteral("null");
+    if (item.isUndefined()) return QStringLiteral("undefined");
+    if (item.isObject()) return QStringLiteral("[object Object]");
+    QStringList elements;
+    for (const QJsonValue& element : item.toArray())
+      elements.append(element.isNull() || element.isUndefined()
+                          ? QString() : self(self, element));
+    return elements.join(QLatin1Char(','));
+  };
+  QString text = jsString(jsString, value);
+  text = text.trimmed().toLower();
+  return text != QLatin1String("false") && text != QLatin1String("null") &&
+         text != QLatin1String("0");
+}
+
 MermaidRenderMetadata renderMetadata(
     const MermaidPreprocessResult& pre, const QString& diagramType,
     const QString& diagramTitle, const QString& accessibleTitle,
@@ -586,7 +642,6 @@ MermaidRenderMetadata renderMetadata(
   metadata.titleFontSize = titleFontSize;
   metadata.titleTopMargin = titleTopMargin;
   metadata.diagramPadding = qMax<qreal>(0.0, diagramPadding);
-  const bool classDiagram = diagramType.startsWith(QLatin1String("class"));
   QString configSection = QStringLiteral("state");
   if (diagramType.startsWith(QLatin1String("flowchart")))
     configSection = QStringLiteral("flowchart");
@@ -597,12 +652,11 @@ MermaidRenderMetadata renderMetadata(
   const QJsonObject svgConfig = pre.config.value(configSection).toObject();
   metadata.svgUseMaxWidth = svgConfig.contains(QStringLiteral("useMaxWidth"))
       ? svgConfig.value(QStringLiteral("useMaxWidth")).toBool(true) : true;
-  const QJsonObject familyConfig = pre.config.value(
-      classDiagram ? QStringLiteral("class") : configSection).toObject();
-  metadata.svgArrowMarkerAbsolute = familyConfig.contains(
-      QStringLiteral("arrowMarkerAbsolute"))
-      ? familyConfig.value(QStringLiteral("arrowMarkerAbsolute")).toBool(false)
-      : pre.config.value(QStringLiteral("arrowMarkerAbsolute")).toBool(false);
+  // Mermaid's source-entry mirror writes the root option into the effective
+  // Flow/Sequence configs. Nested family keys with the same name are schema
+  // fields but are not observed by the 11.16 render path.
+  metadata.svgArrowMarkerAbsolute =
+      pre.config.value(QStringLiteral("arrowMarkerAbsolute")).toBool(false);
   metadata.svgDeterministicIds =
       pre.config.value(QStringLiteral("deterministicIds")).toBool(false);
   metadata.svgDeterministicIdSeed =

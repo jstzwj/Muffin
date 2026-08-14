@@ -168,45 +168,125 @@ bool validCssPaint(const QString& value) {
 
 }  // namespace
 
-JourneyScene buildJourneyScene(const JourneyData& data, JourneyConfig config,
-                               JourneySceneStyle style) {
-  JourneyScene scene;
-  scene.config = std::move(config);
-  scene.style = std::move(style);
-  scene.title = data.title;
-  scene.accTitle = data.accTitle;
-  scene.accDescr = data.accDescr;
+const JourneyActorRosterEntry* JourneyActorRoster::entryFor(
+    const QString& name) const {
+  if (hasPrototype && name == prototype.name) return &prototype;
+  for (const JourneyActorRosterEntry& entry : display)
+    if (entry.name == name) return &entry;
+  return nullptr;
+}
 
+JourneyActorRoster journeyActorRoster(const JourneyData& data) {
+  JourneyActorRoster roster;
   QStringList actorNames;
   for (const JourneyTask& task : data.tasks)
     for (const QString& person : task.people)
       if (!actorNames.contains(person)) actorNames.append(person);
   std::sort(actorNames.begin(), actorNames.end());
   const QStringList sortedActorNames = actorNames;
-  const int prototypePosition = sortedActorNames.indexOf(QStringLiteral("__proto__"));
+  const int prototypePosition =
+      sortedActorNames.indexOf(QStringLiteral("__proto__"));
   if (prototypePosition >= 0) {
-    scene.hasPrototypeActor = true;
-    scene.prototypeActor.name = QStringLiteral("__proto__");
-    scene.prototypeActor.position = prototypePosition;
-    scene.prototypeActor.color =
+    roster.hasPrototype = true;
+    roster.prototype.name = QStringLiteral("__proto__");
+    roster.prototype.position = prototypePosition;
+    roster.prototype.color =
         kActorColors.at(prototypePosition % kActorColors.size());
   }
-  actorNames = javascriptObjectKeyOrder(actorNames);
+  const QStringList displayNames =
+      javascriptObjectKeyOrder(actorNames);
+  for (const QString& name : displayNames) {
+    JourneyActorRosterEntry entry;
+    entry.name = name;
+    entry.position = int(sortedActorNames.indexOf(name));
+    entry.color = kActorColors.at(entry.position % kActorColors.size());
+    roster.display.append(std::move(entry));
+  }
+  return roster;
+}
 
-  const editor::CssPixelFont rootFont =
-      editor::makeUnhintedCssPixelFont(scene.style.fontFamily,
-                                       scene.style.fontSize);
+QStringList wrapJourneyActorLabel(const QString& actor, qreal maxLabelWidth,
+                                  qreal fontPixelSize,
+                                  const QString& fontFamily) {
+  return wrapActor(actor, maxLabelWidth,
+                   editor::makeUnhintedCssPixelFont(fontFamily, fontPixelSize));
+}
+
+QString journeySectionPresentationFill(int colorIndex) {
+  return kSectionFills.at(colorIndex % kSectionFills.size());
+}
+
+JourneyScene buildJourneyScene(const JourneyData& data, JourneyConfig config,
+                               JourneySceneStyle style,
+                               const JourneyCssOverrides* css) {
+  JourneyScene scene;
+  scene.config = std::move(config);
+  scene.style = std::move(style);
+  scene.title = data.title;
+  scene.accTitle = data.accTitle;
+  scene.accDescr = data.accDescr;
+  if (css && css->active) {
+    scene.rootCss = css->root;
+    scene.titleCss = css->title;
+    scene.axisCss = css->axis;
+  }
+
+  const JourneyActorRoster roster = journeyActorRoster(data);
+  scene.hasPrototypeActor = roster.hasPrototype;
+  scene.prototypeActor.name = roster.prototype.name;
+  scene.prototypeActor.position = roster.prototype.position;
+  scene.prototypeActor.color = roster.prototype.color;
+  QStringList actorNames;
+  for (const JourneyActorRosterEntry& entry : roster.display)
+    actorNames.append(entry.name);
+
+  // The svg root's own cascade (#id { font-family; font-size; fill }) feeds
+  // everything that inherits from it. The actor-name wrap measurement uses a
+  // classless probe <text> that upstream appends hidden and removes again, so
+  // its font is resolved separately from the drawn .legend text.
+  const QString rootFamily = css && !css->root.fontFamily.isEmpty()
+                                 ? css->root.fontFamily
+                                 : scene.style.fontFamily;
+  const qreal rootSize = css && css->root.fontSize >= 0.0
+                             ? css->root.fontSize
+                             : scene.style.fontSize;
+  const QString measureFamily = css && !css->measureText.fontFamily.isEmpty()
+                                    ? css->measureText.fontFamily
+                                    : rootFamily;
+  const qreal measureSize = css && css->measureText.fontSize >= 0.0
+                                ? css->measureText.fontSize
+                                : rootSize;
+  const editor::CssPixelFont wrapFont =
+      editor::makeUnhintedCssPixelFont(measureFamily, measureSize);
   qreal maxWidth = 0.0;
   qreal actorY = 60.0;
   for (qsizetype i = 0; i < actorNames.size(); ++i) {
     JourneyActor actor;
     actor.name = actorNames.at(i);
-    actor.position = int(sortedActorNames.indexOf(actor.name));
-    actor.color = kActorColors.at(actor.position % kActorColors.size());
+    const JourneyActorRosterEntry& entry = roster.display.at(i);
+    actor.position = entry.position;
+    actor.color = entry.color;
     actor.y = actorY;
-    actor.lines = wrapActor(actor.name, scene.config.maxLabelWidth, rootFont);
+    if (css && css->active) {
+      actor.circle = css->actorCircles.value(i);
+      actor.text = css->actorTexts.value(i);
+    }
+    actor.lines = wrapActor(actor.name, scene.config.maxLabelWidth, wrapFont);
+    const QString legendFamily = !actor.text.fontFamily.isEmpty()
+                                     ? actor.text.fontFamily
+                                     : scene.style.fontFamily;
+    const qreal legendSize = actor.text.fontSize >= 0.0
+                                 ? actor.text.fontSize
+                                 : scene.style.fontSize;
+    const editor::CssPixelFont legendFont =
+        editor::makeUnhintedCssPixelFont(legendFamily, legendSize);
     for (const QString& line : actor.lines) {
-      const qreal width = rootFont.horizontalAdvance(line);
+      // The drawn .legend text drives the legend block width upstream; a
+      // display:none text reports a zero rect while visibility:hidden keeps
+      // its advance.
+      const qreal width = actor.text.hasBox
+                              ? legendFont.horizontalAdvance(line)
+                              : 0.0;
       actor.maxLineWidth = std::max(actor.maxLineWidth, width);
       if (width > maxWidth && width > scene.config.leftMargin - width)
         maxWidth = width;
@@ -276,6 +356,19 @@ JourneyScene buildJourneyScene(const JourneyData& data, JourneyConfig config,
       section.fill = currentFill;
       section.cssFillActive = currentCssFillActive;
       section.colorIndex = currentColorIndex;
+      if (css && css->active) {
+        const JourneyCssOverrides::Section& resolved =
+            css->sections.value(sectionNumber);
+        section.box = resolved.box;
+        section.label = resolved.label;
+        section.svgText = resolved.svgText;
+        // The resolved string IS the cascade outcome (base .task-type rules
+        // included), so it always participates as a CSS value.
+        if (!resolved.box.fill.isEmpty()) {
+          section.fill = resolved.box.fill;
+          section.cssFillActive = true;
+        }
+      }
       scene.sections.append(std::move(section));
       lastSection = input.section;
       ++sectionNumber;
@@ -309,9 +402,28 @@ JourneyScene buildJourneyScene(const JourneyData& data, JourneyConfig config,
         svgNumber(jsAdd(taskXValue,
                         jsNumberScalar(scene.config.width / 2.0))),
                               300.0 + (5.0 - input.score) * 30.0);
+    if (css && css->active) {
+      const JourneyCssOverrides::Task& resolved = css->tasks.value(i);
+      task.box = resolved.box;
+      task.label = resolved.label;
+      task.svgText = resolved.svgText;
+      task.line = resolved.line;
+      task.face = resolved.face;
+      task.mouth = resolved.mouth;
+      if (!resolved.box.fill.isEmpty()) {
+        task.fill = resolved.box.fill;
+        task.cssFillActive = true;
+      }
+    }
+    qsizetype personIndex = 0;
     for (const QString& person : input.people)
-      if (person == QStringLiteral("__proto__") || actorNames.contains(person))
+      if (person == QStringLiteral("__proto__") || actorNames.contains(person)) {
         task.people.append(person);
+        if (css && css->active)
+          task.peopleCircles.append(
+              css->tasks.value(i).people.value(personIndex));
+        ++personIndex;
+      }
     JsScalar actorXValue = jsAdd(taskXValue, jsNumberScalar(14.0));
     for (const QString& person : task.people) {
       const qreal actorX = svgNumber(actorXValue);

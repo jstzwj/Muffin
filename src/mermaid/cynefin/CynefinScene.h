@@ -44,6 +44,51 @@ struct CynefinSceneStyle {
 
 enum class CynefinTextBaseline { Auto, Middle, Central };
 
+// themeCSS overlay for one cynefin DOM element. `measures` carries the
+// own-display flag for the item badge: the item text already wears its class
+// at getBBox time, so a themeCSS font resizes the badge, while own
+// display:none collapses the Chrome bbox to 0x0 and falls back to
+// label.length * 7. The viewBox stays config-driven (no bbox feedback).
+struct CynefinElementCss {
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString fontFamily;
+  qreal fontSize = -1.0;
+  QString fontWeight;
+  QString fontStyle;
+  qreal opacity = -1.0;
+  qreal fillOpacity = -1.0;
+  qreal strokeOpacity = -1.0;
+  bool visible = true;
+  bool measures = true;
+};
+
+// Slots follow the emission order (quadrant domains, then confusion; each
+// domain's visible items plus the overflow badge; then transitions).
+struct CynefinCssOverrides {
+  struct Item {
+    CynefinElementCss group;
+    CynefinElementCss rect;
+    CynefinElementCss text;
+  };
+  struct Arrow {
+    CynefinElementCss group;
+    CynefinElementCss line;
+    CynefinElementCss label;
+  };
+  bool active = false;
+  QVector<CynefinElementCss> backgrounds;
+  QVector<CynefinElementCss> boundaries;
+  CynefinElementCss confusion;
+  QVector<CynefinElementCss> labels;
+  QVector<CynefinElementCss> subtitles;
+  QVector<Item> items;
+  QVector<Arrow> arrows;
+  CynefinElementCss arrowHead;
+  CynefinElementCss title;
+};
+
 struct CynefinTextGeometry {
   QString role;
   QString text;
@@ -55,6 +100,7 @@ struct CynefinTextGeometry {
   QString anchor = QStringLiteral("middle");
   CynefinTextBaseline baseline = CynefinTextBaseline::Middle;
   QString fill;
+  CynefinElementCss css;
 };
 
 struct CynefinRectGeometry {
@@ -67,6 +113,7 @@ struct CynefinRectGeometry {
   QString stroke;
   qreal strokeWidth = 0.0;
   QVector<qreal> dash;
+  CynefinElementCss css;
 };
 
 struct CynefinPathGeometry {
@@ -79,6 +126,7 @@ struct CynefinPathGeometry {
   QString stroke;
   qreal strokeWidth = 1.0;
   QVector<qreal> dash;
+  CynefinElementCss css;
 };
 
 struct CynefinItemGeometry {
@@ -100,6 +148,7 @@ struct CynefinArrowGeometry {
   QString stroke;
   qreal strokeWidth = 2.0;
   CynefinTextGeometry label;
+  CynefinElementCss css;
 };
 
 struct CynefinScene final : MermaidScene {
@@ -121,6 +170,7 @@ struct CynefinScene final : MermaidScene {
   QVector<CynefinItemGeometry> items;
   QVector<CynefinArrowGeometry> arrows;
   CynefinTextGeometry title;
+  CynefinElementCss arrowHeadCss;
 
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter &painter,
@@ -129,6 +179,7 @@ struct CynefinScene final : MermaidScene {
 };
 
 CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
-                               CynefinSceneStyle style);
+                               CynefinSceneStyle style,
+                               const CynefinCssOverrides *css = nullptr);
 
 } // namespace muffin::mermaid::cynefin

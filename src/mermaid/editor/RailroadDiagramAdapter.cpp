@@ -7,6 +7,7 @@
 #include "mermaid/railroad/RailroadDiagram.h"
 #include "mermaid/railroad/RailroadScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QJsonObject>
 #include <QRegularExpression>
@@ -204,8 +205,152 @@ public:
         railroad::RailroadDiagram::parse(pre.code, dialect_);
     if (data.title.isEmpty() && !pre.title.isEmpty())
       data.title = HtmlSanitizer().sanitizedMermaidText(pre.title);
-    railroad::RailroadScene scene =
-        railroad::buildRailroadScene(data, std::move(config));
+
+    // themeCSS: every railroad element is styled only by the base sheet (no
+    // presentation attrs except the fonts on measureText's transient probe).
+    // The DOM shape is css-independent, so the resolveElements tree is derived
+    // from a first pass over the built scene; the probe element carries the
+    // measurement font attrs, which only tag-level rules can beat (the
+    // .railroad-diagram base rule dies in stylis scoping - #id .railroad-
+    // diagram never matches the svg itself - so the root #id rule owns the
+    // svg font and the probe attrs survive class rules).
+    const QString themeCss = pre.config.value(QStringLiteral("themeCSS")).toString();
+    railroad::RailroadCssOverrides overrides;
+    const bool themeCssActive = !themeCss.trimmed().isEmpty();
+    if (themeCssActive) {
+      using csscascade::ElementInput;
+      using csscascade::ElementStyle;
+      const railroad::RailroadScene pass1 =
+          railroad::buildRailroadScene(data, config);
+      const qreal rootFontSize =
+          cssFontSizePx(theme.fontSize,
+                        pieCssLengthContext(theme.fontFamily, 16.0));
+      ElementStyle rootStyle;
+      rootStyle.fill = theme.textColor;
+      rootStyle.stroke = QStringLiteral("none");
+      rootStyle.strokeWidth = QStringLiteral("1px");
+      rootStyle.color = QStringLiteral("black");
+      rootStyle.fontFamily = theme.fontFamily;
+      rootStyle.fontSize =
+          QStringLiteral("%1px").arg(QString::number(rootFontSize));
+      rootStyle.fontWeight = QStringLiteral("400");
+      ElementStyle inheritAll;
+
+      QVector<ElementInput> tree;
+      const auto push = [&tree](ElementInput input) {
+        tree.append(std::move(input));
+      };
+      push({QStringLiteral("svg"), {}, QStringLiteral("svg"),
+            QStringLiteral("diagram-root"), {QStringLiteral("railroad-diagram")},
+            {}, rootStyle, {}});
+      push({QStringLiteral("styleEl"), QStringLiteral("svg"),
+            QStringLiteral("style"), {}, {}, {}, inheritAll, {}});
+      push({QStringLiteral("probe"), QStringLiteral("svg"),
+            QStringLiteral("text"), {}, {}, {}, inheritAll, {},
+            QStringLiteral("font-family:%1;font-size:%2px")
+                .arg(config.fontFamily, QString::number(config.fontSize))});
+      push({QStringLiteral("rule"), QStringLiteral("svg"),
+            QStringLiteral("g"), {}, {QStringLiteral("railroad-rule")}, {},
+            inheritAll, {}});
+      static const QVector<QString> leafClasses{
+          QStringLiteral("railroad-terminal"),
+          QStringLiteral("railroad-nonterminal"),
+          QStringLiteral("railroad-special")};
+      QString openLeafGroup;
+      for (int i = 0; i < pass1.primitives.size(); ++i) {
+        const auto& primitive = pass1.primitives.at(i);
+        const QString key = QStringLiteral("prim-%1").arg(i);
+        const QString tag =
+            primitive.kind == railroad::RailroadPrimitiveKind::Rect
+                ? QStringLiteral("rect")
+                : primitive.kind == railroad::RailroadPrimitiveKind::Circle
+                      ? QStringLiteral("circle")
+                      : primitive.kind == railroad::RailroadPrimitiveKind::Path
+                            ? QStringLiteral("path")
+                            : QStringLiteral("text");
+        const bool leaf = leafClasses.contains(primitive.cssClass);
+        if (leaf && primitive.kind != railroad::RailroadPrimitiveKind::Text) {
+          openLeafGroup = key + QLatin1String("-group");
+          push({openLeafGroup, QStringLiteral("rule"), QStringLiteral("g"), {},
+                {primitive.cssClass}, {}, inheritAll, {}});
+          push({key, openLeafGroup, tag, {}, {}, {}, inheritAll, {}});
+        } else if (leaf &&
+                   primitive.kind == railroad::RailroadPrimitiveKind::Text &&
+                   !openLeafGroup.isEmpty()) {
+          push({key, openLeafGroup, tag, {}, {}, {}, inheritAll, {}});
+        } else if (primitive.kind == railroad::RailroadPrimitiveKind::Circle) {
+          push({key + QLatin1String("-group"), QStringLiteral("rule"),
+                QStringLiteral("g"), {}, {primitive.cssClass}, {}, inheritAll,
+                {}});
+          push({key, key + QLatin1String("-group"), tag, {}, {}, {},
+                inheritAll, {}});
+        } else {
+          QVector<QString> classes;
+          if (!primitive.cssClass.isEmpty()) classes.append(primitive.cssClass);
+          push({key, QStringLiteral("rule"), tag, {}, classes, {}, inheritAll,
+                {}});
+        }
+      }
+
+      // Live railroad getStyles sheet with the resolved theme values.
+      const QString px = QString::number(config.strokeWidth);
+      const QString fontSizePx = QString::number(config.fontSize);
+      const QString baseCss = QStringLiteral(
+          ".railroad-terminal rect { fill: %1; stroke: %2; stroke-width: %3px; }\n"
+          ".railroad-terminal text { fill: %4; font-family: %5; font-size: %6px; text-anchor: middle; dominant-baseline: middle; }\n"
+          ".railroad-nonterminal rect { fill: %7; stroke: %8; stroke-width: %3px; }\n"
+          ".railroad-nonterminal text { fill: %9; font-family: %5; font-size: %6px; text-anchor: middle; dominant-baseline: middle; }\n"
+          ".railroad-line { stroke: %10; stroke-width: %3px; fill: none; }\n"
+          ".railroad-start circle, .railroad-end circle { fill: %11; }\n"
+          ".railroad-special rect { fill: %12; stroke: %13; stroke-width: %3px; stroke-dasharray: 5,3; }\n"
+          ".railroad-special text { fill: %9; font-family: %5; font-size: %6px; text-anchor: middle; dominant-baseline: middle; }\n"
+          ".railroad-rule-name { font-weight: bold; fill: %14; font-family: %5; font-size: %6px; }\n")
+          .arg(config.terminalFill, config.terminalStroke, px,
+               config.terminalTextColor, config.fontFamily, fontSizePx,
+               config.nonTerminalFill, config.nonTerminalStroke,
+               config.nonTerminalTextColor, config.lineColor, config.markerFill,
+               config.specialFill, config.specialStroke, config.ruleNameColor);
+      const QHash<QString, ElementStyle> css = csscascade::resolveElements(
+          themeCss, tree, baseCss);
+      const CssLengthContext familyCtx =
+          pieCssLengthContext(theme.fontFamily, rootFontSize);
+      const auto convert = [&](const QString& key) {
+        railroad::RailroadElementCss out;
+        const ElementStyle& resolved = css.value(key);
+        out.fill = resolved.fill;
+        out.stroke = resolved.stroke;
+        out.strokeWidth = resolved.strokeWidth;
+        if (!resolved.fontFamily.trimmed().isEmpty())
+          out.fontFamily = firstFontFamily(resolved.fontFamily);
+        out.fontSize = cssFontSizePx(resolved.fontSize, familyCtx);
+        out.fontWeight = resolved.fontWeight;
+        out.fontStyle = resolved.fontStyle;
+        out.opacity = resolved.effectiveOpacity;
+        // Pure channel opacities - the paint layer multiplies opacity once.
+        out.fillOpacity = cssOpacity(resolved.fillOpacity);
+        out.strokeOpacity = cssOpacity(resolved.strokeOpacity);
+        out.visible = resolved.displayed();
+        return out;
+      };
+      overrides.active = true;
+      const ElementStyle& probe = css.value(QStringLiteral("probe"));
+      if (!probe.fontFamily.trimmed().isEmpty())
+        overrides.probeFontFamily = firstFontFamily(probe.fontFamily);
+      overrides.probeFontSize = cssFontSizePx(probe.fontSize, familyCtx);
+      {
+        const QString weight = probe.fontWeight.trimmed().toLower();
+        overrides.probeBold =
+            weight == QLatin1String("bold") ||
+            weight == QLatin1String("bolder") ||
+            (!weight.isEmpty() && weight.toInt() >= 700);
+      }
+      for (int i = 0; i < pass1.primitives.size(); ++i)
+        overrides.perPrimitive.append(
+            convert(QStringLiteral("prim-%1").arg(i)));
+    }
+
+    railroad::RailroadScene scene = railroad::buildRailroadScene(
+        data, std::move(config), themeCssActive ? &overrides : nullptr);
 
     MermaidRenderMetadata metadata = renderMetadata(
         pre, type, QString(), data.accTitle, data.accDescr,

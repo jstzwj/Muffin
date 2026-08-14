@@ -7,6 +7,7 @@
 #include "mermaid/flowchart/SwimlaneLayout.h"
 #include "mermaid/scene/FlowScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QJsonObject>
 
@@ -27,13 +28,17 @@ struct SwimlaneDiagramImpl : Diagram {
 
   MermaidRenderEntry render(const MermaidPreprocessResult& pre, const QString& type,
                             const QString& theme) const override {
-    const flowchart::Flowchart chart = flowchart::Flowchart::parse(pre.code);
+    const QJsonObject flowConfig =
+        pre.config.value(QStringLiteral("flowchart")).toObject();
+    flowchart::FlowchartParseOptions parseOptions;
+    parseOptions.inheritDir =
+        flowConfig.value(QStringLiteral("inheritDir")).toBool(false);
+    const flowchart::Flowchart chart =
+        flowchart::Flowchart::parse(pre.code, parseOptions);
     const QString configuredTheme = themeFromConfig(pre.config);
     const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
         themeIdFromName(configuredTheme.isEmpty() ? theme : configuredTheme),
         themeOverrides(pre.config));
-    const QJsonObject flowConfig =
-        pre.config.value(QStringLiteral("flowchart")).toObject();
     const QJsonObject swimlaneConfig =
         pre.config.value(QStringLiteral("swimlane")).toObject();
     const flowchart::FlowLook look = flowchart::parseFlowLook(
@@ -56,10 +61,35 @@ struct SwimlaneDiagramImpl : Diagram {
     textOptions.htmlLabels = rawHtmlLabels.isUndefined() || rawHtmlLabels.isNull()
         ? true : truthyConfigValue(rawHtmlLabels);
 
+    const csscascade::FlowchartProjection css = csscascade::resolveFlowchart(
+        chart.data(), themeVars,
+        pre.config.value(QStringLiteral("themeCSS")).toString(), true,
+        flowchart::flowLookName(look), textOptions.htmlLabels);
+    QMap<QString, flowchart::FlowTextOptions> perNodeTextOptions;
+    for (const flowchart::FlowVertex& vertex : chart.data().vertices) {
+      const auto style = css.nodeLabels.constFind(vertex.id);
+      if (style == css.nodeLabels.constEnd()) continue;
+      flowchart::FlowTextOptions nodeOptions = textOptions;
+      nodeOptions.fontFamily = style->fontFamily;
+      const CssLengthContext context = pieCssLengthContext(
+          nodeOptions.fontFamily, textOptions.fontPixelSize);
+      nodeOptions.fontPixelSize = cssFontSizePx(style->fontSize, context);
+      nodeOptions.lineHeight = nodeOptions.fontPixelSize * 1.5;
+      nodeOptions.fontWeight = cssFontWeightToQt(
+          QJsonValue(style->fontWeight), QFont::Normal);
+      perNodeTextOptions.insert(vertex.id, nodeOptions);
+    }
+
     const quint32 handDrawnSeed = static_cast<quint32>(std::max(
         0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
-    const QMap<QString, QSizeF> renderedSizes =
-        flowchart::measureFlowchartNodes(chart.data(), textOptions);
+    QMap<QString, QSizeF> renderedSizes =
+        flowchart::measureFlowchartNodes(chart.data(), textOptions,
+                                         perNodeTextOptions);
+    for (const flowchart::FlowVertex& vertex : chart.data().vertices) {
+      const auto style = css.nodes.constFind(vertex.id);
+      if (style != css.nodes.constEnd() && !style->displayed())
+        renderedSizes.insert(vertex.id, QSizeF(60.0, 30.0));
+    }
     const QMap<QString, QSizeF> sizes = look == flowchart::FlowLook::HandDrawn
         ? flowchart::measureSwimlaneHandDrawnNodes(
               chart.data(), renderedSizes, handDrawnSeed)
@@ -89,15 +119,38 @@ struct SwimlaneDiagramImpl : Diagram {
       swimlaneOptions.lineHops = rawLineHops.toString();
     for (const flowchart::FlowEdge& edge : chart.data().edges) {
       if (edge.text.isEmpty()) continue;
+      flowchart::FlowTextOptions labelOptions = textOptions;
+      labelOptions.edgeLabelRectNode = true;
+      const auto style = css.edgeLabels.constFind(edge.id);
+      if (style != css.edgeLabels.constEnd()) {
+        labelOptions.fontFamily = style->fontFamily;
+        const CssLengthContext context = pieCssLengthContext(
+            labelOptions.fontFamily, textOptions.fontPixelSize);
+        labelOptions.fontPixelSize = cssFontSizePx(style->fontSize, context);
+        labelOptions.lineHeight = labelOptions.fontPixelSize * 1.5;
+        labelOptions.fontWeight = cssFontWeightToQt(
+            QJsonValue(style->fontWeight), QFont::Normal);
+      }
       const flowchart::FlowEdgeLabelLayout prepared =
-          flowchart::layoutFlowchartEdgeLabel(edge, textOptions);
+          flowchart::layoutFlowchartEdgeLabel(edge, labelOptions);
       swimlaneOptions.preparedEdgeLabels.insert(edge.id, prepared);
     }
     for (const flowchart::FlowSubgraph& subgraph : chart.data().subgraphs) {
       if (subgraph.title.isEmpty()) continue;
+      flowchart::FlowTextOptions labelOptions = textOptions;
+      const auto style = css.clusterLabels.constFind(subgraph.id);
+      if (style != css.clusterLabels.constEnd()) {
+        labelOptions.fontFamily = style->fontFamily;
+        const CssLengthContext context = pieCssLengthContext(
+            labelOptions.fontFamily, textOptions.fontPixelSize);
+        labelOptions.fontPixelSize = cssFontSizePx(style->fontSize, context);
+        labelOptions.lineHeight = labelOptions.fontPixelSize * 1.5;
+        labelOptions.fontWeight = cssFontWeightToQt(
+            QJsonValue(style->fontWeight), QFont::Normal);
+      }
       swimlaneOptions.measuredClusterLabels.insert(
           subgraph.id,
-          flowchart::measureFlowchartClusterLabel(subgraph, textOptions));
+          flowchart::measureFlowchartClusterLabel(subgraph, labelOptions));
     }
 
     flowchart::FlowLayoutResult layout;
@@ -132,8 +185,14 @@ struct SwimlaneDiagramImpl : Diagram {
         diagramPadding);
     metadata.svgUseMaxWidth =
         swimlaneBoolean(flowConfig, "useMaxWidth", true);
+    flowscene::FlowSceneTextOptions sceneTextOptions;
+    sceneTextOptions.nodeHtmlLabels = textOptions.htmlLabels;
+    sceneTextOptions.auxiliaryHtmlLabels = textOptions.htmlLabels;
+    sceneTextOptions.css = &css;
     flowscene::FlowScene scene = flowscene::buildFlowScene(
-        chart.data(), layout, themeVars, look, handDrawnSeed);
+        chart.data(), layout, themeVars, look, handDrawnSeed,
+        sceneTextOptions);
+    scene.markerDiagramType = QStringLiteral("swimlane");
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(qCeil(scene.bounds.width()),

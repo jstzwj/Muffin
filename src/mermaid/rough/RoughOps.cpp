@@ -238,7 +238,9 @@ QVector<QPair<QPointF, QPointF>> hachureLines(
                     (p2.x() - p1.x()) / (p2.y() - p1.y())});
     }
   }
-  std::sort(edges.begin(), edges.end(), [](const Edge& a, const Edge& b) {
+  // ECMAScript Array.prototype.sort is stable. Equal-x scan edges must retain
+  // polygon insertion order or rounded/closed paths pair different crossings.
+  std::stable_sort(edges.begin(), edges.end(), [](const Edge& a, const Edge& b) {
     if (a.ymin != b.ymin) return a.ymin < b.ymin;
     if (a.x != b.x) return a.x < b.x;
     return a.ymax < b.ymax;
@@ -258,7 +260,7 @@ QVector<QPair<QPointF, QPointF>> hachureLines(
     active.erase(std::remove_if(active.begin(), active.end(),
                                 [&](const Edge& edge) { return edge.ymax <= y; }),
                  active.end());
-    std::sort(active.begin(), active.end(), [](const Edge& a, const Edge& b) {
+    std::stable_sort(active.begin(), active.end(), [](const Edge& a, const Edge& b) {
       return a.x < b.x;
     });
     if (stepOffset != 1 || iteration % static_cast<int>(gap) == 0) {
@@ -346,27 +348,55 @@ QVector<Op> bezierTo(QPointF c1, QPointF c2, QPointF end,
   return ops;
 }
 
-OpSet svgPath(const QPainterPath& source, State& state, bool closed) {
-  OpSet set;
+QVector<PathCommand> normalizedCommands(const QPainterPath& source,
+                                        bool closed) {
+  QVector<PathCommand> commands;
   QPointF current, first;
   for (int i = 0; i < source.elementCount(); ++i) {
     const auto element = source.elementAt(i);
     const QPointF point(element.x, element.y);
-    if (element.isMoveTo()) { current = first = point; continue; }
-    if (element.isLineTo()) {
-      set.ops += doubleLine(current, point, state);
+    if (element.isMoveTo()) {
+      current = first = point;
+      commands.append({PathCommandType::Move, point, {}, {}});
+    } else if (element.isLineTo()) {
       current = point;
-    } else if (element.type == QPainterPath::CurveToElement && i + 2 < source.elementCount()) {
-      const auto c2 = source.elementAt(++i), end = source.elementAt(++i);
-      set.ops += bezierTo(point, QPointF(c2.x, c2.y), QPointF(end.x, end.y), current, state);
+      commands.append({PathCommandType::LineTo, point, {}, {}});
+    } else if (element.type == QPainterPath::CurveToElement &&
+               i + 2 < source.elementCount()) {
+      const auto control2 = source.elementAt(++i);
+      const auto end = source.elementAt(++i);
       current = QPointF(end.x, end.y);
+      commands.append({PathCommandType::CubicTo, current, point,
+                       QPointF(control2.x, control2.y)});
     }
   }
   const bool closingLineMaterialized =
-      source.elementCount() > 1 && source.elementAt(source.elementCount() - 1).isLineTo() &&
+      source.elementCount() > 1 &&
+      source.elementAt(source.elementCount() - 1).isLineTo() &&
       current == first;
   if (closed && !closingLineMaterialized)
-    set.ops += doubleLine(current, first, state);
+    commands.append({PathCommandType::Close, {}, {}, {}});
+  return commands;
+}
+
+OpSet svgPath(const QVector<PathCommand>& source, State& state) {
+  OpSet set;
+  QPointF current, first;
+  for (const PathCommand& command : source) {
+    if (command.type == PathCommandType::Move) {
+      current = first = command.point;
+    } else if (command.type == PathCommandType::LineTo) {
+      set.ops += doubleLine(current, command.point, state);
+      current = command.point;
+    } else if (command.type == PathCommandType::CubicTo) {
+      set.ops += bezierTo(command.control1, command.control2, command.point,
+                          current, state);
+      current = command.point;
+    } else if (command.type == PathCommandType::Close) {
+      set.ops += doubleLine(current, first, state);
+      current = first;
+    }
+  }
   return set;
 }
 
@@ -434,17 +464,23 @@ void simplifyPoints(const QVector<QPointF>& points, qsizetype start, qsizetype e
   }
 }
 
-QVector<QVector<QPointF>> pointsOnPath(const QPainterPath& source,
-                                      qreal tolerance, qreal distance,
-                                      bool closed) {
+QVector<QVector<QPointF>> pointsOnPath(
+    const QVector<PathCommand>& source, qreal tolerance, qreal distance) {
   QVector<QVector<QPointF>> sets;
   QVector<QPointF> currentPoints, pendingCurve;
   QPointF start;
   auto appendCurve = [&] {
+    // points-on-path builds pointsOnBezierCurves() into a fresh array and
+    // then spreads that array into currentPoints. In particular, the first
+    // curve start is observable twice (once from M and once from the sampled
+    // curve) before RDP simplification. Writing directly into currentPoints
+    // changes hachure polygons for rounded/path-based RoughJS nodes.
+    QVector<QPointF> curvePoints;
     for (qsizetype i = 0; i + 3 < pendingCurve.size(); i += 3)
       splitBezier({pendingCurve[i], pendingCurve[i + 1],
                    pendingCurve[i + 2], pendingCurve[i + 3]},
-                  tolerance, currentPoints);
+                  tolerance, curvePoints);
+    currentPoints += curvePoints;
     pendingCurve.clear();
   };
   auto appendPoints = [&] {
@@ -454,32 +490,26 @@ QVector<QVector<QPointF>> pointsOnPath(const QPainterPath& source,
       currentPoints.clear();
     }
   };
-  for (int i = 0; i < source.elementCount(); ++i) {
-    const auto element = source.elementAt(i);
-    const QPointF point(element.x, element.y);
-    if (element.isMoveTo()) {
+  for (const PathCommand& command : source) {
+    if (command.type == PathCommandType::Move) {
       appendPoints();
-      start = point;
+      start = command.point;
       currentPoints.append(start);
-    } else if (element.isLineTo()) {
+    } else if (command.type == PathCommandType::LineTo) {
       appendCurve();
-      currentPoints.append(point);
-    } else if (element.type == QPainterPath::CurveToElement && i + 2 < source.elementCount()) {
+      currentPoints.append(command.point);
+    } else if (command.type == PathCommandType::CubicTo) {
       if (pendingCurve.isEmpty())
         pendingCurve.append(currentPoints.isEmpty() ? start : currentPoints.last());
-      const auto control2 = source.elementAt(++i);
-      const auto end = source.elementAt(++i);
-      pendingCurve.append(point);
-      pendingCurve.append(QPointF(control2.x, control2.y));
-      pendingCurve.append(QPointF(end.x, end.y));
+      pendingCurve.append(command.control1);
+      pendingCurve.append(command.control2);
+      pendingCurve.append(command.point);
+    } else if (command.type == PathCommandType::Close) {
+      appendCurve();
+      currentPoints.append(start);
     }
   }
   appendCurve();
-  const bool closingLineMaterialized =
-      source.elementCount() > 1 && source.elementAt(source.elementCount() - 1).isLineTo() &&
-      !currentPoints.isEmpty() && currentPoints.last() == start;
-  if (closed && !closingLineMaterialized && !currentPoints.isEmpty())
-    currentPoints.append(start);
   if (!currentPoints.isEmpty()) sets.append(currentPoints);
   if (distance <= 0.0) return sets;
   QVector<QVector<QPointF>> simplified;
@@ -605,10 +635,14 @@ Drawable arc(qreal x, qreal y, qreal width, qreal height,
 }
 
 Drawable path(const QPainterPath& source, Options options, bool closed) {
+  return path(normalizedCommands(source, closed), std::move(options));
+}
+
+Drawable path(const QVector<PathCommand>& source, Options options) {
   State state{options};
   const QVector<QVector<QPointF>> pointSets =
-      pointsOnPath(source, 1.0, (1.0 + options.roughness) / 2.0, closed);
-  const OpSet outline = svgPath(source, state, closed);
+      pointsOnPath(source, 1.0, (1.0 + options.roughness) / 2.0);
+  const OpSet outline = svgPath(source, state);
   QVector<OpSet> sets;
   if (!options.fill.isEmpty() && options.fill != QLatin1String("transparent") &&
       options.fill != QLatin1String("none")) {
@@ -618,7 +652,7 @@ Drawable path(const QPainterPath& source, Options options, bool closed) {
         fillState.options.disableMultiStroke = true;
         fillState.options.roughness = options.roughness == 0 ? 0
             : options.roughness + options.fillShapeRoughnessGain;
-        OpSet fill = svgPath(source, fillState, closed);
+        OpSet fill = svgPath(source, fillState);
         fill.type = OpSetType::FillPath;
         bool first = true;
         fill.ops.erase(std::remove_if(fill.ops.begin(), fill.ops.end(), [&](const Op& op) {

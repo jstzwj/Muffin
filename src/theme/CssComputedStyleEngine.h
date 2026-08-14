@@ -43,6 +43,11 @@ struct CssElement {
   QString tag;
   QString id;
   QStringList classes;
+  // SVG/HTML attributes used by Mermaid selectors (`[data-look="neo"]`,
+  // `[data-et="node"]`, `[aria-*]`, ...). Attribute names are matched ASCII
+  // case-insensitively; values follow normal CSS case-sensitive matching unless
+  // the selector carries the `i` flag.
+  QHash<QString, QString> attributes;
   QString pseudoElement;  // "", "before", "after", "selection", "marker"
   const CssElement* parent = nullptr;
   const CssElement* previousSibling = nullptr;  // adapter only; prototype stays null
@@ -58,6 +63,15 @@ struct CssElement {
   QSet<QString> hasChildTags;
   QSet<QString> hasChildClasses;
   const CssElementNavigator* navigator = nullptr;  // live adapter only; never owned
+};
+
+struct CssAttributeSelector {
+  enum class Operator { Exists, Equals, IncludesWord, DashMatch, Prefix,
+                        Suffix, Contains };
+  QString name;
+  QString value;
+  Operator op = Operator::Exists;
+  bool caseInsensitive = false;
 };
 
 struct CssElementState {
@@ -113,6 +127,7 @@ struct SimpleSelector {
   QString hasClass;
   bool hasDirect = false;
   bool unsupported = false;
+  QVector<CssAttributeSelector> attributes;
   // Rightmost compound carries a Typora editor-only class (md-meta-block, ty-*, …) —
   // propagated to ParsedSelector.editorOnly; such selectors never match (see TyporaEditorOnly.h).
   bool editorOnly = false;
@@ -146,6 +161,13 @@ public:
 
   CssComputedStyle styleFor(const CssElement& element) const;
   CssComputedStyle styleFor(const CssElement& element, const CssElementState& state) const;
+  CssComputedStyle styleFor(
+      const CssElement& element, const CssElementState& state,
+      const std::vector<CssDeclaration>& inlineDeclarations) const;
+  CssComputedStyle styleFor(
+      const CssElement& element, const CssElementState& state,
+      const std::vector<CssDeclaration>& inlineDeclarations,
+      const std::vector<CssDeclaration>& presentationDeclarations) const;
   const CssSelectorFeatures& selectorFeatures() const { return selectorFeatures_; }
 
 private:

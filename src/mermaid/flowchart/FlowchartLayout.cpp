@@ -145,6 +145,13 @@ QPointF intersectPolygon(const d::DagreNodeLabel& node, const QVector<QPointF>& 
 // text/tagged_rect/lined_process/divided_rect) falls through to intersectRect.
 QPointF intersectNodeForShape(const d::DagreNodeLabel& node, const QString& type,
                               const QPointF& point, FlowLook look) {
+  // State terminals install Mermaid's circle intersect handler after their
+  // RoughJS bounds have updated width/height. That handler intentionally uses
+  // width / 2 for both axes, even when the rough bbox is not square.
+  if (type == QLatin1String("stateStart") ||
+      type == QLatin1String("stateEnd")) {
+    return intersectEllipse(node, node.width / 2.0, node.width / 2.0, point);
+  }
   const QString ctype = canonicalShape(type);
   if (ctype == QLatin1String("circle") ||
       ctype == QLatin1String("double_circle") ||
@@ -201,11 +208,22 @@ QSizeF measureLabel(const QString& text, const QString& labelType,
   FlowLabelDocument document = options.htmlLabels
       ? parseFlowLabel(text, labelType)
       : parseFlowSvgLabel(text, labelType);
+  document.baseWeight = options.fontWeight;
   prepareFlowLabelMath(document, options.fontPixelSize);
+  if (options.maximumLineWidth > 0.0)
+    document = wrapFlowLabel(document, options.fontFamily,
+                             options.fontPixelSize,
+                             options.maximumLineWidth);
   QSizeF result;
   if (options.htmlLabels) {
     result = measureFlowLabel(document, options.fontFamily,
                               options.fontPixelSize, options.lineHeight);
+    // addHtmlSpan switches to display:table + an explicit CSS width when the
+    // max-width constraint actually wraps the label. The browser therefore
+    // retains the configured container width instead of shrinking to the
+    // longest wrapped line.
+    if (!document.visualLines.isEmpty() && options.maximumLineWidth > 0.0)
+      result.setWidth(std::max(result.width(), options.maximumLineWidth));
     if (options.chromiumInlineWidth) {
       const qreal inlineWidth = measureChromiumInlineLayoutWidth(
           document, options.fontFamily, options.fontPixelSize);
@@ -231,19 +249,29 @@ QSizeF measureLabel(const QString& text, const QString& labelType,
 FlowEdgeLabelLayout layoutFlowchartEdgeLabel(
     const FlowEdge& edge, const FlowTextOptions& options) {
   FlowEdgeLabelLayout result;
+  // The dagre edge pipeline always builds its formatted document with the SVG
+  // parser first; useHtmlLabels only selects the resulting DOM container and
+  // bbox branch. Keeping those decisions separate also preserves Mermaid's
+  // rich edge-label Math/Markdown sizing.
   result.document = parseFlowSvgLabel(edge.text, edge.labelType);
+  result.document.baseWeight = options.fontWeight;
   QSizeF content = measureFlowLabel(result.document, options.fontFamily,
                                    options.fontPixelSize, options.lineHeight);
+  const qreal maximumWidth = std::max<qreal>(0.0,
+      options.maximumLineWidth - 4.0);
   if (!result.document.text.contains(QLatin1Char('\n')) &&
-      content.width() > 196.0) {
+      maximumWidth > 0.0 && content.width() > maximumWidth) {
     result.document = wrapFlowLabel(result.document, options.fontFamily,
-                                    options.fontPixelSize, 196.0);
-    result.document.visualLineAdvance =
-        flowSvgFormattedTextLineStep(options.fontPixelSize);
+                                    options.fontPixelSize, maximumWidth);
+    if (!options.htmlLabels)
+      result.document.visualLineAdvance =
+          flowSvgFormattedTextLineStep(options.fontPixelSize);
     content = measureFlowLabel(result.document, options.fontFamily,
                                options.fontPixelSize, options.lineHeight);
   }
   result.size = content;
+  if (options.edgeLabelRectNode)
+    return result;
   result.size.rwidth() += 4.0;
   result.size.setWidth(std::max<qreal>(30.0, result.size.width()));
   const qsizetype lineCount = !result.document.visualLines.isEmpty()
@@ -269,71 +297,92 @@ QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph,
                                     const FlowTextOptions& options) {
   FlowTextOptions clusterOptions = options;
   clusterOptions.lineHeight = 17.0;
-  return measureFlowLabel(parseFlowSvgLabel(subgraph.title, subgraph.labelType),
-                          clusterOptions.fontFamily, clusterOptions.fontPixelSize,
-                          clusterOptions.lineHeight);
+  FlowLabelDocument document = parseFlowSvgLabel(subgraph.title,
+                                                  subgraph.labelType);
+  document.baseWeight = options.fontWeight;
+  if (clusterOptions.htmlLabels)
+    return measureFlowLabel(document, clusterOptions.fontFamily,
+                            clusterOptions.fontPixelSize,
+                            clusterOptions.lineHeight);
+  const QRectF visual = measureChromiumSvgTextBounds(
+      document, clusterOptions.fontFamily, clusterOptions.fontPixelSize,
+      QFont::Normal, 1.0, clusterOptions.chromiumSvgTerminalPhase);
+  QSizeF result = visual.size();
+  result.setWidth(std::max(
+      result.width(), measureChromiumInlineLayoutWidth(
+                          document, clusterOptions.fontFamily,
+                          clusterOptions.fontPixelSize)));
+  return result;
 }
 
-QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data, FlowTextOptions options) {
+QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data,
+                                            FlowTextOptions options) {
+  return measureFlowchartNodes(data, options, {});
+}
+
+QMap<QString, QSizeF> measureFlowchartNodes(
+    const FlowchartData& data, FlowTextOptions options,
+    const QMap<QString, FlowTextOptions>& perNodeOptions) {
   QMap<QString, QSizeF> result;
   for (const FlowVertex& vertex : data.vertices) {
-    const QSizeF label = measureLabel(vertex.text, vertex.labelType, options);
+    const FlowTextOptions nodeOptions = perNodeOptions.value(vertex.id, options);
+    const QSizeF label = measureLabel(vertex.text, vertex.labelType, nodeOptions);
     QSizeF size;
     const QString type = canonicalShape(vertex.type);
-    const qreal pad = options.verticalPadding;  // mermaid flowchart node.padding (default 15)
-    const bool neo = options.look == FlowLook::Neo;
+    const qreal pad = nodeOptions.verticalPadding;  // mermaid flowchart node.padding (default 15)
+    const bool neo = nodeOptions.look == FlowLook::Neo;
     if (neo && type == QLatin1String("rect")) {
       // squareRect.ts: neo fixes the horizontal/vertical label padding at 16/12.
       size = QSizeF(label.width() + 32.0, label.height() + 24.0);
     } else if (type == QLatin1String("round")) {
-      size = QSizeF(label.width() + options.horizontalPadding,
-                    label.height() + options.verticalPadding * 2.0);
+      size = QSizeF(label.width() + nodeOptions.horizontalPadding,
+                    label.height() + nodeOptions.verticalPadding * 2.0);
     } else if (type == QLatin1String("circle")) {
       // circle.ts deliberately derives the radius from label width only.
       const qreal diameter = neo ? label.width() + 64.0
-                                 : std::max(label.width(), label.height()) + options.verticalPadding;
+                                 : std::max(label.width(), label.height()) + nodeOptions.verticalPadding;
       size = QSizeF(diameter, diameter);
     } else if (type == QLatin1String("diamond")) {
-      const qreal diameter = label.width() + label.height() + options.verticalPadding * 2.0;
+      const qreal diameter = label.width() + label.height() + nodeOptions.verticalPadding * 2.0;
       size = QSizeF(diameter, diameter);
     } else if (type == QLatin1String("stadium")) {
-      const qreal height = label.height() + (neo ? 24.0 : options.verticalPadding);
-      size = QSizeF(label.width() + height / 4.0 + (neo ? 40.0 : options.horizontalPadding / 2.0),
+      const qreal height = label.height() + (neo ? 24.0 : nodeOptions.verticalPadding);
+      size = QSizeF(label.width() + height / 4.0 + (neo ? 40.0 : nodeOptions.horizontalPadding / 2.0),
                     height);
     } else if (type == QLatin1String("subroutine")) {
-      size = QSizeF(label.width() + 16.0 + (neo ? 28.0 : options.horizontalPadding / 2.0),
-                    label.height() + (neo ? 12.0 : options.verticalPadding));
+      size = QSizeF(label.width() + 16.0 + (neo ? 28.0 : nodeOptions.horizontalPadding / 2.0),
+                    label.height() + (neo ? 12.0 : nodeOptions.verticalPadding));
     } else if (type == QLatin1String("cylinder")) {
-      const qreal width = label.width() + (neo ? 24.0 : options.horizontalPadding / 2.0);
+      const qreal width = label.width() + (neo ? 24.0 : nodeOptions.horizontalPadding / 2.0);
       const qreal radiusY = (width / 2.0) / (2.5 + width / 50.0);
-      size = QSizeF(width, label.height() + (neo ? 24.0 : options.verticalPadding) + radiusY * 3.0);
+      size = QSizeF(width, label.height() + (neo ? 24.0 : nodeOptions.verticalPadding) + radiusY * 3.0);
     } else if (type == QLatin1String("odd")) {
       if (neo) {
         const qreal height = label.height() + 24.0;
         size = QSizeF(label.width() + 42.0 + height / 4.0, height);
       }
       else {
-        const qreal height = label.height() + options.verticalPadding;
-        size = QSizeF(label.width() + options.horizontalPadding / 2.0 + height / 4.0,
+        const qreal height = label.height() + nodeOptions.verticalPadding;
+        size = QSizeF(label.width() + nodeOptions.horizontalPadding / 2.0 + height / 4.0,
                       height);
       }
     } else if (type == QLatin1String("hexagon")) {
-      const qreal height = label.height() + (neo ? 70.0 : options.verticalPadding);
-      size = QSizeF(label.width() + (neo ? 32.0 : options.horizontalPadding / 2.0) +
+      const qreal height = label.height() + (neo ? 70.0 : nodeOptions.verticalPadding);
+      size = QSizeF(label.width() + (neo ? 32.0 : nodeOptions.horizontalPadding / 2.0) +
                         2.0 * height / (neo ? 3.5 : 4.0),
                     height);
     } else if (type == QLatin1String("trapezoid")) {
-      const qreal height = label.height() + options.verticalPadding;
-      size = QSizeF(label.width() + (neo ? 30.0 : options.horizontalPadding / 2.0) + height,
+      const qreal height = label.height() + nodeOptions.verticalPadding;
+      size = QSizeF(label.width() + (neo ? 30.0 : nodeOptions.horizontalPadding / 2.0) + height,
                     height);
     } else if (type == QLatin1String("inv_trapezoid")) {
-      const qreal height = label.height() + options.verticalPadding * 2.0;
-      size = QSizeF(label.width() + (neo ? 60.0 : options.horizontalPadding) + height,
+      const qreal height = label.height() + nodeOptions.verticalPadding * 2.0;
+      size = QSizeF(label.width() + (neo ? 60.0 : nodeOptions.horizontalPadding) + height,
                     height);
     } else if (type == QLatin1String("lean_right") ||
                type == QLatin1String("lean_left")) {
-      const qreal height = label.height() + options.verticalPadding;
-      size = QSizeF(label.width() + (neo ? 30.0 : options.horizontalPadding / 2.0) + height,
+      const qreal height = label.height() + nodeOptions.verticalPadding;
+      size = QSizeF(label.width() + (neo ? 30.0 : nodeOptions.horizontalPadding / 2.0) + height,
                     height);
     } else if (type == QLatin1String("triangle") ||
                type == QLatin1String("flipped_triangle")) {
@@ -470,8 +519,8 @@ QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data, FlowTextO
       // derived path params. flowShapeArcShapeSize evaluates the forward model.
       size = flowShapeArcShapeSize(type, label.width(), label.height());
     } else {
-      size = QSizeF(label.width() + options.horizontalPadding * 2.0,
-                    label.height() + options.verticalPadding * 2.0);
+      size = QSizeF(label.width() + nodeOptions.horizontalPadding * 2.0,
+                    label.height() + nodeOptions.verticalPadding * 2.0);
     }
     result.insert(vertex.id, size);
   }
@@ -565,7 +614,7 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     const QString parentDirection = data.direction.toUpper().isEmpty()
                                         ? QStringLiteral("TB")
                                         : data.direction.toUpper();
-    inner.direction = it->hasExplicitDir && !it->dir.isEmpty()
+    inner.direction = !it->dir.isEmpty()
                           ? it->dir
                           : (!retainedRoot.isEmpty()
                                  ? QStringLiteral("TB")
@@ -589,6 +638,10 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
 
     FlowLayoutOptions innerOptions = options;
     innerOptions.rankSpacing += 25.0;
+    if (options.preserveRecursiveSvgFrame) {
+      innerOptions.preserveDagreCoordinates = true;
+      innerOptions.diagramPadding = 8.0;
+    }
     item.layout = layoutFlowchartNodesDagreScope(inner, measuredNodes, innerOptions,
                                                  nullptr, item.id);
     const auto root = std::find_if(item.layout.clusters.cbegin(), item.layout.clusters.cend(),
@@ -1020,6 +1073,16 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     const QSizeF titleSize = options.measuredClusterLabels.value(it->id);
     if (titleSize.isValid() && !titleSize.isEmpty())
       c.width = std::max(c.width, titleSize.width() + 8.0);
+    if (options.clusterSizeTransform) {
+      const QSizeF logicalSize(c.width, c.height);
+      const QRectF logicalBounds(
+          QPointF(c.x - c.width / 2.0, c.y - c.height / 2.0), logicalSize);
+      const QSizeF rendered = options.clusterSizeTransform(c.id, logicalBounds);
+      c.logicalWidth = logicalSize.width();
+      c.logicalHeight = logicalSize.height();
+      c.width = rendered.width();
+      c.height = rendered.height();
+    }
     result.clusters.push_back(c);
   }
 
@@ -1028,7 +1091,10 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     if (!atom) continue;
     const QPointF atomCenter(atom->x.value_or(0.0) - origin.x(),
                              atom->y.value_or(0.0) - origin.y());
-    const QPointF delta = atomCenter - item.center;
+    const QPointF delta = options.preserveRecursiveSvgFrame
+        ? QPointF(atomCenter.x() - item.size.width() / 2.0 - 8.0,
+                  atomCenter.y() - item.size.height() / 2.0 - 8.0)
+        : atomCenter - item.center;
     for (FlowLayoutNode node : item.layout.nodes) {
       node.x += delta.x();
       node.y += delta.y();
@@ -1108,6 +1174,26 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
       cluster.y -= finalOrigin.y();
     }
   }
+  const qreal subGraphTitleTotalMargin =
+      options.subGraphTitleTopMargin + options.subGraphTitleBottomMargin;
+  if (!qFuzzyIsNull(subGraphTitleTotalMargin)) {
+    const qreal offset = subGraphTitleTotalMargin / 2.0;
+    // Mermaid applies the title band after Dagre: every regular node and edge
+    // moves down by half the total, while a pure cluster keeps its centre and
+    // grows by the full total. This intentionally moves even nodes outside a
+    // cluster; it is observable in setupGraphViewbox.
+    for (FlowLayoutNode& node : ordered.nodes) node.y += offset;
+    for (FlowLayoutEdge& edge : ordered.edges) {
+      for (QPointF& point : edge.points) point.ry() += offset;
+      for (QVector<QPointF>& segment : edge.segments)
+        for (QPointF& point : segment) point.ry() += offset;
+      if (edge.hasLabelPosition) edge.labelY += offset;
+    }
+    for (FlowLayoutCluster& cluster : ordered.clusters)
+      cluster.height += subGraphTitleTotalMargin;
+  }
+  for (FlowLayoutCluster& cluster : ordered.clusters)
+    cluster.titleTopMargin = options.subGraphTitleTopMargin;
   QHash<QString, const FlowEdge*> semanticEdges;
   for (const FlowEdge& edge : data.edges) semanticEdges.insert(edge.id, &edge);
   for (FlowLayoutEdge& edge : ordered.edges) {

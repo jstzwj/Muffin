@@ -313,3 +313,66 @@ QJsonObject er::ErScene::toJsonObject() const {
 
   return o;
 }
+
+muffin::mermaid::SvgMarkerProjection er::ErScene::svgMarkerProjection() const {
+  using C = er::ErCardinality;
+  SvgMarkerProjection projection;
+  const auto add = [&](QString key, qreal refX, qreal refY,
+                       qreal width, qreal height, QString path,
+                       bool circle, qreal cx, qreal cy, qreal radius) {
+    SvgMarkerDefinition definition;
+    definition.key = key;
+    definition.idSuffix = QStringLiteral("_er-") + key;
+    definition.refX = refX; definition.refY = refY;
+    definition.markerWidth = width; definition.markerHeight = height;
+    if (circle) {
+      SvgMarkerChild child;
+      child.tag = QStringLiteral("circle"); child.cx = cx; child.cy = cy;
+      child.radius = radius; child.fill = QStringLiteral("white");
+      child.stroke = style.relationshipColor;
+      definition.children.append(child);
+    }
+    SvgMarkerChild child;
+    child.tag = QStringLiteral("path"); child.path = std::move(path);
+    child.fill = QStringLiteral("none"); child.stroke = style.relationshipColor;
+    definition.children.append(child);
+    projection.definitions.append(definition);
+  };
+  add(QStringLiteral("onlyOneStart"), 0, 9, 18, 18,
+      QStringLiteral("M9,0 L9,18 M15,0 L15,18"), false, 0, 0, 0);
+  add(QStringLiteral("onlyOneEnd"), 18, 9, 18, 18,
+      QStringLiteral("M3,0 L3,18 M9,0 L9,18"), false, 0, 0, 0);
+  add(QStringLiteral("zeroOrOneStart"), 0, 9, 30, 18,
+      QStringLiteral("M9,0 L9,18"), true, 21, 9, 6);
+  add(QStringLiteral("zeroOrOneEnd"), 30, 9, 30, 18,
+      QStringLiteral("M21,0 L21,18"), true, 9, 9, 6);
+  add(QStringLiteral("oneOrMoreStart"), 18, 18, 45, 36,
+      QStringLiteral("M0,18 Q 18,0 36,18 Q 18,36 0,18 M42,9 L42,27"), false, 0, 0, 0);
+  add(QStringLiteral("oneOrMoreEnd"), 27, 18, 45, 36,
+      QStringLiteral("M3,9 L3,27 M9,18 Q27,0 45,18 Q27,36 9,18"), false, 0, 0, 0);
+  add(QStringLiteral("zeroOrMoreStart"), 18, 18, 57, 36,
+      QStringLiteral("M0,18 Q18,0 36,18 Q18,36 0,18"), true, 48, 18, 6);
+  add(QStringLiteral("zeroOrMoreEnd"), 39, 18, 57, 36,
+      QStringLiteral("M21,18 Q39,0 57,18 Q39,36 21,18"), true, 9, 18, 6);
+  const auto key = [](C card, bool start) {
+    QString value;
+    switch (card) {
+      case C::ExactlyOne: value = QStringLiteral("onlyOne"); break;
+      case C::ZeroOrOne: value = QStringLiteral("zeroOrOne"); break;
+      case C::OneOrMore: value = QStringLiteral("oneOrMore"); break;
+      case C::ZeroOrMore: value = QStringLiteral("zeroOrMore"); break;
+    }
+    return value + (start ? QStringLiteral("Start") : QStringLiteral("End"));
+  };
+  for (const ErSceneRelationship& source : relationships) {
+    SvgMarkerEdge edge;
+    edge.id = source.id; edge.cssClass = QStringLiteral("relationshipLine");
+    edge.path = source.path; edge.markerStart = key(source.cardA, true);
+    edge.markerEnd = key(source.cardB, false);
+    edge.stroke = style.relationshipColor;
+    edge.strokeWidth = QString::number(style.relationshipStrokeWidth);
+    if (!source.identifying) edge.strokeDasharray = QStringLiteral("6,4");
+    projection.edges.append(edge);
+  }
+  return projection;
+}

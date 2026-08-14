@@ -46,12 +46,27 @@ QFont::Weight weight(const QString& value) {
 }
 
 editor::CssPixelFont primitiveFont(const C4Primitive& primitive) {
-  const QStringList families = cssFamilies(primitive.fontFamily);
+  // themeCSS font declarations only ever repaint — c4 measures through the
+  // config fonts — so the css slot simply overrides the inline style values.
+  const qreal fontSize = primitive.css.fontSize >= 0.0
+                             ? primitive.css.fontSize
+                             : primitive.fontSize;
+  const QString family = !primitive.css.fontFamily.trimmed().isEmpty()
+                             ? primitive.css.fontFamily
+                             : primitive.fontFamily;
+  const QString fontWeightValue = !primitive.css.fontWeight.trimmed().isEmpty()
+                                      ? primitive.css.fontWeight
+                                      : primitive.fontWeight;
+  bool italic = primitive.italic;
+  if (!primitive.css.fontStyle.trimmed().isEmpty())
+    italic = primitive.css.fontStyle.compare(QLatin1String("italic"),
+                                             Qt::CaseInsensitive) == 0;
+  const QStringList families = cssFamilies(family);
   editor::CssPixelFont result = editor::makeUnhintedCssPixelFont(
-      families.first(), primitive.fontSize);
+      families.first(), fontSize);
   if (families.size() > 1) result.font.setFamilies(families);
-  result.font.setWeight(weight(primitive.fontWeight));
-  result.font.setItalic(primitive.italic);
+  result.font.setWeight(weight(fontWeightValue));
+  result.font.setItalic(italic);
   return result;
 }
 
@@ -63,15 +78,22 @@ QStringList lines(QString value) {
   return value.split(QLatin1Char('\n'));
 }
 
-void drawText(QPainter& painter, const C4Primitive& primitive) {
-  if (primitive.text.isEmpty() || !(primitive.fontSize > 0.0)) return;
+void drawText(QPainter& painter, const C4Primitive& primitive,
+              const QColor& rootFill) {
+  const qreal fontSize = primitive.css.fontSize >= 0.0
+                             ? primitive.css.fontSize
+                             : primitive.fontSize;
+  if (primitive.text.isEmpty() || !(fontSize > 0.0)) return;
   const editor::CssPixelFont font = primitiveFont(primitive);
   if (!(font.scale > 0.0)) return;
   const QFontMetricsF metrics(font.font);
   const QStringList textLines = lines(primitive.text);
   painter.save();
   painter.setFont(font.font);
-  painter.setPen(paintColor(primitive.fill));
+  const QString fill = !primitive.css.fill.trimmed().isEmpty()
+                           ? primitive.css.fill
+                           : primitive.fill;
+  painter.setPen(paintColor(fill, rootFill));
   painter.translate(primitive.position);
   painter.scale(font.scale, font.scale);
   for (qsizetype i = 0; i < textLines.size(); ++i) {
@@ -81,8 +103,7 @@ void drawText(QPainter& painter, const C4Primitive& primitive) {
     qreal y = 0.0;
     if (primitive.mathematicalBaseline) {
       y += metrics.xHeight() / 2.0;
-      y += (i * primitive.fontSize -
-            primitive.fontSize * (textLines.size() - 1) / 2.0) /
+      y += (i * fontSize - fontSize * (textLines.size() - 1) / 2.0) /
            font.scale;
       y += primitive.textDy / font.scale;
     }
@@ -124,7 +145,11 @@ void drawArrow(QPainter& painter, const QPointF& point, qreal angle,
 void drawMarkers(QPainter& painter, const C4Primitive& primitive,
                  const QPointF& start, const QPointF& end) {
   const qreal angle = std::atan2(end.y() - start.y(), end.x() - start.x());
-  const QColor color = paintColor(primitive.stroke);
+  // Arrowhead/arrowend marker paths carry no fill attribute upstream and
+  // inherit the svg root fill (textColor), not the line stroke.
+  const QColor color = paintColor(primitive.markerFill.isEmpty()
+                                      ? primitive.stroke
+                                      : primitive.markerFill);
   if (primitive.markerStart) drawArrow(painter, start, angle, true, color);
   if (primitive.markerEnd) drawArrow(painter, end, angle, false, color);
 }
@@ -135,18 +160,50 @@ void paintC4Scene(const C4Scene& scene, QPainter& painter,
                   const MermaidPaintOptions&) {
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
+  // Mermaid paints `#id { fill: textColor }` on the svg root; c4's own
+  // elements resolve fill keywords against it, while stroke inheritance
+  // lands on the root's initial `none`.
+  const QColor rootFill = color::resolveSvgPaint(
+      scene.style.rootTextColor, color::SvgPaintKind::Fill,
+      QColor(Qt::black)).color;
+  // themeCSS stroke-width resolves like any CSS length: em/ex against the
+  // root font, percentages against the viewBox diagonal.
+  CssLengthContext lengthContext = editor::pieCssLengthContext(
+      scene.style.rootFontFamily, scene.style.rootFontSize);
+  lengthContext.viewportPx = scene.bounds.size();
+  const qreal diagonal = std::hypot(scene.bounds.width(),
+                                    scene.bounds.height()) / std::sqrt(2.0);
   for (const C4Primitive& primitive : scene.primitives) {
+    if (!primitive.css.visible) continue;
+    const qreal opacity = primitive.css.opacity >= 0.0 ? primitive.css.opacity
+                                                       : 1.0;
     painter.save();
-    QPen pen = primitive.stroke == QLatin1String("none")
+    painter.setOpacity(opacity);
+    const QString strokeValue = !primitive.css.stroke.trimmed().isEmpty()
+                                    ? primitive.css.stroke
+                                    : primitive.stroke;
+    const QString fillValue = !primitive.css.fill.trimmed().isEmpty()
+                                  ? primitive.css.fill
+                                  : primitive.fill;
+    const qreal strokeWidth = !primitive.css.strokeWidth.trimmed().isEmpty()
+        ? editor::cssStrokeWidthPx(primitive.css.strokeWidth, lengthContext,
+                                   diagonal)
+        : primitive.strokeWidth;
+    const color::SvgPaint strokePaint = color::resolveSvgPaint(
+        strokeValue, color::SvgPaintKind::Stroke, {});
+    QPen pen = (strokePaint.none || !strokePaint.color.isValid() ||
+                !(strokeWidth > 0.0))
                    ? QPen(Qt::NoPen)
-                   : QPen(paintColor(primitive.stroke), primitive.strokeWidth);
+                   : QPen(strokePaint.color, strokeWidth);
     pen.setCapStyle(Qt::FlatCap);
     pen.setJoinStyle(Qt::MiterJoin);
     if (!primitive.dash.isEmpty()) pen.setDashPattern(primitive.dash);
     painter.setPen(pen);
-    painter.setBrush(primitive.fill == QLatin1String("none")
+    const color::SvgPaint fillPaint = color::resolveSvgPaint(
+        fillValue, color::SvgPaintKind::Fill, rootFill);
+    painter.setBrush(fillPaint.none || !fillPaint.color.isValid()
                          ? QBrush(Qt::NoBrush)
-                         : QBrush(paintColor(primitive.fill)));
+                         : QBrush(fillPaint.color));
     switch (primitive.kind) {
       case C4PrimitiveKind::Rect:
         painter.drawRoundedRect(primitive.rect, primitive.rx, primitive.rx);
@@ -164,7 +221,7 @@ void paintC4Scene(const C4Scene& scene, QPainter& painter,
         drawMarkers(painter, primitive, primitive.line.p1(), primitive.line.p2());
         break;
       case C4PrimitiveKind::Text:
-        drawText(painter, primitive);
+        drawText(painter, primitive, rootFill);
         break;
       case C4PrimitiveKind::Image:
         painter.setRenderHint(QPainter::SmoothPixmapTransform, false);

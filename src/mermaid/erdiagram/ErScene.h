@@ -29,6 +29,7 @@ struct ErSceneStyle {
   qreal fontSize = 16.0;
   qreal lineHeight = 24.0;
   qreal strokeWidth = 1.0;
+  qreal relationshipStrokeWidth = 1.0;
 };
 
 struct ErSceneAttribute {
@@ -81,6 +82,7 @@ struct ErScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
+  SvgMarkerProjection svgMarkerProjection() const override;
 
   QRectF bounds;
   QVector<ErSceneEntity> entities;

@@ -47,6 +47,27 @@ struct C4SceneStyle {
 
 enum class C4PrimitiveKind { Rect, Path, Line, Text, Image };
 
+// themeCSS overlay for one DOM element. Empty strings keep the primitive's
+// own value; visible/hasBox follow the shared csscascade semantics (display
+// and visibility gate painting, only the ancestor display chain gates
+// geometry — an element whose *own* display is none loses its Chrome bbox
+// while ancestor-only hiding keeps it, tracked by `measures`). c4 measures
+// every label through the *config* fonts upstream, so font overrides never
+// feed back into layout — they only repaint.
+struct C4ElementCss {
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString fontFamily;
+  qreal fontSize = -1.0;
+  QString fontWeight;
+  QString fontStyle;
+  qreal opacity = -1.0;
+  bool visible = true;
+  bool hasBox = true;
+  bool measures = true;
+};
+
 struct C4Primitive {
   C4PrimitiveKind kind = C4PrimitiveKind::Rect;
   QString role;
@@ -74,6 +95,51 @@ struct C4Primitive {
   bool markerStart = false;
   bool markerEnd = false;
   QString imageKind;
+  // themeCSS slot stamped at emission time.
+  C4ElementCss css;
+  // Relation arrowhead/arrowend paint color: the marker paths carry no fill
+  // attribute upstream and inherit the svg root fill (textColor), unlike the
+  // line stroke they cap.
+  QString markerFill;
+};
+
+// Slots are indexed by parse order (data.shapes / data.boundaries /
+// data.relations); the builder resolves them to primitives at emission time,
+// mirroring the upstream draw recursion (global shapes, then per boundary:
+// nested shapes, nested boundaries, own group — the synthetic global
+// boundary never draws its own rect).
+struct C4CssOverrides {
+  struct Shape {
+    C4ElementCss group;
+    C4ElementCss body;
+    C4ElementCss detail;
+    C4ElementCss stereotype;
+    C4ElementCss image;
+    C4ElementCss label;
+    C4ElementCss technology;
+    C4ElementCss description;
+  };
+  struct Boundary {
+    C4ElementCss group;
+    C4ElementCss body;
+    C4ElementCss label;
+    C4ElementCss type;
+    C4ElementCss description;
+  };
+  struct Relation {
+    C4ElementCss group;
+    C4ElementCss body;
+    C4ElementCss label;
+    C4ElementCss technology;
+  };
+  bool active = false;
+  QVector<Shape> shapes;
+  QVector<Boundary> boundaries;
+  QVector<Relation> relations;
+  C4ElementCss title;
+  // Arrowhead + arrowend + filled-head marker paths share one slot: they all
+  // inherit the root fill and no c4 rule can tell them apart.
+  C4ElementCss markers;
 };
 
 struct C4Scene final : MermaidScene {
@@ -92,6 +158,7 @@ struct C4Scene final : MermaidScene {
 };
 
 C4Scene buildC4Scene(const C4Data& data, C4Config config,
-                     C4SceneStyle style);
+                     C4SceneStyle style,
+                     const C4CssOverrides* css = nullptr);
 
 }  // namespace muffin::mermaid::c4

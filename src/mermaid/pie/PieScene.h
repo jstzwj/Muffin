@@ -44,16 +44,29 @@ struct PieSceneStyle {
   // geometry width is tracked separately and feeds outerRingRadius below.
   qreal outerStrokeWidthGeom = 2.0;                      // parseFontSize(pieOuterStrokeWidth)
   QString sliceStrokeColor = QStringLiteral("black");   // pieStrokeColor
+  // `.pieCircle { display:none }` removes the slice paths from the raster
+  // (layout/canvas geometry is unaffected — the canvas derives from the pie
+  // radius and text advances, not from slice paint).
+  bool sliceVisible = true;
   qreal sliceStrokeWidth = 2.0;                          // pieStrokeWidth
   qreal pieOpacity = 0.7;                                // pieOpacity
   QString titleColor = QStringLiteral("#333333");        // pieTitleTextColor
   QString sectionTextColor = QStringLiteral("#131300");   // pieSectionTextColor
   QString legendTextColor = QStringLiteral("#131300");    // pieLegendTextColor
   QString fontFamily = QStringLiteral("Noto Sans");
+  QString titleFontFamily = QStringLiteral("Noto Sans");
+  QString sectionFontFamily = QStringLiteral("Noto Sans");
+  QString legendFontFamily = QStringLiteral("Noto Sans");
+  QString titleFontWeight = QStringLiteral("400");
+  QString sectionFontWeight = QStringLiteral("400");
+  QString legendFontWeight = QStringLiteral("400");
   // Font sizes (theme fallbacks): pieTitleTextSize 25px, section/legend 17px.
   qreal titleFontSize = 25.0;
   qreal sectionFontSize = 17.0;
   qreal legendFontSize = 17.0;
+  bool titleVisible = true;
+  bool sectionTextVisible = true;
+  bool legendTextVisible = true;
   // DOM-inherited color (theme textColor) for SVG <paint> resolution: a garbage/
   // inherit fill or text value resolves to this (probed #333 for default).
   QString inheritedColor;

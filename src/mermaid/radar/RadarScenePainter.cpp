@@ -121,7 +121,8 @@ QPainterPath curvePath(const RadarCurveGeometry& curve) {
 void drawAnchoredText(QPainter& painter, const QString& family, qreal pixelSize,
                       const QPointF& anchor, const QString& text,
                       RadarTextAnchor horizontal, RadarBaseline vertical,
-                      const QColor& value) {
+                      const QColor& value,
+                      QFont::Weight weight = QFont::Normal) {
   static const QRegularExpression collapsibleWhitespace(
       QStringLiteral(R"([\t\n\r\f ]+)"));
   QString visibleText = text;
@@ -131,8 +132,9 @@ void drawAnchoredText(QPainter& painter, const QString& family, qreal pixelSize,
   if (visibleText.isEmpty() || !(pixelSize > 0.0) || !std::isfinite(pixelSize) ||
       !finitePoint(anchor))
     return;
-  const editor::CssPixelFont font =
+  editor::CssPixelFont font =
       editor::makeUnhintedCssPixelFont(family, pixelSize);
+  font.font.setWeight(weight);
   if (!(font.scale > 0.0)) return;
   const QFontMetricsF metrics(font.font);
   const qreal advance = metrics.horizontalAdvance(visibleText);
@@ -164,13 +166,10 @@ void paintRadarScene(const RadarScene& scene, QPainter& painter,
   painter.translate(scene.center);
 
   // Upstream DOM order is graticules, axes (line+label), curves, legend, title.
-  painter.setPen(strokePen(scene.style.graticuleColor,
-                           scene.style.graticuleStrokeWidth, inherited));
-  painter.setBrush(fillBrush(scene.style.graticuleColor,
-                             scene.style.graticuleOpacity, root,
-                             QStringLiteral("black")));
   for (const RadarGraticuleGeometry& ring : scene.graticules) {
-    if (!std::isfinite(ring.radius)) continue;
+    if (!ring.visible || !std::isfinite(ring.radius)) continue;
+    painter.setPen(strokePen(ring.stroke, ring.strokeWidth, inherited));
+    painter.setBrush(fillBrush(ring.fill, ring.fillOpacity, root, ring.color));
     if (ring.circle) {
       if (ring.radius >= 0.0)
         painter.drawEllipse(QPointF(), ring.radius, ring.radius);
@@ -179,38 +178,36 @@ void paintRadarScene(const RadarScene& scene, QPainter& painter,
     }
   }
 
-  const QPen axisPen = strokePen(scene.style.axisColor,
-                                 scene.style.axisStrokeWidth, inherited);
-  const QBrush axisText = inheritedFillBrush(
-      root, scene.style.axisLabelColor, 1.0);
   for (const RadarAxisGeometry& axis : scene.axes) {
-    if (finitePoint(axis.end) && axisPen.style() != Qt::NoPen) {
+    const QPen axisPen = strokePen(axis.lineStroke,
+                                   axis.lineStrokeWidth, inherited);
+    if (axis.lineVisible && axis.lineOpacity > 0.0 &&
+        finitePoint(axis.end) && axisPen.style() != Qt::NoPen) {
+      painter.save();
+      painter.setOpacity(painter.opacity() * axis.lineOpacity);
       painter.setPen(axisPen);
       painter.setBrush(Qt::NoBrush);
       painter.drawLine(QPointF(), axis.end);
+      painter.restore();
     }
-    if (axisText.style() != Qt::NoBrush)
-      drawAnchoredText(painter, scene.style.fontFamily,
-                       scene.style.axisLabelFontSize, axis.labelPosition,
+    const QBrush axisText = fillBrush(axis.labelFill, axis.labelOpacity, root,
+                                      axis.labelColor);
+    if (axis.labelVisible && axisText.style() != Qt::NoBrush)
+      drawAnchoredText(painter, axis.labelFontFamily,
+                       axis.labelFontSize, axis.labelPosition,
                        axis.label, axis.textAnchor, axis.baseline,
-                       axisText.color());
+                       axisText.color(), axis.labelFontWeight);
   }
 
   for (const RadarCurveGeometry& curve : scene.curves) {
     if (!finiteCurve(curve) || curve.points.isEmpty()) continue;
-    if (curve.classGenerated && !curve.color.trimmed().isEmpty()) {
-      painter.setBrush(fillBrush(curve.color, scene.style.curveOpacity, root,
-                                 QStringLiteral("black")));
-      painter.setPen(strokePen(curve.color, scene.style.curveStrokeWidth, inherited));
-    } else {
-      // A missing class, or a generated class with an invalid empty cScale
-      // color, leaves the SVG path at its defaults: inherited fill, no stroke.
-      // Generated classes still contribute curveOpacity through their rule.
-      painter.setBrush(inheritedFillBrush(
-          root, QStringLiteral("black"),
-          curve.classGenerated ? scene.style.curveOpacity : 1.0));
-      painter.setPen(Qt::NoPen);
-    }
+    if (!curve.visible) continue;
+    painter.setBrush(fillBrush(curve.fill, curve.fillOpacity, root,
+                               curve.elementColor));
+    QPen curvePen = strokePen(curve.stroke, curve.strokeWidth, inherited);
+    if (curvePen.style() != Qt::NoPen)
+      curvePen.setColor(withOpacity(curvePen.color(), curve.strokeOpacity));
+    painter.setPen(curvePen);
     painter.drawPath(curve.polygon ? polygonPath(curve.points) : curvePath(curve));
   }
 
@@ -218,37 +215,35 @@ void paintRadarScene(const RadarScene& scene, QPainter& painter,
     if (!finitePoint(legend.position)) continue;
     painter.save();
     painter.translate(legend.position);
-    if (legend.classGenerated && !legend.color.trimmed().isEmpty()) {
-      painter.setBrush(fillBrush(legend.color, scene.style.curveOpacity, root,
-                                 QStringLiteral("black")));
-      painter.setPen(strokePen(legend.color, 1.0, inherited));
-    } else {
-      painter.setBrush(inheritedFillBrush(
-          root, QStringLiteral("black"),
-          legend.classGenerated ? scene.style.curveOpacity : 1.0));
-      painter.setPen(Qt::NoPen);
-    }
+    painter.setBrush(fillBrush(legend.boxFill, legend.boxFillOpacity, root,
+                               legend.boxColor));
+    QPen boxPen = strokePen(legend.boxStroke, legend.boxStrokeWidth, inherited);
+    if (boxPen.style() != Qt::NoPen)
+      boxPen.setColor(withOpacity(boxPen.color(), legend.boxStrokeOpacity));
+    painter.setPen(boxPen);
     // legendBoxSize is dead upstream; renderer hard-codes 12 and x=16.
-    painter.drawRect(QRectF(0.0, 0.0, 12.0, 12.0));
+    if (legend.boxVisible) painter.drawRect(QRectF(0.0, 0.0, 12.0, 12.0));
     painter.restore();
-    const QBrush legendText = inheritedFillBrush(
-        root, QStringLiteral("black"), 1.0);
-    if (legendText.style() != Qt::NoBrush)
-      drawAnchoredText(painter, scene.style.fontFamily,
-                       scene.style.legendFontSize,
+    const QBrush legendText = fillBrush(legend.textFill, legend.textOpacity,
+                                        root, legend.textColor);
+    if (legend.textVisible && legendText.style() != Qt::NoBrush)
+      drawAnchoredText(painter, legend.textFontFamily,
+                       legend.textFontSize,
                        legend.position + QPointF(16.0, 0.0), legend.text,
                        RadarTextAnchor::Start, RadarBaseline::Hanging,
-                       legendText.color());
+                       legendText.color(), legend.textFontWeight);
   }
 
-  const QBrush titleText = inheritedFillBrush(root, scene.style.titleColor, 1.0);
-  if (titleText.style() != Qt::NoBrush)
-    drawAnchoredText(painter, scene.style.fontFamily,
-                     scene.style.titleFontSize,
+  const QBrush titleText = fillBrush(scene.titleFill, scene.titleOpacity,
+                                     root, scene.titleColor);
+  if (scene.titleVisible && titleText.style() != Qt::NoBrush)
+    drawAnchoredText(painter, scene.titleFontFamily,
+                     scene.titleFontSize,
                      QPointF(0.0, -scene.config.height / 2.0 -
                                       scene.config.marginTop),
                      scene.title, RadarTextAnchor::Middle,
-                     RadarBaseline::Hanging, titleText.color());
+                     RadarBaseline::Hanging, titleText.color(),
+                     scene.titleFontWeight);
   painter.restore();
 }
 

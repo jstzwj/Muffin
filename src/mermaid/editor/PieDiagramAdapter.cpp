@@ -3,9 +3,11 @@
 #include "mermaid/MermaidRenderMetadata.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/pie/PieDiagram.h"
 #include "mermaid/pie/PieScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QJsonObject>
 #include <QRectF>
@@ -20,6 +22,15 @@
 
 namespace muffin::mermaid::editor {
 namespace {
+
+qreal chromiumTextAdvance(const QString& text, const QString& family,
+                          qreal pixelSize, const QString& weight) {
+  flowchart::FlowLabelDocument document;
+  document.text = text;
+  document.baseWeight = cssFontWeightToQt(QJsonValue(weight), QFont::Normal);
+  return flowchart::measureChromiumInlineLayoutWidth(
+      document, family, pixelSize);
+}
 
 struct PieDiagramImpl : Diagram {
   QStringList ids() const override { return {QStringLiteral("pie")}; }
@@ -62,6 +73,9 @@ struct PieDiagramImpl : Diagram {
     // (the model derives them from taskTextDarkColor / mainContrastColor).
     for (int i = 0; i < 12; ++i) style.palette.append(themeVars.pie[i]);
     style.fontFamily = firstFontFamily(themeVars.fontFamily);
+    style.titleFontFamily = style.fontFamily;
+    style.sectionFontFamily = style.fontFamily;
+    style.legendFontFamily = style.fontFamily;
     style.inheritedColor = themeVars.textColor;
     // Resolve the SVG ROOT font-size (themeVariables.fontSize) against the
     // browser <html> root (16px) FIRST: em/% here are relative to 16. "2em"->32,
@@ -88,6 +102,81 @@ struct PieDiagramImpl : Diagram {
     style.titleFontSize = cssFontSizePx(themeVars.pieTitleTextSize, lengthCtx);
     style.sectionFontSize = cssFontSizePx(themeVars.pieSectionTextSize, lengthCtx);
     style.legendFontSize = cssFontSizePx(themeVars.pieLegendTextSize, lengthCtx);
+    QString sliceStrokeWidthCss = themeVars.pieStrokeWidth;
+    const QString themeCss =
+        pre.config.value(QStringLiteral("themeCSS")).toString();
+    // Layout-width gates: visibility:hidden keeps the text box (upstream still
+    // reads getComputedTextLength), only display:none drops it from the canvas.
+    const bool themeCssActive = !themeCss.trimmed().isEmpty();
+    bool legendHasBox = true;
+    bool titleHasBox = true;
+    if (themeCssActive) {
+      csscascade::ElementStyle rootFallback;
+      rootFallback.fill = style.inheritedColor;
+      rootFallback.stroke = QStringLiteral("none");
+      rootFallback.strokeWidth = QStringLiteral("1px");
+      rootFallback.color = QStringLiteral("black");
+      rootFallback.fontFamily = style.fontFamily;
+      rootFallback.fontSize = QString::number(rootFs) + QStringLiteral("px");
+      csscascade::ElementStyle sliceFallback = rootFallback;
+      sliceFallback.fill = style.palette.value(0);
+      sliceFallback.stroke = style.sliceStrokeColor;
+      sliceFallback.strokeWidth = themeVars.pieStrokeWidth;
+      sliceFallback.opacity = QString::number(style.pieOpacity);
+      csscascade::ElementStyle sliceTextFallback = rootFallback;
+      sliceTextFallback.fill = style.sectionTextColor;
+      sliceTextFallback.fontSize = QString::number(style.sectionFontSize) +
+                                   QStringLiteral("px");
+      csscascade::ElementStyle titleTextFallback = rootFallback;
+      titleTextFallback.fill = style.titleColor;
+      titleTextFallback.fontSize = QString::number(style.titleFontSize) +
+                                   QStringLiteral("px");
+      csscascade::ElementStyle legendTextFallback = rootFallback;
+      legendTextFallback.fill = style.legendTextColor;
+      legendTextFallback.fontSize = QString::number(style.legendFontSize) +
+                                    QStringLiteral("px");
+      const auto css = csscascade::resolveElements(themeCss, {
+        {QStringLiteral("svg"), {}, QStringLiteral("svg"),
+         QStringLiteral("diagram-root"), {QStringLiteral("pie")}, {},
+         rootFallback, {}},
+        {QStringLiteral("root"), QStringLiteral("svg"), QStringLiteral("g"),
+         {}, {QStringLiteral("root")}, {}, rootFallback, {}},
+        {QStringLiteral("slicePath"), QStringLiteral("root"), QStringLiteral("path"),
+         {}, {QStringLiteral("pieCircle")}, {}, sliceFallback, {}},
+        {QStringLiteral("sliceText"), QStringLiteral("root"), QStringLiteral("text"),
+         {}, {QStringLiteral("slice")}, {}, sliceTextFallback, {}},
+        {QStringLiteral("titleText"), QStringLiteral("root"), QStringLiteral("text"),
+         {}, {QStringLiteral("pieTitleText")}, {}, titleTextFallback, {}},
+        {QStringLiteral("legendText"), QStringLiteral("root"), QStringLiteral("text"),
+         {}, {}, {}, legendTextFallback, {}}
+      });
+      const auto sliceStyle = css.value(QStringLiteral("slicePath"), sliceFallback);
+      const auto sliceTextStyle = css.value(QStringLiteral("sliceText"), sliceTextFallback);
+      const auto titleTextStyle = css.value(QStringLiteral("titleText"), titleTextFallback);
+      const auto legendTextStyle = css.value(QStringLiteral("legendText"), legendTextFallback);
+      for (QString& paletteColor : style.palette) paletteColor = sliceStyle.fill;
+      style.sliceStrokeColor = sliceStyle.stroke;
+      sliceStrokeWidthCss = sliceStyle.strokeWidth;
+      style.pieOpacity = cssOpacity(sliceStyle.opacity);
+      style.sectionTextColor = sliceTextStyle.fill;
+      style.sectionFontSize = cssFontSizePx(sliceTextStyle.fontSize, lengthCtx);
+      style.sectionFontFamily = firstFontFamily(sliceTextStyle.fontFamily);
+      style.sectionFontWeight = sliceTextStyle.fontWeight;
+      style.sectionTextVisible = sliceTextStyle.displayed();
+      style.sliceVisible = sliceTextStyle.hasBox();
+      style.titleColor = titleTextStyle.fill;
+      style.titleFontSize = cssFontSizePx(titleTextStyle.fontSize, lengthCtx);
+      style.titleFontFamily = firstFontFamily(titleTextStyle.fontFamily);
+      style.titleFontWeight = titleTextStyle.fontWeight;
+      style.titleVisible = titleTextStyle.displayed();
+      style.legendTextColor = legendTextStyle.fill;
+      style.legendFontSize = cssFontSizePx(legendTextStyle.fontSize, lengthCtx);
+      style.legendFontFamily = firstFontFamily(legendTextStyle.fontFamily);
+      style.legendFontWeight = legendTextStyle.fontWeight;
+      style.legendTextVisible = legendTextStyle.displayed();
+      legendHasBox = legendTextStyle.hasBox();
+      titleHasBox = titleTextStyle.hasBox();
+    }
     // slice/outerStrokeWidth (paint) are resolved AFTER the canvas bounds are
     // known -- stroke-width % is relative to the SVG normalized diagonal.
 
@@ -103,14 +192,17 @@ struct PieDiagramImpl : Diagram {
     // chartAndLegendWidth = pieWidth + margin + rect + spacing + longestTextWidth.
     // A 0 legend font-size paints no legend text (font-size:0 -> invisible), so
     // skip measuring (avoids a setPixelSize(0) warning) and contribute 0 width.
+    // visibility:hidden KEEPS the box (getComputedTextLength still reports the
+    // advance), so the layout gate is display-only; display:none drops it.
+    const bool legendBoxSuppressed = themeCssActive && !legendHasBox;
     qreal longest = scene.legends.isEmpty()
                         ? -std::numeric_limits<qreal>::infinity()
                         : 0.0;
-    if (scene.style.legendFontSize > 0.0) {
-      const CssPixelFont legendFont =
-          makeCssPixelFont(scene.style.fontFamily, scene.style.legendFontSize);
+    if (!legendBoxSuppressed && scene.style.legendFontSize > 0.0) {
       for (const pie::PieLegendEntry& e : scene.legends)
-        longest = std::max(longest, legendFont.horizontalAdvance(e.text));
+        longest = std::max(longest, chromiumTextAdvance(
+            e.text, scene.style.legendFontFamily, scene.style.legendFontSize,
+            scene.style.legendFontWeight));
     }
     scene.longestLegendWidth = longest;
     // Upstream switch default is "right": top/bottom stack vertically, center
@@ -137,10 +229,12 @@ struct PieDiagramImpl : Diagram {
     // the legend text width is measured. The title paints nothing when it is
     // empty or its font-size is <= 0 (painter gate), so it then contributes 0.
     qreal titleWidth = 0.0;
-    if (!scene.title.isEmpty() && scene.style.titleFontSize > 0.0) {
-      const CssPixelFont titleFont =
-          makeCssPixelFont(scene.style.fontFamily, scene.style.titleFontSize);
-      titleWidth = titleFont.horizontalAdvance(scene.title);
+    const bool titleBoxSuppressed = themeCssActive && !titleHasBox;
+    if (!scene.title.isEmpty() && !titleBoxSuppressed &&
+        scene.style.titleFontSize > 0.0) {
+      titleWidth = chromiumTextAdvance(
+          scene.title, scene.style.titleFontFamily, scene.style.titleFontSize,
+          scene.style.titleFontWeight);
     }
     const qreal titleLeft = scene.pieWidth / 2.0 - titleWidth / 2.0;
     const qreal titleRight = scene.pieWidth / 2.0 + titleWidth / 2.0;
@@ -157,7 +251,8 @@ struct PieDiagramImpl : Diagram {
         std::sqrt(scene.bounds.width() * scene.bounds.width() +
                   scene.bounds.height() * scene.bounds.height()) /
         std::sqrt(2.0);
-    scene.style.sliceStrokeWidth = cssStrokeWidthPx(themeVars.pieStrokeWidth, lengthCtx, diagonal);
+    scene.style.sliceStrokeWidth = cssStrokeWidthPx(
+        sliceStrokeWidthCss, lengthCtx, diagonal);
     scene.style.outerStrokeWidth = cssStrokeWidthPx(themeVars.pieOuterStrokeWidth, lengthCtx, diagonal);
 
     // The pie title is part of the chart (mermaid draws pieTitleText INSIDE the

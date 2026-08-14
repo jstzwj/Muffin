@@ -147,22 +147,15 @@ const familyPolicies = {
       ...parity("paint", "viewport", "export"),
       families: ["flowchart", "swimlane"],
     },
-    subGraphTitleMargin: unsupported(
-      ["layout", "viewport", "export"],
-      "Cluster title margins are not forwarded to native compound layout.",
-    ),
-    arrowMarkerAbsolute: deferred(
-      ["export"],
-      "Only meaningful for SVG marker URL serialization.",
+    subGraphTitleMargin: parity("layout", "viewport", "export"),
+    arrowMarkerAbsolute: inert(
+      "Mermaid 11.16.0 reads only the root arrowMarkerAbsolute key for flowchart SVG markers.",
     ),
     diagramPadding: {
       ...parity("viewport", "export"),
       families: ["flowchart", "swimlane"],
     },
-    htmlLabels: unsupported(
-      textLayout,
-      "Deprecated upstream alias; native flow labels currently use one structured text path.",
-    ),
+    htmlLabels: parity(...textLayout),
     nodeSpacing: {
       ...parity(...interactiveLayout),
       families: ["flowchart", "swimlane"],
@@ -179,19 +172,9 @@ const familyPolicies = {
       ...parity("text", ...interactiveLayout),
       families: ["flowchart", "swimlane"],
     },
-    defaultRenderer: partial(
-      interactiveLayout,
-      interactiveLayout,
-      "dagre-wrapper and Mermaid 11.16's unregistered-ELK Dagre fallback are supported; legacy dagre-d3 remains explicit unsupported.",
-    ),
-    wrappingWidth: unsupported(
-      textLayout,
-      "Native flow markdown wrapping does not yet consume this width.",
-    ),
-    inheritDir: unsupported(
-      interactiveLayout,
-      "Subgraph direction inheritance is parsed but not forwarded.",
-    ),
+    defaultRenderer: parity(...interactiveLayout),
+    wrappingWidth: parity(...textLayout),
+    inheritDir: parity(...interactiveLayout),
   },
   swimlane: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
@@ -208,9 +191,8 @@ const familyPolicies = {
   sequence: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: parity("viewport", "export"),
-    arrowMarkerAbsolute: deferred(
-      ["export"],
-      "Only meaningful for SVG marker URL serialization.",
+    arrowMarkerAbsolute: inert(
+      "Mermaid 11.16.0 reads only the root arrowMarkerAbsolute key for sequence SVG markers.",
     ),
     hideUnusedParticipants: parity(...layout),
     activationWidth: parity(...layout),
@@ -356,14 +338,11 @@ const familyPolicies = {
     useMaxWidth: inert(
       "The 11.16 unified class renderer reads state.useMaxWidth instead of class.useMaxWidth.",
     ),
-    titleTopMargin: partial(
-      ["paint", "viewport", "export"],
-      ["paint", "viewport", "export"],
-      "Effective in the legacy renderer; the 11.16 unified renderer reads state.titleTopMargin.",
+    titleTopMargin: inert(
+      "The Mermaid 11.16 unified class renderer reads state.titleTopMargin; the class field is retained but inert.",
     ),
-    arrowMarkerAbsolute: deferred(
-      ["export"],
-      "Only meaningful for SVG marker URL serialization.",
+    arrowMarkerAbsolute: inert(
+      "The unified class renderer always emits fragment marker references; the family key is retained but inert.",
     ),
     dividerMargin: legacyOnly(
       layout,
@@ -374,11 +353,7 @@ const familyPolicies = {
       textLayout,
       "Consumed by the legacy class renderer, not the unified native scene.",
     ),
-    defaultRenderer: partial(
-      interactiveLayout,
-      interactiveLayout,
-      "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
-    ),
+    defaultRenderer: parity(...interactiveLayout),
     nodeSpacing: inert(
       "The Mermaid 11.16 class renderer currently resets this value to 50 before Dagre.",
     ),
@@ -400,9 +375,8 @@ const familyPolicies = {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: parity("viewport", "export"),
     titleTopMargin: parity("paint", "viewport", "export"),
-    arrowMarkerAbsolute: deferred(
-      ["export"],
-      "Only meaningful for SVG marker URL serialization.",
+    arrowMarkerAbsolute: inert(
+      "The unified state renderer always emits fragment marker references; the family key is retained but inert.",
     ),
     dividerMargin: legacyOnly(layout, "Legacy state renderer geometry option."),
     sizeUnit: legacyOnly(layout, "Legacy state renderer geometry option."),
@@ -421,11 +395,7 @@ const familyPolicies = {
     edgeLengthFactor: legacyOnly(layout, "Legacy state renderer edge option."),
     compositTitleSize: legacyOnly(textLayout, "Legacy state renderer title option."),
     radius: legacyOnly(["layout", "paint", "export"], "Legacy state corner radius option."),
-    defaultRenderer: partial(
-      interactiveLayout,
-      interactiveLayout,
-      "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
-    ),
+    defaultRenderer: parity(...interactiveLayout),
   },
   er: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
@@ -906,7 +876,7 @@ const shared = [
     ...partial(
       ["text", "layout", "paint", "viewport", "export"],
       ["text", "layout", "paint", "viewport", "export"],
-      "The matrix covers the native theme-variable subset, not arbitrary Mermaid CSS variables.",
+      "Exhaustive per-key golden over the 285-key resolved inventory (theme-variables-inventory.json): 227 keys byte-locked across all 11 themes via FlowThemeVariables::get(); the remaining 58 are enumerated with per-key rationale in MermaidThemeTest's themeVariablesRemainingKeys (upstream-unconsumed palette slots, sequence-local keys resolved in the adapter, and family-local styles).",
     ),
   },
   {
@@ -947,24 +917,17 @@ const shared = [
   {
     path: "htmlLabels",
     families: ["flowchart", "swimlane", "class", "requirement", "kanban", "mindmap", "block"],
-    ...partial(
-      textLayout,
-      textLayout,
-      "Native class, Kanban, and Mindmap labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path).",
-    ),
+    ...parity(...textLayout),
   },
   {
     path: "look",
     families: ["flowchart", "swimlane", "class", "state", "timeline", "kanban", "mindmap", "block", "ishikawa", "venn"],
-    ...partial(
-      interactiveLayout,
-      interactiveLayout,
-      "Flowchart, Timeline, Kanban, Mindmap, and Ishikawa are complete; state currently uses look for marker selection and class retains it without rough painting.",
-    ),
+    ...parity(...interactiveLayout),
+    note: "Classic/Neo/handDrawn routing, exact-case fallback, RoughJS geometry, interaction, and export are covered by family and cross-family upstream oracles.",
   },
   {
     path: "handDrawnSeed",
-    families: ["flowchart", "swimlane", "kanban", "mindmap", "block", "ishikawa", "venn"],
+    families: ["flowchart", "swimlane", "class", "state", "kanban", "mindmap", "block", "ishikawa", "venn"],
     ...parity("layout", "paint", "interaction", "export"),
   },
   {
@@ -976,11 +939,8 @@ const shared = [
   {
     path: "layout",
     families: ["flowchart", "swimlane", "class", "state", "mindmap"],
-    ...partial(
-      interactiveLayout,
-      interactiveLayout,
-      "Dagre is supported by all five families. Flowchart also matches Mermaid 11.16's explicit ELK-to-Dagre fallback; class/state reject unsupported engines; Swimlane accepts its native engine or Dagre; Mindmap falls back to cose-bilkent for unknown or unregistered names.",
-    ),
+    ...parity(...interactiveLayout),
+    note: "Dagre, Mindmap CoSE, exact-case selection, registered-name fallback, and State's runtime-error boundary are covered by production geometry oracles.",
   },
   ...[
     "mergeEdges",
@@ -1004,10 +964,8 @@ const shared = [
   {
     path: "maxEdges",
     families: ["flowchart"],
-    ...unsupported(
-      ["parsed"],
-      "Muffin keeps a fixed safety ceiling instead of allowing source config to raise it.",
-    ),
+    ...parity("parsed"),
+    note: "Mermaid's secure source config strips this key, so documents cannot lower or raise the default 500-edge boundary; Muffin retains the same source behavior.",
   },
   {
     path: "maxTextSize",
@@ -1033,10 +991,8 @@ const shared = [
       "wardley-beta",
       "architecture",
     ],
-    ...unsupported(
-      ["parsed"],
-      "Muffin keeps family-specific safety ceilings instead of trusting document config.",
-    ),
+    ...parity("parsed"),
+    note: "Mermaid's secure source config strips this key; source documents cannot change the global default text boundary in either renderer.",
   },
   {
     path: "securityLevel",
@@ -1081,8 +1037,10 @@ const shared = [
   },
   {
     path: "arrowMarkerAbsolute",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
-    ...deferred(["export"], "Requires native SVG marker serialization."),
+    families: ["flowchart", "swimlane", "sequence"],
+    ...parity("export"),
+    note:
+      "Flowchart, Swimlane, and Sequence serialize absolute marker references when the SVG export context supplies its document URL; other 11.16.0 families retain fragment references.",
   },
   {
     path: "deterministicIds",
@@ -1190,10 +1148,9 @@ const shared = [
       "wardley-beta",
       "architecture",
     ],
-    ...unsupported(
-      ["paint", "export"],
-      "Native scenes consume typed theme variables rather than arbitrary browser CSS.",
-    ),
+    ...parity("text", "paint", "export"),
+    note:
+      "Arbitrary themeCSS is resolved through the per-family CSS cascade against real upstream DOM oracles (mermaid-theme-css.json, 117 cases). Wardley's draw() clears the svg before painting, so themeCSS is upstream-inert there and native parity holds by construction. Geometry feedback beyond paint is demonstrated per family in the themeCSS fixtures: flowchart, swimlane, sequence, class, state, pie, mindmap, sankey, treeview, block, ishikawa, requirement, timeline, kanban, gitGraph, treemap, architecture, and railroad.",
   },
 ];
 
@@ -1347,7 +1304,7 @@ const payload = {
       "railroadPeg",
       "info",
     ],
-    note: "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred.",
+    note: "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL parity is evaluated with an explicit document URL export context.",
   },
   summary,
   entries: normalizedEntries,

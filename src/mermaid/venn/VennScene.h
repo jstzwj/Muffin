@@ -6,6 +6,7 @@
 #include "mermaid/venn/VennLayout.h"
 
 #include <QJsonValue>
+#include <QFont>
 #include <QPainterPath>
 #include <QRectF>
 #include <QString>
@@ -44,7 +45,13 @@ struct VennTextGeometry {
   qreal fontSize = 16.0;
   qreal firstDyEm = 0.0;
   qreal lineHeightEm = 1.1;
+  QString fontFamily;
+  QFont::Weight fontWeight = QFont::Normal;
+  QFont::Style fontStyle = QFont::StyleNormal;
   QString fill;
+  qreal opacity = 1.0;
+  bool visible = true;
+  bool hasBox = true;
   bool middle = true;
 };
 
@@ -62,6 +69,8 @@ struct VennAreaGeometry {
   qreal fillOpacity = 0.0;
   qreal strokeOpacity = 1.0;
   qreal strokeWidth = 1.0;
+  bool pathVisible = true;
+  bool pathHasBox = true;
   bool circle = false;
   bool rough = false;
   rough::Drawable roughDrawable;
@@ -74,6 +83,12 @@ struct VennTextNodeGeometry {
   QRectF box;
   QString color;
   qreal fontSize = 16.0;
+  QString fontFamily;
+  QFont::Weight fontWeight = QFont::Normal;
+  QFont::Style fontStyle = QFont::StyleNormal;
+  qreal opacity = 1.0;
+  bool visible = true;
+  bool hasBox = true;
 };
 
 struct VennDebugCircle {

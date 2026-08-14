@@ -9,6 +9,7 @@
 
 #include "mermaid/flowchart/D3Curves.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/flowchart/FlowchartLayout.h"
 #include "mermaid/theme/MermaidColor.h"
 #include "theme/CssCalc.h"
 
@@ -46,6 +47,12 @@ constexpr qreal kGap = 20.0;
 const QSizeF kMmdcDefaultCssViewport{800.0, 600.0};
 
 qreal r3(qreal v) { return std::round(v * 1000.0) / 1000.0; }
+
+QString cssColor(const QColor& value) {
+  if (!value.isValid()) return {};
+  if (value.alpha() == 255) return value.name(QColor::HexRgb);
+  return color::rgba(value.red(), value.green(), value.blue(), value.alphaF());
+}
 
 QJsonObject rectJson(const QRectF& r) {
   return {{QStringLiteral("x"), r3(r.x())},
@@ -336,6 +343,21 @@ RequirementScene buildRequirementScene(
   RequirementScene scene;
   scene.style = std::move(style);
   scene.markers = requirementMarkerDefinitions();
+  for (RequirementMarkerDefinition& marker : scene.markers) {
+    marker.fill = scene.style.markerFill.isEmpty()
+        ? scene.style.lineColor : scene.style.markerFill;
+    marker.stroke = scene.style.markerStroke.isEmpty()
+        ? scene.style.lineColor : scene.style.markerStroke;
+    marker.opacity = scene.style.markerOpacity;
+    marker.visible = scene.style.markerVisible;
+    const auto resolved = scene.style.markerStyles.constFind(marker.type);
+    if (resolved != scene.style.markerStyles.cend()) {
+      marker.fill = resolved->fill;
+      marker.stroke = resolved->stroke;
+      marker.opacity = resolved->opacity;
+      marker.visible = resolved->visible;
+    }
+  }
 
   QHash<QString, RequirementPlacementNode> placedNodes;
   for (const auto& node : placement.nodes) placedNodes.insert(node.id, node);
@@ -411,13 +433,58 @@ RequirementScene buildRequirementScene(
     rendered.text = resolveRequirementTextStyle(
         node.cssStyles, scene.style.fontFamily, scene.style.fontSize,
         scene.style.fontWeight, scene.style.lineHeight);
+    rendered.visible = node.groupVisible;
+    rendered.hasBox = node.groupHasBox;
+    rendered.rootHasBox = node.groupRootHasBox;
+    if (node.hasResolvedBoxStyle) {
+      rendered.fill = node.boxStyle.fill;
+      rendered.fillNone = node.boxStyle.fill.trimmed().compare(
+          QLatin1String("none"), Qt::CaseInsensitive) == 0;
+      rendered.outlineStroke = node.boxStyle.stroke;
+      rendered.outlineVisible = node.boxStyle.visible &&
+          node.boxStyle.stroke.trimmed().compare(
+              QLatin1String("none"), Qt::CaseInsensitive) != 0 &&
+          node.boxStyle.strokeWidth > 0.0;
+      rendered.strokeWidth = node.boxStyle.strokeWidth;
+      rendered.fillOpacity = node.boxStyle.fillOpacity;
+      rendered.strokeOpacity = node.boxStyle.strokeOpacity;
+      rendered.opacity = node.boxStyle.opacity;
+      rendered.visible = rendered.visible && node.boxStyle.visible;
+      rendered.hasBox = rendered.hasBox && node.boxStyle.hasBox;
+      rendered.rootHasBox = rendered.rootHasBox && node.boxStyle.rootHasBox;
+    }
+    if (node.hasResolvedDividerStyle) {
+      rendered.dividerStroke = node.dividerStyle.stroke;
+      rendered.dividerVisible = node.dividerStyle.visible &&
+          node.dividerStyle.stroke.trimmed().compare(
+              QLatin1String("none"), Qt::CaseInsensitive) != 0 &&
+          node.dividerStyle.strokeWidth > 0.0;
+      rendered.dividerStrokeOpacity = node.dividerStyle.strokeOpacity;
+      rendered.dividerOpacity = node.dividerStyle.opacity;
+      rendered.dividerStrokeWidth = node.dividerStyle.strokeWidth;
+      rendered.dividerRootVisible = node.dividerStyle.visible;
+      rendered.dividerWrapperComputed = node.dividerWrapperComputed;
+      rendered.dividerChildPaths.clear();
+      for (qsizetype pathIndex = 0;
+           pathIndex < node.dividerChildPathComputed.size(); ++pathIndex) {
+        const RequirementComputedElement& computed =
+            node.dividerChildPathComputed.at(pathIndex);
+        RequirementPaintedPathStyle painted;
+        painted.stroke = computed.stroke;
+        painted.strokeWidth = pathIndex == 0
+            ? node.dividerStyle.strokeWidth : rendered.dividerStrokeWidth;
+        painted.effectiveStrokeOpacity = computed.effectiveStrokeOpacity;
+        painted.displayed = computed.displayed;
+        rendered.dividerChildPaths.append(std::move(painted));
+      }
+    }
+    if (!node.hasResolvedDividerStyle)
+      rendered.dividerStrokeWidth = rendered.strokeWidth;
 
     // Row positions (relative to node center). Mermaid positions rows at
     // sequential y-offsets, then shifts so the box is centered. Row i's text
     // center Y (relative) = yoffset_i - totalHeight/2 + padding, where
     // totalHeight = the dagre box height.
-    const qreal effSize = requirementEffectiveFontSize(rendered.text, scene.style.fontSize);
-    const QString effFamily = requirementEffectiveFontFamily(rendered.text, scene.style.fontFamily);
     // font-size:0 / line-height:0 -> the node collapses to mermaid's 20x20 min box
     // with no text ink (STEP0F §2). Mirror the measure path: skip font/measure
     // work entirely (a 0px QFont violates Qt's positive pixel-size contract, and
@@ -425,24 +492,28 @@ RequirementScene buildRequirementScene(
     // its sentinel when the font is absent so the natural-height branch below
     // never constructs a 0px font; the zero row heights already came back from
     // measure, so the emitted rows are zero-size and paintRow skips them.
-    qreal effLineHeight = -1.0;
-    if (effSize != 0.0) {
-      if (rendered.text.lineHeightNormal) {
-        effLineHeight =
-            QFontMetricsF(flowchart::makeFlowLabelFont(effFamily, effSize,
-                                                        rendered.text.fontWeight, rendered.text.fontStyle))
-                .height();
-      } else {
-        // Unset line-height -> 1.5x the RESOLVED font-size (matches the measure
-        // path; default config: effSize == theme fontSize -> 24, byte-identical).
-        effLineHeight = rendered.text.lineHeightPx >= 0.0 ? rendered.text.lineHeightPx
-                                                           : effSize * 1.5;
-      }
-    }
-    const bool noText = (effSize == 0.0 || effLineHeight == 0.0);
     qreal yoffset = 0.0;
     for (qsizetype i = 0; i < node.rows.size(); ++i) {
       const RequirementLayoutRow& row = node.rows.at(i);
+      const RequirementTextStyle& rowStyle = row.hasResolvedStyle
+          ? row.resolvedStyle : rendered.text;
+      const qreal effSize = requirementEffectiveFontSize(
+          rowStyle, scene.style.fontSize);
+      const QString effFamily = requirementEffectiveFontFamily(
+          rowStyle, scene.style.fontFamily);
+      qreal effLineHeight = -1.0;
+      if (effSize != 0.0) {
+        if (rowStyle.lineHeightNormal) {
+          effLineHeight = QFontMetricsF(flowchart::makeFlowLabelFont(
+              effFamily, effSize, rowStyle.fontWeight,
+              rowStyle.fontStyle)).height();
+        } else {
+          effLineHeight = rowStyle.lineHeightPx >= 0.0
+              ? rowStyle.lineHeightPx : effSize * 1.5;
+        }
+      }
+      const bool noText = !row.hasBox || effSize == 0.0 ||
+                          effLineHeight == 0.0;
       const qreal rowHeight = measured.rowHeights.value(i, 0.0);
       RequirementSceneRow sceneRow;
       sceneRow.text = row.text;
@@ -450,23 +521,40 @@ RequirementScene buildRequirementScene(
       sceneRow.fontPixelSize = effSize;
       sceneRow.fontFamily = effFamily;
       sceneRow.lineHeight = effLineHeight;
-      sceneRow.color = rendered.text.color;
+      sceneRow.color = rowStyle.color;
+      sceneRow.opacity = row.opacity;
+      sceneRow.visible = row.visible;
+      sceneRow.hasBox = row.hasBox;
+      sceneRow.rootHasBox = row.rootHasBox;
+      sceneRow.wrapperComputed = row.wrapperComputed;
+      sceneRow.paintedTextComputed = row.paintedTextComputed;
       qreal rowWidth = 0.0;  // ink width (0 when text is collapsed -> no paint)
       if (!noText) {
         // Build the row document once (text-transform + Commit-2 fields applied)
         // and reuse it for the width measure and the stored paint document.
         const flowchart::FlowLabelDocument doc =
-            requirementRowDocument(row.text, row.bold, rendered.text, scene.style.fontSize);
-        rowWidth = flowchart::measureFlowSvgTextBounds(doc, effFamily, effSize).width();
+            measured.rowDocuments.value(i);
+        const QRectF rawInk = measured.rowInkBounds.value(i);
+        rowWidth = rawInk.width();
         sceneRow.document = doc;
       }
-      sceneRow.size = QSizeF(rowWidth, rowHeight);
+      const QRectF rawInk = measured.rowInkBounds.value(i);
+      sceneRow.size = scene.style.htmlLabels
+          ? QSizeF(rowWidth, rowHeight) : rawInk.size();
       // Horizontal: type(0) + name(1) are centered (x=0); body rows are
       // left-aligned at -totalWidth/2 + padding/2 (mermaid's translateX for i>=2).
-      qreal centerX = 0.0;
-      if (i >= 2)
-        centerX = -totalWidth / 2.0 + kPadding / 2.0 + rowWidth / 2.0;
-      const qreal centerY = yoffset - totalHeight / 2.0 + kPadding;
+      qreal translateX = -rowWidth / 2.0;
+      if (i >= 2) translateX = -totalWidth / 2.0 + kPadding / 2.0;
+      const qreal translateY = -rowHeight / 2.0 + yoffset -
+                               totalHeight / 2.0 + kPadding;
+      const QRectF positioned = rawInk.translated(translateX, translateY);
+      const qreal centerX = scene.style.htmlLabels
+          ? (i >= 2 ? -totalWidth / 2.0 + kPadding / 2.0 + rowWidth / 2.0
+                    : 0.0)
+          : positioned.center().x();
+      const qreal centerY = scene.style.htmlLabels
+          ? yoffset - totalHeight / 2.0 + kPadding
+          : positioned.center().y();
       sceneRow.center = QPointF(centerX, centerY);
       rendered.rows.append(std::move(sceneRow));
       yoffset += rowHeight;
@@ -504,12 +592,82 @@ RequirementScene buildRequirementScene(
     rendered.markerStart = edge.isContains ? QStringLiteral("requirement_contains") : QString();
     rendered.markerEnd = edge.isContains ? QString() : QStringLiteral("requirement_arrow");
     rendered.labelPosition = found->labelPosition;
+    rendered.stroke = scene.style.lineColor;
+    // labelFill models the `.edgeLabel .label` <g> computed background-color.
+    // The actual foreignObject background comes from div.labelBkg; the span's
+    // background remains separate computed style but emits no pixels in Chrome.
+    rendered.labelFill = QStringLiteral("transparent");
+    rendered.labelColor = scene.style.edgeLabelColor;
+    rendered.labelContainerBg.color = scene.style.edgeLabelContainerFill;
+    rendered.labelTextBg.color = scene.style.edgeLabelFill;
+    if (edge.hasResolvedPathStyle) {
+      rendered.stroke = edge.pathStyle.stroke;
+      rendered.strokeWidth = edge.pathStyle.strokeWidth;
+      rendered.strokeOpacity = edge.pathStyle.strokeOpacity;
+      rendered.opacity = edge.pathStyle.opacity;
+      rendered.visible = edge.pathStyle.visible;
+      rendered.rootHasBox = edge.pathStyle.rootHasBox;
+    }
+    if (edge.resolvedLabel.hasResolvedStyle) {
+      rendered.labelTextStyle = edge.resolvedLabel.resolvedStyle;
+      rendered.labelOpacity = edge.resolvedLabel.opacity;
+      rendered.labelVisible = edge.resolvedLabel.visible;
+      rendered.labelRootHasBox = edge.resolvedLabel.rootHasBox;
+      if (edge.resolvedLabel.resolvedStyle.color.isValid())
+        rendered.labelColor = cssColor(
+            edge.resolvedLabel.resolvedStyle.color);
+    }
+    rendered.hasLabelCascade = edge.hasLabelCascade;
+    if (edge.hasLabelCascade) {
+      rendered.outerLabelComputed = edge.outerLabelComputed;
+      rendered.innerLabelComputed = edge.innerLabelComputed;
+      rendered.paintedSpanComputed = edge.paintedSpanComputed;
+      rendered.labelContainerBg.color = edge.containerBgComputed.backgroundColor;
+      rendered.labelContainerBg.effectiveOpacity =
+          edge.containerBgComputed.effectiveOpacity;
+      rendered.labelContainerBg.displayed = edge.containerBgComputed.displayed;
+      rendered.labelTextBg.color = edge.paintedSpanComputed.backgroundColor;
+      rendered.labelTextBg.effectiveOpacity =
+          edge.paintedSpanComputed.effectiveOpacity;
+      rendered.labelTextBg.displayed = edge.paintedSpanComputed.displayed;
+    } else {
+      rendered.paintedSpanComputed.displayed = rendered.labelVisible;
+      rendered.paintedSpanComputed.effectiveOpacity = rendered.labelOpacity;
+      rendered.labelContainerBg.displayed = rendered.labelVisible;
+      rendered.labelTextBg.displayed = rendered.labelVisible;
+      rendered.labelContainerBg.effectiveOpacity = rendered.labelOpacity;
+      rendered.labelTextBg.effectiveOpacity = rendered.labelOpacity;
+    }
+    if (!edge.labelBackgroundStyle.fill.isEmpty())
+      rendered.labelFill = edge.labelBackgroundStyle.fill;
     if (!edge.label.isEmpty()) {
-      rendered.labelDocument =
-          flowchart::parseFlowLabel(edge.label, QStringLiteral("markdown"));
-      rendered.labelSize = flowchart::measureFlowLabel(
-          rendered.labelDocument, scene.style.fontFamily,
-          scene.style.fontSize, scene.style.lineHeight);
+      rendered.labelDocument = edge.resolvedLabel.hasResolvedStyle
+          ? requirementRowDocument(edge.label, false,
+                                   edge.resolvedLabel.resolvedStyle,
+                                   scene.style.fontSize,
+                                   scene.style.htmlLabels)
+          : (scene.style.htmlLabels
+                 ? flowchart::parseFlowLabel(edge.label,
+                                             QStringLiteral("markdown"))
+                 : flowchart::parseFlowSvgLabel(edge.label,
+                                                QStringLiteral("markdown")));
+      flowchart::FlowTextOptions labelOptions;
+      const RequirementTextStyle& labelText =
+          edge.resolvedLabel.hasResolvedStyle
+              ? edge.resolvedLabel.resolvedStyle
+              : rendered.labelTextStyle;
+      labelOptions.fontFamily = edge.resolvedLabel.hasResolvedStyle
+          ? requirementEffectiveFontFamily(labelText, scene.style.fontFamily)
+          : scene.style.fontFamily;
+      labelOptions.fontPixelSize = edge.resolvedLabel.hasResolvedStyle
+          ? requirementEffectiveFontSize(labelText, scene.style.fontSize)
+          : scene.style.fontSize;
+      labelOptions.lineHeight = edge.resolvedLabel.hasResolvedStyle &&
+              labelText.lineHeightPx >= 0.0
+          ? labelText.lineHeightPx : labelOptions.fontPixelSize * 1.5;
+      labelOptions.htmlLabels = scene.style.htmlLabels;
+      rendered.labelSize = flowchart::measureLabel(
+          edge.label, QStringLiteral("markdown"), labelOptions);
       if (rendered.labelPosition) {
         rendered.labelBounds = QRectF(
             *rendered.labelPosition -
@@ -538,11 +696,14 @@ RequirementScene buildRequirementScene(
       scene.bounds = scene.bounds.united(bounds);
     }
   };
-  for (const auto& node : scene.nodes)
-    unite(QRectF(node.center.x() - node.size.width() / 2.0,
-                 node.center.y() - node.size.height() / 2.0,
-                 node.size.width(), node.size.height()));
+  for (const auto& node : scene.nodes) {
+    if (node.rootHasBox)
+      unite(QRectF(node.center.x() - node.size.width() / 2.0,
+                   node.center.y() - node.size.height() / 2.0,
+                   node.size.width(), node.size.height()));
+  }
   for (const auto& edge : scene.edges) {
+    if (!edge.rootHasBox) continue;
     for (const QPointF& point : edge.points)
       unite(QRectF(point, QSizeF(0.0, 0.0)));
     for (const QVector<QPointF>& segment : edge.segments)
@@ -620,6 +781,54 @@ QJsonObject RequirementScene::toJsonObject() const {
   o[QStringLiteral("markers")] = markersArray;
 
   return o;
+}
+
+SvgMarkerProjection RequirementScene::svgMarkerProjection() const {
+  SvgMarkerProjection projection;
+  for (const RequirementMarkerDefinition& source : markers) {
+    SvgMarkerDefinition definition;
+    definition.key = source.type;
+    definition.idSuffix = QStringLiteral("_requirement-") + source.type + source.suffix;
+    definition.refX = source.refX; definition.refY = source.refY;
+    definition.markerWidth = source.markerWidth;
+    definition.markerHeight = source.markerHeight;
+    if (source.isContains) {
+      definition.groupChildren = true;
+      SvgMarkerChild circle;
+      circle.tag = QStringLiteral("circle"); circle.cx = 10; circle.cy = 10;
+      circle.radius = 9; circle.fill = QStringLiteral("none");
+      circle.stroke = style.lineColor;
+      definition.children.append(circle);
+      for (const QVector<qreal>& line : QVector<QVector<qreal>>{
+               {1, 10, 19, 10}, {10, 1, 10, 19}}) {
+        SvgMarkerChild child;
+        child.tag = QStringLiteral("line");
+        child.x1 = line.at(0); child.y1 = line.at(1);
+        child.x2 = line.at(2); child.y2 = line.at(3);
+        child.stroke = style.lineColor;
+        definition.children.append(child);
+      }
+    } else {
+      SvgMarkerChild child;
+      child.tag = QStringLiteral("path");
+      child.path = QStringLiteral("M0,0\n      L20,10\n      M20,10\n      L0,20");
+      child.fill = QStringLiteral("none"); child.stroke = style.lineColor;
+      definition.children.append(child);
+    }
+    projection.definitions.append(definition);
+  }
+  for (const RequirementSceneEdge& source : edges) {
+    if (source.markerStart.isEmpty() && source.markerEnd.isEmpty()) continue;
+    SvgMarkerEdge edge;
+    edge.id = source.id; edge.cssClass = QStringLiteral("relationshipLine");
+    edge.path = source.path;
+    edge.markerStart = source.markerStart;
+    edge.markerEnd = source.markerEnd;
+    edge.stroke = style.lineColor; edge.strokeWidth = QStringLiteral("1");
+    if (!source.isContains) edge.strokeDasharray = QStringLiteral("10,7");
+    projection.edges.append(edge);
+  }
+  return projection;
 }
 
 }  // namespace muffin::mermaid::requirement

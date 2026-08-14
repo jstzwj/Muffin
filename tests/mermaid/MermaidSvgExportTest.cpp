@@ -11,7 +11,9 @@
 #include <cstdlib>
 
 using muffin::mermaid::editor::MermaidRenderCache;
+using muffin::mermaid::editor::MermaidRenderEntry;
 using muffin::mermaid::editor::MermaidSvgRenderResult;
+using muffin::mermaid::MermaidPaintOptions;
 
 namespace {
 
@@ -65,6 +67,37 @@ void requireRenderable(const QByteArray& svg, const QString& family) {
     }
   }
   require(hasPaint, family + QStringLiteral(" SVG rendered to a blank image"));
+}
+
+int differentPixels(const QImage& left, const QImage& right) {
+  require(left.size() == right.size(),
+          QStringLiteral("Marker raster dimensions drifted"));
+  int count = 0;
+  for (int y = 0; y < left.height(); ++y) {
+    const QRgb* a = reinterpret_cast<const QRgb*>(left.constScanLine(y));
+    const QRgb* b = reinterpret_cast<const QRgb*>(right.constScanLine(y));
+    for (int x = 0; x < left.width(); ++x)
+      if (a[x] != b[x]) ++count;
+  }
+  return count;
+}
+
+QImage paintScene(const MermaidRenderEntry& entry, bool paintEdgeMarkers) {
+  require(entry.scene != nullptr, QStringLiteral("Marker scene is missing"));
+  const QRectF bounds = entry.scene->sceneBounds();
+  const QSize size(qMax(1, qCeil(bounds.width())),
+                   qMax(1, qCeil(bounds.height())));
+  QImage image(size, QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
+  painter.translate(-bounds.left(), -bounds.top());
+  MermaidPaintOptions options;
+  options.paintEdgeMarkers = paintEdgeMarkers;
+  entry.scene->paint(painter, options);
+  painter.end();
+  return image;
 }
 
 MermaidSvgRenderResult renderSvg(const QString& source,
@@ -244,6 +277,22 @@ int main(int argc, char** argv) {
               deterministicRoot.value(QStringLiteral("id")) !=
                   indexedRoot.value(QStringLiteral("id")),
           QStringLiteral("deterministicIds/seed or instance indexing drifted"));
+
+  const QString markerSource = QStringLiteral(
+      "%%{init: {\"arrowMarkerAbsolute\": true}}%%\n"
+      "flowchart LR\nA --> B");
+  const QUrl markerDocumentUrl =
+      QUrl::fromLocalFile(QStringLiteral("G:/github/mermaid-cli/index.html"));
+  const MermaidSvgRenderResult markerSvg =
+      MermaidRenderCache::renderMermaidSourceToSvg(
+          markerSource, 0, markerDocumentUrl, QStringLiteral("marker-visual"));
+  require(markerSvg.svg.contains("marker-end=\"url(file:///G:/github/mermaid-cli/index.html#marker-visual_flowchart-v2-pointEnd)\""),
+          QStringLiteral("Absolute Flowchart marker reference drifted"));
+  const MermaidRenderEntry markerEntry = MermaidRenderCache().getSync(
+      MermaidRenderCache::makeKey(markerSource), markerSource);
+  require(differentPixels(paintScene(markerEntry, true),
+                          paintScene(markerEntry, false)) >= 8,
+          QStringLiteral("Scene marker geometry does not produce visible arrow ink"));
 
   const QVector<QString> fixedWidthSources = {
       QStringLiteral(

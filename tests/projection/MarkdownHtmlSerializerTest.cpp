@@ -110,6 +110,17 @@ void testMermaidAccessibilityMetadata() {
   require(titleFallback.contains(QStringLiteral(">Title fallback</title>")),
           QStringLiteral("visible Mermaid title must be the SVG title fallback"));
 
+  muffin::MarkdownHtmlOptions absoluteOptions;
+  absoluteOptions.documentUrl =
+      QUrl::fromLocalFile(QStringLiteral("G:/exports/report.html"));
+  const QString absoluteMarkers = serialize(QStringLiteral(
+      "```mermaid\n"
+      "%%{init: {\"arrowMarkerAbsolute\": true}}%%\n"
+      "flowchart LR\nA --> B\n```"), {}, absoluteOptions);
+  require(absoluteMarkers.contains(QStringLiteral(
+              "marker-end=\"url(file:///G:/exports/report.html#")),
+          QStringLiteral("Mermaid HTML document URL did not reach marker export"));
+
   const QString repeated = serialize(QStringLiteral(
       "```mermaid\nflowchart TB\nA --> B\n```\n\n"
       "```mermaid\nflowchart TB\nA --> B\n```"));

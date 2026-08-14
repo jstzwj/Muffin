@@ -265,73 +265,29 @@ MermaidDiagnostic preprocessingDiagnostic(
   return diagnostic;
 }
 
-std::optional<MermaidRenderEntry> unsupportedLayoutConfiguration(
+std::optional<MermaidRenderEntry> upstreamLayoutConfigurationError(
     const MermaidPreprocessResult& pre, const QString& type) {
-  QString section;
-  if (type.startsWith(QLatin1String("flowchart")))
-    section = QStringLiteral("flowchart");
-  else if (type == QLatin1String("swimlane")) {
+  // Unified class/flow renderers call getRegisteredLayoutAlgorithm(), which
+  // falls back to Dagre for an unknown name. State passes the configured name
+  // directly to render(), so an unregistered top-level layout throws. Nested
+  // state.defaultRenderer only selects the legacy detector and is otherwise
+  // ignored by Mermaid 11.16.
+  if (type == QLatin1String("state") ||
+      type == QLatin1String("stateDiagram")) {
     const QString requested =
         pre.config.value(QStringLiteral("layout")).toString();
-    if (requested.isEmpty() || requested == QLatin1String("swimlane") ||
-        requested == QLatin1String("dagre"))
+    if (requested.isEmpty() || requested == QLatin1String("dagre"))
       return std::nullopt;
     MermaidDiagnostic diagnostic;
     diagnostic.diagramType = type;
-    diagnostic.stage = QStringLiteral("configuration");
-    diagnostic.code = QStringLiteral("unsupported-layout-engine");
-    diagnostic.message = QStringLiteral(
-        "Native Mermaid rendering does not support layout='%1'.")
-                             .arg(requested);
-    diagnostic.production = QStringLiteral("layout");
-    diagnostic.actual = requested;
-    diagnostic.expected = {QStringLiteral("swimlane"),
-                           QStringLiteral("dagre")};
-    return errorEntry(std::move(diagnostic),
-                      MermaidRenderStatus::Unsupported);
+    diagnostic.stage = QStringLiteral("render");
+    diagnostic.code = QStringLiteral("native-render-failed");
+    diagnostic.message =
+        QStringLiteral("Unknown layout algorithm: %1").arg(requested);
+    return errorEntry(std::move(diagnostic));
   }
-  else if (type == QLatin1String("class") ||
-           type == QLatin1String("classDiagram"))
-    section = QStringLiteral("class");
-  else if (type == QLatin1String("state") ||
-           type == QLatin1String("stateDiagram"))
-    section = QStringLiteral("state");
-  else
-    return std::nullopt;
 
-  QString path = QStringLiteral("layout");
-  QString actual = pre.config.value(path).toString();
-  QString expected = QStringLiteral("dagre");
-  // Mermaid 11.16 moved ELK to an optional external package. The runtime
-  // pinned by this project does not register that package, so its unified
-  // renderer intentionally warns and resolves `elk` through Dagre.
-  if (section == QLatin1String("flowchart") &&
-      actual == QLatin1String("elk"))
-    return std::nullopt;
-  if (actual.isEmpty() || actual == expected) {
-    path = section + QStringLiteral(".defaultRenderer");
-    actual = pre.config.value(section).toObject()
-                 .value(QStringLiteral("defaultRenderer"))
-                 .toString();
-    expected = QStringLiteral("dagre-wrapper");
-  }
-  if (section == QLatin1String("flowchart") &&
-      actual == QLatin1String("elk"))
-    return std::nullopt;
-  if (actual.isEmpty() || actual == expected) return std::nullopt;
-
-  MermaidDiagnostic diagnostic;
-  diagnostic.diagramType = type;
-  diagnostic.stage = QStringLiteral("configuration");
-  diagnostic.code = QStringLiteral("unsupported-layout-engine");
-  diagnostic.message = QStringLiteral(
-      "Native Mermaid rendering does not support %1='%2'.")
-                           .arg(path, actual);
-  diagnostic.production = path;
-  diagnostic.actual = actual;
-  diagnostic.expected = {expected};
-  return errorEntry(std::move(diagnostic),
-                    MermaidRenderStatus::Unsupported);
+  return std::nullopt;
 }
 
 }  // namespace
@@ -355,7 +311,8 @@ MermaidRenderCache::MermaidRenderCache(QObject* parent, int capacity)
 MermaidRenderKey MermaidRenderCache::makeKey(const QString& source) {
   QString theme = QStringLiteral("default");
   try {
-    theme = themeFromConfig(preprocessDiagram(source).config);
+    theme = themeFromConfig(
+        mermaidRenderConfig(preprocessDiagram(source).config));
   } catch (...) {
     // Preprocessing failed (e.g. malformed frontmatter) — render the raw source
     // with the default theme; the worker will report the real error.
@@ -532,10 +489,20 @@ QString MermaidRenderCache::renderMermaidSourceToPngDataUrl(
 
 MermaidSvgRenderResult MermaidRenderCache::renderMermaidSourceToSvg(
     const QString& source, qsizetype instanceIndex) {
+  return renderMermaidSourceToSvg(source, instanceIndex, QUrl{});
+}
+
+MermaidSvgRenderResult MermaidRenderCache::renderMermaidSourceToSvg(
+    const QString& source, qsizetype instanceIndex,
+    const QUrl& documentUrl, const QString& diagramId) {
   MermaidSvgRenderResult result;
   const MermaidRenderKey key = makeKey(source);
   const MermaidRenderEntry entry = renderSource(source, key.theme);
-  result.svg = renderMermaidEntryToSvg(entry, instanceIndex);
+  MermaidSvgExportOptions options;
+  options.instanceIndex = instanceIndex;
+  options.documentUrl = documentUrl;
+  options.diagramId = diagramId;
+  result.svg = renderMermaidEntryToSvg(entry, options);
   if (result.svg.isEmpty()) return result;
   result.metadata = entry.metadata;
   result.dataUrl = QStringLiteral("data:image/svg+xml;base64,") +
@@ -552,6 +519,7 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   MermaidPreprocessResult pre;
   try {
     pre = preprocessDiagram(source);
+    pre.config = mermaidRenderConfig(pre.config);
   } catch (const std::exception& error) {
     return errorEntry(preprocessingDiagnostic(
         source, QString::fromUtf8(error.what())));
@@ -560,12 +528,14 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
   QString type;
   try {
     type = detectDiagramType(pre.code, pre.config);
-  } catch (const UnknownDiagramError&) {
+  } catch (const UnknownDiagramError& error) {
     MermaidDiagnostic diagnostic;
     diagnostic.stage = QStringLiteral("detector");
     diagnostic.code = QStringLiteral("missing-diagram-header");
-    diagnostic.message = QStringLiteral(
-        "No supported Mermaid diagram header was found.");
+    // Preserve the detector's upstream-compatible exception message. The
+    // structured code/span still gives Muffin a friendlier editor diagnostic
+    // without changing Mermaid's observable failure contract.
+    diagnostic.message = QString::fromUtf8(error.what());
     diagnostic.expected = {
         QStringLiteral("flowchart"), QStringLiteral("sequenceDiagram"),
         QStringLiteral("classDiagram"), QStringLiteral("stateDiagram-v2"),
@@ -604,8 +574,8 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
         source, pre, 0, pre.code.isEmpty() ? 0 : 1, 1, 1);
     return errorEntry(std::move(diagnostic));
   }
-  if (const auto unsupported = unsupportedLayoutConfiguration(pre, type))
-    return *unsupported;
+  if (const auto layoutError = upstreamLayoutConfigurationError(pre, type))
+    return *layoutError;
   const Diagram* diagram = findMermaidDiagram(type);
   if (!diagram) {
     MermaidDiagnostic diagnostic;

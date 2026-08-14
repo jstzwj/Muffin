@@ -91,17 +91,19 @@ QString mappedShape(const QString& type) {
 }
 
 QSizeF labelSize(const BlockNode& node, const QString& family, qreal fontSize,
-                 bool htmlLabels) {
+                 QFont::Weight fontWeight, bool htmlLabels) {
   if (node.label.isEmpty() || !(fontSize > 0.0)) return {};
   if (htmlLabels) {
-    const auto document = flowchart::parseFlowLabel(node.label, QStringLiteral("text"));
+    auto document = flowchart::parseFlowLabel(node.label, QStringLiteral("text"));
+    document.baseWeight = fontWeight;
     QSizeF size = flowchart::measureFlowLabel(document, family, fontSize,
                                               fontSize * 1.5);
     size.setWidth(flowchart::measureChromiumInlineLayoutWidth(
         document, family, fontSize));
     return size;
   }
-  const auto document = flowchart::parseFlowSvgLabel(node.label, QStringLiteral("text"));
+  auto document = flowchart::parseFlowSvgLabel(node.label, QStringLiteral("text"));
+  document.baseWeight = fontWeight;
   return flowchart::measureChromiumSvgTextLayoutBounds(
       document, family, fontSize).size();
 }
@@ -203,18 +205,40 @@ QSizeF naturalSize(const BlockNode& node, const QSizeF& label,
 
 LayoutNode makeLayoutNode(const BlockNode& block, const QString& family,
                           qreal fontSize, bool htmlLabels,
-                          const JsScalar& padding) {
+                          const JsScalar& padding,
+                          const csscascade::FlowchartProjection* css,
+                          const CssLengthContext& rootContext) {
   LayoutNode result;
   result.block = block;
   const JsScalar nodePadding = block.type == QLatin1String("composite")
       ? JsScalar::fromNumber(0.0) : padding;
-  result.labelSize = labelSize(block, family, fontSize, htmlLabels);
+  QString resolvedFamily = family;
+  qreal resolvedFontSize = fontSize;
+  QFont::Weight resolvedWeight = QFont::Normal;
+  bool labelHasBox = true;
+  if (css) {
+    const auto label = css->nodeLabels.constFind(block.id);
+    if (label != css->nodeLabels.constEnd()) {
+      resolvedFamily = label->fontFamily;
+      const CssLengthContext context = editor::pieCssLengthContext(
+          resolvedFamily, rootContext.emPx);
+      resolvedFontSize = editor::cssFontSizePx(label->fontSize, context);
+      resolvedWeight = editor::cssFontWeightToQt(
+          QJsonValue(label->fontWeight), QFont::Normal);
+      labelHasBox = label->hasBox();
+    }
+  }
+  result.labelSize = labelHasBox
+      ? labelSize(block, resolvedFamily, resolvedFontSize, resolvedWeight,
+                  htmlLabels)
+      : QSizeF(0.0, 0.0);
   result.naturalSize = naturalSize(block, result.labelSize, nodePadding);
   setSize(result, JsScalar::fromNumber(result.naturalSize.width()),
           JsScalar::fromNumber(result.naturalSize.height()));
   setCenter(result, JsScalar::fromNumber(0.0), JsScalar::fromNumber(0.0));
   for (const BlockNode& child : block.children)
-    result.children.append(makeLayoutNode(child, family, fontSize, htmlLabels, padding));
+    result.children.append(makeLayoutNode(child, family, fontSize, htmlLabels,
+                                          padding, css, rootContext));
   return result;
 }
 
@@ -423,7 +447,9 @@ QJsonObject rectJson(const QRectF& rect) {
 }  // namespace
 
 BlockScene buildBlockScene(const BlockData& data, BlockConfig config,
-                           const flowtheme::FlowThemeVariables& theme) {
+                           const flowtheme::FlowThemeVariables& theme,
+                           const csscascade::FlowchartProjection* measurementCss,
+                           const csscascade::FlowchartProjection* paintCss) {
   BlockScene scene;
   scene.useMaxWidth = editor::truthyConfigValue(config.useMaxWidth);
   scene.fontFamily = theme.fontFamily;
@@ -432,7 +458,8 @@ BlockScene buildBlockScene(const BlockData& data, BlockConfig config,
   const qreal fontSize = editor::cssFontSizePx(theme.fontSize, rootCtx);
 
   LayoutNode root = makeLayoutNode(data.root, theme.fontFamily, fontSize,
-                                   config.htmlLabels, padding);
+                                   config.htmlLabels, padding, measurementCss,
+                                   rootCtx);
   setBlockSizes(root, 0.0, 0.0, padding);
   layoutBlocks(root, padding);
   QVector<LayoutNode*> flat;
@@ -567,8 +594,13 @@ BlockScene buildBlockScene(const BlockData& data, BlockConfig config,
     scene.edges.append(geometry);
   }
 
+  flowscene::FlowSceneTextOptions textOptions;
+  textOptions.nodeHtmlLabels = config.htmlLabels;
+  textOptions.auxiliaryHtmlLabels = config.htmlLabels;
+  textOptions.css = paintCss;
   scene.flow = flowscene::buildFlowScene(flowData, flowLayout, theme, look,
-                                         config.handDrawnSeed);
+                                         config.handDrawnSeed, textOptions);
+  scene.flow.markerDiagramType = QStringLiteral("block");
   scene.flow.bounds = scene.bounds;
   for (qsizetype i = 0; i < flat.size() && i < scene.flow.nodes.size(); ++i) {
     const LayoutNode& layoutNode = *flat.at(i);

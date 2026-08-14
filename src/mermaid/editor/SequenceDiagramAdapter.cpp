@@ -9,6 +9,7 @@
 #include "mermaid/sequence/SequenceLayout.h"
 #include "mermaid/sequence/SequenceScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QFont>
 #include <QHash>
@@ -78,9 +79,62 @@ sequence::SequenceSceneStyle sequenceStyleFromConfig(const QJsonObject& config) 
   apply(style.labelTextColor, QStringLiteral("labelTextColor"));
   apply(style.sequenceNumberColor, QStringLiteral("sequenceNumberColor"));
   apply(style.fontFamily, QStringLiteral("fontFamily"));
+  // `.actor { stroke-width: ${options.strokeWidth ?? 1} }` (sequence styles.js):
+  // the themeVariables strokeWidth — 2 for the neo/redux light family, 1 for
+  // every other built-in theme. Probed vs 11.16.0 (the previous hardcoded 2px
+  // mismatched the computed 1px default).
+  style.actorStrokeWidth = flowtheme::resolveFlowTheme(
+      themeIdFromName(themeFromConfig(config)), theme).strokeWidth;
+  if (style.actorStrokeWidth <= 0.0) style.actorStrokeWidth = 1.0;
   if (theme.contains(QStringLiteral("fontSize")))
     style.fontSize = pixelValue(
         theme.value(QStringLiteral("fontSize")), style.fontSize);
+  style.actorFontFamily = style.messageFontFamily = style.noteFontFamily =
+      style.fontFamily;
+  style.actorFontSize = style.messageFontSize = style.noteFontSize =
+      style.fontSize;
+
+  csscascade::ElementStyle rootFallback;
+  rootFallback.fill = style.textColor;
+  rootFallback.stroke = QStringLiteral("none");
+  rootFallback.strokeWidth = QStringLiteral("1px");
+  rootFallback.color = QStringLiteral("black");
+  rootFallback.fontFamily = style.fontFamily;
+  rootFallback.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
+  rootFallback.fontWeight = QStringLiteral("400");
+  csscascade::ElementStyle actorFallback = rootFallback;
+  actorFallback.fill = style.actorFill;
+  actorFallback.stroke = style.actorStroke;
+  actorFallback.strokeWidth =
+      QString::number(style.actorStrokeWidth) + QStringLiteral("px");
+  csscascade::ElementStyle messageFallback = rootFallback;
+  messageFallback.fill = style.signalTextColor;
+  const QVector<csscascade::ElementInput> cssElements = {
+      {QStringLiteral("svg"), {}, QStringLiteral("svg"),
+       QStringLiteral("diagram-root"), {QStringLiteral("sequenceDiagram")},
+       {}, rootFallback, {}},
+      {QStringLiteral("root"), QStringLiteral("svg"), QStringLiteral("g"),
+       {}, {QStringLiteral("root")}, {}, rootFallback, {}},
+      {QStringLiteral("actor"), QStringLiteral("root"), QStringLiteral("rect"),
+       {}, {QStringLiteral("actor")}, {}, actorFallback, {}},
+      {QStringLiteral("message"), QStringLiteral("root"), QStringLiteral("text"),
+       {}, {QStringLiteral("messageText")}, {}, messageFallback, {}}};
+  const QString themeCss = config.value(QStringLiteral("themeCSS")).toString();
+  if (!themeCss.trimmed().isEmpty()) {
+    const auto projected = csscascade::resolveElements(themeCss, cssElements);
+    const csscascade::ElementStyle actor = projected.value(
+        QStringLiteral("actor"), actorFallback);
+    const csscascade::ElementStyle message = projected.value(
+        QStringLiteral("message"), messageFallback);
+    style.actorFill = actor.fill;
+    style.actorStroke = actor.stroke;
+    style.actorStrokeWidth = cssStrokeWidthPx(actor.strokeWidth, {}, 0.0);
+    style.actorFontFamily = actor.fontFamily;
+    style.actorFontSize = cssFontSizePx(actor.fontSize, {});
+    style.messageFontFamily = message.fontFamily;
+    style.messageFontSize = cssFontSizePx(message.fontSize, {});
+    style.signalTextColor = message.fill;
+  }
   // sequence.messageAlign / sequence.noteAlign (start/middle/end). Defaults are
   // Center, so an absent or unrecognized value leaves rendering unchanged.
   const QJsonObject sequenceSection =

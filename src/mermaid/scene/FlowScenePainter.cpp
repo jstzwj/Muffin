@@ -177,13 +177,21 @@ QFont labelFont(const FlowSceneLabel& label, const QString& fontFamily) {
   QFont font(family);
   MermaidFontRegistry::configureFont(font, family);
   font.setPixelSize(static_cast<int>(std::round(pxSize(label.fontSize.isEmpty() ? QStringLiteral("16px") : label.fontSize))));
-  if (label.fontWeight == QLatin1String("bold")) font.setBold(true);
+  const QString weight = label.fontWeight.trimmed().toLower();
+  if (weight == QLatin1String("bold") || weight == QLatin1String("bolder")) {
+    font.setWeight(QFont::Bold);
+  } else {
+    bool ok = false;
+    const int numeric = weight.toInt(&ok);
+    if (ok && numeric >= 1 && numeric <= 1000)
+      font.setWeight(static_cast<QFont::Weight>(numeric));
+  }
   return font;
 }
 
 void drawLabel(QPainter& painter, const FlowSceneLabel& label, const QRectF& rect,
                const QString& fontFamily, bool center, PaintMode mode) {
-  if (label.text.isEmpty()) return;
+  if (label.text.isEmpty() || !label.visible) return;
   const QFont font = labelFont(label, fontFamily);
   const qreal lineHeight = (font.pixelSize() > 0 ? font.pixelSize() : 16.0) * 1.5;
   const QColor color = mode == PaintMode::CategoryMask
@@ -316,6 +324,7 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
 
   // Clusters (drawn first).
   for (const FlowSceneCluster& c : scene.clusters) {
+    if (!c.visible) continue;
     const QRectF r(c.cx - c.width / 2.0, c.cy - c.height / 2.0, c.width, c.height);
     if (!mermaidPrimitiveIsVisible(r, options)) continue;
     if (scene.look == flowchart::FlowLook::Neo && !c.swimlane) {
@@ -366,13 +375,20 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
             painter, c.roughBody,
             Qt::NoBrush, pen, Qt::NoPen);
       } else {
-        painter.setBrush(clusterFill);
-        painter.drawRect(titleRect);
-        // The renderer writes fill="none" on the body presentation attribute,
-        // but the generated `.cluster rect` CSS declaration wins in the
-        // cascade. Chrome's used fill is therefore clusterBkg for classic/neo.
-        painter.setBrush(clusterFill);
-        painter.drawRect(bodyRect);
+        if (c.swimlaneTitleVisible) {
+          painter.setBrush(paletteColor(c.swimlaneTitleFill, kCatCluster));
+          QPen titlePen(paletteColor(c.swimlaneTitleStroke, kCatCluster));
+          titlePen.setWidthF(pxSize(c.swimlaneTitleStrokeWidth));
+          painter.setPen(titlePen);
+          painter.drawRect(titleRect);
+        }
+        if (c.swimlaneBodyVisible) {
+          painter.setBrush(paletteColor(c.swimlaneBodyFill, kCatCluster));
+          QPen bodyPen(paletteColor(c.swimlaneBodyStroke, kCatCluster));
+          bodyPen.setWidthF(pxSize(c.swimlaneBodyStrokeWidth));
+          painter.setPen(bodyPen);
+          painter.drawRect(bodyRect);
+        }
       }
       if (!c.label.text.isEmpty()) {
         if (c.titleOnLeft) {
@@ -411,13 +427,15 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
       painter.drawRoundedRect(r, 0, 0);
     }
     if (!c.label.text.isEmpty()) {
-      QRectF lr(r.left() + 4, r.top() + 2, c.width - 8, 20);
+      QRectF lr(r.left() + 4, r.top() + c.titleTopMargin + 2,
+                c.width - 8, 20);
       drawLabel(painter, c.label, lr, fontFamily, false, mode);
     }
   }
 
   // Edges (drawn second).
   for (const FlowSceneEdge& e : scene.edges) {
+    if (!e.visible) continue;
     const QRectF pathBounds = e.pathBounds.isValid() ? e.pathBounds : scene.bounds;
     if (mermaidPrimitiveIsVisible(pathBounds, options)) {
       const ParsedPath pp = parsePath(e.path);
@@ -458,12 +476,13 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
         painter.setPen(pen); painter.setBrush(Qt::NoBrush);
         painter.drawPath(pp.path);
       }
-      // Markers.
-      const QColor mc = paletteColor(e.stroke, kCatEdge);
-      if (!e.markerEnd.isEmpty()) drawMarker(painter, e.markerEnd, pp.endPoint, pp.endTangent, mc);
-      if (!e.markerStart.isEmpty()) {
-        QPointF t = pp.startTangent;
-        drawMarker(painter, e.markerStart, pp.startPoint, QPointF(-t.x(), -t.y()), mc);  // start marker points backward
+      if (options.paintEdgeMarkers) {
+        const QColor mc = paletteColor(e.stroke, kCatEdge);
+        if (!e.markerEnd.isEmpty()) drawMarker(painter, e.markerEnd, pp.endPoint, pp.endTangent, mc);
+        if (!e.markerStart.isEmpty()) {
+          QPointF t = pp.startTangent;
+          drawMarker(painter, e.markerStart, pp.startPoint, QPointF(-t.x(), -t.y()), mc);
+        }
       }
     }
     // Edge label.
@@ -483,6 +502,7 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
 
   // Nodes (drawn last).
   for (const FlowSceneNode& n : scene.nodes) {
+    if (!n.visible) continue;
     const QRectF r(n.cx - n.width / 2.0, n.cy - n.height / 2.0, n.width, n.height);
     QRectF paintBounds = r;
     if (!n.label.text.isEmpty()) {

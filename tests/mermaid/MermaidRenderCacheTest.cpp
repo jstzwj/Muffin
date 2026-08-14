@@ -1579,7 +1579,9 @@ int main(int argc, char** argv) {
             QStringLiteral("wrapped edge label must render"));
     const auto& edge = flowScene->edges.first();
     require(edge.label.richText.visualLines.size() == 3 &&
-                edge.label.richText.visualLineAdvance > 0.0 &&
+                (edge.label.htmlLabels
+                     ? qFuzzyIsNull(edge.label.richText.visualLineAdvance)
+                     : edge.label.richText.visualLineAdvance > 0.0) &&
                 edge.labelSize.width() > 0.0 &&
                 edge.labelSize.height() > 0.0,
             QStringLiteral("edge wrapping must reach the immutable scene"));

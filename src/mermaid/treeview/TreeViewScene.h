@@ -5,6 +5,8 @@
 
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QFont>
+#include <QHash>
 #include <QPointF>
 #include <QRectF>
 #include <QString>
@@ -24,6 +26,26 @@ struct TreeViewConfig {
   QJsonObject extensionIcons;
 };
 
+struct TreeViewResolvedTextStyle {
+  QString fontFamily;
+  qreal fontSize = 16.0;
+  QFont::Weight fontWeight = QFont::Normal;
+  QFont::Style fontStyle = QFont::StyleNormal;
+  QString fill;
+  qreal opacity = 1.0;
+  bool visible = true;
+  bool hasBox = true;
+};
+
+struct TreeViewResolvedShapeStyle {
+  QString fill;
+  QString stroke;
+  qreal strokeWidth = 1.0;
+  qreal fillOpacity = 1.0;
+  qreal strokeOpacity = 1.0;
+  bool visible = true;
+};
+
 struct TreeViewSceneStyle {
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal rootFontSize = 16.0;
@@ -35,6 +57,10 @@ struct TreeViewSceneStyle {
   QString descriptionColor = QStringLiteral("#6a9955");
   QString highlightBg = QStringLiteral("rgba(255, 193, 7, 0.15)");
   QString highlightStroke = QStringLiteral("#ffc107");
+  QHash<int, TreeViewResolvedTextStyle> labelStyles;
+  QHash<int, TreeViewResolvedTextStyle> descriptionStyles;
+  QHash<int, TreeViewResolvedShapeStyle> highlightStyles;
+  QVector<TreeViewResolvedShapeStyle> lineStyles;
 };
 
 struct TreeViewTextGeometry {
@@ -44,9 +70,15 @@ struct TreeViewTextGeometry {
   QRectF inkBounds;
   qreal layoutWidth = 0.0;
   qreal fontSize = 16.0;
+  QString fontFamily;
+  QFont::Weight fontWeight = QFont::Normal;
+  QFont::Style fontStyle = QFont::StyleNormal;
   bool bold = false;
   bool italic = false;
   QString fill;
+  qreal opacity = 1.0;
+  bool visible = true;
+  bool hasBox = true;
 };
 
 struct TreeViewLineGeometry {
@@ -59,6 +91,8 @@ struct TreeViewLineGeometry {
   QString stroke;
   QString strokeWidthAttribute;
   qreal strokeWidth = 1.0;
+  qreal opacity = 1.0;
+  bool visible = true;
   int paintOrder = -1;
 };
 
@@ -74,6 +108,12 @@ struct TreeViewNodeGeometry {
   TreeViewTextGeometry description;
   bool highlighted = false;
   QRectF highlightRect;
+  QString highlightFill;
+  QString highlightStroke;
+  qreal highlightStrokeWidth = 1.0;
+  qreal highlightFillOpacity = 1.0;
+  qreal highlightStrokeOpacity = 1.0;
+  bool highlightVisible = true;
   int groupPaintOrder = -1;
 };
 

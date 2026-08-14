@@ -250,7 +250,7 @@ struct Serializer {
     if (lang == QLatin1String("mermaid")) {
       const auto rendered =
           mermaid::editor::MermaidRenderCache::renderMermaidSourceToSvg(
-              node.literal(), mermaidInstanceIndex++);
+              node.literal(), mermaidInstanceIndex++, opts.documentUrl);
       if (!rendered.svg.isEmpty()) {
         out += QString::fromUtf8(rendered.svg);
         out += QLatin1Char('\n');

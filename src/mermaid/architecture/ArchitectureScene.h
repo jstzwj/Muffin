@@ -39,6 +39,58 @@ struct ArchitectureSceneStyle {
 
 enum class ArchitectureNodeKind { Service, Junction };
 
+// themeCSS overlay for one architecture DOM element. `hasBox` carries the
+// ancestor display chain: setupGraphViewbox reads the svg root getBBox, whose
+// union drops display:none subtrees, so a `.architecture-edges { display:none }`
+// removes the edge layer from the viewBox (the fcose layout itself stays
+// CSS-independent — Cytoscape sizes nodes from config iconSize, never the DOM).
+struct ArchitectureElementCss {
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString fontFamily;
+  qreal fontSize = -1.0;
+  QString fontWeight;
+  QString fontStyle;
+  qreal opacity = -1.0;
+  qreal fillOpacity = -1.0;
+  qreal strokeOpacity = -1.0;
+  bool visible = true;
+  bool hasBox = true;
+};
+
+// Slots follow the DOM: the three layer groups, then per-edge (line + first
+// arrow + label), per-service (group + label + iconless node-bkg path),
+// per-junction (group + invisible rect), per-group (rect.node-bkg + label).
+struct ArchitectureCssOverrides {
+  struct Edge {
+    ArchitectureElementCss line;
+    ArchitectureElementCss arrow;
+    ArchitectureElementCss label;
+  };
+  struct Node {
+    ArchitectureElementCss group;
+    ArchitectureElementCss label;
+    ArchitectureElementCss nodeBkg;
+  };
+  struct Junction {
+    ArchitectureElementCss group;
+    ArchitectureElementCss rect;
+  };
+  struct Group {
+    ArchitectureElementCss rect;
+    ArchitectureElementCss label;
+  };
+  bool active = false;
+  ArchitectureElementCss edgesLayer;
+  ArchitectureElementCss servicesLayer;
+  ArchitectureElementCss groupsLayer;
+  QVector<Edge> edges;
+  QVector<Node> nodes;
+  QVector<Junction> junctions;
+  QVector<Group> groups;
+};
+
 struct ArchitectureNodeGeometry {
   ArchitectureNodeKind kind = ArchitectureNodeKind::Service;
   QString id;
@@ -49,6 +101,9 @@ struct ArchitectureNodeGeometry {
   QPointF topLeft;
   QRectF localBounds;
   QRectF paintedBounds;
+  ArchitectureElementCss groupCss;
+  ArchitectureElementCss labelCss;
+  ArchitectureElementCss nodeBkgCss;
 };
 
 struct ArchitectureGroupGeometry {
@@ -57,6 +112,8 @@ struct ArchitectureGroupGeometry {
   QString title;
   QString parent;
   QRectF rect;
+  ArchitectureElementCss rectCss;
+  ArchitectureElementCss labelCss;
 };
 
 struct ArchitectureArrowGeometry {
@@ -75,6 +132,9 @@ struct ArchitectureEdgeGeometry {
   QRectF bounds;
   QRectF labelBounds;
   QVector<ArchitectureArrowGeometry> arrows;
+  ArchitectureElementCss lineCss;
+  ArchitectureElementCss arrowCss;
+  ArchitectureElementCss labelCss;
 };
 
 struct ArchitectureScene final : MermaidScene {
@@ -98,6 +158,8 @@ struct ArchitectureScene final : MermaidScene {
 
 ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
                                            ArchitectureConfig config,
-                                           ArchitectureSceneStyle style);
+                                           ArchitectureSceneStyle style,
+                                           const ArchitectureCssOverrides* css =
+                                               nullptr);
 
 }  // namespace muffin::mermaid::architecture

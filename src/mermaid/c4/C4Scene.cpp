@@ -34,6 +34,7 @@ struct LayoutElement {
   qreal margin = 0.0;
   qreal imageY = 0.0;
   bool hasImage = false;
+  int parseIndex = 0;
 };
 
 struct Extent {
@@ -185,7 +186,8 @@ C4Font fontFor(const C4Config& config, const QString& type) {
 
 C4Primitive textPrimitive(const QString& role, const QString& alias,
                           const TextBox& box, qreal x, qreal y, qreal width,
-                          C4Font font, const QString& fill, bool bold = false,
+                          C4Font font, const QString& fill,
+                          const C4ElementCss& css, bool bold = false,
                           bool italic = false, bool mathematical = true) {
   C4Primitive primitive;
   primitive.kind = C4PrimitiveKind::Text;
@@ -200,17 +202,41 @@ C4Primitive textPrimitive(const QString& role, const QString& alias,
   primitive.middleAnchor = true;
   primitive.mathematicalBaseline = mathematical;
   primitive.fill = fill;
+  primitive.css = css;
   return primitive;
+}
+
+// Neutral slots used when themeCSS is inactive (or when the adapter produced
+// fewer slots than the data holds); the defaults keep primitive values.
+const C4CssOverrides::Shape& noShapeCss() {
+  static const C4CssOverrides::Shape value;
+  return value;
+}
+const C4CssOverrides::Boundary& noBoundaryCss() {
+  static const C4CssOverrides::Boundary value;
+  return value;
+}
+const C4CssOverrides::Relation& noRelationCss() {
+  static const C4CssOverrides::Relation value;
+  return value;
 }
 
 class Builder {
 public:
-  Builder(const C4Data& data, C4Config config, C4SceneStyle style)
-      : data_(data), config_(std::move(config)), style_(std::move(style)) {
+  Builder(const C4Data& data, C4Config config, C4SceneStyle style,
+          const C4CssOverrides* css = nullptr)
+      : data_(data), config_(std::move(config)), style_(std::move(style)),
+        css_(css) {
     shapes_.reserve(data_.shapes.size());
-    for (const C4Element& shape : data_.shapes) shapes_.append({shape});
+    for (qsizetype i = 0; i < data_.shapes.size(); ++i) {
+      shapes_.append({data_.shapes.at(i)});
+      shapes_.last().parseIndex = static_cast<int>(i);
+    }
     boundaries_.reserve(data_.boundaries.size());
-    for (const C4Element& boundary : data_.boundaries) boundaries_.append({boundary});
+    for (qsizetype i = 0; i < data_.boundaries.size(); ++i) {
+      boundaries_.append({data_.boundaries.at(i)});
+      boundaries_.last().parseIndex = static_cast<int>(i);
+    }
   }
 
   C4Scene build() {
@@ -243,6 +269,7 @@ public:
       primitive.fontSize = style_.rootFontSize;
       primitive.fontWeight = style_.rootFontWeight;
       primitive.fill = style_.rootTextColor;
+      if (css_) primitive.css = css_->title;
       primitives_.append(std::move(primitive));
     }
     const qreal titleExtra = data_.title.isEmpty() ? 0.0 : 60.0;
@@ -288,14 +315,15 @@ private:
   void appendText(const QString& role, const QString& alias,
                   const TextBox& box, qreal x, qreal y, qreal width,
                   const C4Font& font, const QString& fill,
-                  bool bold = false, bool italic = false) {
+                  const C4ElementCss& css, bool bold = false,
+                  bool italic = false) {
     const QStringList lines = splitLines(box.text);
     for (qsizetype i = 0; i < lines.size(); ++i) {
       TextBox line = box;
       line.text = lines.at(i);
       line.lines = 1;
       C4Primitive primitive = textPrimitive(role, alias, line, x, y, width,
-                                            font, fill, bold, italic);
+                                            font, fill, css, bold, italic);
       primitive.textDy = i * font.size -
                          font.size * (lines.size() - 1) / 2.0;
       primitives_.append(std::move(primitive));
@@ -418,6 +446,10 @@ private:
 
   void drawShape(LayoutElement& shape) {
     const QString type = shape.source.typeC4Shape;
+    const C4CssOverrides::Shape& shapeCss =
+        css_ && shape.parseIndex < css_->shapes.size()
+            ? css_->shapes.at(shape.parseIndex)
+            : noShapeCss();
     const QString fill = shape.source.backgroundColor.value_or(
         config_.backgroundColors.value(type, QStringLiteral("#1168BD")));
     const QString stroke = shape.source.borderColor.value_or(
@@ -436,6 +468,7 @@ private:
       rect.stroke = stroke;
       rect.strokeWidth = 0.5;
       rect.rx = 2.5;
+      rect.css = shapeCss.body;
       primitives_.append(std::move(rect));
     } else if (database) {
       const qreal x = shape.rect.x(), y = shape.rect.y();
@@ -452,22 +485,26 @@ private:
       body.path.cubicTo(x+half,y+h+10,x,y+h+10,x,y+h); body.path.lineTo(x,y);
       body.pathData = QStringLiteral("M%1,%2c0,-10 %3,-10 %3,-10c0,0 %3,0 %3,10l0,%4c0,10 -%3,10 -%3,10c0,0 -%3,0 -%3,-10l0,-%4")
                           .arg(number(x), number(y), number(half), number(h));
+      body.css = shapeCss.body;
       primitives_.append(body);
       C4Primitive lip;
       lip.kind=C4PrimitiveKind::Path;lip.role=QStringLiteral("shape-detail");lip.alias=shape.source.alias;
       lip.fill=QStringLiteral("none");lip.stroke=stroke;lip.strokeWidth=.5;
       lip.path.moveTo(x,y);lip.path.cubicTo(x,y+10,x+half,y+10,x+half,y+10);lip.path.cubicTo(x+half,y+10,x+2*half,y+10,x+2*half,y);
       lip.pathData=QStringLiteral("M%1,%2c0,10 %3,10 %3,10c0,0 %3,0 %3,-10").arg(number(x),number(y),number(half));
+      lip.css = shapeCss.detail;
       primitives_.append(std::move(lip));
     } else {
       const qreal x=shape.rect.x(),y=shape.rect.y(),w=shape.rect.width(),half=shape.rect.height()/2.0;
       C4Primitive body;body.kind=C4PrimitiveKind::Path;body.role=QStringLiteral("shape");body.alias=shape.source.alias;body.fill=fill;body.stroke=stroke;body.strokeWidth=.5;
       body.path.moveTo(x,y);body.path.lineTo(x+w,y);body.path.cubicTo(x+w+5,y,x+w+5,y+half,x+w+5,y+half);body.path.cubicTo(x+w+5,y+half,x+w+5,y+2*half,x+w,y+2*half);body.path.lineTo(x,y+2*half);body.path.cubicTo(x-5,y+2*half,x-5,y+half,x-5,y+half);body.path.cubicTo(x-5,y+half,x-5,y,x,y);
       body.pathData=QStringLiteral("M%1,%2l%3,0c5,0 5,%4 5,%4c0,0 0,%4 -5,%4l-%3,0c-5,0 -5,-%4 -5,-%4c0,0 0,-%4 5,-%4").arg(number(x),number(y),number(w),number(half));
+      body.css = shapeCss.body;
       primitives_.append(body);
       C4Primitive lip;lip.kind=C4PrimitiveKind::Path;lip.role=QStringLiteral("shape-detail");lip.alias=shape.source.alias;lip.fill=QStringLiteral("none");lip.stroke=stroke;lip.strokeWidth=.5;
       lip.path.moveTo(x+w,y);lip.path.cubicTo(x+w-5,y,x+w-5,y+half,x+w-5,y+half);lip.path.cubicTo(x+w-5,y+half,x+w,y+2*half,x+w,y+2*half);
       lip.pathData=QStringLiteral("M%1,%2c-5,0 -5,%3 -5,%3c0,%3 5,%3 5,%3").arg(number(x+w),number(y),number(half));
+      lip.css = shapeCss.detail;
       primitives_.append(std::move(lip));
     }
 
@@ -475,16 +512,16 @@ private:
     TextBox displayType=shape.shapeType;displayType.text=QStringLiteral("<<")+type+QStringLiteral(">>");
     C4Primitive typeText=textPrimitive(QStringLiteral("shape-type"),shape.source.alias,displayType,
         shape.rect.x()-shape.rect.width()/2.0+shape.shapeType.width/2.0,
-        shape.rect.y()+shape.shapeType.y,shape.rect.width(),typeFont,fontColor,false,true,false);
+        shape.rect.y()+shape.shapeType.y,shape.rect.width(),typeFont,fontColor,shapeCss.stereotype,false,true,false);
     typeText.position.setX(shape.rect.center().x()-shape.shapeType.width/2.0);
     typeText.middleAnchor=false;typeText.forcedTextWidth=shape.shapeType.width;
     primitives_.append(std::move(typeText));
-    if(shape.hasImage){C4Primitive image;image.kind=C4PrimitiveKind::Image;image.role=QStringLiteral("person-image");image.alias=shape.source.alias;image.rect=QRectF(shape.rect.center().x()-24,shape.rect.y()+shape.imageY,48,48);image.imageKind=type;primitives_.append(std::move(image));}
+    if(shape.hasImage){C4Primitive image;image.kind=C4PrimitiveKind::Image;image.role=QStringLiteral("person-image");image.alias=shape.source.alias;image.rect=QRectF(shape.rect.center().x()-24,shape.rect.y()+shape.imageY,48,48);image.imageKind=type;image.css=shapeCss.image;primitives_.append(std::move(image));}
     C4Font labelFont=fontFor(config_,type);labelFont.size+=2;labelFont.weight=QStringLiteral("bold");
-    appendText(QStringLiteral("shape-label"),shape.source.alias,shape.label,shape.rect.x(),shape.rect.y()+shape.label.y,shape.rect.width(),labelFont,fontColor,true);
-    if(!shape.technology.text.isEmpty())appendText(QStringLiteral("shape-technology"),shape.source.alias,shape.technology,shape.rect.x(),shape.rect.y()+shape.technology.y,shape.rect.width(),fontFor(config_,type),fontColor,false,true);
-    else if(!shape.type.text.isEmpty())appendText(QStringLiteral("shape-technology"),shape.source.alias,shape.type,shape.rect.x(),shape.rect.y()+shape.type.y,shape.rect.width(),fontFor(config_,type),fontColor,false,true);
-    if(!shape.description.text.isEmpty())appendText(QStringLiteral("shape-description"),shape.source.alias,shape.description,shape.rect.x(),shape.rect.y()+shape.description.y,shape.rect.width(),fontFor(config_,QStringLiteral("person")),fontColor);
+    appendText(QStringLiteral("shape-label"),shape.source.alias,shape.label,shape.rect.x(),shape.rect.y()+shape.label.y,shape.rect.width(),labelFont,fontColor,shapeCss.label,true);
+    if(!shape.technology.text.isEmpty())appendText(QStringLiteral("shape-technology"),shape.source.alias,shape.technology,shape.rect.x(),shape.rect.y()+shape.technology.y,shape.rect.width(),fontFor(config_,type),fontColor,shapeCss.technology,false,true);
+    else if(!shape.type.text.isEmpty())appendText(QStringLiteral("shape-technology"),shape.source.alias,shape.type,shape.rect.x(),shape.rect.y()+shape.type.y,shape.rect.width(),fontFor(config_,type),fontColor,shapeCss.technology,false,true);
+    if(!shape.description.text.isEmpty())appendText(QStringLiteral("shape-description"),shape.source.alias,shape.description,shape.rect.x(),shape.rect.y()+shape.description.y,shape.rect.width(),fontFor(config_,QStringLiteral("person")),fontColor,shapeCss.description);
   }
 
   void drawShapeArray(Bounds& bounds, const QVector<int>& indexes) {
@@ -493,15 +530,19 @@ private:
   }
 
   void drawBoundaryPrimitive(LayoutElement& boundary, const Bounds& bounds) {
+    const C4CssOverrides::Boundary& boundaryCss =
+        css_ && boundary.parseIndex < css_->boundaries.size()
+            ? css_->boundaries.at(boundary.parseIndex)
+            : noBoundaryCss();
     boundary.rect=QRectF(bounds.data.startX,bounds.data.startY,bounds.data.stopX-bounds.data.startX,bounds.data.stopY-bounds.data.startY);
     // Upstream assigns c4ShapeMargin - 35 to the lowercase `label.y`, but
     // c4Shapes reads the original uppercase `label.Y` produced during text
     // measurement. Preserve that observable case-mismatch instead of
     // applying the otherwise dead assignment.
-    C4Primitive rect;rect.kind=C4PrimitiveKind::Rect;rect.role=QStringLiteral("boundary");rect.alias=boundary.source.alias;rect.rect=boundary.rect;rect.fill=boundary.source.backgroundColor.value_or(QStringLiteral("none"));rect.stroke=boundary.source.borderColor.value_or(QStringLiteral("#444444"));rect.strokeWidth=1;rect.rx=2.5;if(boundary.source.nodeType.isEmpty())rect.dash={7,7};primitives_.append(rect);
-    C4Font labelFont=fontFor(config_,QStringLiteral("boundary"));labelFont.size+=2;labelFont.weight=QStringLiteral("bold");appendText(QStringLiteral("boundary-label"),boundary.source.alias,boundary.label,boundary.rect.x(),boundary.rect.y()+boundary.label.y,boundary.rect.width(),labelFont,QStringLiteral("#444444"),true);
-    if(!boundary.type.text.isEmpty())appendText(QStringLiteral("boundary-type"),boundary.source.alias,boundary.type,boundary.rect.x(),boundary.rect.y()+boundary.type.y,boundary.rect.width(),fontFor(config_,QStringLiteral("boundary")),QStringLiteral("#444444"));
-    if(!boundary.description.text.isEmpty()){C4Font font=fontFor(config_,QStringLiteral("boundary"));font.size-=2;appendText(QStringLiteral("boundary-description"),boundary.source.alias,boundary.description,boundary.rect.x(),boundary.rect.y()+boundary.description.y,boundary.rect.width(),font,QStringLiteral("#444444"));}
+    C4Primitive rect;rect.kind=C4PrimitiveKind::Rect;rect.role=QStringLiteral("boundary");rect.alias=boundary.source.alias;rect.rect=boundary.rect;rect.fill=boundary.source.backgroundColor.value_or(QStringLiteral("none"));rect.stroke=boundary.source.borderColor.value_or(QStringLiteral("#444444"));rect.strokeWidth=1;rect.rx=2.5;if(boundary.source.nodeType.isEmpty())rect.dash={7,7};rect.css=boundaryCss.body;primitives_.append(rect);
+    C4Font labelFont=fontFor(config_,QStringLiteral("boundary"));labelFont.size+=2;labelFont.weight=QStringLiteral("bold");appendText(QStringLiteral("boundary-label"),boundary.source.alias,boundary.label,boundary.rect.x(),boundary.rect.y()+boundary.label.y,boundary.rect.width(),labelFont,QStringLiteral("#444444"),boundaryCss.label,true);
+    if(!boundary.type.text.isEmpty())appendText(QStringLiteral("boundary-type"),boundary.source.alias,boundary.type,boundary.rect.x(),boundary.rect.y()+boundary.type.y,boundary.rect.width(),fontFor(config_,QStringLiteral("boundary")),QStringLiteral("#444444"),boundaryCss.type);
+    if(!boundary.description.text.isEmpty()){C4Font font=fontFor(config_,QStringLiteral("boundary"));font.size-=2;appendText(QStringLiteral("boundary-description"),boundary.source.alias,boundary.description,boundary.rect.x(),boundary.rect.y()+boundary.description.y,boundary.rect.width(),font,QStringLiteral("#444444"),boundaryCss.description);}
   }
 
   void drawInside(const QString&, Bounds& parent, const QVector<int>& children) {
@@ -521,18 +562,18 @@ private:
     else if(x1<x2&&y1>y2)p=ratio>=tan?QPointF(rect.right(),cy-tan*rect.width()/2):QPointF(cx+(rect.height()/2)*dx/dy,y1);
     else if(x1>x2&&y1>y2)p=ratio>=tan?QPointF(x1,cy-rect.width()/2*tan):QPointF(cx-(rect.height()/2)*dx/dy,y1);return p;}
 
-  void drawRelations(){int sequence=0;bool first=true;for(const C4Relation& relation:data_.relations){++sequence;auto fromIt=std::find_if(shapes_.begin(),shapes_.end(),[&](const LayoutElement& x){return x.source.alias==relation.from;});auto toIt=std::find_if(shapes_.begin(),shapes_.end(),[&](const LayoutElement& x){return x.source.alias==relation.to;});if(fromIt==shapes_.end()||toIt==shapes_.end())continue;const QPointF start=intersection(fromIt->rect,toIt->rect.center()),end=intersection(toIt->rect,fromIt->rect.center());const QString color=relation.lineColor.value_or(QStringLiteral("#444444"));C4Primitive edge;edge.role=QStringLiteral("relation");edge.alias=relation.from+QLatin1Char('-')+relation.to;edge.stroke=color;edge.strokeWidth=1;edge.markerEnd=relation.type!=QLatin1String("rel_b");edge.markerStart=relation.type==QLatin1String("birel")||relation.type==QLatin1String("rel_b");
+  void drawRelations(){int sequence=0;bool first=true;for(const C4Relation& relation:data_.relations){++sequence;auto fromIt=std::find_if(shapes_.begin(),shapes_.end(),[&](const LayoutElement& x){return x.source.alias==relation.from;});auto toIt=std::find_if(shapes_.begin(),shapes_.end(),[&](const LayoutElement& x){return x.source.alias==relation.to;});if(fromIt==shapes_.end()||toIt==shapes_.end())continue;const C4CssOverrides::Relation& relationCss=css_&&sequence-1<css_->relations.size()?css_->relations.at(sequence-1):noRelationCss();const QPointF start=intersection(fromIt->rect,toIt->rect.center()),end=intersection(toIt->rect,fromIt->rect.center());const QString color=relation.lineColor.value_or(QStringLiteral("#444444"));C4Primitive edge;edge.role=QStringLiteral("relation");edge.alias=relation.from+QLatin1Char('-')+relation.to;edge.stroke=color;edge.strokeWidth=1;edge.markerEnd=relation.type!=QLatin1String("rel_b");edge.markerStart=relation.type==QLatin1String("birel")||relation.type==QLatin1String("rel_b");edge.css=relationCss.body;edge.markerFill=css_&&!css_->markers.fill.trimmed().isEmpty()?css_->markers.fill:style_.rootTextColor;
       if(first){edge.kind=C4PrimitiveKind::Line;edge.line=QLineF(start,end);first=false;}else{edge.kind=C4PrimitiveKind::Path;const QPointF control(start.x()+(end.x()-start.x())/4.0,start.y()+(end.y()-start.y())/2.0);edge.path.moveTo(start);edge.path.quadTo(control,end);edge.pathData=QStringLiteral("M%1,%2 Q%3,%4 %5,%6").arg(number(start.x()),number(start.y()),number(control.x()),number(control.y()),number(end.x()),number(end.y()));}primitives_.append(edge);
-      C4Font message=fontFor(config_,QStringLiteral("message"));QString label=relation.label;if(data_.c4Type==QLatin1String("C4Dynamic"))label=QString::number(sequence)+QStringLiteral(": ")+label;const bool wrap=data_.wrap&&config_.wrap;TextBox labelBox=measureText(label,message,wrap,textWidth(label,message));const qreal ox=relation.offsetX.value_or(0),oy=relation.offsetY.value_or(0);const qreal midX=std::min(start.x(),end.x())+std::abs(end.x()-start.x())/2+ox,midY=std::min(start.y(),end.y())+std::abs(end.y()-start.y())/2+oy;appendText(QStringLiteral("relation-label"),edge.alias,labelBox,midX,midY,labelBox.width,message,relation.textColor.value_or(QStringLiteral("#444444")));if(!relation.technology.isEmpty()){TextBox tech=measureText(relation.technology,message,wrap,textWidth(relation.technology,message));const qreal width=std::max(labelBox.width,tech.width);TextBox displayTech{QLatin1Char('[')+tech.text+QLatin1Char(']'),tech.width,tech.height,0,tech.lines};appendText(QStringLiteral("relation-technology"),edge.alias,displayTech,midX,midY+message.size+5,width,message,relation.textColor.value_or(QStringLiteral("#444444")),false,true);}}
+      C4Font message=fontFor(config_,QStringLiteral("message"));QString label=relation.label;if(data_.c4Type==QLatin1String("C4Dynamic"))label=QString::number(sequence)+QStringLiteral(": ")+label;const bool wrap=data_.wrap&&config_.wrap;TextBox labelBox=measureText(label,message,wrap,textWidth(label,message));const qreal ox=relation.offsetX.value_or(0),oy=relation.offsetY.value_or(0);const qreal midX=std::min(start.x(),end.x())+std::abs(end.x()-start.x())/2+ox,midY=std::min(start.y(),end.y())+std::abs(end.y()-start.y())/2+oy;appendText(QStringLiteral("relation-label"),edge.alias,labelBox,midX,midY,labelBox.width,message,relation.textColor.value_or(QStringLiteral("#444444")),relationCss.label);if(!relation.technology.isEmpty()){TextBox tech=measureText(relation.technology,message,wrap,textWidth(relation.technology,message));const qreal width=std::max(labelBox.width,tech.width);TextBox displayTech{QLatin1Char('[')+tech.text+QLatin1Char(']'),tech.width,tech.height,0,tech.lines};appendText(QStringLiteral("relation-technology"),edge.alias,displayTech,midX,midY+message.size+5,width,message,relation.textColor.value_or(QStringLiteral("#444444")),relationCss.technology,false,true);}}
   }
 
-  const C4Data& data_;C4Config config_;C4SceneStyle style_;QVector<LayoutElement> shapes_;QVector<LayoutElement> boundaries_;QVector<C4Primitive> primitives_;qreal globalMaxX_=0,globalMaxY_=0;
+  const C4Data& data_;C4Config config_;C4SceneStyle style_;const C4CssOverrides* css_=nullptr;QVector<LayoutElement> shapes_;QVector<LayoutElement> boundaries_;QVector<C4Primitive> primitives_;qreal globalMaxX_=0,globalMaxY_=0;
 };
 
 QJsonObject rectangleJson(const QRectF& rect){return{{QStringLiteral("x"),rect.x()},{QStringLiteral("y"),rect.y()},{QStringLiteral("width"),rect.width()},{QStringLiteral("height"),rect.height()}};}
 }
 
-C4Scene buildC4Scene(const C4Data& data,C4Config config,C4SceneStyle style){return Builder(data,std::move(config),std::move(style)).build();}
+C4Scene buildC4Scene(const C4Data& data,C4Config config,C4SceneStyle style,const C4CssOverrides* css){return Builder(data,std::move(config),std::move(style),css).build();}
 
 void C4Scene::paint(QPainter& painter,const MermaidPaintOptions& options)const{paintC4Scene(*this,painter,options);}
 

@@ -135,11 +135,21 @@ QString jsNumberToString(double value);
 // to normal. Qt snaps the value to the nearest available face.
 QFont::Weight cssFontWeightToQt(const QJsonValue& value, QFont::Weight fallback);
 
+// The weight the measurement path should use: QFont font matching may answer
+// a bold request with a real face of a different family, while Chromium
+// synthesizes the bold from the family's Regular face (unchanged metrics).
+QFont::Weight faceAwareMetricWeight(const QString& family, QFont::Weight weight);
+
 // JS-style truthiness for a config value. Mirrors mermaid setConf()'s
 // `if (cnf.fontWeight)` gate, where a truthy global value overrides the
 // per-label fields: numbers != 0 and non-empty strings are truthy; null,
 // undefined, 0 and "" are falsy.
 bool truthyConfigValue(const QJsonValue& value);
+
+// Mermaid config.evaluate(): only false and values whose trimmed lowercase
+// String(value) is "false", "null", or "0" are false. This intentionally
+// differs from JavaScript truthiness and is used by htmlLabels.
+bool evaluateConfigValue(const QJsonValue& value);
 
 MermaidRenderMetadata renderMetadata(const MermaidPreprocessResult& pre,
                                      const QString& diagramType,

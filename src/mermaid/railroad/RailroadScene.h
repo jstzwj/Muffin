@@ -41,6 +41,35 @@ struct RailroadConfig {
 enum class RailroadPrimitiveKind { Rect, Circle, Path, Text };
 enum class RailroadTextBaseline { Auto, Middle };
 
+// themeCSS overlay for one railroad DOM element.
+struct RailroadElementCss {
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString fontFamily;
+  qreal fontSize = -1.0;
+  QString fontWeight;
+  QString fontStyle;
+  qreal opacity = -1.0;
+  qreal fillOpacity = -1.0;
+  qreal strokeOpacity = -1.0;
+  bool visible = true;
+};
+
+// The measurement probe: upstream measureText() appends a bare <text> with
+// font-family/font-size presentation attrs. Presentation attrs beat
+// inheritance but lose to tag rules, so ONLY `text{}`-style selectors change
+// the measurement font (class rules repaint only) — the gantt pattern. The
+// probe fields below carry that resolved font; perPrimitive is indexed by the
+// final scene primitive order.
+struct RailroadCssOverrides {
+  bool active = false;
+  QString probeFontFamily;
+  qreal probeFontSize = -1.0;
+  bool probeBold = false;
+  QVector<RailroadElementCss> perPrimitive;
+};
+
 struct RailroadPrimitive {
   RailroadPrimitiveKind kind = RailroadPrimitiveKind::Path;
   QString cssClass;
@@ -61,6 +90,7 @@ struct RailroadPrimitive {
   bool bold = false;
   bool italic = false;
   int paintOrder = -1;
+  RailroadElementCss css;
 };
 
 struct RailroadRuleGeometry {
@@ -91,6 +121,7 @@ struct RailroadScene final : MermaidScene {
 };
 
 RailroadScene buildRailroadScene(const RailroadData& data,
-                                 RailroadConfig config);
+                                 RailroadConfig config,
+                                 const RailroadCssOverrides* css = nullptr);
 
 }  // namespace muffin::mermaid::railroad

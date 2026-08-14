@@ -147,13 +147,23 @@ scene 同时是 culling、hit-test、双后端的依据。给所有 Scene 一个
 `OrderedMap` 承载，原先推测的「ER dagre QHash 抖动」并不存在；0.01 是几何
 oracle 的坐标容差，不是随机性掩码。ER 已加入字节级 SVG 双渲染确定性测试。
 
-**2026-08-12 现状**：全部 38 个 Mermaid 11.16 detector ID 均通过单一 scene 指针和 `Diagram` registry
+**2026-08-14 现状**：全部 38 个 Mermaid 11.16 detector ID 均通过单一 scene 指针和 `Diagram` registry
 进入族无关的 editor/PNG/SVG/canvas/interaction 路径；各 adapter 分离在各自
 TU。新增的 Pie、Quadrant、Journey、Radar、XYChart、Timeline、Packet、Kanban、Mindmap、Block、Swimlane、GitGraph、C4、TreeView、Event Modeling、Ishikawa、Venn、Sankey、Treemap、Cynefin、Wardley、Architecture、Gantt 和 Info 均有真实 Mermaid 11.16.0 语法、几何和像素
-oracle。完整 Release 门禁为 289/289。配置矩阵现为 532 行（347 parity /
-8 partial / 7 unsupported / 120 upstream-inert / 5 deferred /
-19 legacy-only / 25 api-only / 1 security-fixed）。Requirement 的全局
-`htmlLabels:false` 保持 partial；外部 `mermaid.initialize()` 配置不属于当前
+oracle。完整 Release 门禁为 291/291。配置矩阵现为 532 行（361 parity /
+1 partial / 125 upstream-inert /
+19 legacy-only / 25 api-only / 1 security-fixed）。themeCSS 已从
+unsupported 升级为 parity：34 个 family interface 全部经
+`MermaidCssCascade` 消费用户 CSS，对照 `mermaid-theme-css.json`
+117 案真实 DOM oracle（Wardley 上游惰性，native 天然 parity）。
+themeVariables.\* 保持 partial 但已精确化：`theme-variables-inventory.json`
+285 key × 11 主题全量 golden，227 key 经 `FlowThemeVariables::get()`
+逐值锁定，其余 58 个（上游派生但无消费方的调色板槽、sequence 局部
+key、family 局部样式）在 `MermaidThemeTest::themeVariablesRemainingKeys`
+逐 key 列明理由；本轮同时修复了 state 特殊形状真实渲染发散
+（start 圆 `specialStateColor`、end 内点 `stateBorder ?? nodeBorder`、
+end 环 `mainBkg` 填充）与 redux 族构造器 gradient 字面量缺失。
+Requirement 的全局 `htmlLabels:false` 保持 partial；外部 `mermaid.initialize()` 配置不属于当前
 Markdown source API。
 
 ---

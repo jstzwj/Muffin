@@ -353,7 +353,8 @@ QJsonObject CynefinScene::toJsonObject() const {
 }
 
 CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
-                               CynefinSceneStyle style) {
+                               CynefinSceneStyle style,
+                               const CynefinCssOverrides *css) {
   CynefinScene scene;
   scene.style = std::move(style);
   const double width = jsNumber(config.width, 800.0);
@@ -394,12 +395,17 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
       {QStringLiteral("confusion"), scene.style.confusionBg}};
   const QStringList quadrants{QStringLiteral("complex"), QStringLiteral("complicated"),
                               QStringLiteral("chaotic"), QStringLiteral("clear")};
+  const bool cssActive = css && css->active;
   for (const QString &domain : quadrants) {
     const auto layout = layouts.value(domain);
     scene.backgrounds.append({QStringLiteral("background"), domain,
                               QRectF(layout.x, layout.y, layout.w, layout.h),
                               0.0, backgrounds.value(domain), 0.4});
   }
+  if (cssActive)
+    for (qsizetype i = 0; i < scene.backgrounds.size() &&
+                         i < css->backgrounds.size(); ++i)
+      scene.backgrounds[i].css = css->backgrounds.at(i);
 
   const double amplitude = jsNumber(config.boundaryAmplitude, 8.0);
   const double seed = resolvedSeed(config.seed, config.svgId);
@@ -439,6 +445,12 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
   scene.confusion.stroke = scene.style.boundaryColor;
   scene.confusion.strokeWidth = 1.5;
   scene.confusion.dash = {4.0, 2.0};
+  if (cssActive) {
+    for (qsizetype i = 0; i < scene.boundaries.size() &&
+                         i < css->boundaries.size(); ++i)
+      scene.boundaries[i].css = css->boundaries.at(i);
+    scene.confusion.css = css->confusion;
+  }
 
   const bool descriptions = truthy(config.showDomainDescriptions, true);
   const qreal domainSize = fontSize(scene.style.domainFontSize, scene.style.rootFontSize);
@@ -498,11 +510,19 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
             QPointF(width / 2.0, height / 2.0 + 8.0), subtitleSize,
             scene.style.textColor, false, true, CynefinTextBaseline::Middle);
   }
+  if (cssActive) {
+    for (qsizetype i = 0; i < scene.labels.size() && i < css->labels.size(); ++i)
+      scene.labels[i].css = css->labels.at(i);
+    for (qsizetype i = 0; i < scene.subtitles.size() &&
+                         i < css->subtitles.size(); ++i)
+      scene.subtitles[i].css = css->subtitles.at(i);
+  }
 
   QHash<QString, const CynefinDomain *> dataDomains;
   for (const auto &domain : data.domains)
     dataDomains.insert(domain.name, &domain);
   const QStringList allDomains = quadrants + QStringList{QStringLiteral("confusion")};
+  qsizetype cssItemSlot = 0;
   for (const QString &domainName : allDomains) {
     const CynefinDomain *domain = dataDomains.value(domainName, nullptr);
     if (!domain || domain->items.isEmpty()) continue;
@@ -514,10 +534,38 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
     const auto addItem = [&](const QString &label, int index, bool overflow) {
       const QString visible = visibleSvgText(label);
       double measured = label.size() * 7.0;
-      const double actual = textBounds(
-          scene.style, visible, QPointF(), itemSize, QStringLiteral("start"),
-          CynefinTextBaseline::Central).width();
-      if (actual > 0.0) measured = actual;
+      const CynefinElementCss *textCss = nullptr;
+      const CynefinElementCss *rectCss = nullptr;
+      if (cssActive && cssItemSlot < css->items.size()) {
+        textCss = &css->items.at(cssItemSlot).text;
+        rectCss = &css->items.at(cssItemSlot).rect;
+      }
+      // The badge getBBox runs on the classed text element, so the themeCSS
+      // font feeds the measurement; own display:none zeroes the bbox and
+      // keeps the length * 7 fallback. The stored text bounds always use the
+      // css font — the final element renders with it even when hidden.
+      CynefinSceneStyle textFontStyle = scene.style;
+      qreal textFontSize = itemSize;
+      bool textFontBold = false;
+      bool textFontItalic = false;
+      if (textCss) {
+        if (!textCss->fontFamily.trimmed().isEmpty())
+          textFontStyle.fontFamily = textCss->fontFamily;
+        if (textCss->fontSize >= 0.0) textFontSize = textCss->fontSize;
+        const QString weight = textCss->fontWeight.trimmed().toLower();
+        textFontBold = weight == QLatin1String("bold") ||
+                       weight == QLatin1String("bolder") ||
+                       weight.toInt() >= 700;
+        textFontItalic = textCss->fontStyle.trimmed().toLower() ==
+                         QLatin1String("italic");
+      }
+      if (!textCss || textCss->measures) {
+        const double actual = textBounds(
+            textFontStyle, visible, QPointF(), textFontSize,
+            QStringLiteral("start"), CynefinTextBaseline::Central,
+            textFontBold, textFontItalic).width();
+        if (actual > 0.0) measured = actual;
+      }
       const double badgeWidth = measured + 20.0;
       CynefinItemGeometry item;
       item.domain = domainName;
@@ -534,16 +582,20 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
       item.rect.stroke = scene.style.boundaryColor;
       item.rect.strokeWidth = 1.0;
       if (overflow) item.rect.dash = {3.0, 2.0};
+      if (rectCss) item.rect.css = *rectCss;
       item.text.role = QStringLiteral("item-text");
       item.text.text = label;
       item.text.position = QPointF(badgeWidth / 2.0, 13.0);
       item.text.fontSize = itemSize;
       item.text.fill = scene.style.textColor;
       item.text.baseline = CynefinTextBaseline::Central;
-      item.text.bounds = textBounds(scene.style, label, item.text.position,
-                                    itemSize, item.text.anchor,
-                                    item.text.baseline);
+      if (textCss) item.text.css = *textCss;
+      item.text.bounds = textBounds(textFontStyle, label, item.text.position,
+                                    textFontSize, item.text.anchor,
+                                    item.text.baseline, textFontBold,
+                                    textFontItalic);
       scene.items.append(std::move(item));
+      ++cssItemSlot;
     };
     for (int i = 0; i < visibleCount; ++i)
       addItem(domain->items.at(i).label, i, false);
@@ -555,6 +607,7 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
   const qreal arrowWidth = editor::cssStrokeWidthPx(scene.style.arrowWidth,
       editor::pieCssLengthContext(scene.style.fontFamily, scene.style.rootFontSize),
       std::hypot(width, height) / std::sqrt(2.0));
+  qsizetype cssArrowSlot = 0;
   for (const auto &transition : data.transitions) {
     if (!layouts.contains(transition.from) || !layouts.contains(transition.to))
       continue;
@@ -579,6 +632,11 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
              number(arrow.end.x()), number(arrow.end.y()));
     arrow.stroke = scene.style.arrowColor;
     arrow.strokeWidth = arrowWidth;
+    if (cssActive && cssArrowSlot < css->arrows.size()) {
+      arrow.css = css->arrows.at(cssArrowSlot).line;
+      if (transition.hasLabel)
+        arrow.label.css = css->arrows.at(cssArrowSlot).label;
+    }
     if (transition.hasLabel) {
       arrow.label.role = QStringLiteral("arrow-label");
       arrow.label.text = transition.label;
@@ -592,7 +650,9 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
                                       CynefinTextBaseline::Auto);
     }
     scene.arrows.append(std::move(arrow));
+    ++cssArrowSlot;
   }
+  if (cssActive) scene.arrowHeadCss = css->arrowHead;
 
   if (!data.title.isEmpty()) {
     scene.title.role = QStringLiteral("title");
@@ -603,6 +663,7 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
     scene.title.bold = true;
     scene.title.fill = scene.style.labelColor;
     scene.title.baseline = CynefinTextBaseline::Middle;
+    if (cssActive) scene.title.css = css->title;
     scene.title.bounds = textBounds(scene.style, scene.title.text,
                                     scene.title.position, scene.title.fontSize,
                                     scene.title.anchor, scene.title.baseline, true);

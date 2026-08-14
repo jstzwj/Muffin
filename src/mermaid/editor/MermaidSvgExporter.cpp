@@ -12,8 +12,10 @@
 #include <QCryptographicHash>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QHash>
 #include <QPainter>
 #include <QSvgGenerator>
+#include <QUrl>
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 
@@ -93,12 +95,141 @@ void paintEntry(const MermaidRenderEntry& entry, const SvgCanvas& canvas,
                 QPainter& painter) {
   painter.save();
   painter.translate(canvas.sceneOffset);
-  if (entry.scene)
-    entry.scene->paint(painter, MermaidPaintOptions{});
+  if (entry.scene) {
+    MermaidPaintOptions options;
+    options.paintEdgeMarkers = false;
+    entry.scene->paint(painter, options);
+  }
   painter.restore();
   paintMermaidTitle(entry.metadata, painter,
                     QRectF(0.0, 0.0, canvas.size.width(),
                            entry.metadata.titleHeight));
+}
+
+QString cssEscapeUrl(QString value) {
+  // CSS.escape(window.location...) as used by Mermaid Sequence. ASCII URL
+  // punctuation is escaped with a backslash; alphanumerics, '-' and '_' stay.
+  QString result;
+  result.reserve(value.size() * 2);
+  for (const QChar ch : value) {
+    if (ch.isLetterOrNumber() || ch == QLatin1Char('-') ||
+        ch == QLatin1Char('_')) {
+      result.append(ch);
+    } else {
+      result.append(QLatin1Char('\\'));
+      result.append(ch);
+    }
+  }
+  return result;
+}
+
+QString absoluteMarkerBase(const MermaidRenderEntry& entry,
+                           const MermaidSvgExportOptions& options) {
+  if (!entry.metadata.svgArrowMarkerAbsolute || options.documentUrl.isEmpty())
+    return {};
+  const QString family = entry.metadata.diagramType;
+  if (!(family.startsWith(QLatin1String("flowchart")) ||
+        family == QLatin1String("swimlane") ||
+        family == QLatin1String("sequence")))
+    return {};
+  QUrl url = options.documentUrl;
+  url.setFragment({});
+  const QString serialized = url.toString(QUrl::FullyEncoded);
+  return family == QLatin1String("sequence")
+      ? cssEscapeUrl(serialized) : serialized;
+}
+
+QString markerId(const QString& rootId, const SvgMarkerDefinition& definition) {
+  return rootId + definition.idSuffix;
+}
+
+void writeMarkerChild(QXmlStreamWriter& writer, const SvgMarkerChild& child) {
+  writer.writeStartElement(child.tag);
+  if (!child.cssClass.isEmpty())
+    writer.writeAttribute(QStringLiteral("class"), child.cssClass);
+  if (!child.path.isEmpty()) writer.writeAttribute(QStringLiteral("d"), child.path);
+  if (!child.points.isEmpty()) writer.writeAttribute(QStringLiteral("points"), child.points);
+  if (!child.viewBox.isEmpty()) writer.writeAttribute(QStringLiteral("viewBox"), child.viewBox);
+  if (child.tag == QLatin1String("circle")) {
+    writer.writeAttribute(QStringLiteral("cx"), compactNumber(child.cx));
+    writer.writeAttribute(QStringLiteral("cy"), compactNumber(child.cy));
+    writer.writeAttribute(QStringLiteral("r"), compactNumber(child.radius));
+  } else if (child.tag == QLatin1String("line")) {
+    writer.writeAttribute(QStringLiteral("x1"), compactNumber(child.x1));
+    writer.writeAttribute(QStringLiteral("y1"), compactNumber(child.y1));
+    writer.writeAttribute(QStringLiteral("x2"), compactNumber(child.x2));
+    writer.writeAttribute(QStringLiteral("y2"), compactNumber(child.y2));
+  }
+  if (!child.fill.isEmpty()) writer.writeAttribute(QStringLiteral("fill"), child.fill);
+  if (!child.stroke.isEmpty()) writer.writeAttribute(QStringLiteral("stroke"), child.stroke);
+  if (!child.strokeWidth.isEmpty())
+    writer.writeAttribute(QStringLiteral("stroke-width"), child.strokeWidth);
+  if (!child.style.isEmpty()) writer.writeAttribute(QStringLiteral("style"), child.style);
+  writer.writeEndElement();
+}
+
+void writeMarkers(QXmlStreamWriter& writer, const SvgMarkerProjection& projection,
+                  const QString& rootId, const QString& absoluteBase,
+                  const QPointF& sceneOffset) {
+  if (projection.empty()) return;
+  QHash<QString, QString> ids;
+  writer.writeStartElement(QStringLiteral("defs"));
+  writer.writeAttribute(QStringLiteral("id"), rootId + QStringLiteral("-marker-defs"));
+  for (const SvgMarkerDefinition& definition : projection.definitions) {
+    const QString id = markerId(rootId, definition);
+    ids.insert(definition.key, id);
+    writer.writeStartElement(QStringLiteral("marker"));
+    writer.writeAttribute(QStringLiteral("id"), id);
+    if (!definition.viewBox.isEmpty())
+      writer.writeAttribute(QStringLiteral("viewBox"), definition.viewBox);
+    writer.writeAttribute(QStringLiteral("refX"), compactNumber(definition.refX));
+    writer.writeAttribute(QStringLiteral("refY"), compactNumber(definition.refY));
+    writer.writeAttribute(QStringLiteral("markerWidth"), compactNumber(definition.markerWidth));
+    writer.writeAttribute(QStringLiteral("markerHeight"), compactNumber(definition.markerHeight));
+    if (!definition.markerUnits.isEmpty())
+      writer.writeAttribute(QStringLiteral("markerUnits"), definition.markerUnits);
+    writer.writeAttribute(QStringLiteral("orient"), definition.orient);
+    if (definition.groupChildren) writer.writeStartElement(QStringLiteral("g"));
+    for (const SvgMarkerChild& child : definition.children)
+      writeMarkerChild(writer, child);
+    if (definition.groupChildren) writer.writeEndElement();
+    writer.writeEndElement();
+  }
+  writer.writeEndElement();
+
+  writer.writeStartElement(QStringLiteral("g"));
+  writer.writeAttribute(QStringLiteral("id"), rootId + QStringLiteral("-marker-edges"));
+  writer.writeAttribute(QStringLiteral("class"), QStringLiteral("mfn-mermaid-marker-edges"));
+  writer.writeAttribute(QStringLiteral("transform"),
+                        QStringLiteral("translate(%1 %2)")
+                            .arg(compactNumber(sceneOffset.x()),
+                                 compactNumber(sceneOffset.y())));
+  const auto reference = [&](const QString& key) {
+    const QString id = ids.value(key);
+    return id.isEmpty() ? QString() :
+        QStringLiteral("url(%1#%2)").arg(absoluteBase, id);
+  };
+  for (const SvgMarkerEdge& edge : projection.edges) {
+    writer.writeStartElement(edge.tag);
+    if (!edge.id.isEmpty()) writer.writeAttribute(QStringLiteral("data-edge-id"), edge.id);
+    if (!edge.cssClass.isEmpty()) writer.writeAttribute(QStringLiteral("class"), edge.cssClass);
+    if (edge.tag == QLatin1String("line")) {
+      writer.writeAttribute(QStringLiteral("x1"), compactNumber(edge.start.x()));
+      writer.writeAttribute(QStringLiteral("y1"), compactNumber(edge.start.y()));
+      writer.writeAttribute(QStringLiteral("x2"), compactNumber(edge.end.x()));
+      writer.writeAttribute(QStringLiteral("y2"), compactNumber(edge.end.y()));
+    } else {
+      writer.writeAttribute(QStringLiteral("d"), edge.path);
+    }
+    writer.writeAttribute(QStringLiteral("fill"), QStringLiteral("none"));
+    writer.writeAttribute(QStringLiteral("stroke"), QStringLiteral("none"));
+    if (!edge.markerStart.isEmpty())
+      writer.writeAttribute(QStringLiteral("marker-start"), reference(edge.markerStart));
+    if (!edge.markerEnd.isEmpty())
+      writer.writeAttribute(QStringLiteral("marker-end"), reference(edge.markerEnd));
+    writer.writeEndElement();
+  }
+  writer.writeEndElement();
 }
 
 QVector<SvgInteraction> interactions(const MermaidRenderEntry& entry,
@@ -192,20 +323,25 @@ void writeInteractions(QXmlStreamWriter& writer,
 QByteArray normalizeSvg(const QByteArray& generated,
                         const MermaidRenderEntry& entry,
                         const SvgCanvas& canvas,
-                        qsizetype instanceIndex) {
+                        const MermaidSvgExportOptions& options) {
   QXmlStreamReader reader(generated);
   QByteArray output;
   QXmlStreamWriter writer(&output);
   writer.setAutoFormatting(true);
   writer.setAutoFormattingIndent(2);
 
-  const QString rootId = svgRootId(entry, instanceIndex);
+  const QString rootId = svgRootId(entry, options.instanceIndex);
+  const QString diagramId = options.diagramId.isEmpty()
+      ? rootId : options.diagramId;
   const QString titleId = rootId + QStringLiteral("-title");
   const QString descriptionId = rootId + QStringLiteral("-desc");
   const QString accessibleTitle = entry.metadata.accessibleName();
   const QString accessibleDescription =
       entry.metadata.accessibleDescription.trimmed();
   const QVector<SvgInteraction> svgInteractions = interactions(entry, canvas);
+  const SvgMarkerProjection markerProjection =
+      entry.scene ? entry.scene->svgMarkerProjection() : SvgMarkerProjection{};
+  const QString markerBase = absoluteMarkerBase(entry, options);
   int depth = 0;
   bool rootSeen = false;
 
@@ -284,6 +420,8 @@ QByteArray normalizeSvg(const QByteArray& generated,
             writer.writeCharacters(accessibleDescription);
             writer.writeEndElement();
           }
+          writeMarkers(writer, markerProjection, diagramId, markerBase,
+                       canvas.sceneOffset);
         }
         break;
       }
@@ -322,6 +460,13 @@ QByteArray normalizeSvg(const QByteArray& generated,
 
 QByteArray renderMermaidEntryToSvg(const MermaidRenderEntry& entry,
                                    qsizetype instanceIndex) {
+  MermaidSvgExportOptions options;
+  options.instanceIndex = instanceIndex;
+  return renderMermaidEntryToSvg(entry, options);
+}
+
+QByteArray renderMermaidEntryToSvg(const MermaidRenderEntry& entry,
+                                   const MermaidSvgExportOptions& options) {
   if (entry.status != MermaidRenderStatus::Ready || !entry.scene)
     return {};
 
@@ -339,7 +484,7 @@ QByteArray renderMermaidEntryToSvg(const MermaidRenderEntry& entry,
   paintEntry(entry, canvas, painter);
   painter.end();
   buffer.close();
-  return normalizeSvg(generated, entry, canvas, instanceIndex);
+  return normalizeSvg(generated, entry, canvas, options);
 }
 
 }  // namespace muffin::mermaid::editor

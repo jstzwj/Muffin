@@ -54,9 +54,14 @@ struct BlockScene final : MermaidScene {
   void paint(QPainter& painter,
              const MermaidPaintOptions& options = {}) const override;
   QJsonObject toJsonObject() const override;
+  SvgMarkerProjection svgMarkerProjection() const override {
+    return flow.svgMarkerProjection();
+  }
 };
 
 BlockScene buildBlockScene(const BlockData& data, BlockConfig config,
-                           const flowtheme::FlowThemeVariables& theme);
+                           const flowtheme::FlowThemeVariables& theme,
+                           const csscascade::FlowchartProjection* measurementCss = nullptr,
+                           const csscascade::FlowchartProjection* paintCss = nullptr);
 
 }  // namespace muffin::mermaid::block

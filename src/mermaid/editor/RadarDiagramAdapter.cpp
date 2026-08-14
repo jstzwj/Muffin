@@ -6,6 +6,7 @@
 #include "mermaid/radar/RadarDiagram.h"
 #include "mermaid/radar/RadarScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QJsonObject>
 #include <QJsonValue>
@@ -199,6 +200,176 @@ struct RadarDiagramImpl : Diagram {
 
     radar::RadarScene scene =
         radar::buildRadarScene(data, std::move(config), std::move(style));
+
+    const QString themeCss =
+        pre.config.value(QStringLiteral("themeCSS")).toString();
+    if (!themeCss.trimmed().isEmpty()) {
+      using csscascade::ElementInput;
+      using csscascade::ElementStyle;
+      QVector<ElementInput> elements;
+      ElementStyle root;
+      root.fill = scene.style.textColor;
+      root.stroke = QStringLiteral("none");
+      root.strokeWidth = QStringLiteral("1px");
+      root.color = QStringLiteral("black");
+      root.fontFamily = scene.style.fontFamily;
+      root.fontSize = QString::number(rootFontSize) + QStringLiteral("px");
+      root.fontWeight = QStringLiteral("400");
+      elements.append({QStringLiteral("svg"), {}, QStringLiteral("svg"),
+                       QStringLiteral("diagram-root"), {QStringLiteral("radar")},
+                       {}, root, {}});
+      elements.append({QStringLiteral("frame"), QStringLiteral("svg"),
+                       QStringLiteral("g"), {}, {}, {}, root, {}});
+      for (qsizetype i = 0; i < scene.graticules.size(); ++i) {
+        const auto& ring = scene.graticules.at(i);
+        ElementStyle value = root;
+        value.fill = ring.fill;
+        value.stroke = ring.stroke;
+        value.strokeWidth = QString::number(ring.strokeWidth) + QStringLiteral("px");
+        value.fillOpacity = QString::number(ring.fillOpacity);
+        elements.append({QStringLiteral("graticule-%1").arg(i),
+                         QStringLiteral("frame"),
+                         ring.circle ? QStringLiteral("circle")
+                                     : QStringLiteral("polygon"),
+                         {}, {QStringLiteral("radarGraticule")}, {}, value, {}});
+      }
+      for (qsizetype i = 0; i < scene.axes.size(); ++i) {
+        const auto& axis = scene.axes.at(i);
+        ElementStyle line = root;
+        line.stroke = axis.lineStroke;
+        line.strokeWidth = QString::number(axis.lineStrokeWidth) + QStringLiteral("px");
+        elements.append({QStringLiteral("axis-line-%1").arg(i),
+                         QStringLiteral("frame"), QStringLiteral("line"), {},
+                         {QStringLiteral("radarAxisLine")}, {}, line, {}});
+        ElementStyle label = root;
+        label.color = axis.labelColor;
+        label.fontSize = QString::number(axis.labelFontSize) + QStringLiteral("px");
+        elements.append({QStringLiteral("axis-label-%1").arg(i),
+                         QStringLiteral("frame"), QStringLiteral("text"), {},
+                         {QStringLiteral("radarAxisLabel")}, {}, label, {}});
+      }
+      for (qsizetype i = 0; i < scene.curves.size(); ++i) {
+        const auto& curve = scene.curves.at(i);
+        ElementStyle value = root;
+        value.fill = curve.fill;
+        value.stroke = curve.stroke;
+        value.strokeWidth = QString::number(curve.strokeWidth) + QStringLiteral("px");
+        value.color = curve.elementColor;
+        value.fillOpacity = QString::number(curve.fillOpacity);
+        value.strokeOpacity = QString::number(curve.strokeOpacity);
+        elements.append({QStringLiteral("curve-%1").arg(i),
+                         QStringLiteral("frame"),
+                         curve.polygon ? QStringLiteral("polygon")
+                                       : QStringLiteral("path"),
+                         {}, {QStringLiteral("radarCurve-%1").arg(curve.colorIndex)},
+                         {}, value, {}});
+      }
+      for (qsizetype i = 0; i < scene.legends.size(); ++i) {
+        const auto& legend = scene.legends.at(i);
+        const QString group = QStringLiteral("legend-%1").arg(i);
+        elements.append({group, QStringLiteral("frame"), QStringLiteral("g"),
+                         {}, {}, {}, root, {}});
+        ElementStyle box = root;
+        box.fill = legend.boxFill;
+        box.stroke = legend.boxStroke;
+        box.strokeWidth = QString::number(legend.boxStrokeWidth) + QStringLiteral("px");
+        box.color = legend.boxColor;
+        box.fillOpacity = QString::number(legend.boxFillOpacity);
+        box.strokeOpacity = QString::number(legend.boxStrokeOpacity);
+        elements.append({group + QStringLiteral("-box"), group,
+                         QStringLiteral("rect"), {},
+                         {QStringLiteral("radarLegendBox-%1").arg(legend.colorIndex)},
+                         {}, box, {}});
+        ElementStyle text = root;
+        text.fill = legend.textFill;
+        text.color = legend.textColor;
+        text.fontSize = QString::number(legend.textFontSize) + QStringLiteral("px");
+        elements.append({group + QStringLiteral("-text"), group,
+                         QStringLiteral("text"), {},
+                         {QStringLiteral("radarLegendText")}, {}, text, {}});
+      }
+      ElementStyle title = root;
+      title.color = scene.titleColor;
+      title.fontSize = QString::number(scene.titleFontSize) + QStringLiteral("px");
+      elements.append({QStringLiteral("title"), QStringLiteral("frame"),
+                       QStringLiteral("text"), {},
+                       {QStringLiteral("radarTitle")}, {}, title, {}});
+
+      const auto css = csscascade::resolveElements(themeCss, elements);
+      const CssLengthContext cssContext = pieCssLengthContext(
+          firstFontFamily(scene.style.fontFamily), rootFontSize);
+      const qreal cssDiagonal =
+          std::hypot(scene.bounds.width(), scene.bounds.height()) / std::sqrt(2.0);
+      const auto font = [&](const ElementStyle& value, QString& family,
+                            qreal& size, QFont::Weight& weight) {
+        family = value.fontFamily;
+        size = cssFontSizePx(value.fontSize, cssContext);
+        weight = cssFontWeightToQt(QJsonValue(value.fontWeight), QFont::Normal);
+      };
+      for (qsizetype i = 0; i < scene.graticules.size(); ++i) {
+        auto& ring = scene.graticules[i];
+        const auto value = css.value(QStringLiteral("graticule-%1").arg(i));
+        ring.fill = value.fill;
+        ring.stroke = value.stroke;
+        ring.color = value.color;
+        ring.strokeWidth = cssStrokeWidthPx(value.strokeWidth, cssContext, cssDiagonal);
+        ring.fillOpacity = value.effectiveFillOpacity;
+        ring.strokeOpacity = value.effectiveStrokeOpacity;
+        ring.visible = value.displayed();
+      }
+      for (qsizetype i = 0; i < scene.axes.size(); ++i) {
+        auto& axis = scene.axes[i];
+        const auto line = css.value(QStringLiteral("axis-line-%1").arg(i));
+        axis.lineStroke = line.stroke;
+        axis.lineColor = line.color;
+        axis.lineStrokeWidth = cssStrokeWidthPx(line.strokeWidth, cssContext, cssDiagonal);
+        axis.lineOpacity = line.effectiveStrokeOpacity;
+        axis.lineVisible = line.displayed();
+        const auto label = css.value(QStringLiteral("axis-label-%1").arg(i));
+        axis.labelFill = label.fill;
+        axis.labelColor = label.color;
+        font(label, axis.labelFontFamily, axis.labelFontSize, axis.labelFontWeight);
+        axis.labelOpacity = label.effectiveOpacity;
+        axis.labelVisible = label.displayed();
+      }
+      for (qsizetype i = 0; i < scene.curves.size(); ++i) {
+        auto& curve = scene.curves[i];
+        const auto value = css.value(QStringLiteral("curve-%1").arg(i));
+        curve.fill = value.fill;
+        curve.stroke = value.stroke;
+        curve.elementColor = value.color;
+        curve.strokeWidth = cssStrokeWidthPx(value.strokeWidth, cssContext, cssDiagonal);
+        curve.fillOpacity = value.effectiveFillOpacity;
+        curve.strokeOpacity = value.effectiveStrokeOpacity;
+        curve.visible = value.displayed();
+      }
+      for (qsizetype i = 0; i < scene.legends.size(); ++i) {
+        auto& legend = scene.legends[i];
+        const QString group = QStringLiteral("legend-%1").arg(i);
+        const auto box = css.value(group + QStringLiteral("-box"));
+        legend.boxFill = box.fill;
+        legend.boxStroke = box.stroke;
+        legend.boxColor = box.color;
+        legend.boxStrokeWidth = cssStrokeWidthPx(box.strokeWidth, cssContext, cssDiagonal);
+        legend.boxFillOpacity = box.effectiveFillOpacity;
+        legend.boxStrokeOpacity = box.effectiveStrokeOpacity;
+        legend.boxVisible = box.displayed();
+        const auto text = css.value(group + QStringLiteral("-text"));
+        legend.textFill = text.fill;
+        legend.textColor = text.color;
+        font(text, legend.textFontFamily, legend.textFontSize,
+             legend.textFontWeight);
+        legend.textOpacity = text.effectiveOpacity;
+        legend.textVisible = text.displayed();
+      }
+      const auto titleValue = css.value(QStringLiteral("title"));
+      scene.titleFill = titleValue.fill;
+      scene.titleColor = titleValue.color;
+      font(titleValue, scene.titleFontFamily, scene.titleFontSize,
+           scene.titleFontWeight);
+      scene.titleOpacity = titleValue.effectiveOpacity;
+      scene.titleVisible = titleValue.displayed();
+    }
 
     // Radar draws its title at the top of the fixed viewBox. Suppress the
     // shared external title band while retaining the accessibility metadata.

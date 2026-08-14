@@ -5,11 +5,14 @@
 #include "mermaid/block/BlockScene.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/flowchart/Flowchart.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 #include "mermaid/theme/FlowTheme.h"
 
 #include <QJsonObject>
 #include <QSize>
 
+#include <functional>
 #include <memory>
 #include <utility>
 
@@ -57,8 +60,68 @@ struct BlockDiagramImpl : Diagram {
     config.svgId = QStringLiteral("block-native");
 
     block::BlockData data = block::BlockDiagram::parse(pre.code);
+    csscascade::FlowchartProjection measurementCss;
+    csscascade::FlowchartProjection paintCss;
+    const QString themeCss =
+        pre.config.value(QStringLiteral("themeCSS")).toString();
+    const csscascade::FlowchartProjection* cssPtr = nullptr;
+    if (!themeCss.trimmed().isEmpty()) {
+      flowchart::FlowchartData projectedData;
+      projectedData.direction = QStringLiteral("TB");
+      std::function<void(const block::BlockNode&)> appendNode =
+          [&](const block::BlockNode& node) {
+            if (node.id != QLatin1String("root") &&
+                node.type != QLatin1String("space")) {
+              flowchart::FlowVertex vertex;
+              vertex.id = node.id;
+              vertex.domId = config.svgId + QLatin1Char('-') + node.id;
+              vertex.text = node.label;
+              vertex.type = QStringLiteral("rect");
+              vertex.styles = node.styles;
+              vertex.classes = node.classes;
+              projectedData.vertices.append(std::move(vertex));
+            }
+            for (const block::BlockNode& child : node.children)
+              appendNode(child);
+          };
+      appendNode(data.root);
+      for (const block::BlockEdge& source : data.edges) {
+        flowchart::FlowEdge edge;
+        edge.id = source.id;
+        edge.start = source.start;
+        edge.end = source.end;
+        edge.text = source.label;
+        projectedData.edges.append(std::move(edge));
+      }
+      for (const block::BlockClass& source : data.classes) {
+        flowchart::FlowClass value;
+        value.id = source.id;
+        value.styles = source.styles;
+        value.textStyles = source.textStyles;
+        projectedData.classes.append(std::move(value));
+      }
+      paintCss = csscascade::resolveFlowchart(projectedData, themeVars, themeCss);
+      // calculateBlockSizes inserts one node into the temporary `.block`
+      // group and removes it before inserting the next. Structural selectors
+      // therefore see every node as :first-child during measurement, while
+      // the final paint DOM contains all nodes together.
+      for (const flowchart::FlowVertex& vertex : projectedData.vertices) {
+        flowchart::FlowchartData singleton;
+        singleton.direction = projectedData.direction;
+        singleton.vertices.append(vertex);
+        singleton.classes = projectedData.classes;
+        const auto measured =
+            csscascade::resolveFlowchart(singleton, themeVars, themeCss);
+        measurementCss.nodes.insert(vertex.id,
+                                    measured.nodes.value(vertex.id));
+        measurementCss.nodeLabels.insert(
+            vertex.id, measured.nodeLabels.value(vertex.id));
+      }
+      cssPtr = &measurementCss;
+    }
     block::BlockScene scene = block::buildBlockScene(
-        data, std::move(config), themeVars);
+        data, std::move(config), themeVars, cssPtr,
+        themeCss.trimmed().isEmpty() ? nullptr : &paintCss);
 
     MermaidRenderMetadata metadata = renderMetadata(
         pre, type, QString(), QString(), QString(), themeVars.textColor,

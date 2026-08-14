@@ -196,7 +196,7 @@ void muffin::mermaid::er::paintErScene(const ErScene& scene, QPainter& painter,
         ? rel.pathBounds : scene.bounds;
     if (!mermaidPrimitiveIsVisible(pathCull, options)) continue;
 
-    QPen pen(relationshipColor, scene.style.strokeWidth);
+    QPen pen(relationshipColor, scene.style.relationshipStrokeWidth);
     if (!rel.identifying) {
       pen.setStyle(Qt::CustomDashLine);
       pen.setDashPattern({6.0, 4.0});
@@ -209,10 +209,12 @@ void muffin::mermaid::er::paintErScene(const ErScene& scene, QPainter& painter,
     if (pts.size() >= 2) {
       const QPointF startDir = pts.at(1) - pts.first();
       const QPointF endDir = pts.at(pts.size() - 2) - pts.last();
-      drawErMarker(painter, rel.cardA, true, pts.first(), startDir,
-                   relationshipColor, scene.style.strokeWidth);
-      drawErMarker(painter, rel.cardB, false, pts.last(), endDir,
-                   relationshipColor, scene.style.strokeWidth);
+      if (options.paintEdgeMarkers) {
+        drawErMarker(painter, rel.cardA, true, pts.first(), startDir,
+                     relationshipColor, scene.style.relationshipStrokeWidth);
+        drawErMarker(painter, rel.cardB, false, pts.last(), endDir,
+                     relationshipColor, scene.style.relationshipStrokeWidth);
+      }
       paintRole(painter, rel.roleA, pts.first(), startDir, scene.style);
       paintRole(painter, rel.roleB, pts.last(), endDir, scene.style);
     }

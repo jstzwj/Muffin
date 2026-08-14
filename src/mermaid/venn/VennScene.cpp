@@ -290,6 +290,7 @@ VennScene buildVennScene(const VennData& data, VennConfig config,
     scene.titleText.lines = {data.title};
     scene.titleText.position = QPointF(width / 2.0, 32.0 * scene.scale);
     scene.titleText.fontSize = 32.0 * scene.scale;
+    scene.titleText.fontFamily = scene.style.fontFamily;
     scene.titleText.fill = scene.style.vennTitleTextColor.isEmpty()
                                    ? scene.style.titleColor
                                    : scene.style.vennTitleTextColor;
@@ -404,6 +405,7 @@ VennScene buildVennScene(const VennData& data, VennConfig config,
                             : area.circle ? source.data.sets.front() : QString();
     area.label.position = area.textCenter;
     area.label.fontSize = 48.0 * scene.scale;
+    area.label.fontFamily = scene.style.fontFamily;
     if (!area.label.source.isEmpty()) {
       const qreal radius = area.circles.isEmpty() ? 50.0
                                                    : area.circles.front().radius;
@@ -479,6 +481,7 @@ VennScene buildVennScene(const VennData& data, VennConfig config,
       node.color = styleMap.value(source.id).value(QStringLiteral("color"));
       if (node.color.isEmpty()) node.color = scene.style.vennSetTextColor;
       node.fontSize = 40.0 * scene.scale;
+      node.fontFamily = scene.style.fontFamily;
       scene.textNodes.append(std::move(node));
     }
   }

@@ -50,15 +50,13 @@
       "railroadPeg",
       "info"
     ],
-    "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred."
+    "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL parity is evaluated with an explicit document URL export context."
   },
   "summary": {
-    "parity": 347,
-    "partial": 8,
-    "upstream-inert": 120,
-    "unsupported": 7,
+    "parity": 361,
+    "partial": 1,
+    "upstream-inert": 125,
     "security-fixed": 1,
-    "deferred": 5,
     "api-only": 25,
     "legacy-only": 19
   },
@@ -174,7 +172,7 @@
         "viewport",
         "export"
       ],
-      "note": "The matrix covers the native theme-variable subset, not arbitrary Mermaid CSS variables."
+      "note": "Exhaustive per-key golden over the 285-key resolved inventory (theme-variables-inventory.json): 227 keys byte-locked across all 11 themes via FlowThemeVariables::get(); the remaining 58 are enumerated with per-key rationale in MermaidThemeTest's themeVariablesRemainingKeys (upstream-unconsumed palette slots, sequence-local keys resolved in the adapter, and family-local styles)."
     },
     {
       "path": "fontFamily",
@@ -242,7 +240,7 @@
         "mindmap",
         "block"
       ],
-      "status": "partial",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -258,8 +256,7 @@
         "paint",
         "viewport",
         "export"
-      ],
-      "note": "Native class, Kanban, and Mindmap labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path)."
+      ]
     },
     {
       "path": "look",
@@ -275,7 +272,7 @@
         "ishikawa",
         "venn"
       ],
-      "status": "partial",
+      "status": "parity",
       "upstream": [
         "parsed",
         "layout",
@@ -292,13 +289,15 @@
         "interaction",
         "export"
       ],
-      "note": "Flowchart, Timeline, Kanban, Mindmap, and Ishikawa are complete; state currently uses look for marker selection and class retains it without rough painting."
+      "note": "Classic/Neo/handDrawn routing, exact-case fallback, RoughJS geometry, interaction, and export are covered by family and cross-family upstream oracles."
     },
     {
       "path": "handDrawnSeed",
       "families": [
         "flowchart",
         "swimlane",
+        "class",
+        "state",
         "kanban",
         "mindmap",
         "block",
@@ -355,7 +354,7 @@
         "state",
         "mindmap"
       ],
-      "status": "partial",
+      "status": "parity",
       "upstream": [
         "parsed",
         "layout",
@@ -372,7 +371,7 @@
         "interaction",
         "export"
       ],
-      "note": "Dagre is supported by all five families. Flowchart also matches Mermaid 11.16's explicit ELK-to-Dagre fallback; class/state reject unsupported engines; Swimlane accepts its native engine or Dagre; Mindmap falls back to cose-bilkent for unknown or unregistered names."
+      "note": "Dagre, Mindmap CoSE, exact-case selection, registered-name fallback, and State's runtime-error boundary are covered by production geometry oracles."
     },
     {
       "path": "elk.mergeEdges",
@@ -474,14 +473,14 @@
       "families": [
         "flowchart"
       ],
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Muffin keeps a fixed safety ceiling instead of allowing source config to raise it."
+      "note": "Mermaid's secure source config strips this key, so documents cannot lower or raise the default 500-edge boundary; Muffin retains the same source behavior."
     },
     {
       "path": "maxTextSize",
@@ -521,14 +520,14 @@
         "railroadAbnf",
         "railroadPeg"
       ],
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Muffin keeps family-specific safety ceilings instead of trusting document config."
+      "note": "Mermaid's secure source config strips this key; source documents cannot change the global default text boundary in either renderer."
     },
     {
       "path": "securityLevel",
@@ -583,21 +582,19 @@
       "path": "arrowMarkerAbsolute",
       "families": [
         "flowchart",
-        "sequence",
-        "class",
-        "state",
-        "er",
-        "requirement"
+        "swimlane",
+        "sequence"
       ],
-      "status": "deferred",
+      "status": "parity",
       "upstream": [
         "parsed",
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "export"
       ],
-      "note": "Requires native SVG marker serialization."
+      "note": "Flowchart, Swimlane, and Sequence serialize absolute marker references when the SVG export context supplies its document URL; other 11.16.0 families retain fragment references."
     },
     {
       "path": "deterministicIds",
@@ -733,16 +730,20 @@
         "railroadAbnf",
         "railroadPeg"
       ],
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
+        "text",
         "paint",
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "text",
+        "paint",
+        "export"
       ],
-      "note": "Native scenes consume typed theme variables rather than arbitrary browser CSS."
+      "note": "Arbitrary themeCSS is resolved through the per-family CSS cascade against real upstream DOM oracles (mermaid-theme-css.json, 117 cases). Wardley's draw() clears the svg before painting, so themeCSS is upstream-inert there and native parity holds by construction. Geometry feedback beyond paint is demonstrated per family in the themeCSS fixtures: flowchart, swimlane, sequence, class, state, pie, mindmap, sankey, treeview, block, ishikawa, requirement, timeline, kanban, gitGraph, treemap, architecture, and railroad."
     },
     {
       "family": "flowchart",
@@ -814,7 +815,7 @@
       "path": "flowchart.subGraphTitleMargin",
       "field": "subGraphTitleMargin",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "layout",
@@ -822,9 +823,11 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "layout",
+        "viewport",
+        "export"
       ],
-      "note": "Cluster title margins are not forwarded to native compound layout.",
       "default": {
         "top": 0,
         "bottom": 0
@@ -836,15 +839,14 @@
       "path": "flowchart.arrowMarkerAbsolute",
       "field": "arrowMarkerAbsolute",
       "hasDefault": false,
-      "status": "deferred",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Only meaningful for SVG marker URL serialization."
+      "note": "Mermaid 11.16.0 reads only the root arrowMarkerAbsolute key for flowchart SVG markers."
     },
     {
       "family": "flowchart",
@@ -875,7 +877,7 @@
       "path": "flowchart.htmlLabels",
       "field": "htmlLabels",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -885,9 +887,13 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
       ],
-      "note": "Deprecated upstream alias; native flow labels currently use one structured text path.",
       "default": null
     },
     {
@@ -1014,7 +1020,7 @@
       "path": "flowchart.defaultRenderer",
       "field": "defaultRenderer",
       "hasDefault": true,
-      "status": "partial",
+      "status": "parity",
       "upstream": [
         "parsed",
         "layout",
@@ -1031,7 +1037,6 @@
         "interaction",
         "export"
       ],
-      "note": "dagre-wrapper and Mermaid 11.16's unregistered-ELK Dagre fallback are supported; legacy dagre-d3 remains explicit unsupported.",
       "default": "dagre-wrapper"
     },
     {
@@ -1040,7 +1045,7 @@
       "path": "flowchart.wrappingWidth",
       "field": "wrappingWidth",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -1050,9 +1055,13 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "text",
+        "layout",
+        "paint",
+        "viewport",
+        "export"
       ],
-      "note": "Native flow markdown wrapping does not yet consume this width.",
       "default": 200
     },
     {
@@ -1061,7 +1070,7 @@
       "path": "flowchart.inheritDir",
       "field": "inheritDir",
       "hasDefault": true,
-      "status": "unsupported",
+      "status": "parity",
       "upstream": [
         "parsed",
         "layout",
@@ -1071,9 +1080,13 @@
         "export"
       ],
       "native": [
-        "parsed"
+        "parsed",
+        "layout",
+        "paint",
+        "viewport",
+        "interaction",
+        "export"
       ],
-      "note": "Subgraph direction inheritance is parsed but not forwarded.",
       "default": false
     },
     {
@@ -1236,15 +1249,14 @@
       "path": "sequence.arrowMarkerAbsolute",
       "field": "arrowMarkerAbsolute",
       "hasDefault": false,
-      "status": "deferred",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Only meaningful for SVG marker URL serialization."
+      "note": "Mermaid 11.16.0 reads only the root arrowMarkerAbsolute key for sequence SVG markers."
     },
     {
       "family": "sequence",
@@ -2005,20 +2017,14 @@
       "path": "class.titleTopMargin",
       "field": "titleTopMargin",
       "hasDefault": false,
-      "status": "partial",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
       "native": [
-        "parsed",
-        "paint",
-        "viewport",
-        "export"
+        "parsed"
       ],
-      "note": "Effective in the legacy renderer; the 11.16 unified renderer reads state.titleTopMargin."
+      "note": "The Mermaid 11.16 unified class renderer reads state.titleTopMargin; the class field is retained but inert."
     },
     {
       "family": "class",
@@ -2026,15 +2032,14 @@
       "path": "class.arrowMarkerAbsolute",
       "field": "arrowMarkerAbsolute",
       "hasDefault": false,
-      "status": "deferred",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Only meaningful for SVG marker URL serialization."
+      "note": "The unified class renderer always emits fragment marker references; the family key is retained but inert."
     },
     {
       "family": "class",
@@ -2105,7 +2110,7 @@
       "path": "class.defaultRenderer",
       "field": "defaultRenderer",
       "hasDefault": false,
-      "status": "partial",
+      "status": "parity",
       "upstream": [
         "parsed",
         "layout",
@@ -2121,8 +2126,7 @@
         "viewport",
         "interaction",
         "export"
-      ],
-      "note": "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic."
+      ]
     },
     {
       "family": "class",
@@ -2300,15 +2304,14 @@
       "path": "state.arrowMarkerAbsolute",
       "field": "arrowMarkerAbsolute",
       "hasDefault": false,
-      "status": "deferred",
+      "status": "upstream-inert",
       "upstream": [
-        "parsed",
-        "export"
+        "parsed"
       ],
       "native": [
         "parsed"
       ],
-      "note": "Only meaningful for SVG marker URL serialization."
+      "note": "The unified state renderer always emits fragment marker references; the family key is retained but inert."
     },
     {
       "family": "state",
@@ -2669,7 +2672,7 @@
       "path": "state.defaultRenderer",
       "field": "defaultRenderer",
       "hasDefault": true,
-      "status": "partial",
+      "status": "parity",
       "upstream": [
         "parsed",
         "layout",
@@ -2686,7 +2689,6 @@
         "interaction",
         "export"
       ],
-      "note": "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
       "default": "dagre-wrapper"
     },
     {
@@ -11492,5 +11494,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "c9712dff62eb1504724af86350e09caa8e9e89589002d3fd659b4f306395932a"
+  "fixtureSha256": "ae74588dd16bb4d1db19cec67ea0a8dd826e611516a92aa0bc4e99d1a848e1b1"
 }

@@ -307,7 +307,8 @@ QJsonObject TreemapScene::toJsonObject() const {
 }
 
 TreemapScene buildTreemapScene(const TreemapData &data, TreemapConfig config,
-                               TreemapSceneStyle style) {
+                               TreemapSceneStyle style,
+                               const TreemapCssOverrides *css) {
   TreemapScene scene;
   scene.style = std::move(style);
   const double widthValue = jsNumber(config.nodeWidth, 100.0);
@@ -594,8 +595,14 @@ TreemapScene buildTreemapScene(const TreemapData &data, TreemapConfig config,
     scene.title.anchor = QStringLiteral("middle");
     scene.title.fontSize = scene.style.titleFontSize;
     scene.title.fill = scene.style.titleColor;
+    if (css) scene.title.css = css->title;
+    // .treemapTitle keeps the sole live base rule; a themeCSS font-size
+    // override enlarges the ink box that the final getBBox unions.
+    const qreal titleSize = css && css->title.fontSize >= 0.0
+                                ? css->title.fontSize
+                                : scene.style.titleFontSize;
     scene.title.bounds = textBounds(scene.style, data.title, scene.title.position,
-                                    scene.title.fontSize, QStringLiteral("middle"),
+                                    titleSize, QStringLiteral("middle"),
                                     TreemapTextBaseline::Middle);
   }
 
@@ -605,10 +612,33 @@ TreemapScene buildTreemapScene(const TreemapData &data, TreemapConfig config,
     if (first) { scene.contentBounds = rect; first = false; }
     else scene.contentBounds = scene.contentBounds.united(rect);
   };
+  // Stamp themeCSS slots in emission order.
+  if (css) {
+    for (qsizetype index = 0; index < scene.sections.size(); ++index) {
+      if (index >= css->sections.size()) break;
+      const TreemapCssOverrides::Section &slot = css->sections.at(index);
+      scene.sections[index].groupCss = slot.group;
+      scene.sections[index].headerCss = slot.header;
+      scene.sections[index].rectCss = slot.rect;
+      scene.sections[index].label.css = slot.label;
+      scene.sections[index].value.css = slot.value;
+    }
+    for (qsizetype index = 0; index < scene.leaves.size(); ++index) {
+      if (index >= css->leaves.size()) break;
+      const TreemapCssOverrides::Leaf &slot = css->leaves.at(index);
+      scene.leaves[index].groupCss = slot.group;
+      scene.leaves[index].rectCss = slot.rect;
+      scene.leaves[index].label.css = slot.label;
+      scene.leaves[index].value.css = slot.value;
+    }
+  }
+  // The final svg.getBBox drops subtrees whose display is none; visibility
+  // alone keeps them in the union.
   for (const auto &section : scene.sections)
-    if (section.depth > 0) include(section.rect);
-  for (const auto &leaf : scene.leaves) include(leaf.rect);
-  include(scene.title.bounds);
+    if (section.depth > 0 && section.rectCss.hasBox) include(section.rect);
+  for (const auto &leaf : scene.leaves)
+    if (leaf.rectCss.hasBox) include(leaf.rect);
+  if (scene.title.css.hasBox) include(scene.title.bounds);
   if (first) scene.contentBounds = QRectF(0.0, titleHeight, width, height);
   const double diagramPadding = jsNumber(config.diagramPadding, 8.0);
   scene.bounds = scene.contentBounds.adjusted(-diagramPadding, -diagramPadding,

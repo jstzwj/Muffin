@@ -31,6 +31,13 @@ struct SequenceSceneStyle {
   QString boxStroke = QStringLiteral("rgba(0,0,0,0.5)");
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontSize = 16.0;
+  QString actorFontFamily = QStringLiteral("Noto Sans");
+  QString messageFontFamily = QStringLiteral("Noto Sans");
+  QString noteFontFamily = QStringLiteral("Noto Sans");
+  qreal actorFontSize = 16.0;
+  qreal messageFontSize = 16.0;
+  qreal noteFontSize = 16.0;
+  qreal actorStrokeWidth = 2.0;
   // Upstream sequence.messageAlign / sequence.noteAlign (start/middle/end).
   // Defaults are Center, matching mermaid, so default rendering is unchanged.
   // Only notes and messages read these; participants, boxes and fragments stay
@@ -84,6 +91,7 @@ struct SequenceScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
+  SvgMarkerProjection svgMarkerProjection() const override;
   // The resolved viewport rect (logicalBounds + configured margins), computed
   // once at build time. renderBounds returns it so the generic image/canvas
   // paths treat sequence like any other family without a dispatch branch.

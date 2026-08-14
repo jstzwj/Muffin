@@ -448,11 +448,9 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 347 | Audited upstream and native stages agree |
-| `partial` | 8 | Supported values/variants are named; other values fail or remain deferred |
-| `upstream-inert` | 120 | Mermaid retains the option but 11.16.0 does not consume it |
-| `deferred` | 5 | Absolute SVG marker URL serialization remains assigned |
-| `unsupported` | 7 | Upstream effect exists but no native consumer exists yet |
+| `parity` | 361 | Audited upstream and native stages agree |
+| `partial` | 1 | Supported values/variants are named; the remaining variant is explicit |
+| `upstream-inert` | 125 | Mermaid retains the option but 11.16.0 does not consume it |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
 | `api-only` | 25 | Function-valued hooks cannot be expressed by Markdown JSON/YAML config |
 | `security-fixed` | 1 | Muffin intentionally keeps its strict desktop security policy |
@@ -484,11 +482,12 @@ Sequence participant menus, and `sequence.forceMenus` all reach their runtime
 consumers. Native SVG export is now complete at the product boundary: all thirty-one
 families produce deterministic, renderable fragments; HTML embeds them; and a
 rendered diagram can be saved from its context menu. The matrix moved
-`deterministicIds`, `deterministicIDSeed`, and the effective family
-`useMaxWidth` rows to parity. The remaining SVG-specific work is the five
-root/family `arrowMarkerAbsolute` rows: Qt currently expands arrowheads into
-painted paths instead of serializing reusable marker URL references. This is a
-shared export follow-up rather than a blocker for adding another native family.
+`deterministicIds`, `deterministicIDSeed`, the effective family `useMaxWidth`,
+and root `arrowMarkerAbsolute` rows to parity. Native SVG now serializes reusable
+marker definitions for every marker-bearing family. With an explicit document
+URL export context it emits Mermaid's absolute references for Flowchart,
+Swimlane, and Sequence; the same-named family keys and all other families remain
+fragment-only exactly as in Mermaid 11.16.0.
 
 ## Large-scene paint contract
 
@@ -535,12 +534,16 @@ The remaining boundaries are explicit rather than hidden parity claims:
 
 - global `htmlLabels:false` is partial; Requirement currently follows the
   upstream `htmlLabels:true` text path;
-- arbitrary `themeCSS` and absolute SVG marker URL serialization are shared
-  unsupported/deferred capabilities recorded in the config matrix;
 - external `mermaid.initialize()` object/array configuration is not part of
   Muffin's Markdown source API. In particular, source-level custom
   `borderColorArray`/`bkgColorArray` values are ignored, matching Mermaid
   11.16.0's source-entry behavior.
+
+Arbitrary `themeCSS` is no longer a boundary: all 34 native family interfaces
+resolve user CSS through the shared `MermaidCssCascade` against real 11.16.0
+DOM oracles (`mermaid-theme-css.json`, 117 cases). Wardley is the one
+upstream-inert exception — its `draw()` clears the svg before painting, so
+themeCSS never reaches the DOM there and native parity holds by construction.
 
 ### Family expansion status
 

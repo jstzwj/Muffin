@@ -15,6 +15,7 @@
 #include "mermaid/MermaidPaintOptions.h"
 
 #include <QJsonObject>
+#include <QPointF>
 #include <QRectF>
 #include <QString>
 #include <QVector>
@@ -37,6 +38,56 @@ struct InteractionRegion {
   QString accessibleLabel;  // SVG <title>/aria-label (flow node tooltip; sequence item label)
   QString requiresOpenMenu;
   QString togglesMenu;
+};
+
+// Structured SVG marker projection. QPainter has no marker-start/marker-end
+// primitive, so normal paint flattens arrowheads while SVG export asks the
+// immutable scene for this representation and writes real marker references.
+// Geometry is already final scene geometry; no parser/layout work is repeated.
+struct SvgMarkerChild {
+  QString tag;       // path / polygon / circle / line
+  QString cssClass;
+  QString path;
+  QString points;
+  QString viewBox;
+  qreal cx = 0.0, cy = 0.0, radius = 0.0;
+  qreal x1 = 0.0, y1 = 0.0, x2 = 0.0, y2 = 0.0;
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString style;
+};
+
+struct SvgMarkerDefinition {
+  QString key;       // scene-local stable key referenced by SvgMarkerEdge
+  QString idSuffix;  // appended to the exported Mermaid root id
+  QString viewBox;
+  qreal refX = 0.0, refY = 0.0;
+  qreal markerWidth = 0.0, markerHeight = 0.0;
+  QString markerUnits;
+  QString orient = QStringLiteral("auto");
+  bool groupChildren = false;
+  QVector<SvgMarkerChild> children;
+};
+
+struct SvgMarkerEdge {
+  QString tag = QStringLiteral("path");
+  QString id;
+  QString cssClass;
+  QString path;
+  QPointF start;
+  QPointF end;
+  QString markerStart;
+  QString markerEnd;
+  QString stroke;
+  QString strokeWidth;
+  QString strokeDasharray;
+};
+
+struct SvgMarkerProjection {
+  QVector<SvgMarkerDefinition> definitions;
+  QVector<SvgMarkerEdge> edges;
+  bool empty() const { return edges.isEmpty(); }
 };
 
 struct MermaidScene {
@@ -81,6 +132,8 @@ struct MermaidScene {
     static const QVector<InteractionRegion> kEmpty;
     return kEmpty;
   }
+
+  virtual SvgMarkerProjection svgMarkerProjection() const { return {}; }
 
   // Sequence forceMenus: when true, menus are rendered open and their item links
   // are always active (no actor-toggle). Default false.

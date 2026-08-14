@@ -24,16 +24,21 @@ color::SvgPaint rootFill(const QString& value) {
 
 void paintInfoScene(QPainter& painter, const InfoScene& scene,
                     const MermaidPaintOptions&) {
+  if (!scene.style.textVisible || scene.style.fontSize <= 0.0 ||
+      scene.style.opacity <= 0.0)
+    return;
   const color::SvgPaint fill = rootFill(scene.style.textColor);
   if (fill.none) return;
 
   QFont font;
   MermaidFontRegistry::configureFont(font, scene.style.fontFamily);
-  font.setPixelSize(32);
+  font.setPixelSize(std::max(1, qRound(scene.style.fontSize)));
+  font.setWeight(scene.style.fontWeight);
   font.setHintingPreference(QFont::PreferNoHinting);
   painter.setFont(font);
   painter.setPen(QPen(fill.color));
   painter.setBrush(Qt::NoBrush);
+  painter.setOpacity(painter.opacity() * scene.style.opacity);
   const qreal advance = QFontMetricsF(font).horizontalAdvance(scene.text);
   painter.drawText(QPointF(scene.anchor.x() - advance / 2.0,
                            scene.anchor.y()),

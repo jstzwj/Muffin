@@ -562,10 +562,20 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/theme/FlowStyleResolve.h
   src/mermaid/theme/MermaidStyleResolve.cpp
   src/mermaid/theme/MermaidStyleResolve.h
+  src/mermaid/theme/MermaidCssCascade.cpp
+  src/mermaid/theme/MermaidCssCascade.h
   src/mermaid/text/ChromiumTextMetrics.cpp
   src/mermaid/text/ChromiumTextMetrics.h
   src/theme/CssCalc.cpp
   src/theme/CssCalc.h
+  src/theme/CssComputedStyleEngine.cpp
+  src/theme/CssComputedStyleEngine.h
+  src/theme/CssSelectorAnalysis.cpp
+  src/theme/CssSelectorAnalysis.h
+  src/theme/CssSelectorUtils.h
+  src/theme/CssThemeParser.cpp
+  src/theme/CssThemeParser.h
+  src/theme/TyporaEditorOnly.h
   src/mermaid/security/MermaidSecurityPolicy.h
   src/blocks/html/HtmlSanitizer.cpp
   src/blocks/html/HtmlSanitizer.h
@@ -1174,16 +1184,10 @@ set(MUFFIN_UI_SOURCES
   src/theme/ThemeManager.h
   src/theme/ChromeStyleSheet.cpp
   src/theme/ChromeStyleSheet.h
-  src/theme/CssComputedStyleEngine.cpp
-  src/theme/CssComputedStyleEngine.h
   src/theme/CssStyleDebug.cpp
   src/theme/CssStyleDebug.h
-  src/theme/CssThemeParser.cpp
-  src/theme/CssThemeParser.h
   src/theme/CssThemeMapper.cpp
   src/theme/CssThemeMapper.h
-  src/theme/CssSelectorAnalysis.cpp
-  src/theme/CssSelectorAnalysis.h
   src/theme/CssDecorationExtractor.cpp
   src/theme/CssDecorationExtractor.h
   src/theme/CssFlatDecl.h

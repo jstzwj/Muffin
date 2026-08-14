@@ -8,6 +8,7 @@
 #include "mermaid/erdiagram/ErLayout.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QJsonObject>
 #include <QSize>
@@ -41,7 +42,7 @@ struct ErDiagramImpl : Diagram {
         input, fontFamily, fontSize,
         configNumber(erConfig, QStringLiteral("minEntityWidth"), 100.0),
         configNumber(erConfig, QStringLiteral("diagramPadding"), 20.0),
-        configNumber(erConfig, QStringLiteral("entityPadding"), 15.0));
+        configNumber(erConfig, QStringLiteral("entityPadding"), 15.0), 14.0);
     const er::ErPlacementResult placement = er::layoutErDiagramDagre(
         input, measurements,
         configNumber(erConfig, QStringLiteral("nodeSpacing"), 140.0),
@@ -55,9 +56,38 @@ struct ErDiagramImpl : Diagram {
     style.relationshipLabelColor = themeVars.textColor;
     style.labelBackground = themeVars.mainBkg;
     style.strokeWidth = themeVars.strokeWidth;
+    style.relationshipStrokeWidth = style.strokeWidth;
     style.fontFamily = fontFamily;
     style.fontSize = fontSize;
     style.lineHeight = fontSize * 1.5;
+    csscascade::ElementStyle rootFallback;
+    rootFallback.fill = themeVars.textColor;
+    rootFallback.stroke = QStringLiteral("none");
+    rootFallback.strokeWidth = QStringLiteral("1px");
+    rootFallback.color = QStringLiteral("black");
+    rootFallback.fontFamily = style.fontFamily;
+    rootFallback.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
+    csscascade::ElementStyle relationshipFallback = rootFallback;
+    relationshipFallback.fill = QStringLiteral("none");
+    relationshipFallback.stroke = style.relationshipColor;
+    relationshipFallback.strokeWidth = QString::number(style.strokeWidth) +
+                                       QStringLiteral("px");
+    const auto css = csscascade::resolveElements(
+        pre.config.value(QStringLiteral("themeCSS")).toString(), {
+          {QStringLiteral("svg"), {}, QStringLiteral("svg"),
+           QStringLiteral("diagram-root"), {QStringLiteral("erDiagram")}, {},
+           rootFallback, {}},
+          {QStringLiteral("root"), QStringLiteral("svg"), QStringLiteral("g"),
+           {}, {QStringLiteral("root")}, {}, rootFallback, {}},
+          {QStringLiteral("relationship"), QStringLiteral("root"),
+           QStringLiteral("path"), {}, {QStringLiteral("relationshipLine")}, {},
+           relationshipFallback, {}}
+        });
+    const auto relationship = css.value(
+        QStringLiteral("relationship"), relationshipFallback);
+    style.relationshipColor = relationship.stroke;
+    style.relationshipStrokeWidth = cssStrokeWidthPx(
+        relationship.strokeWidth, {}, 0.0);
     MermaidRenderMetadata metadata = renderMetadata(
         pre, type, diagram.data().title, diagram.data().accTitle,
         diagram.data().accDescription, style.entityTitle1, style.fontFamily,

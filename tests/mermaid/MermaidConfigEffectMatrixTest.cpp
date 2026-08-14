@@ -22,6 +22,8 @@
 #include "mermaid/treemap/TreemapScene.h"
 #include "mermaid/wardley/WardleyScene.h"
 #include "mermaid/xychart/XYChartScene.h"
+#include "mermaid/scene/FlowScene.h"
+#include "mermaid/theme/MermaidColor.h"
 
 #include <QByteArray>
 #include <QCryptographicHash>
@@ -37,10 +39,12 @@
 #include <QSet>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <memory>
+#include <tuple>
 
 using muffin::mermaid::editor::MermaidRenderCache;
 using muffin::mermaid::editor::MermaidRenderEntry;
@@ -271,6 +275,40 @@ int main(int argc, char** argv) {
             QStringLiteral("Global %1 scope must cover every native family")
                 .arg(path));
   }
+  require(byPath.value(QStringLiteral("themeCSS"))
+                      .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              stringSet(byPath.value(QStringLiteral("themeCSS"))
+                            .value(QStringLiteral("native")).toArray()) ==
+                  QSet<QString>{QStringLiteral("parsed"),
+                                QStringLiteral("text"),
+                                QStringLiteral("paint"),
+                                QStringLiteral("export")},
+          QStringLiteral("themeCSS lost its parity classification"));
+
+  // Production consumption: the flowchart themeCSS overlay must reach the
+  // built scene's node paint exactly like upstream's injected <style>.
+  const QString themeCssSource = QStringLiteral(
+      "%%{init: {\"themeCSS\": \".node rect { fill: rgb(255, 0, 0) !important; "
+      "stroke-width: 9px !important; }\"}}%%\nflowchart LR\nA --> B");
+  const MermaidRenderEntry themeCssEntry = render(themeCssSource);
+  const auto* themeCssScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          themeCssEntry.scene.get());
+  require(themeCssEntry.status == MermaidRenderStatus::Ready && themeCssScene &&
+              themeCssScene->nodes.size() == 2,
+          QStringLiteral("themeCSS production render failed"));
+  for (const auto& item : themeCssScene->nodes) {
+    const QColor fill = muffin::mermaid::color::resolveSvgPaint(
+        item.fill, muffin::mermaid::color::SvgPaintKind::Fill,
+        QColor(Qt::black)).color;
+    require(fill == QColor(QLatin1String("#ff0000")),
+            QStringLiteral("themeCSS node fill did not reach the scene: %1")
+                .arg(item.fill));
+    require(item.strokeWidth == QLatin1String("9px"),
+            QStringLiteral("themeCSS node stroke-width did not reach the "
+                           "scene: %1").arg(item.strokeWidth));
+  }
 
   const MermaidRenderEntry infoEntry = render(QStringLiteral(
       "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{"
@@ -297,6 +335,36 @@ int main(int argc, char** argv) {
               eventScene->boxes.size() == 1 &&
               eventScene->boxes.first().fill == QLatin1String("#123456"),
           QStringLiteral("Event Modeling live config/theme did not reach the scene"));
+
+  // State special shapes consume specialStateColor (dark literal #f4f4f4,
+  // default = lineColor) and stateEnd's `stateBorder ?? nodeBorder` inner dot.
+  for (const auto& [theme, special, inner] :
+       std::array<std::tuple<const char*, const char*, const char*>, 2>{
+           std::make_tuple("dark", "#f4f4f4", "#ccc"),
+           std::make_tuple("default", "#333333", "#9370DB")}) {
+    const MermaidRenderEntry stateEntry = render(QStringLiteral(
+        "%%{init: {\"theme\": \"%1\"}}%%\nstateDiagram-v2\n[*] --> A\nA --> [*]")
+        .arg(QLatin1String(theme)));
+    const auto* stateScene =
+        dynamic_cast<const muffin::mermaid::state::StateScene*>(
+            stateEntry.scene.get());
+    const bool hasSpecialShapes =
+        stateScene && std::any_of(stateScene->nodes.cbegin(),
+                                  stateScene->nodes.cend(),
+                                  [](const auto& item) {
+                                    return item.shape ==
+                                               QLatin1String("stateStart") ||
+                                           item.shape ==
+                                               QLatin1String("stateEnd");
+                                  });
+    require(stateEntry.status == MermaidRenderStatus::Ready && stateScene &&
+                hasSpecialShapes &&
+                stateScene->style.specialStateColor ==
+                    QLatin1String(special) &&
+                stateScene->style.endInnerFill == QLatin1String(inner),
+            QStringLiteral("State special-shape theme variables drifted for %1")
+                .arg(QLatin1String(theme)));
+  }
   const QString ishikawaSource = QStringLiteral(
       "%%{init: {\"ishikawa\": {\"diagramPadding\": 80, "
       "\"useMaxWidth\": false}, \"look\": \"handDrawn\", "
@@ -833,15 +901,37 @@ int main(int argc, char** argv) {
                     .contains(QStringLiteral("export")),
             QStringLiteral("Native SVG config parity drifted for %1").arg(path));
   }
+  require(byPath.value(QStringLiteral("maxEdges"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              byPath.value(QStringLiteral("maxTextSize"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              byPath.value(QStringLiteral("class.titleTopMargin"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("upstream-inert"),
+          QStringLiteral("Secure limit or unified class config classification drifted"));
+  require(byPath.value(QStringLiteral("arrowMarkerAbsolute"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              stringSet(byPath.value(QStringLiteral("arrowMarkerAbsolute"))
+                            .value(QStringLiteral("families")).toArray()) ==
+                  QSet<QString>({QStringLiteral("flowchart"),
+                                 QStringLiteral("swimlane"),
+                                 QStringLiteral("sequence")}) &&
+              stringSet(byPath.value(QStringLiteral("arrowMarkerAbsolute"))
+                            .value(QStringLiteral("native")).toArray()) ==
+                  QSet<QString>({QStringLiteral("parsed"),
+                                 QStringLiteral("export")}),
+          QStringLiteral("Root SVG marker URL parity scope drifted"));
   for (const QString& path : {
-           QStringLiteral("arrowMarkerAbsolute"),
            QStringLiteral("flowchart.arrowMarkerAbsolute"),
            QStringLiteral("sequence.arrowMarkerAbsolute"),
            QStringLiteral("class.arrowMarkerAbsolute"),
            QStringLiteral("state.arrowMarkerAbsolute")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
-                QLatin1String("deferred"),
-            QStringLiteral("SVG marker URL config was claimed without evidence: %1")
+                QLatin1String("upstream-inert"),
+            QStringLiteral("Family marker URL config liveness drifted: %1")
                 .arg(path));
   }
 
@@ -918,12 +1008,15 @@ int main(int argc, char** argv) {
           QStringLiteral("Swimlane flowchart config or Dagre override drifted"));
   const MermaidRenderEntry unsupportedSwimlane = render(
       QStringLiteral("%%{init: {\"layout\": \"elk\"}}%%\n") + swimlaneBody);
-  require(unsupportedSwimlane.status == MermaidRenderStatus::Unsupported &&
-              unsupportedSwimlane.diagnostic.stage ==
-                  QLatin1String("configuration") &&
-              unsupportedSwimlane.diagnostic.code ==
-                  QLatin1String("unsupported-layout-engine"),
-          QStringLiteral("Swimlane unsupported layout must be explicit"));
+  const auto* fallbackSwimlaneScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          unsupportedSwimlane.scene.get());
+  require(unsupportedSwimlane.status == MermaidRenderStatus::Ready &&
+              fallbackSwimlaneScene &&
+              std::any_of(fallbackSwimlaneScene->clusters.cbegin(),
+                          fallbackSwimlaneScene->clusters.cend(),
+                          [](const auto& cluster) { return cluster.swimlane; }),
+          QStringLiteral("Swimlane unknown-layout fallback drifted"));
 
   const QString edgeRoundedFlow = QStringLiteral(
       "flowchart LR\nA[Start] roundedEdge@--> B[Middle] --> C[End]\n"
@@ -1607,21 +1700,32 @@ int main(int argc, char** argv) {
             QStringLiteral("Flowchart ELK fallback stopped rendering"));
   }
 
-  // Other unregistered family renderer selections remain explicit errors.
+  // Class uses getRegisteredLayoutAlgorithm() and therefore falls back to
+  // Dagre. State ignores nested defaultRenderer but passes the top-level layout
+  // directly to render(), where an unknown algorithm throws.
   for (const QString& source : {
            QStringLiteral(
+               "%%{init: {\"layout\": \"elk\"}}%%\n"
+               "classDiagram\nclass A"),
+           QStringLiteral(
                "%%{init: {\"class\": {\"defaultRenderer\": \"elk\"}}}%%\n"
-               "classDiagram\nclass A")}) {
-    const MermaidRenderEntry unsupportedEntry = render(source);
-    require(unsupportedEntry.status == MermaidRenderStatus::Unsupported &&
-                unsupportedEntry.diagnostic.stage ==
-                    QLatin1String("configuration") &&
-                unsupportedEntry.diagnostic.code ==
-                    QLatin1String("unsupported-layout-engine") &&
-                !unsupportedEntry.diagnostic.actual.isEmpty() &&
-                !unsupportedEntry.diagnostic.expected.isEmpty(),
-            QStringLiteral("Unsupported layout silently fell back to Dagre"));
+               "classDiagram\nclass A"),
+           QStringLiteral(
+               "%%{init: {\"state\": {\"defaultRenderer\": \"elk\"}}}%%\n"
+               "stateDiagram-v2\nA --> B")}) {
+    const MermaidRenderEntry fallback = render(source);
+    require(fallback.status == MermaidRenderStatus::Ready && fallback.scene,
+            QStringLiteral("Registered-layout fallback contract drifted"));
   }
+  const MermaidRenderEntry stateLayoutError = render(QStringLiteral(
+      "%%{init: {\"layout\": \"elk\"}}%%\nstateDiagram-v2\nA --> B"));
+  require(stateLayoutError.status == MermaidRenderStatus::Error &&
+              stateLayoutError.diagnostic.stage == QLatin1String("render") &&
+              stateLayoutError.diagnostic.code ==
+                  QLatin1String("native-render-failed") &&
+              stateLayoutError.diagnostic.message ==
+                  QLatin1String("Unknown layout algorithm: elk"),
+          QStringLiteral("State unknown-layout runtime boundary drifted"));
 
   qDebug() << "MermaidConfigEffectMatrixTest:" << entries.size()
            << "classified rows and all seven effect dimensions passed";

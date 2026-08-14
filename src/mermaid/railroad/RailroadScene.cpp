@@ -101,25 +101,41 @@ void translate(QVector<RailroadPrimitive>& primitives, const QPointF& offset) {
 
 class Builder {
 public:
-  explicit Builder(const RailroadConfig& config) : config_(config) {}
+  explicit Builder(const RailroadConfig& config,
+                   const RailroadCssOverrides* css = nullptr)
+      : config_(config), css_(css) {}
+
+  // themeCSS probe font: the measurement text carries font-family/font-size
+  // presentation attrs, which only tag-level rules can override.
+  QString measureFontFamily() const {
+    return css_ != nullptr && css_->active && !css_->probeFontFamily.isEmpty()
+               ? css_->probeFontFamily
+               : config_.fontFamily;
+  }
+  qreal measureFontSize() const {
+    return css_ != nullptr && css_->active && css_->probeFontSize >= 0.0
+               ? css_->probeFontSize
+               : config_.fontSize;
+  }
 
   TextDimensions measure(const QString& text) const {
     const QString visible = visibleSvgText(text);
+    const QString family = measureFontFamily();
+    const qreal size = measureFontSize();
     qreal advance = 0.0;
     if (const auto shaped = textmetrics::harfBuzzAdvance(
-            visible, config_.fontFamily, config_.fontSize))
+            visible, family, size))
       advance = std::ceil(*shaped * 64.0 - 1e-9) / 64.0;
     else
       advance = editor::makeUnhintedCssPixelFont(
-                  editor::firstFontFamily(config_.fontFamily), config_.fontSize)
+                  editor::firstFontFamily(family), size)
                   .horizontalAdvance(visible);
     flowchart::FlowLabelDocument label;
     label.text = visible;
     QRectF chromiumBounds = flowchart::measureChromiumSvgTextBounds(
-        label, config_.fontFamily, config_.fontSize, QFont::Normal, 1.0, false,
-        true);
+        label, family, size, QFont::Normal, 1.0, false, true);
     const auto hbInk = textmetrics::harfBuzzInkBounds(
-        visible, config_.fontFamily, config_.fontSize);
+        visible, family, size);
     // Blink's SVG text bbox snaps a positive leading side-bearing to the
     // current pixel at the observed 17/64px threshold; below it the antialias
     // fringe occupies the preceding pixel.
@@ -129,10 +145,10 @@ public:
     const qreal chromium = chromiumBounds.width();
     const qreal width = std::max(advance, chromium);
     const auto vertical = flowchart::flowLabelFontBoundingMetrics(
-        editor::firstFontFamily(config_.fontFamily), config_.fontSize);
+        editor::firstFontFamily(family), size);
     qreal height = vertical.height();
     if (!(height > 0.0))
-      height = std::ceil(config_.fontSize * 1.35);
+      height = std::ceil(size * 1.35);
     return {width, height};
   }
 
@@ -237,6 +253,9 @@ public:
   }
 
 private:
+  const RailroadConfig& config_;
+  const RailroadCssOverrides* css_ = nullptr;
+
   LayoutResult leafBox(const QString& cssClass, const QString& text,
                        const QString& fill, const QString& stroke, qreal rx,
                        bool dashed = false) {
@@ -464,14 +483,14 @@ private:
     return result;
   }
 
-  const RailroadConfig& config_;
   int nextPaintOrder_ = 0;
 };
 
 }  // namespace
 
 RailroadScene buildRailroadScene(const RailroadData& data,
-                                 RailroadConfig config) {
+                                 RailroadConfig config,
+                                 const RailroadCssOverrides* css) {
   RailroadScene scene;
   scene.config = std::move(config);
   scene.dialect = data.dialect;
@@ -484,7 +503,7 @@ RailroadScene buildRailroadScene(const RailroadData& data,
     return scene;
   }
 
-  Builder builder(scene.config);
+  Builder builder(scene.config, css);
   qreal y = scene.config.padding;
   qreal maxWidth = 0.0;
   for (const RailroadRule& rule : data.rules) {
@@ -505,6 +524,12 @@ RailroadScene buildRailroadScene(const RailroadData& data,
   }
   scene.rasterBounds = QRectF(
       scene.bounds.topLeft(), QSizeF(qRound(clientWidth), qRound(clientHeight)));
+  if (css != nullptr && css->active) {
+    const qsizetype count = qMin<qsizetype>(scene.primitives.size(),
+                                            css->perPrimitive.size());
+    for (qsizetype i = 0; i < count; ++i)
+      scene.primitives[i].css = css->perPrimitive.at(i);
+  }
   return scene;
 }
 

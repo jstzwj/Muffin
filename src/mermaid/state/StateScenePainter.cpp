@@ -79,15 +79,30 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
   painter.setRenderHint(QPainter::TextAntialiasing, true);
   const QColor transition = color(scene.style.transitionColor);
   for (const StateSceneNode& cluster : scene.clusters) {
-    if (!mermaidPrimitiveIsVisible(cluster.bounds, options)) continue;
+    if (!mermaidPrimitiveIsVisible(
+            scene.handDrawn && cluster.paintedBounds.isValid()
+                ? cluster.paintedBounds : cluster.bounds,
+            options)) continue;
     if (cluster.shape == QLatin1String("noteGroup")) continue;
     painter.setPen(QPen(color(cluster.stroke), cluster.strokeWidth));
     painter.setBrush(color(cluster.fill));
-    if (scene.handDrawn)
-      rough::roughRect(painter, cluster.bounds, scene.handDrawnSeed,
-                       color(cluster.fill), color(cluster.stroke), cluster.strokeWidth);
-    else
+    if (scene.handDrawn) {
+      for (qsizetype i = 0; i < cluster.roughDrawables.size(); ++i) {
+        const rough::Drawable& drawable = cluster.roughDrawables.at(i);
+        const QColor fill = i == 0 ? color(cluster.fill)
+                                   : color(cluster.innerFill);
+        rough::drawRoughDrawable(
+            painter, drawable, fill,
+            QPen(color(cluster.stroke), cluster.strokeWidth),
+            QPen(fill, cluster.strokeWidth));
+      }
+    } else {
       painter.drawRoundedRect(cluster.bounds, 5.0, 5.0);
+      if (cluster.innerBounds.isValid()) {
+        painter.setBrush(color(cluster.innerFill));
+        painter.drawRect(cluster.innerBounds);
+      }
+    }
     if (cluster.shape == QLatin1String("divider")) {
       painter.drawLine(cluster.bounds.left(), cluster.bounds.top(),
                        cluster.bounds.left(), cluster.bounds.bottom());
@@ -127,10 +142,11 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
     if (scene.handDrawn)
-      rough::roughPath(painter, edgePath(edge), scene.handDrawnSeed, edgeColor, edgeWidth);
+      rough::drawRoughDrawable(painter, edge.roughDrawable, Qt::NoBrush,
+                               QPen(edgeColor, edgeWidth), Qt::NoPen);
     else
       painter.drawPath(edgePath(edge));
-    paintArrow(painter, edge, edgeColor);
+    if (options.paintEdgeMarkers) paintArrow(painter, edge, edgeColor);
   }
   for (const StateSceneEdge& edge : scene.edges) {
     if (edge.label.isEmpty() || !edge.labelPosition) continue;
@@ -152,49 +168,104 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
     if (!mermaidPrimitiveIsVisible(node.bounds, options)) continue;
     const QString shape = node.shape;
     const QPointF center = node.bounds.center();
+    if (!node.shapeVisible && (shape.isEmpty() || shape == QLatin1String("rect"))) {
+      // `.node rect { display:none }`: text-only node, no shape box.
+      continue;
+    }
     painter.setPen(QPen(color(node.stroke), node.strokeWidth));
     painter.setBrush(color(node.fill));
+    // 11.16 rendering-util shapes: `.node circle.state-start` paints
+    // fill+stroke specialStateColor; stateEnd is a rough pair whose ring takes
+    // the node fill (userNodeOverrides' mainBkg) + lineColor stroke and whose
+    // inner dot is fill+stroke `stateBorder ?? nodeBorder`. handDrawn start
+    // keeps solidStateFill(lineColor).
+    const QColor special = color(scene.style.specialStateColor.isEmpty()
+                                     ? scene.style.transitionColor
+                                     : scene.style.specialStateColor);
+    const QColor endInner = color(scene.style.endInnerFill.isEmpty()
+                                      ? scene.style.transitionColor
+                                      : scene.style.endInnerFill);
     if (shape == QLatin1String("stateStart")) {
-      painter.setPen(Qt::NoPen); painter.setBrush(transition);
-      painter.drawEllipse(center, 7.0, 7.0); continue;
+      if (scene.handDrawn) {
+        for (const rough::Drawable& drawable : node.roughDrawables)
+          rough::drawRoughDrawable(
+              painter, drawable, transition, QPen(transition, 1.0),
+              QPen(transition, 1.0));
+      } else {
+        painter.setPen(QPen(special, 1.0)); painter.setBrush(special);
+        painter.drawEllipse(center, 7.0, 7.0);
+      }
+      continue;
     }
     if (shape == QLatin1String("stateEnd")) {
-      painter.setPen(QPen(transition, 2.0)); painter.setBrush(Qt::NoBrush);
-      painter.drawEllipse(center, 7.0, 7.0);
-      painter.setPen(Qt::NoPen); painter.setBrush(transition);
-      painter.drawEllipse(center, 2.5, 2.5); continue;
+      if (scene.handDrawn) {
+        for (qsizetype i = 0; i < node.roughDrawables.size(); ++i)
+          rough::drawRoughDrawable(
+              painter, node.roughDrawables.at(i),
+              i == 0 ? QBrush(color(node.fill)) : QBrush(endInner),
+              QPen(transition, 2.0),
+              i == 0 ? QPen(transition, 2.0) : QPen(endInner, 2.0));
+      } else {
+        painter.setPen(QPen(transition, 2.0));
+        painter.setBrush(color(node.fill));
+        painter.drawEllipse(center, 7.0, 7.0);
+        painter.setPen(QPen(endInner, 2.0)); painter.setBrush(endInner);
+        painter.drawEllipse(center, 2.5, 2.5);
+      }
+      continue;
     }
     if (shape == QLatin1String("fork") || shape == QLatin1String("join")) {
-      painter.setPen(Qt::NoPen); painter.setBrush(transition);
-      painter.drawRoundedRect(node.bounds, 1.0, 1.0); continue;
+      if (scene.handDrawn) {
+        for (const rough::Drawable& drawable : node.roughDrawables)
+          rough::drawRoughDrawable(
+              painter, drawable, transition, QPen(transition, 1.0),
+              QPen(transition, 1.0));
+      } else {
+        painter.setPen(Qt::NoPen); painter.setBrush(transition);
+        painter.drawRoundedRect(node.bounds, 1.0, 1.0);
+      }
+      continue;
     }
     if (shape == QLatin1String("choice")) {
       QPolygonF diamond{QPointF(center.x(), node.bounds.top()),
           QPointF(node.bounds.right(), center.y()),
           QPointF(center.x(), node.bounds.bottom()),
           QPointF(node.bounds.left(), center.y())};
-      painter.drawPolygon(diamond); continue;
+      if (scene.handDrawn) {
+        for (const rough::Drawable& drawable : node.roughDrawables)
+          rough::drawRoughDrawable(
+              painter, drawable, color(node.fill),
+              QPen(color(node.stroke), node.strokeWidth),
+              QPen(color(node.fill), node.strokeWidth));
+      } else {
+        painter.drawPolygon(diamond);
+      }
+      continue;
     }
     if (shape == QLatin1String("note")) {
       if (scene.handDrawn)
-        rough::roughRect(painter, node.bounds, scene.handDrawnSeed,
-                         color(node.fill), color(node.stroke), node.strokeWidth);
+        rough::drawRoughDrawable(
+            painter, node.roughDrawables.value(0), color(node.fill),
+            QPen(color(node.stroke), node.strokeWidth),
+            QPen(color(node.fill), node.strokeWidth));
       else
         painter.drawRect(node.bounds);
       paintNodeLabel(painter, node, scene.style, color(node.textColor));
       continue;
     }
     if (scene.handDrawn)
-      rough::roughRect(painter, node.bounds, scene.handDrawnSeed,
-                       color(node.fill), color(node.stroke), node.strokeWidth);
+      rough::drawRoughDrawable(
+          painter, node.roughDrawables.value(0), color(node.fill),
+          QPen(color(node.stroke), node.strokeWidth),
+          QPen(color(node.fill), node.strokeWidth));
     else
       painter.drawRoundedRect(node.bounds, 5.0, 5.0);
     if (!node.descriptions.isEmpty()) {
       const qreal dividerY = node.bounds.top() + scene.style.lineHeight + 16.0;
       if (scene.handDrawn)
-        rough::roughLine(painter, QPointF(node.bounds.left(), dividerY),
-                         QPointF(node.bounds.right(), dividerY),
-                         scene.handDrawnSeed, color(node.stroke), node.strokeWidth);
+        rough::drawRoughDrawable(
+            painter, node.roughDrawables.value(1), Qt::NoBrush,
+            QPen(color(node.stroke), node.strokeWidth), Qt::NoPen);
       else
         painter.drawLine(node.bounds.left(), dividerY, node.bounds.right(), dividerY);
     }

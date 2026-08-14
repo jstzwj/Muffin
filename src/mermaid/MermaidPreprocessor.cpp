@@ -347,7 +347,10 @@ void sanitizeObject(QJsonObject& object) {
   }
 
   QJsonObject themeVariables = object.value(QStringLiteral("themeVariables")).toObject();
-  static const QRegularExpression safeThemeValue(QStringLiteral(R"(^[\d "#%(),.;A-Za-z]+$)"));
+  // Mermaid's directive sanitizer accepts CSS identifiers in theme values;
+  // generic family names such as `sans-serif` therefore retain their hyphen.
+  static const QRegularExpression safeThemeValue(
+      QStringLiteral(R"(^[\d "#%(),.;A-Za-z-]+$)"));
   for (auto it = themeVariables.begin(); it != themeVariables.end(); ++it) {
     if (it.value().isString() && !safeThemeValue.match(it.value().toString()).hasMatch()) {
       it.value() = QString();
@@ -431,6 +434,70 @@ void cleanupComments(MappedText& mapped) {
   removeLeadingWhitespace(mapped);
 }
 
+bool jsTruthy(const QJsonValue& value) {
+  if (value.isUndefined() || value.isNull()) return false;
+  if (value.isBool()) return value.toBool();
+  if (value.isDouble()) {
+    const double number = value.toDouble();
+    return number != 0.0 && !std::isnan(number);
+  }
+  if (value.isString()) return !value.toString().isEmpty();
+  return true;
+}
+
+void sanitizeRenderValue(QJsonValue& value) {
+  static const QSet<QString> secureKeys = {
+      QStringLiteral("secure"), QStringLiteral("securityLevel"),
+      QStringLiteral("startOnLoad"), QStringLiteral("maxTextSize"),
+      QStringLiteral("suppressErrorRendering"), QStringLiteral("maxEdges")};
+
+  if (value.isObject()) {
+    QJsonObject object = value.toObject();
+    for (auto it = object.begin(); it != object.end();) {
+      if (secureKeys.contains(it.key()) || it.key().startsWith(QLatin1String("__"))) {
+        it = object.erase(it);
+        continue;
+      }
+      if (it.value().isString()) {
+        const QString text = it.value().toString();
+        if (text.contains(QLatin1Char('<')) || text.contains(QLatin1Char('>')) ||
+            text.contains(QLatin1String("url(data:"))) {
+          it = object.erase(it);
+          continue;
+        }
+      } else if (it.value().isObject() || it.value().isArray()) {
+        QJsonValue child = it.value();
+        sanitizeRenderValue(child);
+        it.value() = child;
+      }
+      ++it;
+    }
+    value = object;
+    return;
+  }
+  if (value.isArray()) {
+    QJsonArray array = value.toArray();
+    for (qsizetype index = 0; index < array.size(); ++index) {
+      QJsonValue child = array.at(index);
+      if (child.isString()) {
+        const QString text = child.toString();
+        if (text.contains(QLatin1Char('<')) || text.contains(QLatin1Char('>')) ||
+            text.contains(QLatin1String("url(data:"))) {
+          // JavaScript delete leaves a sparse array entry; JSON serialization
+          // and Array#toString observe that entry as null/empty respectively.
+          array.replace(index, QJsonValue::Null);
+          continue;
+        }
+      }
+      if (child.isObject() || child.isArray()) {
+        sanitizeRenderValue(child);
+        array.replace(index, child);
+      }
+    }
+    value = array;
+  }
+}
+
 }  // namespace
 
 MermaidPreprocessResult preprocessDiagram(const QString& source) {
@@ -459,6 +526,23 @@ MermaidPreprocessResult preprocessDiagram(const QString& source) {
       ? source.size()
       : qMin<qsizetype>(source.size(), result.codeSourceOffsets.back() + 1);
   return result;
+}
+
+QJsonObject mermaidRenderConfig(const QJsonObject& preprocessedConfig) {
+  QJsonObject config = preprocessedConfig;
+  sanitizeObject(config);
+
+  const QJsonValue fontFamily = config.value(QStringLiteral("fontFamily"));
+  QJsonObject themeVariables = config.value(QStringLiteral("themeVariables")).toObject();
+  if (jsTruthy(fontFamily) &&
+      !jsTruthy(themeVariables.value(QStringLiteral("fontFamily")))) {
+    themeVariables.insert(QStringLiteral("fontFamily"), fontFamily);
+    config.insert(QStringLiteral("themeVariables"), themeVariables);
+  }
+
+  QJsonValue value(config);
+  sanitizeRenderValue(value);
+  return value.toObject();
 }
 
 }  // namespace muffin::mermaid

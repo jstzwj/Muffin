@@ -849,10 +849,14 @@ MindmapLabelGeometry makeLabel(const MindmapNode& node, const MindmapConfig& con
       QRegularExpression::CaseInsensitiveOption);
   visibleSource.remove(anchorTag);
   label.source = visibleSource;
+  label.fontFamily = style.fontFamily;
+  label.fontSize = style.fontSize;
   if (!(style.fontSize > 0.0)) return label;
   label.document = config.htmlLabels
       ? flowchart::parseFlowLabel(visibleSource, QStringLiteral("markdown"))
       : flowchart::parseFlowSvgLabel(visibleSource, QStringLiteral("markdown"));
+  label.document.baseWeight = editor::cssFontWeightToQt(
+      QJsonValue(style.fontWeight), QFont::Normal);
   for (const MindmapAnchor& anchor : node.anchors) {
     if (anchor.start < 0 || anchor.length <= 0 ||
         anchor.start + anchor.length > label.document.text.size()) continue;
@@ -915,8 +919,23 @@ MindmapLabelGeometry makeLabel(const MindmapNode& node, const MindmapConfig& con
   return label;
 }
 
-MindmapNodeGeometry makeNode(const MindmapNode& source, const MindmapConfig& config,
-                             const MindmapSceneStyle& style) {
+MindmapNodeGeometry makeNode(
+    const MindmapNode& source, const MindmapConfig& config,
+    const MindmapSceneStyle& style,
+    const csscascade::ElementStyle* shapeCss = nullptr,
+    const csscascade::ElementStyle* labelCss = nullptr) {
+  // `.node circle/polygon/rect { display:none }` removes the shape from the
+  // node group's getBBox, so CoSE consumes the label box alone (probed vs
+  // 11.16.0) and the painter skips the shape path.
+  const bool shapeHidden = shapeCss && !shapeCss->hasBox();
+  MindmapSceneStyle measuredStyle = style;
+  if (labelCss) {
+    measuredStyle.fontFamily = labelCss->fontFamily;
+    measuredStyle.fontSize = editor::cssFontSizePx(
+        labelCss->fontSize, editor::pieCssLengthContext(
+                                labelCss->fontFamily, style.fontSize));
+    measuredStyle.fontWeight = labelCss->fontWeight;
+  }
   MindmapNodeGeometry node;
   node.id=source.id; node.nodeId=source.nodeId; node.level=source.level;
   node.section=source.hasSection?source.section:-1; node.look=style.look;
@@ -929,7 +948,11 @@ MindmapNodeGeometry makeNode(const MindmapNode& source, const MindmapConfig& con
       node.shape == QLatin1String("rect") ||
       node.shape == QLatin1String("hexagon"))
     labelSource.width = 0.0;
-  node.label=makeLabel(labelSource,config,style);
+  node.label=makeLabel(labelSource,config,measuredStyle);
+  if (labelCss) {
+    node.label.fill = labelCss->color;
+    node.label.fontWeight = labelCss->fontWeight;
+  }
   const qreal lw=node.label.layoutBounds.width(),
               lh=node.label.layoutBounds.height();
   const qreal rawPadding=jsNumber(source.padding,10.0);
@@ -1010,6 +1033,11 @@ MindmapNodeGeometry makeNode(const MindmapNode& source, const MindmapConfig& con
   node.localBounds=blinkPathBounds.isValid()?blinkPathBounds:pathBounds(path);
   node.shapePath=ownTransform.isNull()?path:
       QTransform::fromTranslate(ownTransform.x(),ownTransform.y()).map(path);
+  if (shapeHidden) {
+    node.shapeVisible = false;
+    node.shapePath = QPainterPath();
+    node.localBounds = QRectF();
+  }
   const QRectF rawLabelBounds = node.label.bounds;
   QRectF groupLabelBounds = rawLabelBounds;
   if (!config.htmlLabels) {
@@ -1041,7 +1069,12 @@ MindmapNodeGeometry makeNode(const MindmapNode& source, const MindmapConfig& con
       style.themeName == QLatin1String("redux-dark-color");
   node.fill=source.isRoot?style.rootFill:(palette?style.cScale[paletteIndex]:style.textColor);
   if (source.isRoot) {
-    node.label.fill = style.textColor;
+    // mindmap styles.js: `.section-root span { color: redux ? nodeBorder :
+    // gitBranchLabel0 }` (htmlLabels) and `.section-root text { fill:
+    // gitBranchLabel0 }` (SVG labels). rootTextColor carries gitBranchLabel0;
+    // the previous textColor (#333) mismatched the browser default.
+    node.label.fill = config.htmlLabels && redux
+                          ? style.nodeBorder : style.rootTextColor;
   } else {
     node.label.fill = paletteIndex >= 0 &&
             paletteIndex < style.cScaleLabel.size()
@@ -1100,16 +1133,26 @@ MindmapNodeGeometry makeNode(const MindmapNode& source, const MindmapConfig& con
   } else {
     node.paintedBounds = transformedShapeBounds;
   }
-  if (!source.anchors.isEmpty() && config.htmlLabels && style.fontSize > 0.0) {
-    const qreal lineHeight = style.fontSize * 1.5;
+  if (shapeCss) {
+    node.fill = shapeCss->fill;
+    node.stroke = shapeCss->stroke;
+    node.strokeWidth = editor::cssStrokeWidthPx(
+        shapeCss->strokeWidth,
+        editor::pieCssLengthContext(measuredStyle.fontFamily,
+                                    measuredStyle.fontSize), 0.0);
+  }
+  if (labelCss) node.label.fill = labelCss->color;
+  if (!source.anchors.isEmpty() && config.htmlLabels && measuredStyle.fontSize > 0.0) {
+    const qreal lineHeight = measuredStyle.fontSize * 1.5;
     for (const MindmapAnchor& anchor : source.anchors) {
       if (anchor.start < 0 || anchor.length <= 0 ||
           anchor.start + anchor.length > node.label.document.text.size()) continue;
       const qreal before = flowchart::measureFlowTextAdvanceWidth(
-          node.label.document, 0, anchor.start, style.fontFamily, style.fontSize);
+          node.label.document, 0, anchor.start,
+          measuredStyle.fontFamily, measuredStyle.fontSize);
       const qreal width = flowchart::measureFlowTextAdvanceWidth(
           node.label.document, anchor.start, anchor.length,
-          style.fontFamily, style.fontSize);
+          measuredStyle.fontFamily, measuredStyle.fontSize);
       const qreal left = node.label.bounds.left() + before;
       node.anchors.append({anchor.href, anchor.label,
                            QRectF(left, node.label.bounds.top(), width, lineHeight)});
@@ -1157,8 +1200,74 @@ MindmapScene buildMindmapScene(const MindmapData& data, MindmapConfig config,
   scene.useMaxWidth=jsTruthy(scene.config.useMaxWidth);
   QVector<MindmapCoseNodeInput> coseNodes; QVector<MindmapCoseEdgeInput> coseEdges;
   QMap<QString,QSizeF> measured;
+  QHash<int, csscascade::ElementStyle> shapeStyles;
+  QHash<int, csscascade::ElementStyle> labelStyles;
+  if (!scene.style.themeCss.trimmed().isEmpty()) {
+    QVector<MindmapNodeGeometry> fallbackNodes;
+    QVector<csscascade::ElementInput> elements;
+    csscascade::ElementStyle rootFallback;
+    rootFallback.fill = scene.style.textColor;
+    rootFallback.stroke = QStringLiteral("none");
+    rootFallback.strokeWidth = QStringLiteral("1px");
+    rootFallback.color = QStringLiteral("black");
+    rootFallback.fontFamily = scene.style.fontFamily;
+    rootFallback.fontSize = QString::number(scene.style.fontSize) +
+                            QStringLiteral("px");
+    elements.append({QStringLiteral("svg"), {}, QStringLiteral("svg"),
+                     QStringLiteral("diagram-root"),
+                     {QStringLiteral("mindmap")}, {}, rootFallback, {}});
+    elements.append({QStringLiteral("root"), QStringLiteral("svg"),
+                     QStringLiteral("g"), {}, {QStringLiteral("root")}, {},
+                     rootFallback, {}});
+    elements.append({QStringLiteral("nodes"), QStringLiteral("root"),
+                     QStringLiteral("g"), {}, {QStringLiteral("nodes")}, {},
+                     rootFallback, {}});
+    for (const MindmapNode& source : data.nodes) {
+      MindmapNodeGeometry fallback = makeNode(source, scene.config, scene.style);
+      fallbackNodes.append(fallback);
+      const QString groupKey = QStringLiteral("group-%1").arg(source.id);
+      const QString shapeKey = QStringLiteral("shape-%1").arg(source.id);
+      const QString labelKey = QStringLiteral("label-%1").arg(source.id);
+      elements.append({groupKey, QStringLiteral("nodes"), QStringLiteral("g"),
+                       QStringLiteral("diagram-root-node_%1").arg(source.id),
+                       {QStringLiteral("node")}, {}, rootFallback, {}});
+      csscascade::ElementStyle shapeFallback = rootFallback;
+      shapeFallback.fill = fallback.fill;
+      shapeFallback.stroke = fallback.stroke;
+      shapeFallback.strokeWidth = QString::number(fallback.strokeWidth) +
+                                  QStringLiteral("px");
+      QString tag = QStringLiteral("path");
+      if (fallback.shape == QLatin1String("circle") ||
+          fallback.shape == QLatin1String("doublecircle"))
+        tag = QStringLiteral("circle");
+      else if (fallback.shape == QLatin1String("rect") ||
+               fallback.shape == QLatin1String("rounded"))
+        tag = QStringLiteral("rect");
+      elements.append({shapeKey, groupKey, tag,
+                       fallback.shape == QLatin1String("defaultMindmapNode")
+                           ? QStringLiteral("diagram-root-node_%1").arg(source.id)
+                           : QString(), {}, {}, shapeFallback, {}});
+      csscascade::ElementStyle labelFallback = rootFallback;
+      labelFallback.color = fallback.label.fill;
+      elements.append({labelKey, groupKey, QStringLiteral("span"), {},
+                       {QStringLiteral("nodeLabel")}, {}, labelFallback, {}});
+    }
+    const auto computed = csscascade::resolveElements(
+        scene.style.themeCss, elements);
+    for (const MindmapNode& source : data.nodes) {
+      shapeStyles.insert(source.id, computed.value(
+          QStringLiteral("shape-%1").arg(source.id)));
+      labelStyles.insert(source.id, computed.value(
+          QStringLiteral("label-%1").arg(source.id)));
+    }
+  }
   for(const MindmapNode& source:data.nodes) {
-    MindmapNodeGeometry node=makeNode(source,scene.config,scene.style);
+    const auto shape = shapeStyles.constFind(source.id);
+    const auto label = labelStyles.constFind(source.id);
+    MindmapNodeGeometry node=makeNode(
+        source, scene.config, scene.style,
+        shape == shapeStyles.cend() ? nullptr : &shape.value(),
+        label == labelStyles.cend() ? nullptr : &label.value());
     coseNodes.append({source.id,node.layoutBounds.size()});
     measured.insert(QString::number(source.id),node.layoutBounds.size());
     scene.nodes.append(std::move(node));

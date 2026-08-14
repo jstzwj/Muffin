@@ -218,7 +218,7 @@ Muffin already covers nearly all of core and extended Markdown — headings, par
 - [x] Add native Mermaid flowchart, Swimlane, sequence, class, state, ER, requirement, pie, quadrant, journey, radar, XY, timeline, packet, Kanban, mindmap, Block, GitGraph, C4, TreeView, Event Modeling, Ishikawa, Venn, Sankey, Treemap, Cynefin, Wardley, Architecture, Gantt, and Info diagrams.
 - [x] Add safe Mermaid links/tooltips, live Flowchart edge animation, and Sequence participant menus.
 - [x] Add deterministic native Mermaid SVG export, including inline HTML output and single-diagram context-menu saving.
-- [ ] Finish absolute SVG marker URL parity and continue adding Mermaid families.
+- [x] Finish absolute SVG marker URL parity (flowchart/Swimlane/sequence serialize absolute marker references when the export context supplies a document URL; other 11.16 families keep fragment references, matching upstream).
 - [ ] Continue extending GFM coverage.
 - [ ] Harden performance — structured 1–100 MB parser phases scale approximately linearly; AST node bodies are now 96 B smaller each and the 100 MiB roundtrip uses about 834 MiB less resident memory. Next, reduce cmark's parse-tree peak and very-large-document layout cost.
 - [ ] Accessibility — keyboard navigation improvements and screen reader support.

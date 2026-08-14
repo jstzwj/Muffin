@@ -4,13 +4,16 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 #include "mermaid/xychart/XYChartDiagram.h"
 #include "mermaid/xychart/XYChartScene.h"
 
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QHash>
 #include <QSize>
 
+#include <algorithm>
 #include <cmath>
 #include <memory>
 #include <stdexcept>
@@ -120,6 +123,189 @@ struct XYChartDiagramImpl : Diagram {
 
     xychart::XYChartScene scene =
         xychart::buildXYChartScene(data, std::move(config), std::move(style));
+
+    const QString themeCss =
+        pre.config.value(QStringLiteral("themeCSS")).toString();
+    if (!themeCss.trimmed().isEmpty()) {
+      using csscascade::ElementInput;
+      using csscascade::ElementStyle;
+      QVector<ElementInput> elements;
+      ElementStyle root;
+      root.fill = themeVars.textColor;
+      root.stroke = QStringLiteral("none");
+      root.strokeWidth = QStringLiteral("1px");
+      root.color = QStringLiteral("black");
+      root.fontFamily = scene.style.fontFamily;
+      root.fontSize = QString::number(scene.style.rootFontSize) +
+                      QStringLiteral("px");
+      root.fontWeight = QStringLiteral("400");
+      elements.append({QStringLiteral("svg"), {}, QStringLiteral("svg"),
+                       QStringLiteral("diagram-root"), {}, {}, root, {}});
+      elements.append({QStringLiteral("main"), QStringLiteral("svg"),
+                       QStringLiteral("g"), {}, {QStringLiteral("main")},
+                       {}, root, {}});
+      ElementStyle background = root;
+      background.fill = scene.style.backgroundColor;
+      elements.append({QStringLiteral("background"), QStringLiteral("main"),
+                       QStringLiteral("rect"), {},
+                       {QStringLiteral("background")},
+                       {{QStringLiteral("width"), QString::number(scene.bounds.width())},
+                        {QStringLiteral("height"), QString::number(scene.bounds.height())},
+                        {QStringLiteral("fill"), background.fill}},
+                       background, {}});
+
+      QHash<QString, QString> groupKeys;
+      const auto domGroupPath = [&](QString path) {
+        const bool horizontal =
+            scene.config.orientation == xychart::XYChartOrientation::Horizontal;
+        if (path == QLatin1String("x-axis") ||
+            path.startsWith(QLatin1String("x-axis/")))
+          path.replace(0, 6, horizontal ? QStringLiteral("left-axis")
+                                        : QStringLiteral("bottom-axis"));
+        else if (path == QLatin1String("y-axis") ||
+                 path.startsWith(QLatin1String("y-axis/")))
+          path.replace(0, 6, horizontal ? QStringLiteral("top-axis")
+                                        : QStringLiteral("left-axis"));
+        return path;
+      };
+      const auto ensureGroup = [&](const QString& rawPath) {
+        QString parent = QStringLiteral("main");
+        QString prefix;
+        for (const QString& segment : domGroupPath(rawPath).split(
+                 QLatin1Char('/'), Qt::SkipEmptyParts)) {
+          prefix += segment;
+          const auto existing = groupKeys.constFind(prefix);
+          if (existing != groupKeys.cend()) {
+            parent = existing.value();
+            continue;
+          }
+          const QString key = QStringLiteral("group-%1").arg(elements.size());
+          elements.append({key, parent, QStringLiteral("g"), {}, {segment},
+                           {}, root, {}});
+          groupKeys.insert(prefix, key);
+          parent = key;
+        }
+        return parent;
+      };
+
+      struct Drawable {
+        int order = -1;
+        char type = 0;
+        qsizetype index = 0;
+      };
+      QVector<Drawable> drawables;
+      for (qsizetype i = 0; i < scene.rects.size(); ++i)
+        drawables.append({scene.rects.at(i).paintOrder, 'r', i});
+      for (qsizetype i = 0; i < scene.paths.size(); ++i)
+        drawables.append({scene.paths.at(i).paintOrder, 'p', i});
+      for (qsizetype i = 0; i < scene.texts.size(); ++i)
+        drawables.append({scene.texts.at(i).paintOrder, 't', i});
+      std::stable_sort(drawables.begin(), drawables.end(),
+                       [](const Drawable& a, const Drawable& b) {
+                         return a.order < b.order;
+                       });
+      QVector<QString> rectKeys(scene.rects.size());
+      QVector<QString> pathKeys(scene.paths.size());
+      QVector<QString> textKeys(scene.texts.size());
+      for (const Drawable& drawable : drawables) {
+        if (drawable.type == 'r') {
+          const auto& rect = scene.rects.at(drawable.index);
+          ElementStyle value = root;
+          value.fill = rect.fill;
+          value.stroke = rect.stroke;
+          value.strokeWidth = QString::number(rect.strokeWidth) +
+                              QStringLiteral("px");
+          const QString key = QStringLiteral("rect-%1").arg(drawable.index);
+          rectKeys[drawable.index] = key;
+          elements.append({key, ensureGroup(rect.group), QStringLiteral("rect"),
+                           {}, {},
+                           {{QStringLiteral("x"), QString::number(rect.rect.x())},
+                            {QStringLiteral("y"), QString::number(rect.rect.y())},
+                            {QStringLiteral("width"), QString::number(rect.rect.width())},
+                            {QStringLiteral("height"), QString::number(rect.rect.height())},
+                            {QStringLiteral("fill"), rect.fill},
+                            {QStringLiteral("stroke"), rect.stroke},
+                            {QStringLiteral("stroke-width"),
+                             QString::number(rect.strokeWidth)}},
+                           value, {}});
+        } else if (drawable.type == 'p') {
+          const auto& path = scene.paths.at(drawable.index);
+          ElementStyle value = root;
+          value.fill = path.fill;
+          value.stroke = path.stroke;
+          value.strokeWidth = QString::number(path.strokeWidth) +
+                              QStringLiteral("px");
+          const QString key = QStringLiteral("path-%1").arg(drawable.index);
+          pathKeys[drawable.index] = key;
+          elements.append({key, ensureGroup(path.group), QStringLiteral("path"),
+                           {}, {},
+                           {{QStringLiteral("d"), path.path},
+                            {QStringLiteral("fill"), path.fill},
+                            {QStringLiteral("stroke"), path.stroke},
+                            {QStringLiteral("stroke-width"),
+                             QString::number(path.strokeWidth)}},
+                           value, {}});
+        } else {
+          const auto& text = scene.texts.at(drawable.index);
+          ElementStyle value = root;
+          value.fill = text.fill;
+          value.fontSize = QString::number(text.fontSize) + QStringLiteral("px");
+          const QString key = QStringLiteral("text-%1").arg(drawable.index);
+          textKeys[drawable.index] = key;
+          elements.append({key, ensureGroup(text.group), QStringLiteral("text"),
+                           {}, {},
+                           {{QStringLiteral("fill"), text.fill},
+                            {QStringLiteral("font-size"),
+                             QString::number(text.fontSize) + QStringLiteral("px")}},
+                           value, {}});
+        }
+      }
+
+      const auto css = csscascade::resolveElements(themeCss, elements);
+      const CssLengthContext cssContext =
+          pieCssLengthContext(scene.style.fontFamily,
+                              scene.style.rootFontSize);
+      const qreal diagonal =
+          std::hypot(scene.bounds.width(), scene.bounds.height()) /
+          std::sqrt(2.0);
+      const auto backgroundCss = css.value(QStringLiteral("background"));
+      scene.style.backgroundColor = backgroundCss.fill;
+      scene.style.backgroundOpacity = backgroundCss.effectiveFillOpacity;
+      scene.style.backgroundVisible = backgroundCss.displayed();
+      for (qsizetype i = 0; i < scene.rects.size(); ++i) {
+        auto& rect = scene.rects[i];
+        const auto value = css.value(rectKeys.at(i));
+        rect.fill = value.fill;
+        rect.stroke = value.stroke;
+        rect.strokeWidth = cssStrokeWidthPx(value.strokeWidth, cssContext,
+                                            diagonal);
+        rect.fillOpacity = value.effectiveFillOpacity;
+        rect.strokeOpacity = value.effectiveStrokeOpacity;
+        rect.visible = value.displayed();
+      }
+      for (qsizetype i = 0; i < scene.paths.size(); ++i) {
+        auto& path = scene.paths[i];
+        const auto value = css.value(pathKeys.at(i));
+        path.fill = value.fill;
+        path.stroke = value.stroke;
+        path.strokeWidth = cssStrokeWidthPx(value.strokeWidth, cssContext,
+                                            diagonal);
+        path.fillOpacity = value.effectiveFillOpacity;
+        path.strokeOpacity = value.effectiveStrokeOpacity;
+        path.visible = value.displayed();
+      }
+      for (qsizetype i = 0; i < scene.texts.size(); ++i) {
+        auto& text = scene.texts[i];
+        const auto value = css.value(textKeys.at(i));
+        text.fill = value.fill;
+        text.fontFamily = value.fontFamily;
+        text.fontSize = cssFontSizePx(value.fontSize, cssContext);
+        text.fontWeight = cssFontWeightToQt(QJsonValue(value.fontWeight),
+                                            QFont::Normal);
+        text.opacity = value.effectiveFillOpacity;
+        text.visible = value.displayed();
+      }
+    }
     MermaidRenderMetadata metadata = renderMetadata(
         pre, type, QString(), data.accTitle, data.accDescr,
         themeVars.textColor, scene.style.fontFamily,

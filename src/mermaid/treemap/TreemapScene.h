@@ -22,6 +22,7 @@ struct TreemapConfig {
 
 struct TreemapSceneStyle {
   QString fontFamily = QStringLiteral("Noto Sans");
+  qreal rootFontSize = 16.0;
   QString textColor = QStringLiteral("#333");
   QString titleColor = QStringLiteral("#333");
   qreal titleFontSize = 14.0;
@@ -31,6 +32,49 @@ struct TreemapSceneStyle {
 };
 
 enum class TreemapTextBaseline { Middle, Hanging };
+
+// themeCSS overlay for one treemap DOM element. Label and value font sizes
+// are inline styles written by the upstream shrink loops, so non-important
+// themeCSS never moves them — only the final svg.getBBox (viewBox) and the
+// .treemapTitle base rule (font-size feeds the title ink box) create
+// geometry feedback. `hasBox` carries the display-only gate for that bbox.
+struct TreemapElementCss {
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString fontFamily;
+  qreal fontSize = -1.0;
+  QString fontWeight;
+  QString fontStyle;
+  qreal opacity = -1.0;
+  qreal fillOpacity = -1.0;
+  qreal strokeOpacity = -1.0;
+  bool visible = true;
+  bool hasBox = true;
+  bool measures = true;
+};
+
+// Slots are indexed by emission order (sections then leaves, matching the
+// builder's emission which mirrors upstream's branch/leaf node order).
+struct TreemapCssOverrides {
+  struct Section {
+    TreemapElementCss group;
+    TreemapElementCss header;
+    TreemapElementCss rect;
+    TreemapElementCss label;
+    TreemapElementCss value;
+  };
+  struct Leaf {
+    TreemapElementCss group;
+    TreemapElementCss rect;
+    TreemapElementCss label;
+    TreemapElementCss value;
+  };
+  bool active = false;
+  QVector<Section> sections;
+  QVector<Leaf> leaves;
+  TreemapElementCss title;
+};
 
 struct TreemapTextGeometry {
   QString role;
@@ -45,6 +89,7 @@ struct TreemapTextGeometry {
   QString anchor = QStringLiteral("start");
   TreemapTextBaseline baseline = TreemapTextBaseline::Middle;
   QString fill;
+  TreemapElementCss css;
 };
 
 struct TreemapSectionGeometry {
@@ -59,6 +104,9 @@ struct TreemapSectionGeometry {
   QString classSelector;
   TreemapTextGeometry label;
   TreemapTextGeometry value;
+  TreemapElementCss groupCss;
+  TreemapElementCss headerCss;
+  TreemapElementCss rectCss;
 };
 
 struct TreemapLeafGeometry {
@@ -72,6 +120,8 @@ struct TreemapLeafGeometry {
   QString classSelector;
   TreemapTextGeometry label;
   TreemapTextGeometry value;
+  TreemapElementCss groupCss;
+  TreemapElementCss rectCss;
 };
 
 struct TreemapScene final : MermaidScene {
@@ -95,6 +145,7 @@ struct TreemapScene final : MermaidScene {
 };
 
 TreemapScene buildTreemapScene(const TreemapData &data, TreemapConfig config,
-                               TreemapSceneStyle style);
+                               TreemapSceneStyle style,
+                               const TreemapCssOverrides *css = nullptr);
 
 } // namespace muffin::mermaid::treemap

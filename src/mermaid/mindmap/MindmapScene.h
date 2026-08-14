@@ -4,6 +4,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/mindmap/MindmapDiagram.h"
 #include "mermaid/rough/RoughOps.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QJsonValue>
 #include <QPainterPath>
@@ -28,6 +29,7 @@ struct MindmapSceneStyle {
   QString look = QStringLiteral("classic");
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontSize = 16.0;
+  QString fontWeight = QStringLiteral("400");
   QString textColor = QStringLiteral("#333");
   QString mainBkg = QStringLiteral("#ECECFF");
   QString rootFill = QStringLiteral("#0000ff");
@@ -44,6 +46,7 @@ struct MindmapSceneStyle {
   QVector<QString> cScale;
   QVector<QString> cScaleInv;
   QVector<QString> cScaleLabel;
+  QString themeCss;
 };
 
 struct MindmapLabelGeometry {
@@ -54,6 +57,9 @@ struct MindmapLabelGeometry {
   QRectF layoutBounds;
   QRectF bounds;
   QString fill;
+  QString fontFamily;
+  qreal fontSize = 16.0;
+  QString fontWeight = QStringLiteral("400");
 };
 
 struct MindmapAnchorGeometry {
@@ -78,6 +84,9 @@ struct MindmapNodeGeometry {
   QRectF paintedBounds;
   QPainterPath shapePath;
   rough::Drawable roughDrawable;
+  // themeCSS shape display:none — the shape leaves the group bbox (layout
+  // collapses to the label) and the painter skips the shape path.
+  bool shapeVisible = true;
   bool handDrawn = false;
   bool dropShadow = false;
   bool gradient = false;

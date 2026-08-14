@@ -28,11 +28,17 @@ QStringList cssFamilies(const QString& expression) {
   return result;
 }
 
-editor::CssPixelFont textFont(const VennScene& scene, qreal size) {
-  const QStringList families = cssFamilies(scene.style.fontFamily);
+editor::CssPixelFont textFont(const VennScene& scene, qreal size,
+                              const QString& resolvedFamily = {},
+                              QFont::Weight weight = QFont::Normal,
+                              QFont::Style fontStyle = QFont::StyleNormal) {
+  const QStringList families = cssFamilies(
+      resolvedFamily.isEmpty() ? scene.style.fontFamily : resolvedFamily);
   editor::CssPixelFont font =
       editor::makeUnhintedCssPixelFont(families.first(), size);
   if (families.size() > 1) font.font.setFamilies(families);
+  font.font.setWeight(weight);
+  font.font.setStyle(fontStyle);
   return font;
 }
 
@@ -43,12 +49,14 @@ color::SvgPaint textPaint(const QString& value) {
 
 void paintText(const VennScene& scene, const VennTextGeometry& text,
                QPainter& painter, qreal yOffset = 0.0) {
-  if (!(text.fontSize > 0.0) || text.lines.isEmpty()) return;
+  if (!text.visible || !(text.fontSize > 0.0) || text.lines.isEmpty()) return;
   const color::SvgPaint fill = textPaint(text.fill);
   if (fill.none) return;
-  const editor::CssPixelFont font = textFont(scene, text.fontSize);
+  const editor::CssPixelFont font = textFont(
+      scene, text.fontSize, text.fontFamily, text.fontWeight, text.fontStyle);
   const QFontMetricsF metrics(font.font);
   painter.save();
+  painter.setOpacity(text.opacity);
   painter.setFont(font.font);
   painter.setPen(fill.color);
   for (int i = 0; i < text.lines.size(); ++i) {
@@ -91,12 +99,13 @@ QPen strokePen(const QString& value, qreal width, qreal opacity) {
 
 void paintTextNode(const VennScene& scene, const VennTextNodeGeometry& node,
                    QPainter& painter) {
-  if (node.source.isEmpty() || !(node.fontSize > 0.0) ||
+  if (!node.visible || node.source.isEmpty() || !(node.fontSize > 0.0) ||
       !(node.box.width() > 0.0) || !(node.box.height() > 0.0))
     return;
   const color::SvgPaint fill = textPaint(node.color);
   if (fill.none) return;
-  const editor::CssPixelFont font = textFont(scene, node.fontSize);
+  const editor::CssPixelFont font = textFont(
+      scene, node.fontSize, node.fontFamily, node.fontWeight, node.fontStyle);
   QTextOption option;
   option.setAlignment(Qt::AlignHCenter);
   option.setWrapMode(QTextOption::WordWrap);
@@ -115,6 +124,7 @@ void paintTextNode(const VennScene& scene, const VennTextNodeGeometry& node,
   }
   layout.endLayout();
   painter.save();
+  painter.setOpacity(node.opacity);
   painter.setPen(fill.color);
   painter.setFont(font.font);
   const qreal top = node.box.center().y() - height * font.scale / 2.0;
@@ -144,7 +154,7 @@ void paintVennScene(const VennScene& scene, QPainter& painter,
   painter.save();
   painter.translate(0.0, scene.titleHeight);
   for (const VennAreaGeometry& area : scene.areas) {
-    if (area.rough && !area.roughDrawable.sets.isEmpty()) {
+    if (area.pathVisible && area.rough && !area.roughDrawable.sets.isEmpty()) {
       const QColor roughStroke = color::toQColor(area.roughDrawable.options.stroke);
       const QColor roughFill = color::toQColor(area.roughDrawable.options.fill);
       rough::drawRoughDrawable(
@@ -153,7 +163,7 @@ void paintVennScene(const VennScene& scene, QPainter& painter,
               ? QPen(Qt::NoPen)
               : QPen(roughStroke, area.roughDrawable.options.strokeWidth),
           QPen(roughFill, area.roughDrawable.options.fillWeight));
-    } else {
+    } else if (area.pathVisible) {
       painter.setBrush(fillBrush(area.fill, area.fillOpacity));
       painter.setPen(strokePen(area.stroke, area.strokeWidth,
                                area.strokeOpacity));

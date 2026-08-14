@@ -6,6 +6,7 @@
 
 #include <QJsonValue>
 #include <QLineF>
+#include <QPair>
 #include <QPointF>
 #include <QRectF>
 #include <QString>
@@ -39,6 +40,43 @@ struct EventModelingSceneStyle {
   QString relationStroke = QStringLiteral("#000000");
 };
 
+// themeCSS overlay for one eventmodeling DOM element. Eventmodeling ships no
+// base stylesheet and measures every box through calculateTextDimensions
+// with hardcoded config fonts, so themeCSS only repaints; the box labels are
+// HTML spans inside foreignObject, where `color` (not `fill`) semantics
+// apply and the color chain starts at the initial black.
+struct EventModelingElementCss {
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString color;
+  QString fontFamily;
+  qreal fontSize = -1.0;
+  QString fontWeight;
+  QString fontStyle;
+  qreal opacity = -1.0;
+  bool visible = true;
+  bool measures = true;
+};
+
+// Slots are indexed by emission order (swimlanes, boxes, relations); the
+// shared arrowhead marker polygon carries one slot.
+struct EventModelingCssOverrides {
+  struct Swimlane {
+    EventModelingElementCss rect;
+    EventModelingElementCss text;
+  };
+  struct Box {
+    EventModelingElementCss rect;
+    EventModelingElementCss label;
+  };
+  bool active = false;
+  QVector<Swimlane> swimlanes;
+  QVector<Box> boxes;
+  QVector<EventModelingElementCss> relations;
+  EventModelingElementCss marker;
+};
+
 struct EventModelingSwimlaneGeometry {
   int index = 0;
   QString label;
@@ -48,6 +86,8 @@ struct EventModelingSwimlaneGeometry {
   qreal maxHeight = 70.0;
   QRectF rect;
   QPointF labelPosition;
+  EventModelingElementCss rectCss;
+  EventModelingElementCss textCss;
 };
 
 struct EventModelingBoxGeometry {
@@ -63,6 +103,8 @@ struct EventModelingBoxGeometry {
   QString contentHtml;
   flowchart::FlowLabelDocument label;
   qreal rightWithPadding = 0.0;
+  EventModelingElementCss rectCss;
+  EventModelingElementCss labelCss;
 };
 
 struct EventModelingRelationGeometry {
@@ -71,6 +113,7 @@ struct EventModelingRelationGeometry {
   QLineF line;
   QString pathData;
   QString stroke;
+  EventModelingElementCss css;
 };
 
 struct EventModelingScene final : MermaidScene {
@@ -89,10 +132,19 @@ struct EventModelingScene final : MermaidScene {
   QVector<EventModelingSwimlaneGeometry> swimlanes;
   QVector<EventModelingBoxGeometry> boxes;
   QVector<EventModelingRelationGeometry> relations;
+  // The shared arrowhead marker polygon (defs > marker > polygon).
+  EventModelingElementCss markerCss;
 };
 
 EventModelingScene buildEventModelingScene(const EventModelingData& data,
                                             EventModelingConfig config,
-                                            EventModelingSceneStyle style);
+                                            EventModelingSceneStyle style,
+                                            const EventModelingCssOverrides* css =
+                                                nullptr);
+
+// Frame-type → (fill, stroke) presentation pair, shared with the themeCSS
+// DOM model so the adapter can stamp the same presentation attributes.
+QPair<QString, QString> eventModelingBoxPaint(const EventModelingFrame& frame,
+                                              const EventModelingSceneStyle& style);
 
 }  // namespace muffin::mermaid::eventmodeling

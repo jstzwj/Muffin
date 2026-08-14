@@ -54,6 +54,7 @@ struct StateLayoutMeasurements {
   QMap<QString, QSizeF> nodes;
   QMap<QString, QSizeF> paintedNodes;
   QMap<QString, QSizeF> edgeLabels;
+  QMap<QString, QSizeF> clusterLabels;
 };
 struct StatePlacementNode {
   QString id;
@@ -73,6 +74,7 @@ struct StatePlacementCluster {
   QString id;
   QPointF center;
   QSizeF size;
+  QSizeF logicalSize;
 };
 struct StatePlacementResult {
   QVector<StatePlacementNode> nodes;
@@ -85,9 +87,14 @@ StateLayoutInput buildStateLayoutInput(const StateDiagramData& data,
 QJsonObject stateLayoutInputToJson(const StateLayoutInput& input);
 StateLayoutMeasurements measureStateLayoutInput(
     const StateLayoutInput& input, QString fontFamily = QStringLiteral("Noto Sans"),
-    qreal fontSize = 16.0);
+    qreal fontSize = 16.0, bool handDrawn = false,
+    quint32 handDrawnSeed = 0,
+    // shapeHidden: `.node rect { display:none }` — plain nodes measure as the
+    // label bbox alone (no shape padding).
+    bool shapeHidden = false);
 StatePlacementResult layoutStateDiagramDagre(
     const StateLayoutInput& input, const StateLayoutMeasurements& measurements,
-    qreal nodeSpacing = 50.0, qreal rankSpacing = 50.0);
+    qreal nodeSpacing = 50.0, qreal rankSpacing = 50.0,
+    bool handDrawn = false, quint32 handDrawnSeed = 0);
 
 }  // namespace muffin::mermaid::state

@@ -133,8 +133,48 @@ struct FlowThemeVariables {
   QString textColor;
   QString titleColor;
   QString edgeLabelBackground;
+  // Requirement's HTML edge-label background is defined only by Redux and
+  // ReduxDark. nullopt is JavaScript undefined; an engaged empty QString is a
+  // distinct explicit empty override used by the stylesheet's ?? expression.
+  std::optional<QString> requirementEdgeLabelBackground;
+  // Requirement getStyles() variables (theme-*.js `this.x = this.x || …`
+  // blocks, derived for all 11 themes). requirementBorderSize is the CSS
+  // wrapper rule's width ("1") — the RoughJS painted border keeps its own 1.3
+  // via presentation attributes, which the author rule does not override.
+  QString requirementBackground;
+  QString requirementBorderColor;
+  QString requirementBorderSize;
+  QString requirementTextColor;
+  QString relationColor;
+  QString relationLabelBackground;
+  QString relationLabelColor;
+  // Actor text color (sequence/requirement); feeds relationLabelColor. The
+  // per-theme resolution differs: dark/neutral constructor "calculated" is
+  // replaced in updateColors (mainContrastColor / text), default/forest
+  // hardcode "black", base + the FamilyA themes fall back to primaryTextColor.
+  // Upstream `this.darkMode` is never set on a built-in theme (undefined
+  // everywhere in the 11.16 bundle), so every `darkMode ? … : …` branch in
+  // these derivations takes the non-dark arm.
+  QString actorTextColor;
   QString clusterBkg;
   QString clusterBorder;
+  // State composite clusters use a separate title/body palette. These are
+  // top-level Mermaid themeVariables, not aliases of clusterBkg/clusterBorder.
+  QString compositeBackground;
+  QString altBackground;
+  QString compositeTitleBackground;
+  // State special shapes (11.16 rendering-util shapes): the start circle's
+  // `.node circle.state-start` fill/stroke (specialStateColor — every theme
+  // derives it from lineColor except dark "#f4f4f4" and neutral "#222") and
+  // stateEnd's inner dot (`stateBorder ?? nodeBorder`; only neutral/neo/redux*
+  // define stateBorder). innerEndBackground's `.node circle.state-end` rule
+  // never matches the dagre-wrapper DOM (rough paths, no circle.state-end), so
+  // it stays unmodeled as upstream-inert.
+  QString specialStateColor;
+  QString stateBorder;
+  // `.node rect { fill: stateBkg || mainBkg }` — every built-in theme derives
+  // stateBkg = mainBkg; only a user override can differ.
+  QString stateBkg;
   QString primaryBorderColor;
   QString primaryTextColor;
   QString secondaryBorderColor;

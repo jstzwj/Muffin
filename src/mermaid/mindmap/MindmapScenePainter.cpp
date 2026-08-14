@@ -69,7 +69,7 @@ void paintMindmapScene(const MindmapScene& scene, QPainter& painter,
     painter.save(); painter.translate(node.center);
     const QBrush fill = fillBrush(node.fill, root);
     const QPen stroke = strokePen(node.stroke, node.strokeWidth, root);
-    if (node.dropShadow) paintShadow(painter, node.shapePath);
+    if (node.dropShadow && node.shapeVisible) paintShadow(painter, node.shapePath);
     if (node.handDrawn) {
       const QColor roughStroke = color::toQColor(node.roughDrawable.options.stroke);
       const QColor roughFill = color::toQColor(node.roughDrawable.options.fill);
@@ -90,7 +90,7 @@ void paintMindmapScene(const MindmapScene& scene, QPainter& painter,
         painter.setPen(gradientPen);
       }
       painter.setBrush(fill);
-      painter.drawPath(node.shapePath);
+      if (node.shapeVisible) painter.drawPath(node.shapePath);
     }
     if (node.bottomLine && node.bottomLineWidth > 0.0) {
       painter.setPen(strokePen(node.bottomLineStroke,node.bottomLineWidth,root));
@@ -98,15 +98,15 @@ void paintMindmapScene(const MindmapScene& scene, QPainter& painter,
       painter.drawLine(QPointF(node.localBounds.left(),node.localBounds.bottom()),
                        QPointF(node.localBounds.right(),node.localBounds.bottom()));
     }
-    if (!node.label.source.isEmpty() && scene.style.fontSize > 0.0) {
+    if (!node.label.source.isEmpty() && node.label.fontSize > 0.0) {
       const color::SvgPaint text = color::resolveSvgPaint(
           node.label.fill,color::SvgPaintKind::Text,
           root.none?QColor(Qt::black):root.color);
       if (!text.none) {
         flowchart::paintFlowLabel(painter,node.label.document,node.label.bounds,
-                                  scene.style.fontFamily,scene.style.fontSize,
-                                  scene.config.htmlLabels?scene.style.fontSize*1.5:
-                                      scene.style.fontSize*1.1,
+                                  node.label.fontFamily,node.label.fontSize,
+                                  scene.config.htmlLabels?node.label.fontSize*1.5:
+                                      node.label.fontSize*1.1,
                                   text.color,false);
         // FlowLabel's glyph runs use the inherited color. HTML anchors are
         // genuine nested CSS runs, so repaint just those spans with the UA
@@ -114,7 +114,7 @@ void paintMindmapScene(const MindmapScene& scene, QPainter& painter,
         // the same font/advance chain in buildMindmapScene.
         if (!node.anchors.isEmpty()) {
           QFont anchorFont = flowchart::makeFlowLabelFont(
-              scene.style.fontFamily, scene.style.fontSize);
+              node.label.fontFamily, node.label.fontSize);
           anchorFont.setUnderline(true);
           painter.setFont(anchorFont);
           painter.setPen(QColor(QStringLiteral("#0000ee")));

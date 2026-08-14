@@ -1550,7 +1550,13 @@ private:
       subgraph.id = context.id;
       subgraph.title = context.title;
       subgraph.nodes = context.nodes;
-      subgraph.dir = context.dir;
+      // Mermaid stores an inherited diagram direction on the subgraph while
+      // keeping hasExplicitDir false. The renderer uses the stored direction
+      // for closed-cluster layout, but only the explicit flag may change the
+      // cross-cluster extraction path.
+      subgraph.dir = context.explicitDir
+                         ? context.dir
+                         : (options_.inheritDir ? direction_ : QString());
       subgraph.hasExplicitDir = context.explicitDir;
       subgraph.labelType = context.labelType;
       if (subgraphs_.size() >= limits_.maxSubgraphs)

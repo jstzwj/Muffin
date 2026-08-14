@@ -23,4 +23,12 @@ struct MermaidPreprocessResult {
 // matching the upstream preprocessing failure boundary.
 MermaidPreprocessResult preprocessDiagram(const QString& source);
 
+// Applies the second configuration phase used by Mermaid's render/parse entry
+// point after preprocessDiagram(): addDirective() sanitizes the directive
+// object unconditionally, mirrors a top-level fontFamily into themeVariables,
+// then updateCurrentConfig() removes secure keys and unsafe string values.
+// preprocessDiagram() deliberately remains the observable intermediate result
+// because Mermaid exposes that helper independently.
+QJsonObject mermaidRenderConfig(const QJsonObject& preprocessedConfig);
+
 }  // namespace muffin::mermaid

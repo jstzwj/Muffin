@@ -49,15 +49,21 @@ QFont cssFont(const ArchitectureScene& scene, qreal size) {
 void drawText(QPainter& painter, const ArchitectureScene& scene,
               const QString& source, const QPointF& anchor, qreal size,
               Qt::Alignment alignment = Qt::AlignHCenter,
-              qreal rotation = 0.0, const QColor& color = Qt::black) {
+              qreal rotation = 0.0, const QColor& color = Qt::black,
+              const QString& family = QString(),
+              bool bold = false) {
   const QString text = visibleText(source);
   if (text.isEmpty() || !(size > 0.0)) return;
-  const QStringList families = fontFamilies(scene.style.fontFamily);
+  const QString familyExpression = family.isEmpty() ? scene.style.fontFamily
+                                                     : family;
+  const QStringList families = fontFamilies(familyExpression);
   auto font = editor::makeUnhintedCssPixelFont(families.first(), size);
   if (families.size() > 1) font.font.setFamilies(families);
+  if (bold) font.font.setWeight(QFont::Bold);
   const qreal advance = QFontMetricsF(font.font).horizontalAdvance(text) * font.scale;
   const auto metrics = flowchart::flowLabelFontBoundingMetrics(
-      scene.style.fontFamily, size, QFont::Normal, QFont::StyleNormal);
+      familyExpression, size, bold ? QFont::Bold : QFont::Normal,
+      QFont::StyleNormal);
   qreal x = 0.0;
   if (alignment.testFlag(Qt::AlignHCenter)) x = -advance / 2.0;
   else if (alignment.testFlag(Qt::AlignRight)) x = -advance;
@@ -69,6 +75,27 @@ void drawText(QPainter& painter, const ArchitectureScene& scene,
   painter.setPen(color);
   painter.drawText(QPointF(x / font.scale, metrics.ascent / font.scale), text);
   painter.restore();
+}
+
+// themeCSS helpers: css channel or base fallback.
+bool cssVisible(const ArchitectureElementCss& css) { return css.visible; }
+bool cssBold(const ArchitectureElementCss& css) {
+  const QString weight = css.fontWeight.trimmed().toLower();
+  return weight == QLatin1String("bold") || weight == QLatin1String("bolder") ||
+         (!weight.isEmpty() && weight.toInt() >= 700);
+}
+qreal cssSize(const ArchitectureElementCss& css, qreal base) {
+  return css.fontSize >= 0.0 ? css.fontSize : base;
+}
+QString cssFamily(const ArchitectureElementCss& css, const QString& base) {
+  return css.fontFamily.trimmed().isEmpty() ? base : css.fontFamily;
+}
+qreal cssOpacity(const ArchitectureElementCss& css) {
+  return css.opacity >= 0.0 ? css.opacity : 1.0;
+}
+QColor withOpacity(QColor color, qreal opacity) {
+  color.setAlphaF(color.alphaF() * qBound(0.0, opacity, 1.0));
+  return color;
 }
 
 QPen whiteIconPen(qreal scale) {
@@ -177,57 +204,95 @@ void paintArchitectureScene(const ArchitectureScene& scene, QPainter& painter,
       scene.style.edgeWidth, lengthContext, diagonal);
   const qreal groupWidth = editor::cssStrokeWidthPx(
       scene.style.groupBorderWidth, lengthContext, diagonal);
-  const auto edgePaint = color::resolveSvgPaint(
-      scene.style.edgeColor, color::SvgPaintKind::Stroke, Qt::black);
-  const auto arrowPaint = color::resolveSvgPaint(
-      scene.style.arrowColor, color::SvgPaintKind::Fill, Qt::black);
-  const auto groupPaint = color::resolveSvgPaint(
-      scene.style.groupBorderColor, color::SvgPaintKind::Stroke, Qt::black);
 
   // DOM order is edges, services/junctions, then group rectangles and labels.
-  if (!edgePaint.none && edgeWidth > 0.0) {
-    QPen pen(edgePaint.color, edgeWidth);
-    pen.setCapStyle(Qt::FlatCap);
-    pen.setJoinStyle(Qt::MiterJoin);
-    painter.setPen(pen);
-    painter.setBrush(Qt::NoBrush);
-    for (const ArchitectureEdgeGeometry& edge : scene.edges) {
-      QPainterPath path;
-      if (!edge.points.isEmpty()) path.moveTo(edge.points.front());
-      for (qsizetype i = 1; i < edge.points.size(); ++i) path.lineTo(edge.points.at(i));
-      painter.drawPath(path);
-      if (!edge.title.isEmpty() && edge.points.size() == 3) {
-        const QPointF middle = edge.points.at(1);
-        const QPointF first = edge.points.front();
-        const QPointF last = edge.points.back();
-        qreal rotation = 0.0;
-        if (qFuzzyCompare(first.x(), last.x())) rotation = -90.0;
-        else if (!qFuzzyCompare(first.y(), last.y()))
-          rotation = (last.y() - first.y()) * (last.x() - first.x()) < 0 ? 45.0 : -45.0;
-        drawText(painter, scene, edge.title, middle, fontSize,
-                 Qt::AlignHCenter, rotation, textColor(scene));
+  for (const ArchitectureEdgeGeometry& edge : scene.edges) {
+    const ArchitectureElementCss& lineCss = edge.lineCss;
+    if (cssVisible(lineCss)) {
+      const QString edgeStrokeValue =
+          lineCss.stroke.isEmpty() ? scene.style.edgeColor : lineCss.stroke;
+      const auto strokePaint = color::resolveSvgPaint(
+          edgeStrokeValue, color::SvgPaintKind::Stroke, Qt::black);
+      const qreal strokeWidthPx = editor::cssStrokeWidthPx(
+          lineCss.strokeWidth.trimmed().isEmpty()
+              ? QString::number(edgeWidth) + QStringLiteral("px")
+              : lineCss.strokeWidth,
+          lengthContext, diagonal);
+      if (!strokePaint.none && strokeWidthPx > 0.0) {
+        QPen pen(withOpacity(strokePaint.color, cssOpacity(lineCss)),
+                 strokeWidthPx);
+        pen.setCapStyle(Qt::FlatCap);
+        pen.setJoinStyle(Qt::MiterJoin);
+        painter.setPen(pen);
+        painter.setBrush(Qt::NoBrush);
+        QPainterPath path;
+        if (!edge.points.isEmpty()) path.moveTo(edge.points.front());
+        for (qsizetype i = 1; i < edge.points.size(); ++i)
+          path.lineTo(edge.points.at(i));
+        painter.drawPath(path);
       }
     }
+    if (!edge.title.isEmpty() && edge.points.size() == 3 &&
+        cssVisible(edge.labelCss)) {
+      const QPointF middle = edge.points.at(1);
+      const QPointF first = edge.points.front();
+      const QPointF last = edge.points.back();
+      qreal rotation = 0.0;
+      if (qFuzzyCompare(first.x(), last.x())) rotation = -90.0;
+      else if (!qFuzzyCompare(first.y(), last.y()))
+        rotation = (last.y() - first.y()) * (last.x() - first.x()) < 0 ? 45.0 : -45.0;
+      const ArchitectureElementCss& labelCss = edge.labelCss;
+      const QString fillValue = labelCss.fill.isEmpty()
+                                    ? scene.style.textColor
+                                    : labelCss.fill;
+      const auto fillPaint = color::resolveSvgPaint(
+          fillValue, color::SvgPaintKind::Text, Qt::black);
+      if (!fillPaint.none)
+        drawText(painter, scene, edge.title, middle,
+                 cssSize(labelCss, fontSize), Qt::AlignHCenter, rotation,
+                 withOpacity(fillPaint.color, cssOpacity(labelCss)),
+                 cssFamily(labelCss, scene.style.fontFamily),
+                 cssBold(labelCss));
+    }
   }
-  if (!arrowPaint.none) {
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(arrowPaint.color);
-    for (const ArchitectureEdgeGeometry& edge : scene.edges)
-      for (const ArchitectureArrowGeometry& arrow : edge.arrows)
-        painter.drawPolygon(arrow.polygon.translated(arrow.position));
+  painter.setPen(Qt::NoPen);
+  for (const ArchitectureEdgeGeometry& edge : scene.edges) {
+    const ArchitectureElementCss& arrowCss = edge.arrowCss;
+    if (!cssVisible(arrowCss)) continue;
+    const QString arrowFillValue =
+        arrowCss.fill.isEmpty() ? scene.style.arrowColor : arrowCss.fill;
+    const auto fillPaint = color::resolveSvgPaint(
+        arrowFillValue, color::SvgPaintKind::Fill, Qt::black);
+    if (fillPaint.none) continue;
+    painter.setBrush(withOpacity(fillPaint.color, cssOpacity(arrowCss)));
+    for (const ArchitectureArrowGeometry& arrow : edge.arrows)
+      painter.drawPolygon(arrow.polygon.translated(arrow.position));
   }
 
   for (const ArchitectureNodeGeometry& node : scene.nodes) {
     painter.save();
     painter.translate(node.topLeft);
     if (node.kind == ArchitectureNodeKind::Service) {
-      if (!node.title.isEmpty())
-        drawText(painter, scene, node.title,
-                 QPointF(iconSize / 2.0, iconSize + fontSize * 0.205),
-                 fontSize, Qt::AlignHCenter, 0.0, textColor(scene));
+      const ArchitectureElementCss& labelCss = node.labelCss;
+      if (!node.title.isEmpty() && cssVisible(labelCss)) {
+        const qreal labelSize = cssSize(labelCss, fontSize);
+        const QString fillValue = labelCss.fill.isEmpty()
+                                      ? scene.style.textColor
+                                      : labelCss.fill;
+        const auto fillPaint = color::resolveSvgPaint(
+            fillValue, color::SvgPaintKind::Text, Qt::black);
+        if (!fillPaint.none)
+          drawText(painter, scene, node.title,
+                   QPointF(iconSize / 2.0, iconSize + labelSize * 0.205),
+                   labelSize, Qt::AlignHCenter, 0.0,
+                   withOpacity(fillPaint.color, cssOpacity(labelCss)),
+                   cssFamily(labelCss, scene.style.fontFamily),
+                   cssBold(labelCss));
+      }
       if (!node.icon.isEmpty() || !node.iconText.isEmpty())
         drawIcon80(painter, node.icon, node.iconText, iconSize, scene);
-      else {
+      else if (cssVisible(node.nodeBkgCss)) {
+        const ArchitectureElementCss& bkgCss = node.nodeBkgCss;
         QPainterPath box;
         box.moveTo(0, iconSize);
         box.lineTo(0, 5);
@@ -236,25 +301,75 @@ void paintArchitectureScene(const ArchitectureScene& scene, QPainter& painter,
         box.quadTo(iconSize, 0, iconSize, 5);
         box.lineTo(iconSize, iconSize);
         box.closeSubpath();
-        QPen pen(groupPaint.none ? QColor(Qt::transparent) : groupPaint.color,
-                 groupWidth);
-        pen.setDashPattern({8.0 / std::max(groupWidth, .01),
-                            8.0 / std::max(groupWidth, .01)});
-        painter.setPen(groupPaint.none ? Qt::NoPen : pen);
-        painter.setBrush(Qt::NoBrush);
+        const QString strokeValue = bkgCss.stroke.isEmpty()
+                                        ? scene.style.groupBorderColor
+                                        : bkgCss.stroke;
+        const auto strokePaint = color::resolveSvgPaint(
+            strokeValue, color::SvgPaintKind::Stroke, Qt::black);
+        const qreal strokeWidthPx = editor::cssStrokeWidthPx(
+            bkgCss.strokeWidth.trimmed().isEmpty()
+                ? QString::number(groupWidth) + QStringLiteral("px")
+                : bkgCss.strokeWidth,
+            lengthContext, diagonal);
+        const qreal dashUnit = std::max(strokeWidthPx, .01);
+        if (!strokePaint.none && strokeWidthPx > 0.0) {
+          QPen pen(strokePaint.color, strokeWidthPx);
+          pen.setDashPattern({8.0 / dashUnit, 8.0 / dashUnit});
+          pen.setColor(withOpacity(strokePaint.color, cssOpacity(bkgCss)));
+          painter.setPen(pen);
+        } else {
+          painter.setPen(Qt::NoPen);
+        }
+        const QString fillValue = bkgCss.fill.isEmpty()
+                                      ? QStringLiteral("none")
+                                      : bkgCss.fill;
+        const auto fillPaint = color::resolveSvgPaint(
+            fillValue, color::SvgPaintKind::Fill, Qt::black);
+        // QBrush(...) explicitly: a `cond ? Qt::NoBrush : QColor` ternary
+        // resolves through QColor's converting constructor and paints SOLID
+        // BLACK (color0) instead of no brush.
+        painter.setBrush(fillPaint.none
+                             ? QBrush(Qt::NoBrush)
+                             : QBrush(withOpacity(fillPaint.color,
+                                                  cssOpacity(bkgCss))));
         painter.drawPath(box);
       }
     }
     painter.restore();
   }
 
-  if (!groupPaint.none && groupWidth > 0.0) {
-    QPen pen(groupPaint.color, groupWidth);
-    pen.setDashPattern({8.0 / groupWidth, 8.0 / groupWidth});
-    painter.setPen(pen);
-    painter.setBrush(Qt::NoBrush);
-    for (const ArchitectureGroupGeometry& group : scene.groups)
-      painter.drawRect(group.rect);
+  for (const ArchitectureGroupGeometry& group : scene.groups) {
+    const ArchitectureElementCss& rectCss = group.rectCss;
+    if (!cssVisible(rectCss)) continue;
+    const QString strokeValue = rectCss.stroke.isEmpty()
+                                    ? scene.style.groupBorderColor
+                                    : rectCss.stroke;
+    const auto strokePaint = color::resolveSvgPaint(
+        strokeValue, color::SvgPaintKind::Stroke, Qt::black);
+    const qreal strokeWidthPx = editor::cssStrokeWidthPx(
+        rectCss.strokeWidth.trimmed().isEmpty()
+            ? QString::number(groupWidth) + QStringLiteral("px")
+            : rectCss.strokeWidth,
+        lengthContext, diagonal);
+    const QString fillValue =
+        rectCss.fill.isEmpty() ? QStringLiteral("none") : rectCss.fill;
+    const auto fillPaint = color::resolveSvgPaint(
+        fillValue, color::SvgPaintKind::Fill, Qt::black);
+    painter.setPen(Qt::NoPen);
+    if (!strokePaint.none && strokeWidthPx > 0.0) {
+      QPen pen(withOpacity(strokePaint.color, cssOpacity(rectCss)),
+               strokeWidthPx);
+      pen.setDashPattern({8.0 / std::max(strokeWidthPx, .01),
+                          8.0 / std::max(strokeWidthPx, .01)});
+      painter.setPen(pen);
+    }
+    // QBrush(...) explicitly: a `cond ? Qt::NoBrush : QColor` ternary resolves
+    // through QColor's converting constructor and paints SOLID BLACK.
+    painter.setBrush(fillPaint.none
+                         ? QBrush(Qt::NoBrush)
+                         : QBrush(withOpacity(fillPaint.color,
+                                              cssOpacity(rectCss))));
+    painter.drawRect(group.rect);
   }
   const qreal groupIconSize = padding * 0.75;
   for (const ArchitectureGroupGeometry& group : scene.groups) {
@@ -268,9 +383,20 @@ void paintArchitectureScene(const ArchitectureScene& scene, QPainter& painter,
       x += groupIconSize;
       y += fontSize / 2.0 - 3.0;
     }
-    if (!group.title.isEmpty())
-      drawText(painter, scene, group.title, QPointF(x + 4.0, y + 2.0),
-               fontSize, Qt::AlignLeft, 0.0, textColor(scene));
+    if (!group.title.isEmpty() && cssVisible(group.labelCss)) {
+      const ArchitectureElementCss& labelCss = group.labelCss;
+      const QString fillValue = labelCss.fill.isEmpty()
+                                    ? scene.style.textColor
+                                    : labelCss.fill;
+      const auto fillPaint = color::resolveSvgPaint(
+          fillValue, color::SvgPaintKind::Text, Qt::black);
+      if (!fillPaint.none)
+        drawText(painter, scene, group.title, QPointF(x + 4.0, y + 2.0),
+                 cssSize(labelCss, fontSize), Qt::AlignLeft, 0.0,
+                 withOpacity(fillPaint.color, cssOpacity(labelCss)),
+                 cssFamily(labelCss, scene.style.fontFamily),
+                 cssBold(labelCss));
+    }
   }
   painter.restore();
 }

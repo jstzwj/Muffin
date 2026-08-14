@@ -7,6 +7,7 @@
 #include <QRectF>
 #include <QString>
 #include <QVector>
+#include <QFont>
 
 #include <optional>
 
@@ -62,6 +63,13 @@ struct RadarGraticuleGeometry {
   bool circle = true;
   qreal radius = 0.0;
   QVector<QPointF> points;
+  QString fill;
+  QString stroke;
+  QString color = QStringLiteral("black");
+  qreal strokeWidth = 1.0;
+  qreal fillOpacity = 0.3;
+  qreal strokeOpacity = 1.0;
+  bool visible = true;
 };
 
 struct RadarAxisGeometry {
@@ -71,6 +79,18 @@ struct RadarAxisGeometry {
   QPointF labelPosition;
   RadarTextAnchor textAnchor = RadarTextAnchor::Middle;
   RadarBaseline baseline = RadarBaseline::Central;
+  QString lineStroke;
+  QString lineColor = QStringLiteral("black");
+  qreal lineStrokeWidth = 2.0;
+  qreal lineOpacity = 1.0;
+  bool lineVisible = true;
+  QString labelFill;
+  QString labelColor = QStringLiteral("black");
+  QString labelFontFamily;
+  qreal labelFontSize = 12.0;
+  QFont::Weight labelFontWeight = QFont::Normal;
+  qreal labelOpacity = 1.0;
+  bool labelVisible = true;
 };
 
 struct RadarCubicSegment {
@@ -88,6 +108,13 @@ struct RadarCurveGeometry {
   bool polygon = false;
   QVector<QPointF> points;
   QVector<RadarCubicSegment> cubics;
+  QString fill;
+  QString stroke;
+  QString elementColor;
+  qreal strokeWidth = 2.0;
+  qreal fillOpacity = 0.5;
+  qreal strokeOpacity = 1.0;
+  bool visible = true;
 };
 
 struct RadarLegendGeometry {
@@ -96,6 +123,20 @@ struct RadarLegendGeometry {
   bool classGenerated = false;
   QString color;
   QPointF position;
+  QString boxFill;
+  QString boxStroke;
+  QString boxColor;
+  qreal boxStrokeWidth = 1.0;
+  qreal boxFillOpacity = 0.5;
+  qreal boxStrokeOpacity = 1.0;
+  bool boxVisible = true;
+  QString textFill;
+  QString textColor;
+  QString textFontFamily;
+  qreal textFontSize = 12.0;
+  QFont::Weight textFontWeight = QFont::Normal;
+  qreal textOpacity = 1.0;
+  bool textVisible = true;
 };
 
 struct RadarScene : MermaidScene {
@@ -116,6 +157,13 @@ struct RadarScene : MermaidScene {
   QVector<RadarAxisGeometry> axes;
   QVector<RadarCurveGeometry> curves;
   QVector<RadarLegendGeometry> legends;
+  QString titleFill;
+  QString titleColor;
+  QString titleFontFamily;
+  qreal titleFontSize = 16.0;
+  QFont::Weight titleFontWeight = QFont::Normal;
+  qreal titleOpacity = 1.0;
+  bool titleVisible = true;
 };
 
 RadarScene buildRadarScene(const RadarData& data, RadarConfig config,

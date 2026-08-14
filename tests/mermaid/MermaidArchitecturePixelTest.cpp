@@ -103,6 +103,11 @@ int main(int argc, char** argv) {
                 .arg(id).arg(actual.width()).arg(actual.height())
                 .arg(expected.width()).arg(expected.height()));
     const qreal iou = alphaIou(actual, expected);
+    {  // TEMP DEBUG
+      QDir temp(qEnvironmentVariable("TEMP"));
+      actual.save(temp.filePath(id + QStringLiteral("-native.png")));
+      expected.save(temp.filePath(id + QStringLiteral("-browser.png")));
+    }
     const qreal rgba = rgbaScore(actual, expected);
     std::fprintf(stderr, "%s IoU %.5f RGBA %.5f\n", qPrintable(id), iou, rgba);
     require(iou >= .88, id + QStringLiteral("/alpha-IoU"));

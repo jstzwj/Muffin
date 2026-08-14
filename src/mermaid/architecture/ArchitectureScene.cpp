@@ -30,7 +30,8 @@ qreal layoutUnit(qreal value) {
 }
 
 QRectF textBounds(const QString& text, const QString& family, qreal fontSize,
-                  const QPointF& anchor, Qt::Alignment horizontal) {
+                  const QPointF& anchor, Qt::Alignment horizontal,
+                  bool bold = false) {
   if (text.isEmpty() || !(fontSize > 0.0)) return {};
   const auto cssFont = editor::makeUnhintedCssPixelFont(
       editor::firstFontFamily(family), fontSize);
@@ -45,10 +46,22 @@ QRectF textBounds(const QString& text, const QString& family, qreal fontSize,
   }
   QFont font = cssFont.font;
   if (!families.isEmpty()) font.setFamilies(families);
-  const qreal width = layoutUnit(
-      QFontMetricsF(font).horizontalAdvance(text) * cssFont.scale);
+  if (bold) font.setWeight(QFont::Bold);
+  // getComputedTextLength parity: the browser's LayoutUnit-quantized design
+  // advance, not QFontMetricsF's hinted per-glyph sum (which drifts ~0.05px
+  // per string and shows up in the setupGraphViewbox union).
+  flowchart::FlowLabelDocument document;
+  document.text = text;
+  document.baseWeight = bold ? QFont::Bold : QFont::Normal;
+  const qreal advance = flowchart::measureOpenTypeDesignAdvance(
+                            document, family, fontSize)
+                            .value_or(
+                                QFontMetricsF(font).horizontalAdvance(text) *
+                                cssFont.scale);
+  const qreal width = std::ceil(advance * 64.0 - 1e-9) / 64.0;
   const auto metrics = flowchart::flowLabelFontBoundingMetrics(
-      family, fontSize, QFont::Normal, QFont::StyleNormal);
+      family, fontSize, bold ? QFont::Bold : QFont::Normal,
+      QFont::StyleNormal);
   qreal x = anchor.x();
   if (horizontal.testFlag(Qt::AlignHCenter)) x -= width / 2.0;
   else if (horizontal.testFlag(Qt::AlignRight)) x -= width;
@@ -57,6 +70,30 @@ QRectF textBounds(const QString& text, const QString& family, qreal fontSize,
   // browser's hhea 22px box. Scale the same offsets with the CSS font size.
   const qreal top = layoutUnit(anchor.y() + fontSize * 0.205);
   return QRectF(x, top, width, metrics.ascent + metrics.descent);
+}
+
+// themeCSS label resolution: the effective font family/size/weight feeding
+// both the measurement (label bounds → content bounds → viewBox) and paint.
+struct CssFont {
+  QString family;
+  qreal size = 0.0;
+  bool bold = false;
+};
+
+CssFont cssFontOf(const QString& baseFamily, qreal baseSize,
+                  const ArchitectureElementCss& css, bool cssActive) {
+  CssFont out;
+  out.family = baseFamily;
+  out.size = baseSize;
+  out.bold = false;
+  if (!cssActive) return out;
+  if (!css.fontFamily.trimmed().isEmpty()) out.family = css.fontFamily;
+  if (css.fontSize >= 0.0) out.size = css.fontSize;
+  const QString weight = css.fontWeight.trimmed().toLower();
+  out.bold = weight == QLatin1String("bold") ||
+             weight == QLatin1String("bolder") ||
+             (!weight.isEmpty() && weight.toInt() >= 700);
+  return out;
 }
 
 QPointF port(const ArchitectureNodeGeometry& node, QChar direction) {
@@ -87,10 +124,12 @@ QPointF arrowPosition(QChar direction, const QPointF& endpoint, qreal size) {
 
 QRectF edgeLabelBounds(const QString& text, const QString& fontFamily,
                        qreal fontSize, const QPointF& middle,
-                       QChar sourceDirection, QChar targetDirection) {
+                       QChar sourceDirection, QChar targetDirection,
+                       bool bold = false) {
   if (text.isEmpty() || !(fontSize > 0.0)) return {};
   flowchart::FlowLabelDocument document;
   document.text = text;
+  document.baseWeight = bold ? QFont::Bold : QFont::Normal;
   QRectF autoBaseline = flowchart::measureFlowSvgTextBounds(
       document, fontFamily, fontSize);
   autoBaseline.setWidth(
@@ -217,11 +256,13 @@ SvgFloatRect svgPolylineFloatBounds(const QVector<QPointF>& points) {
 
 ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
                                            ArchitectureConfig config,
-                                           ArchitectureSceneStyle style) {
+                                           ArchitectureSceneStyle style,
+                                           const ArchitectureCssOverrides* css) {
   ArchitectureScene scene;
   scene.config = std::move(config);
   scene.style = std::move(style);
   scene.useMaxWidth = truthy(scene.config.useMaxWidth);
+  const bool cssActive = css != nullptr && css->active;
   const qreal padding = number(scene.config.padding, 40.0);
   const qreal iconSize = number(scene.config.iconSize, 80.0);
   const qreal fontSize = number(scene.config.fontSize, 16.0);
@@ -255,6 +296,7 @@ ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
       layoutArchitectureFcose(data, layoutOptions, renderedHeights);
 
   QHash<QString, int> nodeIndex;
+  int serviceSlot = 0;
   for (const ArchitectureService& service : data.services) {
     ArchitectureNodeGeometry node;
     node.kind = ArchitectureNodeKind::Service;
@@ -267,9 +309,16 @@ ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
     node.localBounds = QRectF(0, 0, iconSize, iconSize);
     node.paintedBounds = QRectF(0, 0, iconSize,
                                 renderedHeights.value(service.id, iconSize));
+    if (cssActive && serviceSlot < css->nodes.size()) {
+      node.groupCss = css->nodes.at(serviceSlot).group;
+      node.labelCss = css->nodes.at(serviceSlot).label;
+      node.nodeBkgCss = css->nodes.at(serviceSlot).nodeBkg;
+    }
+    ++serviceSlot;
     nodeIndex.insert(node.id, scene.nodes.size());
     scene.nodes.append(std::move(node));
   }
+  int junctionSlot = 0;
   for (const ArchitectureJunction& junction : data.junctions) {
     ArchitectureNodeGeometry node;
     node.kind = ArchitectureNodeKind::Junction;
@@ -277,9 +326,13 @@ ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
     node.parent = junction.parent;
     node.topLeft = layout.topLeft.value(junction.id);
     node.localBounds = node.paintedBounds = QRectF(0, 0, iconSize, iconSize);
+    if (cssActive && junctionSlot < css->junctions.size())
+      node.groupCss = css->junctions.at(junctionSlot).group;
+    ++junctionSlot;
     nodeIndex.insert(node.id, scene.nodes.size());
     scene.nodes.append(std::move(node));
   }
+  int groupSlot = 0;
   for (const ArchitectureGroup& source : data.groups) {
     ArchitectureGroupGeometry group;
     group.id = source.id;
@@ -299,6 +352,11 @@ ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
                         layoutRect.width() + 5.0 + nestedExpansion,
                         layoutRect.height() + 5.0 + 2.0 * nestedExpansion +
                             (source.title.isEmpty() ? 0.0 : fontSize + 1.0));
+    if (cssActive && groupSlot < css->groups.size()) {
+      group.rectCss = css->groups.at(groupSlot).rect;
+      group.labelCss = css->groups.at(groupSlot).label;
+    }
+    ++groupSlot;
     scene.groups.append(std::move(group));
   }
 
@@ -349,9 +407,18 @@ ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
     const qreal edgeBottom = std::max({start.y(), middle.y(), end.y()});
     edge.bounds = QRectF(QPointF(edgeLeft, edgeTop),
                          QPointF(edgeRight, edgeBottom));
-    edge.labelBounds = edgeLabelBounds(
-        source.title, scene.style.fontFamily, fontSize, middle,
-        source.lhsDir, source.rhsDir);
+    if (cssActive && i < css->edges.size()) {
+      edge.lineCss = css->edges.at(i).line;
+      edge.arrowCss = css->edges.at(i).arrow;
+      edge.labelCss = css->edges.at(i).label;
+    }
+    if (!source.title.isEmpty()) {
+      const CssFont labelFont = cssFontOf(
+          scene.style.fontFamily, fontSize, edge.labelCss, cssActive);
+      edge.labelBounds = edgeLabelBounds(
+          source.title, labelFont.family, labelFont.size, middle,
+          source.lhsDir, source.rhsDir, labelFont.bold);
+    }
     if (source.lhsInto)
       edge.arrows.append({source.lhsDir, arrowPosition(source.lhsDir, start, arrowSize),
                           arrowPolygon(source.lhsDir, arrowSize)});
@@ -371,45 +438,60 @@ ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
     }
   };
 
+  // Layer display gates: the root getBBox drops display:none subtrees
+  // (visibility:hidden keeps geometry). The fcose layout already ran on
+  // config-driven inputs, so this only trims the final union.
+  const bool edgesDisplayed = !cssActive || css->edgesLayer.hasBox;
+  const bool servicesDisplayed = !cssActive || css->servicesLayer.hasBox;
+  const bool groupsDisplayed = !cssActive || css->groupsLayer.hasBox;
+
   SvgFloatRect edgeLayer;
   bool hasEdgeLayer = false;
-  for (const ArchitectureEdgeGeometry& edge : scene.edges) {
-    SvgFloatRect edgeGroup;
-    bool hasEdgeGroup = false;
-    includeFloat(edgeGroup, hasEdgeGroup,
-                 svgPolylineFloatBounds(edge.points));
-    if (!edge.labelBounds.isEmpty()) {
+  if (edgesDisplayed) {
+    for (const ArchitectureEdgeGeometry& edge : scene.edges) {
+      SvgFloatRect edgeGroup;
+      bool hasEdgeGroup = false;
       includeFloat(edgeGroup, hasEdgeGroup,
-                   svgFloatBounds(edge.labelBounds));
+                   svgPolylineFloatBounds(edge.points));
+      if (!edge.labelBounds.isEmpty()) {
+        includeFloat(edgeGroup, hasEdgeGroup,
+                     svgFloatBounds(edge.labelBounds));
+      }
+      for (const ArchitectureArrowGeometry& arrow : edge.arrows) {
+        const QRectF localArrowBounds = arrow.polygon.boundingRect();
+        includeFloat(edgeGroup, hasEdgeGroup,
+                     svgTranslateFloatBounds(localArrowBounds,
+                                             arrow.position));
+      }
+      if (hasEdgeGroup)
+        includeFloat(edgeLayer, hasEdgeLayer, edgeGroup);
     }
-    for (const ArchitectureArrowGeometry& arrow : edge.arrows) {
-      const QRectF localArrowBounds = arrow.polygon.boundingRect();
-      includeFloat(edgeGroup, hasEdgeGroup,
-                   svgTranslateFloatBounds(localArrowBounds,
-                                           arrow.position));
-    }
-    if (hasEdgeGroup)
-      includeFloat(edgeLayer, hasEdgeLayer, edgeGroup);
   }
   SvgFloatRect serviceLayer;
   bool hasServiceLayer = false;
-  for (const ArchitectureNodeGeometry& node : scene.nodes) {
-    SvgFloatRect serviceGroup;
-    bool hasServiceGroup = false;
-    if (!node.title.isEmpty()) {
-      const QRectF label = textBounds(
-          node.title, scene.style.fontFamily, fontSize,
-          QPointF(iconSize / 2.0, iconSize), Qt::AlignHCenter);
-      includeFloat(serviceGroup, hasServiceGroup, svgFloatBounds(label));
+  if (servicesDisplayed) {
+    for (const ArchitectureNodeGeometry& node : scene.nodes) {
+      SvgFloatRect serviceGroup;
+      bool hasServiceGroup = false;
+      if (!node.title.isEmpty()) {
+        const CssFont labelFont = cssFontOf(
+            scene.style.fontFamily, fontSize, node.labelCss, cssActive);
+        const QRectF label = textBounds(
+            node.title, labelFont.family, labelFont.size,
+            QPointF(iconSize / 2.0, iconSize), Qt::AlignHCenter,
+            labelFont.bold);
+        includeFloat(serviceGroup, hasServiceGroup, svgFloatBounds(label));
+      }
+      includeFloat(serviceGroup, hasServiceGroup,
+                   svgFloatBounds(node.localBounds));
+      includeFloat(serviceLayer, hasServiceLayer,
+                   svgTranslateFloatBounds(serviceGroup, node.topLeft));
     }
-    includeFloat(serviceGroup, hasServiceGroup,
-                 svgFloatBounds(node.localBounds));
-    includeFloat(serviceLayer, hasServiceLayer,
-                 svgTranslateFloatBounds(serviceGroup, node.topLeft));
   }
 
   SvgFloatRect groupLayer;
   bool hasGroupLayer = false;
+  if (groupsDisplayed) {
   for (const ArchitectureGroupGeometry& group : scene.groups) {
     includeFloat(groupLayer, hasGroupLayer, svgFloatBounds(group.rect));
     if (!group.icon.isEmpty() || !group.title.isEmpty()) {
@@ -422,6 +504,7 @@ ArchitectureScene buildArchitectureScene(const ArchitectureData& data,
       includeFloat(groupLayer, hasGroupLayer,
                    svgFloatBounds(innerLabel));
     }
+  }
   }
 
   SvgFloatRect rootBounds;

@@ -59,6 +59,41 @@ struct TimelineSceneStyle {
 
 enum class TimelineNodeKind { Section, Task, Event };
 
+// Resolved themeCSS declarations for one element, shared by the scene builder
+// (layout gates) and the painter. Empty strings mean "no CSS opinion" — the
+// base theme paint stands. `visible` is the engine's displayed() (display and
+// visibility including ancestors); `hasBox` follows the display:none chain
+// because getBBox() drops undisplayed geometry while visibility keeps it.
+struct TimelineElementCss {
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString color;
+  QString fontFamily;
+  QString fontWeight;
+  qreal fontSize = -1.0;
+  qreal opacity = -1.0;
+  bool visible = true;
+  bool hasBox = true;
+};
+
+// themeCSS overlay resolved against a faithful model of the timeline DOM.
+struct TimelineCssOverrides {
+  bool active = false;
+  // The transient classless probe <text> upstream measures node heights with:
+  // its font feeds wrap and bbox, so font rules change layout.
+  TimelineElementCss measureText;
+  TimelineElementCss title;  // classless svg-level <text>
+  TimelineElementCss axis;   // the axis lineWrapper <line>
+  struct Node {
+    TimelineElementCss box;      // path.node-bkg
+    TimelineElementCss divider;  // line.node-line-N
+    TimelineElementCss text;     // classless <text> in the node group
+  };
+  QVector<Node> nodes;  // scene.nodes order
+  QVector<TimelineElementCss> connectors;  // scene.lines order, non-axis
+};
+
 struct TimelineTextLine {
   QString sourceText;
   QString visibleText;
@@ -94,6 +129,10 @@ struct TimelineNodeGeometry {
   bool gradientStroke = false;
   bool dropShadow = false;
   int paintOrder = 0;
+  // themeCSS surface of the three painted node parts.
+  TimelineElementCss boxCss;
+  TimelineElementCss dividerCss;
+  TimelineElementCss textCss;
 };
 
 struct TimelineLineGeometry {
@@ -106,6 +145,7 @@ struct TimelineLineGeometry {
   bool markerResolved = true;
   bool axis = false;
   int paintOrder = 0;
+  TimelineElementCss css;
 };
 
 struct TimelineTitleGeometry {
@@ -116,6 +156,7 @@ struct TimelineTitleGeometry {
   qreal fontSize = 0.0;
   QString fill;
   int paintOrder = 0;
+  TimelineElementCss css;
 };
 
 struct TimelineScene : MermaidScene {
@@ -140,6 +181,11 @@ struct TimelineScene : MermaidScene {
 };
 
 TimelineScene buildTimelineScene(const TimelineData& data, TimelineConfig config,
-                                 TimelineSceneStyle style);
+                                 TimelineSceneStyle style,
+                                 const TimelineCssOverrides* css = nullptr);
+
+// The 4ex title presentation attribute resolved against the root font, shared
+// by the builder (ink bounds) and the adapter's cascade tree.
+qreal timelineTitleFontSizePx(const TimelineSceneStyle& style);
 
 }  // namespace muffin::mermaid::timeline

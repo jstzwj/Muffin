@@ -2,6 +2,7 @@
 
 #include <QString>
 #include <QStringView>
+#include <QUrl>
 
 namespace muffin {
 
@@ -12,6 +13,9 @@ struct MarkdownHtmlOptions {
   bool breakOnSingleNewline = true;
   // Decode `:shortcode:` emoji to glyphs in text content (mirrors the editor's renderEmoji setting).
   bool renderEmoji = true;
+  // Final HTML document URL. Mermaid uses it when arrowMarkerAbsolute is true;
+  // leave empty for fragments whose embedding location is not known yet.
+  QUrl documentUrl;
 };
 
 // Serializes a fully-annotated MarkdownNode tree to cmark-gfm-compatible HTML, INCLUDING Muffin's

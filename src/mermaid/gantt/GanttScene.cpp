@@ -253,26 +253,82 @@ QJsonObject GanttScene::toJsonObject() const {
           {QStringLiteral("titleGeometry"), textJson(titleGeometry)}};
 }
 
-GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
-                           GanttSceneStyle style) {
-  GanttScene scene;
-  scene.title = data.title;
-  scene.accTitle = data.accTitle;
-  scene.accDescr = data.accDescr;
-  scene.config = std::move(config);
-  scene.style = std::move(style);
+// Upstream task rect class, byte-for-byte: DOMPurify (mermaid's sanitize
+// step) trims leading/trailing class-attribute whitespace, so the upstream
+// trailing join space disappears while interior double spaces (milestone /
+// vert prefixes) survive.
+QString ganttTaskRectClass(const GanttTask& task, int secNum) {
+  QString taskClass;
+  if (task.active) {
+    if (task.crit) taskClass += QStringLiteral(" activeCrit");
+    else taskClass = QStringLiteral(" active");
+  } else if (task.done) {
+    if (task.crit) taskClass = QStringLiteral(" doneCrit");
+    else taskClass = QStringLiteral(" done");
+  } else if (task.crit) {
+    taskClass += QStringLiteral(" crit");
+  }
+  if (taskClass.isEmpty()) taskClass = QStringLiteral(" task");
+  if (task.milestone) taskClass = QStringLiteral(" milestone ") + taskClass;
+  if (task.vert) taskClass = QStringLiteral(" vert ") + taskClass;
+  taskClass += QString::number(secNum);
+  if (!task.classes.isEmpty())
+    taskClass += QStringLiteral(" ") + task.classes.join(QLatin1Char(' '));
+  return (QStringLiteral("task") + taskClass).trimmed();
+}
 
-  QVector<GanttTask> tasks = data.tasks;
-  QVector<QString> categories;
+// Upstream task text class (taskType quirks included: the active prefix has
+// no leading space so an active+done task joins with a single space, while
+// every other branch keeps its leading space and doubles it). The width-N
+// token carries the raw classless getBBox() measurement.
+QString ganttTaskTextClass(const GanttTask& task, int secNum, qreal textWidth,
+                           bool outside, bool outsideLeft) {
+  QString taskType;
+  if (task.active) {
+    if (task.crit) taskType = QStringLiteral("activeCritText%1").arg(secNum);
+    else taskType = QStringLiteral("activeText%1").arg(secNum);
+  }
+  if (task.done) {
+    if (task.crit)
+      taskType += QStringLiteral(" doneCritText%1").arg(secNum);
+    else
+      taskType += QStringLiteral(" doneText%1").arg(secNum);
+  } else if (task.crit) {
+    taskType += QStringLiteral(" critText%1").arg(secNum);
+  }
+  if (task.milestone) taskType += QStringLiteral(" milestoneText");
+  if (task.vert) taskType += QStringLiteral(" vertText");
+  const QString classStr = task.classes.join(QLatin1Char(' '));
+  if (!outside) {
+    return (classStr + QStringLiteral(" taskText taskText%1 ").arg(secNum) +
+            taskType +
+            QStringLiteral(" width-%1").arg(QString::number(textWidth)))
+        .trimmed();
+  }
+  if (outsideLeft) {
+    return (classStr +
+            QStringLiteral(" taskTextOutsideLeft taskTextOutside%1 ").arg(secNum) +
+            taskType)
+        .trimmed();
+  }
+  return (classStr +
+          QStringLiteral(" taskTextOutsideRight taskTextOutside%1 ").arg(secNum) +
+          taskType +
+          QStringLiteral(" width-%1").arg(QString::number(textWidth)))
+      .trimmed();
+}
+
+GanttPreparedLayout ganttPrepareLayout(const GanttData& data,
+                                       const GanttConfig& config) {
+  GanttPreparedLayout layout;
+  QVector<GanttTask>& tasks = layout.tasks = data.tasks;
   for (const GanttTask& task : tasks)
-    if (!task.vert && !categories.contains(task.type)) categories.append(task.type);
+    if (!task.vert && !layout.categories.contains(task.type))
+      layout.categories.append(task.type);
 
-  const qreal gap = scene.config.barHeight + scene.config.barGap;
-  QHash<QString, int> categoryHeights;
-  int rowCount = 0;
   if (data.displayMode == QLatin1String("compact") ||
-      scene.config.displayMode == QLatin1String("compact")) {
-    for (const QString& category : categories) {
+      config.displayMode == QLatin1String("compact")) {
+    for (const QString& category : layout.categories) {
       QVector<GanttTask*> categoryTasks;
       for (GanttTask& task : tasks)
         if (!task.vert && task.section == category) categoryTasks.append(&task);
@@ -286,47 +342,35 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
         for (int row = 0; row < timeline.size(); ++row) {
           if (!timeline.at(row).isValid() || task->startTime >= timeline.at(row)) {
             timeline[row] = task->endTime;
-            task->order = rowCount + row;
+            task->order = layout.rowCount + row;
             maxRow = std::max(maxRow, row);
             break;
           }
         }
       }
-      categoryHeights.insert(category, maxRow + 1);
-      rowCount += maxRow + 1;
+      layout.categoryHeights.insert(category, maxRow + 1);
+      layout.rowCount += maxRow + 1;
     }
   } else {
     for (const GanttTask& task : tasks)
-      if (!task.vert) ++categoryHeights[task.type];
-    rowCount = std::count_if(tasks.cbegin(), tasks.cend(),
-                             [](const GanttTask& task) { return !task.vert; });
+      if (!task.vert) ++layout.categoryHeights[task.type];
+    layout.rowCount = int(std::count_if(tasks.cbegin(), tasks.cend(),
+                                        [](const GanttTask& task) {
+                                          return !task.vert;
+                                        }));
   }
 
-  const qreal width = scene.config.useWidth;
-  const qreal height = 2.0 * scene.config.topPadding + rowCount * gap;
-  scene.bounds = QRectF(0.0, 0.0, width, height);
-  const qreal scaleWidth = width - scene.config.leftPadding - scene.config.rightPadding;
-
-  QDateTime minTime, maxTime;
   for (const GanttTask& task : tasks) {
-    if (!minTime.isValid() || task.startTime < minTime) minTime = task.startTime;
-    if (!maxTime.isValid() || task.endTime > maxTime) maxTime = task.endTime;
+    if (!layout.minTime.isValid() || task.startTime < layout.minTime)
+      layout.minTime = task.startTime;
+    if (!layout.maxTime.isValid() || task.endTime > layout.maxTime)
+      layout.maxTime = task.endTime;
   }
-  const auto scale = [&](const QDateTime& value) {
-    return roundedScale(value, minTime, maxTime, scaleWidth);
-  };
-
-  std::stable_sort(tasks.begin(), tasks.end(), [](const GanttTask& a, const GanttTask& b) {
-    return a.startTime < b.startTime;
-  });
-  std::stable_sort(tasks.begin(), tasks.end(), [](const GanttTask& a, const GanttTask& b) {
-    return a.vert == b.vert ? false : !a.vert;
-  });
 
   // Excluded local calendar-day runs are painted before the grid.
-  if (minTime.isValid() && maxTime.isValid() &&
+  if (layout.minTime.isValid() && layout.maxTime.isValid() &&
       (!data.excludes.isEmpty() || !data.includes.isEmpty()) &&
-      minTime.daysTo(maxTime) <= 366 * 5 + 2) {
+      layout.minTime.daysTo(layout.maxTime) <= 366 * 5 + 2) {
     auto isExcluded = [&](const QDate& date) {
       const QString iso = date.toString(QStringLiteral("yyyy-MM-dd"));
       if (data.includes.contains(iso)) return false;
@@ -340,39 +384,144 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
           QStringLiteral("wednesday"), QStringLiteral("thursday"),
           QStringLiteral("friday"), QStringLiteral("saturday"),
           QStringLiteral("sunday")};
-      return data.excludes.contains(iso) || data.excludes.contains(names.at(day - 1));
+      return data.excludes.contains(iso) ||
+             data.excludes.contains(names.at(day - 1));
     };
     QDate runStart, runEnd;
-    for (QDate date = minTime.date(); date <= maxTime.date(); date = date.addDays(1)) {
+    for (QDate date = layout.minTime.date(); date <= layout.maxTime.date();
+         date = date.addDays(1)) {
       if (isExcluded(date)) {
         if (!runStart.isValid()) runStart = date;
         runEnd = date;
       } else if (runStart.isValid()) {
-        const QDateTime start(runStart, QTime(0, 0), QTimeZone::LocalTime);
-        const QDateTime end(runEnd, QTime(23, 59, 59, 999), QTimeZone::LocalTime);
-        scene.excludes.append({QStringLiteral("exclude-") + runStart.toString(Qt::ISODate),
-                               QStringLiteral("exclude-range"),
-                               QRectF(scale(start) + scene.config.leftPadding,
-                                      scene.config.gridLineStartPadding,
-                                      scale(end) - scale(start),
-                                      height - scene.config.topPadding -
-                                          scene.config.gridLineStartPadding),
-                               scene.style.excludeBkgColor});
-        runStart = {}; runEnd = {};
+        layout.excludeRuns.append({runStart, runEnd});
+        runStart = {};
+        runEnd = {};
       }
     }
-    if (runStart.isValid()) {
-      const QDateTime start(runStart, QTime(0, 0), QTimeZone::LocalTime);
-      const QDateTime end(runEnd, QTime(23, 59, 59, 999), QTimeZone::LocalTime);
-      scene.excludes.append({QStringLiteral("exclude-") + runStart.toString(Qt::ISODate),
-                             QStringLiteral("exclude-range"),
-                             QRectF(scale(start) + scene.config.leftPadding,
-                                    scene.config.gridLineStartPadding,
-                                    scale(end) - scale(start),
-                                    height - scene.config.topPadding -
-                                        scene.config.gridLineStartPadding),
-                             scene.style.excludeBkgColor});
-    }
+    if (runStart.isValid()) layout.excludeRuns.append({runStart, runEnd});
+  }
+
+  const QString tickSource = !data.tickInterval.isEmpty()
+                                 ? data.tickInterval : config.tickInterval;
+  layout.ticks = explicitTicks(layout.minTime, layout.maxTime, tickSource,
+                               !data.weekday.isEmpty() ? data.weekday
+                                                       : config.weekday);
+  if (layout.ticks.isEmpty() && layout.minTime.isValid() &&
+      layout.maxTime.isValid())
+    layout.ticks = automaticTicks(layout.minTime, layout.maxTime);
+
+  std::stable_sort(tasks.begin(), tasks.end(),
+                   [](const GanttTask& a, const GanttTask& b) {
+                     return a.startTime < b.startTime;
+                   });
+  std::stable_sort(tasks.begin(), tasks.end(),
+                   [](const GanttTask& a, const GanttTask& b) {
+                     return a.vert == b.vert ? false : !a.vert;
+                   });
+  for (const GanttTask& task : tasks)
+    if (!task.vert && !layout.uniqueOrders.contains(task.order))
+      layout.uniqueOrders.append(task.order);
+  return layout;
+}
+
+GanttTaskTextPlacement ganttTaskTextPlacement(const GanttTask& task,
+                                              const GanttPreparedLayout& layout,
+                                              const GanttConfig& config,
+                                              const QString& measureFamily,
+                                              qreal measureSize) {
+  GanttTaskTextPlacement out;
+  const qreal width = config.useWidth;
+  const qreal scaleWidth = width - config.leftPadding - config.rightPadding;
+  const auto scale = [&layout, scaleWidth](const QDateTime& value) {
+    return roundedScale(value, layout.minTime, layout.maxTime, scaleWidth);
+  };
+  const editor::CssPixelFont font =
+      editor::makeUnhintedCssPixelFont(measureFamily, measureSize);
+  QFontMetricsF metrics(font.font);
+  out.textWidth =
+      metrics.horizontalAdvance(cssVisibleText(task.task)) * font.scale;
+
+  qreal startX = scale(task.startTime);
+  qreal endX = scale(task.renderEndTime.isValid() ? task.renderEndTime
+                                                  : task.endTime);
+  if (task.milestone) {
+    startX += 0.5 * (scale(task.endTime) - startX) - 0.5 * config.barHeight;
+    endX = startX + config.barHeight;
+  }
+  // Upstream's x callback compares against renderEndTime||endTime while the
+  // class callback compares against the raw endTime; the two only diverge
+  // for excluded trailing days, where this unification matches the observed
+  // upstream output.
+  qreal classEndX = scale(task.endTime);
+  if (task.milestone) classEndX = scale(task.startTime) + config.barHeight;
+  if (task.vert) {
+    out.textX = scale(task.startTime) + config.leftPadding;
+    return out;
+  }
+  out.outside = out.textWidth > classEndX - startX;
+  out.outsideLeft =
+      out.outside &&
+      classEndX + out.textWidth + 1.5 * config.leftPadding > width;
+  if (out.outsideLeft)
+    out.textX = startX + config.leftPadding - 5.0;
+  else if (out.outside)
+    out.textX = endX + config.leftPadding + 5.0;
+  else
+    out.textX = (endX - startX) / 2.0 + startX + config.leftPadding;
+  return out;
+}
+
+GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
+                           GanttSceneStyle style,
+                           const GanttCssOverrides* css) {
+  GanttScene scene;
+  scene.title = data.title;
+  scene.accTitle = data.accTitle;
+  scene.accDescr = data.accDescr;
+  scene.config = std::move(config);
+  scene.style = std::move(style);
+
+  const GanttPreparedLayout layout = ganttPrepareLayout(data, scene.config);
+  const QVector<GanttTask>& tasks = layout.tasks;
+  const QStringList& categories = layout.categories;
+
+  const qreal gap = scene.config.barHeight + scene.config.barGap;
+  const qreal width = scene.config.useWidth;
+  const qreal height =
+      2.0 * scene.config.topPadding + layout.rowCount * gap;
+  scene.bounds = QRectF(0.0, 0.0, width, height);
+  const qreal scaleWidth = width - scene.config.leftPadding - scene.config.rightPadding;
+
+  const auto scale = [&](const QDateTime& value) {
+    return roundedScale(value, layout.minTime, layout.maxTime, scaleWidth);
+  };
+  const GanttElementCss neutral;
+  const auto rectSlot = [&](qsizetype index) -> const GanttElementCss& {
+    return css && index >= 0 && index < css->excludes.size()
+               ? css->excludes.at(index)
+               : neutral;
+  };
+
+  for (qsizetype run = 0; run < layout.excludeRuns.size(); ++run) {
+    const QDateTime start(layout.excludeRuns.at(run).first, QTime(0, 0),
+                          QTimeZone::LocalTime);
+    const QDateTime end(layout.excludeRuns.at(run).second, QTime(23, 59, 59, 999),
+                        QTimeZone::LocalTime);
+    GanttRectGeometry rect;
+    rect.id = QStringLiteral("exclude-") +
+              layout.excludeRuns.at(run).first.toString(Qt::ISODate);
+    rect.cssClass = QStringLiteral("exclude-range");
+    rect.rect = QRectF(scale(start) + scene.config.leftPadding,
+                       scene.config.gridLineStartPadding,
+                       scale(end) - scale(start),
+                       height - scene.config.topPadding -
+                           scene.config.gridLineStartPadding);
+    rect.fill = scene.style.excludeBkgColor;
+    // CSS initial stroke-width is 1px; the unset stroke keeps it unpainted.
+    rect.strokeWidth = 1.0;
+    rect.css = rectSlot(run);
+    scene.excludes.append(std::move(rect));
   }
 
   const QString axisFormat = !data.axisFormat.isEmpty()
@@ -380,58 +529,97 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
                                  : (!scene.config.axisFormat.isEmpty()
                                         ? scene.config.axisFormat
                                         : QStringLiteral("%Y-%m-%d"));
-  const QString tickSource = !data.tickInterval.isEmpty()
-                                 ? data.tickInterval : scene.config.tickInterval;
-  QVector<QDateTime> ticks = explicitTicks(minTime, maxTime, tickSource,
-                                            !data.weekday.isEmpty()
-                                                ? data.weekday : scene.config.weekday);
-  if (ticks.isEmpty() && minTime.isValid() && maxTime.isValid())
-    ticks = automaticTicks(minTime, maxTime);
   const auto addAxis = [&](qreal y, bool top) {
     const qreal tickEnd = top
                               ? y + height - scene.config.topPadding -
                                         scene.config.gridLineStartPadding
                               : y - height + scene.config.topPadding +
                                         scene.config.gridLineStartPadding;
-    for (const QDateTime& tick : ticks) {
-      // d3-axis offsets one-pixel strokes by 0.5 CSS px for a 1x display.
+    for (const QDateTime& tick : layout.ticks) {
+      const qsizetype slot = scene.gridLines.size();
+      const GanttElementCss& lineCss =
+          css && slot < css->ticks.size() ? css->ticks.at(slot).line : neutral;
+      const GanttElementCss& textCss =
+          css && slot < css->ticks.size() ? css->ticks.at(slot).text : neutral;
+      // d3-axis offsets one-pixel strokes by 0.5 CSS px for a 1x display and
+      // stamps stroke=currentColor on every tick line, which resolves against
+      // the inherited `color` (initial black). The `.grid .tick { stroke }`
+      // declaration lands on the <g> and loses to the line's own presentation
+      // attribute, so gridColor never reaches the painted line.
       const qreal x = scene.config.leftPadding + scale(tick) + 0.5;
-      scene.gridLines.append({{}, QStringLiteral("tick"), QLineF(x, y, x, tickEnd),
-                              scene.style.gridColor, 1.0, 0.8});
+      GanttLineGeometry line;
+      line.cssClass = QStringLiteral("tick");
+      line.line = QLineF(x, y, x, tickEnd);
+      line.stroke = QStringLiteral("#000000");
+      line.strokeWidth = 1.0;
+      line.opacity = 0.8;
+      line.css = lineCss;
+      scene.gridLines.append(std::move(line));
       GanttTextGeometry label;
-      label.cssClass = QStringLiteral("tick-label");
+      // Upstream grid labels carry no class attribute.
       label.text = formatTick(tick, axisFormat);
-      label.position = QPointF(x, top ? y - 6.0 : y + 19.0);
+      // d3 places the baseline at k*spacing (±3px); mermaid stamps dy=1em on
+      // the bottom axis only, and the em resolves against the *CSS* font
+      // size, so a themeCSS font-size override moves the baseline too.
+      const qreal labelSize = textCss.fontSize >= 0.0 ? textCss.fontSize : 10.0;
+      label.position = QPointF(x, top ? y - 3.0 : y + 3.0 + labelSize);
       label.fontSize = 10.0;
       label.fill = scene.style.textColor;
       label.anchor = GanttTextAnchor::Middle;
+      label.opacity = 0.8;
+      label.css = textCss;
       scene.gridLabels.append(std::move(label));
     }
   };
   addAxis(height - 50.0, false);
   if (data.topAxis || scene.config.topAxis) addAxis(scene.config.topPadding, true);
+  {
+    // The d3 domain path: `.grid path { stroke-width: 0 }` keeps it invisible;
+    // its stroke resolves through the same currentColor chain as the ticks.
+    GanttLineGeometry domain;
+    domain.cssClass = QStringLiteral("domain");
+    domain.line = QLineF(scene.config.leftPadding + 0.5, height - 50.0,
+                         width - scene.config.rightPadding + 0.5, height - 50.0);
+    domain.stroke = QStringLiteral("#000000");
+    domain.strokeWidth = 0.0;
+    if (css) domain.css = css->gridDomain;
+    scene.gridDomain = std::move(domain);
+  }
 
-  QVector<int> uniqueOrders;
-  for (const GanttTask& task : tasks)
-    if (!task.vert && !uniqueOrders.contains(task.order)) uniqueOrders.append(task.order);
-  for (int order : uniqueOrders) {
+  for (int order : layout.uniqueOrders) {
     const auto found = std::find_if(tasks.cbegin(), tasks.cend(),
                                     [order](const GanttTask& task) {
                                       return !task.vert && task.order == order;
                                     });
     if (found == tasks.cend()) continue;
     const int category = int(std::max<qsizetype>(0, categories.indexOf(found->type)));
-    scene.sections.append({{}, QStringLiteral("section section%1").arg(
-                                   category % std::max(1, scene.config.numberSectionStyles)),
-                           QRectF(0.0, order * gap + scene.config.topPadding - 2.0,
-                                  width - scene.config.rightPadding / 2.0, gap),
-                           sectionFill(category, scene.style), {}, 0.0, 0.2});
+    GanttRectGeometry rect;
+    rect.cssClass = QStringLiteral("section section%1").arg(
+        category % std::max(1, scene.config.numberSectionStyles));
+    rect.rect = QRectF(0.0, order * gap + scene.config.topPadding - 2.0,
+                       width - scene.config.rightPadding / 2.0, gap);
+    rect.fill = sectionFill(category, scene.style);
+    rect.opacity = 0.2;
+    rect.strokeWidth = 1.0;
+    const qsizetype slot = scene.sections.size();
+    if (css && slot < css->sections.size()) rect.css = css->sections.at(slot);
+    scene.sections.append(std::move(rect));
   }
 
-  const editor::CssPixelFont taskFont = editor::makeUnhintedCssPixelFont(
-      scene.style.fontFamily, scene.config.fontSize);
-  QFontMetricsF taskMetrics(taskFont.font);
+  // The task-label measurement runs through a classless probe text (only the
+  // font-size presentation attribute exists at that point), so themeCSS
+  // font overrides reach it through tag/ancestor selectors only.
+  const QString measureFamily =
+      css && !css->measureText.fontFamily.isEmpty() ? css->measureText.fontFamily
+                                                    : scene.style.fontFamily;
+  const qreal measureSize =
+      css && css->measureText.fontSize >= 0.0 ? css->measureText.fontSize
+                                              : scene.config.fontSize;
   for (const GanttTask& task : tasks) {
+    const qsizetype slot = scene.tasks.size();
+    const GanttCssOverrides::Task& taskCss =
+        css && slot < css->tasks.size() ? css->tasks.at(slot)
+                                        : GanttCssOverrides::Task{};
     qreal startX = scale(task.startTime);
     qreal endX = scale(task.renderEndTime.isValid() ? task.renderEndTime : task.endTime);
     qreal rectX = startX + scene.config.leftPadding;
@@ -447,11 +635,16 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
       rectWidth = 0.08 * scene.config.barHeight;
     }
     const qreal rectHeight = task.vert
-                                 ? rowCount * gap + scene.config.barHeight * 2.0
+                                 ? layout.rowCount * gap + scene.config.barHeight * 2.0
                                  : scene.config.barHeight;
+    int secNum = 0;
+    for (int i = 0; i < categories.size(); ++i) {
+      if (task.type == categories.at(i))
+        secNum = i % std::max(1, scene.config.numberSectionStyles);
+    }
     GanttRectGeometry rect;
     rect.id = task.id;
-    rect.cssClass = QStringLiteral("task");
+    rect.cssClass = ganttTaskRectClass(task, secNum);
     rect.rect = QRectF(rectX, rectY, rectWidth, rectHeight);
     rect.fill = taskFill(task, scene.style);
     rect.stroke = taskStroke(task, scene.style);
@@ -463,45 +656,31 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
             0.5 * (scale(task.endTime) - scale(task.startTime)),
         task.order * gap + scene.config.topPadding +
             0.5 * scene.config.barHeight);
+    rect.css = taskCss.rect;
     scene.tasks.append(rect);
 
-    const QString visible = cssVisibleText(task.task);
-    const qreal textWidth = taskMetrics.horizontalAdvance(visible) * taskFont.scale;
-    qreal textStartX = startX;
-    qreal positionEndX = endX;
-    qreal classEndX = scale(task.endTime);
-    if (task.milestone) {
-      textStartX = rectX - scene.config.leftPadding;
-      positionEndX = textStartX + scene.config.barHeight;
-      classEndX = textStartX + scene.config.barHeight;
-    }
-    bool outside = !task.vert && textWidth > classEndX - textStartX;
-    bool outsideLeft = outside &&
-                       classEndX + textWidth + 1.5 * scene.config.leftPadding > width;
-    qreal textX;
-    if (task.vert) textX = scale(task.startTime) + scene.config.leftPadding;
-    else if (outsideLeft) textX = textStartX + scene.config.leftPadding - 5.0;
-    else if (outside) textX = positionEndX + scene.config.leftPadding + 5.0;
-    else textX = (positionEndX - textStartX) / 2.0 + textStartX + scene.config.leftPadding;
+    const GanttTaskTextPlacement placement = ganttTaskTextPlacement(
+        task, layout, scene.config, measureFamily, measureSize);
     GanttTextGeometry text;
     text.id = task.id + QStringLiteral("-text");
-    text.cssClass = outsideLeft ? QStringLiteral("taskTextOutsideLeft")
-                                : (outside ? QStringLiteral("taskTextOutsideRight")
-                                           : QStringLiteral("taskText"));
+    text.cssClass = ganttTaskTextClass(task, secNum, placement.textWidth,
+                                       placement.outside, placement.outsideLeft);
     text.text = task.task;
     text.position = QPointF(
-        textX,
-        task.vert ? scene.config.gridLineStartPadding + rowCount * gap + 60.0
+        placement.textX,
+        task.vert ? scene.config.gridLineStartPadding + layout.rowCount * gap + 60.0
                   : task.order * gap + scene.config.barHeight / 2.0 +
                         (scene.config.fontSize / 2.0 - 2.0) +
                         scene.config.topPadding);
     text.fontSize = task.vert ? 15.0 : scene.config.fontSize;
-    text.fill = taskTextFill(task, outside, scene.style);
-    text.anchor = outsideLeft ? GanttTextAnchor::End
-                              : (outside ? GanttTextAnchor::Start
-                                         : GanttTextAnchor::Middle);
+    text.fill = taskTextFill(task, placement.outside, scene.style);
+    text.anchor = placement.outsideLeft
+                      ? GanttTextAnchor::End
+                      : (placement.outside ? GanttTextAnchor::Start
+                                           : GanttTextAnchor::Middle);
     text.italic = task.milestone;
     text.bold = task.classes.contains(QStringLiteral("clickable"));
+    text.css = taskCss.text;
     scene.taskLabels.append(std::move(text));
 
     const QString href = data.links.value(task.id);
@@ -513,7 +692,7 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
   int previousRows = 0;
   for (int category = 0; category < categories.size(); ++category) {
     const QString name = categories.at(category);
-    const int rows = categoryHeights.value(name);
+    const int rows = layout.categoryHeights.value(name);
     GanttTextGeometry text;
     text.cssClass = QStringLiteral("sectionTitle sectionTitle%1").arg(
         category % std::max(1, scene.config.numberSectionStyles));
@@ -527,12 +706,14 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
     text.fill = scene.style.titleColor;
     text.anchor = GanttTextAnchor::Start;
     text.lineStep = scene.config.sectionFontSize;
+    if (css && category < css->sectionTitles.size())
+      text.css = css->sectionTitles.at(category);
     scene.sectionLabels.append(std::move(text));
     previousRows += rows;
   }
 
-  if (data.todayMarker != QLatin1String("off") && minTime.isValid() &&
-      maxTime.isValid()) {
+  if (data.todayMarker != QLatin1String("off") && layout.minTime.isValid() &&
+      layout.maxTime.isValid()) {
     GanttLineGeometry today;
     today.cssClass = QStringLiteral("today");
     const qreal x = scene.config.leftPadding + scale(QDateTime::currentDateTime());
@@ -566,6 +747,7 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
         }
       }
     }
+    if (css) today.css = css->today;
     scene.todayLines.append(std::move(today));
   }
 
@@ -576,6 +758,7 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
   scene.titleGeometry.fill = scene.style.titleColor.isEmpty()
                                  ? scene.style.textColor : scene.style.titleColor;
   scene.titleGeometry.anchor = GanttTextAnchor::Middle;
+  if (css) scene.titleGeometry.css = css->title;
   return scene;
 }
 

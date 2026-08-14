@@ -84,6 +84,7 @@ struct FlowchartData {
 struct FlowchartParseOptions {
   int maxEdges = 500;
   int maxTextSize = 50000;
+  bool inheritDir = false;
 };
 
 // Muffin's safety boundary against pathological input (milestone H1). SEPARATE

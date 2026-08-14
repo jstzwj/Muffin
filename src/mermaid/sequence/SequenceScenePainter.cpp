@@ -77,9 +77,12 @@ QRectF messageBounds(const SequenceLayoutMessage& message,
 void centeredText(QPainter& painter, const SequenceLabelDocument& label, const QRectF& rect,
                   const SequenceSceneStyle& style, const QString& textColor,
                   flowchart::FlowLabelAlign align = flowchart::FlowLabelAlign::Center,
-                  qreal alignMargin = 0.0) {
-  paintSequenceLabel(painter, label, rect, style.fontFamily,
-                     style.fontSize, style.fontSize * 1.375,
+                  qreal alignMargin = 0.0,
+                  const QString& fontFamily = {}, qreal fontSize = 0.0) {
+  const QString& family = fontFamily.isEmpty() ? style.fontFamily : fontFamily;
+  const qreal size = fontSize > 0.0 ? fontSize : style.fontSize;
+  paintSequenceLabel(painter, label, rect, family,
+                     size, size * 1.375,
                      color(textColor), true, align, alignMargin);
 }
 
@@ -95,7 +98,7 @@ flowchart::FlowLabelAlign effectiveAlign(const SequenceLabelDocument& label,
 void participantShape(QPainter& painter, const SequenceLayoutParticipant& actor,
                       const SequenceLabelDocument& label, bool footer,
                       const SequenceSceneStyle& style) {
-  painter.setPen(QPen(color(style.actorStroke), 2.0));
+  painter.setPen(QPen(color(style.actorStroke), style.actorStrokeWidth));
   painter.setBrush(color(style.actorFill));
   const auto& paths = footer ? actor.bottomShapePaths : actor.topShapePaths;
   const QRectF labelRect = footer ? actor.bottomLabelRect : actor.topLabelRect;
@@ -104,7 +107,9 @@ void participantShape(QPainter& painter, const SequenceLayoutParticipant& actor,
     painter.setBrush(Qt::NoBrush);
   }
   for (const QPainterPath& path : paths) painter.drawPath(path);
-  centeredText(painter, label, labelRect, style, style.actorTextColor);
+  centeredText(painter, label, labelRect, style, style.actorTextColor,
+               flowchart::FlowLabelAlign::Center, 0.0,
+               style.actorFontFamily, style.actorFontSize);
 }
 
 void marker(QPainter& painter, const QString& type, QPointF point, QPointF direction,
@@ -156,14 +161,20 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     if (!mermaidPrimitiveIsVisible(box.rect.united(box.labelRect), options))
       continue;
     painter.setPen(QPen(color(scene.style.boxStroke), 1.0));
-    painter.setBrush(box.fill == QLatin1String("transparent") ? Qt::NoBrush : color(box.fill));
+    // QBrush(...) explicitly: a `cond ? Qt::NoBrush : QColor` ternary
+    // resolves through QColor's converting constructor and paints SOLID
+    // BLACK (color0) instead of no brush.
+    painter.setBrush(box.fill == QLatin1String("transparent")
+                         ? QBrush(Qt::NoBrush) : QBrush(color(box.fill)));
     if (scene.handDrawn)
       rough::roughRect(painter, box.rect, scene.handDrawnSeed,
                        color(box.fill), color(scene.style.boxStroke), 1.0);
     else
       painter.drawRect(box.rect);
-    if (!box.label.isEmpty()) centeredText(painter, scene.boxLabels[index], box.labelRect,
-                                           scene.style, scene.style.labelTextColor);
+    if (!box.label.isEmpty()) centeredText(
+        painter, scene.boxLabels[index], box.labelRect, scene.style,
+        scene.style.labelTextColor, flowchart::FlowLabelAlign::Center, 0.0,
+        scene.style.actorFontFamily, scene.style.actorFontSize);
   }
   for (qsizetype index = 0; index < scene.participants.size(); ++index) {
     const auto& actor = scene.participants[index];
@@ -247,7 +258,8 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     centeredText(painter, scene.noteLabels[index], note.rect, scene.style,
                  scene.style.noteTextColor,
                  effectiveAlign(scene.noteLabels[index], scene.style.noteAlign),
-                 scene.style.noteMargin);
+                 scene.style.noteMargin, scene.style.noteFontFamily,
+                 scene.style.noteFontSize);
   }
   for (qsizetype index = 0; index < scene.messages.size(); ++index) {
     const auto& message = scene.messages[index];
@@ -280,14 +292,17 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     }
     const QPointF end = message.painterPath.isEmpty()
         ? QPointF(message.stopX, message.lineY) : message.painterPath.currentPosition();
-    marker(painter, message.markerEnd, end, message.markerEndDirection,
-           color(scene.style.signalColor));
-    marker(painter, message.markerStart, QPointF(message.startX, message.lineY),
-           message.markerStartDirection, color(scene.style.signalColor));
+    if (options.paintEdgeMarkers) {
+      marker(painter, message.markerEnd, end, message.markerEndDirection,
+             color(scene.style.signalColor));
+      marker(painter, message.markerStart, QPointF(message.startX, message.lineY),
+             message.markerStartDirection, color(scene.style.signalColor));
+    }
     centeredText(painter, scene.messageLabels[index], message.alignRect, scene.style,
                  scene.style.signalTextColor,
                  effectiveAlign(scene.messageLabels[index], scene.style.messageAlign),
-                 scene.style.wrapPadding);
+                 scene.style.wrapPadding, scene.style.messageFontFamily,
+                 scene.style.messageFontSize);
     if (number) {
       painter.setPen(QPen(color(scene.style.signalColor), 1.0));
       painter.setBrush(color(scene.style.actorFill));
@@ -311,14 +326,14 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
         !mermaidPrimitiveIsVisible(menu.panelRect, options)) {
       continue;
     }
-    painter.setPen(QPen(color(scene.style.actorStroke), 2.0));
+    painter.setPen(QPen(color(scene.style.actorStroke), scene.style.actorStrokeWidth));
     painter.setBrush(color(scene.style.actorFill));
     painter.drawRect(menu.panelRect);
     for (const SequenceSceneMenuItem& item : menu.items) {
       paintSequenceLabel(
           painter, item.labelDocument, item.labelRect,
-          scene.style.fontFamily, scene.style.fontSize,
-          scene.style.fontSize * 1.375,
+          scene.style.actorFontFamily, scene.style.actorFontSize,
+          scene.style.actorFontSize * 1.375,
           color(scene.style.actorTextColor), true);
     }
   }

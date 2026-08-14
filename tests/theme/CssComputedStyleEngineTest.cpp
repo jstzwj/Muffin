@@ -186,6 +186,41 @@ void testRootSelectorAppliesToHtml() {
           QStringLiteral(":root must not leak into body — it matches only the root"));
 }
 
+void testAttributeSelectorsAndInlineCascade() {
+  CssElement svg; svg.tag = QStringLiteral("svg"); svg.id = QStringLiteral("diagram");
+  CssElement group; group.tag = QStringLiteral("g"); group.classes = {QStringLiteral("node")};
+  group.attributes.insert(QStringLiteral("data-id"), QStringLiteral("Alpha-42"));
+  group.attributes.insert(QStringLiteral("data-look"), QStringLiteral("neo"));
+  group.parent = &svg;
+  CssElement rect; rect.tag = QStringLiteral("rect"); rect.classes = {QStringLiteral("basic")};
+  rect.parent = &group;
+
+  const CssThemeSheet sheet = CssThemeParser::parse(QStringLiteral(
+      "[data-id] rect { fill:#111; }"
+      "[data-id^='Alpha'][data-id$='42'] > rect { fill:#222; }"
+      "[data-look='NEO' i] rect { stroke:#333 !important; color:#444; }"), {});
+  const CssComputedStyleEngine engine(sheet);
+  CssComputedStyle style = engine.styleFor(rect);
+  require(style.resolvedValue(QStringLiteral("fill")) == QStringLiteral("#222"),
+          QStringLiteral("attribute existence/prefix/suffix selectors should match SVG attributes"));
+  require(style.resolvedValue(QStringLiteral("stroke")) == QStringLiteral("#333"),
+          QStringLiteral("case-insensitive attribute selector should match"));
+
+  const auto inlineNormal = CssThemeParser::parseDeclarations(
+      QStringLiteral("fill:#abc; stroke:#def;"));
+  style = engine.styleFor(rect, CssElementState{}, inlineNormal);
+  require(style.resolvedValue(QStringLiteral("fill")) == QStringLiteral("#abc"),
+          QStringLiteral("inline normal should beat normal stylesheet rules"));
+  require(style.resolvedValue(QStringLiteral("stroke")) == QStringLiteral("#333"),
+          QStringLiteral("stylesheet !important should beat inline normal"));
+
+  const auto inlineImportant = CssThemeParser::parseDeclarations(
+      QStringLiteral("stroke:#fed !important"));
+  style = engine.styleFor(rect, CssElementState{}, inlineImportant);
+  require(style.resolvedValue(QStringLiteral("stroke")) == QStringLiteral("#fed"),
+          QStringLiteral("inline !important should beat stylesheet !important"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -200,6 +235,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testHoverStateQuery);
   RUN_TEST(testTyporaEditorOnlyClassDropped);
   RUN_TEST(testRootSelectorAppliesToHtml);
+  RUN_TEST(testAttributeSelectorsAndInlineCascade);
 #undef RUN_TEST
   return 0;
 }

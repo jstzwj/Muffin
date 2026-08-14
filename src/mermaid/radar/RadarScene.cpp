@@ -83,6 +83,11 @@ RadarScene buildRadarScene(const RadarData& data, RadarConfig config,
     RadarGraticuleGeometry ring;
     ring.circle = data.options.graticule == QLatin1String("circle");
     ring.radius = scene.radius * (i + 1) / data.options.ticks;
+    ring.fill = scene.style.graticuleColor;
+    ring.stroke = scene.style.graticuleColor;
+    ring.color = QStringLiteral("black");
+    ring.strokeWidth = scene.style.graticuleStrokeWidth;
+    ring.fillOpacity = scene.style.graticuleOpacity;
     if (!ring.circle && axisCount > 0)
       for (int j = 0; j < axisCount; ++j)
         ring.points.append(polar(ring.radius, j, axisCount));
@@ -107,6 +112,13 @@ RadarScene buildRadarScene(const RadarData& data, RadarConfig config,
     axis.baseline = sinA > 0.01 ? RadarBaseline::Hanging
                     : sinA < -0.01 ? RadarBaseline::Auto
                                    : RadarBaseline::Central;
+    axis.lineStroke = scene.style.axisColor;
+    axis.lineColor = QStringLiteral("black");
+    axis.lineStrokeWidth = scene.style.axisStrokeWidth;
+    axis.labelFill = scene.style.axisLabelColor;
+    axis.labelColor = scene.style.axisLabelColor;
+    axis.labelFontFamily = scene.style.fontFamily;
+    axis.labelFontSize = scene.style.axisLabelFontSize;
     scene.axes.append(std::move(axis));
   }
 
@@ -126,6 +138,14 @@ RadarScene buildRadarScene(const RadarData& data, RadarConfig config,
     curve.classGenerated = index >= 0 && index < scene.style.themeColorLimit;
     curve.color = scene.style.palette.value(index);
     curve.polygon = data.options.graticule == QLatin1String("polygon");
+    curve.fill = curve.classGenerated && !curve.color.trimmed().isEmpty()
+                     ? curve.color : scene.style.textColor;
+    curve.stroke = curve.classGenerated && !curve.color.trimmed().isEmpty()
+                       ? curve.color : QStringLiteral("none");
+    curve.strokeWidth = curve.classGenerated ? scene.style.curveStrokeWidth : 1.0;
+    curve.fillOpacity = curve.classGenerated ? scene.style.curveOpacity : 1.0;
+    curve.elementColor = curve.classGenerated && !curve.color.trimmed().isEmpty()
+                             ? curve.color : QStringLiteral("black");
     for (int i = 0; i < axisCount; ++i)
       curve.points.append(polar(relativeRadius(source.entries.at(i), data.options.min,
                                                maxValue, scene.radius),
@@ -156,9 +176,24 @@ RadarScene buildRadarScene(const RadarData& data, RadarConfig config,
       legend.classGenerated = index >= 0 && index < scene.style.themeColorLimit;
       legend.color = scene.style.palette.value(index);
       legend.position = first + QPointF(0.0, index * 20.0);
+      legend.boxFill = legend.classGenerated && !legend.color.trimmed().isEmpty()
+                           ? legend.color : scene.style.textColor;
+      legend.boxStroke = legend.classGenerated && !legend.color.trimmed().isEmpty()
+                             ? legend.color : QStringLiteral("none");
+      legend.boxFillOpacity = legend.classGenerated ? scene.style.curveOpacity : 1.0;
+      legend.boxColor = legend.classGenerated && !legend.color.trimmed().isEmpty()
+                            ? legend.color : QStringLiteral("black");
+      legend.textFill = scene.style.textColor;
+      legend.textColor = QStringLiteral("black");
+      legend.textFontFamily = scene.style.fontFamily;
+      legend.textFontSize = scene.style.legendFontSize;
       scene.legends.append(std::move(legend));
     }
   }
+  scene.titleFill = scene.style.titleColor;
+  scene.titleColor = scene.style.titleColor;
+  scene.titleFontFamily = scene.style.fontFamily;
+  scene.titleFontSize = scene.style.titleFontSize;
   return scene;
 }
 

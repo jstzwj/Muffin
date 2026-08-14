@@ -111,6 +111,8 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
     QuadrantRect r;
     r.x = qx[i]; r.y = qy[i]; r.width = halfW; r.height = halfH;
     r.fill = qFills[i]; r.text = qTexts[i]; r.textFill = qTextFills[i];
+    r.textFontFamily = style.fontFamily;
+    r.textFontSize = quadrantLabelFontSize;
     s.quadrants.append(r);
   }
 
@@ -145,6 +147,9 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
         strokeWidth, editor::pieCssLengthContext(style.fontFamily, 16.0),
         std::sqrt(chartWidth * chartWidth + chartHeight * chartHeight) / std::sqrt(2.0));
     g.text = pp.label;
+    g.textFill = style.quadrantPointTextFill;
+    g.textFontFamily = style.fontFamily;
+    g.textFontSize = pointLabelFontSize;
     s.points.append(g);
   }
 
@@ -176,7 +181,7 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
   const auto xLabel = [&](const QString& text, double x) {
     if (text.isEmpty() || !showX) return;
     s.axisLabels.append({text, style.quadrantXAxisTextFill, x, xAxisY,
-                         xAxisLabelFontSize, 0, drawXMid});
+                         xAxisLabelFontSize, 0, drawXMid, style.fontFamily});
   };
   xLabel(data.xAxisLeftText, quadrantLeft + (drawXMid ? halfW / 2.0 : 0.0));
   xLabel(data.xAxisRightText, quadrantLeft + halfW + (drawXMid ? halfW / 2.0 : 0.0));
@@ -186,7 +191,7 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
   const auto yLabel = [&](const QString& text, double y) {
     if (text.isEmpty() || !showY) return;
     s.axisLabels.append({text, style.quadrantYAxisTextFill, yAxisX, y,
-                         yAxisLabelFontSize, -90, drawYMid});
+                         yAxisLabelFontSize, -90, drawYMid, style.fontFamily});
   };
   yLabel(data.yAxisBottomText, quadrantTop + quadrantHeight - (drawYMid ? halfH / 2.0 : 0.0));
   yLabel(data.yAxisTopText, quadrantTop + halfH - (drawYMid ? halfH / 2.0 : 0.0));
@@ -197,6 +202,8 @@ QuadrantScene buildQuadrantScene(const QuadrantData& data, const QJsonObject& cf
     s.titleX = chartWidth / 2.0;
     s.titleY = titlePadding;
   }
+  s.titleFill = style.quadrantTitleFill;
+  s.titleFontFamily = style.fontFamily;
 
   // Quadrant label Y placement depends on whether there are points (middle vs top).
   // (Stored implicitly: the painter computes it; record it in toJson.)

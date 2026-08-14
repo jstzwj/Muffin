@@ -117,6 +117,7 @@ struct MindmapDiagramImpl : Diagram {
     const CssLengthContext rootContext =
         pieCssLengthContext(style.fontFamily, 16.0);
     style.fontSize = cssFontSizePx(themeVars.fontSize, rootContext);
+    style.fontWeight = themeVars.fontWeight;
     style.textColor = themeVars.textColor;
     style.mainBkg = themeVars.mainBkg;
     style.rootFill = themeVars.git0;
@@ -139,6 +140,7 @@ struct MindmapDiagramImpl : Diagram {
     style.dropShadow = rawDropShadow.isUndefined() || rawDropShadow.isNull()
                            ? themeVars.dropShadow
                            : QStringLiteral("none");
+    style.themeCss = pre.config.value(QStringLiteral("themeCSS")).toString();
     const QJsonValue rawThemeColorLimit =
         rawThemeVariables.value(QStringLiteral("THEME_COLOR_LIMIT"));
     style.rawThemeColorLimit =

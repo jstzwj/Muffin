@@ -31,6 +31,12 @@ struct MermaidPaintOptions {
   // deterministic CSS initial frame used by PNG/PDF/print export.
   qreal animationTimeSeconds = -1.0;
 
+  // SVG export writes native <marker> definitions and marker-start/end
+  // references after QSvgGenerator has serialized the painted geometry. The
+  // regular raster/PDF/editor paths leave this true and keep the equivalent
+  // QPainter arrowheads.
+  bool paintEdgeMarkers = true;
+
   // Runtime-only Sequence Diagram menu state. `forceMenus` is stored in the
   // immutable scene; this set contains actor ids toggled open by the editor.
   const QSet<QString>* openSequenceMenus = nullptr;

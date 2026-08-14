@@ -5,6 +5,7 @@
 
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QFont>
 #include <QPainterPath>
 #include <QRectF>
 #include <QStringList>
@@ -46,6 +47,12 @@ struct SankeyNodeGeometry {
   qreal y0 = 0.0;
   qreal y1 = 0.0;
   QString color;
+  QString stroke = QStringLiteral("none");
+  qreal strokeWidth = 1.0;
+  qreal opacity = 1.0;
+  qreal strokeOpacity = 1.0;
+  bool visible = true;
+  bool hasBox = true;
 };
 
 struct SankeyLinkGeometry {
@@ -61,6 +68,10 @@ struct SankeyLinkGeometry {
   QString stroke;
   QString sourceColor;
   QString targetColor;
+  qreal opacity = 0.5;
+  bool visible = true;
+  bool hasBox = true;
+  QString mixBlendMode = QStringLiteral("multiply");
 };
 
 struct SankeyLabelGeometry {
@@ -75,6 +86,12 @@ struct SankeyLabelGeometry {
   QString fill;
   QString stroke;
   qreal strokeWidth = 0.0;
+  QString fontFamily;
+  qreal fontSize = 14.0;
+  QFont::Weight fontWeight = QFont::Normal;
+  qreal opacity = 1.0;
+  bool visible = true;
+  bool hasBox = true;
 };
 
 struct SankeyScene final : MermaidScene {
@@ -99,5 +116,6 @@ struct SankeyScene final : MermaidScene {
 
 SankeyScene buildSankeyScene(const SankeyData &data, SankeyConfig config,
                              SankeySceneStyle style);
+void refreshSankeyBounds(SankeyScene &scene);
 
 } // namespace muffin::mermaid::sankey

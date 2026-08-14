@@ -77,6 +77,7 @@ void applyDark(FlowThemeVariables& t) {
   t.mainBkg = QStringLiteral("#1f2020");
   t.secondBkg = QStringLiteral("calculated");
   t.mainContrastColor = QStringLiteral("lightgrey");
+  t.actorTextColor = QStringLiteral("calculated");
   t.lineColor = QStringLiteral("calculated");
   t.border1 = QStringLiteral("#ccc");
   t.border2 = rgba(255, 255, 255, 0.25);
@@ -137,6 +138,7 @@ void applyDefault(FlowThemeVariables& t) {
   t.defaultLinkColor = QStringLiteral("calculated");
   t.titleColor = QStringLiteral("calculated");
   t.edgeLabelBackground = QStringLiteral("calculated");
+  t.actorTextColor = QStringLiteral("black");
   t.clusterBkg = QStringLiteral("#FBFBFF");
   setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
             QStringLiteral("drop-shadow(1px 2px 2px rgba(185, 185, 185, 1))"));
@@ -176,6 +178,7 @@ void applyForest(FlowThemeVariables& t) {
   t.defaultLinkColor = QStringLiteral("calculated");
   t.titleColor = QStringLiteral("#333");
   t.edgeLabelBackground = QStringLiteral("#e8e8e8");
+  t.actorTextColor = QStringLiteral("black");
   setShadow(t, QStringLiteral("#b9b9b9"), 0.5, 1.0, 2.0,
             QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,0.5))"));
 }
@@ -212,6 +215,7 @@ void applyNeutral(FlowThemeVariables& t) {
   t.defaultLinkColor = QStringLiteral("calculated");
   t.titleColor = QStringLiteral("calculated");
   t.edgeLabelBackground = QStringLiteral("white");
+  t.actorTextColor = QStringLiteral("calculated");
   t.text = QStringLiteral("#333");
   setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
             QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,1))"));
@@ -228,6 +232,9 @@ void applyNeo(FlowThemeVariables& t) {
   t.fontSize = QStringLiteral("14px");
   t.fontWeight = QStringLiteral("normal");
   t.nodeBorder = QStringLiteral("#000000");
+  // neo's constructor literal (chunk line 1953): stateEnd's inner dot takes
+  // stateBorder over the nodeBorder fallback.
+  t.stateBorder = QStringLiteral("#000000");
   t.tertiaryColor = QStringLiteral("#ffffff");
   t.useGradient = true;
   t.gradientStart = QStringLiteral("#0042eb");
@@ -274,6 +281,10 @@ void applyRedux(FlowThemeVariables& t) {
   t.fontSize = QStringLiteral("14px");
   t.fontWeight = QStringLiteral("600");
   t.nodeBorder = QStringLiteral("#28253D");
+  // redux constructor literal (chunk line 2564).
+  t.stateBorder = QStringLiteral("#28253D");
+  t.gradientStart = QStringLiteral("#0042eb");  // redux ctor line 2566
+  t.gradientStop = QStringLiteral("#eb0042");
   t.tertiaryColor = QStringLiteral("#ffffff");
   t.clusterBkg = QStringLiteral("#F9F9FB");
   t.clusterBorder = QStringLiteral("#BDBCCC");
@@ -302,6 +313,10 @@ void applyReduxDark(FlowThemeVariables& t) {
   t.themeColorLimit = 12;
   t.strokeWidth = 2;
   t.nodeBorder = QStringLiteral("#FFFFFF");
+  // redux-dark constructor literal (chunk line 2884).
+  t.stateBorder = QStringLiteral("#FFFFFF");
+  t.gradientStart = QStringLiteral("#0042eb");  // redux-dark ctor line 2886
+  t.gradientStop = QStringLiteral("#eb0042");
   t.clusterBkg = QStringLiteral("#1E1A2E");
   t.clusterBorder = QStringLiteral("#BDBCCC");
   setShadow(t, QStringLiteral("#ffffff"), 0.06, 4.0, 4.0,
@@ -333,6 +348,10 @@ void applyReduxColor(FlowThemeVariables& t) {
   t.fontSize = QStringLiteral("14px");
   t.fontWeight = QStringLiteral("600");
   t.nodeBorder = QStringLiteral("#28253D");
+  // redux-color constructor literal (chunk line 3194).
+  t.stateBorder = QStringLiteral("#28253D");
+  t.gradientStart = QStringLiteral("#0042eb");  // redux-color ctor line 3196
+  t.gradientStop = QStringLiteral("#eb0042");
   t.tertiaryColor = QStringLiteral("#ffffff");
   setShadow(t, QStringLiteral("#000000"), 0.06, 4.0, 4.0,
             QStringLiteral("url(#drop-shadow)"));
@@ -368,6 +387,67 @@ void applyRawConstructor(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::ReduxColor: applyReduxColor(t); break;
     case FlowThemeId::ReduxDarkColor: applyReduxDarkColor(t); break;
   }
+
+  // State diagram's roundedWithTitle renderer consumes these constructor
+  // fields directly. They are not derived from clusterBkg: several themes
+  // deliberately use different title and body colors.
+  switch (id) {
+    case FlowThemeId::Base:
+      t.compositeBackground = QStringLiteral("#f4f4f4");
+      t.altBackground = QStringLiteral("hsl(220.5882352941, 100%, 98.3333333333%)");
+      t.compositeTitleBackground = QStringLiteral("#fff4dd");
+      break;
+    case FlowThemeId::Dark:
+      t.compositeBackground = QStringLiteral("#333");
+      t.altBackground = QStringLiteral("#555");
+      t.compositeTitleBackground = QStringLiteral("#1f2020");
+      break;
+    case FlowThemeId::Default:
+      t.compositeBackground = QStringLiteral("white");
+      t.altBackground = QStringLiteral("#f0f0f0");
+      t.compositeTitleBackground = QStringLiteral("#ECECFF");
+      break;
+    case FlowThemeId::Forest:
+      t.compositeBackground = QStringLiteral("white");
+      t.altBackground = QStringLiteral("#f0f0f0");
+      t.compositeTitleBackground = QStringLiteral("#cde498");
+      break;
+    case FlowThemeId::Neutral:
+      t.compositeBackground = QStringLiteral("#ffffff");
+      t.altBackground = QStringLiteral("#f4f4f4");
+      t.compositeTitleBackground = QStringLiteral("#eee");
+      break;
+    case FlowThemeId::Neo:
+      t.compositeBackground = QStringLiteral("#ffffff");
+      t.altBackground = QStringLiteral("#f0f0f0");
+      t.compositeTitleBackground = QStringLiteral("#ffffff");
+      break;
+    case FlowThemeId::NeoDark:
+      t.compositeBackground = QStringLiteral("#333");
+      t.altBackground = QStringLiteral("#f0f0f0");
+      t.compositeTitleBackground = QStringLiteral("#2a2020");
+      break;
+    case FlowThemeId::Redux:
+      t.compositeBackground = QStringLiteral("#ffffff");
+      t.altBackground = QStringLiteral("#F9F9FB");
+      t.compositeTitleBackground = QStringLiteral("#F9F9FB");
+      break;
+    case FlowThemeId::ReduxDark:
+      t.compositeBackground = QStringLiteral("#16141F");
+      t.altBackground = QStringLiteral("#16141F");
+      t.compositeTitleBackground = QStringLiteral("#16141F");
+      break;
+    case FlowThemeId::ReduxColor:
+      t.compositeBackground = QStringLiteral("#ffffff");
+      t.altBackground = QStringLiteral("#f0f0f0");
+      t.compositeTitleBackground = QStringLiteral("#ffffff");
+      break;
+    case FlowThemeId::ReduxDarkColor:
+      t.compositeBackground = QStringLiteral("#333");
+      t.altBackground = QStringLiteral("#f0f0f0");
+      t.compositeTitleBackground = QStringLiteral("#111113");
+      break;
+  }
 }
 
 // --- updateColors variants ---
@@ -386,6 +466,7 @@ void populateGantt(FlowThemeId id, FlowThemeVariables& t);
 void populateArchitecture(FlowThemeId id, FlowThemeVariables& t);
 void populateVenn(FlowThemeId id, FlowThemeVariables& t);
 void populateGitGraph(FlowThemeId id, FlowThemeVariables& t);
+void populateRequirement(FlowThemeId id, FlowThemeVariables& t);
 
 void populateGitGraph(FlowThemeId id, FlowThemeVariables& t) {
   if (t.git[0].isEmpty() && !t.git0.isEmpty()) t.git[0] = t.git0;
@@ -515,6 +596,7 @@ void populateVenn(FlowThemeId id, FlowThemeVariables& t) {
 void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorDefault,
                          bool nodeBorderFromBorder1, bool lightPalette = false) {
   assignIfEmpty(t.primaryTextColor, primaryTextColorDefault);
+  assignIfEmpty(t.actorTextColor, t.primaryTextColor);
   assignIfEmpty(t.secondaryColor, adjust(t.primaryColor, {.h = -120.0}));
   assignIfEmpty(t.tertiaryColor, adjust(t.primaryColor, {.h = 180.0, .l = 5.0}));
   const QString tertiaryBorderColor = mkBorder(t.tertiaryColor, false);
@@ -533,6 +615,12 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   // primaryBorderColor. Themes that pre-set nodeBorder in the constructor are
   // unaffected (assignIfEmpty keeps the constructor value).
   assignIfEmpty(t.nodeBorder, nodeBorderFromBorder1 ? t.border1 : t.primaryBorderColor);
+  t.specialStateColor = t.lineColor;  // Family-A updateColors (base line 161 etc.)
+  // updateColors tail: gradientStart/Stop = primary/secondaryBorderColor for
+  // base (line 396-397). The neo/redux constructors pre-set literal gradients,
+  // so assignIfEmpty leaves them alone.
+  assignIfEmpty(t.gradientStart, t.primaryBorderColor);
+  assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   assignIfEmpty(t.clusterBkg, t.tertiaryColor);
   assignIfEmpty(t.clusterBorder, tertiaryBorderColor);
   assignIfEmpty(t.defaultLinkColor, t.lineColor);
@@ -827,6 +915,9 @@ void updateColorsDefault(FlowThemeVariables& t) {
                                               : QStringLiteral("black"));
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
+  t.specialStateColor = t.lineColor;  // default updateColors line 977 (unconditional)
+  assignIfEmpty(t.gradientStart, t.primaryBorderColor);   // default tail line 903
+  assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   t.clusterBkg = t.secondBkg;
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
@@ -845,6 +936,9 @@ void updateColorsForest(FlowThemeVariables& t) {
     assignIfEmpty(t.cScaleLabel[i], QStringLiteral("black"));
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
+  t.specialStateColor = t.lineColor;  // forest updateColors line 1350 (unconditional)
+  assignIfEmpty(t.gradientStart, t.primaryBorderColor);   // forest tail line 1283
+  assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   t.clusterBkg = t.secondBkg;
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
@@ -861,8 +955,12 @@ void updateColorsDark(FlowThemeVariables& t) {
   t.secondBkg = lighten(t.mainBkg, 16);
   t.lineColor = t.mainContrastColor;
   t.arrowheadColor = t.mainContrastColor;
+  t.actorTextColor = t.mainContrastColor;
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
+  t.specialStateColor = QStringLiteral("#f4f4f4");  // dark updateColors line 563 literal
+  assignIfEmpty(t.gradientStart, t.primaryBorderColor);   // dark tail line 511
+  assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   t.clusterBkg = t.secondBkg;
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
@@ -905,10 +1003,17 @@ void updateColorsNeutral(FlowThemeVariables& t) {
   t.border2 = t.contrast;
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
+  // neutral updateColors lines 1750-1752: `stateBorder || "#000"` then the
+  // specialStateColor literal (both distinct from lineColor #666).
+  assignIfEmpty(t.stateBorder, QStringLiteral("#000"));
+  t.specialStateColor = QStringLiteral("#222");
+  assignIfEmpty(t.gradientStart, t.primaryBorderColor);   // neutral tail line 1665
+  assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   t.clusterBkg = t.secondBkg;
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
   t.titleColor = t.text;
+  t.actorTextColor = t.text;  // upstream @1674, unconditional
   // cScale: all literals (neutral lines 2418-2429).
   const QString literals[12] = {
       QStringLiteral("#555"), QStringLiteral("#F4F4F4"), QStringLiteral("#555"),
@@ -1222,9 +1327,13 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::NeoDark:
       updateColorsFamilyA(t, QStringLiteral("#333"), true); updateBaseCScale(t, false); break;
     case FlowThemeId::Redux:
-      updateColorsFamilyA(t, QStringLiteral("#28253D"), false, true); updateReduxCScale(t); break;
+      updateColorsFamilyA(t, QStringLiteral("#28253D"), false, true); updateReduxCScale(t);
+      t.requirementEdgeLabelBackground = QStringLiteral("#FFFFFF");
+      break;
     case FlowThemeId::ReduxDark:
-      updateColorsFamilyA(t, QStringLiteral("#FFFFFF"), true); updateBaseCScale(t, false); break;
+      updateColorsFamilyA(t, QStringLiteral("#FFFFFF"), true); updateBaseCScale(t, false);
+      t.requirementEdgeLabelBackground = QStringLiteral("#16141F");
+      break;
     case FlowThemeId::ReduxColor:
       updateColorsFamilyA(t, QStringLiteral("#28253D"), false, true); updateReduxColorCScale(t, false); break;
     case FlowThemeId::ReduxDarkColor:
@@ -1234,6 +1343,9 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::Dark: updateColorsDark(t); break;
     case FlowThemeId::Neutral: updateColorsNeutral(t); break;
   }
+  // Every theme's updateColors ends with `stateBkg = stateBkg || mainBkg`
+  // (base line 151, dark line 556, default line 966, ...).
+  if (t.stateBkg.isEmpty()) t.stateBkg = t.mainBkg;
   populateGitGraph(id, t);
   populatePacket(id, t);
   populateArchitecture(id, t);
@@ -1242,6 +1354,7 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   populateXYChart(id, t);
   populateCynefin(id, t);
   populateVenn(id, t);
+  populateRequirement(id, t);
   const auto wardleyFallback = [](QString& value,
                                   const QString& replacement) {
     if (value.isEmpty()) value = replacement;
@@ -1272,6 +1385,39 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
   wardleyFallback(t.wardley.annotationTextColor, t.primaryTextColor);
   wardleyFallback(t.wardley.annotationFill,
                   id == FlowThemeId::Dark ? t.mainBkg : t.background);
+}
+
+// Requirement getStyles() variables (src/themes/theme-*.js `this.x = this.x ||
+// …` blocks). Upstream never sets this.darkMode on a built-in theme, so the
+// `darkMode ? darken(secondary, 30) : secondary` arm is always secondaryColor.
+// default falls back to labelBackground; forest/neutral to edgeLabelBackground.
+// relationLabelColor follows each theme's FINAL actorTextColor (dark/neutral
+// placeholders were replaced in their updateColors above).
+void populateRequirement(FlowThemeId id, FlowThemeVariables& t) {
+  // neo/redux/redux-color bind a LOCAL `const primaryColor = "#ECECFE"` inside
+  // updateColors (chunk @2006/@2622/@3302) and derive requirementBackground
+  // from it; every other theme uses the themeVariables primaryColor.
+  const bool lightPalette = id == FlowThemeId::Neo || id == FlowThemeId::Redux ||
+                            id == FlowThemeId::ReduxColor;
+  assignIfEmpty(t.requirementBackground,
+                lightPalette ? QStringLiteral("#ECECFE") : t.primaryColor);
+  assignIfEmpty(t.requirementBorderColor, t.primaryBorderColor);
+  assignIfEmpty(t.requirementBorderSize, QStringLiteral("1"));
+  assignIfEmpty(t.requirementTextColor, t.primaryTextColor);
+  assignIfEmpty(t.relationColor, t.lineColor);
+  switch (id) {
+    case FlowThemeId::Default:
+      assignIfEmpty(t.relationLabelBackground, t.labelBackground);
+      break;
+    case FlowThemeId::Forest:
+    case FlowThemeId::Neutral:
+      assignIfEmpty(t.relationLabelBackground, t.edgeLabelBackground);
+      break;
+    default:
+      assignIfEmpty(t.relationLabelBackground, t.secondaryColor);
+      break;
+  }
+  assignIfEmpty(t.relationLabelColor, t.actorTextColor);
 }
 
 void populateArchitecture(FlowThemeId id, FlowThemeVariables& t) {
@@ -1420,8 +1566,24 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("textColor")) return textColor;
   if (key == QStringLiteral("titleColor")) return titleColor;
   if (key == QStringLiteral("edgeLabelBackground")) return edgeLabelBackground;
+  if (key == QStringLiteral("requirementEdgeLabelBackground"))
+    return requirementEdgeLabelBackground.value_or(QString());
+  if (key == QStringLiteral("requirementBackground")) return requirementBackground;
+  if (key == QStringLiteral("requirementBorderColor")) return requirementBorderColor;
+  if (key == QStringLiteral("requirementBorderSize")) return requirementBorderSize;
+  if (key == QStringLiteral("requirementTextColor")) return requirementTextColor;
+  if (key == QStringLiteral("relationColor")) return relationColor;
+  if (key == QStringLiteral("relationLabelBackground")) return relationLabelBackground;
+  if (key == QStringLiteral("relationLabelColor")) return relationLabelColor;
+  if (key == QStringLiteral("actorTextColor")) return actorTextColor;
   if (key == QStringLiteral("clusterBkg")) return clusterBkg;
   if (key == QStringLiteral("clusterBorder")) return clusterBorder;
+  if (key == QStringLiteral("compositeBackground")) return compositeBackground;
+  if (key == QStringLiteral("altBackground")) return altBackground;
+  if (key == QStringLiteral("compositeTitleBackground")) return compositeTitleBackground;
+  if (key == QStringLiteral("specialStateColor")) return specialStateColor;
+  if (key == QStringLiteral("stateBorder")) return stateBorder;
+  if (key == QStringLiteral("stateBkg")) return stateBkg;
   if (key == QStringLiteral("primaryBorderColor")) return primaryBorderColor;
   if (key == QStringLiteral("primaryTextColor")) return primaryTextColor;
   if (key == QStringLiteral("secondaryBorderColor")) return secondaryBorderColor;
@@ -1470,6 +1632,10 @@ QString FlowThemeVariables::get(const QString& key) const {
     if (key == QStringLiteral("fillType%1").arg(i)) return fillType[i];
   for (int i = 0; i < 12; ++i)
     if (key == QStringLiteral("pie%1").arg(i + 1)) return pie[i];
+  // NOTE: upstream "pie0" (dark/neutral `this["pie"+i] = this["cScale"+i]`
+  // with i=0) is derived but never consumed by any renderer — the pie
+  // renderer reads pie1..pie12 only — so it is not modeled (see the
+  // themeVariables inventory remaining list).
   for (int i = 0; i < 8; ++i)
     if (key == QStringLiteral("venn%1").arg(i + 1)) return venn[i];
   for (int i = 0; i < 4; ++i) {
@@ -1626,8 +1792,24 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("textColor")) textColor = value;
   else if (key == QStringLiteral("titleColor")) titleColor = value;
   else if (key == QStringLiteral("edgeLabelBackground")) edgeLabelBackground = value;
+  else if (key == QStringLiteral("requirementEdgeLabelBackground"))
+    requirementEdgeLabelBackground = value;
+  else if (key == QStringLiteral("requirementBackground")) requirementBackground = value;
+  else if (key == QStringLiteral("requirementBorderColor")) requirementBorderColor = value;
+  else if (key == QStringLiteral("requirementBorderSize")) requirementBorderSize = value;
+  else if (key == QStringLiteral("requirementTextColor")) requirementTextColor = value;
+  else if (key == QStringLiteral("relationColor")) relationColor = value;
+  else if (key == QStringLiteral("relationLabelBackground")) relationLabelBackground = value;
+  else if (key == QStringLiteral("relationLabelColor")) relationLabelColor = value;
+  else if (key == QStringLiteral("actorTextColor")) actorTextColor = value;
   else if (key == QStringLiteral("clusterBkg")) clusterBkg = value;
   else if (key == QStringLiteral("clusterBorder")) clusterBorder = value;
+  else if (key == QStringLiteral("compositeBackground")) compositeBackground = value;
+  else if (key == QStringLiteral("altBackground")) altBackground = value;
+  else if (key == QStringLiteral("compositeTitleBackground")) compositeTitleBackground = value;
+  else if (key == QStringLiteral("specialStateColor")) specialStateColor = value;
+  else if (key == QStringLiteral("stateBorder")) stateBorder = value;
+  else if (key == QStringLiteral("stateBkg")) stateBkg = value;
   else if (key == QStringLiteral("primaryBorderColor")) primaryBorderColor = value;
   else if (key == QStringLiteral("primaryTextColor")) primaryTextColor = value;
   else if (key == QStringLiteral("secondaryBorderColor")) secondaryBorderColor = value;

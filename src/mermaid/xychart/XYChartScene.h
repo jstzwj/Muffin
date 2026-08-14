@@ -3,6 +3,7 @@
 #include "mermaid/MermaidScene.h"
 #include "mermaid/xychart/XYChartDiagram.h"
 
+#include <QFont>
 #include <QPointF>
 #include <QRectF>
 #include <QString>
@@ -56,6 +57,8 @@ struct XYChartSceneStyle {
   QString yAxisTickColor = QStringLiteral("#333");
   QString yAxisLineColor = QStringLiteral("#333");
   QStringList plotColorPalette;
+  qreal backgroundOpacity = 1.0;
+  bool backgroundVisible = true;
 };
 
 enum class XYChartTextAnchor { Start, Middle, End };
@@ -70,6 +73,10 @@ struct XYChartTextGeometry {
   qreal rotation = 0.0;
   XYChartTextAnchor anchor = XYChartTextAnchor::Middle;
   XYChartBaseline baseline = XYChartBaseline::Middle;
+  QString fontFamily;
+  QFont::Weight fontWeight = QFont::Normal;
+  qreal opacity = 1.0;
+  bool visible = true;
   int paintOrder = -1;
 };
 
@@ -80,6 +87,9 @@ struct XYChartPathGeometry {
   QString fill;
   QString stroke;
   qreal strokeWidth = 0.0;
+  qreal fillOpacity = 1.0;
+  qreal strokeOpacity = 1.0;
+  bool visible = true;
   int paintOrder = -1;
 };
 
@@ -89,6 +99,9 @@ struct XYChartRectGeometry {
   QString fill;
   QString stroke;
   qreal strokeWidth = 0.0;
+  qreal fillOpacity = 1.0;
+  qreal strokeOpacity = 1.0;
+  bool visible = true;
   int paintOrder = -1;
 };
 
