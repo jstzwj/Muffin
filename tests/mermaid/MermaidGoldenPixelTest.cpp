@@ -163,7 +163,7 @@ QImage renderFlowMathLabelCrop(const flowscene::FlowSceneLabel& label,
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
 #if defined(Q_OS_LINUX)
-  qWarning("skipped on Linux: font/rendering golden coupled to x86 Windows (TODO, docs/mermaid-architecture.md step 5)");
+  qWarning("skipped on Linux: raster goldens were captured against Windows-Chrome PNGs; the bundled Noto faces ARE registered cross-platform via the Qt resource, and geometry uses OpenType design metrics, but FreeType antialiasing/hinting still produces different edge pixels than the committed DirectWrite-rasterized references. Closure requires regenerating (or dual-sourcing) the browser goldens on Linux - a platform-infrastructure task, not a code change.");
   return 0;
 #endif
   require(argc == 2, QStringLiteral("Expected golden-pixel manifest path"));

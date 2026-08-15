@@ -1,0 +1,1011 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "cynefinModuleSha256": "3dbe403effb1abbc413cce6a4433bc2dd59feef86c5da296057459b40a5ffc9c",
+    "parserModuleSha256": "f541603e5c4d057f0c557f0873bd5b3be3c9878caed7ef2b6ee4e6699206dd3d",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "cynefin-beta\ntitle Decision Landscape\ncomplex\n  \"Explore\"\n  \"Experiment\"\ncomplicated\n  \"Analyse\"\nclear\n  \"Standardise\"\nchaotic\n  \"Stabilise\"\nconfusion\n  \"Unknown one\"\n  \"Unknown two\"\n  \"Unknown three\"\n  \"Unknown four\"\ncomplex --> complicated : \"learn\"\nchaotic --> clear",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "Decision Landscape",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "Explore"
+                  },
+                  {
+                    "label": "Experiment"
+                  }
+                ]
+              }
+            ],
+            [
+              "complicated",
+              {
+                "name": "complicated",
+                "items": [
+                  {
+                    "label": "Analyse"
+                  }
+                ]
+              }
+            ],
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": [
+                  {
+                    "label": "Standardise"
+                  }
+                ]
+              }
+            ],
+            [
+              "chaotic",
+              {
+                "name": "chaotic",
+                "items": [
+                  {
+                    "label": "Stabilise"
+                  }
+                ]
+              }
+            ],
+            [
+              "confusion",
+              {
+                "name": "confusion",
+                "items": [
+                  {
+                    "label": "Unknown one"
+                  },
+                  {
+                    "label": "Unknown two"
+                  },
+                  {
+                    "label": "Unknown three"
+                  },
+                  {
+                    "label": "Unknown four"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": [
+            {
+              "from": "complex",
+              "to": "complicated",
+              "label": "learn"
+            },
+            {
+              "from": "chaotic",
+              "to": "clear"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "colon-header",
+      "source": "cynefin-beta:\ntitle Decision Landscape\ncomplex\n  \"Explore\"\n  \"Experiment\"\ncomplicated\n  \"Analyse\"\nclear\n  \"Standardise\"\nchaotic\n  \"Stabilise\"\nconfusion\n  \"Unknown one\"\n  \"Unknown two\"\n  \"Unknown three\"\n  \"Unknown four\"\ncomplex --> complicated : \"learn\"\nchaotic --> clear",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "Decision Landscape",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "Explore"
+                  },
+                  {
+                    "label": "Experiment"
+                  }
+                ]
+              }
+            ],
+            [
+              "complicated",
+              {
+                "name": "complicated",
+                "items": [
+                  {
+                    "label": "Analyse"
+                  }
+                ]
+              }
+            ],
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": [
+                  {
+                    "label": "Standardise"
+                  }
+                ]
+              }
+            ],
+            [
+              "chaotic",
+              {
+                "name": "chaotic",
+                "items": [
+                  {
+                    "label": "Stabilise"
+                  }
+                ]
+              }
+            ],
+            [
+              "confusion",
+              {
+                "name": "confusion",
+                "items": [
+                  {
+                    "label": "Unknown one"
+                  },
+                  {
+                    "label": "Unknown two"
+                  },
+                  {
+                    "label": "Unknown three"
+                  },
+                  {
+                    "label": "Unknown four"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": [
+            {
+              "from": "complex",
+              "to": "complicated",
+              "label": "learn"
+            },
+            {
+              "from": "chaotic",
+              "to": "clear"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uppercase",
+      "source": "CYNEFIN-BETA\ntitle Decision Landscape\ncomplex\n  \"Explore\"\n  \"Experiment\"\ncomplicated\n  \"Analyse\"\nclear\n  \"Standardise\"\nchaotic\n  \"Stabilise\"\nconfusion\n  \"Unknown one\"\n  \"Unknown two\"\n  \"Unknown three\"\n  \"Unknown four\"\ncomplex --> complicated : \"learn\"\nchaotic --> clear",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: CYNEFIN-BETA\ntitle Decision Landscape\ncomplex\n  \"Explore\"\n  \"Experiment\"\ncomplicated\n  \"Analyse\"\nclear\n  \"Standardise\"\nchaotic\n  \"Stabilise\"\nconfusion\n  \"Unknown one\"\n  \"Unknown two\"\n  \"Unknown three\"\n  \"Unknown four\"\ncomplex --> complicated : \"learn\"\nchaotic --> clear",
+          "kind": "Parser",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "cynefin-betaX\nclear",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: cynefin-betaX\nclear",
+          "kind": "Parser",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "header-only",
+      "source": "cynefin-beta",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "header-newline",
+      "source": "cynefin-beta\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "colon-only",
+      "source": "cynefin-beta:",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "all-empty-domains",
+      "source": "cynefin-beta\ncomplex\ncomplicated\nchaotic\nclear\nconfusion",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": []
+              }
+            ],
+            [
+              "complicated",
+              {
+                "name": "complicated",
+                "items": []
+              }
+            ],
+            [
+              "chaotic",
+              {
+                "name": "chaotic",
+                "items": []
+              }
+            ],
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": []
+              }
+            ],
+            [
+              "confusion",
+              {
+                "name": "confusion",
+                "items": []
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "single-domain",
+      "source": "cynefin-beta\ncomplex\n\"Probe\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "Probe"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "same-line-items",
+      "source": "cynefin-beta complex \"A\" \"B\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "A"
+                  },
+                  {
+                    "label": "B"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "single-quotes",
+      "source": "cynefin-beta\ncomplex\n'A'\n'B'",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "A"
+                  },
+                  {
+                    "label": "B"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "empty-item",
+      "source": "cynefin-beta\ncomplex\n\"\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": ""
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "escaped-item",
+      "source": "cynefin-beta\ncomplex\n\"A\\\"B\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "A\"B"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "markup-item",
+      "source": "cynefin-beta\ncomplex\n\"<script>x</script><b>A</b>\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "<script>x</script><b>A</b>"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "bare-item",
+      "source": "cynefin-beta\ncomplex\nA",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 3, column 1: unexpected character: ->A<- at offset: 21, skipped 1 characters. ",
+          "kind": "Lexer",
+          "line": 3,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "unterminated-item",
+      "source": "cynefin-beta\ncomplex\n\"A",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 3, column 1: unexpected character: ->\"<- at offset: 21, skipped 2 characters. ",
+          "kind": "Lexer",
+          "line": 3,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "multiline-item",
+      "source": "cynefin-beta\ncomplex\n\"A\nB\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "A\nB"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "unknown-domain",
+      "source": "cynefin-beta\nobvious\n\"A\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 1: unexpected character: ->o<- at offset: 13, skipped 7 characters. Parse error on line 3, column 1: Expecting token of type 'EOF' but found `\"A\"`.",
+          "kind": "Lexer",
+          "line": 3,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "case-domain",
+      "source": "cynefin-beta\nComplex\n\"A\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 1: unexpected character: ->C<- at offset: 13, skipped 7 characters. Parse error on line 3, column 1: Expecting token of type 'EOF' but found `\"A\"`.",
+          "kind": "Lexer",
+          "line": 3,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "repeated-domain",
+      "source": "cynefin-beta\ncomplex\n\"old\"\ncomplex\n\"new\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "new"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "transition",
+      "source": "cynefin-beta\ncomplex --> clear : \"move\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [],
+          "transitions": [
+            {
+              "from": "complex",
+              "to": "clear",
+              "label": "move"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "transition-no-label",
+      "source": "cynefin-beta\ncomplex --> clear",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [],
+          "transitions": [
+            {
+              "from": "complex",
+              "to": "clear"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "transition-empty-label",
+      "source": "cynefin-beta\ncomplex --> clear : \"\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [],
+          "transitions": [
+            {
+              "from": "complex",
+              "to": "clear"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "self-loop",
+      "source": "cynefin-beta\ncomplex --> complex : \"ignored\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "transition-no-space",
+      "source": "cynefin-beta\ncomplex-->clear:\"move\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [],
+          "transitions": [
+            {
+              "from": "complex",
+              "to": "clear",
+              "label": "move"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "transition-bare-label",
+      "source": "cynefin-beta\ncomplex --> clear : move",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 21: unexpected character: ->m<- at offset: 33, skipped 4 characters. Parse error on line 2, column 9: Expecting token of type 'EOF' but found `-->`.\nParse error on line 2, column 19: Expecting token of type 'EOF' but found `:`.",
+          "kind": "Lexer",
+          "line": 2,
+          "column": 9,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "transition-same-line",
+      "source": "cynefin-beta\ncomplex --> clear complex --> chaotic",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 9: Expecting token of type 'EOF' but found `-->`.",
+          "kind": "Parser",
+          "line": 2,
+          "column": 9,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "semicolon",
+      "source": "cynefin-beta\ncomplex --> clear;",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 18: unexpected character: ->;<- at offset: 30, skipped 1 characters. ",
+          "kind": "Lexer",
+          "line": 2,
+          "column": 18,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "title",
+      "source": "cynefin-beta\ntitle Inline Heading\nclear\n\"Known\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "Inline Heading",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": [
+                  {
+                    "label": "Known"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "cynefin-beta\naccTitle: AT\naccDescr: AD\nclear\n\"Known\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "AT",
+          "accDescr": "AD",
+          "domains": [
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": [
+                  {
+                    "label": "Known"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "acc-block",
+      "source": "cynefin-beta\naccDescr {first\n  second}\nclear\n\"Known\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "first\nsecond",
+          "domains": [
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": [
+                  {
+                    "label": "Known"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "repeated-title",
+      "source": "cynefin-beta\ntitle First\ntitle Second\nclear",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "Second",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": []
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "comment-before",
+      "source": "%% comment\ncynefin-beta\nclear",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": []
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "comment-body",
+      "source": "cynefin-beta\n%% comment\nclear",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": []
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "blank-lines",
+      "source": "\n cynefin-beta:\n\n complex\n \"A\"\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "A"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "cynefin-beta\r\ncomplex\r\n\"A\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "complex",
+              {
+                "name": "complex",
+                "items": [
+                  {
+                    "label": "A"
+                  }
+                ]
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\nconfig:\n  {\n    \"cynefin\": {\n      \"seed\": 7\n    }\n  }\n---\ncynefin-beta\nclear",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": []
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"cynefin\":{\"seed\":7}}}%%\ncynefin-beta\nclear",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "title": "",
+          "accTitle": "",
+          "accDescr": "",
+          "domains": [
+            [
+              "clear",
+              {
+                "name": "clear",
+                "items": []
+              }
+            ]
+          ],
+          "transitions": []
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "e89d8d33ea05b05e538b12f141b3063ef3ecb4d7d4421e0f841b81c5688db0d3"
+}

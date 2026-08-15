@@ -3,6 +3,7 @@
 #include "mermaid/MermaidScene.h"
 #include "mermaid/classdiagram/ClassLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/rough/RoughOps.h"
 #include "mermaid/theme/MermaidStyleResolve.h"
 
 #include <QMap>
@@ -55,6 +56,8 @@ struct ClassSceneNode {
   QString stroke;
   QString textColor;
   qreal strokeWidth = 1.0;
+  QVector<rough::Drawable> roughDrawables;
+  QRectF paintedBounds;
 };
 
 struct ClassSceneTerminalLabel {
@@ -91,6 +94,7 @@ struct ClassSceneEdge {
   QString stroke;
   QString strokeWidth;
   QString strokeDasharray;
+  QVector<rough::Drawable> roughDrawables;
 };
 
 struct ClassSceneCluster {
@@ -98,6 +102,8 @@ struct ClassSceneCluster {
   QString label;
   QRectF bounds;
   ClassSceneLabel titleLabel;
+  rough::Drawable roughDrawable;
+  QRectF paintedBounds;
 };
 
 struct ClassMarkerChild {
@@ -130,6 +136,7 @@ struct ClassScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
+  SvgMarkerProjection svgMarkerProjection() const override;
 
   QRectF bounds;
   QVector<ClassSceneCluster> clusters;
@@ -151,6 +158,8 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
                            const ClassPlacementResult& placement,
                            ClassSceneStyle style = {},
                            const QVector<style::ClassDef>& classDefs = {},
-                           const style::ThemeDefaults& themeDefaults = {});
+                           const style::ThemeDefaults& themeDefaults = {},
+                           bool handDrawn = false,
+                           quint32 handDrawnSeed = 0);
 
 }  // namespace muffin::mermaid::classdiagram

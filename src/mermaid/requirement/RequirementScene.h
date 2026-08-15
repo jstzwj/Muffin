@@ -13,10 +13,12 @@
 #include "mermaid/MermaidScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/requirement/RequirementLayout.h"
+#include "mermaid/requirement/RequirementComputedStyle.h"
 #include "mermaid/requirement/RequirementTextStyle.h"
 
 #include <QColor>
 #include <QFont>
+#include <QHash>
 #include <QPointF>
 #include <QRectF>
 #include <QSizeF>
@@ -32,10 +34,14 @@ namespace muffin::mermaid::requirement {
 struct RequirementSceneStyle {
   QString boxFill = QStringLiteral("#ECECFF");       // theme mainBkg
   QString boxStroke = QStringLiteral("#9370DB");      // theme border1
-  QString textColor = QStringLiteral("#131300");      // theme primaryTextColor
+  // Requirement label color = nodeTextColor || textColor (requirement styles
+  // `.label { color }`). The adapter always overrides this from the theme; the
+  // struct default is only a fallback and is intentionally not relied upon.
+  QString textColor = QStringLiteral("#333333");
   QString dividerColor = QStringLiteral("#9370DB");   // theme nodeBorder
   QString lineColor = QStringLiteral("#333333");      // theme lineColor
   QString edgeLabelFill = QStringLiteral("#ECECFF");  // theme edgeLabelBackground
+  QString edgeLabelContainerFill = QStringLiteral("#ECECFF");
   QString edgeLabelColor = QStringLiteral("#333333"); // theme textColor
   QString titleColor = QStringLiteral("#333333");
   // The SVG-inherited foreground used when an inline fill/color value is
@@ -45,6 +51,7 @@ struct RequirementSceneStyle {
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontSize = 16.0;
   qreal lineHeight = 24.0;
+  bool htmlLabels = true;
   // SVG-root base font-weight (the weight bolder/lighter resolve against at L1).
   QFont::Weight fontWeight = QFont::Normal;
   // requirementBox default border size (userNodeOverrides: strokeWidth = sw || 1.3);
@@ -68,6 +75,11 @@ struct RequirementSceneStyle {
   // THEME_COLOR_LIMIT; default 12, user-configurable via themeVariables). Copied
   // from themeVars.themeColorLimit by the adapter.
   int themeColorLimit = 12;
+  QString markerFill;
+  QString markerStroke;
+  qreal markerOpacity = 1.0;
+  bool markerVisible = true;
+  QHash<QString, RequirementResolvedShapeStyle> markerStyles;
   // Per-node L1 (palette CSS) declarations, set in buildRequirementScene. Presence
   // == a genColor rule exists for this node's color-id for that property; the value
   // is the array entry carried verbatim so resolveBoxStyle's layered resolver can
@@ -90,6 +102,19 @@ struct RequirementSceneRow {
   QString fontFamily;
   qreal lineHeight = -1.0;
   QColor color;  // invalid => scene.style.textColor
+  qreal opacity = 1.0;
+  bool visible = true;
+  bool hasBox = true;
+  bool rootHasBox = true;
+  RequirementComputedElement wrapperComputed;
+  RequirementComputedElement paintedTextComputed;
+};
+
+struct RequirementPaintedPathStyle {
+  QString stroke;
+  qreal strokeWidth = 1.0;
+  qreal effectiveStrokeOpacity = 1.0;
+  bool displayed = true;
 };
 
 struct RequirementSceneNode {
@@ -120,6 +145,18 @@ struct RequirementSceneNode {
   // spacing/decoration/transform/color from the node's labelStyle, last-wins over
   // the theme base. Sentinel defaults mean "use the scene base".
   RequirementTextStyle text;
+  qreal fillOpacity = 1.0;
+  qreal strokeOpacity = 1.0;
+  qreal opacity = 1.0;
+  bool visible = true;
+  bool hasBox = true;
+  bool rootHasBox = true;
+  qreal dividerOpacity = 1.0;
+  qreal dividerStrokeOpacity = 1.0;
+  qreal dividerStrokeWidth = 1.0;
+  bool dividerRootVisible = true;
+  RequirementComputedElement dividerWrapperComputed;
+  QVector<RequirementPaintedPathStyle> dividerChildPaths;
 };
 
 struct RequirementSceneEdge {
@@ -138,6 +175,24 @@ struct RequirementSceneEdge {
   QSizeF labelSize;
   QRectF pathBounds;
   QRectF labelBounds;
+  QString stroke;
+  qreal strokeWidth = 1.0;
+  qreal strokeOpacity = 1.0;
+  qreal opacity = 1.0;
+  bool visible = true;
+  bool rootHasBox = true;
+  QString labelFill;
+  QString labelColor;
+  qreal labelOpacity = 1.0;
+  bool labelVisible = true;
+  bool labelRootHasBox = true;
+  RequirementTextStyle labelTextStyle;
+  RequirementComputedElement outerLabelComputed;
+  RequirementComputedElement innerLabelComputed;
+  RequirementComputedElement paintedSpanComputed;
+  RequirementPaintedBackground labelContainerBg;
+  RequirementPaintedBackground labelTextBg;
+  bool hasLabelCascade = false;
 };
 
 // Marker definition (rendered in the painter's <defs> equivalent).
@@ -162,12 +217,17 @@ struct RequirementMarkerDefinition {
   bool isContains = false;
   // arrow path data:
   QString arrowPath;
+  QString fill;
+  QString stroke;
+  qreal opacity = 1.0;
+  bool visible = true;
 };
 
 struct RequirementScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
+  SvgMarkerProjection svgMarkerProjection() const override;
 
   QRectF bounds;
   QVector<RequirementSceneNode> nodes;

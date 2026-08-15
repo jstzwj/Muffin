@@ -6,6 +6,7 @@
 #include "mermaid/info/InfoDiagram.h"
 #include "mermaid/info/InfoScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QSize>
 
@@ -33,6 +34,39 @@ struct InfoDiagramImpl final : Diagram {
     info::InfoSceneStyle style;
     style.fontFamily = themeVars.fontFamily;
     style.textColor = themeVars.textColor;
+    const QString themeCss =
+        pre.config.value(QStringLiteral("themeCSS")).toString();
+    if (!themeCss.trimmed().isEmpty()) {
+      csscascade::ElementStyle rootFallback;
+      rootFallback.fill = themeVars.textColor;
+      rootFallback.color = themeVars.textColor;
+      rootFallback.fontFamily = themeVars.fontFamily;
+      rootFallback.fontSize = themeVars.fontSize;
+      rootFallback.fontWeight = QStringLiteral("400");
+      csscascade::ElementStyle textFallback = rootFallback;
+      textFallback.fontSize = QStringLiteral("32px");
+      const auto projected = csscascade::resolveElements(themeCss, {
+          {QStringLiteral("svg"), QString(), QStringLiteral("svg"),
+           QStringLiteral("diagram-root"), {QStringLiteral("info")}, {},
+           rootFallback, QString()},
+          {QStringLiteral("group"), QStringLiteral("svg"),
+           QStringLiteral("g"), QString(), {}, {}, rootFallback, QString()},
+          {QStringLiteral("version"), QStringLiteral("group"),
+           QStringLiteral("text"), QString(), {QStringLiteral("version")}, {},
+           textFallback, QString()},
+      });
+      const csscascade::ElementStyle computed =
+          projected.value(QStringLiteral("version"), textFallback);
+      style.fontFamily = computed.fontFamily;
+      const CssLengthContext rootContext =
+          pieCssLengthContext(firstFontFamily(style.fontFamily), 16.0);
+      style.fontSize = cssFontSizePx(computed.fontSize, rootContext);
+      style.fontWeight =
+          cssFontWeightToQt(QJsonValue(computed.fontWeight), QFont::Normal);
+      style.textColor = computed.fill;
+      style.opacity = computed.effectiveOpacity;
+      style.textVisible = computed.displayed();
+    }
     info::InfoScene scene = info::buildInfoScene(std::move(style));
 
     MermaidRenderMetadata metadata = renderMetadata(

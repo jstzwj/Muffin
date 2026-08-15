@@ -7,11 +7,17 @@
 #include <QRectF>
 #include <QString>
 
+#include <QFont>
+
 namespace muffin::mermaid::info {
 
 struct InfoSceneStyle {
   QString fontFamily;
   QString textColor;
+  qreal fontSize = 32.0;
+  QFont::Weight fontWeight = QFont::Normal;
+  qreal opacity = 1.0;
+  bool textVisible = true;
 };
 
 struct InfoScene final : MermaidScene {

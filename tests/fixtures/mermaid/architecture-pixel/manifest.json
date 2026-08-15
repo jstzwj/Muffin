@@ -1,0 +1,51 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "architectureModuleSha256": "d6f8424fba961c50f2cfcbd4e1c5f53f37311d83cc768bcf41afd8874c0454ba",
+    "parserModuleSha256": "08628d5e6194206bf5f1d5afb9c456db355492cd4245d13b55303fa3d2267387",
+    "grammarModuleSha256": "f541603e5c4d057f0c557f0873bd5b3be3c9878caed7ef2b6ee4e6699206dd3d",
+    "cytoscapeVersion": "3.34.0",
+    "fcoseVersion": "2.2.0",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\narchitecture-beta\ngroup platform(cloud)[Platform]\nservice user(internet)[User]\nservice api(server)[API] in platform\nservice db(database)[Database] in platform\njunction hub in platform\nuser:R --> L:api\napi:B -- T:db\nhub:R -- L:api\nalign row hub api",
+      "file": "default.png",
+      "width": 606,
+      "height": 629,
+      "sha256": "174962e140859a11115b368ba54fbb9425343219b3eb62dd6813c5e70c06ba8d"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"theme\":\"dark\"}}%%\narchitecture-beta\ngroup platform(cloud)[Platform]\nservice user(internet)[User]\nservice api(server)[API] in platform\nservice db(database)[Database] in platform\njunction hub in platform\nuser:R --> L:api\napi:B -- T:db\nhub:R -- L:api\nalign row hub api",
+      "file": "dark.png",
+      "width": 606,
+      "height": 629,
+      "sha256": "9b06e7652eac3e21ae6dfc0ee38436ca47dc1e304ff72c4fa1d5acae776dbf1f"
+    },
+    {
+      "id": "forest",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"theme\":\"forest\"}}%%\narchitecture-beta\ngroup platform(cloud)[Platform]\nservice user(internet)[User]\nservice api(server)[API] in platform\nservice db(database)[Database] in platform\njunction hub in platform\nuser:R --> L:api\napi:B -- T:db\nhub:R -- L:api\nalign row hub api",
+      "file": "forest.png",
+      "width": 606,
+      "height": 629,
+      "sha256": "c4204e410d017935677e834535304f45cab26e62d63b13e1e00d48e265648dae"
+    },
+    {
+      "id": "nested",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\narchitecture-beta\ngroup outer(cloud)[Outer]\ngroup inner(server)[Inner] in outer\nservice a(database)[A] in inner\nservice b(internet)[B] in outer\na:R --> L:b",
+      "file": "nested.png",
+      "width": 487,
+      "height": 345,
+      "sha256": "b8952f79cc3d5a9b99ef94a655a6efdcfbfed4cd21a76496c6a14547dc57cdca"
+    }
+  ],
+  "fixtureSha256": "63a292d35ae2fb97b1d9d552c04ce10f8a46e43bec4d82717240febd8ddfe238"
+}

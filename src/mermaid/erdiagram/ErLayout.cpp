@@ -113,7 +113,8 @@ muffin::mermaid::er::ErLayoutMeasurements
 muffin::mermaid::er::measureErLayoutInput(const ErLayoutInput& input,
                                           QString fontFamily, qreal fontSize,
                                           qreal minEntityWidth, qreal diagramPadding,
-                                          qreal entityPadding) {
+                                          qreal entityPadding,
+                                          qreal relationshipFontSize) {
   ErLayoutMeasurements result;
   flowchart::FlowTextOptions options;
   options.fontFamily = std::move(fontFamily);
@@ -173,10 +174,13 @@ muffin::mermaid::er::measureErLayoutInput(const ErLayoutInput& input,
     }
     result.entities.insert(entity.id, size);
   }
+  flowchart::FlowTextOptions relationshipOptions = options;
+  relationshipOptions.fontPixelSize = relationshipFontSize;
+  relationshipOptions.lineHeight = relationshipFontSize * 1.5;
   for (const ErLayoutRelationshipInput& rel : input.relationships) {
     if (rel.label.isEmpty()) continue;
     result.relationships.insert(rel.id, flowchart::measureLabel(
-        rel.label, QStringLiteral("markdown"), options));
+        rel.label, QStringLiteral("markdown"), relationshipOptions));
   }
   return result;
 }

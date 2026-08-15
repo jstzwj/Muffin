@@ -11,7 +11,9 @@
 #include <cstdlib>
 
 using muffin::mermaid::editor::MermaidRenderCache;
+using muffin::mermaid::editor::MermaidRenderEntry;
 using muffin::mermaid::editor::MermaidSvgRenderResult;
+using muffin::mermaid::MermaidPaintOptions;
 
 namespace {
 
@@ -65,6 +67,37 @@ void requireRenderable(const QByteArray& svg, const QString& family) {
     }
   }
   require(hasPaint, family + QStringLiteral(" SVG rendered to a blank image"));
+}
+
+int differentPixels(const QImage& left, const QImage& right) {
+  require(left.size() == right.size(),
+          QStringLiteral("Marker raster dimensions drifted"));
+  int count = 0;
+  for (int y = 0; y < left.height(); ++y) {
+    const QRgb* a = reinterpret_cast<const QRgb*>(left.constScanLine(y));
+    const QRgb* b = reinterpret_cast<const QRgb*>(right.constScanLine(y));
+    for (int x = 0; x < left.width(); ++x)
+      if (a[x] != b[x]) ++count;
+  }
+  return count;
+}
+
+QImage paintScene(const MermaidRenderEntry& entry, bool paintEdgeMarkers) {
+  require(entry.scene != nullptr, QStringLiteral("Marker scene is missing"));
+  const QRectF bounds = entry.scene->sceneBounds();
+  const QSize size(qMax(1, qCeil(bounds.width())),
+                   qMax(1, qCeil(bounds.height())));
+  QImage image(size, QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.setRenderHint(QPainter::Antialiasing, true);
+  painter.setRenderHint(QPainter::TextAntialiasing, true);
+  painter.translate(-bounds.left(), -bounds.top());
+  MermaidPaintOptions options;
+  options.paintEdgeMarkers = paintEdgeMarkers;
+  entry.scene->paint(painter, options);
+  painter.end();
+  return image;
 }
 
 MermaidSvgRenderResult renderSvg(const QString& source,
@@ -125,6 +158,20 @@ int main(int argc, char** argv) {
                       "  done[Done]\n    task2[Ship]")},
       {QStringLiteral("mindmap"), QStringLiteral("mindmap"),
        QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
+      {QStringLiteral("block"), QStringLiteral("block"),
+       QStringLiteral("block-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B")},
+      {QStringLiteral("gitGraph"), QStringLiteral("gitGraph"),
+       QStringLiteral("gitGraph\ncommit id: \"root\"\nbranch feature\n"
+                      "commit id: \"feature-1\"\ncheckout main\n"
+                      "merge feature id: \"release\"")},
+      {QStringLiteral("c4"), QStringLiteral("c4"),
+       QStringLiteral("C4Context\ntitle System context\n"
+                      "Person(user, \"User\")\n"
+                      "System(app, \"Application\")\n"
+                      "Rel(user, app, \"Uses\")")},
+      {QStringLiteral("swimlane"), QStringLiteral("flowchart"),
+       QStringLiteral("swimlane-beta TB\nsubgraph one[One]\n"
+                      "  A[Start] --> B[Done]\nend")},
       {QStringLiteral("gantt"), QStringLiteral("gantt"),
        QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
                       "section Delivery\nBuild :build, 2024-01-01, 3d\n"
@@ -139,6 +186,28 @@ int main(int argc, char** argv) {
                       "tf 3 evt Submitted ->> 2")},
       {QStringLiteral("ishikawa"), QStringLiteral("ishikawa"),
        QStringLiteral("ishikawa\nEffect\n  Cause A\n  Cause B")},
+      {QStringLiteral("venn"), QStringLiteral("venn"),
+       QStringLiteral("venn-beta\ntitle Sets\nset A: 10\nset B: 8\n"
+                      "union A,B: 3")},
+      {QStringLiteral("sankey"), QStringLiteral("sankey"),
+       QStringLiteral("sankey-beta\nA,B,8\nB,C,5\nB,D,3")},
+      {QStringLiteral("treemap"), QStringLiteral("treemap"),
+       QStringLiteral("treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5")},
+      {QStringLiteral("cynefin"), QStringLiteral("cynefin"),
+       QStringLiteral("%%{init: {\"cynefin\": {\"seed\": 17}}}%%\n"
+                      "cynefin-beta\nclear\n  \"Standardise\"")},
+      {QStringLiteral("wardley"), QStringLiteral("wardley"),
+       QStringLiteral("wardley-beta\ntitle Platform map\n"
+                      "component User [0.9,0.1]\n"
+                      "component Service [0.5,0.5]\nUser -> Service")},
+      {QStringLiteral("railroad"), QStringLiteral("railroad"),
+       QStringLiteral("railroad-beta\nA=terminal('a');")},
+      {QStringLiteral("railroad-ebnf"), QStringLiteral("railroad"),
+       QStringLiteral("railroad-ebnf-beta\nA='a' | B;")},
+      {QStringLiteral("railroad-abnf"), QStringLiteral("railroad"),
+       QStringLiteral("railroad-abnf-beta\nA=\"a\" / B;")},
+      {QStringLiteral("railroad-peg"), QStringLiteral("railroad"),
+       QStringLiteral("railroad-peg-beta\nA<-'a'/B;")},
   };
   for (const FamilyCase& family : families) {
     const MermaidSvgRenderResult first = renderSvg(family.source);
@@ -209,6 +278,22 @@ int main(int argc, char** argv) {
                   indexedRoot.value(QStringLiteral("id")),
           QStringLiteral("deterministicIds/seed or instance indexing drifted"));
 
+  const QString markerSource = QStringLiteral(
+      "%%{init: {\"arrowMarkerAbsolute\": true}}%%\n"
+      "flowchart LR\nA --> B");
+  const QUrl markerDocumentUrl =
+      QUrl::fromLocalFile(QStringLiteral("G:/github/mermaid-cli/index.html"));
+  const MermaidSvgRenderResult markerSvg =
+      MermaidRenderCache::renderMermaidSourceToSvg(
+          markerSource, 0, markerDocumentUrl, QStringLiteral("marker-visual"));
+  require(markerSvg.svg.contains("marker-end=\"url(file:///G:/github/mermaid-cli/index.html#marker-visual_flowchart-v2-pointEnd)\""),
+          QStringLiteral("Absolute Flowchart marker reference drifted"));
+  const MermaidRenderEntry markerEntry = MermaidRenderCache().getSync(
+      MermaidRenderCache::makeKey(markerSource), markerSource);
+  require(differentPixels(paintScene(markerEntry, true),
+                          paintScene(markerEntry, false)) >= 8,
+          QStringLiteral("Scene marker geometry does not produce visible arrow ink"));
+
   const QVector<QString> fixedWidthSources = {
       QStringLiteral(
           "%%{init: {\"flowchart\": {\"useMaxWidth\": false}}}%%\n"
@@ -241,6 +326,18 @@ int main(int argc, char** argv) {
           "%%{init: {\"mindmap\": {\"useMaxWidth\": false}}}%%\n"
           "mindmap\n  root((Root))\n    Child"),
       QStringLiteral(
+          "%%{init: {\"block\": {\"useMaxWidth\": false}}}%%\n"
+          "block-beta\nA[\"Alpha\"]"),
+      QStringLiteral(
+          "%%{init: {\"gitGraph\": {\"useMaxWidth\": false}}}%%\n"
+          "gitGraph\ncommit id: \"a\""),
+      QStringLiteral(
+          "%%{init: {\"c4\": {\"useMaxWidth\": false}}}%%\n"
+          "C4Context\nPerson(user, \"User\")"),
+      QStringLiteral(
+          "%%{init: {\"flowchart\": {\"useMaxWidth\": false}}}%%\n"
+          "swimlane-beta\nA --> B"),
+      QStringLiteral(
           "%%{init: {\"treeView\": {\"useMaxWidth\": false}}}%%\n"
           "treeView-beta\nproject/\n  child"),
       QStringLiteral(
@@ -250,10 +347,25 @@ int main(int argc, char** argv) {
           "%%{init: {\"ishikawa\": {\"useMaxWidth\": false}}}%%\n"
           "ishikawa\nEffect\n  Cause A"),
       QStringLiteral(
+          "%%{init: {\"venn\": {\"useMaxWidth\": false}}}%%\n"
+          "venn-beta\nset A: 10\nset B: 8\nunion A,B: 3"),
+      QStringLiteral(
+          "%%{init: {\"sankey\": {\"useMaxWidth\": false}}}%%\n"
+          "sankey-beta\nA,B,8\nB,C,5\nB,D,3"),
+      QStringLiteral(
+          "%%{init: {\"treemap\": {\"useMaxWidth\": false}}}%%\n"
+          "treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5"),
+      QStringLiteral(
+          "%%{init: {\"cynefin\": {\"useMaxWidth\": false, "
+          "\"seed\": 17}}}%%\ncynefin-beta\nclear\n  \"Standardise\""),
+      QStringLiteral(
           "%%{init: {\"gantt\": {\"useMaxWidth\": false, "
           "\"useWidth\": 640}}}%%\n"
           "gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
           "Task :task, 2024-01-01, 2d"),
+      QStringLiteral(
+          "%%{init: {\"railroad\": {\"useMaxWidth\": false}}}%%\n"
+          "railroad-ebnf-beta\nA='a' | B;"),
   };
   for (const QString& source : fixedWidthSources) {
     const QMap<QString, QString> root = svgRootAttributes(renderSvg(source).svg);
@@ -332,6 +444,58 @@ int main(int argc, char** argv) {
               timelineAria.contains("aria-describedby="),
           QStringLiteral("Timeline SVG accessibility metadata drifted"));
 
+  const QByteArray gitGraphAria = renderSvg(QStringLiteral(
+      "gitGraph\ntitle Release history\naccTitle: Git accessible\n"
+      "accDescr: Git description\ncommit id: \"root\"\n"
+      "commit id: \"release\"")).svg;
+  require(gitGraphAria.contains("Release history") &&
+              gitGraphAria.contains("Git accessible</title>") &&
+              gitGraphAria.contains("Git description</desc>") &&
+              gitGraphAria.contains("aria-labelledby=") &&
+              gitGraphAria.contains("aria-describedby="),
+          QStringLiteral("GitGraph title/accessibility metadata drifted"));
+
+  const QByteArray treemapAria = renderSvg(QStringLiteral(
+      "treemap-beta\ntitle Visible map\naccTitle: Treemap accessible\n"
+      "accDescr: Treemap description\n\"Root\"\n  \"A\": 8\n  \"B\": 5")).svg;
+  require(treemapAria.contains("Visible map") &&
+              treemapAria.contains("Treemap accessible</title>") &&
+              treemapAria.contains("Treemap description</desc>") &&
+              treemapAria.contains("aria-labelledby=") &&
+              treemapAria.contains("aria-describedby="),
+          QStringLiteral("Treemap title/accessibility metadata drifted"));
+
+  const QByteArray cynefinAria = renderSvg(QStringLiteral(
+      "%%{init: {\"cynefin\": {\"seed\": 17}}}%%\n"
+      "cynefin-beta\ntitle Visible landscape\n"
+      "accTitle: Cynefin accessible\naccDescr: Cynefin description\n"
+      "clear\n  \"Standardise\"")).svg;
+  require(cynefinAria.contains("Visible landscape") &&
+              cynefinAria.contains("Cynefin accessible</title>") &&
+              cynefinAria.contains("Cynefin description</desc>") &&
+              cynefinAria.contains("aria-labelledby=") &&
+              cynefinAria.contains("aria-describedby="),
+          QStringLiteral("Cynefin title/accessibility metadata drifted"));
+
+  const QByteArray wardleyAria = renderSvg(QStringLiteral(
+      "wardley-beta\ntitle Visible map\naccTitle: Wardley accessible\n"
+      "accDescr: Wardley description\ncomponent A [0.5,0.5]")).svg;
+  require(wardleyAria.contains("Visible map") &&
+              wardleyAria.contains("Wardley accessible</title>") &&
+              wardleyAria.contains("Wardley description</desc>") &&
+              wardleyAria.contains("aria-labelledby=") &&
+              wardleyAria.contains("aria-describedby="),
+          QStringLiteral("Wardley title/accessibility metadata drifted"));
+
+  const QByteArray railroadAria = renderSvg(QStringLiteral(
+      "railroad-ebnf-beta\naccTitle: Railroad accessible\n"
+      "accDescr: Railroad description\nA='a' | B;")).svg;
+  require(railroadAria.contains("Railroad accessible</title>") &&
+              railroadAria.contains("Railroad description</desc>") &&
+              railroadAria.contains("aria-labelledby=") &&
+              railroadAria.contains("aria-describedby="),
+          QStringLiteral("Railroad SVG accessibility metadata drifted"));
+
   const QByteArray packetAria = renderSvg(QStringLiteral(
       "packet-beta\naccTitle: Packet accessible\n"
       "accDescr: Packet description\n0-7: \"Header\"")).svg;
@@ -342,6 +506,17 @@ int main(int argc, char** argv) {
               packetAria.contains("aria-labelledby=") &&
               packetAria.contains("aria-describedby="),
           QStringLiteral("Packet SVG accessibility metadata drifted"));
+
+  const QByteArray c4Aria = renderSvg(QStringLiteral(
+      "C4Context\ntitle Visible C4 title\n"
+      "accTitle: C4 accessible\naccDescr: C4 description\n"
+      "Person(user, \"User\")")).svg;
+  require(!c4Aria.contains("Visible C4 title") &&
+              c4Aria.contains("C4 accessible") &&
+              c4Aria.contains("C4 description</desc>") &&
+              !c4Aria.contains("aria-labelledby=") &&
+              c4Aria.contains("aria-describedby="),
+          QStringLiteral("C4 accTitle overwrite/accessibility quirk drifted"));
 
   const QByteArray treeViewAria = renderSvg(QStringLiteral(
       "---\ntitle: Invisible frontmatter tree title\n---\n"
@@ -402,6 +577,14 @@ int main(int argc, char** argv) {
               !mindmapNoTitle.contains("aria-describedby="),
           QStringLiteral("Mindmap frontmatter title must remain invisible"));
 
+  const QByteArray blockNoTitle = renderSvg(QStringLiteral(
+      "---\ntitle: Block title\n---\n"
+      "block-beta\nA[\"Alpha\"]")).svg;
+  require(!blockNoTitle.contains("Block title") &&
+              !blockNoTitle.contains("aria-labelledby=") &&
+              !blockNoTitle.contains("aria-describedby="),
+          QStringLiteral("Block frontmatter title must remain invisible"));
+
   const QByteArray infoNoTitle = renderSvg(QStringLiteral(
       "---\ntitle: Info frontmatter\n---\n"
       "info\ntitle Inline\naccTitle: AT\naccDescr: AD")).svg;
@@ -429,6 +612,15 @@ int main(int argc, char** argv) {
               !ishikawaNoTitle.contains("aria-describedby="),
           QStringLiteral("Ishikawa frontmatter title must remain invisible"));
 
+  const QByteArray vennNoAria = renderSvg(QStringLiteral(
+      "---\ntitle: Venn frontmatter\n---\n"
+      "venn-beta\ntitle Visible Venn title\nset A: 10\nset B: 8\n"
+      "union A,B: 3")).svg;
+  require(!vennNoAria.contains("Venn frontmatter") &&
+              !vennNoAria.contains("aria-labelledby=") &&
+              !vennNoAria.contains("aria-describedby="),
+          QStringLiteral("Venn must own its title without common ARIA"));
+
   const QByteArray mindmapSafeLink = renderSvg(QStringLiteral(
       "mindmap\n  root((Root))\n"
       "    id[\"<a href='https://example.org/docs'>Docs</a>\"]")).svg;
@@ -455,10 +647,18 @@ int main(int argc, char** argv) {
               !blockedKanbanTicket.contains("javascript:"),
           QStringLiteral("Kanban SVG ticket link sanitization drifted"));
 
-  require(MermaidRenderCache::renderMermaidSourceToSvg(
-              QStringLiteral("flowchart TB\nA -->"))
-              .svg.isEmpty(),
-          QStringLiteral("Invalid Mermaid source must not export partial SVG"));
+  // Invalid sources export the upstream error-diagram fallback (mermaid.core
+  // leaves the lightbulb SVG in the DOM for every parse/draw failure; mmdc
+  // serializes it) — never a partial diagram.
+  {
+    const QByteArray invalidSvg = MermaidRenderCache::renderMermaidSourceToSvg(
+        QStringLiteral("flowchart TB\nA -->")).svg;
+    require(!invalidSvg.isEmpty() &&
+                invalidSvg.contains("aria-roledescription=\"error\"") &&
+                !invalidSvg.contains("flowchart"),
+            QStringLiteral(
+                "Invalid Mermaid source must export the error fallback SVG"));
+  }
 
   qDebug() << "MermaidSvgExportTest: native families, SVG roots, ARIA,"
               " deterministic IDs, sizing, rendering, and safe links passed";

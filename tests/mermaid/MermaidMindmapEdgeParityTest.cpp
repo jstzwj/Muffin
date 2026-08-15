@@ -173,11 +173,18 @@ void compareReadyCase(const QJsonObject& oracle,
                 (nodeComputed.value(QStringLiteral("filter")).toString() !=
                  QLatin1String("none")),
             id + QStringLiteral(": root filter"));
-    require(samePaint(actual.label.fill,
-                      labelComputed.value(QStringLiteral("fill")).toString()),
+    // The painted html label child is the span: `.section-root span { color }`
+    // colors the ink, while the g.label group's own fill stays an inherited
+    // value that never reaches the raster. Compare the span's color for
+    // htmlLabels, the group fill for SVG labels.
+    const QString paintedLabelColor = scene.config.htmlLabels
+        ? label.value(QStringLiteral("spanComputed")).toObject()
+              .value(QStringLiteral("color")).toString()
+        : label.value(QStringLiteral("svgTextComputed")).toObject()
+              .value(QStringLiteral("fill")).toString();
+    require(samePaint(actual.label.fill, paintedLabelColor),
             id + QStringLiteral(": root label fill %1 vs %2")
-                .arg(actual.label.fill,
-                     labelComputed.value(QStringLiteral("fill")).toString()));
+                .arg(actual.label.fill, paintedLabelColor));
     require(scene.config.htmlLabels ==
                 label.value(QStringLiteral("foreignObject")).isObject(),
             id + QStringLiteral(": htmlLabels"));
@@ -212,7 +219,7 @@ int main(int argc, char** argv) {
   require(fixture.open(QIODevice::ReadOnly), fixture.errorString());
   const QJsonObject root = QJsonDocument::fromJson(fixture.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("71485106642915ced70ff7e8c61357ee8974208fc70e82e91812c96ebcad07ac"),
+              QLatin1String("b3c229491eef495cbfe95baac0581a67e4ecf058e2179617c11cbbb781bcaafd"),
           QStringLiteral("fixture drift"));
   for (const QJsonValue& value : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject oracle = value.toObject();

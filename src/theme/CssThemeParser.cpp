@@ -170,7 +170,7 @@ QString stripComments(const QString& text) {
   return out;
 }
 
-std::vector<CssDeclaration> parseDeclarations(const QString& block) {
+std::vector<CssDeclaration> parseDeclarationBlock(const QString& block) {
   std::vector<CssDeclaration> out;
   // Strip comments first so a `/* note */` between two ';' cannot glue onto the
   // following declaration's property (findDelim skips comments while scanning,
@@ -305,7 +305,7 @@ std::vector<CssKeyframeStop> parseKeyframesStops(const QString& blockText) {
     const QString selText = blockText.mid(i, brace - i).trimmed();
     const int end = matchingBrace(blockText, brace, n);
     const QString declText = blockText.mid(brace + 1, (end < 0 ? n : end) - (brace + 1));
-    const std::vector<CssDeclaration> decls = parseDeclarations(declText);
+    const std::vector<CssDeclaration> decls = parseDeclarationBlock(declText);
     for (const QString& sel : CssThemeParser::splitTopLevelCommas(selText)) {
       const QString t = sel.trimmed().toLower();
       qreal pos = -1.0;
@@ -434,7 +434,7 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
         // in an @import'd base resolves against that base's dir because parse()
         // recurses with the sub-sheet's own baseDir.
         QString family;
-        for (const CssDeclaration& d : parseDeclarations(blockText)) {
+        for (const CssDeclaration& d : parseDeclarationBlock(blockText)) {
           if (d.property == QStringLiteral("font-family") && family.isEmpty()) {
             family = unquote(d.value.trimmed());
           }
@@ -470,7 +470,7 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
           selectors.size() == 1 && selectors.first().trimmed() == QStringLiteral(":root");
       if (isRoot) {
         std::vector<CssDeclaration> elementDecls;
-        for (const CssDeclaration& d : parseDeclarations(blockText)) {
+        for (const CssDeclaration& d : parseDeclarationBlock(blockText)) {
           if (d.property.startsWith(QLatin1String("--"))) {
             sheet.setVariable(d.property, d.value);
           } else {
@@ -491,7 +491,7 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
       } else {
         CssRule rule;
         rule.selectors = selectors;
-        rule.declarations = parseDeclarations(blockText);
+        rule.declarations = parseDeclarationBlock(blockText);
         rule.darkScope = darkScope;
         sheet.addRule(std::move(rule));
       }
@@ -547,6 +547,11 @@ CssThemeSheet CssThemeParser::parse(const QString& text, const QString& baseDir)
   }
   parseRules(text, sheet, false, baseDir);
   return sheet;
+}
+
+std::vector<CssDeclaration> CssThemeParser::parseDeclarations(
+    const QString& text) {
+  return parseDeclarationBlock(text);
 }
 
 QStringList CssThemeParser::localResourcePaths(const QString& text, const QString& baseDir) {

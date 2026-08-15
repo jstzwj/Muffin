@@ -205,11 +205,6 @@ void muffin::MainWindow::exportMermaidDiagram(NodeId blockId) {
     return;
   }
 
-  const auto rendered =
-      mermaid::editor::MermaidRenderCache::renderMermaidSourceToSvg(
-          node->literal());
-  if (rendered.svg.isEmpty()) return;
-
   const QFileInfo documentInfo(session_.filePath());
   const QString baseName = documentInfo.completeBaseName().isEmpty()
       ? QStringLiteral("diagram")
@@ -224,6 +219,11 @@ void muffin::MainWindow::exportMermaidDiagram(NodeId blockId) {
       this, tr("Export As"), initialPath, QStringLiteral("SVG (*.svg)"));
   if (path.isEmpty()) return;
   if (QFileInfo(path).suffix().isEmpty()) path += QStringLiteral(".svg");
+
+  const auto rendered =
+      mermaid::editor::MermaidRenderCache::renderMermaidSourceToSvg(
+          node->literal(), 0, QUrl::fromLocalFile(QFileInfo(path).absoluteFilePath()));
+  if (rendered.svg.isEmpty()) return;
 
   QSaveFile file(path);
   const bool opened = file.open(QIODevice::WriteOnly);

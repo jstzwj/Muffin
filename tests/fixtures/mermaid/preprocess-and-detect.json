@@ -254,7 +254,7 @@
     },
     {
       "id": "railroad",
-      "source": "railroad-beta\nA ::= 'a'",
+      "source": "railroad-beta\nA=terminal('a');",
       "config": {},
       "diagramType": "railroad"
     },
@@ -266,13 +266,13 @@
     },
     {
       "id": "railroad-abnf",
-      "source": "railroad-abnf-beta\nA = %s\"a\"",
+      "source": "railroad-abnf-beta\nA = \"a\";",
       "config": {},
       "diagramType": "railroadAbnf"
     },
     {
       "id": "railroad-peg",
-      "source": "railroad-peg-beta\nA <- 'a'",
+      "source": "railroad-peg-beta\nA <- 'a';",
       "config": {},
       "diagramType": "railroadPeg"
     },

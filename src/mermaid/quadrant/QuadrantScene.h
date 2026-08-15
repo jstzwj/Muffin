@@ -17,6 +17,7 @@
 #include <QRectF>
 #include <QString>
 #include <QVector>
+#include <QFont>
 
 class QPainter;
 
@@ -50,7 +51,19 @@ struct QuadrantSceneStyle {
   QString inheritedColor;
 };
 
-struct QuadrantRect { qreal x, y, width, height; QString fill; QString text; QString textFill; };
+struct QuadrantRect {
+  qreal x, y, width, height;
+  QString fill;
+  QString text;
+  QString textFill;
+  QString textFontFamily;
+  qreal textFontSize = 16.0;
+  QFont::Weight textFontWeight = QFont::Normal;
+  qreal shapeOpacity = 1.0;
+  qreal textOpacity = 1.0;
+  bool shapeVisible = true;
+  bool textVisible = true;
+};
 struct QuadrantPointG {
   qreal x, y;
   qreal radius;
@@ -58,8 +71,22 @@ struct QuadrantPointG {
   QString stroke;
   qreal strokeWidth = 0.0;  // Chromium used px (theme default 0)
   QString text;
+  QString textFill;
+  QString textFontFamily;
+  qreal textFontSize = 12.0;
+  QFont::Weight textFontWeight = QFont::Normal;
+  qreal shapeOpacity = 1.0;
+  qreal textOpacity = 1.0;
+  bool shapeVisible = true;
+  bool textVisible = true;
 };
-struct QuadrantBorder { qreal x1, y1, x2, y2; QString strokeFill; qreal strokeWidth; };
+struct QuadrantBorder {
+  qreal x1, y1, x2, y2;
+  QString strokeFill;
+  qreal strokeWidth;
+  qreal opacity = 1.0;
+  bool visible = true;
+};
 struct QuadrantAxisLabel {
   QString text;
   QString fill;
@@ -67,6 +94,10 @@ struct QuadrantAxisLabel {
   qreal fontSize;
   int rotation;
   bool centered = false;  // SVG text-anchor: middle (false => start)
+  QString fontFamily;
+  QFont::Weight fontWeight = QFont::Normal;
+  qreal opacity = 1.0;
+  bool visible = true;
 };
 
 struct QuadrantScene : MermaidScene {
@@ -95,6 +126,11 @@ struct QuadrantScene : MermaidScene {
   // Title placement (empty when no title).
   QString titleText;
   qreal titleX = 0.0, titleY = 0.0;
+  QString titleFill;
+  QString titleFontFamily;
+  QFont::Weight titleFontWeight = QFont::Normal;
+  qreal titleOpacity = 1.0;
+  bool titleVisible = true;
   QuadrantSceneStyle style;
 };
 

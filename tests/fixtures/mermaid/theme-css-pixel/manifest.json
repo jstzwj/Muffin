@@ -1,0 +1,26 @@
+{
+  "upstream": {
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "fontSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5"
+  },
+  "cases": [
+    {
+      "id": "requirement-edge-painted-bg",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"themeCSS\":\"div.labelBkg { background-color:rgba(255,255,0,.5) !important; } span.edgeLabel { background-color:rgba(0,255,0,.5) !important; }\"}}%%\nrequirementDiagram\nrequirement A {\n  id: A\n}\nrequirement B {\n  id: B\n}\nA -contains-> B",
+      "file": "requirement-edge-painted-bg.png",
+      "sha256": "bd23b3c7dcc641d0b9ec039732068a56801e11a7c53bf527927592cb548cf7ec",
+      "width": 171,
+      "height": 314,
+      "roi": {
+        "x": 37,
+        "y": 147,
+        "width": 2,
+        "height": 2
+      }
+    }
+  ],
+  "fixtureSha256": "bb759226e2b0cded8d0ae5d83f75aa59a5074239383c722358fa712759d4d76f"
+}

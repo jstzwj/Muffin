@@ -52,10 +52,29 @@ const QStringList criticalFields() {
       QStringLiteral("fontWeight"),
       QStringLiteral("labelBackground"), QStringLiteral("textColor"),
       QStringLiteral("titleColor"),   QStringLiteral("edgeLabelBackground"),
+      QStringLiteral("requirementEdgeLabelBackground"),
+      // Requirement getStyles() variables (all 11 themes derive them).
+      QStringLiteral("requirementBackground"),
+      QStringLiteral("requirementBorderColor"),
+      QStringLiteral("requirementBorderSize"),
+      QStringLiteral("requirementTextColor"),
+      QStringLiteral("relationColor"),
+      QStringLiteral("relationLabelBackground"),
+      QStringLiteral("relationLabelColor"),
+      QStringLiteral("actorTextColor"),
       QStringLiteral("clusterBkg"),   QStringLiteral("clusterBorder"),
+      QStringLiteral("compositeBackground"), QStringLiteral("altBackground"),
+      QStringLiteral("compositeTitleBackground"),
       QStringLiteral("primaryBorderColor"), QStringLiteral("primaryTextColor"),
+      QStringLiteral("secondaryBorderColor"), QStringLiteral("secondaryTextColor"),
+      QStringLiteral("tertiaryBorderColor"), QStringLiteral("tertiaryTextColor"),
       QStringLiteral("nodeTextColor"), QStringLiteral("nodeBkg"),
       QStringLiteral("nodeBorder"),   QStringLiteral("defaultLinkColor"),
+      // State special shapes (stateStart/stateEnd rendering-util shapes):
+      // specialStateColor is present in every theme's golden; stateBorder only
+      // neutral/neo/redux* define (absent keys compare as empty).
+      QStringLiteral("specialStateColor"), QStringLiteral("stateBorder"),
+      QStringLiteral("stateBkg"),
       QStringLiteral("git0"),         QStringLiteral("gitBranchLabel0"),
       QStringLiteral("dropShadow"),
       QStringLiteral("strokeWidth"),  QStringLiteral("THEME_COLOR_LIMIT"),
@@ -186,6 +205,71 @@ void checkEventModelingThemeOverrides() {
           QStringLiteral("Event Modeling frontmatter theme overrides drifted"));
 }
 
+void checkRequirementEdgeLabelBackgroundOptional() {
+  const FlowThemeVariables redux = resolveFlowTheme(FlowThemeId::Redux);
+  require(redux.requirementEdgeLabelBackground.has_value() &&
+              *redux.requirementEdgeLabelBackground == QLatin1String("#FFFFFF"),
+          QStringLiteral("Redux requirementEdgeLabelBackground"));
+  const FlowThemeVariables reduxDark = resolveFlowTheme(FlowThemeId::ReduxDark);
+  require(reduxDark.requirementEdgeLabelBackground.has_value() &&
+              *reduxDark.requirementEdgeLabelBackground == QLatin1String("#16141F"),
+          QStringLiteral("ReduxDark requirementEdgeLabelBackground"));
+  for (FlowThemeId id : {FlowThemeId::Base, FlowThemeId::Dark,
+                         FlowThemeId::Default, FlowThemeId::Forest,
+                         FlowThemeId::Neutral, FlowThemeId::Neo,
+                         FlowThemeId::NeoDark, FlowThemeId::ReduxColor,
+                         FlowThemeId::ReduxDarkColor}) {
+    require(!resolveFlowTheme(id).requirementEdgeLabelBackground.has_value(),
+            QStringLiteral("Unexpected requirementEdgeLabelBackground: %1")
+                .arg(flowThemeIdName(id)));
+  }
+  QHash<QString, QString> explicitEmpty;
+  explicitEmpty.insert(QStringLiteral("requirementEdgeLabelBackground"),
+                       QString());
+  const FlowThemeVariables empty = resolveFlowTheme(
+      FlowThemeId::Default, explicitEmpty);
+  require(empty.requirementEdgeLabelBackground.has_value() &&
+              empty.requirementEdgeLabelBackground->isEmpty(),
+          QStringLiteral("Explicit empty requirementEdgeLabelBackground"));
+}
+
+void checkWardleyThemeOverrides() {
+  const QStringList fields = {
+      QStringLiteral("backgroundColor"), QStringLiteral("axisColor"),
+      QStringLiteral("axisTextColor"), QStringLiteral("gridColor"),
+      QStringLiteral("componentFill"), QStringLiteral("componentStroke"),
+      QStringLiteral("componentLabelColor"), QStringLiteral("linkStroke"),
+      QStringLiteral("evolutionStroke"), QStringLiteral("annotationStroke"),
+      QStringLiteral("annotationTextColor"), QStringLiteral("annotationFill")};
+  QHash<QString, QString> direct;
+  for (qsizetype i = 0; i < fields.size(); ++i)
+    direct.insert(QStringLiteral("wardley.") + fields.at(i),
+                  QStringLiteral("#%1a0b").arg(i + 1, 2, 16,
+                                                   QLatin1Char('0')));
+  const FlowThemeVariables directTheme =
+      resolveFlowTheme(FlowThemeId::Default, direct);
+  for (auto it = direct.cbegin(); it != direct.cend(); ++it)
+    require(directTheme.get(it.key()) == it.value(),
+            QStringLiteral("Wardley direct override lost %1").arg(it.key()));
+
+  const QString initSource = QStringLiteral(
+      "%%{init:{\"themeVariables\":{\"wardley\":{"
+      "\"backgroundColor\":\"#123456\","
+      "\"evolutionStroke\":\"#654321\","
+      "\"annotationStroke\":\"#abcdef\","
+      "\"annotationTextColor\":\"#fedcba\","
+      "\"annotationFill\":\"#102030\"}}}}%%\n"
+      "wardley-beta\ncomponent A [0.5,0.5]");
+  const FlowThemeVariables sourceTheme = resolveFlowTheme(
+      FlowThemeId::Default, sourceThemeOverrides(initSource));
+  require(sourceTheme.wardley.backgroundColor == QLatin1String("#123456") &&
+              sourceTheme.wardley.evolutionStroke == QLatin1String("#654321") &&
+              sourceTheme.wardley.annotationStroke == QLatin1String("#333333") &&
+              sourceTheme.wardley.annotationTextColor == QLatin1String("#131300") &&
+              sourceTheme.wardley.annotationFill == QLatin1String("white"),
+          QStringLiteral("Wardley source-entry theme sanitizer drifted"));
+}
+
 QStringList ganttFields() {
   return {QStringLiteral("sectionBkgColor"),
           QStringLiteral("altSectionBkgColor"),
@@ -255,6 +339,10 @@ QStringList fieldsForTheme(FlowThemeId id) {
   f.append(QStringLiteral("cScale12"));
   f.append(journeyFields());
   f.append(ganttFields());
+  for (int i = 1; i <= 8; ++i)
+    f.append(QStringLiteral("venn%1").arg(i));
+  f.append(QStringLiteral("vennTitleTextColor"));
+  f.append(QStringLiteral("vennSetTextColor"));
   if (pieQuadrantImplemented(id)) {
     f.append(pieQuadrantFields());
     f.append(pieQuadrantScalarFields());
@@ -777,6 +865,64 @@ void checkThemeOverridesTclJs() {
 // propagates for Dark. A direct pieTitleTextColor override always wins.
 // Quadrant point/axis/title text derive from primaryTextColor, borders from
 // primaryBorderColor.
+// P2 closure: the palette-feed scalars propagate into their slot arrays like
+// 11.16's derivation loops, and the dark labelColor sentinel leaks verbatim.
+void checkPaletteFeedScalarOverrides() {
+  const FlowThemeVariables base = resolveFlowTheme(FlowThemeId::Base);
+  QHash<QString, QString> scaleOv;
+  scaleOv.insert(QStringLiteral("scaleLabelColor"), QStringLiteral("#123456"));
+  const FlowThemeVariables baseScale = resolveFlowTheme(FlowThemeId::Base, scaleOv);
+  require(baseScale.get(QStringLiteral("scaleLabelColor")) ==
+                  QLatin1String("#123456") &&
+              baseScale.get(QStringLiteral("cScaleLabel0")) ==
+                  QLatin1String("#123456") &&
+              baseScale.get(QStringLiteral("cScaleLabel5")) ==
+                  QLatin1String("#123456") &&
+              base.get(QStringLiteral("cScaleLabel0")) != QLatin1String("#123456"),
+          "scaleLabelColor override must propagate to every cScaleLabel slot");
+  // default/forest's label loop is sentinel-guarded (reads labelTextColor
+  // directly), so a scaleLabelColor override stays self-contained there.
+  const FlowThemeVariables defBase = resolveFlowTheme(FlowThemeId::Default);
+  const FlowThemeVariables defScale = resolveFlowTheme(FlowThemeId::Default, scaleOv);
+  require(defScale.get(QStringLiteral("scaleLabelColor")) ==
+                  QLatin1String("#123456") &&
+              defScale.get(QStringLiteral("cScaleLabel0")) ==
+                  defBase.get(QStringLiteral("cScaleLabel0")) &&
+              defScale.get(QStringLiteral("cScaleLabel5")) ==
+                  defBase.get(QStringLiteral("cScaleLabel5")),
+          "default cScaleLabel must ignore a scaleLabelColor override");
+  QHash<QString, QString> branchOv;
+  branchOv.insert(QStringLiteral("branchLabelColor"), QStringLiteral("#654321"));
+  const FlowThemeVariables baseBranch =
+      resolveFlowTheme(FlowThemeId::Base, branchOv);
+  require(baseBranch.get(QStringLiteral("gitBranchLabel0")) ==
+                  QLatin1String("#654321") &&
+              baseBranch.get(QStringLiteral("gitBranchLabel7")) ==
+                  QLatin1String("#654321"),
+          "branchLabelColor override must propagate to the gitBranchLabel slots");
+  const FlowThemeVariables dark = resolveFlowTheme(FlowThemeId::Dark);
+  require(dark.get(QStringLiteral("labelColor")) ==
+              QLatin1String("calculated"),
+          "dark labelColor keeps the raw 'calculated' sentinel upstream leaks");
+  require(resolveFlowTheme(FlowThemeId::Default)
+                  .get(QStringLiteral("labelColor")) ==
+              QLatin1String("black"),
+          "default labelColor ctor literal");
+  // noteFontWeight: 600 only for the redux family; sequence rect fallback and
+  // radius literals lock the merged-read channels.
+  for (FlowThemeId reduxId : {FlowThemeId::Redux, FlowThemeId::ReduxDark,
+                              FlowThemeId::ReduxColor, FlowThemeId::ReduxDarkColor})
+    require(resolveFlowTheme(reduxId).get(QStringLiteral("noteFontWeight")) ==
+                QLatin1String("600"),
+            "redux family noteFontWeight literal 600");
+  require(resolveFlowTheme(FlowThemeId::Neo).get(QStringLiteral("radius")) ==
+              QLatin1String("3"),
+          "neo radius ctor literal 3");
+  require(resolveFlowTheme(FlowThemeId::Redux).get(QStringLiteral("radius")) ==
+              QLatin1String("12"),
+          "redux radius ctor literal 12");
+}
+
 void checkScalarDependencyOverrides() {
   const auto resolved = [](FlowThemeId id, const QHash<QString, QString>& ov) {
     return resolveFlowTheme(id, ov);
@@ -896,6 +1042,65 @@ void checkScalarDependencyOverrides() {
             "direct quadrantPointFill override wins");
   }
 }
+
+// Gate D + P2 closure: walk EVERY resolved themeVariables key from the
+// 285-key inventory (theme-variables-inventory.json — union of all 11 built-in
+// themes' golden values plus upstream dist consumer classification) through
+// FlowThemeVariables::get(). The former `remaining` exception list is now
+// EMPTY: every key is derived natively with upstream's per-theme formulas.
+// Keys with no 11.16 renderer consumer (surface*/surfacePeer* loops, pie0,
+// rowOdd/rowEven, attributeBackgroundColor*, darkTextColor, filterColor,
+// rootLabelColor, wardleyEvolutionColor, er/stateEdgeLabelBackground,
+// labelColor, note/critical/done, contrast, text) are still modeled and
+// golden-locked — documented upstream-dead, see FlowTheme.h. Live keys
+// (sequence/state/class/c4 palettes, radius, scaleLabelColor,
+// branchLabelColor, noteFontWeight) additionally feed their family consumers.
+const QStringList& themeVariablesRemainingKeys() {
+  static const QStringList remaining = {};
+  return remaining;
+}
+
+void checkThemeVariablesInventory(const QJsonObject& fixture) {
+  require(fixture.value(QStringLiteral("upstream")).toObject()
+                  .value(QStringLiteral("version")).toString() ==
+              QLatin1String("11.16.0"),
+          QStringLiteral("Theme inventory version drifted"));
+  const QStringList remaining = themeVariablesRemainingKeys();
+  const QJsonObject values = fixture.value(QStringLiteral("values")).toObject();
+  require(values.size() == 11,
+          QStringLiteral("Theme inventory must cover 11 themes"));
+  QStringList mismatches;
+  QStringList details;
+  for (auto themeIt = values.constBegin(); themeIt != values.constEnd();
+       ++themeIt) {
+    const FlowThemeId id = parseThemeId(themeIt.key());
+    require(flowThemeIdName(id) == themeIt.key(),
+            QStringLiteral("Unknown inventory theme: %1").arg(themeIt.key()));
+    const FlowThemeVariables theme = resolveFlowTheme(id);
+    const QJsonObject vars = themeIt.value().toObject();
+    for (auto varIt = vars.constBegin(); varIt != vars.constEnd(); ++varIt) {
+      const QString key = varIt.key();
+      if (remaining.contains(key)) continue;
+      const QString native = theme.get(key);
+      const QString golden = goldenToString(varIt.value());
+      if (native != golden && !mismatches.contains(key)) {
+        mismatches.append(key);
+        details.append(QStringLiteral("%1[%2: %3 != %4]")
+                           .arg(key, themeIt.key(), native, golden));
+      }
+    }
+  }
+  if (!mismatches.isEmpty())
+    fail(QStringLiteral("themeVariables inventory keys not covered natively "
+                        "(add to remaining only with a per-key justification): "
+                        "%1 -- %2")
+             .arg(mismatches.join(QLatin1String(", ")),
+                  details.join(QLatin1String(", "))));
+  // Every remaining key must still exist in the inventory (no stale entries).
+  for (const QString& key : remaining)
+    require(fixture.value(QStringLiteral("keys")).toObject().contains(key),
+            QStringLiteral("Stale remaining key: %1").arg(key));
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -936,15 +1141,26 @@ int main(int argc, char** argv) {
   checkTclNoOverflow();
   checkThemeOverridesTclJs();
   checkScalarDependencyOverrides();
+  checkPaletteFeedScalarOverrides();
   checkFontWeightOverrides();
   checkPacketThemeOverrides();
   checkEventModelingThemeOverrides();
+  checkRequirementEdgeLabelBackgroundOptional();
+  checkWardleyThemeOverrides();
 
   QFile xyChartFile(
       QFileInfo(fixturePath).dir().filePath(QStringLiteral("xychart-theme.json")));
   require(xyChartFile.open(QIODevice::ReadOnly),
           QStringLiteral("Could not open XYChart theme fixture"));
   checkXYChartThemes(QJsonDocument::fromJson(xyChartFile.readAll()).object());
+
+  QFile inventoryFile(
+      QFileInfo(fixturePath).dir().filePath(
+          QStringLiteral("theme-variables-inventory.json")));
+  require(inventoryFile.open(QIODevice::ReadOnly),
+          QStringLiteral("Could not open theme variables inventory"));
+  checkThemeVariablesInventory(
+      QJsonDocument::fromJson(inventoryFile.readAll()).object());
 
   qDebug().noquote()
       << "MermaidThemeTest: all themes + overrides match goldens";

@@ -1,0 +1,48 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "blockModuleSha256": "2e993bfcf368ff51b44be0b4eea45d293fde010f1d5e79e3ed556fa648a77ba3",
+    "blockMapSha256": "11743524dc75ca380e817b58695c317e6ca17d1c875d1c3ad580dd4befaa3c9b",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nblock-beta\ncolumns 3\nfrontend[\"Frontend\"] backend(\"Backend\") db[(\"Database\")]\nfrontend --> backend\nbackend --> db",
+      "file": "default.png",
+      "width": 263,
+      "height": 71,
+      "sha256": "14ed26aaedeb06e7fc733446349fba1e520b3397a381a4e77a31d15422e0ed96"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"theme\":\"dark\"}}%%\nblock-beta\ncolumns 3\nfrontend[\"Frontend\"] backend(\"Backend\") db[(\"Database\")]\nfrontend --> backend\nbackend --> db",
+      "file": "dark.png",
+      "width": 263,
+      "height": 71,
+      "sha256": "55ef03f8961369fb4bf2d15c394545a57e7accfe7cca9942352d54559dc242f6"
+    },
+    {
+      "id": "forest",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\",\"theme\":\"forest\"}}%%\nblock-beta\ncolumns 3\nfrontend[\"Frontend\"] backend(\"Backend\") db[(\"Database\")]\nfrontend --> backend\nbackend --> db",
+      "file": "forest.png",
+      "width": 263,
+      "height": 71,
+      "sha256": "0708a0cafd338f88b186eb87fb87f49107cf9dd317b1b91d8322522a33f3d47a"
+    },
+    {
+      "id": "nested",
+      "source": "%%{init:{\"fontFamily\":\"Noto Sans\"}}%%\nblock-beta\ncolumns 2\nblock:group[\"Group\"]\n columns 2\n a[\"A\"] b(\"B\")\n block:inner[\"Inner\"]:2\n  columns 1\n  c[(\"C\")]\n  d{{\"D\"}}\n end\nend\ne[\"Outside\"]",
+      "file": "nested.png",
+      "width": 177,
+      "height": 248,
+      "sha256": "bc084d4737b7b2bc847ba3a1fc748376bbbdb3ebb461e742eea7293020c7a123"
+    }
+  ],
+  "fixtureSha256": "55c1b32ef0c7a016db889f92afc3421c70f32bd33593d4cf0a142c380e578179"
+}

@@ -3,6 +3,8 @@
 // key stability.
 
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/block/BlockScene.h"
+#include "mermaid/c4/C4Scene.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/eventmodeling/EventModelingScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
@@ -10,9 +12,11 @@
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/gantt/GanttScene.h"
+#include "mermaid/gitgraph/GitGraphScene.h"
 #include "mermaid/info/InfoScene.h"
 #include "mermaid/ishikawa/IshikawaScene.h"
 #include "mermaid/radar/RadarScene.h"
+#include "mermaid/railroad/RailroadScene.h"
 #include "mermaid/xychart/XYChartScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
@@ -38,7 +42,6 @@ void require(bool condition, const QString& message) { if (!condition) fail(mess
 constexpr auto kReady = MermaidRenderStatus::Ready;
 constexpr auto kLoading = MermaidRenderStatus::Loading;
 constexpr auto kError = MermaidRenderStatus::Error;
-constexpr auto kUnsupported = MermaidRenderStatus::Unsupported;
 
 // Spin the event loop until `cache` signals renderReady for `key`, or timeout.
 bool waitForReady(MermaidRenderCache& cache, const MermaidRenderKey& key, int timeoutMs = 5000) {
@@ -70,9 +73,15 @@ int main(int argc, char** argv) {
       "ORDER ||--|{ LINE-ITEM : contains\n"
       "CUSTOMER {\n  string name PK\n  int age\n}\n"
       "ORDER {\n  bigint id PK\n  string status\n}");
-  // A family Mermaid detects but Muffin does not yet render natively.
-  const QString unsupported = QStringLiteral(
-      "architecture-beta\n group api(cloud)");
+  const QString gitGraph = QStringLiteral(
+      "gitGraph\ncommit id: \"A\"\ncommit id: \"B\"");
+  const QString c4Diagram = QStringLiteral(
+      "C4Context\ntitle System context\n"
+      "Person(user, \"User\", \"Uses the system\")\n"
+      "System(app, \"Application\", \"Serves requests\")\n"
+      "Rel(user, app, \"Uses\", \"HTTPS\")");
+  const QString flowchartElk = QStringLiteral(
+      "flowchart-elk LR\nA --> B");
 
   // --- getSync: valid flowchart → Ready + scene + natural size ---
   {
@@ -108,9 +117,10 @@ int main(int argc, char** argv) {
   }
 
   // --- look: handDrawn renders sequence/class/state through the rough painter
-  // without crashing, and the scene's handDrawn flag + seed propagate from the
-  // frontmatter config. Default-look tests never reach these branches, so this
-  // block is the guard that the handDrawn wiring (Task 5) stays functional.
+  // without crashing. Families that upstream routes through RoughJS (class,
+  // state) keep their handDrawn wiring; sequence deliberately does NOT —
+  // mermaid 11.16's sequence renderer ignores config.look entirely, so its
+  // scene must stay identical to the classic render (asserted below).
   {
     const QString handDrawnSources[] = {
         QStringLiteral("---\nconfig:\n  look: handDrawn\n  handDrawnSeed: 7\n---\n"
@@ -131,11 +141,21 @@ int main(int argc, char** argv) {
     const MermaidRenderEntry seq = cache.getSync(
         MermaidRenderCache::makeKey(handDrawnSources[0]), handDrawnSources[0]);
     require(seq.status == kReady, QStringLiteral("handDrawn sequence should be Ready"));
+    // Mermaid 11.16's sequence renderer never branches on config.look (the
+    // classic and handDrawn SVGs differ only in render-id counters, probed),
+    // so the sequence scene carries no handDrawn surface — it must render the
+    // IDENTICAL classic scene for a look:handDrawn source.
+    const MermaidRenderEntry classic = cache.getSync(
+        MermaidRenderCache::makeKey(QStringLiteral(
+            "sequenceDiagram\nAlice->>Bob: Hi\nBob-->>Alice: Yo\n"
+            "Note over Alice,Bob: shared\n")),
+        QStringLiteral("sequenceDiagram\nAlice->>Bob: Hi\nBob-->>Alice: Yo\n"
+                       "Note over Alice,Bob: shared\n"));
     const auto* sequenceScene = dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(seq.scene.get());
-    require(sequenceScene && sequenceScene->handDrawn,
-            QStringLiteral("sequence scene must reflect look: handDrawn"));
-    require(sequenceScene->handDrawnSeed == 7u,
-            QStringLiteral("handDrawnSeed must propagate to the sequence scene"));
+    const auto* classicScene = dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(classic.scene.get());
+    require(sequenceScene && classicScene &&
+                sequenceScene->toJsonObject() == classicScene->toJsonObject(),
+            QStringLiteral("look:handDrawn must leave the sequence scene unchanged"));
   }
 
   // --- shared title/accessibility metadata reaches the generic-title families ---
@@ -779,6 +799,53 @@ int main(int argc, char** argv) {
             QStringLiteral("Mindmap frontmatter title must remain invisible"));
   }
 
+  // Block has no commonDb metadata productions. Frontmatter metadata remains
+  // invisible, while family config is projected into its typed scene.
+  {
+    MermaidRenderCache cache;
+    const QString body = QStringLiteral(
+        "%%{init: {\"block\": {\"useMaxWidth\": false, "
+        "\"padding\": 20}}}%%\n"
+        "block-beta\ncolumns 2\na[\"Alpha\"] b(\"Beta\")\na --> b");
+    const QString titled =
+        QStringLiteral("---\ntitle: Invisible block title\n---\n") + body;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(titled), titled);
+    const auto scene = std::dynamic_pointer_cast<
+        const muffin::mermaid::block::BlockScene>(entry.scene);
+    require(entry.status == kReady && scene && scene->nodes.size() == 2 &&
+                !scene->useMaxWidth && !entry.metadata.svgUseMaxWidth &&
+                entry.metadata.title.isEmpty() &&
+                entry.metadata.accessibleTitle.isEmpty() &&
+                entry.metadata.accessibleDescription.isEmpty() &&
+                entry.metadata.titleHeight == 0.0,
+            QStringLiteral("Block scene/config/metadata contract drifted"));
+  }
+
+  // --- getSync: swimlane-beta reuses Flowchart syntax but owns its layout ---
+  {
+    const QString source = QStringLiteral(
+        "swimlane-beta TB\n"
+        "subgraph sales[Sales]\n  a[Lead] --> b[Quote]\nend\n"
+        "subgraph legal[Legal]\n  c[Review] --> d[Approve]\nend\n"
+        "b --> c\n");
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(source), source);
+    require(entry.status == kReady && entry.scene != nullptr,
+            QStringLiteral("swimlane-beta must render through the native adapter"));
+    const auto* scene =
+        dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(entry.scene.get());
+    require(scene != nullptr && scene->nodes.size() == 4 && scene->edges.size() == 3,
+            QStringLiteral("swimlane must expose the shared FlowScene semantic content"));
+    int lanes = 0;
+    for (const auto& cluster : scene->clusters)
+      if (cluster.swimlane && cluster.titleBandSize > 0.0) ++lanes;
+    require(lanes == 2 && entry.naturalSize.width() > 0 &&
+                entry.naturalSize.height() > 0,
+            QStringLiteral("swimlane layout must materialize both titled lanes"));
+  }
+
   // Gantt owns the visible chart title while shared metadata carries only its
   // accessibility title/description. A frontmatter title is the fallback when
   // no inline title directive exists and must not create a second title strip.
@@ -952,6 +1019,28 @@ int main(int argc, char** argv) {
             QStringLiteral("TreeView decorated lexer diagnostic drifted"));
   }
 
+  // C4 parser offsets are measured after preprocessing. Preserve the typed
+  // lexer error while mapping it back through frontmatter/directive/comment
+  // removal to the original source.
+  {
+    MermaidRenderCache cache;
+    const QString decorated = QStringLiteral(
+        "---\ntitle: C4 title\n---\n"
+        "%%{init: {\"theme\": \"default\"}}%%\n"
+        "%% generated comment\nC4Context\nUnknown(a,A)");
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(decorated), decorated);
+    require(entry.status == kError &&
+                entry.diagnostic.stage == QLatin1String("parse") &&
+                entry.diagnostic.code == QLatin1String("c4-lexer-error") &&
+                entry.diagnostic.span.offset ==
+                    decorated.lastIndexOf(QStringLiteral("Unknown")) &&
+                entry.diagnostic.span.line == 7 &&
+                entry.diagnostic.span.column == 1,
+            QStringLiteral("C4 decorated lexer diagnostic drifted: %1")
+                .arg(entry.errorMessage));
+  }
+
   // Every native family is normalised into the same 1-based diagnostic model.
   {
     struct InvalidCase {
@@ -977,6 +1066,15 @@ int main(int argc, char** argv) {
          QStringLiteral("packet"), QStringLiteral("packet-runtime-error"), 3},
         {QStringLiteral("kanban\n []"),
          QStringLiteral("kanban"), QStringLiteral("kanban-parse-error"), 2},
+        {QStringLiteral("block-beta\na[A]"),
+         QStringLiteral("block"), QStringLiteral("block-lexer-error"), 2},
+        {QStringLiteral("gitGraph\ncommit id: \"a\";"),
+         QStringLiteral("gitGraph"),
+         QStringLiteral("gitgraph-lexer-error"), 2},
+        {QStringLiteral("C4Context\nUnknown(a,A)"),
+         QStringLiteral("c4"), QStringLiteral("c4-lexer-error"), 2},
+        {QStringLiteral("swimlane-beta\nA -->"),
+         QStringLiteral("swimlane"), QStringLiteral("missing-link-endpoint"), 2},
         {QStringLiteral("gantt:"),
          QStringLiteral("gantt"), QStringLiteral("gantt-parse-error"), 1},
         {QStringLiteral("info\nunknown"),
@@ -986,6 +1084,12 @@ int main(int argc, char** argv) {
         {QStringLiteral("eventmodeling\ntf 1000 evt A"),
          QStringLiteral("eventmodeling"),
          QStringLiteral("eventmodeling-parse-error"), 2},
+        {QStringLiteral("venn-beta\nset A: 1e3"),
+         QStringLiteral("venn"), QStringLiteral("venn-parse-error"), 2},
+        {QStringLiteral("cynefin-beta\ncomplex\nA"),
+         QStringLiteral("cynefin"), QStringLiteral("cynefin-lexer-error"), 3},
+        {QStringLiteral("wardley-beta\nsize [480.5,320]"),
+         QStringLiteral("wardley"), QStringLiteral("wardley-parse-error"), 2},
     };
     for (const InvalidCase& invalid : cases) {
       MermaidRenderCache cache;
@@ -1027,6 +1131,14 @@ int main(int argc, char** argv) {
                 detected.diagnostic.expected.contains(
                     QStringLiteral("mindmap")) &&
                 detected.diagnostic.expected.contains(
+                    QStringLiteral("block-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("gitGraph")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("C4Context")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("swimlane-beta")) &&
+                detected.diagnostic.expected.contains(
                     QStringLiteral("gantt")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("info")) &&
@@ -1036,6 +1148,14 @@ int main(int argc, char** argv) {
                     QStringLiteral("eventmodeling")) &&
                 detected.diagnostic.expected.contains(
                     QStringLiteral("ishikawa-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("venn-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("sankey-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("treemap-beta")) &&
+                detected.diagnostic.expected.contains(
+                    QStringLiteral("cynefin-beta")) &&
                 detected.diagnostic.span.offset == 0 &&
                 detected.diagnostic.span.line == 1 &&
                 detected.diagnostic.span.column == 1,
@@ -1066,13 +1186,65 @@ int main(int argc, char** argv) {
             QStringLiteral("sequenceDiagram scene must contain participant/message geometry"));
   }
 
-  // --- getSync: an unknown native family reports Unsupported with context ---
+  // --- getSync: GitGraph is supported through the shared cache path ---
   {
     MermaidRenderCache cache;
     const MermaidRenderEntry entry = cache.getSync(
-        MermaidRenderCache::makeKey(unsupported), unsupported);
-    require(entry.status == kUnsupported && !entry.errorMessage.isEmpty(),
-            QStringLiteral("unsupported family must carry an explanatory message"));
+        MermaidRenderCache::makeKey(gitGraph), gitGraph);
+    const auto* scene =
+        dynamic_cast<const muffin::mermaid::gitgraph::GitGraphScene*>(
+            entry.scene.get());
+    require(entry.status == kReady && scene && !scene->primitives.isEmpty() &&
+                entry.naturalSize.width() > 0 &&
+                entry.naturalSize.height() > 0,
+            QStringLiteral("gitGraph should produce a native scene"));
+  }
+
+  // --- getSync: C4 is supported through the shared cache path ---
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(c4Diagram), c4Diagram);
+    const auto* scene =
+        dynamic_cast<const muffin::mermaid::c4::C4Scene*>(entry.scene.get());
+    require(entry.status == kReady && scene && !scene->primitives.isEmpty() &&
+                entry.metadata.cssClass == QLatin1String("c4") &&
+                entry.naturalSize.width() > 0 &&
+                entry.naturalSize.height() > 0,
+            QStringLiteral("C4 should produce a native scene"));
+  }
+
+  // Mermaid 11.16's bundled runtime has no external ELK loader. Its explicit
+  // flowchart-elk ID therefore uses the unified parser and Dagre fallback.
+  {
+    MermaidRenderCache cache;
+    const MermaidRenderEntry entry = cache.getSync(
+        MermaidRenderCache::makeKey(flowchartElk), flowchartElk);
+    require(entry.status == kReady && entry.scene &&
+                entry.metadata.diagramType == QLatin1String("flowchart-elk"),
+            QStringLiteral("flowchart-elk must use the bundled Dagre fallback"));
+  }
+
+  // --- all four Railroad parser frontends share one native immutable scene ---
+  {
+    const QVector<QString> sources = {
+        QStringLiteral("railroad-beta\nA=terminal('a');"),
+        QStringLiteral("railroad-ebnf-beta\nA='a';"),
+        QStringLiteral("railroad-abnf-beta\nA=\"a\";"),
+        QStringLiteral("railroad-peg-beta\nA<-'a';")};
+    MermaidRenderCache cache;
+    for (const QString& source : sources) {
+      const MermaidRenderEntry entry = cache.getSync(
+          MermaidRenderCache::makeKey(source), source);
+      const auto* scene =
+          dynamic_cast<const muffin::mermaid::railroad::RailroadScene*>(
+              entry.scene.get());
+      require(entry.status == kReady && scene && !scene->rules.isEmpty() &&
+                  entry.metadata.cssClass == QLatin1String("railroad") &&
+                  entry.naturalSize.width() > 0 &&
+                  entry.naturalSize.height() > 0,
+              QStringLiteral("Railroad dialect did not reach the native cache"));
+    }
   }
 
   // --- sequence MathML is compiled into the immutable scene once ---
@@ -1418,7 +1590,9 @@ int main(int argc, char** argv) {
             QStringLiteral("wrapped edge label must render"));
     const auto& edge = flowScene->edges.first();
     require(edge.label.richText.visualLines.size() == 3 &&
-                edge.label.richText.visualLineAdvance > 0.0 &&
+                (edge.label.htmlLabels
+                     ? qFuzzyIsNull(edge.label.richText.visualLineAdvance)
+                     : edge.label.richText.visualLineAdvance > 0.0) &&
                 edge.labelSize.width() > 0.0 &&
                 edge.labelSize.height() > 0.0,
             QStringLiteral("edge wrapping must reach the immutable scene"));
@@ -1633,6 +1807,19 @@ int main(int argc, char** argv) {
                         "  done[Done]\n    task2[Ship]")},
         {QStringLiteral("mindmap"),
          QStringLiteral("mindmap\n  root((Root))\n    Alpha\n    Beta")},
+        {QStringLiteral("block"),
+         QStringLiteral("block-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B")},
+        {QStringLiteral("gitGraph"),
+         QStringLiteral("gitGraph\ncommit id: \"root\"\nbranch feature\n"
+                        "commit id: \"feature-1\"\ncheckout main\n"
+                        "merge feature id: \"release\"")},
+        {QStringLiteral("c4"),
+         QStringLiteral("C4Context\nPerson(user, \"User\")\n"
+                        "System(app, \"Application\")\n"
+                        "Rel(user, app, \"Uses\")")},
+        {QStringLiteral("swimlane"),
+         QStringLiteral("swimlane-beta TB\nsubgraph one[One]\n"
+                        "  A[Start] --> B[Done]\nend")},
         {QStringLiteral("gantt"),
          QStringLiteral("gantt\ndateFormat YYYY-MM-DD\ntodayMarker off\n"
                         "section Delivery\nBuild :build, 2024-01-01, 3d\n"
@@ -1646,6 +1833,20 @@ int main(int argc, char** argv) {
                         "tf 3 evt Submitted ->> 2")},
         {QStringLiteral("ishikawa"),
          QStringLiteral("ishikawa\nEffect\n  Cause A\n  Cause B")},
+        {QStringLiteral("venn"),
+         QStringLiteral("venn-beta\nset A: 10\nset B: 8\n"
+                        "union A,B: 3")},
+        {QStringLiteral("sankey"),
+         QStringLiteral("sankey-beta\nA,B,8\nB,C,5\nB,D,3")},
+        {QStringLiteral("treemap"),
+         QStringLiteral("treemap-beta\n\"Root\"\n  \"A\": 8\n  \"B\": 5")},
+        {QStringLiteral("cynefin"),
+         QStringLiteral("%%{init: {\"cynefin\": {\"seed\": 17}}}%%\n"
+                        "cynefin-beta\nclear\n  \"Standardise\"")},
+        {QStringLiteral("wardley"),
+         QStringLiteral("wardley-beta\ntitle Platform map\n"
+                        "component User [0.9,0.1]\n"
+                        "component Service [0.5,0.5]\nUser -> Service")},
     };
     for (const FamilyCase& f : families) {
       const QString url1 = MermaidRenderCache::renderMermaidSourceToPngDataUrl(f.source, 1.0);

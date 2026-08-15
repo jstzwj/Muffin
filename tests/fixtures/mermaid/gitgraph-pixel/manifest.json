@@ -1,0 +1,48 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "gitGraphModuleSha256": "9d46246ac6ec251dd26b28033496ea7e56c4914c1f1a6a9f9cb6b90a105a206b",
+    "parserModuleSha256": "f541603e5c4d057f0c557f0873bd5b3be3c9878caed7ef2b6ee4e6699206dd3d",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ngitGraph LR:\n  commit id: \"root\" msg: \"Initial\" tag: \"v1\"\n  branch develop order: 2\n  commit id: \"dev-1\" type: HIGHLIGHT\n  branch feature order: 1\n  commit id: \"feat-1\" msg: \"Feature\"\n  checkout develop\n  merge feature id: \"merge-1\" tag: \"merged\"\n  checkout main\n  merge develop id: \"release\" type: REVERSE\n  branch hotfix order: 3\n  commit id: \"fix-1\"\n  checkout main\n  cherry-pick id: \"fix-1\" tag: \"picked\"",
+      "file": "default.png",
+      "width": 479,
+      "height": 356,
+      "sha256": "b98177b92b0630307c41b59a6d1a390dc190ad58faf23439623e3df8bfb89214"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"theme\":\"dark\"}}%%\ngitGraph LR:\n  commit id: \"root\" msg: \"Initial\" tag: \"v1\"\n  branch develop order: 2\n  commit id: \"dev-1\" type: HIGHLIGHT\n  branch feature order: 1\n  commit id: \"feat-1\" msg: \"Feature\"\n  checkout develop\n  merge feature id: \"merge-1\" tag: \"merged\"\n  checkout main\n  merge develop id: \"release\" type: REVERSE\n  branch hotfix order: 3\n  commit id: \"fix-1\"\n  checkout main\n  cherry-pick id: \"fix-1\" tag: \"picked\"",
+      "file": "dark.png",
+      "width": 479,
+      "height": 356,
+      "sha256": "8c9372a64e0dc72330826b84f247dfdb118f35eedd27976cd4c4e04e44f744a7"
+    },
+    {
+      "id": "redux-color",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"theme\":\"redux-color\"}}%%\ngitGraph LR:\n  commit id: \"root\" msg: \"Initial\" tag: \"v1\"\n  branch develop order: 2\n  commit id: \"dev-1\" type: HIGHLIGHT\n  branch feature order: 1\n  commit id: \"feat-1\" msg: \"Feature\"\n  checkout develop\n  merge feature id: \"merge-1\" tag: \"merged\"\n  checkout main\n  merge develop id: \"release\" type: REVERSE\n  branch hotfix order: 3\n  commit id: \"fix-1\"\n  checkout main\n  cherry-pick id: \"fix-1\" tag: \"picked\"",
+      "file": "redux-color.png",
+      "width": 473,
+      "height": 356,
+      "sha256": "bde9aa3164bfac3ff173be472a6a9a57e5de9f90dbc7577046d4ac8c667754cd"
+    },
+    {
+      "id": "neo",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"look\":\"neo\",\"theme\":\"neo\"}}%%\ngitGraph LR:\n  commit id: \"root\" msg: \"Initial\" tag: \"v1\"\n  branch develop order: 2\n  commit id: \"dev-1\" type: HIGHLIGHT\n  branch feature order: 1\n  commit id: \"feat-1\" msg: \"Feature\"\n  checkout develop\n  merge feature id: \"merge-1\" tag: \"merged\"\n  checkout main\n  merge develop id: \"release\" type: REVERSE\n  branch hotfix order: 3\n  commit id: \"fix-1\"\n  checkout main\n  cherry-pick id: \"fix-1\" tag: \"picked\"",
+      "file": "neo.png",
+      "width": 471,
+      "height": 356,
+      "sha256": "7faefe9fd9127da60fd35e655bdda45b61659c49918ae53df180d1abb663822f"
+    }
+  ],
+  "fixtureSha256": "4904052b84dc14de0d6c3d617b5125581df538a866b22a24ed64128beab6d453"
+}

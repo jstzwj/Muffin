@@ -24,31 +24,39 @@ QString visibleSvgText(QString text) {
   return text;
 }
 
-QPen strokePen(const QString& value, qreal width) {
+QColor withOpacity(QColor value, qreal opacity) {
+  if (!std::isfinite(opacity)) opacity = 1.0;
+  value.setAlphaF(std::clamp(value.alphaF() * opacity, 0.0, 1.0));
+  return value;
+}
+
+QPen strokePen(const QString& value, qreal width, qreal opacity = 1.0) {
   const color::SvgPaint paint = color::resolveSvgPaint(
       value, color::SvgPaintKind::Stroke, QColor(Qt::black));
   if (paint.none || width == 0.0)
     return QPen(Qt::NoPen);
   const qreal usedWidth = width > 0.0 && std::isfinite(width) ? width : 1.0;
-  QPen pen(paint.color, usedWidth);
+  QPen pen(withOpacity(paint.color, opacity), usedWidth);
   pen.setCapStyle(Qt::FlatCap);
   pen.setJoinStyle(Qt::MiterJoin);
   pen.setMiterLimit(4.0);
   return pen;
 }
 
-QBrush fillBrush(const QString& value) {
+QBrush fillBrush(const QString& value, qreal opacity = 1.0) {
   // An empty SVG fill declaration is invalid and inherits the root black
   // fill. It is not the `none` paint keyword.
-  if (value.trimmed().isEmpty()) return QBrush(Qt::black);
+  if (value.trimmed().isEmpty()) return QBrush(withOpacity(Qt::black, opacity));
   const color::SvgPaint paint = color::resolveSvgPaint(
       value, color::SvgPaintKind::Fill, QColor(Qt::black));
-  return paint.none ? QBrush(Qt::NoBrush) : QBrush(paint.color);
+  return paint.none ? QBrush(Qt::NoBrush)
+                    : QBrush(withOpacity(paint.color, opacity));
 }
 
 void drawText(QPainter& painter, const XYChartSceneStyle& style,
               const XYChartTextGeometry& text) {
   const QString visible = visibleSvgText(text.text);
+  if (!text.visible || !(text.opacity > 0.0)) return;
   const qreal usedSize = text.fontSize < 0.0 || !std::isfinite(text.fontSize)
                              ? style.rootFontSize
                              : text.fontSize;
@@ -63,30 +71,34 @@ void drawText(QPainter& painter, const XYChartSceneStyle& style,
                                          QColor(Qt::black));
   if (fill.none) return;
   const editor::CssPixelFont font =
-      editor::makeUnhintedCssPixelFont(style.fontFamily, usedSize);
-  if (!(font.scale > 0.0)) return;
-  const QFontMetricsF metrics(font.font);
-  const qreal advance = metrics.horizontalAdvance(visible) * font.scale;
+      editor::makeUnhintedCssPixelFont(
+          text.fontFamily.isEmpty() ? style.fontFamily : text.fontFamily,
+          usedSize);
+  editor::CssPixelFont weightedFont = font;
+  weightedFont.font.setWeight(text.fontWeight);
+  if (!(weightedFont.scale > 0.0)) return;
+  const QFontMetricsF metrics(weightedFont.font);
+  const qreal advance = metrics.horizontalAdvance(visible) * weightedFont.scale;
   qreal localX = 0.0;
   if (text.anchor == XYChartTextAnchor::Middle) localX -= advance / 2.0;
   else if (text.anchor == XYChartTextAnchor::End) localX -= advance;
   qreal localBaseline = 0.0;
   if (text.baseline == XYChartBaseline::BeforeEdge)
-    localBaseline += metrics.ascent() * font.scale;
+    localBaseline += metrics.ascent() * weightedFont.scale;
   else if (text.baseline == XYChartBaseline::Hanging)
-    localBaseline += metrics.ascent() * font.scale * 0.8;
+    localBaseline += metrics.ascent() * weightedFont.scale * 0.8;
   else if (text.baseline == XYChartBaseline::Middle)
     localBaseline +=
-        (metrics.ascent() - metrics.descent()) * font.scale / 2.0;
+        (metrics.ascent() - metrics.descent()) * weightedFont.scale / 2.0;
   painter.save();
   // SVG applies translate(position), then rotation. text-anchor and
   // dominant-baseline operate in the resulting local glyph coordinate space.
   painter.translate(text.position);
   painter.rotate(text.rotation);
   painter.translate(localX, localBaseline);
-  painter.scale(font.scale, font.scale);
-  painter.setFont(font.font);
-  painter.setPen(fill.color);
+  painter.scale(weightedFont.scale, weightedFont.scale);
+  painter.setFont(weightedFont.font);
+  painter.setPen(withOpacity(fill.color, text.opacity));
   painter.drawText(QPointF(0.0, 0.0), visible);
   painter.restore();
 }
@@ -95,9 +107,12 @@ void drawText(QPainter& painter, const XYChartSceneStyle& style,
 
 void paintXYChartScene(const XYChartScene& scene, QPainter& painter,
                        const MermaidPaintOptions&) {
-  painter.setPen(Qt::NoPen);
-  painter.setBrush(fillBrush(scene.style.backgroundColor));
-  painter.drawRect(scene.bounds);
+  if (scene.style.backgroundVisible) {
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(fillBrush(scene.style.backgroundColor,
+                              scene.style.backgroundOpacity));
+    painter.drawRect(scene.bounds);
+  }
 
   struct Drawable {
     int order = -1;
@@ -122,15 +137,19 @@ void paintXYChartScene(const XYChartScene& scene, QPainter& painter,
   for (const Drawable& drawable : drawables) {
     if (drawable.rect) {
       const XYChartRectGeometry& rect = *drawable.rect;
-      painter.setPen(strokePen(rect.stroke, rect.strokeWidth));
-      painter.setBrush(fillBrush(rect.fill));
+      if (!rect.visible) continue;
+      painter.setPen(strokePen(rect.stroke, rect.strokeWidth,
+                               rect.strokeOpacity));
+      painter.setBrush(fillBrush(rect.fill, rect.fillOpacity));
       if (std::isfinite(rect.rect.x()) && std::isfinite(rect.rect.y()) &&
           std::isfinite(rect.rect.width()) && std::isfinite(rect.rect.height()))
         painter.drawRect(rect.rect);
     } else if (drawable.path) {
       const XYChartPathGeometry& path = *drawable.path;
-      painter.setPen(strokePen(path.stroke, path.strokeWidth));
-      painter.setBrush(fillBrush(path.fill));
+      if (!path.visible) continue;
+      painter.setPen(strokePen(path.stroke, path.strokeWidth,
+                               path.strokeOpacity));
+      painter.setBrush(fillBrush(path.fill, path.fillOpacity));
       if (!path.path.isEmpty()) painter.drawPath(scene::parseSvgPath(path.path));
     } else if (drawable.text) {
       drawText(painter, scene.style, *drawable.text);

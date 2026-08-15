@@ -18,7 +18,20 @@ if (packageJson.version !== "11.16.0") {
 }
 
 const configTypesPath = path.join(mermaidRoot, "dist", "config.type.d.ts");
-const configTypes = fs.readFileSync(configTypesPath, "utf8");
+// Treemap's diagram-local config interface is not emitted into Mermaid's main
+// generated config.type.d.ts in 11.16.0. Keep it in the same upstream-driven
+// interface audit by reading the shipped diagram declaration as well.
+const treemapTypesPath = path.join(
+  mermaidRoot,
+  "dist",
+  "diagrams",
+  "treemap",
+  "types.d.ts",
+);
+const configTypes =
+  fs.readFileSync(configTypesPath, "utf8") +
+  "\n" +
+  fs.readFileSync(treemapTypesPath, "utf8");
 const { defaultConfig } = await import(
   pathToFileURL(
     path.join(
@@ -67,6 +80,57 @@ const interactiveLayout = [
   "export",
 ];
 const textLayout = ["text", "layout", "paint", "viewport", "export"];
+const railroadFamilies = [
+  "railroad",
+  "railroadEbnf",
+  "railroadAbnf",
+  "railroadPeg",
+];
+const allRailroad = (classification) => ({
+  ...classification,
+  families: railroadFamilies,
+});
+
+const c4ShapeTypes = [
+  "person", "external_person", "system", "external_system",
+  "system_db", "external_system_db", "system_queue", "external_system_queue",
+  "container", "external_container", "container_db", "external_container_db",
+  "container_queue", "external_container_queue", "component", "external_component",
+  "component_db", "external_component_db", "component_queue", "external_component_queue",
+];
+const c4Policies = {
+  useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+  useMaxWidth: parity("viewport", "export"),
+  diagramMarginX: parity(...layout),
+  diagramMarginY: parity(...layout),
+  c4ShapeMargin: parity(...layout),
+  c4ShapePadding: parity(...layout),
+  width: parity(...layout),
+  height: parity(...layout),
+  boxMargin: parity(...layout),
+  c4ShapeInRow: inert(
+    "The renderer reads C4DB's diagram-local value; source UpdateLayoutConfig changes it, but config.c4ShapeInRow does not.",
+  ),
+  nextLinePaddingX: parity(...layout),
+  c4BoundaryInRow: inert(
+    "The renderer reads C4DB's diagram-local value; source UpdateLayoutConfig changes it, but config.c4BoundaryInRow does not.",
+  ),
+  wrap: parity(...textLayout),
+  wrapPadding: parity(...textLayout),
+};
+for (const shape of [...c4ShapeTypes, "boundary", "message"]) {
+  c4Policies[`${shape}FontSize`] = parity(...textLayout);
+  c4Policies[`${shape}FontFamily`] = parity(...textLayout);
+  c4Policies[`${shape}FontWeight`] = parity(...textLayout);
+  c4Policies[`${shape}Font`] = apiOnly(
+    textLayout,
+    "Function-valued Mermaid API hooks cannot be represented in Markdown JSON/YAML config.",
+  );
+}
+for (const shape of c4ShapeTypes) {
+  c4Policies[`${shape}_bg_color`] = parity("paint", "export");
+  c4Policies[`${shape}_border_color`] = parity("paint", "export");
+}
 
 // This table is the reviewed semantic policy. Interface membership and defaults
 // are generated from Mermaid itself below, so adding or removing an upstream
@@ -74,45 +138,61 @@ const textLayout = ["text", "layout", "paint", "viewport", "export"];
 const familyPolicies = {
   flowchart: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
-    useMaxWidth: parity("viewport", "export"),
-    titleTopMargin: parity("paint", "viewport", "export"),
-    subGraphTitleMargin: unsupported(
-      ["layout", "viewport", "export"],
-      "Cluster title margins are not forwarded to native compound layout.",
+    useMaxWidth: {
+      ...parity("viewport", "export"),
+      families: ["flowchart", "swimlane"],
+      note: "Swimlane reuses flowchart root sizing; swimlane.useMaxWidth itself is inert.",
+    },
+    titleTopMargin: {
+      ...parity("paint", "viewport", "export"),
+      families: ["flowchart", "swimlane"],
+    },
+    subGraphTitleMargin: parity("layout", "viewport", "export"),
+    arrowMarkerAbsolute: inert(
+      "Mermaid 11.16.0 reads only the root arrowMarkerAbsolute key for flowchart SVG markers.",
     ),
-    arrowMarkerAbsolute: deferred(
-      ["export"],
-      "Only meaningful for SVG marker URL serialization.",
+    diagramPadding: {
+      ...parity("viewport", "export"),
+      families: ["flowchart", "swimlane"],
+    },
+    htmlLabels: parity(...textLayout),
+    nodeSpacing: {
+      ...parity(...interactiveLayout),
+      families: ["flowchart", "swimlane"],
+    },
+    rankSpacing: {
+      ...parity(...interactiveLayout),
+      families: ["flowchart", "swimlane"],
+    },
+    curve: {
+      ...parity(...interactiveLayout),
+      families: ["flowchart", "swimlane"],
+    },
+    padding: {
+      ...parity("text", ...interactiveLayout),
+      families: ["flowchart", "swimlane"],
+    },
+    defaultRenderer: parity(...interactiveLayout),
+    wrappingWidth: parity(...textLayout),
+    inheritDir: parity(...interactiveLayout),
+  },
+  swimlane: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: inert(
+      "Swimlane 11.16.0 configures its SVG from flowchart.useMaxWidth; the same-named Swimlane field is retained but inert.",
     ),
-    diagramPadding: parity("viewport", "export"),
-    htmlLabels: unsupported(
-      textLayout,
-      "Deprecated upstream alias; native flow labels currently use one structured text path.",
+    lineHops: parity(...layout),
+    ignoreCrossLaneEdges: parity(...interactiveLayout),
+    optimizeRanksByCrossings: inert(
+      "The 11.16.0 crossing lift is unreachable after longest-path initialization: every node has lower-bound >= current rank.",
     ),
-    nodeSpacing: parity(...interactiveLayout),
-    rankSpacing: parity(...interactiveLayout),
-    curve: parity(...interactiveLayout),
-    padding: parity("text", ...interactiveLayout),
-    defaultRenderer: partial(
-      interactiveLayout,
-      interactiveLayout,
-      "dagre-wrapper is supported; dagre-d3 and elk return an explicit unsupported diagnostic.",
-    ),
-    wrappingWidth: unsupported(
-      textLayout,
-      "Native flow markdown wrapping does not yet consume this width.",
-    ),
-    inheritDir: unsupported(
-      interactiveLayout,
-      "Subgraph direction inheritance is parsed but not forwarded.",
-    ),
+    automaticLaneOrdering: parity(...interactiveLayout),
   },
   sequence: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: parity("viewport", "export"),
-    arrowMarkerAbsolute: deferred(
-      ["export"],
-      "Only meaningful for SVG marker URL serialization.",
+    arrowMarkerAbsolute: inert(
+      "Mermaid 11.16.0 reads only the root arrowMarkerAbsolute key for sequence SVG markers.",
     ),
     hideUnusedParticipants: parity(...layout),
     activationWidth: parity(...layout),
@@ -258,14 +338,11 @@ const familyPolicies = {
     useMaxWidth: inert(
       "The 11.16 unified class renderer reads state.useMaxWidth instead of class.useMaxWidth.",
     ),
-    titleTopMargin: partial(
-      ["paint", "viewport", "export"],
-      ["paint", "viewport", "export"],
-      "Effective in the legacy renderer; the 11.16 unified renderer reads state.titleTopMargin.",
+    titleTopMargin: inert(
+      "The Mermaid 11.16 unified class renderer reads state.titleTopMargin; the class field is retained but inert.",
     ),
-    arrowMarkerAbsolute: deferred(
-      ["export"],
-      "Only meaningful for SVG marker URL serialization.",
+    arrowMarkerAbsolute: inert(
+      "The unified class renderer always emits fragment marker references; the family key is retained but inert.",
     ),
     dividerMargin: legacyOnly(
       layout,
@@ -276,11 +353,7 @@ const familyPolicies = {
       textLayout,
       "Consumed by the legacy class renderer, not the unified native scene.",
     ),
-    defaultRenderer: partial(
-      interactiveLayout,
-      interactiveLayout,
-      "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
-    ),
+    defaultRenderer: parity(...interactiveLayout),
     nodeSpacing: inert(
       "The Mermaid 11.16 class renderer currently resets this value to 50 before Dagre.",
     ),
@@ -302,9 +375,8 @@ const familyPolicies = {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: parity("viewport", "export"),
     titleTopMargin: parity("paint", "viewport", "export"),
-    arrowMarkerAbsolute: deferred(
-      ["export"],
-      "Only meaningful for SVG marker URL serialization.",
+    arrowMarkerAbsolute: inert(
+      "The unified state renderer always emits fragment marker references; the family key is retained but inert.",
     ),
     dividerMargin: legacyOnly(layout, "Legacy state renderer geometry option."),
     sizeUnit: legacyOnly(layout, "Legacy state renderer geometry option."),
@@ -323,11 +395,7 @@ const familyPolicies = {
     edgeLengthFactor: legacyOnly(layout, "Legacy state renderer edge option."),
     compositTitleSize: legacyOnly(textLayout, "Legacy state renderer title option."),
     radius: legacyOnly(["layout", "paint", "export"], "Legacy state corner radius option."),
-    defaultRenderer: partial(
-      interactiveLayout,
-      interactiveLayout,
-      "dagre-wrapper/native routing is supported; elk returns an explicit unsupported diagnostic.",
-    ),
+    defaultRenderer: parity(...interactiveLayout),
   },
   er: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
@@ -492,6 +560,58 @@ const familyPolicies = {
       "Declared by MindmapDiagramConfig but never read; Mindmap selects the renderer from the top-level layout key.",
     ),
   },
+  railroad: {
+    useWidth: allRailroad(inert("Only Gantt consumes BaseDiagramConfig.useWidth.")),
+    useMaxWidth: allRailroad(parity("viewport", "export")),
+    compactMode: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    padding: allRailroad(parity("layout", "paint", "viewport", "export")),
+    verticalSeparation: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    horizontalSeparation: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    arcRadius: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    fontSize: allRailroad(parity(...textLayout)),
+    fontFamily: allRailroad(parity(...textLayout)),
+    terminalFill: allRailroad(parity("paint", "export")),
+    terminalStroke: allRailroad(parity("paint", "export")),
+    terminalTextColor: allRailroad(parity("text", "paint", "export")),
+    nonTerminalFill: allRailroad(parity("paint", "export")),
+    nonTerminalStroke: allRailroad(parity("paint", "export")),
+    nonTerminalTextColor: allRailroad(parity("text", "paint", "export")),
+    lineColor: allRailroad(parity("paint", "export")),
+    strokeWidth: allRailroad(parity("paint", "export")),
+    markerFill: allRailroad(parity("paint", "export")),
+    commentFill: allRailroad(inert("Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.")),
+    commentStroke: allRailroad(inert("Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.")),
+    commentTextColor: allRailroad(inert("Removed by the source-entry sanitizer; no shipped Railroad grammar emits a comment node.")),
+    specialFill: allRailroad(parity("paint", "export")),
+    specialStroke: allRailroad(parity("paint", "export")),
+    ruleNameColor: allRailroad(parity("text", "paint", "export")),
+    showMarkers: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+    markerRadius: allRailroad(inert("Removed by the Mermaid 11.16.0 source-entry config sanitizer.")),
+  },
+  block: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    padding: parity("text", "layout", "paint", "viewport", "export"),
+  },
+  gitGraph: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    titleTopMargin: parity("paint", "viewport", "export"),
+    diagramPadding: parity("viewport", "export"),
+    nodeLabel: inert(
+      "GitGraphDiagramConfig retains the legacy nodeLabel object, but the 11.16.0 renderer never reads it.",
+    ),
+    mainBranchName: parity("text", "layout", "paint", "viewport", "export"),
+    mainBranchOrder: parity("layout", "paint", "viewport", "export"),
+    showCommitLabel: parity("text", "paint", "viewport", "export"),
+    showBranches: parity("text", "paint", "viewport", "export"),
+    rotateCommitLabel: parity("layout", "paint", "viewport", "export"),
+    parallelCommits: parity("layout", "paint", "viewport", "export"),
+    arrowMarkerAbsolute: inert(
+      "GitGraph 11.16.0 draws paths directly and does not serialize SVG arrow-marker URLs.",
+    ),
+  },
+  c4: c4Policies,
   treeView: {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: parity("viewport", "export"),
@@ -519,6 +639,103 @@ const familyPolicies = {
     useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
     useMaxWidth: parity("viewport", "export"),
     diagramPadding: parity("viewport", "export"),
+  },
+  venn: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    width: parity("layout", "paint", "viewport", "export"),
+    height: parity("layout", "paint", "viewport", "export"),
+    padding: parity("layout", "paint", "export"),
+    useDebugLayout: parity("paint", "export"),
+  },
+  sankey: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    width: parity("layout", "paint", "viewport", "export"),
+    height: parity("layout", "paint", "viewport", "export"),
+    linkColor: parity("paint", "export"),
+    nodeAlignment: parity("layout", "paint", "viewport", "export"),
+    showValues: parity("text", "layout", "paint", "viewport", "export"),
+    prefix: parity("text", "paint", "viewport", "export"),
+    suffix: parity("text", "paint", "viewport", "export"),
+    nodeWidth: parity("layout", "paint", "viewport", "export"),
+    nodePadding: parity("layout", "paint", "viewport", "export"),
+    labelStyle: parity("text", "paint", "viewport", "export"),
+    nodeColors: parity("paint", "export"),
+  },
+  treemap: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    padding: parity("layout", "paint", "viewport", "export"),
+    diagramPadding: parity("viewport", "export"),
+    showValues: parity("text", "layout", "paint", "viewport", "export"),
+    nodeWidth: parity("layout", "paint", "viewport", "export"),
+    nodeHeight: parity("layout", "paint", "viewport", "export"),
+    borderWidth: inert(
+      "Treemap 11.16.0 declares borderWidth but its styles use fixed section/leaf widths.",
+    ),
+    valueFontSize: inert(
+      "Treemap 11.16.0 declares valueFontSize but derives value text size from each tile.",
+    ),
+    labelFontSize: inert(
+      "Treemap 11.16.0 declares labelFontSize but derives label text size from each tile.",
+    ),
+    valueFormat: parity("text", "paint", "viewport", "export"),
+  },
+  cynefin: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    width: parity("layout", "paint", "viewport", "export"),
+    height: parity("layout", "paint", "viewport", "export"),
+    padding: parity("layout", "paint", "viewport", "export"),
+    showDomainDescriptions: parity("text", "layout", "paint", "viewport", "export"),
+    boundaryAmplitude: parity("layout", "paint", "viewport", "export"),
+    seed: parity("layout", "paint", "export"),
+  },
+  architecture: {
+    useWidth: inert("Only Gantt consumes BaseDiagramConfig.useWidth."),
+    useMaxWidth: parity("viewport", "export"),
+    padding: parity("layout", "viewport", "export"),
+    iconSize: parity("layout", "paint", "viewport", "export"),
+    fontSize: parity("text", "layout", "paint", "viewport", "export"),
+    randomize: parity("layout", "viewport", "export"),
+    nodeSeparation: parity("layout", "viewport", "export"),
+    idealEdgeLengthMultiplier: parity("layout", "viewport", "export"),
+    edgeElasticity: parity("layout", "viewport", "export"),
+    numIter: parity("layout", "viewport", "export"),
+    seed: parity("layout", "viewport", "export"),
+  },
+  "wardley-beta": {
+    useWidth: inert(
+      "Only Gantt consumes BaseDiagramConfig.useWidth; Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
+    ),
+    useMaxWidth: inert(
+      "Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
+    ),
+    width: inert(
+      "Wardley's source config object is removed; only the diagram-local size statement changes width.",
+    ),
+    height: inert(
+      "Wardley's source config object is removed; only the diagram-local size statement changes height.",
+    ),
+    padding: inert(
+      "Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
+    ),
+    nodeRadius: inert(
+      "Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
+    ),
+    nodeLabelOffset: inert(
+      "Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
+    ),
+    axisFontSize: inert(
+      "Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
+    ),
+    labelFontSize: inert(
+      "Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
+    ),
+    showGrid: inert(
+      "Wardley's source config object is removed by the 11.16 source-entry sanitizer.",
+    ),
   },
   gantt: {
     useWidth: parity("layout", "paint", "viewport", "export"),
@@ -590,6 +807,7 @@ const shared = [
     path: "theme",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -604,11 +822,20 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "wardley-beta",
+      "architecture",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
@@ -616,6 +843,7 @@ const shared = [
     path: "themeVariables.*",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -630,22 +858,33 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "wardley-beta",
+      "architecture",
     ],
-    ...partial(
+    ...policy(
+      "parity",
       ["text", "layout", "paint", "viewport", "export"],
       ["text", "layout", "paint", "viewport", "export"],
-      "The matrix covers the native theme-variable subset, not arbitrary Mermaid CSS variables.",
+      "Exhaustive per-key golden over the 285-key resolved inventory (theme-variables-inventory.json): every key byte-locked across all 11 themes via FlowThemeVariables::get(). The 26 live keys follow the per-theme 11.16 derivation chains (sequence/state/class/c4 palettes, radius, scaleLabelColor/branchLabelColor, noteFontWeight) and feed their family consumers; the 30 upstream-dead keys are modeled and locked with zero-consumer evidence in FlowTheme.h.",
     ),
   },
   {
     path: "fontFamily",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -660,35 +899,36 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "architecture",
     ],
     ...parity("text", "layout", "paint", "viewport", "export"),
   },
   {
     path: "htmlLabels",
-    families: ["flowchart", "class", "requirement", "kanban", "mindmap"],
-    ...partial(
-      textLayout,
-      textLayout,
-      "Native class, Kanban, and Mindmap labels consume this option; native flow and requirement labels do not yet branch on it (Requirement currently follows the htmlLabels:true path).",
-    ),
+    families: ["flowchart", "swimlane", "class", "requirement", "kanban", "mindmap", "block"],
+    ...parity(...textLayout),
   },
   {
     path: "look",
-    families: ["flowchart", "class", "state", "timeline", "kanban", "mindmap", "ishikawa"],
-    ...partial(
-      interactiveLayout,
-      interactiveLayout,
-      "Flowchart, Timeline, Kanban, Mindmap, and Ishikawa are complete; state currently uses look for marker selection and class retains it without rough painting.",
-    ),
+    families: ["flowchart", "swimlane", "class", "state", "timeline", "kanban", "mindmap", "block", "ishikawa", "venn"],
+    ...parity(...interactiveLayout),
+    note: "Classic/Neo/handDrawn routing, exact-case fallback, RoughJS geometry, interaction, and export are covered by family and cross-family upstream oracles.",
   },
   {
     path: "handDrawnSeed",
-    families: ["flowchart", "kanban", "mindmap", "ishikawa"],
+    families: ["flowchart", "swimlane", "class", "state", "kanban", "mindmap", "block", "ishikawa", "venn"],
     ...parity("layout", "paint", "interaction", "export"),
   },
   {
@@ -699,50 +939,67 @@ const shared = [
   },
   {
     path: "layout",
-    families: ["flowchart", "class", "state", "mindmap"],
-    ...partial(
-      interactiveLayout,
-      interactiveLayout,
-      "Dagre is supported by all four families. Flowchart/class/state reject unsupported engines; Mindmap falls back to cose-bilkent for unknown or unregistered names.",
-    ),
+    families: ["flowchart", "swimlane", "class", "state", "mindmap"],
+    ...parity(...interactiveLayout),
+    note: "Dagre, Mindmap CoSE, exact-case selection, registered-name fallback, and State's runtime-error boundary are covered by production geometry oracles.",
   },
+  ...[
+    "mergeEdges",
+    "nodePlacementStrategy",
+    "cycleBreakingStrategy",
+    "forceNodeModelOrder",
+    "considerModelOrder",
+  ].map((field) => ({
+    path: `elk.${field}`,
+    families: ["flowchart"],
+    ...inert(
+      "Mermaid 11.16 retains this external-ELK option, but the pinned runtime registers no ELK loader and renders through Dagre.",
+    ),
+  })),
   {
     path: "wrap",
-    families: ["sequence"],
+    families: ["sequence", "c4"],
     ...parity(...textLayout),
     note: "Includes the %%{wrap}%% directive promoted by Mermaid preprocessing.",
   },
   {
     path: "maxEdges",
     families: ["flowchart"],
-    ...unsupported(
-      ["parsed"],
-      "Muffin keeps a fixed safety ceiling instead of allowing source config to raise it.",
-    ),
+    ...parity("parsed"),
+    note: "Mermaid's secure source config strips this key, so documents cannot lower or raise the default 500-edge boundary; Muffin retains the same source behavior.",
   },
   {
     path: "maxTextSize",
     families: [
       "flowchart", "sequence", "class", "state", "er", "requirement",
+      "swimlane",
       "pie", "quadrantChart", "journey", "radar", "xyChart",
       "timeline", "packet",
       "kanban",
       "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "wardley-beta",
+      "architecture",
     ],
-    ...unsupported(
-      ["parsed"],
-      "Muffin keeps family-specific safety ceilings instead of trusting document config.",
-    ),
+    ...parity("parsed"),
+    note: "Mermaid's secure source config strips this key; source documents cannot change the global default text boundary in either renderer.",
   },
   {
     path: "securityLevel",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -757,11 +1014,20 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "wardley-beta",
+      "architecture",
     ],
     ...policy(
       "security-fixed",
@@ -771,14 +1037,10 @@ const shared = [
     ),
   },
   {
-    path: "arrowMarkerAbsolute",
-    families: ["flowchart", "sequence", "class", "state", "er", "requirement"],
-    ...deferred(["export"], "Requires native SVG marker serialization."),
-  },
-  {
-    path: "deterministicIds",
+    path: "suppressErrorRendering",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -793,11 +1055,68 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "wardley-beta",
+      "architecture",
+    ],
+    ...policy(
+      "parity",
+      ["parsed"],
+      ["parsed"],
+      "Mermaid's secure source config strips this key, so through the Markdown source API the parse/draw-failure fallback (the error diagram) stays enabled in both renderers; only an external initialize() can suppress it, which is outside the source API.",
+    ),
+  },
+  {
+    path: "arrowMarkerAbsolute",
+    families: ["flowchart", "swimlane", "sequence"],
+    ...parity("export"),
+    note:
+      "Flowchart, Swimlane, and Sequence serialize absolute marker references when the SVG export context supplies its document URL; other 11.16.0 families retain fragment references.",
+  },
+  {
+    path: "deterministicIds",
+    families: [
+      "flowchart",
+      "swimlane",
+      "sequence",
+      "class",
+      "state",
+      "er",
+      "requirement",
+      "pie",
+      "quadrantChart",
+      "journey",
+      "radar",
+      "xyChart",
+      "timeline",
+      "packet",
+      "kanban",
+      "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
+      "gantt",
+      "info",
+      "treeView",
+      "eventmodeling",
+      "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "wardley-beta",
+      "architecture",
     ],
     ...parity("export"),
   },
@@ -805,6 +1124,7 @@ const shared = [
     path: "deterministicIDSeed",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -819,11 +1139,20 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "wardley-beta",
+      "architecture",
     ],
     ...parity("export"),
   },
@@ -831,6 +1160,7 @@ const shared = [
     path: "themeCSS",
     families: [
       "flowchart",
+      "swimlane",
       "sequence",
       "class",
       "state",
@@ -845,18 +1175,44 @@ const shared = [
       "packet",
       "kanban",
       "mindmap",
+      "block",
+      "gitGraph",
+      "c4",
       "gantt",
       "info",
       "treeView",
       "eventmodeling",
       "ishikawa",
+      "venn",
+      "sankey",
+      "treemap",
+      "cynefin",
+      "wardley-beta",
+      "architecture",
     ],
-    ...unsupported(
-      ["paint", "export"],
-      "Native scenes consume typed theme variables rather than arbitrary browser CSS.",
-    ),
+    ...parity("text", "paint", "export"),
+    note:
+      "Arbitrary themeCSS is resolved through the per-family CSS cascade against real upstream DOM oracles (mermaid-theme-css.json, 117 cases). Wardley's draw() clears the svg before painting, so themeCSS is upstream-inert there and native parity holds by construction. Geometry feedback beyond paint is demonstrated per family in the themeCSS fixtures: flowchart, swimlane, sequence, class, state, pie, mindmap, sankey, treeview, block, ishikawa, requirement, timeline, kanban, gitGraph, treemap, architecture, and railroad.",
   },
 ];
+
+// Railroad has four independent parser/detector frontends over one renderer
+// and one `railroad` config object. Shared top-level configuration therefore
+// reaches all four dialects, while the interface rows below remain unique.
+const railroadSharedPaths = new Set([
+  "theme",
+  "themeVariables.*",
+  "fontFamily",
+  "maxTextSize",
+  "securityLevel",
+  "deterministicIds",
+  "deterministicIDSeed",
+  "themeCSS",
+]);
+for (const entry of shared) {
+  if (railroadSharedPaths.has(entry.path))
+    entry.families.push(...railroadFamilies);
+}
 
 function interfaceProperties(name) {
   const marker = `export interface ${name}`;
@@ -890,6 +1246,7 @@ function interfaceProperties(name) {
 const baseFields = interfaceProperties("BaseDiagramConfig");
 const interfaces = {
   flowchart: "FlowchartDiagramConfig",
+  swimlane: "SwimlaneDiagramConfig",
   sequence: "SequenceDiagramConfig",
   class: "ClassDiagramConfig",
   state: "StateDiagramConfig",
@@ -904,9 +1261,19 @@ const interfaces = {
   packet: "PacketDiagramConfig",
   kanban: "KanbanDiagramConfig",
   mindmap: "MindmapDiagramConfig",
+  railroad: "RailroadDiagramConfig",
+  block: "BlockDiagramConfig",
+  gitGraph: "GitGraphDiagramConfig",
+  c4: "C4DiagramConfig",
   treeView: "TreeViewDiagramConfig",
   eventmodeling: "EventModelingDiagramConfig",
   ishikawa: "IshikawaDiagramConfig",
+  venn: "VennDiagramConfig",
+  sankey: "SankeyDiagramConfig",
+  treemap: "TreemapDiagramConfig",
+  cynefin: "CynefinDiagramConfig",
+  architecture: "ArchitectureDiagramConfig",
+  "wardley-beta": "WardleyDiagramConfig",
   gantt: "GanttDiagramConfig",
 };
 
@@ -972,8 +1339,14 @@ const payload = {
   },
   dimensions,
   scope: {
-    families: [...Object.keys(interfaces), "info"],
-    note: "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL controls remain deferred.",
+    families: [
+      ...Object.keys(interfaces),
+      "railroadEbnf",
+      "railroadAbnf",
+      "railroadPeg",
+      "info",
+    ],
+    note: "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL parity is evaluated with an explicit document URL export context.",
   },
   summary,
   entries: normalizedEntries,

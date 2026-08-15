@@ -1,0 +1,48 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "cynefinModuleSha256": "3dbe403effb1abbc413cce6a4433bc2dd59feef86c5da296057459b40a5ffc9c",
+    "parserModuleSha256": "f541603e5c4d057f0c557f0873bd5b3be3c9878caed7ef2b6ee4e6699206dd3d",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"cynefin\":{\"seed\":17}}}%%\ncynefin-beta\ntitle Decision Landscape\ncomplex\n  \"Explore\"\n  \"Experiment\"\ncomplicated\n  \"Analyse\"\nclear\n  \"Standardise\"\nchaotic\n  \"Stabilise\"\nconfusion\n  \"Unknown one\"\n  \"Unknown two\"\n  \"Unknown three\"\n  \"Unknown four\"\ncomplex --> complicated : \"learn\"\nchaotic --> clear",
+      "file": "default.png",
+      "width": 880,
+      "height": 680,
+      "sha256": "7efa1217a2b4e297f20f3a415fdce6e769f2c1b99d00188a996b697d6f3e9eaf"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"cynefin\":{\"seed\":17},\"theme\":\"dark\"}}%%\ncynefin-beta\ntitle Decision Landscape\ncomplex\n  \"Explore\"\n  \"Experiment\"\ncomplicated\n  \"Analyse\"\nclear\n  \"Standardise\"\nchaotic\n  \"Stabilise\"\nconfusion\n  \"Unknown one\"\n  \"Unknown two\"\n  \"Unknown three\"\n  \"Unknown four\"\ncomplex --> complicated : \"learn\"\nchaotic --> clear",
+      "file": "dark.png",
+      "width": 880,
+      "height": 680,
+      "sha256": "7c3d63d3da49335d416598f2cfc08b54f3d1000af80ad77790684b5d6f05b5b5"
+    },
+    {
+      "id": "forest",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"cynefin\":{\"seed\":17},\"theme\":\"forest\"}}%%\ncynefin-beta\ntitle Decision Landscape\ncomplex\n  \"Explore\"\n  \"Experiment\"\ncomplicated\n  \"Analyse\"\nclear\n  \"Standardise\"\nchaotic\n  \"Stabilise\"\nconfusion\n  \"Unknown one\"\n  \"Unknown two\"\n  \"Unknown three\"\n  \"Unknown four\"\ncomplex --> complicated : \"learn\"\nchaotic --> clear",
+      "file": "forest.png",
+      "width": 880,
+      "height": 680,
+      "sha256": "b60edf265054a9f8933d40bbdf83ffa252c098510a97308a7bbbef5ad95570de"
+    },
+    {
+      "id": "transitions",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"cynefin\":{\"seed\":17}}}%%\ncynefin-beta\ncomplex --> complicated : \"learn\"\nchaotic --> clear\nconfusion --> complex : \"sense\"",
+      "file": "transitions.png",
+      "width": 880,
+      "height": 680,
+      "sha256": "8c2c49ae62d3b82c368a10335dc6aad5c6be241feff1566b8eae4065d6e6ee56"
+    }
+  ],
+  "fixtureSha256": "5093cc5e6c32528f9783c82cffd6061d4942127a4b3b9c0a322d87111ba717cc"
+}

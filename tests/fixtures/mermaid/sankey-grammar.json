@@ -1,0 +1,864 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "sankeyModuleSha256": "c34fab7be73b824f060579c70c10ed3a4d0fc40489e4d57abfe00fc042662ca4",
+    "engine": "d3-sankey@0.12.3",
+    "engineSha256": "b721b95e028b9b45dff0b79edfddd9ce57934ac9e00a7ddd080d245ddfaf0cf0",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "sankey-beta\nCoal,Electricity,30\nGas,Electricity,20\nElectricity,Industry,28\nElectricity,Homes,17\nElectricity,Losses,5",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "Coal"
+            },
+            {
+              "id": "Electricity"
+            },
+            {
+              "id": "Gas"
+            },
+            {
+              "id": "Industry"
+            },
+            {
+              "id": "Homes"
+            },
+            {
+              "id": "Losses"
+            }
+          ],
+          "links": [
+            {
+              "source": "Coal",
+              "target": "Electricity",
+              "value": 30
+            },
+            {
+              "source": "Gas",
+              "target": "Electricity",
+              "value": 20
+            },
+            {
+              "source": "Electricity",
+              "target": "Industry",
+              "value": 28
+            },
+            {
+              "source": "Electricity",
+              "target": "Homes",
+              "value": 17
+            },
+            {
+              "source": "Electricity",
+              "target": "Losses",
+              "value": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "non-beta",
+      "source": "sankey\nCoal,Electricity,30\nGas,Electricity,20\nElectricity,Industry,28\nElectricity,Homes,17\nElectricity,Losses,5",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "Coal"
+            },
+            {
+              "id": "Electricity"
+            },
+            {
+              "id": "Gas"
+            },
+            {
+              "id": "Industry"
+            },
+            {
+              "id": "Homes"
+            },
+            {
+              "id": "Losses"
+            }
+          ],
+          "links": [
+            {
+              "source": "Coal",
+              "target": "Electricity",
+              "value": 30
+            },
+            {
+              "source": "Gas",
+              "target": "Electricity",
+              "value": 20
+            },
+            {
+              "source": "Electricity",
+              "target": "Industry",
+              "value": 28
+            },
+            {
+              "source": "Electricity",
+              "target": "Homes",
+              "value": 17
+            },
+            {
+              "source": "Electricity",
+              "target": "Losses",
+              "value": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "uppercase",
+      "source": "SANKEY-BETA\nCoal,Electricity,30\nGas,Electricity,20\nElectricity,Industry,28\nElectricity,Homes,17\nElectricity,Losses,5",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: SANKEY-BETA\nCoal,Electricity,30\nGas,Electricity,20\nElectricity,Industry,28\nElectricity,Homes,17\nElectricity,Losses,5",
+          "line": 1,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "sankey-betaX\na,b,1",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nsankey-betaXa,b,1\n------^\nExpecting 'NEWLINE', got 'NON_ESCAPED_TEXT'",
+          "line": 2,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "header-only",
+      "source": "sankey-beta",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nsankey-beta\n-----------^\nExpecting 'NEWLINE', got 'EOF'",
+          "line": 2,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "header-newline",
+      "source": "sankey-beta\n",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nsankey-beta\n-----------^\nExpecting 'NEWLINE', got 'EOF'",
+          "line": 2,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "sankey-beta a,b,1",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nsankey-beta a,b,1\n-----------^\nExpecting 'NEWLINE', got 'NON_ESCAPED_TEXT'",
+          "line": 2,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "one-record",
+      "source": "sankey-beta\na,b,1",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "decimal",
+      "source": "sankey-beta\na,b,.5",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 0.5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "signed",
+      "source": "sankey-beta\na,b,-2.5",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": -2.5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "exponent",
+      "source": "sankey-beta\na,b,1e2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 100
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "nan",
+      "source": "sankey-beta\na,b,NaN",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "infinity",
+      "source": "sankey-beta\na,b,Infinity",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "garbage-number",
+      "source": "sankey-beta\na,b,12widgets",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 12
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty-number",
+      "source": "sankey-beta\na,b,",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-betaa,b,\n---------------^\nExpecting 'DQUOTE', 'NON_ESCAPED_TEXT', got 'EOF'",
+          "line": 3,
+          "column": 4
+        }
+      }
+    },
+    {
+      "id": "empty-source",
+      "source": "sankey-beta\n,b,1",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-beta,b,1\n-----------^\nExpecting 'DQUOTE', 'NON_ESCAPED_TEXT', got 'COMMA'",
+          "line": 2,
+          "column": 12
+        }
+      }
+    },
+    {
+      "id": "empty-target",
+      "source": "sankey-beta\na,,1",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-betaa,,1\n-------------^\nExpecting 'DQUOTE', 'NON_ESCAPED_TEXT', got 'COMMA'",
+          "line": 3,
+          "column": 2
+        }
+      }
+    },
+    {
+      "id": "quoted-comma",
+      "source": "sankey-beta\n\"a, one\",\"b, two\",3",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a, one"
+            },
+            {
+              "id": "b, two"
+            }
+          ],
+          "links": [
+            {
+              "source": "a, one",
+              "target": "b, two",
+              "value": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "quoted-newline",
+      "source": "sankey-beta\n\"a\nline\",b,3",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a\nline"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a\nline",
+              "target": "b",
+              "value": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "escaped-quote",
+      "source": "sankey-beta\n\"a\"\"one\",b,3",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a\"one"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a\"one",
+              "target": "b",
+              "value": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unterminated-quote",
+      "source": "sankey-beta\n\"a,b,3",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-beta\"a,b,3\n-----------------^\nExpecting 'DQUOTE', got 'ESCAPED_TEXT'",
+          "line": 3,
+          "column": 2
+        }
+      }
+    },
+    {
+      "id": "too-few-fields",
+      "source": "sankey-beta\na,b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-betaa,b\n--------------^\nExpecting 'COMMA', got 'EOF'",
+          "line": 3,
+          "column": 3
+        }
+      }
+    },
+    {
+      "id": "too-many-fields",
+      "source": "sankey-beta\na,b,1,x",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-betaa,b,1,x\n----------------^\nExpecting 'NEWLINE', 'EOF', got 'COMMA'",
+          "line": 3,
+          "column": 5
+        }
+      }
+    },
+    {
+      "id": "two-records-one-line",
+      "source": "sankey-beta\na,b,1,c,d,2",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-betaa,b,1,c,d,2\n----------------^\nExpecting 'NEWLINE', 'EOF', got 'COMMA'",
+          "line": 3,
+          "column": 5
+        }
+      }
+    },
+    {
+      "id": "semicolon",
+      "source": "sankey-beta\na,b,1;",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "blank-lines",
+      "source": "\n sankey-beta \n\n a,b,1 \n\n b,c,2 \n",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 1:\nsankey-beta  a,b,1  b,c,2\n-----------^\nExpecting 'NEWLINE', got 'NON_ESCAPED_TEXT'",
+          "line": 2,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "sankey-beta\r\na,b,1\r\nb,c,2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            },
+            {
+              "id": "c"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            },
+            {
+              "source": "b",
+              "target": "c",
+              "value": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "comment-before",
+      "source": "%% comment\nsankey-beta\na,b,1",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "comment-body",
+      "source": "sankey-beta\n%% comment\na,b,1",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "duplicate-links",
+      "source": "sankey-beta\na,b,1\na,b,2",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            },
+            {
+              "source": "a",
+              "target": "b",
+              "value": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "self-cycle",
+      "source": "sankey-beta\na,a,1",
+      "expected": {
+        "parse": true,
+        "render": false,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "a",
+              "value": 1
+            }
+          ]
+        },
+        "error": {
+          "name": "Error",
+          "message": "circular link"
+        }
+      }
+    },
+    {
+      "id": "two-cycle",
+      "source": "sankey-beta\na,b,1\nb,a,2",
+      "expected": {
+        "parse": true,
+        "render": false,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            },
+            {
+              "source": "b",
+              "target": "a",
+              "value": 2
+            }
+          ]
+        },
+        "error": {
+          "name": "Error",
+          "message": "circular link"
+        }
+      }
+    },
+    {
+      "id": "sanitizer",
+      "source": "sankey-beta\n\"<script>x</script><b>A</b>\",\"<img src=x onerror=bad>B\",1",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "<b>A</b>"
+            },
+            {
+              "id": "<img src=\"x\">B"
+            }
+          ],
+          "links": [
+            {
+              "source": "<b>A</b>",
+              "target": "<img src=\"x\">B",
+              "value": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "unicode-bare",
+      "source": "sankey-beta\n中文,b,1",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-beta中文,b,1\n-----------^\nExpecting 'NEWLINE', 'EOF', 'COMMA', got 'NON_ESCAPED_TEXT'",
+          "line": 3,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "unicode-quoted",
+      "source": "sankey-beta\n\"中文\",b,1",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 2:\nsankey-beta\"中文\",b,1\n------------^\nExpecting 'DQUOTE', got 'ESCAPED_TEXT'",
+          "line": 3,
+          "column": 2
+        }
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\nconfig:\n  {\n    \"sankey\": {\n      \"showValues\": false\n    }\n  }\n---\nsankey-beta\na,b,1",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"sankey\":{\"nodeAlignment\":\"left\"}}}%%\nsankey-beta\na,b,1",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "graph": {
+          "nodes": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ],
+          "links": [
+            {
+              "source": "a",
+              "target": "b",
+              "value": 1
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "ed36a90ab8ef42082ebcf2c0f8ff4655c645f60dbb9a5ac0e5d1435ba6e0b02e"
+}

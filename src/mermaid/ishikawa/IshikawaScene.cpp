@@ -78,23 +78,26 @@ QStringList cssFontFamilies(const QString& expression) {
   return result;
 }
 
-editor::CssPixelFont textFont(const IshikawaSceneStyle& style, qreal size,
-                              QFont::Weight weight) {
-  const QStringList families = cssFontFamilies(style.fontFamily);
+editor::CssPixelFont textFont(const QString& familyExpression, qreal size,
+                              QFont::Weight weight,
+                              QFont::Style fontStyle = QFont::StyleNormal) {
+  const QStringList families = cssFontFamilies(familyExpression);
   editor::CssPixelFont font =
       editor::makeUnhintedCssPixelFont(families.first(), size);
   if (families.size() > 1) font.font.setFamilies(families);
   font.font.setWeight(weight);
+  font.font.setStyle(fontStyle);
   return font;
 }
 
-QString metricFamily(const IshikawaSceneStyle& style, qreal size,
-                     QFont::Weight weight) {
-  const editor::CssPixelFont font = textFont(style, size, weight);
+QString metricFamily(const QString& familyExpression, qreal size,
+                     QFont::Weight weight, QFont::Style fontStyle) {
+  const editor::CssPixelFont font =
+      textFont(familyExpression, size, weight, fontStyle);
   const QRawFont raw = QRawFont::fromFont(font.font);
   return raw.isValid() && !raw.familyName().isEmpty()
              ? raw.familyName()
-             : cssFontFamilies(style.fontFamily).first();
+             : cssFontFamilies(familyExpression).first();
 }
 
 QString visibleSvgText(QString value) {
@@ -155,11 +158,16 @@ QRectF textBounds(const IshikawaTextGeometry& text,
     return QRectF(text.anchor.x() + text.translation.x(),
                   text.firstY + text.translation.y(), 0.0, 0.0);
   }
-  const editor::CssPixelFont font = textFont(style, text.fontSize, text.weight);
+  if (!text.hasBox) return {};
+  const QString family = text.fontFamily.isEmpty() ? style.fontFamily
+                                                    : text.fontFamily;
+  const editor::CssPixelFont font =
+      textFont(family, text.fontSize, text.weight, text.fontStyle);
   const QFontMetricsF qmetrics(font.font);
   const flowchart::FlowLabelFontMetrics metrics =
       flowchart::flowLabelFontBoundingMetrics(
-          metricFamily(style, text.fontSize, text.weight), text.fontSize,
+          metricFamily(family, text.fontSize, text.weight, text.fontStyle),
+          text.fontSize,
           text.weight);
   Extents extents;
   for (int index = 0; index < text.lines.size(); ++index) {
@@ -168,12 +176,49 @@ QRectF textBounds(const IshikawaTextGeometry& text,
     const qreal anchorY = text.firstY + index * text.lineStep;
     flowchart::FlowLabelDocument document;
     document.text = visible;
-    document.baseWeight = QFont::Normal;
-    const QString family = metricFamily(style, text.fontSize, text.weight);
+    const QString metric =
+        metricFamily(family, text.fontSize, text.weight, text.fontStyle);
     const QRectF layoutInk = flowchart::measureChromiumSvgTextLayoutBounds(
-        document, family, text.fontSize, deviceScale);
+        document, metric, text.fontSize, deviceScale);
     QRectF ink = flowchart::measureChromiumSvgTextBounds(
-        document, family, text.fontSize, text.weight, deviceScale);
+        document, metric, text.fontSize, text.weight, deviceScale);
+    if (text.fontStyle != QFont::StyleNormal) {
+      const editor::CssPixelFont regular =
+          textFont(family, text.fontSize, QFont::Normal, QFont::StyleNormal);
+      QTextLayout regularLayout(visible, regular.font);
+      QTextOption regularOption;
+      regularOption.setUseDesignMetrics(true);
+      regularLayout.setTextOption(regularOption);
+      regularLayout.beginLayout();
+      QTextLine regularLine = regularLayout.createLine();
+      if (regularLine.isValid())
+        regularLine.setLineWidth(std::numeric_limits<qreal>::max());
+      regularLayout.endLayout();
+      QPainterPath regularPath;
+      if (regularLine.isValid()) {
+        for (const QGlyphRun& run : regularLine.glyphRuns(
+                 0, -1, QTextLayout::RetrieveAll)) {
+          const auto glyphs = run.glyphIndexes();
+          const auto positions = run.positions();
+          for (qsizetype glyph = 0;
+               glyph < std::min(glyphs.size(), positions.size()); ++glyph) {
+            QPainterPath path = run.rawFont().pathForGlyph(glyphs.at(glyph));
+            path.translate(positions.at(glyph));
+            regularPath.addPath(path);
+          }
+        }
+      }
+      // The Mermaid fixture exposes only Noto Sans Regular. Blink therefore
+      // synthesizes CSS italic by skewing that regular outline while retaining
+      // the unskewed ShapeResult advance cell. The cell fixes the left edge;
+      // only the skewed glyph fringe may extend the right edge.
+      QTransform skew;
+      skew.shear(0.208, 0.0);
+      const qreal italicRight =
+          skew.map(regularPath).boundingRect().right() * regular.scale;
+      ink.setLeft(0.0);
+      ink.setRight(std::max(layoutInk.width(), italicRight));
+    }
     if (!ink.isValid()) {
       ink = qmetrics.boundingRect(visible);
       ink = QRectF(ink.x() * font.scale, ink.y() * font.scale,
@@ -198,23 +243,58 @@ QRectF textBounds(const IshikawaTextGeometry& text,
 }
 
 int appendText(IshikawaScene& scene, IshikawaTextGeometry text) {
+  if (text.domKey.isEmpty())
+    text.domKey = QStringLiteral("text-%1").arg(scene.texts.size());
+  const auto resolved = scene.style.textStyles.constFind(text.domKey);
+  if (resolved != scene.style.textStyles.cend()) {
+    text.fontFamily = resolved->fontFamily;
+    text.fontSize = resolved->fontSize;
+    text.weight = resolved->fontWeight;
+    text.fontStyle = resolved->fontStyle;
+    text.textAnchor = resolved->textAnchor;
+    text.baseline = resolved->baseline;
+    text.fill = resolved->fill;
+    text.opacity = resolved->opacity;
+    text.visible = resolved->visible;
+    text.hasBox = resolved->hasBox;
+    text.rootHasBox = resolved->rootHasBox;
+  } else {
+    text.fontFamily = scene.style.fontFamily;
+    text.fill = scene.style.textColor;
+  }
   text.layoutBounds = textBounds(text, scene.style, 1.0);
   text.bounds = text.layoutBounds;
   const int index = scene.texts.size();
   scene.texts.append(std::move(text));
   scene.paintOrder.append({IshikawaPrimitiveKind::Text, index});
+  const auto& stored = scene.texts.back();
+  scene.domElements.append({stored.domKey, stored.parentKey,
+                            QStringLiteral("text"),
+                            stored.className.split(QLatin1Char(' '),
+                                                   Qt::SkipEmptyParts),
+                            IshikawaPrimitiveKind::Text, index, true});
   return index;
 }
 
+QString appendGroup(IshikawaScene& scene, const QString& parent,
+                    const QStringList& classes, const QString& prefix) {
+  const QString key = QStringLiteral("%1-%2").arg(prefix).arg(
+      scene.domElements.size());
+  scene.domElements.append({key, parent, QStringLiteral("g"), classes,
+                            IshikawaPrimitiveKind::Line, -1, false});
+  return key;
+}
+
 rough::Options roughOptions(const IshikawaScene& scene, bool filled,
-                            qreal strokeWidth = 2.0) {
+                            const QString& stroke, qreal strokeWidth,
+                            const QString& fill = QString()) {
   rough::Options options;
   options.roughness = filled ? 1.5 : 1.5;
   options.seed = quint32(editor::jsNumberValue(scene.config.handDrawnSeed));
-  options.stroke = scene.style.lineColor;
+  options.stroke = stroke;
   options.strokeWidth = strokeWidth;
   if (filled) {
-    options.fill = scene.style.mainBkg;
+    options.fill = fill;
     options.fillStyle = QStringLiteral("hachure");
     options.fillWeight = 2.5;
     options.hachureGap = 5.0;
@@ -223,37 +303,84 @@ rough::Options roughOptions(const IshikawaScene& scene, bool filled,
 }
 
 int appendLine(IshikawaScene& scene, const QString& className,
-               const QLineF& value) {
+               const QLineF& value, const QString& parentKey) {
   IshikawaLineGeometry line;
+  line.domKey = QStringLiteral("line-%1").arg(scene.lines.size());
+  line.parentKey = parentKey;
   line.className = className;
   line.line = value;
+  line.stroke = scene.style.lineColor;
+  line.strokeWidth = className == QLatin1String("ishikawa-sub-branch")
+                         ? 1.0 : 2.0;
+  const auto resolved = scene.style.shapeStyles.constFind(line.domKey);
+  if (resolved != scene.style.shapeStyles.cend()) {
+    line.stroke = resolved->stroke;
+    line.strokeWidth = resolved->strokeWidth;
+    line.strokeOpacity = resolved->strokeOpacity;
+    line.visible = resolved->visible;
+    line.hasBox = resolved->hasBox;
+    line.rootHasBox = resolved->rootHasBox;
+  }
   line.rough = scene.style.look == QLatin1String("handDrawn");
   if (line.rough)
     line.roughDrawable =
         rough::line(value.x1(), value.y1(), value.x2(), value.y2(),
-                    roughOptions(scene, false));
+                    roughOptions(scene, false, line.stroke,
+                                 line.strokeWidth));
   const int index = scene.lines.size();
   scene.lines.append(std::move(line));
   scene.paintOrder.append({IshikawaPrimitiveKind::Line, index});
+  const auto& stored = scene.lines.back();
+  scene.domElements.append({stored.domKey, parentKey,
+                            stored.rough ? QStringLiteral("g")
+                                         : QStringLiteral("line"),
+                            {className}, IshikawaPrimitiveKind::Line,
+                            index, true});
   return index;
 }
 
 int appendPath(IshikawaScene& scene, const QString& className,
-               const QPainterPath& value, bool filled) {
+               const QPainterPath& value, bool filled,
+               const QString& parentKey) {
   IshikawaPathGeometry path;
+  path.domKey = QStringLiteral("path-%1").arg(scene.paths.size());
+  path.parentKey = parentKey;
   path.className = className;
   path.path = value;
+  path.fill = filled ? scene.style.mainBkg : scene.style.lineColor;
+  path.stroke = scene.style.lineColor;
+  path.strokeWidth = className.isEmpty() ? 1.0 : 2.0;
+  const auto resolved = scene.style.shapeStyles.constFind(path.domKey);
+  if (resolved != scene.style.shapeStyles.cend()) {
+    path.fill = resolved->fill;
+    path.stroke = resolved->stroke;
+    path.strokeWidth = resolved->strokeWidth;
+    path.fillOpacity = resolved->fillOpacity;
+    path.strokeOpacity = resolved->strokeOpacity;
+    path.visible = resolved->visible;
+    path.hasBox = resolved->hasBox;
+    path.rootHasBox = resolved->rootHasBox;
+  }
   path.rough = scene.style.look == QLatin1String("handDrawn");
   if (path.rough)
-    path.roughDrawable = rough::path(value, roughOptions(scene, filled), true);
+    path.roughDrawable = rough::path(
+        value, roughOptions(scene, filled, path.stroke, path.strokeWidth,
+                            path.fill), true);
   const int index = scene.paths.size();
   scene.paths.append(std::move(path));
   scene.paintOrder.append({IshikawaPrimitiveKind::Path, index});
+  const auto& stored = scene.paths.back();
+  scene.domElements.append({stored.domKey, parentKey,
+                            stored.rough ? QStringLiteral("g")
+                                         : QStringLiteral("path"),
+                            className.split(QLatin1Char(' '),
+                                            Qt::SkipEmptyParts),
+                            IshikawaPrimitiveKind::Path, index, true});
   return index;
 }
 
 void appendRoughArrow(IshikawaScene& scene, qreal x, qreal y, qreal dx,
-                      qreal dy) {
+                      qreal dy, const QString& parentKey) {
   const qreal length = std::hypot(dx, dy);
   if (!(length > 0.0)) return;
   const qreal ux = dx / length;
@@ -270,8 +397,13 @@ void appendRoughArrow(IshikawaScene& scene, qreal x, qreal y, qreal dx,
   arrow.closeSubpath();
 
   IshikawaPathGeometry geometry;
+  geometry.domKey = QStringLiteral("path-%1").arg(scene.paths.size());
+  geometry.parentKey = parentKey;
   geometry.path = arrow;
   geometry.rough = true;
+  geometry.fill = scene.style.lineColor;
+  geometry.stroke = scene.style.lineColor;
+  geometry.strokeWidth = 1.0;
   rough::Options options;
   options.roughness = 1.0;
   options.seed = quint32(editor::jsNumberValue(scene.config.handDrawnSeed));
@@ -283,21 +415,46 @@ void appendRoughArrow(IshikawaScene& scene, qreal x, qreal y, qreal dx,
   const int index = scene.paths.size();
   scene.paths.append(std::move(geometry));
   scene.paintOrder.append({IshikawaPrimitiveKind::Path, index});
+  scene.domElements.append({scene.paths.back().domKey, parentKey,
+                            QStringLiteral("g"), {},
+                            IshikawaPrimitiveKind::Path, index, true});
 }
 
 int appendRect(IshikawaScene& scene, const QString& className,
-               const QRectF& value) {
+               const QRectF& value, const QString& parentKey) {
   IshikawaRectGeometry rect;
+  rect.domKey = QStringLiteral("rect-%1").arg(scene.rects.size());
+  rect.parentKey = parentKey;
   rect.className = className;
   rect.rect = value;
+  rect.fill = scene.style.mainBkg;
+  rect.stroke = scene.style.lineColor;
+  rect.strokeWidth = 2.0;
+  const auto resolved = scene.style.shapeStyles.constFind(rect.domKey);
+  if (resolved != scene.style.shapeStyles.cend()) {
+    rect.fill = resolved->fill;
+    rect.stroke = resolved->stroke;
+    rect.strokeWidth = resolved->strokeWidth;
+    rect.fillOpacity = resolved->fillOpacity;
+    rect.strokeOpacity = resolved->strokeOpacity;
+    rect.visible = resolved->visible;
+    rect.hasBox = resolved->hasBox;
+    rect.rootHasBox = resolved->rootHasBox;
+  }
   rect.rough = scene.style.look == QLatin1String("handDrawn");
   if (rect.rough)
     rect.roughDrawable = rough::rectangle(
         value.x(), value.y(), value.width(), value.height(),
-        roughOptions(scene, true));
+        roughOptions(scene, true, rect.stroke, rect.strokeWidth, rect.fill));
   const int index = scene.rects.size();
   scene.rects.append(std::move(rect));
   scene.paintOrder.append({IshikawaPrimitiveKind::Rect, index});
+  const auto& stored = scene.rects.back();
+  scene.domElements.append({stored.domKey, parentKey,
+                            stored.rough ? QStringLiteral("g")
+                                         : QStringLiteral("rect"),
+                            {className}, IshikawaPrimitiveKind::Rect,
+                            index, true});
   return index;
 }
 
@@ -381,8 +538,10 @@ int drawMultilineText(IshikawaScene& scene, QString text, qreal x, qreal y,
                       QString className, IshikawaTextAnchor anchor,
                       IshikawaTextBaseline baseline, qreal layoutFontSize,
                       qreal paintFontSize,
-                      QFont::Weight weight = QFont::Normal) {
+                      QFont::Weight weight, const QString& parentKey) {
   IshikawaTextGeometry geometry;
+  geometry.parentKey = parentKey;
+  geometry.domKey = QStringLiteral("text-%1").arg(scene.texts.size());
   geometry.className = std::move(className);
   geometry.lines = splitLines(text);
   geometry.source = geometry.lines.join(QString());
@@ -398,14 +557,17 @@ int drawMultilineText(IshikawaScene& scene, QString text, qreal x, qreal y,
 }
 
 void drawHead(IshikawaScene& scene, qreal x, qreal y, const QString& label,
-              qreal layoutFontSize) {
+              qreal layoutFontSize, const QString& parentKey) {
+  const QString groupKey = appendGroup(
+      scene, parentKey, {QStringLiteral("ishikawa-head-group")},
+      QStringLiteral("head-group"));
   const int maxChars =
       std::max(6, int(std::floor(110.0 / (layoutFontSize * 0.6))));
   const int textIndex = drawMultilineText(
       scene, wrapText(label, maxChars), 0.0, 0.0,
       QStringLiteral("ishikawa-head-label"), IshikawaTextAnchor::Middle,
       IshikawaTextBaseline::Middle, layoutFontSize, 14.0,
-      QFont::DemiBold);
+      QFont::DemiBold, groupKey);
   IshikawaTextGeometry& text = scene.texts[textIndex];
   const QRectF original = text.layoutBounds;
   const qreal width = std::max(60.0, original.width() + 6.0);
@@ -427,7 +589,8 @@ void drawHead(IshikawaScene& scene, qreal x, qreal y, const QString& label,
   head.quadTo(width * 2.4, 0.0, 0.0, -height / 2.0);
   head.closeSubpath();
   const int pathIndex =
-      appendPath(scene, QStringLiteral("ishikawa-head"), head, true);
+      appendPath(scene, QStringLiteral("ishikawa-head"), head, true,
+                 groupKey);
   QTransform headTransform;
   headTransform.translate(x, y);
   scene.paths[pathIndex].path = headTransform.map(scene.paths[pathIndex].path);
@@ -442,18 +605,50 @@ void drawHead(IshikawaScene& scene, qreal x, qreal y, const QString& label,
                entry.index == textIndex;
       }) - scene.paintOrder.begin();
   scene.paintOrder.insert(textOrder, pathEntry);
+  const auto domPath = std::find_if(
+      scene.domElements.begin(), scene.domElements.end(),
+      [&](const IshikawaDomElement& element) {
+        return element.primitive &&
+               element.kind == IshikawaPrimitiveKind::Path &&
+               element.index == pathIndex;
+      });
+  const auto domText = std::find_if(
+      scene.domElements.begin(), scene.domElements.end(),
+      [&](const IshikawaDomElement& element) {
+        return element.primitive &&
+               element.kind == IshikawaPrimitiveKind::Text &&
+               element.index == textIndex;
+      });
+  if (domPath != scene.domElements.end() && domText != scene.domElements.end() &&
+      domPath > domText) {
+    const IshikawaDomElement value = *domPath;
+    scene.domElements.erase(domPath);
+    const auto target = std::find_if(
+        scene.domElements.begin(), scene.domElements.end(),
+        [&](const IshikawaDomElement& element) {
+          return element.primitive &&
+                 element.kind == IshikawaPrimitiveKind::Text &&
+                 element.index == textIndex;
+        });
+    scene.domElements.insert(target, value);
+  }
   Q_UNUSED(pathIndex);
 }
 
 void drawCauseLabel(IshikawaScene& scene, const QString& text, qreal x,
-                    qreal y, int direction, qreal layoutFontSize) {
+                    qreal y, int direction, qreal layoutFontSize,
+                    const QString& parentKey) {
+  const QString groupKey = appendGroup(
+      scene, parentKey, {QStringLiteral("ishikawa-label-group")},
+      QStringLiteral("label-group"));
   const int textIndex = drawMultilineText(
       scene, text, x, y + 11.0 * direction,
       QStringLiteral("ishikawa-label cause"), IshikawaTextAnchor::Middle,
-      IshikawaTextBaseline::Middle, layoutFontSize, scene.style.fontSize);
+      IshikawaTextBaseline::Middle, layoutFontSize, scene.style.fontSize,
+      QFont::Normal, groupKey);
   const QRectF bounds = scene.texts.at(textIndex).layoutBounds;
   appendRect(scene, QStringLiteral("ishikawa-label-box"),
-             bounds.adjusted(-20.0, -2.0, 20.0, 2.0));
+             bounds.adjusted(-20.0, -2.0, 20.0, 2.0), groupKey);
   const IshikawaPaintEntry rectEntry = scene.paintOrder.takeLast();
   const int textOrder = std::find_if(
       scene.paintOrder.begin(), scene.paintOrder.end(),
@@ -462,11 +657,38 @@ void drawCauseLabel(IshikawaScene& scene, const QString& text, qreal x,
                entry.index == textIndex;
       }) - scene.paintOrder.begin();
   scene.paintOrder.insert(textOrder, rectEntry);
+  const auto domRect = std::find_if(
+      scene.domElements.begin(), scene.domElements.end(),
+      [&](const IshikawaDomElement& element) {
+        return element.primitive &&
+               element.kind == IshikawaPrimitiveKind::Rect &&
+               element.index == scene.rects.size() - 1;
+      });
+  const auto domText = std::find_if(
+      scene.domElements.begin(), scene.domElements.end(),
+      [&](const IshikawaDomElement& element) {
+        return element.primitive &&
+               element.kind == IshikawaPrimitiveKind::Text &&
+               element.index == textIndex;
+      });
+  if (domRect != scene.domElements.end() && domText != scene.domElements.end() &&
+      domRect > domText) {
+    const IshikawaDomElement value = *domRect;
+    scene.domElements.erase(domRect);
+    const auto target = std::find_if(
+        scene.domElements.begin(), scene.domElements.end(),
+        [&](const IshikawaDomElement& element) {
+          return element.primitive &&
+                 element.kind == IshikawaPrimitiveKind::Text &&
+                 element.index == textIndex;
+        });
+    scene.domElements.insert(target, value);
+  }
 }
 
 void drawBranch(IshikawaScene& scene, const IshikawaNode& node,
                 qreal startX, qreal startY, int direction, qreal length,
-                qreal layoutFontSize) {
+                qreal layoutFontSize, const QString& parentKey) {
   const qreal lineLength = length * (node.children.isEmpty() ? 0.2 : 1.0);
   const qreal dx = -kCosA * lineLength;
   const qreal dy = kSinA * lineLength * direction;
@@ -474,11 +696,13 @@ void drawBranch(IshikawaScene& scene, const IshikawaNode& node,
   const qreal endY = startY + dy;
   const int branch =
       appendLine(scene, QStringLiteral("ishikawa-branch"),
-                 QLineF(startX, startY, endX, endY));
+                 QLineF(startX, startY, endX, endY), parentKey);
   scene.lines[branch].markerStart = true;
   if (scene.style.look == QLatin1String("handDrawn"))
-    appendRoughArrow(scene, startX, startY, startX - endX, startY - endY);
-  drawCauseLabel(scene, node.text, endX, endY, direction, layoutFontSize);
+    appendRoughArrow(scene, startX, startY, startX - endX, startY - endY,
+                     parentKey);
+  drawCauseLabel(scene, node.text, endX, endY, direction, layoutFontSize,
+                 parentKey);
   if (node.children.isEmpty()) return;
 
   const FlattenedTree flat = flattenTree(node.children, direction);
@@ -494,6 +718,9 @@ void drawBranch(IshikawaScene& scene, const IshikawaNode& node,
   const qreal diagonalY = kSinA * direction;
   for (int index = 0; index < flat.entries.size(); ++index) {
     const LabelEntry& entry = flat.entries.at(index);
+    const QString groupKey = appendGroup(
+        scene, parentKey, {QStringLiteral("ishikawa-sub-group")},
+        QStringLiteral("sub-group"));
     BoneInfo& parent = bones.at(entry.parentIndex);
     const qreal y = ys.at(index);
     qreal x0 = 0.0;
@@ -524,17 +751,17 @@ void drawBranch(IshikawaScene& scene, const IshikawaNode& node,
     }
     const int lineIndex =
         appendLine(scene, QStringLiteral("ishikawa-sub-branch"),
-                   QLineF(x0, y0, x1, y));
+                   QLineF(x0, y0, x1, y), groupKey);
     scene.lines[lineIndex].markerStart = true;
     if (scene.style.look == QLatin1String("handDrawn")) {
       if (entry.depth % 2 == 0)
-        appendRoughArrow(scene, x0, y, 1.0, 0.0);
+        appendRoughArrow(scene, x0, y, 1.0, 0.0, groupKey);
       else
-        appendRoughArrow(scene, x0, y0, x0 - x1, y0 - y);
+        appendRoughArrow(scene, x0, y0, x0 - x1, y0 - y, groupKey);
     }
     drawMultilineText(scene, entry.text, x1, y, className,
                       IshikawaTextAnchor::End, baseline, layoutFontSize,
-                      scene.style.fontSize);
+                      scene.style.fontSize, QFont::Normal, groupKey);
     if (entry.childCount > 0)
       bones.emplace(index,
                     BoneInfo{x0, y0, x1, y, entry.childCount, 0});
@@ -544,6 +771,7 @@ void drawBranch(IshikawaScene& scene, const IshikawaNode& node,
 void includeSceneGeometry(IshikawaScene& scene) {
   Extents extents;
   for (const IshikawaLineGeometry& line : scene.lines) {
+    if (!line.rootHasBox) continue;
     if (line.rough)
       extents.rect(roughBounds(line.roughDrawable));
     else {
@@ -552,14 +780,16 @@ void includeSceneGeometry(IshikawaScene& scene) {
     }
   }
   for (const IshikawaPathGeometry& path : scene.paths) {
+    if (!path.rootHasBox) continue;
     extents.rect(path.rough ? roughBounds(path.roughDrawable)
                             : path.path.boundingRect());
   }
   for (const IshikawaRectGeometry& rect : scene.rects) {
+    if (!rect.rootHasBox) continue;
     extents.rect(rect.rough ? roughBounds(rect.roughDrawable) : rect.rect);
   }
   for (const IshikawaTextGeometry& text : scene.texts)
-    extents.rect(text.layoutBounds);
+    if (text.rootHasBox) extents.rect(text.layoutBounds);
   scene.contentBounds = extents.value();
   scene.bounds = scene.contentBounds.adjusted(-scene.padding, -scene.padding,
                                                scene.padding, scene.padding);
@@ -620,19 +850,38 @@ IshikawaScene buildIshikawaScene(const IshikawaData& data,
           : scene.config.diagramPadding;
   scene.padding = editor::jsNumberValue(paddingValue);
   if (!data.hasRoot) return scene;
+  scene.domElements.append({QStringLiteral("svg"), {}, QStringLiteral("svg"),
+                            {}, IshikawaPrimitiveKind::Line, -1, false});
+  scene.domElements.append({QStringLiteral("ishikawa"), QStringLiteral("svg"),
+                            QStringLiteral("g"),
+                            {QStringLiteral("ishikawa")},
+                            IshikawaPrimitiveKind::Line, -1, false});
+  const QString rootKey = QStringLiteral("ishikawa");
+  if (scene.style.look != QLatin1String("handDrawn")) {
+    scene.domElements.append({QStringLiteral("defs"), rootKey,
+                              QStringLiteral("defs"), {},
+                              IshikawaPrimitiveKind::Line, -1, false});
+    scene.domElements.append({QStringLiteral("marker"), QStringLiteral("defs"),
+                              QStringLiteral("marker"), {},
+                              IshikawaPrimitiveKind::Line, -1, false});
+    scene.domElements.append({QStringLiteral("marker-path"),
+                              QStringLiteral("marker"), QStringLiteral("path"),
+                              {QStringLiteral("ishikawa-arrow")},
+                              IshikawaPrimitiveKind::Path, -1, false});
+  }
 
   qreal spineX = 0.0;
   qreal spineY = kSpineBaseLength;
   int spineLine = -1;
   if (scene.style.look != QLatin1String("handDrawn"))
     spineLine = appendLine(scene, QStringLiteral("ishikawa-spine"),
-                           QLineF(spineX, spineY, spineX, spineY));
+                           QLineF(spineX, spineY, spineX, spineY), rootKey);
   drawHead(scene, spineX, spineY, data.root.text,
-           scene.style.layoutFontSize);
+           scene.style.layoutFontSize, rootKey);
   if (data.root.children.isEmpty()) {
     if (scene.style.look == QLatin1String("handDrawn"))
       appendLine(scene, QStringLiteral("ishikawa-spine"),
-                 QLineF(spineX, spineY, spineX, spineY));
+                 QLineF(spineX, spineY, spineX, spineY), rootKey);
     includeSceneGeometry(scene);
     for (IshikawaTextGeometry& text : scene.texts)
       text.bounds = textBounds(text, scene.style, renderedSvgScale(scene));
@@ -686,15 +935,18 @@ IshikawaScene buildIshikawaScene(const IshikawaData& data,
 
   const int pairCount = (data.root.children.size() + 1) / 2;
   for (int pair = 0; pair < pairCount; ++pair) {
+    const QString pairKey = appendGroup(
+        scene, rootKey, {QStringLiteral("ishikawa-pair")},
+        QStringLiteral("pair"));
     const int textStart = scene.texts.size();
     const int upperIndex = pair * 2;
     const int lowerIndex = upperIndex + 1;
     if (upperIndex < data.root.children.size())
       drawBranch(scene, data.root.children.at(upperIndex), spineX, spineY,
-                 -1, upperLength, scene.style.layoutFontSize);
+                 -1, upperLength, scene.style.layoutFontSize, pairKey);
     if (lowerIndex < data.root.children.size())
       drawBranch(scene, data.root.children.at(lowerIndex), spineX, spineY,
-                 1, lowerLength, scene.style.layoutFontSize);
+                 1, lowerLength, scene.style.layoutFontSize, pairKey);
     qreal left = std::numeric_limits<qreal>::infinity();
     for (int i = textStart; i < scene.texts.size(); ++i)
       left = std::min(left, scene.texts.at(i).layoutBounds.left());
@@ -703,7 +955,7 @@ IshikawaScene buildIshikawaScene(const IshikawaData& data,
 
   if (scene.style.look == QLatin1String("handDrawn"))
     appendLine(scene, QStringLiteral("ishikawa-spine"),
-               QLineF(spineX, spineY, 0.0, spineY));
+               QLineF(spineX, spineY, 0.0, spineY), rootKey);
   else
     scene.lines[spineLine].line =
         QLineF(spineX, spineY, 0.0, spineY);

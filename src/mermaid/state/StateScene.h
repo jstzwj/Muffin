@@ -3,6 +3,7 @@
 #include "mermaid/MermaidScene.h"
 #include "mermaid/state/StateLayout.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/rough/RoughOps.h"
 #include "mermaid/theme/MermaidStyleResolve.h"
 
 #include <QRectF>
@@ -15,16 +16,32 @@ struct StateSceneStyle {
   QString textColor = QStringLiteral("#333333");
   QString transitionColor = QStringLiteral("#333333");
   QString edgeLabelFill = QStringLiteral("#ECECFF");
-  QString compositeFill = QStringLiteral("#ffffde");
-  QString compositeStroke = QStringLiteral("#aaaa33");
+  // `.stateLabel text`/`.state-title` (stateLabelColor) and `.edgeLabel .label
+  // text` (transitionLabelColor, `|| tertiaryTextColor`) — resolved-theme
+  // slots distinct from textColor (defaults agree for every built-in theme).
+  QString stateLabelColor;
+  QString transitionLabelColor;
+  QString compositeFill = QStringLiteral("white");
+  QString compositeAltFill = QStringLiteral("#f0f0f0");
+  QString compositeTitleFill = QStringLiteral("#ECECFF");
+  QString compositeStroke = QStringLiteral("#9370DB");
   QString noteFill = QStringLiteral("#fff5ad");
   QString noteStroke = QStringLiteral("#aaaa33");
   QString noteTextColor = QStringLiteral("#000000");
+  // 11.16 rendering-util shapes: the start circle's `.node circle.state-start`
+  // fill/stroke (specialStateColor) and the end-state inner dot
+  // (`stateBorder ?? nodeBorder`). The end ring keeps transitionColor stroke
+  // and takes the node fill (userNodeOverrides' mainBkg default).
+  QString specialStateColor;
+  QString endInnerFill;
   QString fontFamily = QStringLiteral("Noto Sans");
   qreal fontSize = 16.0;
   qreal lineHeight = 24.0;
   qreal strokeWidth = 1.0;
-};
+
+  // themeCSS `.node rect { display:none }` — the modeled single rect shape is
+  // removed from every plain state node (label-only bbox, no painted rect).
+  bool shapeVisible = true;};
 
 struct StateSceneNode {
   QString id;
@@ -37,10 +54,17 @@ struct StateSceneNode {
   QString stroke;
   QString textColor;
   qreal strokeWidth = 1.0;
+  // themeCSS `.node rect { display:none }` removes the shape box: the node
+  // keeps its text (group bbox = label) and the painter skips the rect.
+  bool shapeVisible = true;
   QRectF bounds;
+  QRectF innerBounds;
+  QString innerFill;
   bool group = false;
   flowchart::FlowLabelDocument labelDocument;
   QVector<flowchart::FlowLabelDocument> descriptionDocuments;
+  QVector<rough::Drawable> roughDrawables;
+  QRectF paintedBounds;
 };
 struct StateSceneEdge {
   QString id;
@@ -62,11 +86,13 @@ struct StateSceneEdge {
   QString stroke;
   QString strokeWidth;
   QString strokeDasharray;
+  rough::Drawable roughDrawable;
 };
 struct StateScene : MermaidScene {
   QRectF sceneBounds() const override { return bounds; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
+  SvgMarkerProjection svgMarkerProjection() const override;
 
   QString role = QStringLiteral("graphics-document document");
   QString ariaRoleDescription = QStringLiteral("stateDiagram");
@@ -89,6 +115,8 @@ StateScene buildStateScene(const StateLayoutInput& input,
                            const StatePlacementResult& placement,
                            StateSceneStyle style = {},
                            const QVector<style::ClassDef>& classDefs = {},
-                           const style::ThemeDefaults& themeDefaults = {});
+                           const style::ThemeDefaults& themeDefaults = {},
+                           bool handDrawn = false,
+                           quint32 handDrawnSeed = 0);
 
 }  // namespace muffin::mermaid::state

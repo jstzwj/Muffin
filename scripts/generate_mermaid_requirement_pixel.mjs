@@ -23,6 +23,17 @@ const cases = [
     "functionalRequirement SubFunc {\n  id: \"REQ-002\"\n  text: sub function\n  risk: medium\n  verifyMethod: analysis\n}\n" +
     "element HardwareModule {\n  type: Hardware\n  docref: \"DOC-1\"\n}\n" +
     "TheSystem -contains-> SubFunc\nSubFunc -copies-> HardwareModule" },
+  // P3a: the global htmlLabels:false boundary — upstream swaps every label for
+  // SVG <text> with tspan dy=1.1em rows, fill-black ink (no inherited root
+  // fill), and per-label background rects (edgeLabelBackground). The directive
+  // goes through the source entry, matching Muffin's render path.
+  { id: "html-labels-false", dpr: 1, theme: "default", source:
+    "%%{init: {\"htmlLabels\": false}}%%\n" +
+    "requirementDiagram\n" +
+    "requirement TheSystem {\n  id: \"REQ-001\"\n  text: shall do the thing\n  risk: high\n  verifyMethod: test\n}\n" +
+    "functionalRequirement SubFunc {\n  id: \"REQ-002\"\n  text: sub function\n  risk: medium\n  verifyMethod: analysis\n}\n" +
+    "element HardwareModule {\n  type: Hardware\n  docref: \"DOC-1\"\n}\n" +
+    "TheSystem -contains-> SubFunc\nSubFunc -copies-> HardwareModule" },
 ];
 
 const notoDir = path.resolve("third_party", "noto", "fonts");

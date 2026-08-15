@@ -14,13 +14,23 @@ namespace muffin::mermaid::editor {
 const Diagram* findMermaidDiagram(const QString& type) {
   static const QVector<const Diagram*> kAll = {
       &stateDiagramAdapter(),       &classDiagramAdapter(),   &sequenceDiagramAdapter(),
-      &flowchartDiagramAdapter(),   &erDiagramAdapter(),      &requirementDiagramAdapter(),
+      &flowchartDiagramAdapter(),   &swimlaneDiagramAdapter(), &erDiagramAdapter(),
+      &requirementDiagramAdapter(),
       &pieDiagramAdapter(),         &quadrantDiagramAdapter(), &journeyDiagramAdapter(),
       &radarDiagramAdapter(),       &xyChartDiagramAdapter(),   &timelineDiagramAdapter(),
       &packetDiagramAdapter(),      &kanbanDiagramAdapter(),
-      &mindmapDiagramAdapter(),     &ganttDiagramAdapter(),
+      &mindmapDiagramAdapter(),     &gitGraphDiagramAdapter(),
+      &c4DiagramAdapter(),
+      &ganttDiagramAdapter(),
       &infoDiagramAdapter(),        &treeViewDiagramAdapter(),
-      &eventModelingDiagramAdapter(), &ishikawaDiagramAdapter()};
+      &eventModelingDiagramAdapter(), &ishikawaDiagramAdapter(),
+      &vennDiagramAdapter(),       &sankeyDiagramAdapter(),
+      &treemapDiagramAdapter(),     &cynefinDiagramAdapter(),
+      &wardleyDiagramAdapter(),    &architectureDiagramAdapter(),
+      &blockDiagramAdapter(),
+      &railroadDiagramAdapter(),   &railroadEbnfDiagramAdapter(),
+      &railroadAbnfDiagramAdapter(), &railroadPegDiagramAdapter(),
+      &errorDiagramAdapter(),      &dashDiagramAdapter()};
   static const QHash<QString, const Diagram*> kByType = [] {
     QHash<QString, const Diagram*> registry;
     for (const Diagram* diagram : kAll)

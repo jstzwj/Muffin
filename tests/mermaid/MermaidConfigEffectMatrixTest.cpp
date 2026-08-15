@@ -1,17 +1,29 @@
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/architecture/ArchitectureScene.h"
+#include "mermaid/block/BlockScene.h"
+#include "mermaid/c4/C4Scene.h"
+#include "mermaid/cynefin/CynefinScene.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/eventmodeling/EventModelingScene.h"
 #include "mermaid/journey/JourneyScene.h"
 #include "mermaid/kanban/KanbanScene.h"
 #include "mermaid/mindmap/MindmapScene.h"
 #include "mermaid/gantt/GanttScene.h"
+#include "mermaid/gitgraph/GitGraphScene.h"
 #include "mermaid/info/InfoScene.h"
 #include "mermaid/ishikawa/IshikawaScene.h"
 #include "mermaid/radar/RadarScene.h"
+#include "mermaid/railroad/RailroadScene.h"
 #include "mermaid/timeline/TimelineScene.h"
 #include "mermaid/packet/PacketScene.h"
 #include "mermaid/treeview/TreeViewScene.h"
+#include "mermaid/venn/VennScene.h"
+#include "mermaid/sankey/SankeyScene.h"
+#include "mermaid/treemap/TreemapScene.h"
+#include "mermaid/wardley/WardleyScene.h"
 #include "mermaid/xychart/XYChartScene.h"
+#include "mermaid/scene/FlowScene.h"
+#include "mermaid/theme/MermaidColor.h"
 
 #include <QByteArray>
 #include <QCryptographicHash>
@@ -27,10 +39,12 @@
 #include <QSet>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <memory>
+#include <tuple>
 
 using muffin::mermaid::editor::MermaidRenderCache;
 using muffin::mermaid::editor::MermaidRenderEntry;
@@ -156,8 +170,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 279,
-          QStringLiteral("Expected 279 classified config rows, found %1")
+  require(entries.size() == 533,
+          QStringLiteral("Expected 533 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;
@@ -210,14 +224,20 @@ int main(int argc, char** argv) {
     }
   }
   require(familyCounts == QMap<QString, int>{{QStringLiteral("class"), 14},
+                                             {QStringLiteral("architecture"), 11},
                                              {QStringLiteral("er"), 13},
                                              {QStringLiteral("eventmodeling"), 4},
                                              {QStringLiteral("flowchart"), 14},
+                                             {QStringLiteral("swimlane"), 6},
                                              {QStringLiteral("gantt"), 17},
                                              {QStringLiteral("ishikawa"), 3},
                                              {QStringLiteral("journey"), 26},
                                              {QStringLiteral("kanban"), 5},
                                              {QStringLiteral("mindmap"), 5},
+                                             {QStringLiteral("railroad"), 26},
+                                             {QStringLiteral("block"), 3},
+                                              {QStringLiteral("gitGraph"), 12},
+                                              {QStringLiteral("c4"), 142},
                                              {QStringLiteral("pie"), 6},
                                              {QStringLiteral("packet"), 8},
                                              {QStringLiteral("quadrantChart"), 20},
@@ -227,6 +247,11 @@ int main(int argc, char** argv) {
                                              {QStringLiteral("state"), 22},
                                              {QStringLiteral("timeline"), 24},
                                              {QStringLiteral("treeView"), 10},
+                                             {QStringLiteral("venn"), 6},
+                                             {QStringLiteral("sankey"), 13},
+                                             {QStringLiteral("treemap"), 11},
+                                             {QStringLiteral("cynefin"), 8},
+                                             {QStringLiteral("wardley-beta"), 10},
                                              {QStringLiteral("xyChart"), 13}},
           QStringLiteral("Family interface coverage drifted"));
   require(observedNativeDimensions == expectedDimensions,
@@ -241,11 +266,48 @@ int main(int argc, char** argv) {
            QStringLiteral("deterministicIds"),
            QStringLiteral("deterministicIDSeed"),
            QStringLiteral("themeCSS")}) {
+    QSet<QString> expectedScope = scopedFamilies;
+    if (path == QLatin1String("fontFamily"))
+      expectedScope.remove(QStringLiteral("wardley-beta"));
     require(stringSet(byPath.value(path)
                           .value(QStringLiteral("families")).toArray()) ==
-                scopedFamilies,
+                expectedScope,
             QStringLiteral("Global %1 scope must cover every native family")
                 .arg(path));
+  }
+  require(byPath.value(QStringLiteral("themeCSS"))
+                      .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              stringSet(byPath.value(QStringLiteral("themeCSS"))
+                            .value(QStringLiteral("native")).toArray()) ==
+                  QSet<QString>{QStringLiteral("parsed"),
+                                QStringLiteral("text"),
+                                QStringLiteral("paint"),
+                                QStringLiteral("export")},
+          QStringLiteral("themeCSS lost its parity classification"));
+
+  // Production consumption: the flowchart themeCSS overlay must reach the
+  // built scene's node paint exactly like upstream's injected <style>.
+  const QString themeCssSource = QStringLiteral(
+      "%%{init: {\"themeCSS\": \".node rect { fill: rgb(255, 0, 0) !important; "
+      "stroke-width: 9px !important; }\"}}%%\nflowchart LR\nA --> B");
+  const MermaidRenderEntry themeCssEntry = render(themeCssSource);
+  const auto* themeCssScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          themeCssEntry.scene.get());
+  require(themeCssEntry.status == MermaidRenderStatus::Ready && themeCssScene &&
+              themeCssScene->nodes.size() == 2,
+          QStringLiteral("themeCSS production render failed"));
+  for (const auto& item : themeCssScene->nodes) {
+    const QColor fill = muffin::mermaid::color::resolveSvgPaint(
+        item.fill, muffin::mermaid::color::SvgPaintKind::Fill,
+        QColor(Qt::black)).color;
+    require(fill == QColor(QLatin1String("#ff0000")),
+            QStringLiteral("themeCSS node fill did not reach the scene: %1")
+                .arg(item.fill));
+    require(item.strokeWidth == QLatin1String("9px"),
+            QStringLiteral("themeCSS node stroke-width did not reach the "
+                           "scene: %1").arg(item.strokeWidth));
   }
 
   const MermaidRenderEntry infoEntry = render(QStringLiteral(
@@ -273,6 +335,36 @@ int main(int argc, char** argv) {
               eventScene->boxes.size() == 1 &&
               eventScene->boxes.first().fill == QLatin1String("#123456"),
           QStringLiteral("Event Modeling live config/theme did not reach the scene"));
+
+  // State special shapes consume specialStateColor (dark literal #f4f4f4,
+  // default = lineColor) and stateEnd's `stateBorder ?? nodeBorder` inner dot.
+  for (const auto& [theme, special, inner] :
+       std::array<std::tuple<const char*, const char*, const char*>, 2>{
+           std::make_tuple("dark", "#f4f4f4", "#ccc"),
+           std::make_tuple("default", "#333333", "#9370DB")}) {
+    const MermaidRenderEntry stateEntry = render(QStringLiteral(
+        "%%{init: {\"theme\": \"%1\"}}%%\nstateDiagram-v2\n[*] --> A\nA --> [*]")
+        .arg(QLatin1String(theme)));
+    const auto* stateScene =
+        dynamic_cast<const muffin::mermaid::state::StateScene*>(
+            stateEntry.scene.get());
+    const bool hasSpecialShapes =
+        stateScene && std::any_of(stateScene->nodes.cbegin(),
+                                  stateScene->nodes.cend(),
+                                  [](const auto& item) {
+                                    return item.shape ==
+                                               QLatin1String("stateStart") ||
+                                           item.shape ==
+                                               QLatin1String("stateEnd");
+                                  });
+    require(stateEntry.status == MermaidRenderStatus::Ready && stateScene &&
+                hasSpecialShapes &&
+                stateScene->style.specialStateColor ==
+                    QLatin1String(special) &&
+                stateScene->style.endInnerFill == QLatin1String(inner),
+            QStringLiteral("State special-shape theme variables drifted for %1")
+                .arg(QLatin1String(theme)));
+  }
   const QString ishikawaSource = QStringLiteral(
       "%%{init: {\"ishikawa\": {\"diagramPadding\": 80, "
       "\"useMaxWidth\": false}, \"look\": \"handDrawn\", "
@@ -289,6 +381,259 @@ int main(int argc, char** argv) {
               ishikawaScene->style.look == QLatin1String("handDrawn") &&
               pngImage(ishikawaSource).size() == ishikawaEntry.naturalSize,
           QStringLiteral("Ishikawa live config did not reach scene/PNG export"));
+  const QString vennSource = QStringLiteral(
+      "%%{init: {\"venn\": {\"width\": 620, \"height\": 360, "
+      "\"padding\": 20, \"useDebugLayout\": true, "
+      "\"useMaxWidth\": false}, \"look\": \"handDrawn\", "
+      "\"handDrawnSeed\": 17}}%%\n"
+      "venn-beta\nset A: 10\nset B: 8\nunion A,B: 2\n"
+      "text A note[\"Inside\"]");
+  const MermaidRenderEntry vennEntry = render(vennSource);
+  const auto* vennScene =
+      dynamic_cast<const muffin::mermaid::venn::VennScene*>(
+          vennEntry.scene.get());
+  require(vennEntry.status == MermaidRenderStatus::Ready && vennScene &&
+              vennScene->bounds.size() == QSizeF(620.0, 360.0) &&
+              !vennScene->useMaxWidth && !vennEntry.metadata.svgUseMaxWidth &&
+              vennScene->useDebugLayout && !vennScene->debugCircles.isEmpty() &&
+              std::any_of(vennScene->areas.cbegin(), vennScene->areas.cend(),
+                          [](const auto& area) { return area.rough; }) &&
+              pngImage(vennSource).size() == vennEntry.naturalSize,
+          QStringLiteral("Venn live config did not reach scene/PNG export"));
+  const QString sankeySource = QStringLiteral(
+      "%%{init: {\"fontFamily\":\"Noto Sans\",\"sankey\": {"
+      "\"width\": 420, \"height\": 260, \"nodeWidth\": 24, "
+      "\"nodePadding\": 4, \"nodeAlignment\": \"right\", "
+      "\"showValues\": false, \"linkColor\": \"source\", "
+      "\"labelStyle\": \"outlined\", \"useMaxWidth\": false, "
+      "\"nodeColors\": {\"A\": \"#ff0000\"}}}}%%\n"
+      "sankey-beta\nA,B,8\nB,C,5\nB,D,3");
+  const MermaidRenderEntry sankeyEntry = render(sankeySource);
+  const auto* sankeyScene =
+      dynamic_cast<const muffin::mermaid::sankey::SankeyScene*>(
+          sankeyEntry.scene.get());
+  require(sankeyEntry.status == MermaidRenderStatus::Ready && sankeyScene &&
+              sankeyScene->configuredWidth == 420.0 &&
+              sankeyScene->configuredHeight == 260.0 &&
+              !sankeyScene->useMaxWidth &&
+              !sankeyEntry.metadata.svgUseMaxWidth &&
+              sankeyScene->outlinedLabels &&
+              sankeyScene->nodes.first().color == QLatin1String("#ff0000") &&
+              sankeyScene->nodes.first().x1 - sankeyScene->nodes.first().x0 == 24.0 &&
+              sankeyScene->links.first().stroke == QLatin1String("#ff0000") &&
+              pngImage(sankeySource).size() == sankeyEntry.naturalSize,
+          QStringLiteral("Sankey live config did not reach scene/PNG export"));
+  const QString treemapSource = QStringLiteral(
+      "%%{init: {\"fontFamily\":\"Noto Sans\",\"treemap\": {"
+      "\"padding\": 3, \"diagramPadding\": 30, \"showValues\": false, "
+      "\"nodeWidth\": 48, \"nodeHeight\": 28, \"useMaxWidth\": false, "
+      "\"valueFormat\": \"$,.2f\"}, \"themeVariables\": {\"treemap\": {"
+      "\"titleColor\": \"#ff0000\", \"titleFontSize\": \"24px\"}}}}%%\n"
+      "treemap-beta\ntitle Revenue Map\n\"Root\"\n  \"A\": 1234.5\n  \"B\": 500");
+  const MermaidRenderEntry treemapEntry = render(treemapSource);
+  const auto* treemapScene =
+      dynamic_cast<const muffin::mermaid::treemap::TreemapScene*>(
+          treemapEntry.scene.get());
+  const QSize treemapPngSize = pngImage(treemapSource).size();
+  require(treemapEntry.status == MermaidRenderStatus::Ready && treemapScene &&
+              treemapScene->configuredWidth == 480.0 &&
+              treemapScene->configuredHeight == 310.0 &&
+              !treemapScene->useMaxWidth &&
+              !treemapEntry.metadata.svgUseMaxWidth &&
+              treemapScene->title.fill == QLatin1String("#ff0000") &&
+              treemapScene->title.fontSize == 24.0 &&
+              !treemapScene->leaves.isEmpty() &&
+              !treemapScene->leaves.first().value.visible &&
+              treemapPngSize == treemapEntry.naturalSize,
+          QStringLiteral("Treemap live config did not reach scene/PNG export: "
+                         "status=%1 scene=%2 configured=%3x%4 useMax=%5 "
+                         "metadataUseMax=%6 title=%7/%8 leaves=%9 valueVisible=%10 "
+                         "png=%11x%12 natural=%13x%14")
+              .arg(static_cast<int>(treemapEntry.status))
+              .arg(treemapScene != nullptr)
+              .arg(treemapScene ? treemapScene->configuredWidth : -1.0)
+              .arg(treemapScene ? treemapScene->configuredHeight : -1.0)
+              .arg(treemapScene ? treemapScene->useMaxWidth : true)
+              .arg(treemapEntry.metadata.svgUseMaxWidth)
+              .arg(treemapScene ? treemapScene->title.fill : QString())
+              .arg(treemapScene ? treemapScene->title.fontSize : -1.0)
+              .arg(treemapScene ? treemapScene->leaves.size() : -1)
+              .arg(treemapScene && !treemapScene->leaves.isEmpty()
+                       ? treemapScene->leaves.first().value.visible
+                       : true)
+              .arg(treemapPngSize.width())
+              .arg(treemapPngSize.height())
+              .arg(treemapEntry.naturalSize.width())
+              .arg(treemapEntry.naturalSize.height()));
+  const QString cynefinSource = QStringLiteral(
+      "%%{init: {\"fontFamily\":\"Noto Sans\",\"cynefin\": {"
+      "\"width\": 480, \"height\": 360, \"padding\": 12, "
+      "\"useMaxWidth\": false, \"showDomainDescriptions\": false, "
+      "\"boundaryAmplitude\": 0, \"seed\": 17}, "
+      "\"themeVariables\": {\"cynefin\": {"
+      "\"boundaryColor\": \"#ff0000\", \"domainFontSize\": 22}}}}%%\n"
+      "cynefin-beta\nclear\n  \"Standardise\"");
+  const MermaidRenderEntry cynefinEntry = render(cynefinSource);
+  const QSize cynefinPngSize = pngImage(cynefinSource).size();
+  const auto* cynefinScene =
+      dynamic_cast<const muffin::mermaid::cynefin::CynefinScene*>(
+          cynefinEntry.scene.get());
+  require(cynefinEntry.status == MermaidRenderStatus::Ready && cynefinScene &&
+              cynefinScene->configuredWidth == 480.0 &&
+              cynefinScene->configuredHeight == 360.0 &&
+              cynefinScene->configuredPadding == 12.0 &&
+              !cynefinScene->useMaxWidth &&
+              !cynefinEntry.metadata.svgUseMaxWidth &&
+              cynefinScene->subtitles.isEmpty() &&
+              !cynefinScene->boundaries.isEmpty() &&
+              cynefinScene->boundaries.first().stroke == QLatin1String("#ff0000") &&
+              !cynefinScene->labels.isEmpty() &&
+              cynefinScene->labels.first().fontSize == 22.0 &&
+              cynefinPngSize == cynefinEntry.naturalSize,
+          QStringLiteral("Cynefin live config did not reach scene/PNG export: "
+                         "status=%1 scene=%2 size=%3x%4 padding=%5 useMax=%6 "
+                         "metadataUseMax=%7 subtitles=%8 boundaries=%9 "
+                         "stroke=%10 labels=%11 font=%12 png=%13x%14 natural=%15x%16")
+              .arg(static_cast<int>(cynefinEntry.status))
+              .arg(cynefinScene != nullptr)
+              .arg(cynefinScene ? cynefinScene->configuredWidth : -1.0)
+              .arg(cynefinScene ? cynefinScene->configuredHeight : -1.0)
+              .arg(cynefinScene ? cynefinScene->configuredPadding : -1.0)
+              .arg(cynefinScene ? cynefinScene->useMaxWidth : true)
+              .arg(cynefinEntry.metadata.svgUseMaxWidth)
+              .arg(cynefinScene ? cynefinScene->subtitles.size() : -1)
+              .arg(cynefinScene ? cynefinScene->boundaries.size() : -1)
+              .arg(cynefinScene && !cynefinScene->boundaries.isEmpty()
+                       ? cynefinScene->boundaries.first().stroke
+                       : QString())
+              .arg(cynefinScene ? cynefinScene->labels.size() : -1)
+              .arg(cynefinScene && !cynefinScene->labels.isEmpty()
+                       ? cynefinScene->labels.first().fontSize
+                       : -1.0)
+              .arg(cynefinPngSize.width())
+              .arg(cynefinPngSize.height())
+              .arg(cynefinEntry.naturalSize.width())
+              .arg(cynefinEntry.naturalSize.height()));
+  const QString cynefinFallbackSource =
+      QString(cynefinSource).replace(
+          QStringLiteral("\"fontFamily\":\"Noto Sans\""),
+          QStringLiteral("\"fontFamily\":\"DefinitelyMissing, Noto Sans\""));
+  const MermaidRenderEntry cynefinFallbackEntry = render(cynefinFallbackSource);
+  const auto* cynefinFallbackScene =
+      dynamic_cast<const muffin::mermaid::cynefin::CynefinScene*>(
+          cynefinFallbackEntry.scene.get());
+  require(cynefinFallbackEntry.status == MermaidRenderStatus::Ready &&
+              cynefinFallbackScene && cynefinScene &&
+              cynefinFallbackScene->labels.first().bounds ==
+                  cynefinScene->labels.first().bounds &&
+              cynefinFallbackEntry.naturalSize == cynefinEntry.naturalSize,
+          QStringLiteral("Cynefin CSS font-family fallback list drifted"));
+
+  const QString wardleySource = QStringLiteral(
+      "%%{init: {\"wardley-beta\":{\"width\":480,\"height\":320,"
+      "\"padding\":10,\"nodeRadius\":12,\"nodeLabelOffset\":20,"
+      "\"axisFontSize\":22,\"labelFontSize\":18,\"showGrid\":true,"
+      "\"useMaxWidth\":false},\"themeVariables\":{\"wardley\":{"
+      "\"backgroundColor\":\"#010203\",\"axisColor\":\"#070809\","
+      "\"componentFill\":\"#040506\",\"annotationFill\":\"#ff00ff\"}}}}%%\n"
+      "wardley-beta\ncomponent A [0.5,0.5]");
+  const MermaidRenderEntry wardleyEntry = render(wardleySource);
+  const auto* wardleyScene =
+      dynamic_cast<const muffin::mermaid::wardley::WardleyScene*>(
+          wardleyEntry.scene.get());
+  require(wardleyEntry.status == MermaidRenderStatus::Ready && wardleyScene &&
+              wardleyScene->config.width == 900.0 &&
+              wardleyScene->config.height == 600.0 &&
+              wardleyScene->config.padding == 48.0 &&
+              wardleyScene->config.nodeRadius == 6.0 &&
+              !wardleyScene->config.showGrid && wardleyScene->useMaxWidth &&
+              wardleyEntry.metadata.svgUseMaxWidth &&
+              wardleyScene->style.backgroundColor == QLatin1String("#010203") &&
+              wardleyScene->style.axisColor == QLatin1String("#070809") &&
+              wardleyScene->style.componentFill == QLatin1String("#040506") &&
+              wardleyScene->style.annotationFill == QLatin1String("white") &&
+              wardleyEntry.naturalSize == QSize(900, 600) &&
+              pngImage(wardleySource).size() == wardleyEntry.naturalSize,
+          QStringLiteral("Wardley source-inert config/live theme projection drifted"));
+
+  const QString architectureSource = QStringLiteral(
+      "%%{init:{\"fontFamily\":\"Noto Sans\",\"architecture\":{"
+      "\"useMaxWidth\":false,\"padding\":18,\"iconSize\":52,"
+      "\"fontSize\":21,\"randomize\":false,\"nodeSeparation\":32,"
+      "\"idealEdgeLengthMultiplier\":2.25,\"edgeElasticity\":0.2,"
+      "\"numIter\":600,\"seed\":9},\"themeVariables\":{"
+      "\"archEdgeColor\":\"#112233\","
+      "\"archEdgeArrowColor\":\"#445566\","
+      "\"archGroupBorderColor\":\"#778899\"}}}%%\n"
+      "architecture-beta\nservice a(server)[A]\nservice b(database)[B]\n"
+      "a:R --> L:b");
+  const MermaidRenderEntry architectureEntry = render(architectureSource);
+  const auto* architectureScene =
+      dynamic_cast<const muffin::mermaid::architecture::ArchitectureScene*>(
+          architectureEntry.scene.get());
+  require(architectureEntry.status == MermaidRenderStatus::Ready &&
+              architectureScene && !architectureScene->useMaxWidth &&
+              !architectureEntry.metadata.svgUseMaxWidth &&
+              architectureScene->config.padding == QJsonValue(18.0) &&
+              architectureScene->config.iconSize == QJsonValue(52.0) &&
+              architectureScene->config.fontSize == QJsonValue(21.0) &&
+              architectureScene->config.nodeSeparation == QJsonValue(32.0) &&
+              architectureScene->config.seed == QJsonValue(9.0) &&
+              architectureScene->style.edgeColor == QLatin1String("#112233") &&
+              architectureScene->style.arrowColor == QLatin1String("#445566") &&
+              architectureScene->style.groupBorderColor ==
+                  QLatin1String("#778899") &&
+              pngImage(architectureSource).size() ==
+                  architectureEntry.naturalSize,
+          QStringLiteral("Architecture config/theme production projection drifted"));
+
+  const QString c4Source = QStringLiteral(
+      "%%{init:{\"fontFamily\":\"Noto Sans\",\"c4\":{"
+      "\"useMaxWidth\":false,\"diagramMarginX\":24,"
+      "\"diagramMarginY\":18,\"width\":180,\"height\":70,"
+      "\"personFontFamily\":\"Noto Sans\",\"personFontSize\":20,"
+      "\"personFontWeight\":\"bold\",\"person_bg_color\":\"#123456\","
+      "\"person_border_color\":\"#654321\"}}}%%\n"
+      "C4Context\nPerson(user, \"User\")");
+  const MermaidRenderEntry c4Entry = render(c4Source);
+  const auto* c4Scene =
+      dynamic_cast<const muffin::mermaid::c4::C4Scene*>(c4Entry.scene.get());
+  require(c4Entry.status == MermaidRenderStatus::Ready && c4Scene &&
+              !c4Scene->useMaxWidth && !c4Entry.metadata.svgUseMaxWidth &&
+              c4Scene->config.diagramMarginX == 24.0 &&
+              c4Scene->config.diagramMarginY == 18.0 &&
+              c4Scene->config.width == 180.0 &&
+              c4Scene->config.height == 70.0 &&
+              c4Scene->config.fonts.value(QStringLiteral("person")).size == 20.0 &&
+              c4Scene->config.fonts.value(QStringLiteral("person")).weight ==
+                  QLatin1String("bold") &&
+              c4Scene->config.backgroundColors.value(QStringLiteral("person")) ==
+                  QLatin1String("#123456") &&
+              c4Scene->config.borderColors.value(QStringLiteral("person")) ==
+                  QLatin1String("#654321") &&
+              pngImage(c4Source).size() == c4Entry.naturalSize,
+          QStringLiteral("C4 config production projection drifted"));
+
+  const QString railroadSource = QStringLiteral(
+      "%%{init: {\"railroad\": {\"useMaxWidth\": false, "
+      "\"padding\": 24, \"fontSize\": 20, "
+      "\"terminalFill\": \"#123456\", "
+      "\"ruleNameColor\": \"#654321\"}}}%%\n"
+      "railroad-ebnf-beta\nA = 'a';");
+  const MermaidRenderEntry railroadEntry = render(railroadSource);
+  const auto* railroadScene =
+      dynamic_cast<const muffin::mermaid::railroad::RailroadScene*>(
+          railroadEntry.scene.get());
+  require(railroadEntry.status == MermaidRenderStatus::Ready &&
+              railroadScene && !railroadScene->config.useMaxWidth &&
+              !railroadEntry.metadata.svgUseMaxWidth &&
+              railroadScene->config.padding == 24.0 &&
+              railroadScene->config.fontSize == 20.0 &&
+              railroadScene->config.terminalFill == QLatin1String("#123456") &&
+              railroadScene->config.ruleNameColor == QLatin1String("#654321") &&
+              pngImage(railroadSource).size() == railroadEntry.naturalSize,
+          QStringLiteral("Railroad config production projection drifted"));
+
   const QJsonObject declaredSummary =
       fixture.value(QStringLiteral("summary")).toObject();
   for (auto it = statusCounts.cbegin(); it != statusCounts.cend(); ++it)
@@ -300,8 +645,45 @@ int main(int argc, char** argv) {
               QLatin1String("parity") &&
               stringSet(byPath.value(QStringLiteral("flowchart.curve"))
                             .value(QStringLiteral("native")).toArray())
-                  .contains(QStringLiteral("interaction")),
+                  .contains(QStringLiteral("interaction")) &&
+              stringSet(byPath.value(QStringLiteral("flowchart.curve"))
+                            .value(QStringLiteral("families")).toArray()) ==
+                  QSet<QString>{QStringLiteral("flowchart"),
+                                QStringLiteral("swimlane")},
           QStringLiteral("Flowchart curve matrix row lost full native parity"));
+  for (const QString& path : {
+           QStringLiteral("elk.mergeEdges"),
+           QStringLiteral("elk.nodePlacementStrategy"),
+           QStringLiteral("elk.cycleBreakingStrategy"),
+           QStringLiteral("elk.forceNodeModelOrder"),
+           QStringLiteral("elk.considerModelOrder")}) {
+    require(byPath.value(path).value(QStringLiteral("status")).toString() ==
+                    QLatin1String("upstream-inert") &&
+                stringSet(byPath.value(path)
+                              .value(QStringLiteral("families")).toArray()) ==
+                    QSet<QString>{QStringLiteral("flowchart")},
+            QStringLiteral("ELK fallback config classification drifted: %1")
+                .arg(path));
+  }
+  require(byPath.value(QStringLiteral("swimlane.useWidth"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("swimlane.useMaxWidth"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("swimlane.lineHops"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              byPath.value(QStringLiteral("swimlane.ignoreCrossLaneEdges"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              byPath.value(QStringLiteral("swimlane.optimizeRanksByCrossings"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("swimlane.automaticLaneOrdering"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity"),
+          QStringLiteral("Swimlane config policy rows drifted"));
   require(byPath.value(QStringLiteral("sequence.forceMenus"))
                   .value(QStringLiteral("status")).toString() ==
               QLatin1String("parity") &&
@@ -365,6 +747,24 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("mindmap.layoutAlgorithm"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("gitGraph.parallelCommits"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("gitGraph.nodeLabel"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("gitGraph.arrowMarkerAbsolute"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("c4.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("c4.c4ShapeInRow"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("c4.personFont"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("api-only") &&
               byPath.value(QStringLiteral("treeView.useWidth"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("upstream-inert") &&
@@ -398,6 +798,69 @@ int main(int argc, char** argv) {
               byPath.value(QStringLiteral("ishikawa.diagramPadding"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity") &&
+              byPath.value(QStringLiteral("venn.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("venn.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("venn.useDebugLayout"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("sankey.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("sankey.nodeAlignment"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("sankey.nodeColors"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("treemap.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("treemap.showValues"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("treemap.valueFormat"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("treemap.borderWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("cynefin.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("cynefin.showDomainDescriptions"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("cynefin.boundaryAmplitude"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("cynefin.seed"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("wardley-beta.width"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("wardley-beta.showGrid"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("wardley-beta.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("architecture.useWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("upstream-inert") &&
+              byPath.value(QStringLiteral("architecture.useMaxWidth"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("architecture.padding"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
+              byPath.value(QStringLiteral("architecture.randomize"))
+                      .value(QStringLiteral("status")).toString() ==
+                  QLatin1String("parity") &&
               byPath.value(QStringLiteral("markdownAutoWrap"))
                       .value(QStringLiteral("status")).toString() ==
                   QLatin1String("parity"),
@@ -423,24 +886,52 @@ int main(int argc, char** argv) {
            QStringLiteral("timeline.useMaxWidth"),
            QStringLiteral("packet.useMaxWidth"),
            QStringLiteral("mindmap.useMaxWidth"),
+           QStringLiteral("c4.useMaxWidth"),
            QStringLiteral("treeView.useMaxWidth"),
            QStringLiteral("eventmodeling.useMaxWidth"),
-           QStringLiteral("ishikawa.useMaxWidth")}) {
+           QStringLiteral("ishikawa.useMaxWidth"),
+           QStringLiteral("venn.useMaxWidth"),
+           QStringLiteral("sankey.useMaxWidth"),
+           QStringLiteral("treemap.useMaxWidth"),
+           QStringLiteral("cynefin.useMaxWidth"),
+           QStringLiteral("architecture.useMaxWidth")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
                 QLatin1String("parity") &&
                 stringSet(byPath.value(path).value(QStringLiteral("native")).toArray())
                     .contains(QStringLiteral("export")),
             QStringLiteral("Native SVG config parity drifted for %1").arg(path));
   }
+  require(byPath.value(QStringLiteral("maxEdges"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              byPath.value(QStringLiteral("maxTextSize"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              byPath.value(QStringLiteral("class.titleTopMargin"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("upstream-inert"),
+          QStringLiteral("Secure limit or unified class config classification drifted"));
+  require(byPath.value(QStringLiteral("arrowMarkerAbsolute"))
+                  .value(QStringLiteral("status")).toString() ==
+              QLatin1String("parity") &&
+              stringSet(byPath.value(QStringLiteral("arrowMarkerAbsolute"))
+                            .value(QStringLiteral("families")).toArray()) ==
+                  QSet<QString>({QStringLiteral("flowchart"),
+                                 QStringLiteral("swimlane"),
+                                 QStringLiteral("sequence")}) &&
+              stringSet(byPath.value(QStringLiteral("arrowMarkerAbsolute"))
+                            .value(QStringLiteral("native")).toArray()) ==
+                  QSet<QString>({QStringLiteral("parsed"),
+                                 QStringLiteral("export")}),
+          QStringLiteral("Root SVG marker URL parity scope drifted"));
   for (const QString& path : {
-           QStringLiteral("arrowMarkerAbsolute"),
            QStringLiteral("flowchart.arrowMarkerAbsolute"),
            QStringLiteral("sequence.arrowMarkerAbsolute"),
            QStringLiteral("class.arrowMarkerAbsolute"),
            QStringLiteral("state.arrowMarkerAbsolute")}) {
     require(byPath.value(path).value(QStringLiteral("status")).toString() ==
-                QLatin1String("deferred"),
-            QStringLiteral("SVG marker URL config was claimed without evidence: %1")
+                QLatin1String("upstream-inert"),
+            QStringLiteral("Family marker URL config liveness drifted: %1")
                 .arg(path));
   }
 
@@ -476,6 +967,56 @@ int main(int argc, char** argv) {
     sawRoundedCorner = sawRoundedCorner || edge.path.contains(QLatin1Char('Q'));
   require(sawRoundedCorner && !pngImage(roundedFlow).isNull(),
           QStringLiteral("flowchart.curve rounded did not reach scene/PNG paint"));
+
+  const QString swimlaneBody = QStringLiteral(
+      "swimlane-beta TB\n"
+      "subgraph one[One]\n  A[Start] --> B[Done]\nend\n"
+      "subgraph two[Two]\n  C[Review] --> D[Ship]\nend\n"
+      "B --> C");
+  const MermaidRenderEntry nativeSwimlane = render(swimlaneBody);
+  const MermaidRenderEntry linearSwimlane = render(
+      QStringLiteral("%%{init: {\"flowchart\": {\"curve\": \"linear\"}}}%%\n") +
+      swimlaneBody);
+  const MermaidRenderEntry dagreSwimlane = render(
+      QStringLiteral("%%{init: {\"layout\": \"dagre\"}}%%\n") + swimlaneBody);
+  const auto* nativeSwimlaneScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          nativeSwimlane.scene.get());
+  const auto* linearSwimlaneScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          linearSwimlane.scene.get());
+  const auto* dagreSwimlaneScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          dagreSwimlane.scene.get());
+  require(nativeSwimlane.status == MermaidRenderStatus::Ready &&
+              linearSwimlane.status == MermaidRenderStatus::Ready &&
+              dagreSwimlane.status == MermaidRenderStatus::Ready &&
+              nativeSwimlaneScene && linearSwimlaneScene &&
+              dagreSwimlaneScene &&
+              std::any_of(nativeSwimlaneScene->clusters.cbegin(),
+                          nativeSwimlaneScene->clusters.cend(),
+                          [](const auto& cluster) { return cluster.swimlane; }) &&
+              std::none_of(dagreSwimlaneScene->clusters.cbegin(),
+                           dagreSwimlaneScene->clusters.cend(),
+                           [](const auto& cluster) { return cluster.swimlane; }) &&
+              std::none_of(linearSwimlaneScene->edges.cbegin(),
+                           linearSwimlaneScene->edges.cend(),
+                           [](const auto& edge) {
+                             return edge.path.contains(QLatin1Char('Q')) ||
+                                    edge.path.contains(QLatin1Char('C'));
+                           }),
+          QStringLiteral("Swimlane flowchart config or Dagre override drifted"));
+  const MermaidRenderEntry unsupportedSwimlane = render(
+      QStringLiteral("%%{init: {\"layout\": \"elk\"}}%%\n") + swimlaneBody);
+  const auto* fallbackSwimlaneScene =
+      dynamic_cast<const muffin::mermaid::flowscene::FlowScene*>(
+          unsupportedSwimlane.scene.get());
+  require(unsupportedSwimlane.status == MermaidRenderStatus::Ready &&
+              fallbackSwimlaneScene &&
+              std::any_of(fallbackSwimlaneScene->clusters.cbegin(),
+                          fallbackSwimlaneScene->clusters.cend(),
+                          [](const auto& cluster) { return cluster.swimlane; }),
+          QStringLiteral("Swimlane unknown-layout fallback drifted"));
 
   const QString edgeRoundedFlow = QStringLiteral(
       "flowchart LR\nA[Start] roundedEdge@--> B[Middle] --> C[End]\n"
@@ -909,6 +1450,64 @@ int main(int argc, char** argv) {
               "    A[alpha beta gamma delta epsilon]\n    B[Beta]")),
           QStringLiteral("Mindmap live config did not affect PNG output"));
 
+  const QString blockBody = QStringLiteral(
+      "block-beta\ncolumns 2\na[\"Alpha\"] b(\"Beta\")\na --> b");
+  const QString configuredBlockSource = QStringLiteral(
+      "%%{init: {\"block\": {\"useWidth\": 999, "
+      "\"useMaxWidth\": false, \"padding\": 20}}}%%\n") + blockBody;
+  const MermaidRenderEntry baselineBlock = render(blockBody);
+  const MermaidRenderEntry configuredBlock = render(configuredBlockSource);
+  const MermaidRenderEntry inertBlock = render(QStringLiteral(
+      "%%{init: {\"block\": {\"useWidth\": 999}}}%%\n") + blockBody);
+  const auto* baselineBlockScene =
+      dynamic_cast<const muffin::mermaid::block::BlockScene*>(
+          baselineBlock.scene.get());
+  const auto* configuredBlockScene =
+      dynamic_cast<const muffin::mermaid::block::BlockScene*>(
+          configuredBlock.scene.get());
+  const auto* inertBlockScene =
+      dynamic_cast<const muffin::mermaid::block::BlockScene*>(
+          inertBlock.scene.get());
+  require(baselineBlock.status == MermaidRenderStatus::Ready &&
+              configuredBlock.status == MermaidRenderStatus::Ready &&
+              inertBlock.status == MermaidRenderStatus::Ready &&
+              baselineBlockScene && configuredBlockScene && inertBlockScene &&
+              !configuredBlock.metadata.svgUseMaxWidth &&
+              configuredBlockScene->nodes.first().paintSize.width() >
+                  baselineBlockScene->nodes.first().paintSize.width() &&
+              inertBlockScene->bounds == baselineBlockScene->bounds,
+          QStringLiteral("Block live/inert config did not reach the scene"));
+  require(pngImage(configuredBlockSource) != pngImage(blockBody),
+          QStringLiteral("Block live config did not affect PNG output"));
+
+  const QString gitGraphBody = QStringLiteral(
+      "gitGraph LR:\ncommit id: \"root\"\nbranch alpha\n"
+      "commit id: \"alpha-1\"\ncheckout main\nbranch beta\n"
+      "commit id: \"beta-1\"");
+  const QString configuredGitGraphSource = QStringLiteral(
+      "%%{init: {\"gitGraph\": {\"useMaxWidth\": false, "
+      "\"diagramPadding\": 20, \"parallelCommits\": true}}}%%\n") +
+      gitGraphBody;
+  const MermaidRenderEntry baselineGitGraph = render(gitGraphBody);
+  const MermaidRenderEntry configuredGitGraph =
+      render(configuredGitGraphSource);
+  const auto* baselineGitGraphScene =
+      dynamic_cast<const muffin::mermaid::gitgraph::GitGraphScene*>(
+          baselineGitGraph.scene.get());
+  const auto* configuredGitGraphScene =
+      dynamic_cast<const muffin::mermaid::gitgraph::GitGraphScene*>(
+          configuredGitGraph.scene.get());
+  require(baselineGitGraph.status == MermaidRenderStatus::Ready &&
+              configuredGitGraph.status == MermaidRenderStatus::Ready &&
+              baselineGitGraphScene && configuredGitGraphScene &&
+              !configuredGitGraph.metadata.svgUseMaxWidth &&
+              configuredGitGraphScene->config.parallelCommits &&
+              configuredGitGraphScene->config.diagramPadding == 20.0 &&
+              configuredGitGraphScene->bounds != baselineGitGraphScene->bounds,
+          QStringLiteral("GitGraph live config did not reach the scene"));
+  require(pngImage(configuredGitGraphSource) != pngImage(gitGraphBody),
+          QStringLiteral("GitGraph live config did not affect PNG output"));
+
   // TreeView preserves JavaScript scalar coercion and uses all icon mapping
   // fields while reproducing the upstream bug that strips the final <use>
   // elements. The 18px icon reservation therefore remains observable in the
@@ -1088,26 +1687,45 @@ int main(int argc, char** argv) {
               noNodeShadow(shadowBogus),
           QStringLiteral("Mindmap dropShadow source used-value contract drifted"));
 
-  // Unsupported engines must not silently produce a Dagre scene.
+  // The bundled Mermaid 11.16 runtime deliberately resolves ELK to Dagre when
+  // the optional external loader is absent.
   for (const QString& source : {
            QStringLiteral(
                "%%{init: {\"layout\": \"elk\"}}%%\nflowchart TB\nA --> B"),
            QStringLiteral(
                "%%{init: {\"flowchart\": {\"defaultRenderer\": \"elk\"}}}%%\n"
-               "flowchart TB\nA --> B"),
+               "flowchart TB\nA --> B")}) {
+    const MermaidRenderEntry fallback = render(source);
+    require(fallback.status == MermaidRenderStatus::Ready && fallback.scene,
+            QStringLiteral("Flowchart ELK fallback stopped rendering"));
+  }
+
+  // Class uses getRegisteredLayoutAlgorithm() and therefore falls back to
+  // Dagre. State ignores nested defaultRenderer but passes the top-level layout
+  // directly to render(), where an unknown algorithm throws.
+  for (const QString& source : {
+           QStringLiteral(
+               "%%{init: {\"layout\": \"elk\"}}%%\n"
+               "classDiagram\nclass A"),
            QStringLiteral(
                "%%{init: {\"class\": {\"defaultRenderer\": \"elk\"}}}%%\n"
-               "classDiagram\nclass A")}) {
-    const MermaidRenderEntry unsupportedEntry = render(source);
-    require(unsupportedEntry.status == MermaidRenderStatus::Unsupported &&
-                unsupportedEntry.diagnostic.stage ==
-                    QLatin1String("configuration") &&
-                unsupportedEntry.diagnostic.code ==
-                    QLatin1String("unsupported-layout-engine") &&
-                !unsupportedEntry.diagnostic.actual.isEmpty() &&
-                !unsupportedEntry.diagnostic.expected.isEmpty(),
-            QStringLiteral("Unsupported layout silently fell back to Dagre"));
+               "classDiagram\nclass A"),
+           QStringLiteral(
+               "%%{init: {\"state\": {\"defaultRenderer\": \"elk\"}}}%%\n"
+               "stateDiagram-v2\nA --> B")}) {
+    const MermaidRenderEntry fallback = render(source);
+    require(fallback.status == MermaidRenderStatus::Ready && fallback.scene,
+            QStringLiteral("Registered-layout fallback contract drifted"));
   }
+  const MermaidRenderEntry stateLayoutError = render(QStringLiteral(
+      "%%{init: {\"layout\": \"elk\"}}%%\nstateDiagram-v2\nA --> B"));
+  require(stateLayoutError.status == MermaidRenderStatus::Error &&
+              stateLayoutError.diagnostic.stage == QLatin1String("render") &&
+              stateLayoutError.diagnostic.code ==
+                  QLatin1String("native-render-failed") &&
+              stateLayoutError.diagnostic.message ==
+                  QLatin1String("Unknown layout algorithm: elk"),
+          QStringLiteral("State unknown-layout runtime boundary drifted"));
 
   qDebug() << "MermaidConfigEffectMatrixTest:" << entries.size()
            << "classified rows and all seven effect dimensions passed";

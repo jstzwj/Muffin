@@ -9,6 +9,7 @@
 #include "mermaid/sequence/SequenceLayout.h"
 #include "mermaid/sequence/SequenceScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QFont>
 #include <QHash>
@@ -33,54 +34,107 @@ bool isSequenceFragment(int type) {
 sequence::SequenceSceneStyle sequenceStyleFromConfig(const QJsonObject& config) {
   sequence::SequenceSceneStyle style;
   style.fontFamily = MermaidFontRegistry::cssFamilyStack();
-  if (themeFromConfig(config).compare(
-          QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
-    style.actorFill = QStringLiteral("#1f2020");
-    style.actorStroke = QStringLiteral("#cccccc");
-    style.textColor = QStringLiteral("#d3d3d3");
-    style.actorTextColor = QStringLiteral("#d3d3d3");
-    style.signalColor = QStringLiteral("#d3d3d3");
-    style.signalTextColor = QStringLiteral("#d3d3d3");
-    style.lifelineColor = QStringLiteral("#cccccc");
-    style.noteFill = QStringLiteral("#474949");
-    style.noteStroke = QStringLiteral("#2f2f2f");
-    style.noteTextColor = QStringLiteral("#ffffff");
-    style.activationFill = QStringLiteral("#2f3030");
-    style.activationStroke = QStringLiteral("#cccccc");
-    style.fragmentStroke = QStringLiteral("#d3d3d3");
-    style.loopTextColor = QStringLiteral("#d3d3d3");
-    style.labelFill = QStringLiteral("#1f2020");
-    style.labelStroke = QStringLiteral("#bdbccc");
-    style.labelTextColor = QStringLiteral("#d3d3d3");
-    style.sequenceNumberColor = QStringLiteral("#ffffff");
-    style.boxStroke = QStringLiteral("rgba(204,204,204,0.5)");
-  }
+  // The sequence stylesheet (styles.js getStyles) consumes the RESOLVED theme
+  // (updateCurrentConfig replaces config.themeVariables with
+  // getThemeVariables(userOverrides) before render), so every palette slot
+  // comes from flowtheme — including user themeVariables overrides, which
+  // resolveFlowTheme replays after the per-theme derivation.
+  const flowtheme::FlowThemeVariables themeVars = flowtheme::resolveFlowTheme(
+      themeIdFromName(themeFromConfig(config)), themeOverrides(config));
+  style.actorFill = themeVars.actorBkg;
+  style.actorStroke = themeVars.actorBorder;
+  style.textColor = themeVars.textColor;
+  style.actorTextColor = themeVars.actorTextColor;
+  style.signalColor = themeVars.signalColor;
+  style.signalTextColor = themeVars.signalTextColor;
+  style.lifelineColor = themeVars.actorLineColor;
+  style.noteFill = themeVars.noteBkgColor;
+  style.noteStroke = themeVars.noteBorderColor;
+  style.noteTextColor = themeVars.noteTextColor;
+  style.activationFill = themeVars.activationBkgColor;
+  style.activationStroke = themeVars.activationBorderColor;
+  // `.loopLine` (the fragment/loop border lines) takes labelBoxBorderColor
+  // from the resolved theme — probed: default renders #9370DB dashed 2,2.
+  style.fragmentStroke = themeVars.labelBoxBorderColor;
+  style.loopTextColor = themeVars.loopTextColor;
+  style.labelFill = themeVars.labelBoxBkgColor;
+  style.labelStroke = themeVars.labelBoxBorderColor;
+  style.labelTextColor = themeVars.labelTextColor;
+  style.sequenceNumberColor = themeVars.sequenceNumberColor;
+  // `box` statement rects carry only class "rect"; `g rect.rect { stroke:
+  // nodeBorder }` paints the border from the resolved theme.
+  style.boxStroke = themeVars.nodeBorder;
+  // Loops/alt/opt boxes have NO background upstream (drawLoop emits only the
+  // four loopLine borders + label polygon), so fragmentFill stays transparent.
+  // The colorless `rect` fragment reads config.themeVariables (the MERGED
+  // object: user override ?: resolved theme value) with JS-|| fallbacks:
+  // `rectBkgColor || actorBkg || "rgba(128,128,128,0.5)"` — the resolved
+  // rectBkgColor (tertiaryColor-derived) is always present for built-ins, so
+  // the rgba tier only engages for empty-string overrides.
+  style.fragmentFill = QStringLiteral("transparent");
+  style.rectFallbackFill = !themeVars.rectBkgColor.isEmpty()
+                               ? themeVars.rectBkgColor
+                               : (!themeVars.actorBkg.isEmpty()
+                                      ? themeVars.actorBkg
+                                      : QStringLiteral("rgba(128, 128, 128, 0.5)"));
+  // `.actor { stroke-width: ${options.strokeWidth ?? 1} }` (sequence styles.js):
+  // the themeVariables strokeWidth — 2 for the neo/redux light family, 1 for
+  // every other built-in theme. Probed vs 11.16.0 (the previous hardcoded 2px
+  // mismatched the computed 1px default).
+  style.actorStrokeWidth = themeVars.strokeWidth;
+  if (style.actorStrokeWidth <= 0.0) style.actorStrokeWidth = 1.0;
   const QHash<QString, QString> theme = themeOverrides(config);
-  const auto apply = [&](QString& target, const QString& key) {
-    if (theme.contains(key)) target = theme.value(key);
-  };
-  apply(style.actorFill, QStringLiteral("actorBkg"));
-  apply(style.actorStroke, QStringLiteral("actorBorder"));
-  apply(style.actorTextColor, QStringLiteral("actorTextColor"));
-  apply(style.lifelineColor, QStringLiteral("actorLineColor"));
-  apply(style.signalColor, QStringLiteral("signalColor"));
-  apply(style.signalTextColor, QStringLiteral("signalTextColor"));
-  apply(style.noteFill, QStringLiteral("noteBkgColor"));
-  apply(style.noteStroke, QStringLiteral("noteBorderColor"));
-  apply(style.noteTextColor, QStringLiteral("noteTextColor"));
-  apply(style.activationFill, QStringLiteral("activationBkgColor"));
-  apply(style.activationStroke, QStringLiteral("activationBorderColor"));
-  apply(style.fragmentFill, QStringLiteral("rectBkgColor"));
-  apply(style.fragmentStroke, QStringLiteral("labelBoxBorderColor"));
-  apply(style.loopTextColor, QStringLiteral("loopTextColor"));
-  apply(style.labelFill, QStringLiteral("labelBoxBkgColor"));
-  apply(style.labelStroke, QStringLiteral("labelBoxBorderColor"));
-  apply(style.labelTextColor, QStringLiteral("labelTextColor"));
-  apply(style.sequenceNumberColor, QStringLiteral("sequenceNumberColor"));
-  apply(style.fontFamily, QStringLiteral("fontFamily"));
+  if (theme.contains(QStringLiteral("fontFamily")))
+    style.fontFamily = theme.value(QStringLiteral("fontFamily"));
   if (theme.contains(QStringLiteral("fontSize")))
     style.fontSize = pixelValue(
         theme.value(QStringLiteral("fontSize")), style.fontSize);
+  style.actorFontFamily = style.messageFontFamily = style.noteFontFamily =
+      style.fontFamily;
+  style.actorFontSize = style.messageFontSize = style.noteFontSize =
+      style.fontSize;
+
+  csscascade::ElementStyle rootFallback;
+  rootFallback.fill = style.textColor;
+  rootFallback.stroke = QStringLiteral("none");
+  rootFallback.strokeWidth = QStringLiteral("1px");
+  rootFallback.color = QStringLiteral("black");
+  rootFallback.fontFamily = style.fontFamily;
+  rootFallback.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
+  rootFallback.fontWeight = QStringLiteral("400");
+  csscascade::ElementStyle actorFallback = rootFallback;
+  actorFallback.fill = style.actorFill;
+  actorFallback.stroke = style.actorStroke;
+  actorFallback.strokeWidth =
+      QString::number(style.actorStrokeWidth) + QStringLiteral("px");
+  csscascade::ElementStyle messageFallback = rootFallback;
+  messageFallback.fill = style.signalTextColor;
+  const QVector<csscascade::ElementInput> cssElements = {
+      {QStringLiteral("svg"), {}, QStringLiteral("svg"),
+       QStringLiteral("diagram-root"), {QStringLiteral("sequenceDiagram")},
+       {}, rootFallback, {}},
+      {QStringLiteral("root"), QStringLiteral("svg"), QStringLiteral("g"),
+       {}, {QStringLiteral("root")}, {}, rootFallback, {}},
+      {QStringLiteral("actor"), QStringLiteral("root"), QStringLiteral("rect"),
+       {}, {QStringLiteral("actor")}, {}, actorFallback, {}},
+      {QStringLiteral("message"), QStringLiteral("root"), QStringLiteral("text"),
+       {}, {QStringLiteral("messageText")}, {}, messageFallback, {}}};
+  const QString themeCss = config.value(QStringLiteral("themeCSS")).toString();
+  if (!themeCss.trimmed().isEmpty()) {
+    const auto projected = csscascade::resolveElements(themeCss, cssElements);
+    const csscascade::ElementStyle actor = projected.value(
+        QStringLiteral("actor"), actorFallback);
+    const csscascade::ElementStyle message = projected.value(
+        QStringLiteral("message"), messageFallback);
+    style.actorFill = actor.fill;
+    style.actorStroke = actor.stroke;
+    style.actorStrokeWidth = cssStrokeWidthPx(actor.strokeWidth, {}, 0.0);
+    style.actorFontFamily = actor.fontFamily;
+    style.actorFontSize = cssFontSizePx(actor.fontSize, {});
+    style.messageFontFamily = message.fontFamily;
+    style.messageFontSize = cssFontSizePx(message.fontSize, {});
+    style.signalTextColor = message.fill;
+  }
   // sequence.messageAlign / sequence.noteAlign (start/middle/end). Defaults are
   // Center, so an absent or unrecognized value leaves rendering unchanged.
   const QJsonObject sequenceSection =
@@ -290,10 +344,6 @@ struct SequenceDiagramImpl : Diagram {
       }
       sequence::SequenceScene scene = sequence::buildSequenceScene(
           layout, std::move(style), preparedLabels, true);
-      scene.handDrawn = pre.config.value(QStringLiteral("look"))
-          .toString().compare(QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0;
-      scene.handDrawnSeed = static_cast<quint32>(
-          std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
       sequence::SequenceViewportOptions viewportOptions;
       viewportOptions.diagramMarginX = configNumber(
           sequenceConfig, QStringLiteral("diagramMarginX"), 50.0);

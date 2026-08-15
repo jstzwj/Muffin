@@ -81,13 +81,30 @@ struct LabelLayout {
 
 LabelLayout makeLabel(const QString& source, bool html, bool autoWrap,
                       qreal requestedWidth, const KanbanSceneStyle& style,
-                      bool centered) {
+                      bool centered, const KanbanElementCss* spanCss) {
   LabelLayout result;
   result.geometry.source = source;
   result.geometry.html = html;
   result.geometry.centered = centered;
   result.geometry.fill = style.textColor;
-  result.lineHeight = html ? style.fontSize * 1.5 : style.fontSize * 1.1;
+  // The label font follows the span's cascade: htmlLabels measures the
+  // foreignObject content, whose computed font themeCSS can move.
+  QString family = style.fontFamily;
+  qreal fontSize = style.fontSize;
+  QFont::Weight weight = QFont::Normal;
+  if (spanCss) {
+    result.geometry.css = *spanCss;
+    if (!spanCss->fontFamily.isEmpty()) family = spanCss->fontFamily;
+    if (spanCss->fontSize >= 0.0) fontSize = spanCss->fontSize;
+    if (!spanCss->fontWeight.isEmpty())
+      weight = editor::cssFontWeightToQt(QJsonValue(spanCss->fontWeight),
+                                         weight);
+    weight = editor::faceAwareMetricWeight(family, weight);
+  }
+  result.geometry.fontFamily = family;
+  result.geometry.fontSize = fontSize;
+  result.geometry.fontWeight = weight;
+  result.lineHeight = html ? fontSize * 1.5 : fontSize * 1.1;
   // createText/addHtmlSpan emits a zero-sized foreignObject for an empty
   // metadata field. FlowLabel's empty document still has one CSS line box,
   // so short-circuit before measuring or it adds 24px to every card.
@@ -95,26 +112,24 @@ LabelLayout makeLabel(const QString& source, bool html, bool autoWrap,
   result.geometry.document = html
       ? flowchart::parseFlowLabel(source, QStringLiteral("markdown"), true)
       : flowchart::parseFlowSvgLabel(source, QStringLiteral("markdown"));
-  if (!(style.fontSize > 0.0) || !std::isfinite(style.fontSize)) return result;
+  if (!(fontSize > 0.0) || !std::isfinite(fontSize)) return result;
 
   const qreal fallbackWidth = 200.0;
   qreal wrapWidth = requestedWidth;
   if (!std::isfinite(wrapWidth)) wrapWidth = fallbackWidth;
   const QSizeF natural = flowchart::measureFlowLabel(
-      result.geometry.document, style.fontFamily, style.fontSize,
-      result.lineHeight);
+      result.geometry.document, family, fontSize, result.lineHeight);
   static const QRegularExpression breakableWhitespace(
       QStringLiteral(R"([\t\n\r\f ])"));
   const bool canBreak = source.contains(breakableWhitespace);
   if (autoWrap && canBreak && wrapWidth > 0.0 && natural.width() > wrapWidth) {
     result.geometry.document = flowchart::wrapFlowLabel(
-        result.geometry.document, style.fontFamily, style.fontSize, wrapWidth);
+        result.geometry.document, family, fontSize, wrapWidth);
   }
 
   if (html) {
     result.size = flowchart::measureFlowLabel(
-        result.geometry.document, style.fontFamily, style.fontSize,
-        result.lineHeight);
+        result.geometry.document, family, fontSize, result.lineHeight);
     // foreignObject labels are CSS line boxes; getBBox reports exactly the
     // authored 1.5em line-height rather than the glyph cell height.
     const qsizetype lineCount = !result.geometry.document.visualLines.isEmpty()
@@ -126,7 +141,7 @@ LabelLayout makeLabel(const QString& source, bool html, bool autoWrap,
     result.localInk = QRectF(QPointF(0.0, 0.0), result.size);
   } else {
     result.localInk = flowchart::measureFlowSvgTextBounds(
-        result.geometry.document, style.fontFamily, style.fontSize);
+        result.geometry.document, family, fontSize);
     result.size = result.localInk.size();
   }
   return result;
@@ -200,7 +215,8 @@ QJsonObject rectJson(const QRectF& r) {
 }  // namespace
 
 KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
-                             KanbanSceneStyle style) {
+                             KanbanSceneStyle style,
+                             const KanbanCssOverrides* css) {
   KanbanScene scene;
   scene.config = std::move(config);
   scene.style = std::move(style);
@@ -237,13 +253,17 @@ KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
     p.x = columnWidth * qreal(i + 1) + qreal(i) * kColumnGap;
     p.label = makeLabel(section.label, scene.config.htmlLabels,
                         scene.config.markdownAutoWrap, columnWidth, scene.style,
-                        true);
+                        true,
+                        css && i < css->sections.size()
+                            ? &css->sections.at(i).label
+                            : nullptr);
     maxLabelHeight = std::max(maxLabelHeight, p.label.size.height());
     pending.append(std::move(p));
   }
 
   QRectF content;
   bool hasContent = false;
+  qsizetype itemIndex = 0;
   QVector<const KanbanNode*> rendererGroups;
   for (const KanbanNode& node : data.nodes)
     if (node.isGroup) rendererGroups.append(&node);
@@ -268,15 +288,22 @@ KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
       const qreal labelWidth = std::isfinite(columnWidth - 25.0)
                                    ? columnWidth - 25.0
                                    : 200.0;
+      const KanbanCssOverrides::Item* itemCss =
+          css && itemIndex < css->items.size() ? &css->items.at(itemIndex)
+                                               : nullptr;
+      const auto labelCssAt = [&itemCss](int k) {
+        return itemCss && k < itemCss->labels.size() ? &itemCss->labels.at(k).span
+                                                     : nullptr;
+      };
       LabelLayout title = makeLabel(node.label, scene.config.htmlLabels,
                                     scene.config.markdownAutoWrap, labelWidth,
-                                    scene.style, false);
+                                    scene.style, false, labelCssAt(0));
       LabelLayout ticket = makeLabel(node.ticket, scene.config.htmlLabels,
                                      scene.config.markdownAutoWrap, labelWidth,
-                                     scene.style, false);
+                                     scene.style, false, labelCssAt(1));
       LabelLayout assigned = makeLabel(node.assigned, scene.config.htmlLabels,
                                        scene.config.markdownAutoWrap, labelWidth,
-                                       scene.style, false);
+                                       scene.style, false, labelCssAt(2));
       const qreal heightAdjustment =
           std::max(ticket.size.height(), assigned.size.height()) / 2.0;
       const qreal height = std::max(title.size.height() + 20.0, 0.0) +
@@ -322,6 +349,11 @@ KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
       }
       item.strokeWidth = 1.0;
       item.radius = kRadius;
+      if (itemCss) {
+        item.nodeCss = itemCss->node;
+        item.boxCss = itemCss->box;
+        item.priorityCss = itemCss->priority;
+      }
 
       const qreal titleX = kPadding - totalWidth / 2.0;
       title.geometry.bounds = translatedLabelBounds(title, titleX, titleY,
@@ -345,14 +377,19 @@ KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
                                    usedPosition + QPointF(x, height / 2.0 - 2.0));
       }
 
+      // Kanban's final svg.getBBox() (after the awaited insertNode calls)
+      // drops display:none geometry while visibility keeps it.
       QRectF itemInk;
       bool itemHasInk = false;
-      if (local.width() > 0.0 && local.height() > 0.0)
+      if (item.boxCss.hasBox && local.width() > 0.0 && local.height() > 0.0)
         includeRect(itemInk, itemHasInk, local.translated(usedPosition));
-      includeRect(itemInk, itemHasInk, item.title.bounds);
-      if (!node.ticket.isEmpty()) includeRect(itemInk, itemHasInk, item.ticket.bounds);
-      if (!node.assigned.isEmpty()) includeRect(itemInk, itemHasInk, item.assigned.bounds);
-      if (item.priorityVisible) {
+      if (item.title.css.hasBox)
+        includeRect(itemInk, itemHasInk, item.title.bounds);
+      if (!node.ticket.isEmpty() && item.ticket.css.hasBox)
+        includeRect(itemInk, itemHasInk, item.ticket.bounds);
+      if (!node.assigned.isEmpty() && item.assigned.css.hasBox)
+        includeRect(itemInk, itemHasInk, item.assigned.bounds);
+      if (item.priorityVisible && item.priorityCss.hasBox) {
         QRectF lineBounds(item.priorityLine.p1(), item.priorityLine.p2());
         lineBounds = lineBounds.normalized().adjusted(-2.0, -2.0, 2.0, 2.0);
         includeRect(itemInk, itemHasInk, lineBounds);
@@ -366,6 +403,7 @@ KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
       }
       includeRect(content, hasContent, item.bounds);
       columnItems.append(std::move(item));
+      ++itemIndex;
     }
 
     KanbanSectionGeometry section;
@@ -381,18 +419,19 @@ KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
     if (paletteIndex < scene.style.themeColorRuleCount) {
       section.fill = adjustedSectionColor(scene.style, paletteIndex);
       section.stroke = section.fill;
-      if (paletteIndex < scene.style.cScaleLabel.size() &&
-          !scene.style.cScaleLabel.at(paletteIndex).isEmpty())
-        section.label.fill = scene.style.cScaleLabel.at(paletteIndex);
-      else
-        section.label.fill = scene.style.textColor;
     } else {
       section.fill = scene.style.textColor;
       section.stroke = QStringLiteral("none");
-      section.label.fill = scene.style.textColor;
     }
+    // The section label is an html span reached only by
+    // `.cluster-label, .label { color: textColor }`; the `.section-N text`
+    // palette rule targets svg <text> and never reaches kanban labels.
+    section.label.fill = scene.style.textColor;
     section.strokeWidth = 1.0;
-    const qreal finalHeight =
+    if (css && column < css->sections.size()) {
+      section.clusterCss = css->sections.at(column).cluster;
+      section.boxCss = css->sections.at(column).box;
+    }    const qreal finalHeight =
         std::max(cursor - (sectionTop + maxLabelHeight) + 30.0, 50.0) +
         (maxLabelHeight - 25.0);
     const QRectF finalRect(usedCoordinate(p.x - columnWidth / 2.0),
@@ -423,10 +462,11 @@ KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
     const qreal labelY = sectionTop;
     sectionLabel.geometry.bounds = translatedLabelBounds(sectionLabel, labelX, labelY);
     section.label = std::move(sectionLabel.geometry);
-    if (section.paintedBounds.width() > 0.0 &&
+    if (section.boxCss.hasBox && section.paintedBounds.width() > 0.0 &&
         section.paintedBounds.height() > 0.0)
       includeRect(content, hasContent, section.paintedBounds);
-    includeRect(content, hasContent, section.label.bounds);
+    if (section.label.css.hasBox)
+      includeRect(content, hasContent, section.label.bounds);
     scene.sections.append(std::move(section));
     for (KanbanItemGeometry& item : columnItems) scene.items.append(std::move(item));
   }

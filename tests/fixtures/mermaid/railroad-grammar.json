@@ -1,0 +1,866 @@
+{
+  "provenance": {
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "chrome": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "fontSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "dialectModules": {
+      "railroad": {
+        "name": "railroadDiagram-RFXS5EU6.mjs",
+        "sha256": "070c34a3c52bcf70f45f37d1ea3a8f9c8881a565ecac10d9c777133a7c93bda6"
+      },
+      "railroadEbnf": {
+        "name": "ebnfDiagram-CCIWWBDH.mjs",
+        "sha256": "76620e31e376bdb16c9e7e2cbf5009ef9aa7bb620eff92d8764f40d3ca868d8c"
+      },
+      "railroadAbnf": {
+        "name": "abnfDiagram-VRR7QNED.mjs",
+        "sha256": "7104d15f869ae8944eef735784b7b677aecb35edded748476e47ad69e03d5641"
+      },
+      "railroadPeg": {
+        "name": "pegDiagram-2B236MQR.mjs",
+        "sha256": "46306a1b083db2c918f32e9b13009075f53d02acfba41c44a6e6c098646284ba"
+      }
+    },
+    "sharedModule": {
+      "name": "chunk-MOJQB5TN.mjs",
+      "sha256": "3c6b785a3e3755b7ea2e22a1b84e03d5af6b3d121a4d015295161762afac9165"
+    }
+  },
+  "cases": [
+    {
+      "id": "direct-canonical",
+      "source": "railroad-beta\ntitle Direct grammar\naccTitle: Direct accessible\naccDescr {First line\n  Second line}\nroot = sequence(terminal(\"if\"), nonterminal(\"condition\"), optional(terminal(\"else\")), choice(terminal(\"yes\"), terminal(\"no\")), zeroOrMore(special(\"token\")), oneOrMore(nonterminal(\"item\")));\nescaped = terminal(\"line\\nquote\\\"\");",
+      "accepted": true,
+      "database": {
+        "title": "Direct grammar",
+        "accTitle": "Direct accessible",
+        "accDescr": "First line\nSecond line",
+        "rules": [
+          {
+            "name": "root",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "terminal",
+                  "value": "if"
+                },
+                {
+                  "type": "nonterminal",
+                  "name": "condition"
+                },
+                {
+                  "type": "optional",
+                  "element": {
+                    "type": "terminal",
+                    "value": "else"
+                  }
+                },
+                {
+                  "type": "choice",
+                  "alternatives": [
+                    {
+                      "type": "terminal",
+                      "value": "yes"
+                    },
+                    {
+                      "type": "terminal",
+                      "value": "no"
+                    }
+                  ]
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "special",
+                    "text": "token"
+                  },
+                  "min": 0,
+                  "max": null
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "item"
+                  },
+                  "min": 1,
+                  "max": null
+                }
+              ]
+            }
+          },
+          {
+            "name": "escaped",
+            "definition": {
+              "type": "terminal",
+              "value": "line\nquote\""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-empty",
+      "source": "railroad-beta",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": []
+      }
+    },
+    {
+      "id": "direct-comments",
+      "source": "%% head\nrailroad-beta\n/* body */ A=terminal('x');",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "terminal",
+              "value": "x"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-duplicate",
+      "source": "railroad-beta\nA=terminal('x');\nA=terminal('y');",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "terminal",
+              "value": "x"
+            }
+          },
+          {
+            "name": "A",
+            "definition": {
+              "type": "terminal",
+              "value": "y"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-metadata",
+      "source": "railroad-beta\ntitle \"A\\nB\"\naccTitle:  A   B\naccDescr { one\n   two }\nA=terminal('x');",
+      "accepted": true,
+      "database": {
+        "title": "A\nB",
+        "accTitle": "A B",
+        "accDescr": "one\ntwo",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "terminal",
+              "value": "x"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "direct-invalid-header-case",
+      "source": "RAILROAD-BETA\nA=terminal('x');",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line 1, column 1: Expecting token of type 'railroad-beta' but found `RAILROAD-BETA`.\nParse error on line 2, column 1: Expecting token of type '=' but found `A`.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "direct-prefix",
+      "source": "railroad-betaX\nA=terminal('x');",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line 1, column 1: Expecting token of type 'railroad-beta' but found `railroad-betaX`.\nParse error on line 2, column 1: Expecting token of type '=' but found `A`.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "direct-missing-semicolon",
+      "source": "railroad-beta\nA=terminal('x')",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line ?, column ?: Expecting token of type ';' but found ``.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "direct-unknown-call",
+      "source": "railroad-beta\nA=bogus('x');",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line 2, column 3: Expecting: one of these possible Token sequences:\n  1. [sequence]\n  2. [choice]\n  3. [optional]\n  4. [oneOrMore]\n  5. [zeroOrMore]\n  6. [terminal]\n  7. [nonterminal]\n  8. [special]\nbut found: 'bogus'\nParse error on line 2, column 8: Expecting token of type '=' but found `(`.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "direct-empty-sequence",
+      "source": "railroad-beta\nA=sequence();",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line 2, column 12: Expecting: one of these possible Token sequences:\n  1. [sequence]\n  2. [choice]\n  3. [optional]\n  4. [oneOrMore]\n  5. [zeroOrMore]\n  6. [terminal]\n  7. [nonterminal]\n  8. [special]\nbut found: ')'",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "direct-unquoted",
+      "source": "railroad-beta\nA=terminal(x);",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line 2, column 12: Expecting token of type 'RR_STRING' but found `x`.\nParse error on line 2, column 13: Expecting token of type '=' but found `)`.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "ebnf-canonical",
+      "source": "railroad-ebnf-beta\nroot = \"if\", condition, [\"else\"], (\"yes\" | \"no\"), { ? token ? }, item+;\nexcept ::= letter - \"x\";",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "root",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "terminal",
+                  "value": "if"
+                },
+                {
+                  "type": "nonterminal",
+                  "name": "condition"
+                },
+                {
+                  "type": "optional",
+                  "element": {
+                    "type": "terminal",
+                    "value": "else"
+                  }
+                },
+                {
+                  "type": "choice",
+                  "alternatives": [
+                    {
+                      "type": "terminal",
+                      "value": "yes"
+                    },
+                    {
+                      "type": "terminal",
+                      "value": "no"
+                    }
+                  ]
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "special",
+                    "text": "token"
+                  },
+                  "min": 0,
+                  "max": null
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "item"
+                  },
+                  "min": 1,
+                  "max": null
+                }
+              ]
+            }
+          },
+          {
+            "name": "except",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "nonterminal",
+                  "name": "letter"
+                },
+                {
+                  "type": "terminal",
+                  "value": "-"
+                },
+                {
+                  "type": "terminal",
+                  "value": "x"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ebnf-empty",
+      "source": "railroad-ebnf-beta",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": []
+      }
+    },
+    {
+      "id": "ebnf-adjacent",
+      "source": "railroad-ebnf-beta\nA='a' B [C] {D};",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "terminal",
+                  "value": "a"
+                },
+                {
+                  "type": "nonterminal",
+                  "name": "B"
+                },
+                {
+                  "type": "optional",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "C"
+                  }
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "D"
+                  },
+                  "min": 0,
+                  "max": null
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ebnf-postfix-chain",
+      "source": "railroad-ebnf-beta\nA=('a'|'b')?*+;",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "repetition",
+              "element": {
+                "type": "repetition",
+                "element": {
+                  "type": "optional",
+                  "element": {
+                    "type": "choice",
+                    "alternatives": [
+                      {
+                        "type": "terminal",
+                        "value": "a"
+                      },
+                      {
+                        "type": "terminal",
+                        "value": "b"
+                      }
+                    ]
+                  }
+                },
+                "min": 0,
+                "max": null
+              },
+              "min": 1,
+              "max": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ebnf-comments",
+      "source": "railroad-ebnf-beta\n(* iso *) A=/*c*/'a';",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "terminal",
+              "value": "a"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "ebnf-special-empty",
+      "source": "railroad-ebnf-beta\nA = ?   ?;",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line 2, column 5: Expecting: one of these possible Token sequences:\n  1. [EBNF_STRING]\n  2. [EBNF_SPECIAL_SEQUENCE]\n  3. [EBNF_ID]\n  4. [(]\n  5. [[]\n  6. [{]\nbut found: '?'",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "ebnf-trailing-comma",
+      "source": "railroad-ebnf-beta\nA='a',;",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line 2, column 7: Expecting: one of these possible Token sequences:\n  1. [EBNF_STRING]\n  2. [EBNF_SPECIAL_SEQUENCE]\n  3. [EBNF_ID]\n  4. [(]\n  5. [[]\n  6. [{]\nbut found: ';'",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "ebnf-missing-semi",
+      "source": "railroad-ebnf-beta\nA='a'",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line ?, column ?: Expecting token of type ';' but found ``.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "abnf-canonical",
+      "source": "railroad-abnf-beta\nroot = \"if\" condition [\"else\"] (\"yes\" / \"no\") *item %x41-5A ;\nbounded = 0*1foo 2bar 3*5baz ;",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "root",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "terminal",
+                  "value": "if"
+                },
+                {
+                  "type": "nonterminal",
+                  "name": "condition"
+                },
+                {
+                  "type": "optional",
+                  "element": {
+                    "type": "terminal",
+                    "value": "else"
+                  }
+                },
+                {
+                  "type": "choice",
+                  "alternatives": [
+                    {
+                      "type": "terminal",
+                      "value": "yes"
+                    },
+                    {
+                      "type": "terminal",
+                      "value": "no"
+                    }
+                  ]
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "item"
+                  },
+                  "min": 0,
+                  "max": null
+                },
+                {
+                  "type": "terminal",
+                  "value": "%x41-5A"
+                }
+              ]
+            }
+          },
+          {
+            "name": "bounded",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "optional",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "foo"
+                  }
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "bar"
+                  },
+                  "min": 2,
+                  "max": 2
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "baz"
+                  },
+                  "min": 3,
+                  "max": 5
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "abnf-empty",
+      "source": "railroad-abnf-beta",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": []
+      }
+    },
+    {
+      "id": "abnf-comments",
+      "source": "railroad-abnf-beta\n; comment\nA = \"a\" ;",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "terminal",
+              "value": "a"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "abnf-repeats",
+      "source": "railroad-abnf-beta\nA = *foo 1*bar *2baz 3qux ;",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "foo"
+                  },
+                  "min": 0,
+                  "max": null
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "bar"
+                  },
+                  "min": 1,
+                  "max": null
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "baz"
+                  },
+                  "min": 0,
+                  "max": 2
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "qux"
+                  },
+                  "min": 3,
+                  "max": 3
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "abnf-single-quote",
+      "source": "railroad-abnf-beta\nA='a';",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed: Lexer error on line 2, column 3: unexpected character: ->'<- at offset: 21, skipped 1 characters.\nLexer error on line 2, column 5: unexpected character: ->'<- at offset: 23, skipped 1 characters. ",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "abnf-bad-num",
+      "source": "railroad-abnf-beta\nA=%x;",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed: Lexer error on line 2, column 3: unexpected character: ->%<- at offset: 21, skipped 1 characters. ",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "abnf-missing-semi",
+      "source": "railroad-abnf-beta\nA=\"a\"",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line ?, column ?: Expecting token of type ';' but found ``.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "peg-canonical",
+      "source": "railroad-peg-beta\nroot <- \"if\" condition \"else\"? (\"yes\" / \"no\") item* .+;\nlook <- &\"a\" !forbidden value;",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "root",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "terminal",
+                  "value": "if"
+                },
+                {
+                  "type": "nonterminal",
+                  "name": "condition"
+                },
+                {
+                  "type": "optional",
+                  "element": {
+                    "type": "terminal",
+                    "value": "else"
+                  }
+                },
+                {
+                  "type": "choice",
+                  "alternatives": [
+                    {
+                      "type": "terminal",
+                      "value": "yes"
+                    },
+                    {
+                      "type": "terminal",
+                      "value": "no"
+                    }
+                  ]
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "nonterminal",
+                    "name": "item"
+                  },
+                  "min": 0,
+                  "max": null
+                },
+                {
+                  "type": "repetition",
+                  "element": {
+                    "type": "special",
+                    "text": "."
+                  },
+                  "min": 1,
+                  "max": null
+                }
+              ]
+            }
+          },
+          {
+            "name": "look",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "special",
+                  "text": "&\"a\""
+                },
+                {
+                  "type": "special",
+                  "text": "!forbidden"
+                },
+                {
+                  "type": "nonterminal",
+                  "name": "value"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "peg-empty",
+      "source": "railroad-peg-beta",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": []
+      }
+    },
+    {
+      "id": "peg-comments",
+      "source": "railroad-peg-beta\n# comment\nA <- 'a';",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "terminal",
+              "value": "a"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "peg-prefix-compound",
+      "source": "railroad-peg-beta\nA <- &(B C) !(D/E);",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "sequence",
+              "elements": [
+                {
+                  "type": "special",
+                  "text": "&(...)"
+                },
+                {
+                  "type": "special",
+                  "text": "!(...)"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "peg-dot",
+      "source": "railroad-peg-beta\nA <- .;",
+      "accepted": true,
+      "database": {
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "rules": [
+          {
+            "name": "A",
+            "definition": {
+              "type": "special",
+              "text": "."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "peg-double-suffix",
+      "source": "railroad-peg-beta\nA <- 'a'?*;",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line 2, column 10: Expecting token of type ';' but found `*`.",
+        "line": 0,
+        "column": 0
+      }
+    },
+    {
+      "id": "peg-missing-semi",
+      "source": "railroad-peg-beta\nA <- 'a'",
+      "accepted": false,
+      "error": {
+        "message": "Parsing failed:  Parse error on line ?, column ?: Expecting token of type ';' but found ``.",
+        "line": 0,
+        "column": 0
+      }
+    }
+  ],
+  "fixtureSha256": "5b99dfb4224576630c9d05a4ef11518d2d5af1c3402d9a320c7a1ea73e68467e"
+}

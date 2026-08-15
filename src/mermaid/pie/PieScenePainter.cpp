@@ -54,6 +54,13 @@ void drawLeftBaseline(QPainter& painter, const editor::CssPixelFont& font,
   painter.restore();
 }
 
+editor::CssPixelFont textFont(const QString& family, qreal size,
+                              const QString& weight) {
+  editor::CssPixelFont font = editor::makeCssPixelFont(family, size);
+  font.font.setWeight(editor::cssFontWeightToQt(QJsonValue(weight), QFont::Normal));
+  return font;
+}
+
 color::SvgPaint resolvePieFill(const QString& value, const QColor& inherited) {
   // D3 omits the fill attribute when a palette slot is undefined. SVG then
   // inherits the root fill (dark pie12 -> #ccc); an explicit empty CSS paint is
@@ -141,6 +148,7 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
   const bool sliceNoPen = sliceStroke.none || scene.style.sliceStrokeWidth <= 0.0;
   painter.setOpacity(scene.style.pieOpacity);
   for (const PieSliceGeometry& s : scene.slices) {
+    if (!scene.style.sliceVisible) break;  // display:none removes all slices
     const bool highlighted = s.className.contains(QStringLiteral("highlighted")) &&
                              !s.className.contains(QStringLiteral("highlightedOnHover"));
     const auto fill = resolvePieFill(s.fill, inherited);
@@ -165,12 +173,13 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
 
   // Percentage labels (slice text), centered at each centroid. font-size:0 -> no
   // text; a none/invalid text fill hides the text too.
-  if (scene.style.sectionFontSize > 0.0) {
+  if (scene.style.sectionTextVisible && scene.style.sectionFontSize > 0.0) {
     const auto sectionPaint =
         color::resolveSvgPaint(scene.style.sectionTextColor, color::SvgPaintKind::Text, inherited);
     if (!sectionPaint.none) {
-      const editor::CssPixelFont sliceFont =
-          editor::makeCssPixelFont(scene.style.fontFamily, scene.style.sectionFontSize);
+      const editor::CssPixelFont sliceFont = textFont(
+          scene.style.sectionFontFamily, scene.style.sectionFontSize,
+          scene.style.sectionFontWeight);
       painter.setPen(sectionPaint.color);
       for (const PieSliceGeometry& s : scene.slices)
         drawCenteredBaseline(painter, sliceFont, QPointF(s.centroidX, s.centroidY),
@@ -180,12 +189,14 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
   painter.restore();  // pie subgroup
 
   // Title (pieTitleText, in the main group — not shifted), centered at y=-200.
-  if (!scene.title.isEmpty() && scene.style.titleFontSize > 0.0) {
+  if (!scene.title.isEmpty() && scene.style.titleVisible &&
+      scene.style.titleFontSize > 0.0) {
     const auto titlePaint =
         color::resolveSvgPaint(scene.style.titleColor, color::SvgPaintKind::Text, inherited);
     if (!titlePaint.none) {
-      const editor::CssPixelFont titleFont =
-          editor::makeCssPixelFont(scene.style.fontFamily, scene.style.titleFontSize);
+      const editor::CssPixelFont titleFont = textFont(
+          scene.style.titleFontFamily, scene.style.titleFontSize,
+          scene.style.titleFontWeight);
       painter.setPen(titlePaint.color);
       const qreal ty = -(scene.height - 50.0) / 2.0;
       // SVG positions this <text> by its baseline at y=-200. QRectF overloads
@@ -214,9 +225,12 @@ void paintPieScene(const PieScene& scene, QPainter& painter,
                                                              : scene.legendHeight * n / 2.0;
     const auto legendTextPaint =
         color::resolveSvgPaint(scene.style.legendTextColor, color::SvgPaintKind::Text, inherited);
-    const bool drawLegendText = scene.style.legendFontSize > 0.0 && !legendTextPaint.none;
-    const editor::CssPixelFont legendFont =
-        editor::makeCssPixelFont(scene.style.fontFamily, scene.style.legendFontSize);
+    const bool drawLegendText = scene.style.legendTextVisible &&
+                                scene.style.legendFontSize > 0.0 &&
+                                !legendTextPaint.none;
+    const editor::CssPixelFont legendFont = textFont(
+        scene.style.legendFontFamily, scene.style.legendFontSize,
+        scene.style.legendFontWeight);
     for (int i = 0; i < n; ++i) {
       const PieLegendEntry& e = scene.legends.at(i);
       const qreal vertical = i * scene.legendHeight - offset;

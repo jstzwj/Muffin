@@ -666,7 +666,8 @@ int main(int argc, char** argv) {
   }
   {
     // invalid fill -> the interior takes the foreground fallback (#333/#ccc =
-    // grey). Text (#131300) is greenish-dark (G-B large) so it is excluded.
+    // grey). The requirement label text is also #333 (label color = textColor),
+    // so label ink counts as grey too; the fill area dominates the count.
     const QString src = head + "requirement A {\n id: 1\n}\nstyle A fill:notacolor";
     const auto entry = cache.getSync(cache.makeKey(src), src);
     require(entry.status == editor::MermaidRenderStatus::Ready,

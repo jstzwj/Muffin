@@ -9,6 +9,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/theme/FlowTheme.h"
 #include "mermaid/theme/MermaidColor.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QJsonObject>
 #include <QSize>
@@ -45,36 +46,84 @@ struct ClassDiagramImpl : Diagram {
           classConfig.value(QStringLiteral("hideEmptyMembersBox")).toBool(false);
       options.htmlLabels = pre.config.value(QStringLiteral("htmlLabels")).toBool(true);
       options.look = pre.config.value(QStringLiteral("look")).toString(QStringLiteral("classic"));
+      const bool handDrawn = options.look == QLatin1String("handDrawn");
+      const quint32 handDrawnSeed = static_cast<quint32>(
+          std::max(0.0, configNumber(
+              pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
       const classdiagram::ClassLayoutInput input =
           classdiagram::buildClassLayoutInput(diagram.data(), options);
       classdiagram::ClassLabelMeasureOptions measureOptions;
-      measureOptions.fontFamily = firstFontFamily(themeVars.fontFamily);
+      measureOptions.fontFamily = themeVars.fontFamily;
       measureOptions.fontPixelSize = pixelValue(themeVars.fontSize, 16.0);
       measureOptions.lineHeight = measureOptions.fontPixelSize * 1.5;
       measureOptions.htmlLabels = options.htmlLabels;
+      csscascade::ElementStyle rootFallback;
+      rootFallback.fill = themeVars.textColor;
+      rootFallback.stroke = QStringLiteral("none");
+      rootFallback.strokeWidth = QStringLiteral("1px");
+      rootFallback.color = QStringLiteral("black");
+      rootFallback.fontFamily = measureOptions.fontFamily;
+      rootFallback.fontSize = QString::number(measureOptions.fontPixelSize) +
+                              QStringLiteral("px");
+      rootFallback.fontWeight = QStringLiteral("400");
+      csscascade::ElementStyle labelFallback = rootFallback;
+      // `.nodeLabel, .edgeLabel { color: classText }` (class/styles.js) — the
+      // unified renderer's span label color. classText's per-theme derivation
+      // equals primaryTextColor; resolving it directly keeps a user
+      // classText override authoritative.
+      labelFallback.color = themeVars.classText.isEmpty()
+                                ? themeVars.primaryTextColor
+                                : themeVars.classText;
+      labelFallback.fontWeight = QStringLiteral("700");
+      csscascade::ElementStyle labelStyle = labelFallback;
+      const QString themeCss =
+          pre.config.value(QStringLiteral("themeCSS")).toString();
+      if (!themeCss.trimmed().isEmpty()) {
+        const auto css = csscascade::resolveElements(themeCss, {
+          {QStringLiteral("svg"), {}, QStringLiteral("svg"),
+           QStringLiteral("diagram-root"), {QStringLiteral("classDiagram")}, {},
+           rootFallback, {}},
+          {QStringLiteral("root"), QStringLiteral("svg"), QStringLiteral("g"),
+           {}, {QStringLiteral("root")}, {}, rootFallback, {}},
+          {QStringLiteral("node"), QStringLiteral("root"), QStringLiteral("g"),
+           {}, {QStringLiteral("node")}, {}, rootFallback, {}},
+          {QStringLiteral("label"), QStringLiteral("node"), QStringLiteral("span"),
+           {}, {QStringLiteral("nodeLabel")}, {}, labelFallback, {}}
+        });
+        labelStyle = css.value(QStringLiteral("label"), labelFallback);
+        measureOptions.fontFamily = labelStyle.fontFamily;
+        measureOptions.fontPixelSize = cssFontSizePx(labelStyle.fontSize, {});
+        measureOptions.lineHeight = measureOptions.fontPixelSize * 1.5;
+      }
       const classdiagram::ClassLayoutMeasurements labelMeasurements =
           classdiagram::measureClassLayoutLabels(input, measureOptions);
       const QVector<classdiagram::ClassBoxGeometry> boxes =
           classdiagram::layoutClassBoxes(input, labelMeasurements, options);
       const classdiagram::ClassDagreMeasurements dagreMeasurements =
-          classdiagram::measureClassDagreInput(input, boxes, measureOptions);
+          classdiagram::measureClassDagreInput(
+              input, boxes, measureOptions, handDrawn, handDrawnSeed);
       const classdiagram::ClassPlacementResult placement =
-          classdiagram::layoutClassDiagramDagre(input, dagreMeasurements);
+          classdiagram::layoutClassDiagramDagre(
+              input, dagreMeasurements, handDrawn, handDrawnSeed);
       classdiagram::ClassSceneStyle style;
       style.classFill = themeVars.mainBkg;
       style.classStroke = themeVars.border1;
-      style.textColor = themeVars.primaryTextColor;
+      style.textColor = labelStyle.color;
       style.lineColor = themeVars.lineColor;
       style.edgeLabelFill = themeVars.mainBkg;
       style.clusterFill = themeVars.secondaryColor;
       style.clusterStroke = themeVars.border2;
       style.titleColor = themeVars.titleColor;
       style.strokeWidth = themeVars.strokeWidth;
-      if (configuredTheme.compare(QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
-        style.noteFill = QStringLiteral("#474949");
-        style.noteStroke = QStringLiteral("#2f2f2f");
-        style.noteTextColor = color::invert(themeVars.secondaryColor);
-      }
+      // Class notes go through the unified renderer's `note` shape, whose
+      // fill/stroke defaults read config.themeVariables.noteBkgColor/
+      // noteBorderColor — the MERGED object (user override ?: resolved theme
+      // value), so the classic #fff5ad note palette paints (probed + pixel
+      // golden). The note TEXT is `.noteLabel .nodeLabel { color:
+      // noteTextColor }` from the resolved theme.
+      style.noteFill = themeVars.noteBkgColor;
+      style.noteStroke = themeVars.noteBorderColor;
+      style.noteTextColor = themeVars.noteTextColor;
       style.fontFamily = measureOptions.fontFamily;
       style.fontSize = measureOptions.fontPixelSize;
       style.lineHeight = measureOptions.lineHeight;
@@ -97,14 +146,11 @@ struct ClassDiagramImpl : Diagram {
       classTheme.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
       classdiagram::ClassScene scene = classdiagram::buildClassScene(
           input, boxes, labelMeasurements, placement, std::move(style),
-          classStyleDefs, classTheme);
-      scene.handDrawn = options.look.compare(
-          QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0;
-      scene.handDrawnSeed = static_cast<quint32>(
-          std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
+          classStyleDefs, classTheme, handDrawn, handDrawnSeed);
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
-      entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+      entry.naturalSize = QSize(qRound(scene.bounds.width()),
+                                qRound(scene.bounds.height()));
       entry.scene = std::make_shared<const classdiagram::ClassScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;

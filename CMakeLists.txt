@@ -486,6 +486,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/MermaidDiagrams.cpp
   src/mermaid/editor/MermaidDiagrams.h
   src/mermaid/editor/FlowchartDiagramAdapter.cpp
+  src/mermaid/editor/SwimlaneDiagramAdapter.cpp
   src/mermaid/editor/SequenceDiagramAdapter.cpp
   src/mermaid/editor/ClassDiagramAdapter.cpp
   src/mermaid/editor/StateDiagramAdapter.cpp
@@ -500,20 +501,33 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/PacketDiagramAdapter.cpp
   src/mermaid/editor/KanbanDiagramAdapter.cpp
   src/mermaid/editor/MindmapDiagramAdapter.cpp
+  src/mermaid/editor/GitGraphDiagramAdapter.cpp
+  src/mermaid/editor/C4DiagramAdapter.cpp
   src/mermaid/editor/GanttDiagramAdapter.cpp
   src/mermaid/editor/InfoDiagramAdapter.cpp
   src/mermaid/editor/TreeViewDiagramAdapter.cpp
   src/mermaid/editor/EventModelingDiagramAdapter.cpp
   src/mermaid/editor/IshikawaDiagramAdapter.cpp
+  src/mermaid/editor/VennDiagramAdapter.cpp
+  src/mermaid/editor/SankeyDiagramAdapter.cpp
+  src/mermaid/editor/TreemapDiagramAdapter.cpp
+  src/mermaid/editor/CynefinDiagramAdapter.cpp
+  src/mermaid/editor/WardleyDiagramAdapter.cpp
+  src/mermaid/editor/ArchitectureDiagramAdapter.cpp
+  src/mermaid/editor/BlockDiagramAdapter.cpp
+  src/mermaid/editor/RailroadDiagramAdapter.cpp
+  src/mermaid/editor/ErrorDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
   src/mermaid/flowchart/Flowchart.h
   src/mermaid/flowchart/FlowLabel.cpp
+  src/mermaid/flowchart/BlinkSvgPathMetrics.cpp
   src/mermaid/flowchart/FlowLabel.h
   src/mermaid/flowchart/FlowchartTokenizer.cpp
   src/mermaid/flowchart/FlowchartTokenizer.h
   src/mermaid/flowchart/FlowchartLayout.cpp
+  src/mermaid/flowchart/SwimlaneLayout.cpp
   src/mermaid/flowchart/FlowchartLayout.h
   src/mermaid/flowchart/FlowchartShapes.cpp
   src/mermaid/flowchart/FlowchartShapes.h
@@ -549,8 +563,20 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/theme/FlowStyleResolve.h
   src/mermaid/theme/MermaidStyleResolve.cpp
   src/mermaid/theme/MermaidStyleResolve.h
+  src/mermaid/theme/MermaidCssCascade.cpp
+  src/mermaid/theme/MermaidCssCascade.h
+  src/mermaid/text/ChromiumTextMetrics.cpp
+  src/mermaid/text/ChromiumTextMetrics.h
   src/theme/CssCalc.cpp
   src/theme/CssCalc.h
+  src/theme/CssComputedStyleEngine.cpp
+  src/theme/CssComputedStyleEngine.h
+  src/theme/CssSelectorAnalysis.cpp
+  src/theme/CssSelectorAnalysis.h
+  src/theme/CssSelectorUtils.h
+  src/theme/CssThemeParser.cpp
+  src/theme/CssThemeParser.h
+  src/theme/TyporaEditorOnly.h
   src/mermaid/security/MermaidSecurityPolicy.h
   src/blocks/html/HtmlSanitizer.cpp
   src/blocks/html/HtmlSanitizer.h
@@ -642,6 +668,27 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/mindmap/MindmapScene.h
   src/mermaid/mindmap/MindmapScenePainter.cpp
   src/mermaid/mindmap/MindmapScenePainter.h
+  src/mermaid/gitgraph/GitGraphDiagram.cpp
+  src/mermaid/gitgraph/GitGraphDiagram.h
+  src/mermaid/gitgraph/GitGraphScene.cpp
+  src/mermaid/gitgraph/GitGraphScene.h
+  src/mermaid/gitgraph/GitGraphScenePainter.cpp
+  src/mermaid/c4/C4Diagram.cpp
+  src/mermaid/c4/C4Diagram.h
+  src/mermaid/c4/C4Scene.cpp
+  src/mermaid/c4/C4Scene.h
+  src/mermaid/c4/C4ScenePainter.cpp
+  src/mermaid/c4/C4ScenePainter.h
+  src/mermaid/railroad/RailroadDiagram.cpp
+  src/mermaid/railroad/RailroadDiagram.h
+  src/mermaid/railroad/RailroadScene.cpp
+  src/mermaid/railroad/RailroadScene.h
+  src/mermaid/railroad/RailroadScenePainter.cpp
+  src/mermaid/railroad/RailroadScenePainter.h
+  src/mermaid/error/ErrorScene.cpp
+  src/mermaid/error/ErrorScene.h
+  src/mermaid/error/ErrorScenePainter.cpp
+  src/mermaid/error/ErrorScenePainter.h
   src/mermaid/gantt/GanttDiagram.cpp
   src/mermaid/gantt/GanttDiagram.h
   src/mermaid/gantt/GanttScene.cpp
@@ -672,6 +719,52 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/ishikawa/IshikawaScene.h
   src/mermaid/ishikawa/IshikawaScenePainter.cpp
   src/mermaid/ishikawa/IshikawaScenePainter.h
+  src/mermaid/venn/VennDiagram.cpp
+  src/mermaid/venn/VennDiagram.h
+  src/mermaid/venn/VennLayout.cpp
+  src/mermaid/venn/VennLayout.h
+  src/mermaid/venn/VennScene.cpp
+  src/mermaid/venn/VennScene.h
+  src/mermaid/venn/VennScenePainter.cpp
+  src/mermaid/venn/VennScenePainter.h
+  src/mermaid/sankey/SankeyDiagram.cpp
+  src/mermaid/sankey/SankeyDiagram.h
+  src/mermaid/sankey/SankeyScene.cpp
+  src/mermaid/sankey/SankeyScene.h
+  src/mermaid/sankey/SankeyScenePainter.cpp
+  src/mermaid/sankey/SankeyScenePainter.h
+  src/mermaid/treemap/TreemapDiagram.cpp
+  src/mermaid/treemap/TreemapDiagram.h
+  src/mermaid/treemap/TreemapScene.cpp
+  src/mermaid/treemap/TreemapScene.h
+  src/mermaid/treemap/TreemapScenePainter.cpp
+  src/mermaid/treemap/TreemapScenePainter.h
+  src/mermaid/cynefin/CynefinDiagram.cpp
+  src/mermaid/cynefin/CynefinDiagram.h
+  src/mermaid/cynefin/CynefinScene.cpp
+  src/mermaid/cynefin/CynefinScene.h
+  src/mermaid/cynefin/CynefinScenePainter.cpp
+  src/mermaid/cynefin/CynefinScenePainter.h
+  src/mermaid/wardley/WardleyDiagram.cpp
+  src/mermaid/wardley/WardleyDiagram.h
+  src/mermaid/wardley/WardleyScene.cpp
+  src/mermaid/wardley/WardleyScene.h
+  src/mermaid/wardley/WardleyScenePainter.cpp
+  src/mermaid/wardley/WardleyScenePainter.h
+  src/mermaid/architecture/ArchitectureDiagram.cpp
+  src/mermaid/architecture/ArchitectureDiagram.h
+  src/mermaid/architecture/ArchitectureFcoseLayout.cpp
+  src/mermaid/architecture/ArchitectureFcoseLayout.h
+  src/mermaid/architecture/ArchitectureSpectralLayout.cpp
+  src/mermaid/architecture/ArchitectureSpectralLayout.h
+  src/mermaid/architecture/ArchitectureScene.cpp
+  src/mermaid/architecture/ArchitectureScene.h
+  src/mermaid/architecture/ArchitectureScenePainter.cpp
+  src/mermaid/architecture/ArchitectureScenePainter.h
+  src/mermaid/block/BlockDiagram.cpp
+  src/mermaid/block/BlockDiagram.h
+  src/mermaid/block/BlockScene.cpp
+  src/mermaid/block/BlockScene.h
   src/mermaid/erdiagram/ErDiagram.cpp
   src/mermaid/erdiagram/ErDiagram.h
   src/mermaid/erdiagram/ErLayout.cpp
@@ -1098,16 +1191,10 @@ set(MUFFIN_UI_SOURCES
   src/theme/ThemeManager.h
   src/theme/ChromeStyleSheet.cpp
   src/theme/ChromeStyleSheet.h
-  src/theme/CssComputedStyleEngine.cpp
-  src/theme/CssComputedStyleEngine.h
   src/theme/CssStyleDebug.cpp
   src/theme/CssStyleDebug.h
-  src/theme/CssThemeParser.cpp
-  src/theme/CssThemeParser.h
   src/theme/CssThemeMapper.cpp
   src/theme/CssThemeMapper.h
-  src/theme/CssSelectorAnalysis.cpp
-  src/theme/CssSelectorAnalysis.h
   src/theme/CssDecorationExtractor.cpp
   src/theme/CssDecorationExtractor.h
   src/theme/CssFlatDecl.h

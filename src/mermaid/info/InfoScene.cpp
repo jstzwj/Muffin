@@ -7,6 +7,7 @@
 #include <QFontMetricsF>
 #include <QJsonObject>
 
+#include <algorithm>
 #include <utility>
 
 namespace muffin::mermaid::info {
@@ -32,9 +33,12 @@ QJsonObject InfoScene::toJsonObject() const {
           {QStringLiteral("textBounds"), rectJson(textBounds)},
           {QStringLiteral("x"), anchor.x()},
           {QStringLiteral("y"), anchor.y()},
-          {QStringLiteral("fontSize"), 32},
+          {QStringLiteral("fontSize"), style.fontSize},
           {QStringLiteral("fontFamily"), style.fontFamily},
           {QStringLiteral("textColor"), style.textColor},
+          {QStringLiteral("fontWeight"), int(style.fontWeight)},
+          {QStringLiteral("opacity"), style.opacity},
+          {QStringLiteral("textVisible"), style.textVisible},
           {QStringLiteral("useMaxWidth"), true}};
 }
 
@@ -43,8 +47,13 @@ InfoScene buildInfoScene(InfoSceneStyle style) {
   scene.style = std::move(style);
   QFont font;
   MermaidFontRegistry::configureFont(font, scene.style.fontFamily);
-  font.setPixelSize(32);
+  font.setPixelSize(std::max(1, qRound(scene.style.fontSize)));
+  font.setWeight(scene.style.fontWeight);
   font.setHintingPreference(QFont::PreferNoHinting);
+  if (!scene.style.textVisible || scene.style.fontSize <= 0.0) {
+    scene.textBounds = {};
+    return scene;
+  }
   const QFontMetricsF metrics(font);
   const qreal advance = metrics.horizontalAdvance(scene.text);
   const QRectF ink = metrics.boundingRect(scene.text);

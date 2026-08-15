@@ -1,0 +1,230 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "swimlaneLayoutSha256": "da16cc93e8359e7c7479e6e5ee4572f90eda7f76b73905a3e7354804ad476a35",
+    "swimlaneLayoutMapSha256": "91f3efc6e897559e7923a432cad3fea28106f70d3305ddd091cc256dd15328e4",
+    "swimlaneDiagramSha256": "85a5cfcf634e50a645de2a7a6057b07a3bc3dbf7746b352ee514e9dfcbf00060",
+    "swimlaneDiagramMapSha256": "2700c58b9d34fe3b2b027b4371483117c29535bfb305570524340b0c306041e6",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "swimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 4,
+        "edges": 3,
+        "subgraphs": 2
+      }
+    },
+    {
+      "id": "header-only",
+      "source": "swimlane-beta",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 0,
+        "edges": 0,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "tb",
+      "source": "swimlane-beta TB\nA --> B",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "lr",
+      "source": "swimlane-beta LR\nA --> B",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "LR",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "rl",
+      "source": "swimlane-beta RL\nA --> B",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "RL",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "bt",
+      "source": "swimlane-beta BT\nA --> B",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "BT",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "uppercase",
+      "source": "SWIMLANE-BETA\nA --> B",
+      "expected": {
+        "accepted": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: SWIMLANE-BETA\nA --> B",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "missing-beta",
+      "source": "swimlane\nA --> B",
+      "expected": {
+        "accepted": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: swimlane\nA --> B",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "swimlane-betaX\nA --> B",
+      "expected": {
+        "accepted": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: swimlane-betaX\nA --> B",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1
+        }
+      }
+    },
+    {
+      "id": "leading-comment",
+      "source": "%% before\nswimlane-beta\nA --> B",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "swimlane-beta TB; A --> B",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "subgraphs",
+      "source": "swimlane-beta TB\nsubgraph sales[Sales]\n a[Lead] --> b[Quote]\nend\nsubgraph legal[Legal]\n c[Review] --> d[Approve]\nend\nb --> c",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 4,
+        "edges": 3,
+        "subgraphs": 2
+      }
+    },
+    {
+      "id": "loose",
+      "source": "swimlane-beta\nA --> B --> C",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 3,
+        "edges": 2,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "shape",
+      "source": "swimlane-beta\nA{Choice} --> B([Done])",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "edge-label",
+      "source": "swimlane-beta\nA -->|review| B",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "class-style",
+      "source": "swimlane-beta\nclassDef hot fill:#f00\nA:::hot --> B",
+      "expected": {
+        "accepted": true,
+        "type": "swimlane",
+        "direction": "TB",
+        "vertices": 2,
+        "edges": 1,
+        "subgraphs": 0
+      }
+    },
+    {
+      "id": "malformed-edge",
+      "source": "swimlane-beta\nA -->",
+      "expected": {
+        "accepted": false,
+        "error": {
+          "name": "Error",
+          "message": "Parse error on line 3:\nswimlane-betaA -->\n------------------^\nExpecting 'AMP', 'COLON', 'PIPE', 'TESTSTR', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', got 'EOF'",
+          "kind": "Parser",
+          "line": 2,
+          "column": 2
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "7b0d07e8d9d7281841acd24fc3b51d095e113a22208a80177e0f914d50a8f9a8"
+}

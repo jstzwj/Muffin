@@ -4,6 +4,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 
 #include <QMap>
+#include <functional>
 #include <QPointF>
 #include <QSizeF>
 
@@ -36,6 +37,11 @@ struct FlowLayoutNode {
   qreal y = 0.0;
   qreal width = 0.0;
   qreal height = 0.0;
+  // Some renderers (notably hand-drawn Swimlane) lay out by the generated
+  // SVG group's getBBox while retaining the pre-RoughJS shape dimensions for
+  // painting. Zero means the rendered dimensions equal width/height.
+  qreal renderWidth = 0.0;
+  qreal renderHeight = 0.0;
   int rank = 0;
 };
 
@@ -63,6 +69,12 @@ struct FlowLayoutCluster {
   qreal y = 0.0;
   qreal width = 0.0;
   qreal height = 0.0;
+  bool swimlane = false;
+  bool titleOnLeft = false;
+  qreal titleBandSize = 0.0;
+  qreal titleTopMargin = 0.0;
+  qreal logicalWidth = 0.0;
+  qreal logicalHeight = 0.0;
 };
 
 struct FlowLayoutResult {
@@ -78,22 +90,50 @@ struct FlowLayoutOptions {
   qreal nodePadding = 15.0;
   qreal clusterHorizontalPadding = 35.0;
   qreal clusterVerticalPadding = 25.0;
+  qreal subGraphTitleTopMargin = 0.0;
+  qreal subGraphTitleBottomMargin = 0.0;
+  qreal diagramPadding = 0.0;
   FlowLook look = FlowLook::Classic;
   QMap<QString, QSizeF> measuredEdgeLabels;
   QMap<QString, FlowEdgeLabelLayout> preparedEdgeLabels;
   QMap<QString, QSizeF> measuredClusterLabels;
+  // Generic renderer cluster handlers may replace a compound node's width and
+  // height with the generated SVG/RoughJS getBBox before that cluster becomes
+  // an atom in its parent Dagre graph. Diagram families supply their handler
+  // here; ordinary flowcharts keep the logical Dagre size unchanged.
+  std::function<QSizeF(const QString&, const QRectF&)> clusterSizeTransform;
+  // recursiveRender keeps a generated child <g>'s own 8px Dagre frame and
+  // positions that frame as a cluster node. Families whose cluster handler
+  // replaces node dimensions with an SVG/RoughJS getBBox opt into that frame.
+  bool preserveRecursiveSvgFrame = false;
   // Edge curve: "basis" (default, d3 curveBasis), "linear" (curveLinear),
   // "step" (curveStep). Mirrors mermaid's flowchart.curve config.
   QString curve = QStringLiteral("basis");
+  // Mermaid's standalone flowchart adapter consumes coordinates relative to
+  // its first semantic node, while Swimlane's explicit Dagre fallback keeps
+  // the coordinates emitted by Dagre and lets setupGraphViewbox add padding.
+  bool preserveDagreCoordinates = false;
 };
 
 struct FlowTextOptions {
   QString fontFamily = QStringLiteral("Arial");
   qreal fontPixelSize = 16.0;
+  QFont::Weight fontWeight = QFont::Normal;
   qreal lineHeight = 24.0;
   qreal horizontalPadding = 30.0;
   qreal verticalPadding = 15.0;
   FlowLook look = FlowLook::Classic;
+  bool htmlLabels = true;
+  qreal maximumLineWidth = 200.0;
+  // Swimlane's renderer observes the browser's insertion-time inline width
+  // and post-layout SVG terminal fringe. Other Mermaid renderers use their
+  // own DOM/getBBox stage and retain the established shared measurements.
+  bool chromiumInlineWidth = false;
+  bool chromiumSvgTerminalPhase = false;
+  // Swimlane converts labelled edges into `labelRect` dummy nodes before
+  // layout. Their 0.1px rect sits inside the text bbox, so the node size is
+  // the label content itself rather than Dagre's padded edge-label box.
+  bool edgeLabelRectNode = false;
 };
 
 // Measures a label's bbox with the given text options (QFontMetrics). Used by
@@ -111,6 +151,22 @@ QSizeF measureFlowchartClusterLabel(const FlowSubgraph& subgraph,
 
 QMap<QString, QSizeF> measureFlowchartNodes(const FlowchartData& data,
                                             FlowTextOptions options = {});
+QMap<QString, QSizeF> measureFlowchartNodes(
+    const FlowchartData& data, FlowTextOptions options,
+    const QMap<QString, FlowTextOptions>& perNodeOptions);
+
+// Shared generic-node intersection used by diagram families that reuse
+// Mermaid's dagre-wrapper shapes without using Dagre for placement (Block).
+// `nodeRect` is centred at its scene position and `toward` is the next point
+// on the edge. The result follows the same ellipse/polygon/rect dispatch and
+// diamond bias correction as the flowchart renderer.
+QPointF intersectFlowShape(const FlowVertex& vertex, const QRectF& nodeRect,
+                           const QPointF& toward,
+                           FlowLook look = FlowLook::Classic);
+
+// Applies Mermaid's marker refX contract to the rendered path while preserving
+// the unmodified router points for label placement and marker orientation.
+void clipFlowEdgeForMarkers(QVector<QPointF>& points, const QString& type);
 
 FlowLayoutResult layoutFlowchartNodes(const FlowchartData& data,
                                       const QMap<QString, QSizeF>& measuredNodes,

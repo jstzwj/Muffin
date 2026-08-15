@@ -1133,6 +1133,65 @@ std::optional<qreal> measureOpenTypeDesignAdvance(
                                       fontPixelSize);
 }
 
+qreal measureChromiumInlineLayoutWidth(
+    const FlowLabelDocument& label, const QString& fontFamily,
+    qreal fontPixelSize) {
+  if (label.text.isEmpty() || !(fontPixelSize > 0.0)) return 0.0;
+
+  QVector<FlowLabelLineRange> lines = label.visualLines;
+  if (lines.isEmpty()) {
+    qsizetype start = 0;
+    while (true) {
+      const qsizetype newline = label.text.indexOf(QLatin1Char('\n'), start);
+      const qsizetype end = newline < 0 ? label.text.size() : newline;
+      lines.push_back({start, end - start});
+      if (newline < 0) break;
+      start = newline + 1;
+    }
+  }
+
+  qreal maximum = 0.0;
+  for (const FlowLabelLineRange& line : lines) {
+    const qsizetype lineEnd = line.start + line.length;
+    QVector<qsizetype> boundaries{line.start, lineEnd};
+    for (const QTextLayout::FormatRange& range : label.formats) {
+      boundaries.append(std::clamp<qsizetype>(range.start, line.start,
+                                               lineEnd));
+      boundaries.append(std::clamp<qsizetype>(range.start + range.length,
+                                               line.start, lineEnd));
+    }
+    std::sort(boundaries.begin(), boundaries.end());
+    boundaries.erase(std::unique(boundaries.begin(), boundaries.end()),
+                     boundaries.end());
+
+    qreal width = 0.0;
+    for (qsizetype i = 1; i < boundaries.size(); ++i) {
+      const qsizetype start = boundaries.at(i - 1);
+      const qsizetype length = boundaries.at(i) - start;
+      if (length <= 0) continue;
+
+      FlowLabelDocument segment = label;
+      for (const QTextLayout::FormatRange& range : label.formats) {
+        if (range.start > start ||
+            range.start + range.length < start + length)
+          continue;
+        if (range.format.hasProperty(QTextFormat::FontWeight))
+          segment.baseWeight = QFont::Weight(range.format.fontWeight());
+        if (range.format.hasProperty(QTextFormat::FontItalic))
+          segment.baseStyle = range.format.fontItalic()
+              ? QFont::StyleItalic : QFont::StyleNormal;
+      }
+      const qreal advance = measureOpenTypeDesignAdvance(
+          segment, start, length, fontFamily, fontPixelSize)
+          .value_or(measureFlowTextAdvanceWidth(
+              segment, start, length, fontFamily, fontPixelSize));
+      width += std::ceil(advance * 64.0) / 64.0;
+    }
+    maximum = std::max(maximum, width);
+  }
+  return maximum;
+}
+
 QRectF measureChromiumSvgTextLayoutBounds(const FlowLabelDocument& label,
                                           const QString& fontFamily,
                                           qreal fontPixelSize,
@@ -1156,7 +1215,9 @@ QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
                                     const QString& fontFamily,
                                     qreal fontPixelSize,
                                     QFont::Weight weight,
-                                    qreal deviceScale) {
+                                    qreal deviceScale,
+                                    bool applyTerminalPhaseCorrection,
+                                    bool exactMeasurementNode) {
   if (label.text.isEmpty() || !(fontPixelSize > 0.0)) return {};
   QRectF result = measureFlowSvgTextBounds(label, fontFamily, fontPixelSize);
   const QFont font = flowLabelDocumentFont(label, fontFamily, fontPixelSize);
@@ -1177,7 +1238,8 @@ QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
   const qreal measuredAdvance =
       measureOpenTypeDesignAdvanceImpl(label, 0, label.text.size(), fontFamily,
                                        fontPixelSize, false, &terminalGlyph,
-                                       &terminalOrigin, deviceScale)
+                                       &terminalOrigin,
+                                       exactMeasurementNode ? 0.0 : deviceScale)
           .value_or(strikeAdvance);
   const qreal designAdvance =
       std::ceil(measuredAdvance * deviceScale * 64.0 - 1e-9) /
@@ -1233,9 +1295,23 @@ QRectF measureChromiumSvgTextBounds(const FlowLabelDocument& label,
           fontPixelSize * std::max<qreal>(deviceScale, 0.0), 0.0,
           weight > QFont::Normal);
       if (chromiumRight) {
+        qreal right = chromiumRight->right / deviceScale;
+        const qreal terminalRight = terminalOrigin + right;
+        if (applyTerminalPhaseCorrection &&
+            (cellRight <= advances.first().x() || rightSideBearing < 0.5) &&
+            terminalRight > cellWidth + 0.001) {
+          qreal phase = std::fmod(terminalOrigin * deviceScale, 1.0);
+          if (phase < 0.0) phase += 1.0;
+          if (cellRight > advances.first().x() && phase < 0.125) {
+            right -= 0.002 / deviceScale;
+          } else {
+            right += (phase < 0.5 ? 0.014 - 0.0065 * phase : 0.0065) /
+                     deviceScale;
+          }
+        }
         result.setRight(std::max(
             {result.left(), cellWidth,
-             terminalOrigin + chromiumRight->right / deviceScale}));
+             terminalOrigin + right}));
         usedChromiumGlyphBounds = true;
       } else if (cellRight > advances.first().x() ||
                  rightSideBearing < 0.5) {

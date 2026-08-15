@@ -292,6 +292,10 @@ try {
           const label = node.querySelector(":scope > g.label");
           const foreign = label?.querySelector("foreignObject");
           const svgText = label?.querySelector("text");
+          // The PAINTED html label child: `.section-root span { color: … }`
+          // colors the span, while the g.label group's own computed fill/color
+          // stay inherited (fill #333 / color black) and never reach the ink.
+          const htmlSpan = foreign?.querySelector("span");
           return {
             attrs: attrs(node, ["id", "class", "transform", "data-look"]),
             bbox: box(node), computed: computed(node),
@@ -310,6 +314,10 @@ try {
             label: label ? { text: label.textContent ?? "",
               attrs: attrs(label, ["class", "transform", "style"]),
               bbox: box(label), computed: computed(label),
+              spanComputed: htmlSpan ? computed(htmlSpan) : null,
+              // The PAINTED svg label child: `.section-root text { fill }`
+              // colors the text, not the g.label group's inherited fill.
+              svgTextComputed: svgText ? computed(svgText) : null,
               svgText: svgText ? {
                 length: round(svgText.getComputedTextLength()),
                 chars: Array.from({ length: svgText.getNumberOfChars() }, (_, i) => ({

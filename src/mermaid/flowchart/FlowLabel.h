@@ -228,13 +228,21 @@ std::optional<qreal> measureOpenTypeDesignAdvance(
     const FlowLabelDocument& label, const QString& fontFamily,
     qreal fontPixelSize);
 
+// Chromium lays out foreignObject labels as DOM inline boxes. Each formatted
+// box is shaped in OpenType design units, scaled to CSS pixels, then rounded
+// up to a 1/64px LayoutUnit before the boxes on a line are summed.
+qreal measureChromiumInlineLayoutWidth(
+    const FlowLabelDocument& label, const QString& fontFamily,
+    qreal fontPixelSize);
+
 // Chromium's post-layout SVGTextElement.getBBox() for one unformatted line.
 // It combines Blink's 1/64px ShapeResult cell with Skia's leading/trailing
 // antialias cells; DirectWrite/QFontMetrics alone loses both edge cases.
 QRectF measureChromiumSvgTextBounds(
     const FlowLabelDocument& label, const QString& fontFamily,
     qreal fontPixelSize, QFont::Weight weight = QFont::Normal,
-    qreal deviceScale = 1.0);
+    qreal deviceScale = 1.0, bool applyTerminalPhaseCorrection = false,
+    bool exactMeasurementNode = false);
 QRectF measureChromiumSvgTextLayoutBounds(
     const FlowLabelDocument& label, const QString& fontFamily,
     qreal fontPixelSize, qreal deviceScale = 1.0);

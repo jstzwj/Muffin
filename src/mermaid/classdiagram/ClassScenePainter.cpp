@@ -86,7 +86,10 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
   painter.setRenderHint(QPainter::TextAntialiasing, true);
 
   for (const auto& cluster : scene.clusters) {
-    if (!mermaidPrimitiveIsVisible(cluster.bounds, options)) continue;
+    if (!mermaidPrimitiveIsVisible(
+            scene.handDrawn && cluster.paintedBounds.isValid()
+                ? cluster.paintedBounds : cluster.bounds,
+            options)) continue;
     const QColor clusterColor = mode == ClassPaintMode::SemanticMask
         ? QColor::fromRgba(kClassMaskCluster) : color(scene.style.clusterStroke);
     if (mode != ClassPaintMode::TextMask) {
@@ -94,9 +97,11 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
       painter.setBrush(mode == ClassPaintMode::SemanticMask
                            ? clusterColor : color(scene.style.clusterFill));
       if (mode == ClassPaintMode::Color && scene.handDrawn)
-        rough::roughRect(painter, cluster.bounds, scene.handDrawnSeed,
-                         color(scene.style.clusterFill),
-                         color(scene.style.clusterStroke), 1.0);
+        rough::drawRoughDrawable(
+            painter, cluster.roughDrawable,
+            color(scene.style.clusterFill),
+            QPen(color(scene.style.clusterStroke), 1.3),
+            QPen(color(scene.style.clusterFill), 3.0));
       else
         painter.drawRect(cluster.bounds);
     }
@@ -154,9 +159,9 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
     if (mode == ClassPaintMode::Color && scene.handDrawn) {
-      for (const QString& path : edge.paths)
-        rough::roughPath(painter, scene::parseSvgPath(path), scene.handDrawnSeed,
-                         edgeColor, edgeWidth);
+      for (const rough::Drawable& drawable : edge.roughDrawables)
+        rough::drawRoughDrawable(painter, drawable, Qt::NoBrush,
+                                 QPen(edgeColor, edgeWidth), Qt::NoPen);
     } else {
       for (const QString& path : edge.paths) painter.drawPath(scene::parseSvgPath(path));
     }
@@ -164,8 +169,10 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
         ? edge.renderedPoints : edge.renderedSegments.first();
     const QVector<QPointF>& endPoints = edge.renderedSegments.isEmpty()
         ? edge.renderedPoints : edge.renderedSegments.last();
-    drawMarker(painter, scene, edge.markerStart, true, startPoints, mode);
-    drawMarker(painter, scene, edge.markerEnd, false, endPoints, mode);
+    if (options.paintEdgeMarkers) {
+      drawMarker(painter, scene, edge.markerStart, true, startPoints, mode);
+      drawMarker(painter, scene, edge.markerEnd, false, endPoints, mode);
+    }
   }
 
   for (const auto& edge : scene.edges) {
@@ -241,11 +248,15 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
       painter.setBrush(mode == ClassPaintMode::SemanticMask
                            ? nodeColor : color(node.fill));
       if (mode == ClassPaintMode::Color && scene.handDrawn) {
-        rough::roughRect(painter, outer, scene.handDrawnSeed,
-                         color(node.fill), color(node.stroke), node.strokeWidth);
-        for (const QRectF& divider : node.localDividers)
-          rough::roughRect(painter, divider.translated(node.center), scene.handDrawnSeed,
-                           color(node.fill), color(node.stroke), node.strokeWidth);
+        for (qsizetype i = 0; i < node.roughDrawables.size(); ++i) {
+          const bool outerDrawable = i == 0;
+          rough::drawRoughDrawable(
+              painter, node.roughDrawables.at(i),
+              outerDrawable ? QBrush(color(node.fill)) : Qt::NoBrush,
+              QPen(color(node.stroke), node.strokeWidth),
+              outerDrawable ? QPen(color(node.fill), node.strokeWidth)
+                            : Qt::NoPen);
+        }
       } else {
         painter.drawRect(outer);
         for (const QRectF& divider : node.localDividers)

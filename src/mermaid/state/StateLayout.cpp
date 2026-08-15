@@ -1,4 +1,5 @@
 #include "mermaid/state/StateLayout.h"
+#include "mermaid/state/StateRough.h"
 
 #include "mermaid/flowchart/FlowchartLayout.h"
 
@@ -248,7 +249,8 @@ StateLayoutInput buildStateLayoutInput(const StateDiagramData& data, QString loo
 }
 
 StateLayoutMeasurements measureStateLayoutInput(
-    const StateLayoutInput& input, QString fontFamily, qreal fontSize) {
+    const StateLayoutInput& input, QString fontFamily, qreal fontSize,
+    bool handDrawn, quint32 handDrawnSeed, bool shapeHidden) {
   StateLayoutMeasurements result;
   flowchart::FlowTextOptions options;
   options.fontFamily = std::move(fontFamily);
@@ -256,8 +258,18 @@ StateLayoutMeasurements measureStateLayoutInput(
   options.lineHeight = fontSize * 1.5;
   options.horizontalPadding = 16.0;
   options.verticalPadding = 16.0;
+  // State labels are foreignObject inline boxes. Use Blink's HarfBuzz /
+  // LayoutUnit contract before RoughJS and Dagre consume their dimensions.
+  options.chromiumInlineWidth = true;
   for (const StateLayoutNodeInput& node : input.nodes) {
-    if (node.isGroup) continue;
+    if (node.isGroup) {
+      if (node.shape != QLatin1String("noteGroup")) {
+        result.clusterLabels.insert(
+            node.id, flowchart::measureLabel(node.label.toString(),
+                                              QStringLiteral("markdown"), options));
+      }
+      continue;
+    }
     const QString shape = node.shape.isEmpty() ? QStringLiteral("rect") : node.shape;
     QSizeF size;
     QSizeF paintedSize;
@@ -274,10 +286,31 @@ StateLayoutMeasurements measureStateLayoutInput(
       if (node.description.isArray())
         for (const QJsonValue& value : node.description.toArray()) lines.append(value.toString());
       size = flowchart::measureLabel(lines.join(QLatin1Char('\n')), QStringLiteral("markdown"), options);
-      if (shape == QLatin1String("rectWithTitle")) size += QSizeF(8.0, 17.0);
-      else if (shape == QLatin1String("note")) size += QSizeF(30.0, 30.0);
-      else size += QSizeF(16.0, 16.0);
-      paintedSize = size;
+      // drawState measures a temporary group that contains only the shape
+      // (labels are inserted later at the dagre node centre), so the dagre
+      // node size = rect box = label + 2*padding. `.node rect { display:none }`
+      // removes that box: dagre gets a 0x0 node (rank centres collapse to the
+      // bare ranksep) while the label still paints at the centre (probed vs
+      // 11.16.0: nodes 24 tall, centre gap 50, painted gap 26).
+      if (shapeHidden) {
+        paintedSize = size;
+        size = QSizeF(0.0, 0.0);
+      } else {
+        if (shape == QLatin1String("rectWithTitle")) size += QSizeF(8.0, 17.0);
+        else if (shape == QLatin1String("note")) size += QSizeF(30.0, 30.0);
+        else size += QSizeF(16.0, 16.0);
+        paintedSize = size;
+      }
+    }
+    if (handDrawn) {
+      const QRectF local(-paintedSize.width() / 2.0,
+                         -paintedSize.height() / 2.0,
+                         paintedSize.width(), paintedSize.height());
+      const QRectF roughBounds = stateRoughBounds(
+          stateRoughNodeDrawables(shape, local, handDrawnSeed));
+      if (roughBounds.isValid()) {
+        size = roughBounds.size();
+      }
     }
     result.nodes.insert(node.id, size);
     result.paintedNodes.insert(node.id, paintedSize);
@@ -295,7 +328,8 @@ StateLayoutMeasurements measureStateLayoutInput(
 
 StatePlacementResult layoutStateDiagramDagre(
     const StateLayoutInput& input, const StateLayoutMeasurements& measurements,
-    qreal nodeSpacing, qreal rankSpacing) {
+    qreal nodeSpacing, qreal rankSpacing, bool handDrawn,
+    quint32 handDrawnSeed) {
   if (input.nodes.isEmpty()) return {};
   flowchart::FlowchartData projected;
   projected.direction = input.direction;
@@ -313,7 +347,9 @@ StatePlacementResult layoutStateDiagramDagre(
       flowchart::FlowVertex vertex;
       vertex.id = node.id;
       vertex.text = node.label.toString();
-      vertex.type = QStringLiteral("rect");
+      vertex.type = (node.shape == QLatin1String("stateStart") ||
+                     node.shape == QLatin1String("stateEnd"))
+          ? node.shape : QStringLiteral("rect");
       projected.vertices.append(std::move(vertex));
     }
   }
@@ -331,6 +367,22 @@ StatePlacementResult layoutStateDiagramDagre(
   options.rankSpacing = rankSpacing;
   options.nodePadding = 8.0;
   options.measuredEdgeLabels = measurements.edgeLabels;
+  if (handDrawn) {
+    options.preserveRecursiveSvgFrame = true;
+    options.clusterSizeTransform = [&, handDrawnSeed](
+        const QString& id, const QRectF& bounds) {
+      const auto semantic = std::find_if(
+          input.nodes.cbegin(), input.nodes.cend(),
+          [&](const StateLayoutNodeInput& node) { return node.id == id; });
+      if (semantic == input.nodes.cend() ||
+          semantic->shape == QLatin1String("noteGroup"))
+        return bounds.size();
+      const qreal titleHeight = measurements.clusterLabels.value(id).height();
+      const QRectF rendered = stateRoughBounds(stateRoughClusterDrawables(
+          bounds, titleHeight, handDrawnSeed));
+      return rendered.isValid() ? rendered.size() : bounds.size();
+    };
+  }
   const flowchart::FlowLayoutResult placed =
       flowchart::layoutFlowchartNodesDagre(projected, measurements.nodes, options);
   StatePlacementResult result;
@@ -349,7 +401,8 @@ StatePlacementResult layoutStateDiagramDagre(
   }
   for (const flowchart::FlowLayoutCluster& cluster : placed.clusters)
     result.clusters.append({cluster.id, QPointF(cluster.x, cluster.y),
-                            QSizeF(cluster.width, cluster.height)});
+                            QSizeF(cluster.width, cluster.height),
+                            QSizeF(cluster.logicalWidth, cluster.logicalHeight)});
 
   // Note position is a semantic ordering constraint in Mermaid's state
   // renderer. The generic graph receives it before ordering; FlowchartData has

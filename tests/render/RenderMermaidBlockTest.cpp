@@ -176,7 +176,7 @@ SelectionRange focusedSelection(NodeId blockId, qsizetype offset = 0) {
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
 #if defined(Q_OS_LINUX)
-  qWarning("skipped on Linux: font/rendering golden coupled to x86 Windows (TODO, docs/mermaid-architecture.md step 5)");
+  qWarning("skipped on Linux: raster goldens were captured against Windows-Chrome PNGs; the bundled Noto faces ARE registered cross-platform via the Qt resource, and geometry uses OpenType design metrics, but FreeType antialiasing/hinting still produces different edge pixels than the committed DirectWrite-rasterized references. Closure requires regenerating (or dual-sourcing) the browser goldens on Linux - a platform-infrastructure task, not a code change.");
   return 0;
 #endif
   QCoreApplication::setOrganizationName(QStringLiteral("Muffin"));
@@ -658,11 +658,11 @@ int main(int argc, char** argv) {
             QStringLiteral("native Gantt fence must render without a diagnostic"));
   }
 
-  // --- unsupported Mermaid families keep source and explain why ---
+  // --- native Block diagrams use the rendered-block product path ---
   {
     DocumentSession session;
     session.setMarkdownText(QStringLiteral(
-        "```mermaid\narchitecture-beta\n group api(cloud)\n```\n"),
+        "```mermaid\nblock-beta\ncolumns 2\nA[\"Alpha\"] B(\"Beta\")\nA --> B\n```\n"),
         false);
     mermaid::editor::MermaidRenderCache cache;
     DocumentLayout layout;
@@ -670,11 +670,50 @@ int main(int argc, char** argv) {
     layout.setMermaidSyncMode(true);
     layout.rebuild(session.document(), theme, 800.0);
     const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
-    require(block != nullptr && !block->isMermaidRendered() &&
-                block->mermaidState() == BlockLayout::MermaidState::Unsupported &&
-                !block->mermaidDiagnosticMessage().isEmpty() &&
-                block->mermaidDiagnosticRect(theme).isValid(),
-            QStringLiteral("unsupported Mermaid family must show a diagnostic panel"));
+    require(block != nullptr && block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Ready &&
+                block->mermaidDiagnosticMessage().isEmpty() &&
+                !block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("native Block fence must render without a diagnostic"));
+  }
+
+  // --- native GitGraph fences render through the editor block path ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\ngitGraph\ncommit id: \"A\"\n"
+        "branch feature\ncommit id: \"B\"\n```\n"),
+        false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Ready &&
+                block->mermaidDiagnosticMessage().isEmpty() &&
+                !block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("native GitGraph fence must render without a diagnostic"));
+  }
+
+  // --- flowchart-elk uses Mermaid 11.16's bundled Dagre fallback ---
+  {
+    DocumentSession session;
+    session.setMarkdownText(QStringLiteral(
+        "```mermaid\nflowchart-elk LR\nA --> B\n```\n"),
+        false);
+    mermaid::editor::MermaidRenderCache cache;
+    DocumentLayout layout;
+    layout.setMermaidRenderCache(&cache);
+    layout.setMermaidSyncMode(true);
+    layout.rebuild(session.document(), theme, 800.0);
+    const BlockLayout* block = layout.block(firstCodeFenceId(session.document()));
+    require(block != nullptr && block->isMermaidRendered() &&
+                block->mermaidState() == BlockLayout::MermaidState::Ready &&
+                block->mermaidDiagnosticMessage().isEmpty() &&
+                !block->mermaidDiagnosticRect(theme).isValid(),
+            QStringLiteral("flowchart-elk must render through the Dagre fallback"));
   }
 
   // --- correcting invalid source removes the panel and restores rendering ---

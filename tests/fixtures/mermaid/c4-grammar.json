@@ -1,0 +1,2089 @@
+{
+  "provenance": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "c4ModuleSha256": "ea38b507259b57ac7d0fa526018cd1589abc99dc5f90af5c03f69540964a9862",
+    "c4SourceMapSha256": "ff3aeaa5dd97f61feef685f5b09eb787f1d06dad665cb6353fe3d1d62ccf0df8",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "notoSansCjkSha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "C4Context\ntitle Banking Context\nPerson(customer, \"Customer\", \"Uses the bank\")\nSystem_Boundary(bank, \"Bank\") {\n  SystemDb(core, \"Core\", \"Accounts and payments\")\n  System(api, \"API\", \"Public interface\")\n}\nSystem_Ext(mail, \"Mail\", \"Sends notifications\")\nRel(customer, api, \"Uses\", \"HTTPS\")\nBiRel(api, core, \"Reads and writes\", \"SQL\")\nRel_R(api, mail, \"Sends\", \"SMTP\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "Banking Context",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "customer",
+            "label": {
+              "text": "Customer"
+            },
+            "descr": {
+              "text": "Uses the bank"
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "core",
+            "label": {
+              "text": "Core"
+            },
+            "descr": {
+              "text": "Accounts and payments"
+            },
+            "typeC4Shape": {
+              "text": "system_db"
+            },
+            "parentBoundary": "bank"
+          },
+          {
+            "alias": "api",
+            "label": {
+              "text": "API"
+            },
+            "descr": {
+              "text": "Public interface"
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "bank"
+          },
+          {
+            "alias": "mail",
+            "label": {
+              "text": "Mail"
+            },
+            "descr": {
+              "text": "Sends notifications"
+            },
+            "typeC4Shape": {
+              "text": "external_system"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          },
+          {
+            "alias": "bank",
+            "label": {
+              "text": "Bank"
+            },
+            "type": {
+              "text": "SYSTEM"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "relations": [
+          {
+            "type": "rel",
+            "from": "customer",
+            "to": "api",
+            "label": {
+              "text": "Uses"
+            },
+            "techn": {
+              "text": "HTTPS"
+            },
+            "descr": {
+              "text": ""
+            }
+          },
+          {
+            "type": "birel",
+            "from": "api",
+            "to": "core",
+            "label": {
+              "text": "Reads and writes"
+            },
+            "techn": {
+              "text": "SQL"
+            },
+            "descr": {
+              "text": ""
+            }
+          },
+          {
+            "type": "rel_r",
+            "from": "api",
+            "to": "mail",
+            "label": {
+              "text": "Sends"
+            },
+            "techn": {
+              "text": "SMTP"
+            },
+            "descr": {
+              "text": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "context",
+      "source": "C4Context\nPerson(a, \"A\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "container",
+      "source": "C4Container\nContainer(a, \"A\", \"Tech\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Container",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "techn": {
+              "text": "Tech"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "container"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "component",
+      "source": "C4Component\nComponent(a, \"A\", \"Tech\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Component",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "techn": {
+              "text": "Tech"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "component"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "dynamic",
+      "source": "C4Dynamic\nPerson(a, \"A\")\nSystem(b, \"B\")\nRel(a,b,\"Uses\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Dynamic",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "b",
+            "label": {
+              "text": "B"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": [
+          {
+            "type": "rel",
+            "from": "a",
+            "to": "b",
+            "label": {
+              "text": "Uses"
+            },
+            "techn": {
+              "text": ""
+            },
+            "descr": {
+              "text": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "deployment",
+      "source": "C4Deployment\nDeployment_Node(n, \"Node\") {\nSystem(a, \"A\")\n}\n",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Deployment",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "n"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          },
+          {
+            "alias": "n",
+            "label": {
+              "text": "Node"
+            },
+            "type": {
+              "text": "node"
+            },
+            "descr": {
+              "text": ""
+            },
+            "nodeType": "node",
+            "parentBoundary": "global"
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "uppercase-detector",
+      "source": "c4context\nPerson(a, A)",
+      "accepted": false,
+      "error": {
+        "name": "UnknownDiagramError",
+        "message": "No diagram type detected matching given configuration for text: c4context\nPerson(a, A)",
+        "hash": null
+      }
+    },
+    {
+      "id": "detector-prefix",
+      "source": "prefix C4Container suffix\nContainer(a,A,T)",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Lexical error on line 1. Unrecognized text.\nprefix C4Container s\n^",
+        "hash": {
+          "text": "",
+          "token": null,
+          "line": 0,
+          "loc": null,
+          "expected": null
+        }
+      }
+    },
+    {
+      "id": "direction-before",
+      "source": "direction LR\nC4Context\nPerson(a,A)",
+      "accepted": false,
+      "error": {
+        "name": "UnknownDiagramError",
+        "message": "No diagram type detected matching given configuration for text: direction LR\nC4Context\nPerson(a,A)",
+        "hash": null
+      }
+    },
+    {
+      "id": "direction-after",
+      "source": "C4Context\ndirection TB\nPerson(a,A)",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 2:\nC4Contextdirection TBPerson(\n---------^\nExpecting 'title', 'accDescription', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'ENTERPRISE_BOUNDARY', 'SYSTEM_BOUNDARY', 'BOUNDARY', 'CONTAINER_BOUNDARY', 'NODE', 'NODE_L', 'NODE_R', 'PERSON', 'PERSON_EXT', 'SYSTEM', 'SYSTEM_DB', 'SYSTEM_QUEUE', 'SYSTEM_EXT', 'SYSTEM_EXT_DB', 'SYSTEM_EXT_QUEUE', 'CONTAINER', 'CONTAINER_DB', 'CONTAINER_QUEUE', 'CONTAINER_EXT', 'CONTAINER_EXT_DB', 'CONTAINER_EXT_QUEUE', 'COMPONENT', 'COMPONENT_DB', 'COMPONENT_QUEUE', 'COMPONENT_EXT', 'COMPONENT_EXT_DB', 'COMPONENT_EXT_QUEUE', 'REL', 'BIREL', 'REL_U', 'REL_D', 'REL_L', 'REL_R', 'REL_B', 'REL_INDEX', 'UPDATE_EL_STYLE', 'UPDATE_REL_STYLE', 'UPDATE_LAYOUT_CONFIG', got 'direction_tb'",
+        "hash": {
+          "text": "direction TB",
+          "token": "direction_tb",
+          "line": 1,
+          "loc": {
+            "first_line": 1,
+            "last_line": 2,
+            "first_column": 9,
+            "last_column": 0
+          },
+          "expected": [
+            "'title'",
+            "'accDescription'",
+            "'acc_title'",
+            "'acc_descr'",
+            "'acc_descr_multiline_value'",
+            "'ENTERPRISE_BOUNDARY'",
+            "'SYSTEM_BOUNDARY'",
+            "'BOUNDARY'",
+            "'CONTAINER_BOUNDARY'",
+            "'NODE'",
+            "'NODE_L'",
+            "'NODE_R'",
+            "'PERSON'",
+            "'PERSON_EXT'",
+            "'SYSTEM'",
+            "'SYSTEM_DB'",
+            "'SYSTEM_QUEUE'",
+            "'SYSTEM_EXT'",
+            "'SYSTEM_EXT_DB'",
+            "'SYSTEM_EXT_QUEUE'",
+            "'CONTAINER'",
+            "'CONTAINER_DB'",
+            "'CONTAINER_QUEUE'",
+            "'CONTAINER_EXT'",
+            "'CONTAINER_EXT_DB'",
+            "'CONTAINER_EXT_QUEUE'",
+            "'COMPONENT'",
+            "'COMPONENT_DB'",
+            "'COMPONENT_QUEUE'",
+            "'COMPONENT_EXT'",
+            "'COMPONENT_EXT_DB'",
+            "'COMPONENT_EXT_QUEUE'",
+            "'REL'",
+            "'BIREL'",
+            "'REL_U'",
+            "'REL_D'",
+            "'REL_L'",
+            "'REL_R'",
+            "'REL_B'",
+            "'REL_INDEX'",
+            "'UPDATE_EL_STYLE'",
+            "'UPDATE_REL_STYLE'",
+            "'UPDATE_LAYOUT_CONFIG'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "C4Context\ntitle Heading\naccTitle: Accessible\naccDescr: Description\nPerson(a,\"A\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "Accessible",
+        "accTitle": "",
+        "accDescr": "Description",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "acc-block",
+      "source": "C4Context\naccDescr {first\n  second}\nPerson(a,\"A\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "first\nsecond",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "comments",
+      "source": "%% before\nC4Context\n%% body\nPerson(a,\"A\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "all-shapes",
+      "source": "C4Deployment\nPerson(p, \"Person\", \"Description\")\nPerson_Ext(pe, \"External person\")\nSystem(s, \"System\", \"Description\")\nSystemDb(sd, \"System DB\", \"Description\")\nSystemQueue(sq, \"System Queue\", \"Description\")\nSystem_Ext(se, \"External System\")\nSystemDb_Ext(sde, \"External DB\")\nSystemQueue_Ext(sqe, \"External Queue\")\nContainer(c, \"Container\", \"Node\", \"Description\")\nContainerDb(cd, \"Container DB\", \"SQL\", \"Description\")\nContainerQueue(cq, \"Container Queue\", \"MQ\", \"Description\")\nContainer_Ext(ce, \"External Container\", \"Node\")\nContainerDb_Ext(cde, \"External Container DB\", \"SQL\")\nContainerQueue_Ext(cqe, \"External Container Queue\", \"MQ\")\nComponent(k, \"Component\", \"Library\", \"Description\")\nComponentDb(kd, \"Component DB\", \"SQL\", \"Description\")\nComponentQueue(kq, \"Component Queue\", \"MQ\", \"Description\")\nComponent_Ext(ke, \"External Component\", \"Library\")\nComponentDb_Ext(kde, \"External Component DB\", \"SQL\")\nComponentQueue_Ext(kqe, \"External Component Queue\", \"MQ\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Deployment",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "p",
+            "label": {
+              "text": "Person"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "pe",
+            "label": {
+              "text": "External person"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_person"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "s",
+            "label": {
+              "text": "System"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "sd",
+            "label": {
+              "text": "System DB"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "system_db"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "sq",
+            "label": {
+              "text": "System Queue"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "system_queue"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "se",
+            "label": {
+              "text": "External System"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_system"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "sde",
+            "label": {
+              "text": "External DB"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_system_db"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "sqe",
+            "label": {
+              "text": "External Queue"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_system_queue"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "c",
+            "label": {
+              "text": "Container"
+            },
+            "techn": {
+              "text": "Node"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "container"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "cd",
+            "label": {
+              "text": "Container DB"
+            },
+            "techn": {
+              "text": "SQL"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "container_db"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "cq",
+            "label": {
+              "text": "Container Queue"
+            },
+            "techn": {
+              "text": "MQ"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "container_queue"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "ce",
+            "label": {
+              "text": "External Container"
+            },
+            "techn": {
+              "text": "Node"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_container"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "cde",
+            "label": {
+              "text": "External Container DB"
+            },
+            "techn": {
+              "text": "SQL"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_container_db"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "cqe",
+            "label": {
+              "text": "External Container Queue"
+            },
+            "techn": {
+              "text": "MQ"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_container_queue"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "k",
+            "label": {
+              "text": "Component"
+            },
+            "techn": {
+              "text": "Library"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "component"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "kd",
+            "label": {
+              "text": "Component DB"
+            },
+            "techn": {
+              "text": "SQL"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "component_db"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "kq",
+            "label": {
+              "text": "Component Queue"
+            },
+            "techn": {
+              "text": "MQ"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "typeC4Shape": {
+              "text": "component_queue"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "ke",
+            "label": {
+              "text": "External Component"
+            },
+            "techn": {
+              "text": "Library"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_component"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "kde",
+            "label": {
+              "text": "External Component DB"
+            },
+            "techn": {
+              "text": "SQL"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_component_db"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "kqe",
+            "label": {
+              "text": "External Component Queue"
+            },
+            "techn": {
+              "text": "MQ"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "external_component_queue"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "boundaries",
+      "source": "C4Deployment\nEnterprise_Boundary(e, \"Enterprise\") {\n System_Boundary(s, \"System\") {\n  Container_Boundary(c, \"Container\") {\n   Component(x, \"X\", \"Tech\")\n  }\n }\n Boundary(b, \"Generic\", \"Custom\") {\n  Person(p, \"P\")\n }\n Deployment_Node(n, \"Node\", \"Type\", \"Description\") {\n  System(a, \"A\")\n }\n Node_L(l, \"Left\") {\n  System(ll, \"LL\")\n }\n Node_R(r, \"Right\") {\n  System(rr, \"RR\")\n }\n}\n",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Deployment",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "x",
+            "label": {
+              "text": "X"
+            },
+            "techn": {
+              "text": "Tech"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "component"
+            },
+            "parentBoundary": "c"
+          },
+          {
+            "alias": "p",
+            "label": {
+              "text": "P"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "b"
+          },
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "n"
+          },
+          {
+            "alias": "ll",
+            "label": {
+              "text": "LL"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "l"
+          },
+          {
+            "alias": "rr",
+            "label": {
+              "text": "RR"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "r"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          },
+          {
+            "alias": "e",
+            "label": {
+              "text": "Enterprise"
+            },
+            "type": {
+              "text": "ENTERPRISE"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "s",
+            "label": {
+              "text": "System"
+            },
+            "type": {
+              "text": "SYSTEM"
+            },
+            "parentBoundary": "e"
+          },
+          {
+            "alias": "c",
+            "label": {
+              "text": "Container"
+            },
+            "type": {
+              "text": "CONTAINER"
+            },
+            "parentBoundary": "s"
+          },
+          {
+            "alias": "b",
+            "label": {
+              "text": "Generic"
+            },
+            "type": {
+              "text": "Custom"
+            },
+            "parentBoundary": "e"
+          },
+          {
+            "alias": "n",
+            "label": {
+              "text": "Node"
+            },
+            "type": {
+              "text": "Type"
+            },
+            "descr": {
+              "text": "Description"
+            },
+            "nodeType": "node",
+            "parentBoundary": "e"
+          },
+          {
+            "alias": "l",
+            "label": {
+              "text": "Left"
+            },
+            "type": {
+              "text": "node"
+            },
+            "descr": {
+              "text": ""
+            },
+            "nodeType": "nodeL",
+            "parentBoundary": "e"
+          },
+          {
+            "alias": "r",
+            "label": {
+              "text": "Right"
+            },
+            "type": {
+              "text": "node"
+            },
+            "descr": {
+              "text": ""
+            },
+            "nodeType": "nodeR",
+            "parentBoundary": "e"
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "boundary-same-line-close",
+      "source": "C4Context\nBoundary(b,B) { Person(a,A) }",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 3:\n...,B) { Person(a,A) }\n----------------------^\nExpecting 'NEWLINE', 'EOF', 'LBRACE', 'RBRACE', 'STR', 'STR_KEY', 'ATTRIBUTE', 'ATTRIBUTE_EMPTY', got '1'",
+        "hash": {
+          "text": "",
+          "token": 1,
+          "line": 2,
+          "loc": {
+            "first_line": 2,
+            "last_line": 3,
+            "first_column": 25,
+            "last_column": 0
+          },
+          "expected": [
+            "'NEWLINE'",
+            "'EOF'",
+            "'LBRACE'",
+            "'RBRACE'",
+            "'STR'",
+            "'STR_KEY'",
+            "'ATTRIBUTE'",
+            "'ATTRIBUTE_EMPTY'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "relations",
+      "source": "C4Context\nPerson(a,\"A\")\nSystem(b,\"B\")\nSystem(c,\"C\")\nRel(a,b,\"R\")\nBiRel(b,c,\"BR\")\nRel_U(a,c,\"U\")\nRel_Down(c,a,\"D\")\nRel_Left(a,b,\"L\")\nRel_Right(b,c,\"RR\")\nRel_Back(c,b,\"B\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "b",
+            "label": {
+              "text": "B"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "c",
+            "label": {
+              "text": "C"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": [
+          {
+            "type": "rel_l",
+            "from": "a",
+            "to": "b",
+            "label": {
+              "text": "L"
+            },
+            "techn": {
+              "text": ""
+            },
+            "descr": {
+              "text": ""
+            }
+          },
+          {
+            "type": "rel_r",
+            "from": "b",
+            "to": "c",
+            "label": {
+              "text": "RR"
+            },
+            "techn": {
+              "text": ""
+            },
+            "descr": {
+              "text": ""
+            }
+          },
+          {
+            "type": "rel_u",
+            "from": "a",
+            "to": "c",
+            "label": {
+              "text": "U"
+            },
+            "techn": {
+              "text": ""
+            },
+            "descr": {
+              "text": ""
+            }
+          },
+          {
+            "type": "rel_d",
+            "from": "c",
+            "to": "a",
+            "label": {
+              "text": "D"
+            },
+            "techn": {
+              "text": ""
+            },
+            "descr": {
+              "text": ""
+            }
+          },
+          {
+            "type": "rel_b",
+            "from": "c",
+            "to": "b",
+            "label": {
+              "text": "B"
+            },
+            "techn": {
+              "text": ""
+            },
+            "descr": {
+              "text": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "rel-index",
+      "source": "C4Dynamic\nPerson(a,\"A\")\nSystem(b,\"B\")\nRelIndex(7,a,b,\"R\",\"T\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Dynamic",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "b",
+            "label": {
+              "text": "B"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": [
+          {
+            "type": "rel",
+            "from": "a",
+            "to": "b",
+            "label": {
+              "text": "R"
+            },
+            "techn": {
+              "text": "T"
+            },
+            "descr": {
+              "text": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "empty-attributes",
+      "source": "C4Context\nPerson(,A)\nSystem(a,)",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "",
+            "label": {
+              "text": "A)\nSystem(a"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "bare-attributes",
+      "source": "C4Context\nPerson(a, Alice Smith, Description here)",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 3:\n..., Description here)\n----------------------^\nExpecting 'NEWLINE', 'EOF', 'LBRACE', 'RBRACE', 'STR', 'STR_KEY', 'ATTRIBUTE', 'ATTRIBUTE_EMPTY', got '1'",
+        "hash": {
+          "text": "",
+          "token": 1,
+          "line": 2,
+          "loc": {
+            "first_line": 2,
+            "last_line": 3,
+            "first_column": 22,
+            "last_column": 0
+          },
+          "expected": [
+            "'NEWLINE'",
+            "'EOF'",
+            "'LBRACE'",
+            "'RBRACE'",
+            "'STR'",
+            "'STR_KEY'",
+            "'ATTRIBUTE'",
+            "'ATTRIBUTE_EMPTY'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "quoted-comma",
+      "source": "C4Context\nPerson(a, \"Alice, Smith\", \"A \\\"quoted\\\" user\")",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 3:\n...A \\\"quoted\\\" user\")\n----------------------^\nExpecting 'NEWLINE', 'EOF', 'LBRACE', 'RBRACE', 'STR', 'STR_KEY', 'ATTRIBUTE', 'ATTRIBUTE_EMPTY', got '1'",
+        "hash": {
+          "text": "",
+          "token": 1,
+          "line": 2,
+          "loc": {
+            "first_line": 2,
+            "last_line": 3,
+            "first_column": 31,
+            "last_column": 0
+          },
+          "expected": [
+            "'NEWLINE'",
+            "'EOF'",
+            "'LBRACE'",
+            "'RBRACE'",
+            "'STR'",
+            "'STR_KEY'",
+            "'ATTRIBUTE'",
+            "'ATTRIBUTE_EMPTY'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "key-value",
+      "source": "C4Context\nPerson(a,A,$descr=\"Desc\",$sprite=\"icon\",$tags=\"tag\",$link=\"https://example.org\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": "Desc"
+            },
+            "sprite": "icon",
+            "tags": "tag",
+            "link": "https://example.org",
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "duplicate-shape",
+      "source": "C4Context\nPerson(a,\"A\",\"One\")\nSystem(a,\"B\",\"Two\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "B"
+            },
+            "descr": {
+              "text": "Two"
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "duplicate-rel",
+      "source": "C4Context\nPerson(a,\"A\")\nSystem(b,\"B\")\nRel(a,b,\"One\")\nBiRel(a,b,\"Two\",\"T\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          },
+          {
+            "alias": "b",
+            "label": {
+              "text": "B"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": [
+          {
+            "type": "birel",
+            "from": "a",
+            "to": "b",
+            "label": {
+              "text": "Two"
+            },
+            "techn": {
+              "text": "T"
+            },
+            "descr": {
+              "text": ""
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "styles",
+      "source": "C4Context\nPerson(a,\"A\")\nSystem(b,\"B\")\nRel(a,b,\"R\")\nUpdateElementStyle(a,$bgColor=\"#ff0000\",$fontColor=\"#00ff00\",$borderColor=\"#0000ff\")\nUpdateRelStyle(a,b,$textColor=\"#123456\",$lineColor=\"#654321\",$offsetX=\"10\",$offsetY=\"-5\")\nUpdateLayoutConfig($c4ShapeInRow=\"2\",$c4BoundaryInRow=\"1\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 2,
+        "boundaryInRow": 1,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global",
+            "bgColor": "#ff0000",
+            "fontColor": "#00ff00",
+            "borderColor": "#0000ff"
+          },
+          {
+            "alias": "b",
+            "label": {
+              "text": "B"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "system"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": [
+          {
+            "type": "rel",
+            "from": "a",
+            "to": "b",
+            "label": {
+              "text": "R"
+            },
+            "techn": {
+              "text": ""
+            },
+            "descr": {
+              "text": ""
+            },
+            "textColor": "#123456",
+            "lineColor": "#654321",
+            "offsetX": 10,
+            "offsetY": -5
+          }
+        ]
+      }
+    },
+    {
+      "id": "style-positional",
+      "source": "C4Context\nPerson(a,\"A\")\nUpdateElementStyle(a,#f00,#0f0,#00f,\"true\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global",
+            "bgColor": "#f00",
+            "fontColor": "#0f0",
+            "borderColor": "#00f",
+            "shadowing": "true"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "layout-invalid",
+      "source": "C4Context\nUpdateLayoutConfig(0,\"abc\")\nPerson(a,\"A\")",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "missing-newline",
+      "source": "C4Context Person(a,A)",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 1:\nC4Context Person(a,A)\n----------^\nExpecting 'NEWLINE', got 'PERSON'",
+        "hash": {
+          "text": "Person",
+          "token": "PERSON",
+          "line": 0,
+          "loc": {
+            "first_line": 1,
+            "last_line": 1,
+            "first_column": 0,
+            "last_column": 9
+          },
+          "expected": [
+            "'NEWLINE'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "missing-close",
+      "source": "C4Context\nPerson(a,A",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 3:\n...4ContextPerson(a,A\n---------------------^\nExpecting 'NEWLINE', 'EOF', 'LBRACE', 'RBRACE', 'STR', 'STR_KEY', 'ATTRIBUTE', 'ATTRIBUTE_EMPTY', got '1'",
+        "hash": {
+          "text": "",
+          "token": 1,
+          "line": 2,
+          "loc": {
+            "first_line": 2,
+            "last_line": 3,
+            "first_column": 9,
+            "last_column": 0
+          },
+          "expected": [
+            "'NEWLINE'",
+            "'EOF'",
+            "'LBRACE'",
+            "'RBRACE'",
+            "'STR'",
+            "'STR_KEY'",
+            "'ATTRIBUTE'",
+            "'ATTRIBUTE_EMPTY'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "extra-close",
+      "source": "C4Context\nPerson(a,A))",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 3:\n...ontextPerson(a,A))\n---------------------^\nExpecting 'NEWLINE', 'EOF', 'LBRACE', 'RBRACE', 'STR', 'STR_KEY', 'ATTRIBUTE', 'ATTRIBUTE_EMPTY', got '1'",
+        "hash": {
+          "text": "",
+          "token": 1,
+          "line": 2,
+          "loc": {
+            "first_line": 2,
+            "last_line": 3,
+            "first_column": 9,
+            "last_column": 0
+          },
+          "expected": [
+            "'NEWLINE'",
+            "'EOF'",
+            "'LBRACE'",
+            "'RBRACE'",
+            "'STR'",
+            "'STR_KEY'",
+            "'ATTRIBUTE'",
+            "'ATTRIBUTE_EMPTY'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "unknown",
+      "source": "C4Context\nUnknown(a,A)",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Lexical error on line 2. Unrecognized text.\nC4ContextUnknown(a,A)\n---------^",
+        "hash": {
+          "text": "",
+          "token": null,
+          "line": 1,
+          "loc": null,
+          "expected": null
+        }
+      }
+    },
+    {
+      "id": "semicolon",
+      "source": "C4Context\nPerson(a,A);",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 3:\n...ontextPerson(a,A);\n---------------------^\nExpecting 'NEWLINE', 'EOF', 'LBRACE', 'RBRACE', 'STR', 'STR_KEY', 'ATTRIBUTE', 'ATTRIBUTE_EMPTY', got '1'",
+        "hash": {
+          "text": "",
+          "token": 1,
+          "line": 2,
+          "loc": {
+            "first_line": 2,
+            "last_line": 3,
+            "first_column": 9,
+            "last_column": 0
+          },
+          "expected": [
+            "'NEWLINE'",
+            "'EOF'",
+            "'LBRACE'",
+            "'RBRACE'",
+            "'STR'",
+            "'STR_KEY'",
+            "'ATTRIBUTE'",
+            "'ATTRIBUTE_EMPTY'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty",
+      "source": "C4Context",
+      "accepted": false,
+      "error": {
+        "name": "Error",
+        "message": "Parse error on line 2:\nC4Context\n---------^\nExpecting 'title', 'accDescription', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'ENTERPRISE_BOUNDARY', 'SYSTEM_BOUNDARY', 'BOUNDARY', 'CONTAINER_BOUNDARY', 'NODE', 'NODE_L', 'NODE_R', 'PERSON', 'PERSON_EXT', 'SYSTEM', 'SYSTEM_DB', 'SYSTEM_QUEUE', 'SYSTEM_EXT', 'SYSTEM_EXT_DB', 'SYSTEM_EXT_QUEUE', 'CONTAINER', 'CONTAINER_DB', 'CONTAINER_QUEUE', 'CONTAINER_EXT', 'CONTAINER_EXT_DB', 'CONTAINER_EXT_QUEUE', 'COMPONENT', 'COMPONENT_DB', 'COMPONENT_QUEUE', 'COMPONENT_EXT', 'COMPONENT_EXT_DB', 'COMPONENT_EXT_QUEUE', 'REL', 'BIREL', 'REL_U', 'REL_D', 'REL_L', 'REL_R', 'REL_B', 'REL_INDEX', 'UPDATE_EL_STYLE', 'UPDATE_REL_STYLE', 'UPDATE_LAYOUT_CONFIG', got 'EOF'",
+        "hash": {
+          "text": "",
+          "token": "EOF",
+          "line": 1,
+          "loc": {
+            "first_line": 1,
+            "last_line": 2,
+            "first_column": 9,
+            "last_column": 0
+          },
+          "expected": [
+            "'title'",
+            "'accDescription'",
+            "'acc_title'",
+            "'acc_descr'",
+            "'acc_descr_multiline_value'",
+            "'ENTERPRISE_BOUNDARY'",
+            "'SYSTEM_BOUNDARY'",
+            "'BOUNDARY'",
+            "'CONTAINER_BOUNDARY'",
+            "'NODE'",
+            "'NODE_L'",
+            "'NODE_R'",
+            "'PERSON'",
+            "'PERSON_EXT'",
+            "'SYSTEM'",
+            "'SYSTEM_DB'",
+            "'SYSTEM_QUEUE'",
+            "'SYSTEM_EXT'",
+            "'SYSTEM_EXT_DB'",
+            "'SYSTEM_EXT_QUEUE'",
+            "'CONTAINER'",
+            "'CONTAINER_DB'",
+            "'CONTAINER_QUEUE'",
+            "'CONTAINER_EXT'",
+            "'CONTAINER_EXT_DB'",
+            "'CONTAINER_EXT_QUEUE'",
+            "'COMPONENT'",
+            "'COMPONENT_DB'",
+            "'COMPONENT_QUEUE'",
+            "'COMPONENT_EXT'",
+            "'COMPONENT_EXT_DB'",
+            "'COMPONENT_EXT_QUEUE'",
+            "'REL'",
+            "'BIREL'",
+            "'REL_U'",
+            "'REL_D'",
+            "'REL_L'",
+            "'REL_R'",
+            "'REL_B'",
+            "'REL_INDEX'",
+            "'UPDATE_EL_STYLE'",
+            "'UPDATE_REL_STYLE'",
+            "'UPDATE_LAYOUT_CONFIG'"
+          ]
+        }
+      }
+    },
+    {
+      "id": "title-only",
+      "source": "C4Context\ntitle Heading",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "Heading",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "C4Context\r\nPerson(a,\"A\")\r\n",
+      "accepted": true,
+      "database": {
+        "c4Type": "C4Context",
+        "title": "",
+        "accTitle": "",
+        "accDescr": "",
+        "shapeInRow": 4,
+        "boundaryInRow": 2,
+        "shapes": [
+          {
+            "alias": "a",
+            "label": {
+              "text": "A"
+            },
+            "descr": {
+              "text": ""
+            },
+            "typeC4Shape": {
+              "text": "person"
+            },
+            "parentBoundary": "global"
+          }
+        ],
+        "boundaries": [
+          {
+            "alias": "global",
+            "label": {
+              "text": "global"
+            },
+            "type": {
+              "text": "global"
+            },
+            "tags": null,
+            "link": null,
+            "parentBoundary": ""
+          }
+        ],
+        "relations": []
+      }
+    }
+  ],
+  "fixtureSha256": "a99f31961d48cc1fb4f5b6ebfea09fe3eeb7c64217cdc7c490eaf277d91fa718"
+}

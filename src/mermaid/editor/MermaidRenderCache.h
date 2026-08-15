@@ -30,6 +30,7 @@
 #include <QString>
 #include <QFutureWatcher>
 #include <QTimer>
+#include <QUrl>
 
 #include <memory>
 
@@ -112,6 +113,9 @@ public:
   // standalone output (the default index is zero).
   static MermaidSvgRenderResult renderMermaidSourceToSvg(
       const QString& source, qsizetype instanceIndex = 0);
+  static MermaidSvgRenderResult renderMermaidSourceToSvg(
+      const QString& source, qsizetype instanceIndex,
+      const QUrl& documentUrl, const QString& diagramId = {});
   static QString renderMermaidSourceToSvgDataUrl(
       const QString& source, qsizetype instanceIndex = 0);
 
@@ -124,6 +128,8 @@ private:
   // supported family. Unknown families become Unsupported; parser/layout
   // exceptions become Error.
   static MermaidRenderEntry renderSource(const QString& source, const QString& theme);
+  static MermaidRenderEntry renderSourceDispatch(
+      const QString& source, const QString& theme);
 
   void launchWorker(const MermaidRenderKey& key, const QString& source);
   void cancelDebouncedRequest(bool removeLoadingEntry);

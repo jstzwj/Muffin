@@ -1,4 +1,5 @@
 #include "mermaid/classdiagram/ClassLayout.h"
+#include "mermaid/rough/RoughPaint.h"
 
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/flowchart/Flowchart.h"
@@ -106,6 +107,14 @@ ClassTextMeasurement measureClassText(
       ? flowchart::measureFlowSvgTextBounds(
             document, options.fontFamily, options.fontPixelSize)
       : QRectF(QPointF(0.0, 0.0), layout.size);
+  if (!svgText) {
+    // classBox measures foreignObject inline boxes before constructing the
+    // outer RoughJS rectangle. Blink shapes each formatted run in OpenType
+    // design units and rounds the resulting box to a 1/64px LayoutUnit; Qt's
+    // DirectWrite advance can differ by one fractional cell.
+    measured.bounds.setWidth(flowchart::measureChromiumInlineLayoutWidth(
+        document, options.fontFamily, options.fontPixelSize));
+  }
   return measured;
 }
 
@@ -374,11 +383,22 @@ ClassLayoutMeasurements measureClassLayoutLabels(
 
 ClassDagreMeasurements measureClassDagreInput(
     const ClassLayoutInput& input, const QVector<ClassBoxGeometry>& boxes,
-    ClassLabelMeasureOptions options) {
+    ClassLabelMeasureOptions options, bool handDrawn,
+    quint32 handDrawnSeed) {
   ClassDagreMeasurements result;
   QHash<QString, QSizeF> classBoxes;
-  for (const ClassBoxGeometry& box : boxes)
-    classBoxes.insert(box.id, box.bounds.size());
+  for (const ClassBoxGeometry& box : boxes) {
+    if (!handDrawn) {
+      classBoxes.insert(box.id, box.bounds.size());
+      continue;
+    }
+    // classBox calls updateNodeBounds(node, rect) before Dagre. Divider paths
+    // remain children of the group and affect final getBBox/viewBox, but not
+    // the width/height supplied to the layout engine.
+    const QRectF painted = rough::tightBounds(rough::roughRectDrawable(
+        box.outerRect, handDrawnSeed));
+    classBoxes.insert(box.id, painted.size());
+  }
   for (const ClassLayoutNodeInput& node : input.nodes) {
     if (node.isGroup) continue;
     if (node.shape == QLatin1String("classBox")) {
@@ -387,9 +407,16 @@ ClassDagreMeasurements measureClassDagreInput(
     }
     const QSizeF label = measureClassText(node.label, {}, options).bounds.size();
     const qreal padding = node.padding.value_or(0.0);
-    result.nodes.insert(node.id,
-        QSizeF(label.width() + padding * 2.0,
-               label.height() + padding * 2.0));
+    const QSizeF natural(label.width() + padding * 2.0,
+                         label.height() + padding * 2.0);
+    if (handDrawn) {
+      const QRectF local(-natural.width() / 2.0, -natural.height() / 2.0,
+                         natural.width(), natural.height());
+      result.nodes.insert(node.id, rough::tightBounds(
+          rough::roughRectDrawable(local, handDrawnSeed)).size());
+    } else {
+      result.nodes.insert(node.id, natural);
+    }
   }
   for (const ClassLayoutEdgeInput& edge : input.edges) {
     if (edge.label.isEmpty()) {
@@ -403,7 +430,8 @@ ClassDagreMeasurements measureClassDagreInput(
 }
 
 ClassPlacementResult layoutClassDiagramDagre(
-    const ClassLayoutInput& input, const ClassDagreMeasurements& measurements) {
+    const ClassLayoutInput& input, const ClassDagreMeasurements& measurements,
+    bool handDrawn, quint32 handDrawnSeed) {
   constexpr qreal kDagreMarginX = 8.0;
   // All class layouts (flat + compound + self-edge) route through the shared
   // flowchart dagre pipeline. The former direct-dagre flat branch produced
@@ -444,6 +472,20 @@ ClassPlacementResult layoutClassDiagramDagre(
     options.nodeSpacing = input.nodeSpacing;
     options.rankSpacing = input.rankSpacing;
     options.measuredEdgeLabels = measurements.edgeLabels;
+    if (handDrawn) {
+      options.preserveRecursiveSvgFrame = true;
+      options.clusterSizeTransform = [handDrawnSeed](
+          const QString&, const QRectF& bounds) {
+        rough::Options clusterOptions = rough::nodeOptions(handDrawnSeed, 1.3);
+        clusterOptions.fillWeight = 3.0;
+        // Generic renderer creates its root SVG graph at Dagre's 8px margin.
+        // hachure-fill rotates about (0,0) and rounds scan intersections, so
+        // this frame is observably not translation invariant.
+        return rough::tightBounds(rough::roughRoundedRectPathDrawable(
+            bounds.translated(8.0, 8.0), 0.0, clusterOptions)).size();
+      };
+    }
+    options.preserveDagreCoordinates = true;
     const flowchart::FlowLayoutResult placed =
         flowchart::layoutFlowchartNodesDagre(projected, measurements.nodes, options);
     ClassPlacementResult result;
@@ -460,7 +502,8 @@ ClassPlacementResult layoutClassDiagramDagre(
     }
     for (const flowchart::FlowLayoutCluster& cluster : placed.clusters)
       result.clusters.append({cluster.id, cluster.x, cluster.y,
-                              cluster.width, cluster.height});
+                              cluster.width, cluster.height,
+                              cluster.logicalWidth, cluster.logicalHeight});
     QPointF origin;
     const auto firstSemantic = std::find_if(input.nodes.cbegin(), input.nodes.cend(),
         [](const ClassLayoutNodeInput& node) { return !node.isGroup; });
@@ -469,6 +512,7 @@ ClassPlacementResult layoutClassDiagramDagre(
           [&](const ClassPlacementNode& node) { return node.id == firstSemantic->id; });
       if (firstPlaced != result.nodes.cend()) origin = QPointF(firstPlaced->x, firstPlaced->y);
     }
+    result.sourceOrigin = origin;
     for (ClassPlacementNode& node : result.nodes) {
       node.x -= origin.x();
       node.y -= origin.y();

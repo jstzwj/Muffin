@@ -243,19 +243,6 @@ LaneProps laneProps(const EventModelingFrame& frame,
   return {200, QStringLiteral("Events")};
 }
 
-QPair<QString, QString> boxPaint(const EventModelingFrame& frame,
-                                 const EventModelingSceneStyle& style) {
-  const QString& type = frame.modelEntityType;
-  if (type == QLatin1String("ui")) return {style.uiFill, style.uiStroke};
-  if (type == QLatin1String("pcr") || type == QLatin1String("processor"))
-    return {style.processorFill, style.processorStroke};
-  if (type == QLatin1String("rmo") || type == QLatin1String("readmodel"))
-    return {style.readModelFill, style.readModelStroke};
-  if (type == QLatin1String("cmd") || type == QLatin1String("command"))
-    return {style.commandFill, style.commandStroke};
-  return {style.eventFill, style.eventStroke};
-}
-
 QJsonObject rectJson(const QRectF& rect) {
   return {{QStringLiteral("x"), rect.x()},
           {QStringLiteral("y"), rect.y()},
@@ -270,9 +257,23 @@ void EventModelingScene::paint(QPainter& painter,
   paintEventModelingScene(*this, painter, options);
 }
 
+QPair<QString, QString> eventModelingBoxPaint(
+    const EventModelingFrame& frame, const EventModelingSceneStyle& style) {
+  const QString& type = frame.modelEntityType;
+  if (type == QLatin1String("ui")) return {style.uiFill, style.uiStroke};
+  if (type == QLatin1String("pcr") || type == QLatin1String("processor"))
+    return {style.processorFill, style.processorStroke};
+  if (type == QLatin1String("rmo") || type == QLatin1String("readmodel"))
+    return {style.readModelFill, style.readModelStroke};
+  if (type == QLatin1String("cmd") || type == QLatin1String("command"))
+    return {style.commandFill, style.commandStroke};
+  return {style.eventFill, style.eventStroke};
+}
+
 EventModelingScene buildEventModelingScene(const EventModelingData& data,
                                             EventModelingConfig config,
-                                            EventModelingSceneStyle style) {
+                                            EventModelingSceneStyle style,
+                                            const EventModelingCssOverrides* css) {
   EventModelingScene scene;
   scene.config = config;
   scene.style = std::move(style);
@@ -334,7 +335,7 @@ EventModelingScene buildEventModelingScene(const EventModelingData& data,
     box.foreignObjectRect = QRectF(x + kBoxPadding, 0.0,
                                    width - 2.0 * kBoxPadding,
                                    height - 2.0 * kBoxPadding);
-    const auto paints = boxPaint(frame, scene.style);
+    const auto paints = eventModelingBoxPaint(frame, scene.style);
     box.fill = paints.first;
     box.stroke = paints.second;
     box.contentHtml = text.html;
@@ -388,17 +389,30 @@ EventModelingScene buildEventModelingScene(const EventModelingData& data,
                                  [&](const auto& lane) { return lane.index == index; });
     return it == scene.swimlanes.cend() ? nullptr : &*it;
   };
-  for (auto& lane : scene.swimlanes) {
+  for (qsizetype laneIndex = 0; laneIndex < scene.swimlanes.size();
+       ++laneIndex) {
+    auto& lane = scene.swimlanes[laneIndex];
     lane.rect = QRectF(0.0, lane.y, maxRight + kSwimlanePadding, lane.height);
     lane.labelPosition = QPointF(30.0, lane.y + 30.0);
+    if (css && laneIndex < css->swimlanes.size()) {
+      lane.rectCss = css->swimlanes.at(laneIndex).rect;
+      lane.textCss = css->swimlanes.at(laneIndex).text;
+    }
   }
-  for (auto& box : scene.boxes) {
+  for (qsizetype boxIndex = 0; boxIndex < scene.boxes.size(); ++boxIndex) {
+    auto& box = scene.boxes[boxIndex];
     const auto* lane = laneFor(box.swimlaneIndex);
     const qreal y = (lane ? lane->y : 0.0) + kSwimlanePadding;
     box.rect.moveTop(y);
     box.foreignObjectRect.moveTop(y + 10.0);
+    if (css && boxIndex < css->boxes.size()) {
+      box.rectCss = css->boxes.at(boxIndex).rect;
+      box.labelCss = css->boxes.at(boxIndex).label;
+    }
   }
-  for (auto& relation : scene.relations) {
+  for (qsizetype relationIndex = 0; relationIndex < scene.relations.size();
+       ++relationIndex) {
+    auto& relation = scene.relations[relationIndex];
     const auto& source = scene.boxes.at(relation.sourceBox);
     const auto& target = scene.boxes.at(relation.targetBox);
     const auto* sourceLane = laneFor(source.swimlaneIndex);
@@ -411,6 +425,8 @@ EventModelingScene buildEventModelingScene(const EventModelingData& data,
     const QPointF end(target.rect.x() + target.rect.width() / 3.0,
                       upwards ? targetLaneY + target.rect.height() : targetLaneY);
     relation.line = QLineF(start, end);
+    if (css && relationIndex < css->relations.size())
+      relation.css = css->relations.at(relationIndex);
     relation.pathData = QStringLiteral("M%1 %2 L%3 %4")
                             .arg(editor::jsNumberToString(start.x()),
                                  editor::jsNumberToString(start.y()),
@@ -418,6 +434,7 @@ EventModelingScene buildEventModelingScene(const EventModelingData& data,
                                  editor::jsNumberToString(end.y()));
   }
 
+  if (css) scene.markerCss = css->marker;
   if (scene.swimlanes.isEmpty()) {
     scene.contentBounds = QRectF();
   } else {

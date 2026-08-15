@@ -1,0 +1,1053 @@
+{
+  "provenance": {
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "flowModule": {
+      "name": "flowDiagram-QQNUYIFB.mjs",
+      "sha256": "6a211d64c6dff33eda21df86fd91cce5cc50691319270878397d1d1f58885848"
+    },
+    "chrome": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "fontSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "registeredLayouts": [
+      "dagre",
+      "swimlane",
+      "cose-bilkent"
+    ],
+    "elkPackageRegistered": false
+  },
+  "cases": [
+    {
+      "id": "explicit-lr",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false}}}%%\nflowchart-elk LR\nA[Alpha] --> B{Choice}\nB -->|yes| C((Done))\nB -.->|no| D[Retry]",
+      "dagreSource": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false}}}%%\nflowchart LR\nA[Alpha] --> B{Choice}\nB -->|yes| C((Done))\nB -.->|no| D[Retry]",
+      "detected": "flowchart-elk",
+      "dagreDetected": "flowchart-v2",
+      "fallbackWarning": "flowchart-elk was moved to an external package in Mermaid v11. Please refer [release notes](https://github.com/mermaid-js/mermaid/releases/tag/v11.0.0) for more details. This diagram will be rendered using `dagre` layout as a fallback.",
+      "root": {
+        "viewBox": "0 0 453.2933349609375 175.28125",
+        "width": "100%",
+        "height": null,
+        "style": "max-width: 453.2933349609375px;",
+        "roleDescription": "flowchart-elk",
+        "client": [
+          453.28125,
+          175.265625
+        ]
+      },
+      "nodes": [
+        {
+          "id": "elk-explicit-lr-flowchart-A-0",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            59.53125,
+            87.960938
+          ],
+          "bbox": [
+            -51.53125,
+            -27,
+            103.0625,
+            54
+          ],
+          "text": "Alpha"
+        },
+        {
+          "id": "elk-explicit-lr-flowchart-B-1",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            213.320313,
+            87.960938
+          ],
+          "bbox": [
+            -51.757813,
+            -52.257813,
+            104.515625,
+            104.515625
+          ],
+          "text": "Choice"
+        },
+        {
+          "id": "elk-explicit-lr-flowchart-C-3",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            395.52771,
+            35.640625
+          ],
+          "bbox": [
+            -27.640625,
+            -27.640625,
+            55.28125,
+            55.28125
+          ],
+          "text": "Done"
+        },
+        {
+          "id": "elk-explicit-lr-flowchart-D-5",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            395.52771,
+            140.28125
+          ],
+          "bbox": [
+            -49.765625,
+            -27,
+            99.53125,
+            54
+          ],
+          "text": "Retry"
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M111.063,87.961L115.229,87.961C119.396,87.961,127.729,87.961,135.396,87.961C143.063,87.961,150.063,87.961,153.563,87.961L157.063,87.961",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M246.679,69.062L256.511,63.492C266.343,57.921,286.006,46.781,305.541,41.211C325.076,35.641,344.481,35.641,354.184,35.641L363.887,35.641",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-dotted edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M246.679,106.86L256.511,112.43C266.343,118,286.006,129.141,301.854,134.711C317.701,140.281,329.731,140.281,335.747,140.281L341.762,140.281",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        }
+      ],
+      "labels": [
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            305.670105,
+            35.640625
+          ],
+          "bbox": [
+            -15.091988,
+            -13,
+            30.183975,
+            26
+          ],
+          "text": "yes"
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            305.670105,
+            140.28125
+          ],
+          "bbox": [
+            -11.943993,
+            -13,
+            23.887985,
+            26
+          ],
+          "text": "no"
+        }
+      ],
+      "pixel": {
+        "file": "explicit-lr.png",
+        "sha256": "98c22a889f4dfa8fb4d74e42fba947bcae262e09449ba6bd22198348cc224c05"
+      }
+    },
+    {
+      "id": "explicit-subgraph",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false}}}%%\nflowchart-elk TB\nsubgraph S[Services]\nA[API] --> B[(Store)]\nend\nC[Client] --> A",
+      "dagreSource": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false}}}%%\nflowchart TB\nsubgraph S[Services]\nA[API] --> B[(Store)]\nend\nC[Client] --> A",
+      "detected": "flowchart-elk",
+      "dagreDetected": "flowchart-v2",
+      "fallbackWarning": "flowchart-elk was moved to an external package in Mermaid v11. Please refer [release notes](https://github.com/mermaid-js/mermaid/releases/tag/v11.0.0) for more details. This diagram will be rendered using `dagre` layout as a fallback.",
+      "root": {
+        "viewBox": "0 0 171.328125 335.7897644042969",
+        "width": "100%",
+        "height": null,
+        "style": "max-width: 171.328125px;",
+        "roleDescription": "flowchart-elk",
+        "client": [
+          171.328125,
+          335.78125
+        ]
+      },
+      "nodes": [
+        {
+          "id": "elk-explicit-subgraph-flowchart-A-0",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            85.664062,
+            164
+          ],
+          "bbox": [
+            -42.664063,
+            -27,
+            85.328125,
+            54
+          ],
+          "text": "API"
+        },
+        {
+          "id": "elk-explicit-subgraph-flowchart-B-1",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            85.664062,
+            271.894897
+          ],
+          "bbox": [
+            -27.28125,
+            -30.894884,
+            54.5625,
+            61.789764
+          ],
+          "text": "Store"
+        },
+        {
+          "id": "elk-explicit-subgraph-flowchart-C-2",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            85.664062,
+            35
+          ],
+          "bbox": [
+            -51.53125,
+            -27,
+            103.0625,
+            54
+          ],
+          "text": "Client"
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "cluster",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            8,
+            110.999573,
+            155.328125,
+            216.790192
+          ],
+          "text": "Services"
+        }
+      ],
+      "edges": [
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M85.664,191L85.664,195.167C85.664,199.333,85.664,207.667,85.664,215.333C85.664,223,85.664,230,85.664,233.5L85.664,237",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M85.664,62L85.664,66.167C85.664,70.333,85.664,78.667,85.664,87C85.664,95.333,85.664,103.667,85.664,111.333C85.664,119,85.664,126,85.664,129.5L85.664,133",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        }
+      ],
+      "labels": [
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        }
+      ],
+      "pixel": {
+        "file": "explicit-subgraph.png",
+        "sha256": "75f23e61808a4d1062c1cd1a8ba1fc9f61563326f52fe38176bcdcd9cac9d5ec"
+      }
+    },
+    {
+      "id": "default-renderer-flowchart",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false,\"defaultRenderer\":\"elk\"}}}%%\nflowchart LR\nA --> B --> C",
+      "dagreSource": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false,\"defaultRenderer\":\"dagre-wrapper\"}}}%%\nflowchart LR\nA --> B --> C",
+      "detected": "flowchart-v2",
+      "dagreDetected": "flowchart-v2",
+      "fallbackWarning": "flowchart-elk was moved to an external package in Mermaid v11. Please refer [release notes](https://github.com/mermaid-js/mermaid/releases/tag/v11.0.0) for more details. This diagram will be rendered using `dagre` layout as a fallback.",
+      "root": {
+        "viewBox": "0 0 326.765625 70",
+        "width": "100%",
+        "height": null,
+        "style": "max-width: 326.765625px;",
+        "roleDescription": "flowchart-elk",
+        "client": [
+          326.765625,
+          70
+        ]
+      },
+      "nodes": [
+        {
+          "id": "elk-default-renderer-flowchart-flowchart-A-0",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            43.117188,
+            35
+          ],
+          "bbox": [
+            -35.117188,
+            -27,
+            70.234375,
+            54
+          ],
+          "text": "A"
+        },
+        {
+          "id": "elk-default-renderer-flowchart-flowchart-B-1",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            163.4375,
+            35
+          ],
+          "bbox": [
+            -35.203125,
+            -27,
+            70.40625,
+            54
+          ],
+          "text": "B"
+        },
+        {
+          "id": "elk-default-renderer-flowchart-flowchart-C-2",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            283.703125,
+            35
+          ],
+          "bbox": [
+            -35.0625,
+            -27,
+            70.125,
+            54
+          ],
+          "text": "C"
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M78.234,35L82.401,35C86.568,35,94.901,35,102.568,35C110.234,35,117.234,35,120.734,35L124.234,35",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M198.641,35L202.807,35C206.974,35,215.307,35,222.974,35C230.641,35,237.641,35,241.141,35L244.641,35",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        }
+      ],
+      "labels": [
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "default-renderer-graph",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false,\"defaultRenderer\":\"elk\"}}}%%\ngraph TB\nA --> B --> C",
+      "dagreSource": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false,\"defaultRenderer\":\"dagre-wrapper\"}}}%%\ngraph TB\nA --> B --> C",
+      "detected": "flowchart",
+      "dagreDetected": "flowchart",
+      "fallbackWarning": "flowchart-elk was moved to an external package in Mermaid v11. Please refer [release notes](https://github.com/mermaid-js/mermaid/releases/tag/v11.0.0) for more details. This diagram will be rendered using `dagre` layout as a fallback.",
+      "root": {
+        "viewBox": "0 0 86.40625 278",
+        "width": "100%",
+        "height": null,
+        "style": "max-width: 86.40625px;",
+        "roleDescription": "flowchart-elk",
+        "client": [
+          86.40625,
+          278
+        ]
+      },
+      "nodes": [
+        {
+          "id": "elk-default-renderer-graph-flowchart-A-0",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            43.203125,
+            35
+          ],
+          "bbox": [
+            -35.117188,
+            -27,
+            70.234375,
+            54
+          ],
+          "text": "A"
+        },
+        {
+          "id": "elk-default-renderer-graph-flowchart-B-1",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            43.203125,
+            139
+          ],
+          "bbox": [
+            -35.203125,
+            -27,
+            70.40625,
+            54
+          ],
+          "text": "B"
+        },
+        {
+          "id": "elk-default-renderer-graph-flowchart-C-2",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            43.203125,
+            243
+          ],
+          "bbox": [
+            -35.0625,
+            -27,
+            70.125,
+            54
+          ],
+          "text": "C"
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M43.203,62L43.203,66.167C43.203,70.333,43.203,78.667,43.203,86.333C43.203,94,43.203,101,43.203,104.5L43.203,108",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M43.203,166L43.203,170.167C43.203,174.333,43.203,182.667,43.203,190.333C43.203,198,43.203,205,43.203,208.5L43.203,212",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        }
+      ],
+      "labels": [
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "top-layout-elk",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false},\"layout\":\"elk\"}}%%\nflowchart LR\nA --> B --> C",
+      "dagreSource": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false},\"layout\":\"dagre\"}}%%\nflowchart LR\nA --> B --> C",
+      "detected": "flowchart-v2",
+      "dagreDetected": "flowchart-v2",
+      "fallbackWarning": "flowchart-elk was moved to an external package in Mermaid v11. Please refer [release notes](https://github.com/mermaid-js/mermaid/releases/tag/v11.0.0) for more details. This diagram will be rendered using `dagre` layout as a fallback.",
+      "root": {
+        "viewBox": "0 0 326.765625 70",
+        "width": "100%",
+        "height": null,
+        "style": "max-width: 326.765625px;",
+        "roleDescription": "flowchart-v2",
+        "client": [
+          326.765625,
+          70
+        ]
+      },
+      "nodes": [
+        {
+          "id": "elk-top-layout-elk-flowchart-A-0",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            43.117188,
+            35
+          ],
+          "bbox": [
+            -35.117188,
+            -27,
+            70.234375,
+            54
+          ],
+          "text": "A"
+        },
+        {
+          "id": "elk-top-layout-elk-flowchart-B-1",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            163.4375,
+            35
+          ],
+          "bbox": [
+            -35.203125,
+            -27,
+            70.40625,
+            54
+          ],
+          "text": "B"
+        },
+        {
+          "id": "elk-top-layout-elk-flowchart-C-2",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            283.703125,
+            35
+          ],
+          "bbox": [
+            -35.0625,
+            -27,
+            70.125,
+            54
+          ],
+          "text": "C"
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M78.234,35L82.401,35C86.568,35,94.901,35,102.568,35C110.234,35,117.234,35,120.734,35L124.234,35",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M198.641,35L202.807,35C206.974,35,215.307,35,222.974,35C230.641,35,237.641,35,241.141,35L244.641,35",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        }
+      ],
+      "labels": [
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "elk-options-inert",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false},\"elk\":{\"mergeEdges\":true,\"nodePlacementStrategy\":\"SIMPLE\",\"cycleBreakingStrategy\":\"DEPTH_FIRST\",\"forceNodeModelOrder\":true,\"considerModelOrder\":\"NODES_AND_EDGES\"}}}%%\nflowchart-elk LR\nA --> B\nA --> C\nB --> D\nC --> D",
+      "dagreSource": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false}}}%%\nflowchart LR\nA --> B\nA --> C\nB --> D\nC --> D",
+      "detected": "flowchart-elk",
+      "dagreDetected": "flowchart-v2",
+      "fallbackWarning": "flowchart-elk was moved to an external package in Mermaid v11. Please refer [release notes](https://github.com/mermaid-js/mermaid/releases/tag/v11.0.0) for more details. This diagram will be rendered using `dagre` layout as a fallback.",
+      "root": {
+        "viewBox": "0 0 328.328125 174",
+        "width": "100%",
+        "height": null,
+        "style": "max-width: 328.328125px;",
+        "roleDescription": "flowchart-elk",
+        "client": [
+          328.328125,
+          174
+        ]
+      },
+      "nodes": [
+        {
+          "id": "elk-elk-options-inert-flowchart-A-0",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            43.117188,
+            87
+          ],
+          "bbox": [
+            -35.117188,
+            -27,
+            70.234375,
+            54
+          ],
+          "text": "A"
+        },
+        {
+          "id": "elk-elk-options-inert-flowchart-B-1",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            163.4375,
+            35
+          ],
+          "bbox": [
+            -35.203125,
+            -27,
+            70.40625,
+            54
+          ],
+          "text": "B"
+        },
+        {
+          "id": "elk-elk-options-inert-flowchart-C-3",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            163.4375,
+            139
+          ],
+          "bbox": [
+            -35.0625,
+            -27,
+            70.125,
+            54
+          ],
+          "text": "C"
+        },
+        {
+          "id": "elk-elk-options-inert-flowchart-D-5",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            284.484375,
+            87
+          ],
+          "bbox": [
+            -35.84375,
+            -27,
+            71.6875,
+            54
+          ],
+          "text": "D"
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M74.332,60L79.149,55.833C83.966,51.667,93.6,43.333,101.917,39.167C110.234,35,117.234,35,120.734,35L124.234,35",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M74.332,114L79.149,118.167C83.966,122.333,93.6,130.667,101.941,134.833C110.281,139,117.328,139,120.852,139L124.375,139",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M198.641,35L202.807,35C206.974,35,215.307,35,223.842,38.734C232.378,42.467,241.115,49.934,245.483,53.668L249.852,57.401",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        },
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M198.5,139L202.69,139C206.88,139,215.26,139,223.819,135.266C232.378,131.533,241.115,124.066,245.483,120.332L249.852,116.599",
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        }
+      ],
+      "labels": [
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        },
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        }
+      ]
+    },
+    {
+      "id": "dark-theme",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false},\"theme\":\"dark\"}}%%\nflowchart-elk TB\nA[Start] --> B[Finish]",
+      "dagreSource": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"flowchart\":{\"htmlLabels\":false},\"theme\":\"dark\"}}%%\nflowchart TB\nA[Start] --> B[Finish]",
+      "detected": "flowchart-elk",
+      "dagreDetected": "flowchart-v2",
+      "fallbackWarning": "flowchart-elk was moved to an external package in Mermaid v11. Please refer [release notes](https://github.com/mermaid-js/mermaid/releases/tag/v11.0.0) for more details. This diagram will be rendered using `dagre` layout as a fallback.",
+      "root": {
+        "viewBox": "0 0 120 174",
+        "width": "100%",
+        "height": null,
+        "style": "max-width: 120px;",
+        "roleDescription": "flowchart-elk",
+        "client": [
+          120,
+          174
+        ]
+      },
+      "nodes": [
+        {
+          "id": "elk-dark-theme-flowchart-A-0",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            60,
+            35
+          ],
+          "bbox": [
+            -47.960938,
+            -27,
+            95.921875,
+            54
+          ],
+          "text": "Start"
+        },
+        {
+          "id": "elk-dark-theme-flowchart-B-1",
+          "classes": "node default",
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            60,
+            139
+          ],
+          "bbox": [
+            -52,
+            -27,
+            104,
+            54
+          ],
+          "text": "Finish"
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "classes": "edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link",
+          "d": "M60,62L60,66.167C60,70.333,60,78.667,60,86.333C60,94,60,101,60,104.5L60,108",
+          "stroke": "rgb(211, 211, 211)",
+          "strokeWidth": "1px",
+          "markerStart": false,
+          "markerEnd": true
+        }
+      ],
+      "labels": [
+        {
+          "matrix": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "bbox": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "text": ""
+        }
+      ],
+      "pixel": {
+        "file": "dark-theme.png",
+        "sha256": "5665faea7b66ba97a5e6714e120822b53048300fd6a2853385583aac29d50ad1"
+      }
+    }
+  ],
+  "fixtureSha256": "08796e86008c64b203d5ff3ce17118dc609ab99aa41c701ff928320d4232b31e"
+}

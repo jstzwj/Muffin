@@ -15,6 +15,10 @@ public:
   static QPainterPath painterPathFromSvgPath(
       const QString& svgPath, QRectF viewBox, QRectF target,
       Qt::AspectRatioMode aspectRatioMode = Qt::IgnoreAspectRatio);
+  // Identity parse of SVG path data (no viewBox/target mapping) for callers
+  // that store upstream path strings verbatim, e.g. the Mermaid error
+  // diagram's lightbulb icon.
+  static QPainterPath parseSvgPath(const QString& source);
   static QString innerPath(const QString& name, int height);
   static QString tallDelimiterPath(const QString& label, int midHeight);
   static QString sqrtPath(const QString& size, qreal extraVinculum, int viewBoxHeight);

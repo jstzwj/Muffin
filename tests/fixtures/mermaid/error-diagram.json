@@ -1,0 +1,503 @@
+{
+  "upstream": {
+    "version": "11.16.0"
+  },
+  "cases": {
+    "literal-error": {
+      "status": "ready",
+      "diagramType": "error",
+      "analysis": {
+        "attributes": {
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "viewBox": "0 0 2412 512",
+          "style": "max-width: 512px;",
+          "role": "graphics-document document",
+          "aria-roledescription": "error"
+        },
+        "childSummary": [
+          "style",
+          "g",
+          "g"
+        ],
+        "clientRect": {
+          "width": 512,
+          "height": 108.671875
+        },
+        "paths": [
+          {
+            "d": "m411.313,123.313c6.25-6.25 6.25-16.375 0-22.625s-16.375-6.25-22.625,0l-32,32-9.375,9.375-20.688-20.688c-12.484-12.5-32.766-12.5-45.25,0l-16,16c-1.261,1.261-2.304,2.648-3.31,4.051-21.739-8.561-45.324-13.426-70.065-13.426-105.867,0-192,86.133-192,192s86.133,192 192,192 192-86.133 192-192c0-24.741-4.864-48.327-13.426-70.065 1.402-1.007 2.79-2.049 4.051-3.31l16-16c12.5-12.492 12.5-32.758 0-45.25l-20.688-20.688 9.375-9.375 32.001-31.999zm-219.313,100.687c-52.938,0-96,43.063-96,96 0,8.836-7.164,16-16,16s-16-7.164-16-16c0-70.578 57.422-128 128-128 8.836,0 16,7.164 16,16s-7.164,16-16,16z",
+            "fill": "rgb(85, 34, 34)",
+            "stroke": "none",
+            "bbox": {
+              "x": 0,
+              "y": 96.00050354003906,
+              "width": 416.00048828125,
+              "height": 415.99951171875
+            }
+          },
+          {
+            "d": "m459.02,148.98c-6.25-6.25-16.375-6.25-22.625,0s-6.25,16.375 0,22.625l16,16c3.125,3.125 7.219,4.688 11.313,4.688 4.094,0 8.188-1.563 11.313-4.688 6.25-6.25 6.25-16.375 0-22.625l-16.001-16z",
+            "fill": "rgb(85, 34, 34)",
+            "stroke": "none",
+            "bbox": {
+              "x": 431.7074890136719,
+              "y": 144.29249572753906,
+              "width": 48.0009765625,
+              "height": 48.00050354003906
+            }
+          },
+          {
+            "d": "m340.395,75.605c3.125,3.125 7.219,4.688 11.313,4.688 4.094,0 8.188-1.563 11.313-4.688 6.25-6.25 6.25-16.375 0-22.625l-16-16c-6.25-6.25-16.375-6.25-22.625,0s-6.25,16.375 0,22.625l15.999,16z",
+            "fill": "rgb(85, 34, 34)",
+            "stroke": "none",
+            "bbox": {
+              "x": 319.7084655761719,
+              "y": 32.292503356933594,
+              "width": 48,
+              "height": 48.00050354003906
+            }
+          },
+          {
+            "d": "m400,64c8.844,0 16-7.164 16-16v-32c0-8.836-7.156-16-16-16-8.844,0-16,7.164-16,16v32c0,8.836 7.156,16 16,16z",
+            "fill": "rgb(85, 34, 34)",
+            "stroke": "none",
+            "bbox": {
+              "x": 384,
+              "y": 0,
+              "width": 32,
+              "height": 64
+            }
+          },
+          {
+            "d": "m496,96.586h-32c-8.844,0-16,7.164-16,16 0,8.836 7.156,16 16,16h32c8.844,0 16-7.164 16-16 0-8.836-7.156-16-16-16z",
+            "fill": "rgb(85, 34, 34)",
+            "stroke": "none",
+            "bbox": {
+              "x": 448,
+              "y": 96.58599853515625,
+              "width": 64,
+              "height": 32
+            }
+          },
+          {
+            "d": "m436.98,75.605c3.125,3.125 7.219,4.688 11.313,4.688 4.094,0 8.188-1.563 11.313-4.688l32-32c6.25-6.25 6.25-16.375 0-22.625s-16.375-6.25-22.625,0l-32,32c-6.251,6.25-6.251,16.375-0.001,22.625z",
+            "fill": "rgb(85, 34, 34)",
+            "stroke": "none",
+            "bbox": {
+              "x": 432.2926025390625,
+              "y": 16.292503356933594,
+              "width": 64.00088500976562,
+              "height": 64.00050354003906
+            }
+          }
+        ],
+        "texts": [
+          {
+            "text": "Syntax error in text",
+            "attributes": {
+              "class": "error-text",
+              "x": "1440",
+              "y": "250",
+              "font-size": "150px",
+              "style": "text-anchor: middle;"
+            },
+            "computed": {
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "150px",
+              "fontWeight": "400",
+              "fill": "rgb(85, 34, 34)",
+              "stroke": "rgb(85, 34, 34)",
+              "textAnchor": "middle"
+            },
+            "textLength": 1344.745361328125,
+            "bbox": {
+              "x": 767.6273193359375,
+              "y": 89.81135559082031,
+              "width": 1347.1337890625,
+              "height": 202.5915069580078
+            }
+          },
+          {
+            "text": "mermaid version 11.16.0",
+            "attributes": {
+              "class": "error-text",
+              "x": "1250",
+              "y": "400",
+              "font-size": "100px",
+              "style": "text-anchor: middle;"
+            },
+            "computed": {
+              "fontFamily": "\"Noto Sans\"",
+              "fontSize": "100px",
+              "fontWeight": "400",
+              "fill": "rgb(85, 34, 34)",
+              "stroke": "rgb(85, 34, 34)",
+              "textAnchor": "middle"
+            },
+            "textLength": 1163.9442138671875,
+            "bbox": {
+              "x": 668.0278930664062,
+              "y": 291.6370849609375,
+              "width": 1163.9442138671875,
+              "height": 136.63148498535156
+            }
+          }
+        ]
+      }
+    }
+  },
+  "themes": {
+    "default": {
+      "iconFill": "rgb(85, 34, 34)",
+      "textFill": "rgb(85, 34, 34)",
+      "textStroke": "rgb(85, 34, 34)"
+    },
+    "base": {
+      "iconFill": "rgb(247, 249, 255)",
+      "textFill": "rgb(9, 6, 0)",
+      "textStroke": "rgb(9, 6, 0)"
+    },
+    "dark": {
+      "iconFill": "rgb(164, 65, 65)",
+      "textFill": "rgb(221, 221, 221)",
+      "textStroke": "rgb(221, 221, 221)"
+    },
+    "forest": {
+      "iconFill": "rgb(85, 34, 34)",
+      "textFill": "rgb(85, 34, 34)",
+      "textStroke": "rgb(85, 34, 34)"
+    },
+    "neutral": {
+      "iconFill": "rgb(85, 34, 34)",
+      "textFill": "rgb(85, 34, 34)",
+      "textStroke": "rgb(85, 34, 34)"
+    },
+    "neo": {
+      "iconFill": "rgb(255, 255, 255)",
+      "textFill": "rgb(0, 0, 0)",
+      "textStroke": "rgb(0, 0, 0)"
+    },
+    "neo-dark": {
+      "iconFill": "rgb(32, 31, 31)",
+      "textFill": "rgb(223, 224, 224)",
+      "textStroke": "rgb(223, 224, 224)"
+    },
+    "redux": {
+      "iconFill": "rgb(255, 255, 255)",
+      "textFill": "rgb(0, 0, 0)",
+      "textStroke": "rgb(0, 0, 0)"
+    },
+    "redux-dark": {
+      "iconFill": "rgb(32, 31, 31)",
+      "textFill": "rgb(223, 224, 224)",
+      "textStroke": "rgb(223, 224, 224)"
+    },
+    "redux-color": {
+      "iconFill": "rgb(255, 255, 255)",
+      "textFill": "rgb(0, 0, 0)",
+      "textStroke": "rgb(0, 0, 0)"
+    },
+    "redux-dark-color": {
+      "iconFill": "rgb(32, 31, 31)",
+      "textFill": "rgb(223, 224, 224)",
+      "textStroke": "rgb(223, 224, 224)"
+    }
+  },
+  "failures": {
+    "dash-only": {
+      "status": "error",
+      "name": "Error",
+      "message": "Diagrams beginning with --- are not valid. If you were trying to use a YAML front-matter, please ensure that you've correctly opened and closed the YAML front-matter with un-indented `---` blocks",
+      "fallbackSvg": true,
+      "fallbackTexts": [
+        "Syntax error in text",
+        "mermaid version 11.16.0"
+      ]
+    },
+    "unclosed-frontmatter": {
+      "status": "error",
+      "name": "Error",
+      "message": "Diagrams beginning with --- are not valid. If you were trying to use a YAML front-matter, please ensure that you've correctly opened and closed the YAML front-matter with un-indented `---` blocks",
+      "fallbackSvg": true,
+      "fallbackTexts": [
+        "Syntax error in text",
+        "mermaid version 11.16.0"
+      ]
+    },
+    "invalid-flowchart": {
+      "status": "error",
+      "name": "Error",
+      "message": "Parse error on line 4:\n...ph S[Group]A --> B\n---------------------^\nExpecting 'SEMI', 'NEWLINE', 'SPACE', 'EOF', 'subgraph', 'end', 'acc_title', 'acc_descr', 'acc_descr_multiline_value', 'AMP', 'COLON', 'STYLE', 'LINKSTYLE', 'CLASSDEF', 'CLASS', 'CLICK', 'DOWN', 'DEFAULT', 'NUM', 'COMMA', 'NODE_STRING', 'BRKT', 'MINUS', 'MULT', 'UNICODE_TEXT', 'direction_tb', 'direction_bt', 'direction_rl', 'direction_lr', 'direction_td', got '1'",
+      "fallbackSvg": true,
+      "fallbackTexts": [
+        "Syntax error in text",
+        "mermaid version 11.16.0"
+      ]
+    },
+    "invalid-suppressed": {
+      "status": "error",
+      "name": "Error",
+      "message": "Parse error on line 4:\n...ph S[Group]A --> B\n---------------------^\nExpecting 'S",
+      "fallbackSvg": false
+    },
+    "bad-yaml": {
+      "status": "error",
+      "name": "YAMLException",
+      "message": "unexpected end of the stream within a flow collection (2:1)\n\n 1 | config: [unclosed\n 2 | \n-----^",
+      "fallbackSvg": false,
+      "fallbackTexts": []
+    },
+    "unknown-diagram": {
+      "status": "error",
+      "name": "UnknownDiagramError",
+      "message": "No diagram type detected matching given configuration for text: this is not a diagram",
+      "fallbackSvg": true,
+      "fallbackTexts": [
+        "Syntax error in text",
+        "mermaid version 11.16.0"
+      ]
+    }
+  },
+  "themeCss": {
+    "themeCss": ".error-icon { fill: rgb(255, 0, 0) !important; } .error-text { font-size: 90px !important; }",
+    "iconFill": "rgb(255, 0, 0)",
+    "textFontSize": "90px",
+    "analysis": {
+      "attributes": {
+        "width": "100%",
+        "xmlns": "http://www.w3.org/2000/svg",
+        "viewBox": "0 0 2412 512",
+        "style": "max-width: 512px;",
+        "role": "graphics-document document",
+        "aria-roledescription": "error"
+      },
+      "childSummary": [
+        "style",
+        "g",
+        "g"
+      ],
+      "clientRect": {
+        "width": 512,
+        "height": 108.671875
+      },
+      "paths": [
+        {
+          "d": "m411.313,123.313c6.25-6.25 6.25-16.375 0-22.625s-16.375-6.25-22.625,0l-32,32-9.375,9.375-20.688-20.688c-12.484-12.5-32.766-12.5-45.25,0l-16,16c-1.261,1.261-2.304,2.648-3.31,4.051-21.739-8.561-45.324-13.426-70.065-13.426-105.867,0-192,86.133-192,192s86.133,192 192,192 192-86.133 192-192c0-24.741-4.864-48.327-13.426-70.065 1.402-1.007 2.79-2.049 4.051-3.31l16-16c12.5-12.492 12.5-32.758 0-45.25l-20.688-20.688 9.375-9.375 32.001-31.999zm-219.313,100.687c-52.938,0-96,43.063-96,96 0,8.836-7.164,16-16,16s-16-7.164-16-16c0-70.578 57.422-128 128-128 8.836,0 16,7.164 16,16s-7.164,16-16,16z",
+          "fill": "rgb(255, 0, 0)",
+          "stroke": "none",
+          "bbox": {
+            "x": 0,
+            "y": 96.00050354003906,
+            "width": 416.00048828125,
+            "height": 415.99951171875
+          }
+        },
+        {
+          "d": "m459.02,148.98c-6.25-6.25-16.375-6.25-22.625,0s-6.25,16.375 0,22.625l16,16c3.125,3.125 7.219,4.688 11.313,4.688 4.094,0 8.188-1.563 11.313-4.688 6.25-6.25 6.25-16.375 0-22.625l-16.001-16z",
+          "fill": "rgb(255, 0, 0)",
+          "stroke": "none",
+          "bbox": {
+            "x": 431.7074890136719,
+            "y": 144.29249572753906,
+            "width": 48.0009765625,
+            "height": 48.00050354003906
+          }
+        },
+        {
+          "d": "m340.395,75.605c3.125,3.125 7.219,4.688 11.313,4.688 4.094,0 8.188-1.563 11.313-4.688 6.25-6.25 6.25-16.375 0-22.625l-16-16c-6.25-6.25-16.375-6.25-22.625,0s-6.25,16.375 0,22.625l15.999,16z",
+          "fill": "rgb(255, 0, 0)",
+          "stroke": "none",
+          "bbox": {
+            "x": 319.7084655761719,
+            "y": 32.292503356933594,
+            "width": 48,
+            "height": 48.00050354003906
+          }
+        },
+        {
+          "d": "m400,64c8.844,0 16-7.164 16-16v-32c0-8.836-7.156-16-16-16-8.844,0-16,7.164-16,16v32c0,8.836 7.156,16 16,16z",
+          "fill": "rgb(255, 0, 0)",
+          "stroke": "none",
+          "bbox": {
+            "x": 384,
+            "y": 0,
+            "width": 32,
+            "height": 64
+          }
+        },
+        {
+          "d": "m496,96.586h-32c-8.844,0-16,7.164-16,16 0,8.836 7.156,16 16,16h32c8.844,0 16-7.164 16-16 0-8.836-7.156-16-16-16z",
+          "fill": "rgb(255, 0, 0)",
+          "stroke": "none",
+          "bbox": {
+            "x": 448,
+            "y": 96.58599853515625,
+            "width": 64,
+            "height": 32
+          }
+        },
+        {
+          "d": "m436.98,75.605c3.125,3.125 7.219,4.688 11.313,4.688 4.094,0 8.188-1.563 11.313-4.688l32-32c6.25-6.25 6.25-16.375 0-22.625s-16.375-6.25-22.625,0l-32,32c-6.251,6.25-6.251,16.375-0.001,22.625z",
+          "fill": "rgb(255, 0, 0)",
+          "stroke": "none",
+          "bbox": {
+            "x": 432.2926025390625,
+            "y": 16.292503356933594,
+            "width": 64.00088500976562,
+            "height": 64.00050354003906
+          }
+        }
+      ],
+      "texts": [
+        {
+          "text": "Syntax error in text",
+          "attributes": {
+            "class": "error-text",
+            "x": "1440",
+            "y": "250",
+            "font-size": "150px",
+            "style": "text-anchor: middle;"
+          },
+          "computed": {
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "90px",
+            "fontWeight": "400",
+            "fill": "rgb(85, 34, 34)",
+            "stroke": "rgb(85, 34, 34)",
+            "textAnchor": "middle"
+          },
+          "textLength": 806.979736328125,
+          "bbox": {
+            "x": 1036.5101318359375,
+            "y": 155.77137756347656,
+            "width": 807.4188232421875,
+            "height": 122.4971923828125
+          }
+        },
+        {
+          "text": "mermaid version 11.16.0",
+          "attributes": {
+            "class": "error-text",
+            "x": "1250",
+            "y": "400",
+            "font-size": "100px",
+            "style": "text-anchor: middle;"
+          },
+          "computed": {
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "90px",
+            "fontWeight": "400",
+            "fill": "rgb(85, 34, 34)",
+            "stroke": "rgb(85, 34, 34)",
+            "textAnchor": "middle"
+          },
+          "textLength": 1047.704345703125,
+          "bbox": {
+            "x": 726.1477661132812,
+            "y": 305.7713928222656,
+            "width": 1047.9954833984375,
+            "height": 122.4971923828125
+          }
+        }
+      ]
+    }
+  },
+  "themeCssStructure": {
+    "themeCss": "g:nth-of-type(2) path { fill: rgb(0, 128, 128) !important; } path { stroke: rgb(128, 0, 128); stroke-width: 2px; } .error-text { fill: rgb(255, 0, 0) !important; stroke: rgb(0, 0, 255) !important; }",
+    "childSummary": [
+      "style",
+      "g",
+      "g"
+    ],
+    "icons": [
+      {
+        "fill": "rgb(0, 128, 128)",
+        "stroke": "rgb(128, 0, 128)",
+        "strokeWidth": 2
+      },
+      {
+        "fill": "rgb(0, 128, 128)",
+        "stroke": "rgb(128, 0, 128)",
+        "strokeWidth": 2
+      },
+      {
+        "fill": "rgb(0, 128, 128)",
+        "stroke": "rgb(128, 0, 128)",
+        "strokeWidth": 2
+      },
+      {
+        "fill": "rgb(0, 128, 128)",
+        "stroke": "rgb(128, 0, 128)",
+        "strokeWidth": 2
+      },
+      {
+        "fill": "rgb(0, 128, 128)",
+        "stroke": "rgb(128, 0, 128)",
+        "strokeWidth": 2
+      },
+      {
+        "fill": "rgb(0, 128, 128)",
+        "stroke": "rgb(128, 0, 128)",
+        "strokeWidth": 2
+      }
+    ],
+    "textFill": "rgb(255, 0, 0)",
+    "textStroke": "rgb(0, 0, 255)",
+    "textStrokeWidth": "1px"
+  },
+  "themeCssPerPath": {
+    "themeCss": ".error-icon:nth-of-type(2) { fill: rgb(0, 128, 128) !important; } .error-icon + .error-icon { stroke: rgb(255, 0, 255); } .error-icon:nth-of-type(3) { opacity: 0.5; } path:nth-of-type(6) { stroke-width: 4px; } .error-icon:nth-of-type(4) { display: none; }",
+    "icons": [
+      {
+        "fill": "rgb(85, 34, 34)",
+        "stroke": "none",
+        "strokeWidth": 1,
+        "opacity": 1,
+        "display": "inline"
+      },
+      {
+        "fill": "rgb(0, 128, 128)",
+        "stroke": "rgb(255, 0, 255)",
+        "strokeWidth": 1,
+        "opacity": 1,
+        "display": "inline"
+      },
+      {
+        "fill": "rgb(85, 34, 34)",
+        "stroke": "rgb(255, 0, 255)",
+        "strokeWidth": 1,
+        "opacity": 0.5,
+        "display": "inline"
+      },
+      {
+        "fill": "rgb(85, 34, 34)",
+        "stroke": "rgb(255, 0, 255)",
+        "strokeWidth": 1,
+        "opacity": 1,
+        "display": "none"
+      },
+      {
+        "fill": "rgb(85, 34, 34)",
+        "stroke": "rgb(255, 0, 255)",
+        "strokeWidth": 1,
+        "opacity": 1,
+        "display": "inline"
+      },
+      {
+        "fill": "rgb(85, 34, 34)",
+        "stroke": "rgb(255, 0, 255)",
+        "strokeWidth": 4,
+        "opacity": 1,
+        "display": "inline"
+      }
+    ]
+  },
+  "png": {
+    "file": "error-diagram/default.png",
+    "sha256": "1923a9bfe3ff5c2042cfcfb708dddd74f0e7c438815b755e900fcd70e04d9844",
+    "width": 512,
+    "height": 109
+  },
+  "fixtureSha256": "6a7f55da2884c7328b6f76d4db84eb9848797583abf06e60181ebbd86e2bdc3b"
+}

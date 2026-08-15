@@ -41,6 +41,13 @@ void drawScaledText(QPainter& painter, const editor::CssPixelFont& font,
   painter.restore();
 }
 
+editor::CssPixelFont styledFont(const QString& family, qreal size,
+                                QFont::Weight weight) {
+  editor::CssPixelFont result = editor::makeCssPixelFont(family, size);
+  result.font.setWeight(weight);
+  return result;
+}
+
 }  // namespace
 
 // Theme colors arrive as CSS strings (hex / hsl() / rgba() / named / ...). The
@@ -53,24 +60,31 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
   const bool pointsEmpty = scene.points.isEmpty();
   const QColor inherited = color::toQColor(scene.style.inheritedColor);
 
-  const qreal qSize = usedSvgFontSize(scene.quadrantLabelFontSize,
-                                      scene.style.inheritedFontSize);
-  const editor::CssPixelFont qFont =
-      editor::makeCssPixelFont(scene.style.fontFamily, qSize);
-
   // DOM order is quadrant groups (rect + text), then borders, then data-point
   // groups (circle + text), axis labels, and title. Preserve it because labels
   // and large styled points can overlap later groups.
   for (const QuadrantRect& q : scene.quadrants) {
     const QRectF rect(q.x, q.y, q.width, q.height);
-    painter.setPen(Qt::NoPen);
-    const auto fill = color::resolveSvgPaint(q.fill, color::SvgPaintKind::Fill, inherited);
-    painter.setBrush(fill.none ? Qt::NoBrush : QBrush(fill.color));
-    painter.drawRect(rect);
-    if (q.text.isEmpty() || qSize <= 0.0) continue;
+    if (q.shapeVisible && q.shapeOpacity > 0.0) {
+      painter.save();
+      painter.setOpacity(painter.opacity() * q.shapeOpacity);
+      painter.setPen(Qt::NoPen);
+      const auto fill = color::resolveSvgPaint(q.fill, color::SvgPaintKind::Fill, inherited);
+      painter.setBrush(fill.none ? Qt::NoBrush : QBrush(fill.color));
+      painter.drawRect(rect);
+      painter.restore();
+    }
+    const qreal qSize = usedSvgFontSize(q.textFontSize,
+                                        scene.style.inheritedFontSize);
+    if (!q.textVisible || q.textOpacity <= 0.0 || q.text.isEmpty() || qSize <= 0.0)
+      continue;
     const auto tf = color::resolveSvgPaint(q.textFill, color::SvgPaintKind::Text, inherited);
     if (tf.none) continue;
+    painter.save();
+    painter.setOpacity(painter.opacity() * q.textOpacity);
     painter.setPen(tf.color);
+    const editor::CssPixelFont qFont =
+        styledFont(q.textFontFamily, qSize, q.textFontWeight);
     const qreal cx = q.x + q.width / 2.0;
     const qreal cy = pointsEmpty ? q.y + q.height / 2.0 : q.y + scene.quadrantTextTopPadding;
     // pointsEmpty => centered (middle baseline); else top (hanging baseline).
@@ -79,10 +93,14 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
     drawScaledText(painter, qFont, box,
                    pointsEmpty ? Qt::AlignCenter : (Qt::AlignHCenter | Qt::AlignTop),
                    q.text);
+    painter.restore();
   }
 
   // Borders. stroke:none/invalid or width<=0 -> NoPen.
   for (const QuadrantBorder& b : scene.borders) {
+    if (!b.visible || b.opacity <= 0.0) continue;
+    painter.save();
+    painter.setOpacity(painter.opacity() * b.opacity);
     const auto sc = color::resolveSvgPaint(b.strokeFill, color::SvgPaintKind::Stroke, inherited);
     if (sc.none || b.strokeWidth <= 0.0)
       painter.setPen(Qt::NoPen);
@@ -94,14 +112,8 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
       painter.setPen(pen);
     }
     painter.drawLine(QPointF(b.x1, b.y1), QPointF(b.x2, b.y2));
+    painter.restore();
   }
-
-  const qreal pSize = usedSvgFontSize(scene.pointLabelFontSize,
-                                      scene.style.inheritedFontSize);
-  const editor::CssPixelFont pFont =
-      editor::makeCssPixelFont(scene.style.fontFamily, pSize);
-  const auto ptText = color::resolveSvgPaint(scene.style.quadrantPointTextFill,
-                                             color::SvgPaintKind::Text, inherited);
   for (const QuadrantPointG& p : scene.points) {
     QPen pen(Qt::NoPen);
     if (p.strokeWidth > 0.0) {
@@ -111,17 +123,30 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
         pen.setCapStyle(Qt::FlatCap);
       }
     }
-    if (p.radius > 0.0) {
+    if (p.shapeVisible && p.shapeOpacity > 0.0 && p.radius > 0.0) {
+      painter.save();
+      painter.setOpacity(painter.opacity() * p.shapeOpacity);
       painter.setPen(pen);
       const auto pfill = color::resolveSvgPaint(p.fill, color::SvgPaintKind::Fill, inherited);
       painter.setBrush(pfill.none ? Qt::NoBrush : QBrush(pfill.color));
       painter.drawEllipse(QPointF(p.x, p.y), p.radius, p.radius);
+      painter.restore();
     }
-    if (pSize > 0.0 && !ptText.none && !p.text.isEmpty()) {
+    const qreal pSize = usedSvgFontSize(p.textFontSize,
+                                        scene.style.inheritedFontSize);
+    const auto ptText = color::resolveSvgPaint(
+        p.textFill, color::SvgPaintKind::Text, inherited);
+    if (p.textVisible && p.textOpacity > 0.0 && pSize > 0.0 &&
+        !ptText.none && !p.text.isEmpty()) {
+      painter.save();
+      painter.setOpacity(painter.opacity() * p.textOpacity);
       painter.setPen(ptText.color);
+      const editor::CssPixelFont pFont =
+          styledFont(p.textFontFamily, pSize, p.textFontWeight);
       drawScaledText(painter, pFont,
                      QRectF(p.x - 200.0, p.y + scene.pointTextPadding, 400.0, 40.0),
                      Qt::AlignHCenter | Qt::AlignTop, p.text);
+      painter.restore();
     }
   }
 
@@ -129,16 +154,17 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
   // fixed QRect(-400,...)+AlignLeft placed start-anchored labels 400px outside
   // the chart and also used the X-axis font for Y-axis text.
   for (const QuadrantAxisLabel& a : scene.axisLabels) {
-    if (a.text.isEmpty()) continue;
+    if (!a.visible || a.opacity <= 0.0 || a.text.isEmpty()) continue;
     const auto af = color::resolveSvgPaint(a.fill, color::SvgPaintKind::Text, inherited);
     if (af.none) continue;
     painter.setPen(af.color);
     painter.save();
+    painter.setOpacity(painter.opacity() * a.opacity);
     painter.translate(a.x, a.y);
     painter.rotate(a.rotation);
     const qreal aSize = usedSvgFontSize(a.fontSize, scene.style.inheritedFontSize);
     const editor::CssPixelFont aFont =
-        editor::makeCssPixelFont(scene.style.fontFamily, aSize);
+        styledFont(a.fontFamily, aSize, a.fontWeight);
     const qreal width = std::max<qreal>(aFont.horizontalAdvance(a.text) + 4.0, 4.0);
     drawScaledText(painter, aFont,
                    QRectF(a.centered ? -width / 2.0 : 0.0, 0.0, width, aSize + 8.0),
@@ -147,20 +173,24 @@ void paintQuadrantScene(const QuadrantScene& scene, QPainter& painter,
   }
 
   // Title.
-  if (!scene.titleText.isEmpty()) {
+  if (scene.titleVisible && scene.titleOpacity > 0.0 &&
+      !scene.titleText.isEmpty()) {
     const qreal tSize = usedSvgFontSize(scene.titleFontSizeCfg,
                                         scene.style.inheritedFontSize);
     const auto tf =
-        color::resolveSvgPaint(scene.style.quadrantTitleFill, color::SvgPaintKind::Text, inherited);
+        color::resolveSvgPaint(scene.titleFill, color::SvgPaintKind::Text, inherited);
     if (!tf.none && tSize > 0.0) {
+      painter.save();
+      painter.setOpacity(painter.opacity() * scene.titleOpacity);
       painter.setPen(tf.color);
       const editor::CssPixelFont tFont =
-          editor::makeCssPixelFont(scene.style.fontFamily, tSize);
+          styledFont(scene.titleFontFamily, tSize, scene.titleFontWeight);
       const qreal width = std::max<qreal>(tFont.horizontalAdvance(scene.titleText) + 4.0, 4.0);
       drawScaledText(painter, tFont,
                      QRectF(scene.titleX - width / 2.0, scene.titleY,
                             width, tSize + 8.0),
                      Qt::AlignLeft | Qt::AlignTop, scene.titleText);
+      painter.restore();
     }
   }
 }

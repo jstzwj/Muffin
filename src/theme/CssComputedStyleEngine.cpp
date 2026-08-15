@@ -30,7 +30,10 @@ const QSet<QString>& inheritedProperties() {
   static const QSet<QString> props = {
       QStringLiteral("color"), QStringLiteral("font-family"), QStringLiteral("font-size"),
       QStringLiteral("line-height"), QStringLiteral("text-align"), QStringLiteral("font-weight"),
-      QStringLiteral("font-style")};
+      QStringLiteral("font-style"), QStringLiteral("fill"),
+      QStringLiteral("fill-opacity"), QStringLiteral("stroke"),
+      QStringLiteral("stroke-opacity"), QStringLiteral("stroke-width"),
+      QStringLiteral("visibility")};
   return props;
 }
 
@@ -212,8 +215,54 @@ SimpleSelector parseCompound(QString compound) {
       }
       i = j;
     } else if (c == QLatin1Char('[')) {
-      int close = compound.indexOf(QLatin1Char(']'), i);
-      i = close < 0 ? n : close + 1;
+      int close = i + 1;
+      bool inString = false;
+      QChar quote;
+      for (; close < n; ++close) {
+        const QChar current = compound.at(close);
+        if (inString) {
+          if (current == quote) inString = false;
+          else if (current == QLatin1Char('\\') && close + 1 < n) ++close;
+        } else if (current == QLatin1Char('"') || current == QLatin1Char('\'')) {
+          inString = true;
+          quote = current;
+        } else if (current == QLatin1Char(']')) {
+          break;
+        }
+      }
+      if (close >= n) {
+        out.unsupported = true;
+        i = n;
+        continue;
+      }
+      QString body = compound.mid(i + 1, close - i - 1).trimmed();
+      CssAttributeSelector attr;
+      static const QRegularExpression attrRe(QStringLiteral(
+          "^([_a-zA-Z][-_a-zA-Z0-9:.]*)(?:\\s*(~=|\\|=|\\^=|\\$=|\\*=|=)\\s*"
+          "(?:\"((?:\\\\.|[^\"])*)\"|'((?:\\\\.|[^'])*)'|([^\\s]+))\\s*([iIsS])?)?$"));
+      const QRegularExpressionMatch match = attrRe.match(body);
+      if (!match.hasMatch()) {
+        out.unsupported = true;
+      } else {
+        attr.name = match.captured(1).toLower();
+        const QString op = match.captured(2);
+        if (op == QLatin1String("=")) attr.op = CssAttributeSelector::Operator::Equals;
+        else if (op == QLatin1String("~=")) attr.op = CssAttributeSelector::Operator::IncludesWord;
+        else if (op == QLatin1String("|=")) attr.op = CssAttributeSelector::Operator::DashMatch;
+        else if (op == QLatin1String("^=")) attr.op = CssAttributeSelector::Operator::Prefix;
+        else if (op == QLatin1String("$=")) attr.op = CssAttributeSelector::Operator::Suffix;
+        else if (op == QLatin1String("*=")) attr.op = CssAttributeSelector::Operator::Contains;
+        attr.value = !match.captured(3).isNull() ? match.captured(3)
+                   : !match.captured(4).isNull() ? match.captured(4)
+                                                  : match.captured(5);
+        attr.value.replace(QStringLiteral("\\\""), QStringLiteral("\""));
+        attr.value.replace(QStringLiteral("\\'"), QStringLiteral("'"));
+        attr.value.replace(QStringLiteral("\\\\"), QStringLiteral("\\"));
+        attr.caseInsensitive = match.captured(6).compare(
+            QLatin1String("i"), Qt::CaseInsensitive) == 0;
+        out.attributes.push_back(std::move(attr));
+      }
+      i = close + 1;
     } else {
       ++i;
     }
@@ -354,6 +403,39 @@ bool simpleMatches(const SimpleSelector& simple, const CssElement& element, cons
   for (const QString& cls : element.classes) { classes << cls.toLower(); }
   for (const QString& cls : simple.classes) {
     if (!classes.contains(cls)) { return false; }
+  }
+  QHash<QString, QString> attributes;
+  for (auto it = element.attributes.constBegin(); it != element.attributes.constEnd(); ++it)
+    attributes.insert(it.key().toLower(), it.value());
+  if (!element.id.isEmpty()) attributes.insert(QStringLiteral("id"), element.id);
+  if (!element.classes.isEmpty())
+    attributes.insert(QStringLiteral("class"), element.classes.join(QLatin1Char(' ')));
+  for (const CssAttributeSelector& selector : simple.attributes) {
+    const auto found = attributes.constFind(selector.name);
+    if (found == attributes.constEnd()) return false;
+    if (selector.op == CssAttributeSelector::Operator::Exists) continue;
+    const Qt::CaseSensitivity cs = selector.caseInsensitive
+        ? Qt::CaseInsensitive : Qt::CaseSensitive;
+    const QString& actual = found.value();
+    bool matched = false;
+    switch (selector.op) {
+      case CssAttributeSelector::Operator::Exists: matched = true; break;
+      case CssAttributeSelector::Operator::Equals:
+        matched = actual.compare(selector.value, cs) == 0; break;
+      case CssAttributeSelector::Operator::IncludesWord:
+        matched = actual.split(QRegularExpression(QStringLiteral("\\s+")),
+                               Qt::SkipEmptyParts).contains(selector.value, cs); break;
+      case CssAttributeSelector::Operator::DashMatch:
+        matched = actual.compare(selector.value, cs) == 0 ||
+                  actual.startsWith(selector.value + QLatin1Char('-'), cs); break;
+      case CssAttributeSelector::Operator::Prefix:
+        matched = actual.startsWith(selector.value, cs); break;
+      case CssAttributeSelector::Operator::Suffix:
+        matched = actual.endsWith(selector.value, cs); break;
+      case CssAttributeSelector::Operator::Contains:
+        matched = actual.contains(selector.value, cs); break;
+    }
+    if (!matched) return false;
   }
   if (!simple.notTag.isEmpty() && simple.notTag == tag) { return false; }
   if (!simple.notId.isEmpty() && simple.notId == id) { return false; }
@@ -558,6 +640,67 @@ CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element) con
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, const CssElementState& state) const {
   CssComputedStyle style = parentStyleFor(element.parent);
   applyStyleForElement(element, state, style);
+  return style;
+}
+
+CssComputedStyle CssComputedStyleEngine::styleFor(
+    const CssElement& element, const CssElementState& state,
+    const std::vector<CssDeclaration>& inlineDeclarations) const {
+  return styleFor(element, state, inlineDeclarations, {});
+}
+
+CssComputedStyle CssComputedStyleEngine::styleFor(
+    const CssElement& element, const CssElementState& state,
+    const std::vector<CssDeclaration>& inlineDeclarations,
+    const std::vector<CssDeclaration>& presentationDeclarations) const {
+  CssComputedStyle style = parentStyleFor(element.parent);
+  // SVG presentation attributes are author-origin declarations with zero
+  // specificity and precede author stylesheets. Seed them before applying the
+  // sheet so any matching normal rule wins; inline style is applied last below.
+  for (const CssDeclaration& declaration : presentationDeclarations) {
+    const QString property = declaration.property.toLower();
+    if (property.startsWith(QStringLiteral("--")))
+      style.customProperties_.insert(property, declaration.value);
+    else
+      style.properties_.insert(property, declaration.value);
+  }
+  applyStyleForElement(element, state, style);
+
+  // Inline declarations form an author-origin rule with specificity greater
+  // than every selector, but a stylesheet !important still beats inline
+  // normal. Re-run only the properties touched inline so the public value map
+  // remains compact. The winner metadata is recovered from a one-property
+  // probe of the stylesheet cascade.
+  QHash<QString, CssDeclaration> inlineWinners;
+  for (const CssDeclaration& declaration : inlineDeclarations) {
+    const QString property = declaration.property.toLower();
+    const auto current = inlineWinners.constFind(property);
+    if (current == inlineWinners.constEnd() || declaration.important ||
+        !current.value().important)
+      inlineWinners.insert(property, declaration);
+  }
+  for (auto inlineIt = inlineWinners.constBegin();
+       inlineIt != inlineWinners.constEnd(); ++inlineIt) {
+    const QString& property = inlineIt.key();
+    const CssDeclaration& declaration = inlineIt.value();
+    bool stylesheetImportant = false;
+    for (const CssRule& rule : sheet_.rules()) {
+      bool matches = false;
+      for (const QString& selector : rule.selectors) {
+        const ParsedSelector parsed = parseSelector(selector);
+        if (selectorMatches(parsed, element, state)) { matches = true; break; }
+      }
+      if (!matches) continue;
+      for (const CssDeclaration& candidate : rule.declarations)
+        if (candidate.property == property && candidate.important)
+          stylesheetImportant = true;
+    }
+    if (stylesheetImportant && !declaration.important) continue;
+    if (property.startsWith(QStringLiteral("--")))
+      style.customProperties_.insert(property, declaration.value);
+    else
+      style.properties_.insert(property, declaration.value);
+  }
   return style;
 }
 

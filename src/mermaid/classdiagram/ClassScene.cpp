@@ -1,6 +1,8 @@
 #include "mermaid/classdiagram/ClassScene.h"
 
 #include "mermaid/flowchart/D3Curves.h"
+#include "mermaid/rough/RoughPaint.h"
+#include "mermaid/scene/SvgPathParse.h"
 
 #include <QHash>
 #include <QJsonArray>
@@ -297,9 +299,12 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
                            const ClassPlacementResult& placement,
                            ClassSceneStyle style,
                            const QVector<style::ClassDef>& classDefs,
-                           const style::ThemeDefaults& themeDefaults) {
+                           const style::ThemeDefaults& themeDefaults,
+                           bool handDrawn, quint32 handDrawnSeed) {
   ClassScene scene;
   scene.style = std::move(style);
+  scene.handDrawn = handDrawn;
+  scene.handDrawnSeed = handDrawnSeed;
   scene.markers = classMarkerDefinitions();
   QHash<QString, ClassPlacementNode> placedNodes;
   for (const auto& node : placement.nodes) placedNodes.insert(node.id, node);
@@ -315,6 +320,12 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     rendered.bounds = QRectF(cluster.x - cluster.width / 2.0,
                              cluster.y - cluster.height / 2.0,
                              cluster.width, cluster.height);
+    const QSizeF logicalSize(
+        cluster.logicalWidth > 0.0 ? cluster.logicalWidth : cluster.width,
+        cluster.logicalHeight > 0.0 ? cluster.logicalHeight : cluster.height);
+    const QRectF logicalBounds(
+        QPointF(cluster.x - logicalSize.width() / 2.0,
+                cluster.y - logicalSize.height() / 2.0), logicalSize);
     if (!rendered.label.isEmpty()) {
       rendered.titleLabel.text = rendered.label;
       rendered.titleLabel.document =
@@ -324,7 +335,17 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
           scene.style.fontSize, scene.style.lineHeight);
       rendered.titleLabel.center = QPointF(
           rendered.bounds.center().x(),
-          rendered.bounds.top() + rendered.titleLabel.size.height() / 2.0);
+          logicalBounds.top() + rendered.titleLabel.size.height() / 2.0);
+    }
+    if (handDrawn) {
+      rough::Options options = rough::nodeOptions(handDrawnSeed, 1.3);
+      options.fillWeight = 3.0;
+      const QPointF roughFrame = placement.sourceOrigin + QPointF(8.0, 8.0);
+      rendered.roughDrawable = rough::translatedDrawable(
+          rough::roughRoundedRectPathDrawable(
+              logicalBounds.translated(roughFrame), 0.0, options),
+          -roughFrame);
+      rendered.paintedBounds = rough::tightBounds(rendered.roughDrawable);
     }
     scene.clusters.append(std::move(rendered));
   }
@@ -367,6 +388,30 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
                           std::max(0.0, placed.height - padding * 2.0));
       label.document = prepareLabel(label.text, scene.style.fontSize);
       rendered.nameLabels.append(std::move(label));
+    }
+    if (handDrawn) {
+      const rough::Drawable localOuter = rough::roughRectDrawable(
+          rendered.localOuter, handDrawnSeed);
+      const QRectF localOuterBounds = rough::tightBounds(localOuter);
+      rendered.roughDrawables.append(rough::translatedDrawable(
+          localOuter, rendered.center));
+      rendered.paintedBounds = rough::tightBounds(
+          rendered.roughDrawables.last());
+      for (const QRectF& divider : rendered.localDividers) {
+        // classBox reads rect2.getBBox() after RoughJS has generated the
+        // outer rectangle, then uses that observable bbox for both divider
+        // endpoints. It is deliberately wider/narrower than the nominal box
+        // depending on the handDrawnSeed.
+        const QRectF line(localOuterBounds.left(), divider.top(),
+                          localOuterBounds.width(), divider.height());
+        rendered.roughDrawables.append(rough::translatedDrawable(
+            rough::roughNodeLineDrawable(
+            QPointF(line.left(), line.top()),
+            QPointF(line.right(), line.bottom()), handDrawnSeed),
+            rendered.center));
+        rendered.paintedBounds = rendered.paintedBounds.united(
+            rough::tightBounds(rendered.roughDrawables.last()));
+      }
     }
     scene.nodes.append(std::move(rendered));
   }
@@ -448,6 +493,18 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
           terminal.document, scene.style.fontFamily, 11.0, 12.0);
       rendered.endLabelLeft = std::move(terminal);
     }
+    if (handDrawn) {
+      for (const QString& path : rendered.paths)
+        rendered.roughDrawables.append(rough::roughEdgeDrawable(
+            scene::parseSvgPath(path), handDrawnSeed));
+      if (!rendered.roughDrawables.isEmpty()) {
+        rendered.pathBounds = rough::tightBounds(
+            rendered.roughDrawables.first());
+        for (qsizetype i = 1; i < rendered.roughDrawables.size(); ++i)
+          rendered.pathBounds = rendered.pathBounds.united(
+              rough::tightBounds(rendered.roughDrawables.at(i)));
+      }
+    }
     scene.edges.append(std::move(rendered));
   }
 
@@ -456,12 +513,20 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     if (first) { scene.bounds = bounds; first = false; }
     else scene.bounds = scene.bounds.united(bounds);
   };
-  for (const auto& cluster : scene.clusters) unite(cluster.bounds);
+  for (const auto& cluster : scene.clusters)
+    unite(handDrawn && cluster.paintedBounds.isValid()
+              ? cluster.paintedBounds : cluster.bounds);
   for (const auto& node : scene.nodes)
-    unite(QRectF(node.center.x() - node.size.width() / 2.0,
-                 node.center.y() - node.size.height() / 2.0,
-                 node.size.width(), node.size.height()));
+    unite(handDrawn && node.paintedBounds.isValid()
+              ? node.paintedBounds
+              : QRectF(node.center.x() - node.size.width() / 2.0,
+                       node.center.y() - node.size.height() / 2.0,
+                       node.size.width(), node.size.height()));
   for (const auto& edge : scene.edges) {
+    if (handDrawn && edge.pathBounds.isValid()) {
+      unite(edge.pathBounds);
+      continue;
+    }
     for (const QPointF& point : edge.renderedPoints)
       unite(QRectF(point, QSizeF(0, 0)));
     for (const QVector<QPointF>& segment : edge.renderedSegments)
@@ -570,6 +635,65 @@ QJsonObject ClassScene::toJsonObject() const {
   o[QStringLiteral("markers")] = markersArray;
 
   return o;
+}
+
+SvgMarkerProjection ClassScene::svgMarkerProjection() const {
+  SvgMarkerProjection projection;
+  for (const ClassMarkerDefinition& marker : markers) {
+    SvgMarkerDefinition definition;
+    definition.key = marker.suffix;
+    definition.idSuffix = QStringLiteral("_class-") + marker.suffix;
+    definition.viewBox = marker.viewBox;
+    definition.refX = marker.refX; definition.refY = marker.refY;
+    definition.markerWidth = marker.markerWidth;
+    definition.markerHeight = marker.markerHeight;
+    definition.markerUnits = marker.markerUnits;
+    definition.orient = marker.orient;
+    SvgMarkerChild child;
+    child.tag = marker.child.tag;
+    child.path = marker.child.path;
+    child.points = marker.child.points;
+    child.cx = marker.child.cx; child.cy = marker.child.cy;
+    child.radius = marker.child.radius;
+    child.fill = marker.child.fill;
+    child.strokeWidth = marker.child.strokeWidth;
+    child.style = marker.child.style;
+    if (marker.type == QLatin1String("composition") &&
+        marker.suffix == QLatin1String("compositionStart-margin"))
+      child.viewBox = QStringLiteral("0 0 15 15");
+    const bool filled = marker.type == QLatin1String("composition") ||
+                        marker.type == QLatin1String("dependency");
+    if (child.fill.isEmpty()) child.fill = filled ? style.lineColor
+                                                  : QStringLiteral("none");
+    child.stroke = style.lineColor;
+    definition.children.append(child);
+    projection.definitions.append(definition);
+  }
+  for (const ClassSceneEdge& source : edges) {
+    if (source.markerStart.isEmpty() && source.markerEnd.isEmpty()) continue;
+    const qsizetype segmentCount = source.paths.isEmpty() ? 1 : source.paths.size();
+    const auto append = [&](const QString& path, qsizetype segment) {
+      SvgMarkerEdge edge;
+      edge.id = segment == 0 ? source.id
+          : source.id + QStringLiteral("-%1").arg(segment);
+      edge.cssClass = QStringLiteral("relation");
+      edge.path = path;
+      if (segment == 0 && !source.markerStart.isEmpty())
+        edge.markerStart = source.markerStart + QStringLiteral("Start");
+      if (segment + 1 == segmentCount && !source.markerEnd.isEmpty())
+        edge.markerEnd = source.markerEnd + QStringLiteral("End");
+      edge.stroke = source.stroke.isEmpty() ? style.lineColor : source.stroke;
+      edge.strokeWidth = source.strokeWidth;
+      edge.strokeDasharray = source.strokeDasharray;
+      projection.edges.append(edge);
+    };
+    if (!source.paths.isEmpty()) {
+      for (qsizetype i = 0; i < source.paths.size(); ++i) append(source.paths.at(i), i);
+    } else {
+      append(source.path, 0);
+    }
+  }
+  return projection;
 }
 
 }  // namespace muffin::mermaid::classdiagram

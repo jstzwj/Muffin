@@ -1,0 +1,1582 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "wardleyModuleSha256": "7688a218dfc9e1eccdb8fca61d89414723ab05f3aced6f970a4ca6464e9ca3ee",
+    "parserModuleSha256": "f541603e5c4d057f0c557f0873bd5b3be3c9878caed7ef2b6ee4e6699206dd3d",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "wardley-beta\ntitle Platform Landscape\naccTitle: Platform map\naccDescr: Dependencies and evolution\nsize [900,600]\nevolution Genesis @0.18 -> Custom Built @0.42 -> Product @0.72 -> Commodity @1.0\nanchor User [0.95,0.08]\ncomponent Platform [0.82,0.34] label [12,-14] (build) inertia\ncomponent Service [0.62,0.58] (buy)\ncomponent Supplier [0.44,0.78] (outsource)\ncomponent Market [0.30,0.90] (market)\nUser -> Platform\nPlatform +'depends'> Service ; ignored because flow label wins\nService -.-> Supplier ; contract\nSupplier +<> Market\nevolve Service 0.88\nnote 'Important dependency' [0.72,0.43]\nannotations [0.18,0.78]\nannotation 1, [0.55,0.53] 'Watch the transition'\naccelerator Adoption [0.28,0.18]\ndeaccelerator Regulation [0.35,0.75]\npipeline Platform {\n  component Prototype [0.12] label [-4,12]\n  component Productised [0.52]\n  component Utility [0.86]\n}",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "User",
+                "label": "User",
+                "x": 8,
+                "y": 95,
+                "className": "anchor"
+              },
+              {
+                "id": "Platform",
+                "label": "Platform",
+                "x": 34,
+                "y": 82,
+                "className": "component",
+                "labelOffsetX": 12,
+                "labelOffsetY": -14,
+                "inertia": true,
+                "sourceStrategy": "build",
+                "isPipelineParent": true
+              },
+              {
+                "id": "Service",
+                "label": "Service",
+                "x": 57.99999999999999,
+                "y": 62,
+                "className": "component",
+                "inertia": false,
+                "sourceStrategy": "buy"
+              },
+              {
+                "id": "Supplier",
+                "label": "Supplier",
+                "x": 78,
+                "y": 44,
+                "className": "component",
+                "inertia": false,
+                "sourceStrategy": "outsource"
+              },
+              {
+                "id": "Market",
+                "label": "Market",
+                "x": 90,
+                "y": 30,
+                "className": "component",
+                "inertia": false,
+                "sourceStrategy": "market"
+              },
+              {
+                "id": "Platform_Prototype",
+                "label": "Prototype",
+                "x": 12,
+                "y": 82,
+                "className": "pipeline-component",
+                "labelOffsetX": -4,
+                "labelOffsetY": 12,
+                "inPipeline": true
+              },
+              {
+                "id": "Platform_Productised",
+                "label": "Productised",
+                "x": 52,
+                "y": 82,
+                "className": "pipeline-component",
+                "inPipeline": true
+              },
+              {
+                "id": "Platform_Utility",
+                "label": "Utility",
+                "x": 86,
+                "y": 82,
+                "className": "pipeline-component",
+                "inPipeline": true
+              }
+            ],
+            "links": [
+              {
+                "source": "User",
+                "target": "Platform",
+                "dashed": false
+              },
+              {
+                "source": "Platform",
+                "target": "Service",
+                "dashed": false,
+                "label": "depends",
+                "flow": "forward"
+              },
+              {
+                "source": "Service",
+                "target": "Supplier",
+                "dashed": true,
+                "label": "contract"
+              },
+              {
+                "source": "Supplier",
+                "target": "Market",
+                "dashed": false,
+                "flow": "bidirectional"
+              }
+            ],
+            "trends": [
+              {
+                "nodeId": "Service",
+                "targetX": 88,
+                "targetY": 62
+              }
+            ],
+            "pipelines": [
+              {
+                "nodeId": "Platform",
+                "componentIds": [
+                  "Platform_Prototype",
+                  "Platform_Productised",
+                  "Platform_Utility"
+                ]
+              }
+            ],
+            "annotations": [
+              {
+                "number": 1,
+                "coordinates": [
+                  {
+                    "x": 53,
+                    "y": 55.00000000000001
+                  }
+                ],
+                "text": "Watch the transition"
+              }
+            ],
+            "notes": [
+              {
+                "text": "Important dependency",
+                "x": 43,
+                "y": 72
+              }
+            ],
+            "accelerators": [
+              {
+                "name": "Adoption",
+                "x": 18,
+                "y": 28.000000000000004
+              }
+            ],
+            "deaccelerators": [
+              {
+                "name": "Regulation",
+                "x": 75,
+                "y": 35
+              }
+            ],
+            "annotationsBox": {
+              "x": 78,
+              "y": 18
+            },
+            "axes": {
+              "stages": [
+                "Genesis",
+                "Custom Built",
+                "Product",
+                "Commodity"
+              ],
+              "stageBoundaries": [
+                0.18,
+                0.42,
+                0.72,
+                1
+              ]
+            },
+            "size": {
+              "width": 900,
+              "height": 600
+            }
+          },
+          "title": "Platform Landscape",
+          "accTitle": "Platform map",
+          "accDescr": "Dependencies and evolution"
+        }
+      }
+    },
+    {
+      "id": "header-only",
+      "source": "wardley-beta",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "header-newline",
+      "source": "wardley-beta\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "uppercase-header",
+      "source": "WARDLEY-BETA\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 1, column 1: Expecting token of type 'KW_WARDLEY' but found `WARDLEY-BETA`.\nParse error on line 1, column 13: Expecting: one of these possible Token sequences:\n  1. [STRING]\n  2. [ID]\n  3. [NAME_WITH_SPACES]\nbut found: '\n'",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "mixed-header",
+      "source": "Wardley-Beta\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 1, column 1: Expecting token of type 'KW_WARDLEY' but found `Wardley-Beta`.\nParse error on line 1, column 13: Expecting: one of these possible Token sequences:\n  1. [STRING]\n  2. [ID]\n  3. [NAME_WITH_SPACES]\nbut found: '\n'",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "wardley-betaX\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 1, column 14: Expecting: one of these possible Token sequences:\n  1. [STRING]\n  2. [ID]\n  3. [NAME_WITH_SPACES]\nbut found: '\n'",
+          "kind": "Parser",
+          "line": 1,
+          "column": 14,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "wrong-header",
+      "source": "wardley\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: wardley\ncomponent A [0.5,0.5]",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "wardley-beta component A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "blank-lines",
+      "source": "\nwardley-beta\n\ncomponent A [0.5,0.5]\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "comment",
+      "source": "%% before\nwardley-beta\n%% body\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "directive",
+      "source": "%%{init: {\"wardley-beta\":{\"width\":480}}}%%\nwardley-beta\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\ntitle: Front\nconfig:\n  {\n    \"wardley-beta\": {\n      \"width\": 480\n    }\n  }\n---\nwardley-beta\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "wardley-beta\ntitle Inline\naccTitle: Accessible\naccDescr: Description\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "Inline",
+          "accTitle": "Accessible",
+          "accDescr": "Description"
+        }
+      }
+    },
+    {
+      "id": "acc-block",
+      "source": "wardley-beta\naccDescr {first\n  second}\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": "first\nsecond"
+        }
+      }
+    },
+    {
+      "id": "size",
+      "source": "wardley-beta\nsize [480,320]\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {},
+            "size": {
+              "width": 480,
+              "height": 320
+            }
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "size-float",
+      "source": "wardley-beta\nsize [480.5,320]\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 7: Expecting token of type 'INT' but found `480.5`.",
+          "kind": "Parser",
+          "line": 2,
+          "column": 7,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "evolution-default-names",
+      "source": "wardley-beta\nevolution Genesis -> Custom Built -> Product -> Commodity\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {
+              "stages": [
+                "Genesis",
+                "Custom Built",
+                "Product",
+                "Commodity"
+              ],
+              "stageBoundaries": []
+            }
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "evolution-boundaries-dual",
+      "source": "wardley-beta\nevolution Genesis @0.2 / Concept -> Custom Built @0.5 / Emerging -> Product @0.8 / Rental -> Commodity @1.0 / Utility\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {
+              "stages": [
+                "Genesis / Concept",
+                "Custom Built / Emerging",
+                "Product / Rental",
+                "Commodity / Utility"
+              ],
+              "stageBoundaries": [
+                0.2,
+                0.5,
+                0.8,
+                1
+              ]
+            }
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "evolution-single",
+      "source": "wardley-beta\nevolution Genesis\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 18: Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[ARROW]>\nbut found: '\n'",
+          "kind": "Parser",
+          "line": 2,
+          "column": 18,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "anchor",
+      "source": "wardley-beta\nanchor User [1.0,0.0]\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "User",
+                "label": "User",
+                "x": 0,
+                "y": 100,
+                "className": "anchor"
+              },
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "anchor-integer",
+      "source": "wardley-beta\nanchor User [1,0.0]\ncomponent A [0.5,0.5]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 14: Expecting token of type 'WARDLEY_NUMBER' but found `1`.",
+          "kind": "Parser",
+          "line": 2,
+          "column": 14,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "quoted-names",
+      "source": "wardley-beta\nanchor 'User role' [0.9,0.1]\ncomponent 'Core API' [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "User role",
+                "label": "User role",
+                "x": 10,
+                "y": 90,
+                "className": "anchor"
+              },
+              {
+                "id": "Core API",
+                "label": "Core API",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "markup-name",
+      "source": "wardley-beta\ncomponent '<script>x</script><b>A</b>' [0.5,0.5]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "<script>x</script><b>A</b>",
+                "label": "<script>x</script><b>A</b>",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "coordinates-percent",
+      "source": "wardley-beta\ncomponent A [80.0,30.0]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 30,
+                "y": 80,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "coordinates-over-one",
+      "source": "wardley-beta\ncomponent A [1.1,2.0]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 2,
+                "y": 1.1,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "coordinates-out-of-range",
+      "source": "wardley-beta\ncomponent A [101.0,50.0]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Component \"A\" visibility must be between 0-1 (decimal) or 0-100 (percentage). Received: 101",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "coordinates-negative",
+      "source": "wardley-beta\ncomponent A [-1,0.5]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 14: Expecting token of type 'WARDLEY_NUMBER' but found `-`.",
+          "kind": "Parser",
+          "line": 2,
+          "column": 14,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "label-offsets",
+      "source": "wardley-beta\ncomponent A [0.5,0.5] label [-12,-7]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "labelOffsetX": -12,
+                "labelOffsetY": -7,
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "strategies",
+      "source": "wardley-beta\ncomponent A [0.9,0.1] (build)\ncomponent B [0.7,0.3] (buy)\ncomponent C [0.5,0.5] (outsource)\ncomponent D [0.3,0.7] (market)",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 10,
+                "y": 90,
+                "className": "component",
+                "inertia": false,
+                "sourceStrategy": "build"
+              },
+              {
+                "id": "B",
+                "label": "B",
+                "x": 30,
+                "y": 70,
+                "className": "component",
+                "inertia": false,
+                "sourceStrategy": "buy"
+              },
+              {
+                "id": "C",
+                "label": "C",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false,
+                "sourceStrategy": "outsource"
+              },
+              {
+                "id": "D",
+                "label": "D",
+                "x": 70,
+                "y": 30,
+                "className": "component",
+                "inertia": false,
+                "sourceStrategy": "market"
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "inertia",
+      "source": "wardley-beta\ncomponent A [0.5,0.5] inertia\ncomponent B [0.4,0.6] (inertia)",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": true
+              },
+              {
+                "id": "B",
+                "label": "B",
+                "x": 60,
+                "y": 40,
+                "className": "component",
+                "inertia": true
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "bad-strategy",
+      "source": "wardley-beta\ncomponent A [0.5,0.5] (rent)",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 24: Expecting token of type 'KW_INERTIA' but found `rent)`.\nParse error on line 2, column 29: Expecting: one of these possible Token sequences:\n  1. [STRING]\n  2. [ID]\n  3. [NAME_WITH_SPACES]\nbut found: '\n'",
+          "kind": "Parser",
+          "line": 2,
+          "column": 24,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "duplicate-node",
+      "source": "wardley-beta\ncomponent A [0.8,0.2] label [1,2]\ncomponent A [0.4,0.6] inertia",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 60,
+                "y": 40,
+                "className": "component",
+                "labelOffsetX": 1,
+                "labelOffsetY": 2,
+                "inertia": true
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "links",
+      "source": "wardley-beta\ncomponent A [0.8,0.2]\ncomponent B [0.5,0.5]\nA -> B\nA --> B\nA -.-> B ; dashed\nA +> B\nA +< B\nA +<> B\nA +'flow'> B ; annotation",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 20,
+                "y": 80,
+                "className": "component",
+                "inertia": false
+              },
+              {
+                "id": "B",
+                "label": "B",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [
+              {
+                "source": "A",
+                "target": "B",
+                "dashed": false
+              },
+              {
+                "source": "A",
+                "target": "B",
+                "dashed": false
+              },
+              {
+                "source": "A",
+                "target": "B",
+                "dashed": true,
+                "label": "dashed"
+              },
+              {
+                "source": "A",
+                "target": "B",
+                "dashed": false,
+                "flow": "forward"
+              },
+              {
+                "source": "A",
+                "target": "B",
+                "dashed": false,
+                "flow": "backward"
+              },
+              {
+                "source": "A",
+                "target": "B",
+                "dashed": false,
+                "flow": "bidirectional"
+              },
+              {
+                "source": "A",
+                "target": "B",
+                "dashed": false,
+                "label": "flow",
+                "flow": "forward"
+              }
+            ],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "missing-link-node",
+      "source": "wardley-beta\ncomponent A [0.5,0.5]\nA -> Missing",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [
+              {
+                "source": "A",
+                "target": "Missing",
+                "dashed": false
+              }
+            ],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "evolve",
+      "source": "wardley-beta\ncomponent A [0.5,0.5]\nevolve A 0.9\nevolve Missing 0.7",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [
+              {
+                "nodeId": "A",
+                "targetX": 90,
+                "targetY": 50
+              }
+            ],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "evolve-out-of-range",
+      "source": "wardley-beta\ncomponent A [0.5,0.5]\nevolve A 101.0",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Evolve target for \"A\" must be between 0-1 (decimal) or 0-100 (percentage). Received: 101",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "pipeline",
+      "source": "wardley-beta\ncomponent Parent [0.7,0.5]\npipeline Parent {\ncomponent One [0.1]\ncomponent Two [0.8] label [-2,3]\n}",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "Parent",
+                "label": "Parent",
+                "x": 50,
+                "y": 70,
+                "className": "component",
+                "inertia": false,
+                "isPipelineParent": true
+              },
+              {
+                "id": "Parent_One",
+                "label": "One",
+                "x": 10,
+                "y": 70,
+                "className": "pipeline-component",
+                "inPipeline": true
+              },
+              {
+                "id": "Parent_Two",
+                "label": "Two",
+                "x": 80,
+                "y": 70,
+                "className": "pipeline-component",
+                "labelOffsetX": -2,
+                "labelOffsetY": 3,
+                "inPipeline": true
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [
+              {
+                "nodeId": "Parent",
+                "componentIds": [
+                  "Parent_One",
+                  "Parent_Two"
+                ]
+              }
+            ],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "pipeline-missing-parent",
+      "source": "wardley-beta\npipeline Missing {\ncomponent One [0.1]\n}",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Pipeline \"Missing\" must reference an existing component with coordinates.",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "pipeline-no-components",
+      "source": "wardley-beta\ncomponent Parent [0.7,0.5]\npipeline Parent {\n}",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 4, column 1: Expecting: expecting at least one iteration which starts with one of these possible Token sequences::\n  <[KW_COMPONENT]>\nbut found: '}'",
+          "kind": "Parser",
+          "line": 4,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "note",
+      "source": "wardley-beta\nnote 'A note' [0.7,0.4]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [
+              {
+                "text": "A note",
+                "x": 40,
+                "y": 70
+              }
+            ],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "note-unquoted",
+      "source": "wardley-beta\nnote A note [0.7,0.4]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 6: Expecting token of type 'STRING' but found `A note`.\nParse error on line 2, column 13: Expecting: one of these possible Token sequences:\n  1. [STRING]\n  2. [ID]\n  3. [NAME_WITH_SPACES]\nbut found: '['",
+          "kind": "Parser",
+          "line": 2,
+          "column": 6,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "annotations",
+      "source": "wardley-beta\nannotations [20,80]\nannotation 2, [0.4,0.6] 'Second'\nannotation 1, [50,50] 'First'",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [
+              {
+                "number": 2,
+                "coordinates": [
+                  {
+                    "x": 60,
+                    "y": 40
+                  }
+                ],
+                "text": "Second"
+              },
+              {
+                "number": 1,
+                "coordinates": [
+                  {
+                    "x": 50,
+                    "y": 50
+                  }
+                ],
+                "text": "First"
+              }
+            ],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "annotationsBox": {
+              "x": 80,
+              "y": 20
+            },
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "accelerators",
+      "source": "wardley-beta\naccelerator Fast [0.3,0.2]\ndeaccelerator Slow [0.4,0.7]",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [
+              {
+                "name": "Fast",
+                "x": 20,
+                "y": 30
+              }
+            ],
+            "deaccelerators": [
+              {
+                "name": "Slow",
+                "x": 70,
+                "y": 40
+              }
+            ],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "accelerator-integer",
+      "source": "wardley-beta\naccelerator Fast [1,0.2]",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 19: Expecting token of type 'WARDLEY_NUMBER' but found `1`.",
+          "kind": "Parser",
+          "line": 2,
+          "column": 19,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "semicolon",
+      "source": "wardley-beta\ncomponent A [0.5,0.5];",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 22: unexpected character: ->;<- at offset: 34, skipped 1 characters. ",
+          "kind": "Lexer",
+          "line": 2,
+          "column": 22,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "wardley-beta\r\ncomponent A [0.5,0.5]\r\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "data": {
+            "nodes": [
+              {
+                "id": "A",
+                "label": "A",
+                "x": 50,
+                "y": 50,
+                "className": "component",
+                "inertia": false
+              }
+            ],
+            "links": [],
+            "trends": [],
+            "pipelines": [],
+            "annotations": [],
+            "notes": [],
+            "accelerators": [],
+            "deaccelerators": [],
+            "axes": {}
+          },
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "795bab868d252dd346ceaf2f617968893d1ea9cf48994ba1e225d3d95144e216"
+}

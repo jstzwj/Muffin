@@ -8,6 +8,7 @@
 #include "mermaid/state/StateLayout.h"
 #include "mermaid/state/StateScene.h"
 #include "mermaid/theme/FlowTheme.h"
+#include "mermaid/theme/MermaidCssCascade.h"
 
 #include <QJsonObject>
 #include <QSize>
@@ -36,39 +37,107 @@ struct StateDiagramImpl : Diagram {
           themeOverrides(pre.config));
       const QString look = pre.config.value(QStringLiteral("look"))
           .toString(QStringLiteral("classic"));
+      const bool handDrawn = look == QLatin1String("handDrawn");
+      const quint32 handDrawnSeed = static_cast<quint32>(
+          std::max(0.0, configNumber(
+              pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
       const QJsonObject stateConfig =
           pre.config.value(QStringLiteral("state")).toObject();
       const state::StateLayoutInput input =
           state::buildStateLayoutInput(diagram.data(), look);
       state::StateSceneStyle style;
-      style.stateFill = themeVars.mainBkg;
-      style.stateStroke = themeVars.border1;
+      // `.node rect` rule: fill = stateBkg || mainBkg, stroke = stateBorder ||
+      // nodeBorder (NOT border1 — redux-dark's border1 #ccc differs from its
+      // stateBorder/nodeBorder #FFFFFF). stateBkg is derived to mainBkg by
+      // every built-in theme's updateColors.
+      style.stateFill = !themeVars.stateBkg.isEmpty() ? themeVars.stateBkg
+                                                      : themeVars.mainBkg;
+      style.stateStroke = !themeVars.stateBorder.isEmpty()
+                              ? themeVars.stateBorder : themeVars.nodeBorder;
       style.textColor = themeVars.primaryTextColor;
-      style.transitionColor = themeVars.lineColor;
-      style.edgeLabelFill = themeVars.mainBkg;
-      style.compositeFill = themeVars.clusterBkg;
-      style.compositeStroke = themeVars.clusterBorder;
+      // state/styles.js: `.transition` stroke + the barbEnd markers take
+      // transitionColor (`|| lineColor`); the edge-label background rect takes
+      // labelBackgroundColor (derived from stateBkg → mainBkg); `.stateLabel
+      // text`/`.state-title` take stateLabelColor — whose `|| stateBkg ||
+      // primaryTextColor` chain equals primaryTextColor unless overridden.
+      // All three now consume the resolved themeVariables, so user overrides
+      // of these keys propagate like 11.16.
+      style.transitionColor = themeVars.transitionColor;
+      style.edgeLabelFill = themeVars.labelBackgroundColor;
+      style.stateLabelColor = themeVars.stateLabelColor;
+      style.transitionLabelColor = themeVars.transitionLabelColor;
+      style.specialStateColor = themeVars.specialStateColor;
+      style.endInnerFill = !themeVars.stateBorder.isEmpty()
+                               ? themeVars.stateBorder : themeVars.nodeBorder;
+      style.compositeFill = themeVars.compositeBackground;
+      style.compositeAltFill = themeVars.altBackground;
+      style.compositeTitleFill = themeVars.compositeTitleBackground;
+      style.compositeStroke = themeVars.nodeBorder;
       style.fontFamily = MermaidFontRegistry::cssFamilyStack();
       style.fontSize = pixelValue(themeVars.fontSize, 16.0);
       style.lineHeight = style.fontSize * 1.5;
       style.strokeWidth = themeVars.strokeWidth;
-      if (configuredTheme.compare(QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
-        style.noteFill = QStringLiteral("#474949");
-        style.noteStroke = QStringLiteral("#2f2f2f");
-        style.noteTextColor = QStringLiteral("#ffffff");
-      }
+      csscascade::ElementStyle rootFallback;
+      rootFallback.fill = themeVars.textColor;
+      rootFallback.stroke = QStringLiteral("none");
+      rootFallback.strokeWidth = QStringLiteral("1px");
+      rootFallback.color = QStringLiteral("black");
+      rootFallback.fontFamily = style.fontFamily;
+      rootFallback.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
+      csscascade::ElementStyle nodeFallback = rootFallback;
+      nodeFallback.fill = style.stateFill;
+      nodeFallback.stroke = style.stateStroke;
+      nodeFallback.strokeWidth = QString::number(style.strokeWidth) + QStringLiteral("px");
+      csscascade::ElementStyle labelFallback = rootFallback;
+      labelFallback.color = style.textColor;
+      const auto css = csscascade::resolveElements(
+          pre.config.value(QStringLiteral("themeCSS")).toString(), {
+            {QStringLiteral("svg"), {}, QStringLiteral("svg"),
+             QStringLiteral("diagram-root"), {QStringLiteral("stateDiagram")}, {},
+             rootFallback, {}},
+            {QStringLiteral("root"), QStringLiteral("svg"), QStringLiteral("g"),
+             {}, {QStringLiteral("root")}, {}, rootFallback, {}},
+            {QStringLiteral("node"), QStringLiteral("root"), QStringLiteral("g"),
+             {}, {QStringLiteral("node")}, {}, rootFallback, {}},
+            {QStringLiteral("shape"), QStringLiteral("node"), QStringLiteral("rect"),
+             {}, {}, {}, nodeFallback, {}},
+            {QStringLiteral("label"), QStringLiteral("node"), QStringLiteral("span"),
+             {}, {QStringLiteral("nodeLabel")}, {}, labelFallback, {}}
+          });
+      const auto nodeStyle = css.value(QStringLiteral("shape"), nodeFallback);
+      const auto labelStyle = css.value(QStringLiteral("label"), labelFallback);
+      const bool shapeHidden = !nodeStyle.hasBox();
+      style.shapeVisible = !shapeHidden;
+      style.stateFill = nodeStyle.fill;
+      style.stateStroke = nodeStyle.stroke;
+      style.strokeWidth = cssStrokeWidthPx(nodeStyle.strokeWidth, {}, 0.0);
+      style.textColor = labelStyle.color;
+      // The stateLabel slot follows the projected label color (themeCSS
+      // `.stateLabel text`-equivalent cases must win over the theme default).
+      style.stateLabelColor = labelStyle.color;
+      style.fontFamily = firstFontFamily(labelStyle.fontFamily);
+      style.fontSize = cssFontSizePx(labelStyle.fontSize, {});
+      style.lineHeight = style.fontSize * 1.5;
+      // `.state-note` fill/stroke + nested text (mkBorder(noteBkgColor) /
+      // noteBkgColor / noteTextColor per theme — the former dark-hardcoded
+      // approximations are superseded by the resolved derivation).
+      style.noteFill = themeVars.noteBkgColor;
+      style.noteStroke = themeVars.noteBorderColor;
+      style.noteTextColor = themeVars.noteTextColor;
       const state::StateLayoutMeasurements measurements = state::measureStateLayoutInput(
-          input, style.fontFamily, style.fontSize);
+          input, style.fontFamily, style.fontSize, handDrawn, handDrawnSeed,
+          shapeHidden);
       const state::StatePlacementResult placement =
           state::layoutStateDiagramDagre(
               input, measurements,
               configNumber(stateConfig, QStringLiteral("nodeSpacing"), 50.0),
-              configNumber(stateConfig, QStringLiteral("rankSpacing"), 50.0));
+              configNumber(stateConfig, QStringLiteral("rankSpacing"), 50.0),
+              handDrawn, handDrawnSeed);
       MermaidRenderMetadata metadata = renderMetadata(
           pre, type, {}, diagram.data().accTitle,
           diagram.data().accDescription, style.textColor, style.fontFamily,
           18.0, configNumber(stateConfig, QStringLiteral("titleTopMargin"),
-                             25.0), 8.0);
+                             25.0), 0.0);
       QVector<style::ClassDef> stateStyleDefs;
       for (const state::StateStyleClass& cls : diagram.data().styleClasses)
         stateStyleDefs.append({cls.id, cls.styles + cls.textStyles});
@@ -81,14 +150,14 @@ struct StateDiagramImpl : Diagram {
       stateTheme.fontFamily = style.fontFamily;
       stateTheme.fontSize = QString::number(style.fontSize) + QStringLiteral("px");
       state::StateScene scene = state::buildStateScene(
-          input, placement, std::move(style), stateStyleDefs, stateTheme);
-      scene.handDrawn = look.compare(
-          QStringLiteral("handDrawn"), Qt::CaseInsensitive) == 0;
-      scene.handDrawnSeed = static_cast<quint32>(
-          std::max(0.0, configNumber(pre.config, QStringLiteral("handDrawnSeed"), 0.0)));
+          input, placement, std::move(style), stateStyleDefs, stateTheme,
+          handDrawn, handDrawnSeed);
       MermaidRenderEntry entry;
       entry.status = MermaidRenderStatus::Ready;
-      entry.naturalSize = QSize(qCeil(scene.bounds.width()), qCeil(scene.bounds.height()));
+      // naturalSize = the rounded client size (upstream's fractional viewBox
+      // width is the svg's used CSS width; round, matching the Flowchart
+      // convention — ceil inflated a 26.40625-wide diagram to 27).
+      entry.naturalSize = QSize(qRound(scene.bounds.width()), qRound(scene.bounds.height()));
       entry.scene = std::make_shared<const state::StateScene>(std::move(scene));
       finalizeReadyEntry(entry, std::move(metadata));
       return entry;

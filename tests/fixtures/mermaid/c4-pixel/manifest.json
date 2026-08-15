@@ -1,0 +1,41 @@
+{
+  "provenance": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "c4ModuleSha256": "ea38b507259b57ac7d0fa526018cd1589abc99dc5f90af5c03f69540964a9862",
+    "c4SourceMapSha256": "ff3aeaa5dd97f61feef685f5b09eb787f1d06dad665cb6353fe3d1d62ccf0df8",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "notoSansCjkSha256": "2c76254f6fc379fddfce0a7e84fb5385bb135d3e399294f6eeb6680d0365b74b",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "default",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"c4\":{\"personFontFamily\":\"Noto Sans\",\"external_personFontFamily\":\"Noto Sans\",\"systemFontFamily\":\"Noto Sans\",\"external_systemFontFamily\":\"Noto Sans\",\"system_dbFontFamily\":\"Noto Sans\",\"external_system_dbFontFamily\":\"Noto Sans\",\"system_queueFontFamily\":\"Noto Sans\",\"external_system_queueFontFamily\":\"Noto Sans\",\"boundaryFontFamily\":\"Noto Sans\",\"messageFontFamily\":\"Noto Sans\",\"containerFontFamily\":\"Noto Sans\",\"external_containerFontFamily\":\"Noto Sans\",\"container_dbFontFamily\":\"Noto Sans\",\"external_container_dbFontFamily\":\"Noto Sans\",\"container_queueFontFamily\":\"Noto Sans\",\"external_container_queueFontFamily\":\"Noto Sans\",\"componentFontFamily\":\"Noto Sans\",\"external_componentFontFamily\":\"Noto Sans\",\"component_dbFontFamily\":\"Noto Sans\",\"external_component_dbFontFamily\":\"Noto Sans\",\"component_queueFontFamily\":\"Noto Sans\",\"external_component_queueFontFamily\":\"Noto Sans\"}}}%%\nC4Context\ntitle Banking Context\nPerson(customer, \"Customer\", \"Uses the bank\")\nSystem_Boundary(bank, \"Bank\") {\n  SystemDb(core, \"Core\", \"Accounts and payments\")\n  System(api, \"API\", \"Public interface\")\n}\nSystem_Ext(mail, \"Mail\", \"Sends notifications\")\nRel(customer, api, \"Uses\", \"HTTPS\")\nBiRel(api, core, \"Reads and writes\", \"SQL\")\nRel_R(api, mail, \"Sends\", \"SMTP\")",
+      "file": "default.png",
+      "width": 932,
+      "height": 844,
+      "sha256": "e4724c2bda0d5c9de300c7a57addcf8d50dc5548c41da096fe6926c1333d57f3"
+    },
+    {
+      "id": "dark",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"c4\":{\"personFontFamily\":\"Noto Sans\",\"external_personFontFamily\":\"Noto Sans\",\"systemFontFamily\":\"Noto Sans\",\"external_systemFontFamily\":\"Noto Sans\",\"system_dbFontFamily\":\"Noto Sans\",\"external_system_dbFontFamily\":\"Noto Sans\",\"system_queueFontFamily\":\"Noto Sans\",\"external_system_queueFontFamily\":\"Noto Sans\",\"boundaryFontFamily\":\"Noto Sans\",\"messageFontFamily\":\"Noto Sans\",\"containerFontFamily\":\"Noto Sans\",\"external_containerFontFamily\":\"Noto Sans\",\"container_dbFontFamily\":\"Noto Sans\",\"external_container_dbFontFamily\":\"Noto Sans\",\"container_queueFontFamily\":\"Noto Sans\",\"external_container_queueFontFamily\":\"Noto Sans\",\"componentFontFamily\":\"Noto Sans\",\"external_componentFontFamily\":\"Noto Sans\",\"component_dbFontFamily\":\"Noto Sans\",\"external_component_dbFontFamily\":\"Noto Sans\",\"component_queueFontFamily\":\"Noto Sans\",\"external_component_queueFontFamily\":\"Noto Sans\"},\"theme\":\"dark\"}}%%\nC4Context\ntitle Banking Context\nPerson(customer, \"Customer\", \"Uses the bank\")\nSystem_Boundary(bank, \"Bank\") {\n  SystemDb(core, \"Core\", \"Accounts and payments\")\n  System(api, \"API\", \"Public interface\")\n}\nSystem_Ext(mail, \"Mail\", \"Sends notifications\")\nRel(customer, api, \"Uses\", \"HTTPS\")\nBiRel(api, core, \"Reads and writes\", \"SQL\")\nRel_R(api, mail, \"Sends\", \"SMTP\")",
+      "file": "dark.png",
+      "width": 932,
+      "height": 844,
+      "sha256": "c29d8c55fc949a5f628c11b067720c3c432f3a5d2c6f7cdeeb5dd2bef5fc25ac"
+    },
+    {
+      "id": "deployment",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"c4\":{\"personFontFamily\":\"Noto Sans\",\"external_personFontFamily\":\"Noto Sans\",\"systemFontFamily\":\"Noto Sans\",\"external_systemFontFamily\":\"Noto Sans\",\"system_dbFontFamily\":\"Noto Sans\",\"external_system_dbFontFamily\":\"Noto Sans\",\"system_queueFontFamily\":\"Noto Sans\",\"external_system_queueFontFamily\":\"Noto Sans\",\"boundaryFontFamily\":\"Noto Sans\",\"messageFontFamily\":\"Noto Sans\",\"containerFontFamily\":\"Noto Sans\",\"external_containerFontFamily\":\"Noto Sans\",\"container_dbFontFamily\":\"Noto Sans\",\"external_container_dbFontFamily\":\"Noto Sans\",\"container_queueFontFamily\":\"Noto Sans\",\"external_container_queueFontFamily\":\"Noto Sans\",\"componentFontFamily\":\"Noto Sans\",\"external_componentFontFamily\":\"Noto Sans\",\"component_dbFontFamily\":\"Noto Sans\",\"external_component_dbFontFamily\":\"Noto Sans\",\"component_queueFontFamily\":\"Noto Sans\",\"external_component_queueFontFamily\":\"Noto Sans\"}}}%%\nC4Deployment\nEnterprise_Boundary(e, \"Enterprise\") {\n System_Boundary(s, \"System\") {\n  Container_Boundary(c, \"Container\") {\n   Component(x, \"X\", \"Tech\")\n  }\n }\n Boundary(b, \"Generic\", \"Custom\") {\n  Person(p, \"P\")\n }\n Deployment_Node(n, \"Node\", \"Type\", \"Description\") {\n  System(a, \"A\")\n }\n Node_L(l, \"Left\") {\n  System(ll, \"LL\")\n }\n Node_R(r, \"Right\") {\n  System(rr, \"RR\")\n }\n}\n",
+      "file": "deployment.png",
+      "width": 1182,
+      "height": 1390,
+      "sha256": "22a0f98e32be722fed832b05cc64b5cb38d839ed99e13e8ebf956dabac4713f0"
+    }
+  ],
+  "fixtureSha256": "c9f489d3eb29503844373276cfdfb584abb91d11c8b24a871043f65fd4b7b358"
+}

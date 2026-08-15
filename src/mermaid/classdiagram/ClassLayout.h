@@ -137,12 +137,15 @@ struct ClassPlacementCluster {
   qreal y = 0.0;
   qreal width = 0.0;
   qreal height = 0.0;
+  qreal logicalWidth = 0.0;
+  qreal logicalHeight = 0.0;
 };
 
 struct ClassPlacementResult {
   QVector<ClassPlacementNode> nodes;
   QVector<ClassPlacementEdge> edges;
   QVector<ClassPlacementCluster> clusters;
+  QPointF sourceOrigin;
 };
 
 ClassLayoutInput buildClassLayoutInput(const ClassDiagramData& data,
@@ -157,9 +160,11 @@ ClassLayoutMeasurements measureClassLayoutLabels(
 
 ClassDagreMeasurements measureClassDagreInput(
     const ClassLayoutInput& input, const QVector<ClassBoxGeometry>& boxes,
-    ClassLabelMeasureOptions options = {});
+    ClassLabelMeasureOptions options = {}, bool handDrawn = false,
+    quint32 handDrawnSeed = 0);
 
 ClassPlacementResult layoutClassDiagramDagre(
-    const ClassLayoutInput& input, const ClassDagreMeasurements& measurements);
+    const ClassLayoutInput& input, const ClassDagreMeasurements& measurements,
+    bool handDrawn = false, quint32 handDrawnSeed = 0);
 
 }  // namespace muffin::mermaid::classdiagram

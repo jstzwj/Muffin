@@ -12,6 +12,7 @@ namespace muffin::mermaid::editor {
 // and stays family-agnostic — so adding a family touches one adapter TU + this
 // registry + CMake + the accessor declaration, but no consumer code.
 const Diagram& flowchartDiagramAdapter();
+const Diagram& swimlaneDiagramAdapter();
 const Diagram& sequenceDiagramAdapter();
 const Diagram& classDiagramAdapter();
 const Diagram& stateDiagramAdapter();
@@ -26,11 +27,28 @@ const Diagram& timelineDiagramAdapter();
 const Diagram& packetDiagramAdapter();
 const Diagram& kanbanDiagramAdapter();
 const Diagram& mindmapDiagramAdapter();
+const Diagram& gitGraphDiagramAdapter();
+const Diagram& c4DiagramAdapter();
 const Diagram& ganttDiagramAdapter();
 const Diagram& infoDiagramAdapter();
 const Diagram& treeViewDiagramAdapter();
 const Diagram& eventModelingDiagramAdapter();
 const Diagram& ishikawaDiagramAdapter();
+const Diagram& vennDiagramAdapter();
+const Diagram& sankeyDiagramAdapter();
+const Diagram& treemapDiagramAdapter();
+const Diagram& cynefinDiagramAdapter();
+const Diagram& wardleyDiagramAdapter();
+const Diagram& architectureDiagramAdapter();
+const Diagram& blockDiagramAdapter();
+const Diagram& railroadDiagramAdapter();
+const Diagram& railroadEbnfDiagramAdapter();
+const Diagram& railroadAbnfDiagramAdapter();
+const Diagram& railroadPegDiagramAdapter();
+// The two diagram types upstream registers before everything else: the error
+// diagram (lightbulb fallback visual) and the "---" frontmatter-guard stub.
+const Diagram& errorDiagramAdapter();
+const Diagram& dashDiagramAdapter();
 
 // Returns the Diagram that handles the detected type id, or nullptr if the
 // type is not natively rendered. The registry is the single source of truth

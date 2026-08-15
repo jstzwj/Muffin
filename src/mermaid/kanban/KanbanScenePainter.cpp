@@ -1,9 +1,11 @@
 #include "mermaid/kanban/KanbanScenePainter.h"
 
+#include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/rough/RoughPaint.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QPainter>
+#include <QJsonValue>
 
 #include <algorithm>
 #include <cmath>
@@ -57,22 +59,45 @@ void paintDropShadow(QPainter& painter, const QRectF& rect, qreal radius,
   }
 }
 
+qreal effectiveOpacity(const KanbanElementCss& css) {
+  return css.opacity >= 0.0 ? css.opacity : 1.0;
+}
+
+// A themeCSS stroke-width resolves like any CSS length: em/ex against the
+// root font, percentages against the viewBox diagonal.
+qreal cssStrokeWidthValue(const QString& raw, const KanbanScene& scene) {
+  CssLengthContext context = editor::pieCssLengthContext(
+      scene.style.fontFamily, scene.style.fontSize);
+  context.viewportPx = scene.bounds.size();
+  const qreal diagonal =
+      std::hypot(scene.bounds.width(), scene.bounds.height()) /
+      std::sqrt(2.0);
+  return editor::cssStrokeWidthPx(raw, context, diagonal);
+}
+
 void paintLabel(QPainter& painter, const KanbanScene& scene,
                 const KanbanLabelGeometry& label) {
-  if (label.source.isEmpty() || label.bounds.isEmpty()) return;
+  if (label.source.isEmpty() || label.bounds.isEmpty() ||
+      !label.css.visible)
+    return;
   const color::SvgPaint root = rootPaint(scene.style.textColor);
-  const color::SvgPaint text = label.fill.trimmed().isEmpty()
+  const QString colorValue =
+      !label.css.color.isEmpty() ? label.css.color : label.fill;
+  const color::SvgPaint text = colorValue.trimmed().isEmpty()
       ? root
-      : color::resolveSvgPaint(label.fill, color::SvgPaintKind::Text,
+      : color::resolveSvgPaint(colorValue, color::SvgPaintKind::Text,
                                root.color);
-  if (text.none || !(scene.style.fontSize > 0.0)) return;
-  const qreal lineHeight = scene.config.htmlLabels
-      ? scene.style.fontSize * 1.5 : scene.style.fontSize * 1.1;
+  if (text.none || !(label.fontSize > 0.0)) return;
+  const qreal lineHeight =
+      label.html ? label.fontSize * 1.5 : label.fontSize * 1.1;
+  painter.save();
+  painter.setOpacity(effectiveOpacity(label.css));
   flowchart::paintFlowLabel(
-      painter, label.document, label.bounds, scene.style.fontFamily,
-      scene.style.fontSize, lineHeight, text.color, false,
+      painter, label.document, label.bounds, label.fontFamily,
+      label.fontSize, lineHeight, text.color, false,
       label.centered ? flowchart::FlowLabelAlign::Center
                      : flowchart::FlowLabelAlign::Left);
+  painter.restore();
 }
 
 }  // namespace
@@ -84,8 +109,23 @@ void paintKanbanScene(const KanbanScene& scene, QPainter& painter,
     if (!mermaidPrimitiveIsVisible(section.paintedBounds.united(section.label.bounds),
                                    options))
       continue;
-    const QBrush fill = fillBrush(section.fill, root);
-    const QPen stroke = strokePen(section.stroke, section.strokeWidth, root);
+    if (!section.clusterCss.visible || !section.boxCss.visible) {
+      paintLabel(painter, scene, section.label);
+      continue;
+    }
+    const QString fillValue =
+        !section.boxCss.fill.isEmpty() ? section.boxCss.fill : section.fill;
+    const QString strokeValue = !section.boxCss.stroke.isEmpty()
+                                    ? section.boxCss.stroke
+                                    : section.stroke;
+    const qreal strokeWidth = !section.boxCss.strokeWidth.isEmpty()
+                                  ? cssStrokeWidthValue(
+                                        section.boxCss.strokeWidth, scene)
+                                  : section.strokeWidth;
+    const QBrush fill = fillBrush(fillValue, root);
+    const QPen stroke = strokePen(strokeValue, strokeWidth, root);
+    painter.save();
+    painter.setOpacity(effectiveOpacity(section.boxCss));
     if (section.dropShadow) {
       const color::SvgPaint shadow = color::resolveSvgPaint(
           scene.style.shadowColor, color::SvgPaintKind::Fill, QColor(Qt::black));
@@ -103,27 +143,52 @@ void paintKanbanScene(const KanbanScene& scene, QPainter& painter,
       painter.setBrush(fill);
       painter.drawRoundedRect(section.shapeBounds, 5.0, 5.0);
     }
+    painter.restore();
     paintLabel(painter, scene, section.label);
   }
 
   for (const KanbanItemGeometry& item : scene.items) {
     if (!mermaidPrimitiveIsVisible(item.bounds, options)) continue;
-    painter.setPen(strokePen(item.stroke, item.strokeWidth, root));
-    painter.setBrush(fillBrush(item.fill, root));
-    painter.drawRoundedRect(item.localBounds.translated(item.position),
-                            item.radius, item.radius);
+    const QString fillValue =
+        !item.boxCss.fill.isEmpty() ? item.boxCss.fill : item.fill;
+    const QString strokeValue =
+        !item.boxCss.stroke.isEmpty() ? item.boxCss.stroke : item.stroke;
+    const qreal strokeWidth = !item.boxCss.strokeWidth.isEmpty()
+                                  ? cssStrokeWidthValue(
+                                        item.boxCss.strokeWidth, scene)
+                                  : item.strokeWidth;
+    if (item.nodeCss.visible && item.boxCss.visible) {
+      painter.save();
+      painter.setOpacity(effectiveOpacity(item.boxCss));
+      painter.setPen(strokePen(strokeValue, strokeWidth, root));
+      painter.setBrush(fillBrush(fillValue, root));
+      painter.drawRoundedRect(item.localBounds.translated(item.position),
+                              item.radius, item.radius);
+      painter.restore();
+    }
     paintLabel(painter, scene, item.title);
     paintLabel(painter, scene, item.ticket);
     paintLabel(painter, scene, item.assigned);
-    if (item.priorityVisible) {
+    if (item.priorityVisible && item.priorityCss.visible) {
+      const QString priorityValue = !item.priorityCss.stroke.isEmpty()
+                                        ? item.priorityCss.stroke
+                                        : item.priorityStroke;
+      const qreal priorityWidth = !item.priorityCss.strokeWidth.isEmpty()
+                                      ? cssStrokeWidthValue(
+                                            item.priorityCss.strokeWidth,
+                                            scene)
+                                      : item.priorityStrokeWidth;
       const color::SvgPaint priority = color::resolveSvgPaint(
-          item.priorityStroke, color::SvgPaintKind::Stroke, root.color);
+          priorityValue, color::SvgPaintKind::Stroke, root.color);
       if (!priority.none) {
-        QPen pen(priority.color, item.priorityStrokeWidth);
+        painter.save();
+        painter.setOpacity(effectiveOpacity(item.priorityCss));
+        QPen pen(priority.color, priorityWidth);
         pen.setCapStyle(Qt::FlatCap);
         painter.setPen(pen);
         painter.setBrush(Qt::NoBrush);
         painter.drawLine(item.priorityLine);
+        painter.restore();
       }
     }
   }

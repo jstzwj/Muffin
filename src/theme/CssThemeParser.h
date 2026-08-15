@@ -102,6 +102,14 @@ class CssThemeParser {
 public:
   static CssThemeSheet parse(const QString& text, const QString& baseDir);
 
+  // Parse an element's `style` attribute using the same declaration grammar as
+  // stylesheet rules. Exposed for semantic renderers (notably Mermaid) that
+  // build a lightweight DOM projection and need the real author cascade:
+  // stylesheet !important > inline normal, while inline !important wins by
+  // specificity. Invalid/incomplete declarations are skipped exactly as in a
+  // normal rule block.
+  static std::vector<CssDeclaration> parseDeclarations(const QString& text);
+
   // Recursively substitute var(--x[, fallback]) references in `value` using the
   // variable table. Unknown variables with no fallback resolve to empty string.
   static QString resolveVars(const QString& value, const QHash<QString, QString>& variables);

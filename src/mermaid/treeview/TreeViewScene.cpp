@@ -84,15 +84,29 @@ flowchart::FlowLabelDocument textDocument(const QString& text, bool bold,
 }
 
 qreal textInkWidth(const QString& text, const TreeViewSceneStyle& style,
-                    qreal fontSize, bool bold, bool italic) {
+                    qreal fontSize, bool bold, bool italic,
+                    const QString& resolvedFamily = {},
+                    QFont::Weight resolvedWeight = QFont::Normal,
+                    QFont::Style resolvedStyle = QFont::StyleNormal) {
   if (!(fontSize > 0.0) || text.isEmpty()) return 0.0;
+  const QString family = resolvedFamily.isEmpty() ? style.fontFamily
+                                                   : resolvedFamily;
+  const QFont::Weight weight =
+      resolvedWeight != QFont::Normal ? resolvedWeight
+                                      : (bold ? QFont::Bold : QFont::Normal);
+  const QFont::Style fontStyle =
+      resolvedStyle != QFont::StyleNormal
+          ? resolvedStyle
+          : (italic ? QFont::StyleItalic : QFont::StyleNormal);
   const QFont font = flowchart::makeFlowLabelFont(
-      style.fontFamily, fontSize, bold ? QFont::Bold : QFont::Normal,
-      italic ? QFont::StyleItalic : QFont::StyleNormal);
+      family, fontSize, weight, fontStyle);
   const QFontMetricsF metrics(font);
-  const flowchart::FlowLabelDocument document = textDocument(text, bold, italic);
+  flowchart::FlowLabelDocument document;
+  document.text = text;
+  document.baseWeight = weight;
+  document.baseStyle = fontStyle;
   const std::optional<qreal> designAdvance =
-      flowchart::measureOpenTypeDesignAdvance(document, style.fontFamily,
+      flowchart::measureOpenTypeDesignAdvance(document, family,
                                               fontSize);
   const qreal advance = designAdvance.has_value()
       ? std::ceil(*designAdvance * 64.0) / 64.0
@@ -121,21 +135,51 @@ qreal textInkWidth(const QString& text, const TreeViewSceneStyle& style,
 }
 
 qreal textHeight(const TreeViewSceneStyle& style, qreal fontSize, bool bold,
-                 bool italic) {
+                 bool italic, const QString& resolvedFamily = {},
+                 QFont::Weight resolvedWeight = QFont::Normal,
+                 QFont::Style resolvedStyle = QFont::StyleNormal) {
   if (!(fontSize > 0.0)) return 0.0;
   return flowchart::flowLabelFontBoundingMetrics(
-             style.fontFamily, fontSize, bold ? QFont::Bold : QFont::Normal,
-             italic ? QFont::StyleItalic : QFont::StyleNormal)
+             resolvedFamily.isEmpty() ? style.fontFamily : resolvedFamily,
+             fontSize,
+             resolvedWeight != QFont::Normal
+                 ? resolvedWeight
+                 : (bold ? QFont::Bold : QFont::Normal),
+             resolvedStyle != QFont::StyleNormal
+                 ? resolvedStyle
+                 : (italic ? QFont::StyleItalic : QFont::StyleNormal))
       .height();
+}
+
+qreal cssTextInkWidth(const QString& text, qreal fontSize,
+                      const QString& fontFamily, QFont::Weight fontWeight,
+                      QFont::Style fontStyle) {
+  if (!(fontSize > 0.0) || text.isEmpty()) return 0.0;
+  flowchart::FlowLabelDocument document;
+  document.text = text;
+  document.baseWeight = fontWeight;
+  document.baseStyle = fontStyle;
+  return flowchart::measureChromiumSvgTextBounds(
+             document, fontFamily, fontSize, fontWeight)
+      .width();
 }
 
 QRectF textInkBounds(const QString& text, const QPointF& position,
                      const TreeViewSceneStyle& style, qreal fontSize,
-                     bool bold, bool italic) {
+                     bool bold, bool italic,
+                     const QString& resolvedFamily = {},
+                     QFont::Weight resolvedWeight = QFont::Normal,
+                     QFont::Style resolvedStyle = QFont::StyleNormal) {
   if (!(fontSize > 0.0) || text.isEmpty()) return {};
   const QFont font = flowchart::makeFlowLabelFont(
-      style.fontFamily, fontSize, bold ? QFont::Bold : QFont::Normal,
-      italic ? QFont::StyleItalic : QFont::StyleNormal);
+      resolvedFamily.isEmpty() ? style.fontFamily : resolvedFamily,
+      fontSize,
+      resolvedWeight != QFont::Normal
+          ? resolvedWeight
+          : (bold ? QFont::Bold : QFont::Normal),
+      resolvedStyle != QFont::StyleNormal
+          ? resolvedStyle
+          : (italic ? QFont::StyleItalic : QFont::StyleNormal));
   const QFontMetricsF metrics(font);
   const qreal baseline =
       position.y() + (metrics.ascent() - metrics.descent()) / 2.0;
@@ -192,9 +236,15 @@ QJsonObject textJson(const TreeViewTextGeometry& text) {
           {QStringLiteral("inkBounds"), rectJson(text.inkBounds)},
           {QStringLiteral("layoutWidth"), text.layoutWidth},
           {QStringLiteral("fontSize"), text.fontSize},
+          {QStringLiteral("fontFamily"), text.fontFamily},
+          {QStringLiteral("fontWeight"), int(text.fontWeight)},
+          {QStringLiteral("fontStyle"), int(text.fontStyle)},
           {QStringLiteral("bold"), text.bold},
           {QStringLiteral("italic"), text.italic},
-          {QStringLiteral("fill"), text.fill}};
+          {QStringLiteral("fill"), text.fill},
+          {QStringLiteral("opacity"), text.opacity},
+          {QStringLiteral("visible"), text.visible},
+          {QStringLiteral("hasBox"), text.hasBox}};
 }
 
 }  // namespace
@@ -265,11 +315,8 @@ TreeViewScene buildTreeViewScene(const TreeViewData& data,
   const CssLengthContext rootContext =
       editor::pieCssLengthContext(scene.style.fontFamily,
                                   scene.style.rootFontSize);
-  const qreal labelFontSize =
+  const qreal defaultLabelFontSize =
       editor::cssFontSizePx(scene.style.labelFontSize, rootContext);
-  const qreal regularHeight =
-      textHeight(scene.style, labelFontSize, false, false);
-  const qreal boldHeight = textHeight(scene.style, labelFontSize, true, false);
 
   int paintOrder = 0;
   QVector<JsPrimitive> labelRightEdges;
@@ -289,6 +336,14 @@ TreeViewScene buildTreeViewScene(const TreeViewData& data,
     line.stroke = scene.style.lineColor;
     line.strokeWidthAttribute = lineThicknessAttribute;
     line.strokeWidth = usedLineThickness;
+    if (scene.lines.size() < scene.style.lineStyles.size()) {
+      const TreeViewResolvedShapeStyle& resolved =
+          scene.style.lineStyles.at(scene.lines.size());
+      line.stroke = resolved.stroke;
+      line.strokeWidth = resolved.strokeWidth;
+      line.opacity = resolved.strokeOpacity;
+      line.visible = resolved.visible;
+    }
     line.paintOrder = paintOrder++;
     scene.lines.append(std::move(line));
   };
@@ -317,12 +372,37 @@ TreeViewScene buildTreeViewScene(const TreeViewData& data,
     if (!source.cssClass.isEmpty())
       node.label.cssClass += QLatin1Char(' ') + source.cssClass;
     node.label.text = source.name;
-    node.label.bold = source.directory;
-    node.label.fontSize = labelFontSize;
-    node.label.fill = scene.style.labelColor;
+    TreeViewResolvedTextStyle labelStyle;
+    labelStyle.fontFamily = scene.style.fontFamily;
+    labelStyle.fontSize = defaultLabelFontSize;
+    labelStyle.fontWeight = source.directory ? QFont::Bold : QFont::Normal;
+    labelStyle.fill = scene.style.labelColor;
+    const bool hasResolvedLabel = scene.style.labelStyles.contains(source.id);
+    if (hasResolvedLabel)
+      labelStyle = scene.style.labelStyles.value(source.id);
+    node.label.fontSize = labelStyle.fontSize;
+    node.label.fontFamily = labelStyle.fontFamily;
+    node.label.fontWeight = labelStyle.fontWeight;
+    node.label.fontStyle = labelStyle.fontStyle;
+    node.label.bold = labelStyle.fontWeight >= QFont::DemiBold;
+    node.label.italic = labelStyle.fontStyle != QFont::StyleNormal;
+    node.label.fill = labelStyle.fill;
+    node.label.opacity = labelStyle.opacity;
+    node.label.visible = labelStyle.visible;
+    node.label.hasBox = labelStyle.hasBox;
     node.label.layoutWidth = textInkWidth(
-        source.name, scene.style, labelFontSize, source.directory, false);
-    const qreal labelHeight = source.directory ? boldHeight : regularHeight;
+        source.name, scene.style, node.label.fontSize, node.label.bold,
+        node.label.italic, node.label.fontFamily, node.label.fontWeight,
+        node.label.fontStyle);
+    if (hasResolvedLabel)
+      node.label.layoutWidth = cssTextInkWidth(
+          source.name, node.label.fontSize, node.label.fontFamily,
+          node.label.fontWeight, node.label.fontStyle);
+    if (!node.label.hasBox) node.label.layoutWidth = 0.0;
+    qreal labelHeight = textHeight(
+        scene.style, node.label.fontSize, node.label.bold, node.label.italic,
+        node.label.fontFamily, node.label.fontWeight, node.label.fontStyle);
+    if (!node.label.hasBox) labelHeight = 0.0;
     const qreal height = labelHeight + paddingYNumber * 2.0;
     JsPrimitive labelX = jsAdd({false, {}, x}, paddingX);
     labelX = jsAdd(labelX, {false, {}, showIcon ? 18.0 : 0.0});
@@ -330,22 +410,62 @@ TreeViewScene buildTreeViewScene(const TreeViewData& data,
     const qreal centerY = y + height / 2.0;
     node.label.position = QPointF(labelXUsed, centerY);
     node.label.inkBounds = textInkBounds(
-        source.name, node.label.position, scene.style, labelFontSize,
-        source.directory, false);
+        source.name, node.label.position, scene.style, node.label.fontSize,
+        node.label.bold, node.label.italic, node.label.fontFamily,
+        node.label.fontWeight, node.label.fontStyle);
+    if (!node.label.hasBox) node.label.inkBounds = {};
     const qreal width = node.label.layoutWidth + paddingXNumber * 2.0 +
                         (showIcon ? 18.0 : 0.0);
     node.bbox = QRectF(x, y, width, height);
     node.highlighted = hasHighlightClass(source.cssClass);
+    node.highlightFill = scene.style.highlightBg;
+    node.highlightStroke = scene.style.highlightStroke;
+    if (scene.style.highlightStyles.contains(source.id)) {
+      const TreeViewResolvedShapeStyle& resolved =
+          scene.style.highlightStyles.value(source.id);
+      node.highlightFill = resolved.fill;
+      node.highlightStroke = resolved.stroke;
+      node.highlightStrokeWidth = resolved.strokeWidth;
+      node.highlightFillOpacity = resolved.fillOpacity;
+      node.highlightStrokeOpacity = resolved.strokeOpacity;
+      node.highlightVisible = resolved.visible;
+    }
     if (node.highlighted)
       node.highlightRect = QRectF(x, y + 1.0, 0.0, height - 2.0);
     node.hasDescription = !source.description.isEmpty();
     node.description.text = source.description;
     node.description.cssClass = QStringLiteral("treeView-node-description");
-    node.description.fontSize = labelFontSize;
-    node.description.italic = true;
-    node.description.fill = scene.style.descriptionColor;
+    TreeViewResolvedTextStyle descriptionStyle;
+    descriptionStyle.fontFamily = scene.style.fontFamily;
+    descriptionStyle.fontSize = defaultLabelFontSize;
+    descriptionStyle.fontStyle = QFont::StyleItalic;
+    descriptionStyle.fill = scene.style.descriptionColor;
+    const bool hasResolvedDescription =
+        scene.style.descriptionStyles.contains(source.id);
+    if (hasResolvedDescription)
+      descriptionStyle = scene.style.descriptionStyles.value(source.id);
+    node.description.fontSize = descriptionStyle.fontSize;
+    node.description.fontFamily = descriptionStyle.fontFamily;
+    node.description.fontWeight = descriptionStyle.fontWeight;
+    node.description.fontStyle = descriptionStyle.fontStyle;
+    node.description.bold = descriptionStyle.fontWeight >= QFont::DemiBold;
+    node.description.italic =
+        descriptionStyle.fontStyle != QFont::StyleNormal;
+    node.description.fill = descriptionStyle.fill;
+    node.description.opacity = descriptionStyle.opacity;
+    node.description.visible = descriptionStyle.visible;
+    node.description.hasBox = descriptionStyle.hasBox;
     node.description.layoutWidth = textInkWidth(
-        source.description, scene.style, labelFontSize, false, true);
+        source.description, scene.style, node.description.fontSize,
+        node.description.bold, node.description.italic,
+        node.description.fontFamily, node.description.fontWeight,
+        node.description.fontStyle);
+    if (hasResolvedDescription)
+      node.description.layoutWidth = cssTextInkWidth(
+          source.description, node.description.fontSize,
+          node.description.fontFamily, node.description.fontWeight,
+          node.description.fontStyle);
+    if (!node.description.hasBox) node.description.layoutWidth = 0.0;
 
     scene.nodes.append(std::move(node));
     labelRightEdges.append(jsAdd(labelX,
@@ -390,7 +510,10 @@ TreeViewScene buildTreeViewScene(const TreeViewData& data,
           QPointF(descriptionX, node.bbox.y() + node.bbox.height() / 2.0);
       node.description.inkBounds = textInkBounds(
           node.description.text, node.description.position, scene.style,
-          labelFontSize, false, true);
+          node.description.fontSize, node.description.bold,
+          node.description.italic, node.description.fontFamily,
+          node.description.fontWeight, node.description.fontStyle);
+      if (!node.description.hasBox) node.description.inkBounds = {};
       const JsPrimitive descriptionRight = jsAdd(
           {false, {}, descriptionX + node.description.layoutWidth}, paddingX);
       scene.totalWidth =

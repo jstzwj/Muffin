@@ -47,15 +47,15 @@ color::SvgPaint cssPaint(const QString& raw, color::SvgPaintKind kind,
 
 void paintText(QPainter& painter, const TreeViewScene& scene,
                const TreeViewTextGeometry& text) {
-  if (text.text.isEmpty() || !(text.fontSize > 0.0)) return;
+  if (!text.visible || text.text.isEmpty() || !(text.fontSize > 0.0)) return;
   const color::SvgPaint fill = inheritedTextFill(text.fill, scene);
   if (fill.none) return;
   const QFont font = flowchart::makeFlowLabelFont(
-      scene.style.fontFamily, text.fontSize,
-      text.bold ? QFont::Bold : QFont::Normal,
-      text.italic ? QFont::StyleItalic : QFont::StyleNormal);
+      text.fontFamily.isEmpty() ? scene.style.fontFamily : text.fontFamily,
+      text.fontSize, text.fontWeight, text.fontStyle);
   const QFontMetricsF metrics(font);
   painter.save();
+  painter.setOpacity(text.opacity);
   painter.setFont(font);
   painter.setPen(fill.color);
   painter.setBrush(Qt::NoBrush);
@@ -69,19 +69,24 @@ void paintText(QPainter& painter, const TreeViewScene& scene,
 
 void paintNode(QPainter& painter, const TreeViewScene& scene,
                const TreeViewNodeGeometry& node) {
-  if (node.highlighted) {
+  if (node.highlighted && node.highlightVisible) {
     const color::SvgPaint fill = cssPaint(
-        scene.style.highlightBg, color::SvgPaintKind::Fill, {false, Qt::black});
+        node.highlightFill, color::SvgPaintKind::Fill, {false, Qt::black});
     const color::SvgPaint stroke = cssPaint(
-        scene.style.highlightStroke, color::SvgPaintKind::Stroke, {true, {}});
+        node.highlightStroke, color::SvgPaintKind::Stroke, {true, {}});
     QPainterPath path;
     path.addRoundedRect(node.highlightRect, 3.0, 3.0);
     painter.save();
-    painter.setBrush(fill.none ? QBrush(Qt::NoBrush) : QBrush(fill.color));
+    QColor fillColor = fill.color;
+    fillColor.setAlphaF(fillColor.alphaF() * node.highlightFillOpacity);
+    painter.setBrush(fill.none ? QBrush(Qt::NoBrush) : QBrush(fillColor));
     if (stroke.none) {
       painter.setPen(Qt::NoPen);
     } else {
-      QPen pen(stroke.color, 1.0);
+      QColor strokeColor = stroke.color;
+      strokeColor.setAlphaF(strokeColor.alphaF() *
+                            node.highlightStrokeOpacity);
+      QPen pen(strokeColor, node.highlightStrokeWidth);
       pen.setCapStyle(Qt::FlatCap);
       painter.setPen(pen);
     }
@@ -97,12 +102,14 @@ void paintNode(QPainter& painter, const TreeViewScene& scene,
 
 void paintLine(QPainter& painter, const TreeViewScene& scene,
                const TreeViewLineGeometry& line) {
-  if (!(line.strokeWidth > 0.0)) return;
+  if (!line.visible || !(line.strokeWidth > 0.0)) return;
   const color::SvgPaint stroke = cssPaint(
       line.stroke, color::SvgPaintKind::Stroke, {true, {}});
   if (stroke.none) return;
   painter.save();
-  QPen pen(stroke.color, line.strokeWidth);
+  QColor strokeColor = stroke.color;
+  strokeColor.setAlphaF(strokeColor.alphaF() * line.opacity);
+  QPen pen(strokeColor, line.strokeWidth);
   pen.setCapStyle(Qt::FlatCap);
   painter.setPen(pen);
   painter.setBrush(Qt::NoBrush);

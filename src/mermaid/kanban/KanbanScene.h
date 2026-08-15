@@ -5,6 +5,7 @@
 #include "mermaid/kanban/KanbanDiagram.h"
 #include "mermaid/rough/RoughOps.h"
 
+#include <QFont>
 #include <QJsonValue>
 #include <QLineF>
 #include <QRectF>
@@ -46,6 +47,48 @@ struct KanbanSceneStyle {
   QVector<QString> cScaleLabel;
 };
 
+// Resolved themeCSS declarations for one element, shared by the scene builder
+// (label measurement fonts) and the painter. Empty strings mean "no CSS
+// opinion" — the base theme paint stands. `visible` is displayed() including
+// ancestors; `hasBox` follows the display:none chain because kanban's final
+// svg.getBBox() (unlike timeline's render-time aggregate) does drop
+// undisplayed geometry.
+struct KanbanElementCss {
+  QString fill;
+  QString stroke;
+  QString strokeWidth;
+  QString color;
+  QString fontFamily;
+  QString fontWeight;
+  qreal fontSize = -1.0;
+  qreal opacity = -1.0;
+  bool visible = true;
+  bool hasBox = true;
+};
+
+// themeCSS overlay resolved against a faithful model of the kanban DOM.
+struct KanbanCssOverrides {
+  bool active = false;
+  struct Section {
+    KanbanElementCss cluster;  // g.cluster (opacity/display surface)
+    KanbanElementCss box;      // the section <rect>
+    KanbanElementCss label;    // span.nodeLabel in .cluster-label
+  };
+  struct ItemLabel {
+    KanbanElementCss group;    // g.label
+    KanbanElementCss bkg;      // the zero-sized label background <rect>
+    KanbanElementCss span;     // span.nodeLabel (.markdown-node-label on titles)
+  };
+  struct Item {
+    KanbanElementCss node;     // g.node (opacity/display surface)
+    KanbanElementCss box;      // rect.basic.label-container
+    QVector<ItemLabel> labels;  // title, ticket, assigned
+    KanbanElementCss priority;  // the priority strike <line>
+  };
+  QVector<Section> sections;
+  QVector<Item> items;
+};
+
 struct KanbanLabelGeometry {
   QString source;
   flowchart::FlowLabelDocument document;
@@ -53,6 +96,10 @@ struct KanbanLabelGeometry {
   QString fill;
   bool html = true;
   bool centered = false;
+  KanbanElementCss css;
+  qreal fontSize = 16.0;
+  QString fontFamily;
+  QFont::Weight fontWeight = QFont::Normal;
 };
 
 struct KanbanSectionGeometry {
@@ -68,6 +115,8 @@ struct KanbanSectionGeometry {
   bool dropShadow = false;
   rough::Drawable roughDrawable;
   KanbanLabelGeometry label;
+  KanbanElementCss clusterCss;
+  KanbanElementCss boxCss;
 };
 
 struct KanbanItemGeometry {
@@ -88,6 +137,9 @@ struct KanbanItemGeometry {
   QString priorityStroke;
   qreal priorityStrokeWidth = 4.0;
   QString href;
+  KanbanElementCss nodeCss;
+  KanbanElementCss boxCss;
+  KanbanElementCss priorityCss;
 };
 
 struct KanbanScene : MermaidScene {
@@ -115,6 +167,7 @@ struct KanbanScene : MermaidScene {
 };
 
 KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
-                             KanbanSceneStyle style);
+                             KanbanSceneStyle style,
+                             const KanbanCssOverrides* css = nullptr);
 
 }  // namespace muffin::mermaid::kanban

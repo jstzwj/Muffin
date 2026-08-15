@@ -1,0 +1,1103 @@
+{
+  "upstream": {
+    "package": "mermaid",
+    "version": "11.16.0",
+    "moduleSha256": "fdd1cc80731e400d2c3e41118ed53b775446391d9a71738afaf2e855ba227a5b",
+    "gitGraphModuleSha256": "9d46246ac6ec251dd26b28033496ea7e56c4914c1f1a6a9f9cb6b90a105a206b",
+    "parserModuleSha256": "f541603e5c4d057f0c557f0873bd5b3be3c9878caed7ef2b6ee4e6699206dd3d",
+    "chromeProduct": "Chrome/151.0.7922.76",
+    "chromeSha256": "a4d3a6dd0ffb35ccb77e04c033024fabd85a2bc7191066410cf1905f901f7965",
+    "notoSansSha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+    "sourceEntry": true
+  },
+  "cases": [
+    {
+      "id": "canonical",
+      "source": "gitGraph LR:\n  commit id: \"root\" msg: \"Initial\" tag: \"v1\"\n  branch develop order: 2\n  commit id: \"dev-1\" type: HIGHLIGHT\n  branch feature order: 1\n  commit id: \"feat-1\" msg: \"Feature\"\n  checkout develop\n  merge feature id: \"merge-1\" tag: \"merged\"\n  checkout main\n  merge develop id: \"release\" type: REVERSE\n  branch hotfix order: 3\n  commit id: \"fix-1\"\n  checkout main\n  cherry-pick id: \"fix-1\" tag: \"picked\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "root",
+              "message": "Initial",
+              "seq": 0,
+              "type": 0,
+              "tags": [
+                "v1"
+              ],
+              "parents": [],
+              "branch": "main"
+            },
+            {
+              "id": "dev-1",
+              "message": "",
+              "seq": 1,
+              "type": 2,
+              "tags": [],
+              "parents": [
+                "root"
+              ],
+              "branch": "develop"
+            },
+            {
+              "id": "feat-1",
+              "message": "Feature",
+              "seq": 2,
+              "type": 0,
+              "tags": [],
+              "parents": [
+                "dev-1"
+              ],
+              "branch": "feature"
+            },
+            {
+              "id": "merge-1",
+              "message": "merged branch feature into develop",
+              "seq": 3,
+              "parents": [
+                "dev-1",
+                "feat-1"
+              ],
+              "branch": "develop",
+              "type": 3,
+              "customId": true,
+              "tags": [
+                "merged"
+              ]
+            },
+            {
+              "id": "release",
+              "message": "merged branch develop into main",
+              "seq": 4,
+              "parents": [
+                "root",
+                "merge-1"
+              ],
+              "branch": "main",
+              "type": 3,
+              "customType": 1,
+              "customId": true,
+              "tags": []
+            },
+            {
+              "id": "fix-1",
+              "message": "",
+              "seq": 5,
+              "type": 0,
+              "tags": [],
+              "parents": [
+                "release"
+              ],
+              "branch": "hotfix"
+            },
+            {
+              "id": "@generated:6",
+              "message": "cherry-picked  into main",
+              "seq": 6,
+              "parents": [
+                "release",
+                "fix-1"
+              ],
+              "branch": "main",
+              "type": 4,
+              "tags": [
+                "picked"
+              ]
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "@generated:6"
+            },
+            {
+              "name": "develop",
+              "head": "merge-1"
+            },
+            {
+              "name": "feature",
+              "head": "feat-1"
+            },
+            {
+              "name": "hotfix",
+              "head": "fix-1"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            },
+            {
+              "name": "feature"
+            },
+            {
+              "name": "develop"
+            },
+            {
+              "name": "hotfix"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "header",
+      "source": "gitGraph",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [],
+          "branches": [
+            {
+              "name": "main",
+              "head": null
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "header-colon",
+      "source": "gitGraph:",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [],
+          "branches": [
+            {
+              "name": "main",
+              "head": null
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "directions",
+      "source": "gitGraph TB:\ncommit id: \"a\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "TB",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "direction-bt",
+      "source": "gitGraph BT:\ncommit id: \"a\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "BT",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "direction-lowercase",
+      "source": "gitGraph lr:\ncommit id: \"a\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 1, column 10: Expecting token of type 'EOF' but found `lr`.",
+          "kind": "Parser",
+          "line": 1,
+          "column": 10,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "uppercase-header",
+      "source": "GITGRAPH\ncommit id: \"a\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "UnknownDiagramError",
+          "message": "No diagram type detected matching given configuration for text: GITGRAPH\ncommit id: \"a\"",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "prefix",
+      "source": "gitGraphX\ncommit id: \"a\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 1, column 1: Expecting: one of these possible Token sequences:\n  1. [gitGraph]\n  2. [gitGraph, :]\n  3. [gitGraph:]\n  4. [gitGraph, LR]\n  5. [gitGraph, TB]\n  6. [gitGraph, BT]\nbut found: 'gitGraphX'",
+          "kind": "Parser",
+          "line": 1,
+          "column": 1,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "commit-options",
+      "source": "gitGraph\ncommit id: 'a' msg: \"hello\" tag: \"x\" tag: 'y' type: REVERSE",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "hello",
+              "seq": 0,
+              "type": 1,
+              "tags": [
+                "x",
+                "y"
+              ],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "commit-message-short",
+      "source": "gitGraph\ncommit \"hello\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "@generated:0",
+              "message": "hello",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "@generated:0"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "commit-empty",
+      "source": "gitGraph\ncommit",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "@generated:0",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "@generated:0"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "branch-id",
+      "source": "gitGraph\ncommit id: \"a\"\nbranch feature-1 order: 2.5\ncommit id: \"b\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 3, column 25: Expecting token of type 'INT' but found `2.5`.",
+          "kind": "Parser",
+          "line": 3,
+          "column": 25,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "branch-string",
+      "source": "gitGraph\ncommit id: \"a\"\nbranch \"feature one\"\ncommit id: \"b\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "feature one",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            },
+            {
+              "id": "b",
+              "message": "",
+              "seq": 1,
+              "type": 0,
+              "tags": [],
+              "parents": [
+                "a"
+              ],
+              "branch": "feature one"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            },
+            {
+              "name": "feature one",
+              "head": "b"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            },
+            {
+              "name": "feature one"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "switch",
+      "source": "gitGraph\ncommit id: \"a\"\nbranch b\ncommit id: \"b\"\nswitch main\ncommit id: \"c\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            },
+            {
+              "id": "b",
+              "message": "",
+              "seq": 1,
+              "type": 0,
+              "tags": [],
+              "parents": [
+                "a"
+              ],
+              "branch": "b"
+            },
+            {
+              "id": "c",
+              "message": "",
+              "seq": 2,
+              "type": 0,
+              "tags": [],
+              "parents": [
+                "a"
+              ],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "c"
+            },
+            {
+              "name": "b",
+              "head": "b"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            },
+            {
+              "name": "b"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "merge",
+      "source": "gitGraph\ncommit id: \"a\"\nbranch b\ncommit id: \"b\"\ncheckout main\nmerge b id: \"m\" tag: \"T\" type: HIGHLIGHT",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            },
+            {
+              "id": "b",
+              "message": "",
+              "seq": 1,
+              "type": 0,
+              "tags": [],
+              "parents": [
+                "a"
+              ],
+              "branch": "b"
+            },
+            {
+              "id": "m",
+              "message": "merged branch b into main",
+              "seq": 2,
+              "parents": [
+                "a",
+                "b"
+              ],
+              "branch": "main",
+              "type": 3,
+              "customType": 2,
+              "customId": true,
+              "tags": [
+                "T"
+              ]
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "m"
+            },
+            {
+              "name": "b",
+              "head": "b"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            },
+            {
+              "name": "b"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "cherry",
+      "source": "gitGraph\ncommit id: \"a\"\nbranch b\ncommit id: \"b\"\ncheckout main\ncherry-pick id: \"b\" tag: \"pick\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            },
+            {
+              "id": "b",
+              "message": "",
+              "seq": 1,
+              "type": 0,
+              "tags": [],
+              "parents": [
+                "a"
+              ],
+              "branch": "b"
+            },
+            {
+              "id": "@generated:2",
+              "message": "cherry-picked  into main",
+              "seq": 2,
+              "parents": [
+                "a",
+                "b"
+              ],
+              "branch": "main",
+              "type": 4,
+              "tags": [
+                "pick"
+              ]
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "@generated:2"
+            },
+            {
+              "name": "b",
+              "head": "b"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            },
+            {
+              "name": "b"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "duplicate-commit",
+      "source": "gitGraph\ncommit id: \"a\"\ncommit id: \"a\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 1,
+              "type": 0,
+              "tags": [],
+              "parents": [
+                "a"
+              ],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "duplicate-branch",
+      "source": "gitGraph\nbranch b\nbranch b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Trying to create an existing branch. (Help: Either use a new name if you want create a new branch or try using \"checkout b\")",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "checkout-missing",
+      "source": "gitGraph\ncheckout b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Trying to checkout branch which is not yet created. (Help try using \"branch b\")",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "merge-self",
+      "source": "gitGraph\ncommit id: \"a\"\nmerge main",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Cannot merge branch 'main' into itself.",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "merge-missing",
+      "source": "gitGraph\ncommit id: \"a\"\nmerge b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Incorrect usage of \"merge\". Branch to be merged (b) does not exist",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "merge-same-head",
+      "source": "gitGraph\ncommit id: \"a\"\nbranch b\ncheckout main\nmerge b",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Incorrect usage of \"merge\". Both branches have same head",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "cherry-missing",
+      "source": "gitGraph\ncommit id: \"a\"\ncherry-pick id: \"missing\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Incorrect usage of \"cherryPick\". Source commit id should exist and provided",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "cherry-same-branch",
+      "source": "gitGraph\ncommit id: \"a\"\ncherry-pick id: \"a\"",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Incorrect usage of \"cherryPick\". Source commit is already on current branch",
+          "kind": "Runtime",
+          "line": 0,
+          "column": 0,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "metadata",
+      "source": "gitGraph\ntitle History\naccTitle: Git history\naccDescr: Commit graph\ncommit id: \"a\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "History",
+          "accTitle": "Git history",
+          "accDescr": "Commit graph"
+        }
+      }
+    },
+    {
+      "id": "acc-block",
+      "source": "gitGraph\naccDescr {first\n  second}\ncommit id: \"a\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": "first\nsecond"
+        }
+      }
+    },
+    {
+      "id": "comments",
+      "source": "%% before\ngitGraph\n%% body\ncommit id: \"a\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "semicolon",
+      "source": "gitGraph\ncommit id: \"a\";",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed: Lexer error on line 2, column 15: unexpected character: ->;<- at offset: 23, skipped 1 characters. ",
+          "kind": "Lexer",
+          "line": 2,
+          "column": 15,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "bare-id",
+      "source": "gitGraph\ncommit id: a",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 12: Expecting token of type 'STRING' but found `a`.",
+          "kind": "Parser",
+          "line": 2,
+          "column": 12,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "bad-type",
+      "source": "gitGraph\ncommit type: MERGE",
+      "expected": {
+        "parse": false,
+        "render": false,
+        "error": {
+          "name": "Error",
+          "message": "Parsing failed:  Parse error on line 2, column 14: Expecting: one of these possible Token sequences:\n  1. [NORMAL]\n  2. [REVERSE]\n  3. [HIGHLIGHT]\nbut found: 'MERGE'",
+          "kind": "Parser",
+          "line": 2,
+          "column": 14,
+          "token": ""
+        }
+      }
+    },
+    {
+      "id": "same-line",
+      "source": "gitGraph commit id: \"a\"",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    },
+    {
+      "id": "crlf",
+      "source": "gitGraph\r\ncommit id: \"a\"\r\n",
+      "expected": {
+        "parse": true,
+        "render": true,
+        "db": {
+          "direction": "LR",
+          "currentBranch": "main",
+          "commits": [
+            {
+              "id": "a",
+              "message": "",
+              "seq": 0,
+              "type": 0,
+              "tags": [],
+              "parents": [],
+              "branch": "main"
+            }
+          ],
+          "branches": [
+            {
+              "name": "main",
+              "head": "a"
+            }
+          ],
+          "orderedBranches": [
+            {
+              "name": "main"
+            }
+          ],
+          "title": "",
+          "accTitle": "",
+          "accDescr": ""
+        }
+      }
+    }
+  ],
+  "fixtureSha256": "72fd6b2be6d989aa9bf906e368c357bfa47871e783308f2c1011c816c12b3676"
+}

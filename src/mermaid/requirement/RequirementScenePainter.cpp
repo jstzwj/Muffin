@@ -40,6 +40,7 @@ void paintRow(QPainter& painter, const muffin::mermaid::requirement::Requirement
               const QPointF& nodeCenter,
               const muffin::mermaid::requirement::RequirementSceneStyle& style) {
   if (row.text.isEmpty() || row.size.width() <= 0.0) return;
+  if (!row.visible) return;
   if (row.fontPixelSize == 0.0) return;  // font-size:0 -> text absent (no paint)
   const qreal fontSize = row.fontPixelSize >= 0.0 ? row.fontPixelSize : style.fontSize;
   const QString fontFamily = row.fontFamily.isEmpty() ? style.fontFamily : row.fontFamily;
@@ -50,6 +51,7 @@ void paintRow(QPainter& painter, const muffin::mermaid::requirement::Requirement
                     center.y() - row.size.height() / 2.0,
                     row.size.width(), row.size.height());
   painter.save();
+  painter.setOpacity(painter.opacity() * row.opacity);
   painter.setClipRect(rect);
   flowchart::paintFlowLabel(painter, row.document, rect, fontFamily, fontSize, lineHeight,
                             color, true);
@@ -133,38 +135,51 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
 
-  const QColor lineColor = resolveColor(scene.style.lineColor);
-
   // (1) Relationship edges + markers + labels. Drawn before nodes so node boxes
   // paint over line ends where they meet the box outline.
   for (const RequirementSceneEdge& edge : scene.edges) {
     const QRectF pathCull = edge.pathBounds.isValid() ? edge.pathBounds : scene.bounds;
-    if (!mermaidPrimitiveIsVisible(pathCull, options)) continue;
+    if (edge.visible && mermaidPrimitiveIsVisible(pathCull, options)) {
+      QPen pen(resolveColor(edge.stroke), edge.strokeWidth);
+      if (!edge.isContains) {
+        // Dashed: stroke-dasharray: 10,7.
+        pen.setStyle(Qt::CustomDashLine);
+        pen.setDashPattern({10.0, 7.0});
+      }
+      painter.save();
+      painter.setOpacity(painter.opacity() * edge.opacity * edge.strokeOpacity);
+      painter.setPen(pen);
+      painter.setBrush(Qt::NoBrush);
+      painter.drawPath(edgePath(edge));
+      painter.restore();
 
-    QPen pen(lineColor, 1.0);
-    if (!edge.isContains) {
-      // Dashed: stroke-dasharray: 10,7.
-      pen.setStyle(Qt::CustomDashLine);
-      pen.setDashPattern({10.0, 7.0});
-    }
-    painter.setPen(pen);
-    painter.setBrush(Qt::NoBrush);
-    painter.drawPath(edgePath(edge));
-
-    const QVector<QPointF> pts = edgePolyline(edge);
-    if (pts.size() >= 2) {
-      if (edge.isContains) {
-        // contains: marker at START. Tangent = edge direction at the start.
-        const QPointF startDir = pts.at(1) - pts.first();
-        drawContainsMarker(painter, pts.first(), startDir, lineColor);
-      } else {
-        // arrow: marker at END. Tangent = into the endpoint.
-        const QPointF endDir = pts.last() - pts.at(pts.size() - 2);
-        drawArrowMarker(painter, pts.last(), endDir, lineColor);
+      const QVector<QPointF> pts = edgePolyline(edge);
+      const RequirementMarkerDefinition* marker = nullptr;
+      for (const RequirementMarkerDefinition& candidate : scene.markers) {
+        if ((edge.isContains && candidate.isContains) ||
+            (!edge.isContains && !candidate.isContains)) {
+          marker = &candidate;
+          break;
+        }
+      }
+      if (options.paintEdgeMarkers && marker && marker->visible &&
+          pts.size() >= 2) {
+        painter.save();
+        painter.setOpacity(painter.opacity() * marker->opacity);
+        const QColor markerStroke = resolveColor(marker->stroke);
+        if (edge.isContains) {
+          const QPointF startDir = pts.at(1) - pts.first();
+          drawContainsMarker(painter, pts.first(), startDir, markerStroke);
+        } else {
+          const QPointF endDir = pts.last() - pts.at(pts.size() - 2);
+          drawArrowMarker(painter, pts.last(), endDir, markerStroke);
+        }
+        painter.restore();
       }
     }
 
-    // Centered edge label with a background fill (reqLabelBox).
+    // Centered edge label. div.labelBkg is the painted foreignObject background;
+    // g.label and span.edgeLabel computed backgrounds remain separate state.
     if (edge.labelPosition && !edge.label.isEmpty()) {
       const QPointF labelCenter = *edge.labelPosition;
       const QRectF labelRect(
@@ -172,22 +187,60 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
           labelCenter.y() - edge.labelSize.height() / 2.0,
           edge.labelSize.width(), edge.labelSize.height());
       if (mermaidPrimitiveIsVisible(labelRect, options)) {
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(resolveColor(scene.style.edgeLabelFill));
-        painter.drawRect(labelRect);
-        painter.save();
-        painter.setClipRect(labelRect);
-        flowchart::paintFlowLabel(painter, edge.labelDocument, labelRect,
-                                  scene.style.fontFamily, scene.style.fontSize,
-                                  scene.style.lineHeight,
-                                  resolveColor(scene.style.edgeLabelColor), true);
-        painter.restore();
+        const auto paintBackground = [&](const RequirementPaintedBackground& bg) {
+          if (!bg.displayed) return;
+          const QColor color = resolveColor(bg.color);
+          if (!color.isValid() || color.alpha() == 0) return;
+          painter.save();
+          painter.setOpacity(painter.opacity() * bg.effectiveOpacity);
+          painter.setPen(Qt::NoPen);
+          painter.setBrush(color);
+          painter.drawRect(labelRect);
+          painter.restore();
+        };
+        paintBackground(edge.labelContainerBg);
+        // Chrome reports span.edgeLabel's computed background-color, but the
+        // inline span inside Requirement's SVG foreignObject does not emit a
+        // painted background fragment. The browser PNG contains only the
+        // div.labelBkg layer. Keep labelTextBg in the scene for computed-style
+        // parity, but do not synthesize pixels the DOM renderer does not paint.
+        if (edge.paintedSpanComputed.displayed) {
+          painter.save();
+          painter.setOpacity(painter.opacity() *
+                             edge.paintedSpanComputed.effectiveOpacity);
+          painter.setClipRect(labelRect);
+          const QString labelFamily = requirementEffectiveFontFamily(
+              edge.labelTextStyle, scene.style.fontFamily);
+          const qreal labelSize = requirementEffectiveFontSize(
+              edge.labelTextStyle, scene.style.fontSize);
+          if (scene.style.htmlLabels) {
+            const qreal labelHeight = edge.labelTextStyle.lineHeightPx >= 0.0
+                ? edge.labelTextStyle.lineHeightPx : labelSize * 1.5;
+            flowchart::paintFlowLabel(painter, edge.labelDocument, labelRect,
+                                      labelFamily, labelSize, labelHeight,
+                                      resolveColor(edge.labelColor), true);
+          } else {
+            // htmlLabels:false: createFormattedText positions the <text>
+            // inside the ±2px background rect with rows advancing at the fixed
+            // 1.1em dy from the font-cell top (CSS line-height is inert for
+            // SVG tspans); the cell-height line height reproduces the
+            // baseline = cell top + hhea ascent.
+            const flowchart::FlowLabelFontMetrics font =
+                flowchart::flowLabelFontBoundingMetrics(labelFamily, labelSize);
+            flowchart::paintFlowLabel(painter, edge.labelDocument,
+                                      labelRect.adjusted(2.0, 2.0, -2.0, -2.0),
+                                      labelFamily, labelSize, font.height(),
+                                      resolveColor(edge.labelColor), true);
+          }
+          painter.restore();
+        }
       }
     }
   }
 
   // (2) Requirement box nodes.
   for (const RequirementSceneNode& node : scene.nodes) {
+    if (!node.visible) continue;
     const QRectF box(node.center.x() - node.size.width() / 2.0,
                      node.center.y() - node.size.height() / 2.0,
                      node.size.width(), node.size.height());
@@ -217,6 +270,13 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
         boxPen.setDashPattern({node.dashArray.at(0) * dashInv, node.dashArray.at(1) * dashInv});
       }
     }
+    painter.save();
+    painter.setOpacity(painter.opacity() * node.opacity);
+    if (boxPen.style() != Qt::NoPen)
+      boxPen.setColor(QColor::fromRgbF(boxPen.color().redF(),
+                                      boxPen.color().greenF(),
+                                      boxPen.color().blueF(),
+                                      node.strokeOpacity));
     painter.setPen(boxPen);
     // Explicit if/else: a ternary here resolves Qt::NoBrush through the
     // QColor(Qt::GlobalColor) ctor (Qt::NoBrush == 0 == Qt::color0 -> black),
@@ -224,8 +284,12 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
     if (node.fillNone)
       painter.setBrush(Qt::NoBrush);
     else
-      painter.setBrush(resolveColor(node.fill));
+      painter.setBrush(QColor::fromRgbF(resolveColor(node.fill).redF(),
+                                        resolveColor(node.fill).greenF(),
+                                        resolveColor(node.fill).blueF(),
+                                        node.fillOpacity));
     painter.drawRoundedRect(box, 5.0, 5.0);
+    painter.restore();
 
     // Divider line under the name (only if body rows present). Its Y is
     // precomputed on the node (mermaid's body-top: top + typeHeight + nameHeight
@@ -237,20 +301,32 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
       const qreal divY = node.center.y() + node.dividerY;
       const QPointF p1(node.center.x() - node.size.width() / 2.0, divY);
       const QPointF p2(node.center.x() + node.size.width() / 2.0, divY);
+      const RequirementPaintedPathStyle painted = node.dividerChildPaths.isEmpty()
+          ? RequirementPaintedPathStyle{node.dividerStroke,
+                                        node.dividerStrokeWidth,
+                                        node.dividerStrokeOpacity,
+                                        node.dividerRootVisible &&
+                                            node.dividerVisible}
+          : node.dividerChildPaths.first();
       QPen divPen;
-      if (!node.dividerVisible) {
+      if (!painted.displayed || painted.stroke.trimmed().compare(
+              QLatin1String("none"), Qt::CaseInsensitive) == 0 ||
+          painted.strokeWidth <= 0.0) {
         divPen = Qt::NoPen;
       } else {
-        divPen.setColor(resolveColor(node.dividerStroke));
-        divPen.setWidthF(node.strokeWidth);  // > 0: dividerVisible is false when width==0
+        divPen.setColor(resolveColor(painted.stroke));
+        divPen.setWidthF(painted.strokeWidth);
         if (hasDash) {
           divPen.setStyle(Qt::CustomDashLine);
           divPen.setDashPattern({node.dashArray.at(0) * dashInv, node.dashArray.at(1) * dashInv});
         }
       }
+      painter.save();
+      painter.setOpacity(painter.opacity() * painted.effectiveStrokeOpacity);
       painter.setPen(divPen);
       painter.setBrush(Qt::NoBrush);
       painter.drawLine(p1, p2);
+      painter.restore();
     }
 
     // Rows: type line, name (bold), body rows.

@@ -9,6 +9,17 @@ namespace muffin::mermaid::rough {
 
 enum class OpType { Move, LineTo, BcurveTo };
 enum class OpSetType { Path, FillPath, FillSketch };
+enum class PathCommandType { Move, LineTo, CubicTo, Close };
+
+// RoughJS operates on normalized SVG path commands. Keeping this model matters
+// for degenerate commands: `A 0 0 ...` becomes a zero-length cubic which still
+// advances the seeded random stream even though it has no visible geometry.
+struct PathCommand {
+  PathCommandType type = PathCommandType::Move;
+  QPointF point;
+  QPointF control1;
+  QPointF control2;
+};
 
 struct Op {
   OpType type = OpType::Move;
@@ -55,6 +66,7 @@ Drawable arc(qreal x, qreal y, qreal width, qreal height,
              qreal start, qreal stop, bool closed, Options options = {});
 Drawable path(const QPainterPath& source, Options options = {},
               bool closed = false);
+Drawable path(const QVector<PathCommand>& source, Options options = {});
 
 QPainterPath toPainterPath(const OpSet& set);
 QRectF tightBounds(const OpSet& set);
