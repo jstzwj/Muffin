@@ -46,6 +46,17 @@ QString compactNumber(qreal value) {
   return result;
 }
 
+// Fractional SVG root lengths (LayoutUnit-quantized client boxes are exact
+// in six decimals — 1/64 = 0.015625); trailing zeros are trimmed so integer
+// lengths stay "512".
+QString formatSvgLength(qreal value) {
+  QString result = QString::number(value, 'f', 6);
+  while (result.contains(QLatin1Char('.')) && result.endsWith(QLatin1Char('0')))
+    result.chop(1);
+  if (result.endsWith(QLatin1Char('.'))) result.chop(1);
+  return result;
+}
+
 QString svgRootId(const MermaidRenderEntry& entry, qsizetype instanceIndex) {
   const auto& metadata = entry.metadata;
   instanceIndex = std::max<qsizetype>(0, instanceIndex);
@@ -376,14 +387,28 @@ QByteArray normalizeSvg(const QByteArray& generated,
         ++depth;
         if (root) {
           writer.writeAttribute(QStringLiteral("id"), rootId);
-          writer.writeAttribute(QStringLiteral("class"),
-                                QStringLiteral("mfn-mermaid ") +
-                                    entry.metadata.cssClass);
+          // Families whose upstream svg carries no class (the error diagram)
+          // keep only the Muffin embedding marker.
+          writer.writeAttribute(
+              QStringLiteral("class"),
+              entry.metadata.cssClass.isEmpty()
+                  ? QStringLiteral("mfn-mermaid")
+                  : QStringLiteral("mfn-mermaid ") + entry.metadata.cssClass);
           if (entry.metadata.svgEmitViewBox) {
-            writer.writeAttribute(QStringLiteral("viewBox"),
-                                  QStringLiteral("0 0 %1 %2")
-                                      .arg(canvas.size.width())
-                                      .arg(canvas.size.height()));
+            // Scenes whose client box is fractional (the error diagram:
+            // LayoutUnit 108.671875 vs the raster-rounded 109 canvas) carry
+            // the exact value so the exported intrinsic height matches the
+            // browser replaced-element box.
+            const QRectF clientViewBox =
+                entry.scene ? entry.scene->svgClientViewBox() : QRectF();
+            const QString viewBoxValue = clientViewBox.isValid()
+                ? QStringLiteral("0 0 %1 %2")
+                      .arg(formatSvgLength(clientViewBox.width()))
+                      .arg(formatSvgLength(clientViewBox.height()))
+                : QStringLiteral("0 0 %1 %2")
+                      .arg(canvas.size.width())
+                      .arg(canvas.size.height());
+            writer.writeAttribute(QStringLiteral("viewBox"), viewBoxValue);
           }
           if (entry.metadata.svgUseMaxWidth) {
             writer.writeAttribute(QStringLiteral("width"), QStringLiteral("100%"));
@@ -467,7 +492,10 @@ QByteArray renderMermaidEntryToSvg(const MermaidRenderEntry& entry,
 
 QByteArray renderMermaidEntryToSvg(const MermaidRenderEntry& entry,
                                    const MermaidSvgExportOptions& options) {
-  if (entry.status != MermaidRenderStatus::Ready || !entry.scene)
+  // Any entry carrying a scene serializes — including Error entries with the
+  // upstream error-diagram fallback attached (invalid sources export the
+  // lightbulb exactly like a browser page or mmdc would).
+  if (!entry.scene)
     return {};
 
   const SvgCanvas canvas = svgCanvas(entry);

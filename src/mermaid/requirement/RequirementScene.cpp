@@ -666,8 +666,12 @@ RequirementScene buildRequirementScene(
               labelText.lineHeightPx >= 0.0
           ? labelText.lineHeightPx : labelOptions.fontPixelSize * 1.5;
       labelOptions.htmlLabels = scene.style.htmlLabels;
-      rendered.labelSize = flowchart::measureLabel(
-          edge.label, QStringLiteral("markdown"), labelOptions);
+      rendered.labelSize = scene.style.htmlLabels
+          ? flowchart::measureLabel(
+                edge.label, QStringLiteral("markdown"), labelOptions)
+          : requirementSvgEdgeLabelSize(
+                rendered.labelDocument, labelOptions.fontFamily,
+                labelOptions.fontPixelSize);
       if (rendered.labelPosition) {
         rendered.labelBounds = QRectF(
             *rendered.labelPosition -

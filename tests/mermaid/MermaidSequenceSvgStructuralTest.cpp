@@ -1,9 +1,12 @@
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/sequence/SequenceDiagram.h"
+#include "mermaid/sequence/SequenceScene.h"
+#include "mermaid/sequence/SequenceScenePainter.h"
 
 #include <QDebug>
 #include <QFile>
 #include <QGuiApplication>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -11,6 +14,7 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <numeric>
 
 using namespace muffin::mermaid;
 
@@ -192,6 +196,219 @@ int main(int argc,char** argv) {
   require(mathCases>=5&&foreignObjectCases>=5&&ariaCases>=1&&labelCases>=12&&domEntries>=500&&
               markerEntries>=160,
           QStringLiteral("Sequence SVG structural coverage regressed"));
+
+  // ---- pen-level parity: dash patterns and line widths (QPen dash entries
+  // are multiples of the pen width, so the values must be normalized) ----
+  {
+    const QString source=QStringLiteral(
+        "sequenceDiagram\n"
+        "participant A as Alice\n"
+        "participant B as Bob\n"
+        "A->>B: solid\n"
+        "B-->>A: dotted\n"
+        "loop retry\n"
+        "  A->>B: ping\n"
+        "  alt ok\n"
+        "    B-->>A: pong\n"
+        "  else fail\n"
+        "    B-->>A: error\n"
+        "  end\n"
+        "end\n");
+    const auto entryOf=[&](const QString& src) {
+      auto entry=cache.getSync(cache.makeKey(src),src);
+      require(entry.status==editor::MermaidRenderStatus::Ready,
+              QStringLiteral("dash-parity render failed"));
+      auto* raw=dynamic_cast<const sequence::SequenceScene*>(entry.scene.get());
+      require(raw!=nullptr,QStringLiteral("dash-parity scene cast"));
+      return std::pair{std::move(entry),raw};
+    };
+    // Keep the cache entries alive: the scene data is owned by them.
+    const auto [dashEntry,scene]=entryOf(source);
+    const QImage image=sequence::renderSequenceSceneToImage(*scene);
+    const qreal pad=8.0;
+    const auto toImage=QPointF(scene->bounds.left()-pad,scene->bounds.top()-pad);
+    const auto imageX=[&](qreal x){return qRound(x-toImage.x());};
+    const auto imageY=[&](qreal y){return qRound(y-toImage.y());};
+    const auto alphaAt=[&](int x,int y) {
+      return (x>=0&&y>=0&&x<image.width()&&y<image.height())
+          ? image.pixelColor(x,y).alpha():0;
+    };
+    struct Run { int length; };
+    const auto inkRuns=[&](const QVector<int>& alphas,int threshold) {
+      QVector<Run> runs; int current=0;
+      for(int a:alphas) {
+        if(a>=threshold) ++current;
+        else if(current>0) { runs.append({current}); current=0; }
+      }
+      if(current>0) runs.append({current});
+      return runs;
+    };
+    const auto maxRun=[&](const char* what,const QVector<Run>& runs) {
+      require(!runs.isEmpty(),
+              QStringLiteral("%1: no ink found (coordinate mapping?)").arg(what));
+      return std::max_element(runs.cbegin(),runs.cend(),
+          [](const Run& a,const Run& b){return a.length<b.length;})->length;
+    };
+    const auto columnAlphas=[&](int x,int y0,int y1) {
+      QVector<int> alphas;
+      for(int y=y0;y<=y1;++y) alphas.append(alphaAt(x,y));
+      return alphas;
+    };
+    const auto rowAlphas=[&](int y,int x0,int x1) {
+      QVector<int> alphas;
+      for(int x=x0;x<=x1;++x) alphas.append(alphaAt(x,y));
+      return alphas;
+    };
+
+    // loop/alt border: stroke-width 2px, dasharray 2,2 — no solid stretch,
+    // ~50% duty cycle. The left/right border columns coincide with the outer
+    // actors' lifelines (the rect hugs the anchors), so measure the BOTTOM
+    // border row across the mid-span where neither lifelines (at the ends)
+    // nor the fragment label (top-left) paint.
+    require(!scene->fragments.isEmpty(),QStringLiteral("dash-parity fragment"));
+    const sequence::SequenceLayoutFragment& fragment=scene->fragments.first();
+    if(qEnvironmentVariableIsSet("MUFFIN_SAVE_DASH")) {
+      image.save(QStringLiteral("dash-parity.png"));
+      for(const auto& f:scene->fragments)
+        qDebug()<<"fragment"<<f.kind<<"rect"<<f.rect<<"sections"<<f.sectionY;
+      for(const auto& b:scene->boxes)
+        qDebug()<<"box"<<b.rect;
+      for(const auto& a:scene->participants)
+        qDebug()<<"actor"<<a.id<<"anchor"<<a.anchorX<<"life"<<a.lifelineStartY<<a.lifelineStopY;
+      for(const auto& m:scene->messages)
+        qDebug()<<"msg"<<m.label<<"y"<<m.lineY<<"x"<<m.startX<<m.stopX<<"dashed"<<m.dashed;
+      qDebug()<<"bounds"<<scene->bounds;
+    }
+    const auto midSpanRow=[&](qreal sceneY,const QRectF& rect) {
+      const int y=imageY(sceneY);
+      int bestY=y,bestInk=-1;
+      for(int yy=y-1;yy<=y+1;++yy) {
+        const QVector<int> row=rowAlphas(
+            yy,imageX(rect.left()+rect.width()*0.35),
+            imageX(rect.left()+rect.width()*0.65));
+        const int ink=std::accumulate(row.cbegin(),row.cend(),0);
+        if(ink>bestInk) { bestInk=ink; bestY=yy; }
+      }
+      return rowAlphas(bestY,imageX(rect.left()+rect.width()*0.35),
+                       imageX(rect.left()+rect.width()*0.65));
+    };
+    {
+      const QVector<int> border=midSpanRow(fragment.rect.bottom(),fragment.rect);
+      const auto borderRuns=inkRuns(border,128);
+      const int borderMaxRun=maxRun("loopLine border",borderRuns);
+      const int borderInk=std::count_if(border.cbegin(),border.cend(),
+                                        [](int a){return a>=128;});
+      require(borderMaxRun<=4,
+              QStringLiteral("loopLine dash too long: %1px (2,2 at 2px pen)")
+                  .arg(borderMaxRun));
+      require(borderInk*100/border.size()>=25&&borderInk*100/border.size()<=75,
+              QStringLiteral("loopLine duty cycle %1% not ~50% (dash 2,2)")
+                  .arg(borderInk*100/border.size()));
+    }
+
+    // Section separator (inline dasharray 3,3 at 2px): runs ~3px, ~50% duty.
+    // The nested alt/else carries the section lines; scan the mid-span row.
+    const sequence::SequenceLayoutFragment* sectioned=nullptr;
+    for(const auto& candidate:scene->fragments)
+      if(!candidate.sectionY.isEmpty()) { sectioned=&candidate; break; }
+    if(sectioned) {
+      const QVector<int> section=midSpanRow(sectioned->sectionY.first(),
+                                             sectioned->rect);
+      const auto sectionRuns=inkRuns(section,100);
+      const int sectionMaxRun=maxRun("section separator",sectionRuns);
+      const int sectionInk=std::count_if(section.cbegin(),section.cend(),
+                                         [](int a){return a>=100;});
+      require(sectionMaxRun>=2&&sectionMaxRun<=7,
+              QStringLiteral("section dash run %1px not ~3px (3,3 at 2px pen)")
+                  .arg(sectionMaxRun));
+      require(sectionInk*100/section.size()>=25&&sectionInk*100/section.size()<=75,
+              QStringLiteral("section duty cycle %1% not ~50%")
+                  .arg(sectionInk*100/section.size()));
+    }
+
+    // Messages: .messageLine0/1 stroke-width 1.5 (CSS beats the attr 2);
+    // dotted = inline dasharray 3,3 — runs ~3px, ~50% duty; solid = one long
+    // continuous run.
+    const sequence::SequenceLayoutMessage* dotted=nullptr;
+    const sequence::SequenceLayoutMessage* solid=nullptr;
+    for(const auto& message:scene->messages) {
+      if(message.dashed&&!dotted) dotted=&message;
+      if(!message.dashed&&!solid) solid=&message;
+    }
+    require(dotted&&solid,QStringLiteral("dash-parity messages"));
+    const auto rowProfile=[&](const sequence::SequenceLayoutMessage& message) {
+      const int y=imageY(message.lineY);
+      const int x0=qMin(imageX(message.startX),imageX(message.stopX))+4;
+      const int x1=qMax(imageX(message.startX),imageX(message.stopX))-4;
+      int bestY=y,bestInk=-1;
+      for(int yy=y-1;yy<=y+1;++yy) {
+        const QVector<int> row=rowAlphas(yy,x0,x1);
+        const int ink=std::accumulate(row.cbegin(),row.cend(),0);
+        if(ink>bestInk) { bestInk=ink; bestY=yy; }
+      }
+      return rowAlphas(bestY,x0,x1);
+    };
+    {
+      const QVector<int> dottedRow=rowProfile(*dotted);
+      const auto dottedRuns=inkRuns(dottedRow,100);
+      const int dottedMaxRun=maxRun("dotted message",dottedRuns);
+      const int dottedInk=std::count_if(dottedRow.cbegin(),dottedRow.cend(),
+                                        [](int a){return a>=100;});
+      require(dottedMaxRun>=2&&dottedMaxRun<=6,
+              QStringLiteral("dotted message dash run %1px not ~3px (3,3 at 1.5px pen)")
+                  .arg(dottedMaxRun));
+      require(dottedInk*100/dottedRow.size()>=30&&dottedInk*100/dottedRow.size()<=70,
+              QStringLiteral("dotted message duty cycle %1% not ~50%")
+                  .arg(dottedInk*100/dottedRow.size()));
+    }
+    {
+      const QVector<int> solidRow=rowProfile(*solid);
+      const auto solidRuns=inkRuns(solidRow,100);
+      const int solidMaxRun=maxRun("solid message",solidRuns);
+      require(solidMaxRun>=30,
+              QStringLiteral("solid message is not one continuous 1.5px line"));
+    }
+
+    // Lifelines: the bare `line` tag rule in the sheet forces stroke-width
+    // 2px SOLID (nothing declares a dasharray; computed style probed none).
+    {
+      const auto& actor=scene->participants.first();
+      const int x=imageX(actor.anchorX);
+      const int y0=imageY(actor.lifelineStartY)+3;
+      const int y1=imageY(actor.lifelineStopY)-3;
+      int bestX=x,bestInk=-1;
+      for(int xx=x-2;xx<=x+2;++xx) {
+        const QVector<int> column=columnAlphas(xx,y0,y1);
+        const int ink=std::accumulate(column.cbegin(),column.cend(),0);
+        if(ink>bestInk) { bestInk=ink; bestX=xx; }
+      }
+      const QVector<int> lifeline=columnAlphas(bestX,y0,y1);
+      const auto lifelineRuns=inkRuns(lifeline,128);
+      const int lifelineMaxRun=maxRun("lifeline",lifelineRuns);
+      require(lifelineMaxRun>=(y1-y0)*8/10,
+              QStringLiteral("lifeline not solid 2px (max run %1 of %2)")
+                  .arg(lifelineMaxRun).arg(y1-y0));
+      int wideColumns=0;
+      const int midY=imageY((actor.lifelineStartY+actor.lifelineStopY)/2);
+      for(int xx=bestX-2;xx<=bestX+2;++xx)
+        if(alphaAt(xx,midY)>=200) ++wideColumns;
+      require(wideColumns>=2,
+              QStringLiteral("lifeline width %1 columns, expected a 2px stroke")
+                  .arg(wideColumns));
+    }
+
+    // look:handDrawn is INERT for sequence (upstream never branches on it in
+    // the sequence renderer; probed: classic vs handDrawn SVGs differ only in
+    // render-id counters). The scene must be identical either way.
+    {
+      const QString handDrawnSource=QStringLiteral(
+          "%%{init: {\"look\": \"handDrawn\", \"handDrawnSeed\": 7}}%%\n")+source;
+      const auto [handDrawnEntry,handDrawnScene]=entryOf(handDrawnSource);
+      require(handDrawnScene->toJsonObject()==scene->toJsonObject(),
+              QStringLiteral("look:handDrawn changed the sequence scene (upstream ignores it)"));
+    }
+  }
+
   qDebug()<<"MermaidSequenceSvgStructuralTest:"<<cases.size()<<"cases,"<<domEntries
           <<"ordered DOM entries passed";
   return 0;

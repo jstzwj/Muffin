@@ -44,7 +44,7 @@ qreal nextNumber(const QVector<QString>& tokens, int& index) {
   return tokens.at(index++).toDouble();
 }
 
-QPainterPath parseSvgPath(const QString& source) {
+QPainterPath parseSvgPathData(const QString& source) {
   const QVector<QString> tokens = pathTokens(source);
   QPainterPath path;
   // SVG's default fill-rule is nonzero; QPainterPath defaults to odd-even.
@@ -172,6 +172,10 @@ QPainterPath parseSvgPath(const QString& source) {
 
 }  // namespace
 
+QPainterPath MathSvgGeometry::parseSvgPath(const QString& source) {
+  return parseSvgPathData(source);
+}
+
 void MathSvgGeometry::ensureLoaded() {
   if (didLoad()) {
     return;
@@ -210,7 +214,7 @@ QPainterPath MathSvgGeometry::painterPath(const QString& name, QRectF target) {
 QPainterPath MathSvgGeometry::painterPathFromSvgPath(
     const QString& svgPath, QRectF viewBox, QRectF target,
     Qt::AspectRatioMode aspectRatioMode) {
-  QPainterPath parsed = parseSvgPath(svgPath);
+  QPainterPath parsed = parseSvgPathData(svgPath);
   const QRectF source = viewBox.isEmpty() ? parsed.boundingRect() : viewBox;
   if (parsed.isEmpty() || source.isEmpty() || target.isEmpty()) {
     return {};

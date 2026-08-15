@@ -128,6 +128,8 @@ private:
   // supported family. Unknown families become Unsupported; parser/layout
   // exceptions become Error.
   static MermaidRenderEntry renderSource(const QString& source, const QString& theme);
+  static MermaidRenderEntry renderSourceDispatch(
+      const QString& source, const QString& theme);
 
   void launchWorker(const MermaidRenderKey& key, const QString& source);
   void cancelDebouncedRequest(bool removeLoadingEntry);

@@ -41,6 +41,10 @@ QHash<QString, QString> themeOverrides(const QJsonObject& config);
 // than the string-flattened themeOverrides.
 std::optional<int> jsThemeColorLimit(const QJsonObject& config);
 
+// The config.themeVariables.radius consumed by shapes/roundedRect — the
+// MERGED value (user override ?: resolved theme literal, `?? 5` fallback).
+qreal rawShapeRadius(const flowtheme::FlowThemeVariables& theme);
+
 qreal pixelValue(const QString& value, qreal fallback);
 
 // A CssLengthContext for the Pie family, mirroring requirement's layerCtx

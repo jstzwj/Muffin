@@ -334,12 +334,23 @@ RequirementPlacementResult layoutRequirementDiagramDagre(
         textOptions.fontPixelSize = requirementEffectiveFontSize(style, fontSize);
         textOptions.lineHeight = style.lineHeightPx >= 0.0
             ? style.lineHeightPx : textOptions.fontPixelSize * 1.5;
-        measuredEdgeLabels.insert(edge.id, flowchart::measureLabel(
-            edge.label, QStringLiteral("markdown"), textOptions));
+        if (htmlLabels) {
+          measuredEdgeLabels.insert(edge.id, flowchart::measureLabel(
+              edge.label, QStringLiteral("markdown"), textOptions));
+        } else {
+          measuredEdgeLabels.insert(edge.id, requirementSvgEdgeLabelSize(
+              requirementRowDocument(edge.label, false, style, fontSize, false),
+              textOptions.fontFamily, textOptions.fontPixelSize));
+        }
       }
-    } else {
+    } else if (htmlLabels) {
       measuredEdgeLabels.insert(edge.id, flowchart::measureLabel(
           edge.label, QStringLiteral("markdown"), textOptions));
+    } else {
+      measuredEdgeLabels.insert(edge.id, requirementSvgEdgeLabelSize(
+          flowchart::parseFlowSvgLabel(edge.label,
+                                       QStringLiteral("markdown")),
+          textOptions.fontFamily, textOptions.fontPixelSize));
     }
   }
   flowchart::FlowLayoutOptions options;
@@ -361,6 +372,24 @@ RequirementPlacementResult layoutRequirementDiagramDagre(
     result.edges.append(std::move(projectedEdge));
   }
   return result;
+}
+
+QSizeF requirementSvgEdgeLabelSize(const flowchart::FlowLabelDocument& document,
+                                   const QString& fontFamily, qreal fontSize) {
+  const flowchart::FlowLabelFontMetrics font =
+      flowchart::flowLabelFontBoundingMetrics(fontFamily, fontSize);
+  // Pass the cell height as the line height so a single row measures exactly
+  // the font bounding box (multi-row blocks take the 1.1em svg pitch inside
+  // measureFlowLabel via the FlowSvgFormattedText formatting context).
+  const qreal advanceWidth = flowchart::measureFlowLabel(
+      document, fontFamily, fontSize, font.height()).width();
+  const qsizetype rows = !document.visualLines.isEmpty()
+      ? document.visualLines.size()
+      : document.text.count(QLatin1Char('\n')) + 1;
+  const qreal height = rows > 1
+      ? flowchart::flowSvgFormattedTextBlockHeight(fontFamily, fontSize, rows)
+      : font.height() + 4.0;
+  return QSizeF(advanceWidth + 4.0, height);
 }
 
 }  // namespace muffin::mermaid::requirement

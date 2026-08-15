@@ -170,8 +170,8 @@ int main(int argc, char** argv) {
           QStringLiteral("Config matrix dimensions drifted"));
 
   const QJsonArray entries = fixture.value(QStringLiteral("entries")).toArray();
-  require(entries.size() == 532,
-          QStringLiteral("Expected 532 classified config rows, found %1")
+  require(entries.size() == 533,
+          QStringLiteral("Expected 533 classified config rows, found %1")
               .arg(entries.size()));
   QMap<QString, QJsonObject> byPath;
   QMap<QString, int> familyCounts;

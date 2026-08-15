@@ -290,6 +290,47 @@ std::optional<MermaidRenderEntry> upstreamLayoutConfigurationError(
   return std::nullopt;
 }
 
+// Upstream 11.16 (mermaid.core render): a failure inside Diagram.fromText()
+// or renderer.draw() falls back to `Diagram.fromText("error")` — the
+// lightbulb error diagram stays in the DOM — while the original exception
+// still propagates (render() rethrows after the SVG is produced). Mirror
+// that: the diagnostic entry keeps its contract AND carries the error scene
+// for the export paths (PNG/SVG). The editor canvas intentionally does NOT
+// consume it — BlockLayoutBuilder keeps source + diagnostic panel for Error
+// entries (a deliberate Muffin editing surface, locked by
+// RenderMermaidBlockTest), unlike the browser where the failed svg is
+// replaced in place.
+//
+// suppressErrorRendering cannot be enabled through the Markdown source API
+// (the frontmatter sanitizer's secure set strips it, matching upstream), so
+// the fallback is unconditional here. Preprocess-stage failures (frontmatter
+// YAML / directive errors) throw before mermaid's try/catch upstream and
+// produce no error svg; "unsupported" has no upstream equivalent (every
+// registered detector id has a native adapter).
+void attachErrorFallbackScene(MermaidRenderEntry& entry,
+                              const QString& source, const QString& theme) {
+  if (entry.status != MermaidRenderStatus::Error || entry.scene) return;
+  if (entry.diagnostic.stage == QLatin1String("preprocess") ||
+      entry.diagnostic.stage == QLatin1String("unsupported"))
+    return;
+  try {
+    MermaidPreprocessResult pre = preprocessDiagram(source);
+    pre.config = mermaidRenderConfig(pre.config);
+    const Diagram* errorDiagram = findMermaidDiagram(QStringLiteral("error"));
+    if (!errorDiagram) return;
+    MermaidRenderEntry fallback =
+        errorDiagram->render(pre, QStringLiteral("error"), theme);
+    if (fallback.status == MermaidRenderStatus::Ready && fallback.scene) {
+      entry.scene = std::move(fallback.scene);
+      entry.metadata = std::move(fallback.metadata);
+      entry.naturalSize = fallback.naturalSize;
+    }
+  } catch (const std::exception&) {
+    // The diagnostic contract stays primary; the fallback visual is
+    // best-effort.
+  }
+}
+
 }  // namespace
 
 MermaidRenderCache::MermaidRenderCache(QObject* parent, int capacity)
@@ -445,7 +486,10 @@ MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(
   MermaidPngRenderResult result;
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
-  if (entry.status != MermaidRenderStatus::Ready || !entry.scene)
+  // Any entry carrying a scene rasterizes — including Error entries with the
+  // upstream error-diagram fallback attached (invalid sources export the
+  // lightbulb exactly like a browser page or mmdc would).
+  if (!entry.scene)
     return result;
   result.metadata = entry.metadata;
   dpr = qMax<qreal>(0.25, dpr);
@@ -515,7 +559,8 @@ QString MermaidRenderCache::renderMermaidSourceToSvgDataUrl(
   return renderMermaidSourceToSvg(source, instanceIndex).dataUrl;
 }
 
-MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const QString& theme) {
+MermaidRenderEntry MermaidRenderCache::renderSourceDispatch(
+    const QString& source, const QString& theme) {
   MermaidPreprocessResult pre;
   try {
     pre = preprocessDiagram(source);
@@ -1079,6 +1124,13 @@ MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source, const
     diagnostic.message = QString::fromUtf8(error.what());
     return errorEntry(std::move(diagnostic));
   }
+}
+
+MermaidRenderEntry MermaidRenderCache::renderSource(const QString& source,
+                                                    const QString& theme) {
+  MermaidRenderEntry entry = renderSourceDispatch(source, theme);
+  attachErrorFallbackScene(entry, source, theme);
+  return entry;
 }
 
 }  // namespace muffin::mermaid::editor

@@ -55,11 +55,20 @@ struct StateDiagramImpl : Diagram {
       style.stateStroke = !themeVars.stateBorder.isEmpty()
                               ? themeVars.stateBorder : themeVars.nodeBorder;
       style.textColor = themeVars.primaryTextColor;
-      style.transitionColor = themeVars.lineColor;
+      // state/styles.js: `.transition` stroke + the barbEnd markers take
+      // transitionColor (`|| lineColor`); the edge-label background rect takes
+      // labelBackgroundColor (derived from stateBkg → mainBkg); `.stateLabel
+      // text`/`.state-title` take stateLabelColor — whose `|| stateBkg ||
+      // primaryTextColor` chain equals primaryTextColor unless overridden.
+      // All three now consume the resolved themeVariables, so user overrides
+      // of these keys propagate like 11.16.
+      style.transitionColor = themeVars.transitionColor;
+      style.edgeLabelFill = themeVars.labelBackgroundColor;
+      style.stateLabelColor = themeVars.stateLabelColor;
+      style.transitionLabelColor = themeVars.transitionLabelColor;
       style.specialStateColor = themeVars.specialStateColor;
       style.endInnerFill = !themeVars.stateBorder.isEmpty()
                                ? themeVars.stateBorder : themeVars.nodeBorder;
-      style.edgeLabelFill = themeVars.mainBkg;
       style.compositeFill = themeVars.compositeBackground;
       style.compositeAltFill = themeVars.altBackground;
       style.compositeTitleFill = themeVars.compositeTitleBackground;
@@ -103,14 +112,18 @@ struct StateDiagramImpl : Diagram {
       style.stateStroke = nodeStyle.stroke;
       style.strokeWidth = cssStrokeWidthPx(nodeStyle.strokeWidth, {}, 0.0);
       style.textColor = labelStyle.color;
+      // The stateLabel slot follows the projected label color (themeCSS
+      // `.stateLabel text`-equivalent cases must win over the theme default).
+      style.stateLabelColor = labelStyle.color;
       style.fontFamily = firstFontFamily(labelStyle.fontFamily);
       style.fontSize = cssFontSizePx(labelStyle.fontSize, {});
       style.lineHeight = style.fontSize * 1.5;
-      if (configuredTheme.compare(QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
-        style.noteFill = QStringLiteral("#474949");
-        style.noteStroke = QStringLiteral("#2f2f2f");
-        style.noteTextColor = QStringLiteral("#ffffff");
-      }
+      // `.state-note` fill/stroke + nested text (mkBorder(noteBkgColor) /
+      // noteBkgColor / noteTextColor per theme — the former dark-hardcoded
+      // approximations are superseded by the resolved derivation).
+      style.noteFill = themeVars.noteBkgColor;
+      style.noteStroke = themeVars.noteBorderColor;
+      style.noteTextColor = themeVars.noteTextColor;
       const state::StateLayoutMeasurements measurements = state::measureStateLayoutInput(
           input, style.fontFamily, style.fontSize, handDrawn, handDrawnSeed,
           shapeHidden);

@@ -1,7 +1,6 @@
 #include "mermaid/sequence/SequenceScenePainter.h"
 
 #include "mermaid/MermaidFontRegistry.h"
-#include "mermaid/rough/RoughPaint.h"
 #include "mermaid/sequence/SequenceLabel.h"
 #include "mermaid/theme/MermaidColor.h"
 
@@ -72,6 +71,25 @@ QRectF messageBounds(const SequenceLayoutMessage& message,
                   QRectF(number->position.x() - 10.0,
                          number->position.y() - 14.0, 20.0, 20.0));
   return initialized ? bounds.adjusted(-12.0, -12.0, 12.0, 12.0) : bounds;
+}
+
+// Chrome renders short CSS dashes (stroke-dasharray 2,2 / 3,3) as crisp
+// on/off segments; Qt's raster engine solidifies dash periods below ~5px, so
+// a CustomDashLine pen cannot reproduce them. Paint the on-segments
+// explicitly — one phase restart per edge, exactly like upstream's separate
+// `<line class="loopLine">` elements (each browser line resets its dash
+// phase at its own start point).
+void drawDashedEdge(QPainter& painter, const QPointF& a, const QPointF& b,
+                    qreal dashOn, qreal dashOff) {
+  const QLineF line(a, b);
+  const qreal length = line.length();
+  if (length <= 0.0) return;
+  const QPointF unit(line.dx() / length, line.dy() / length);
+  for (qreal t = 0.0; t < length; t += dashOn + dashOff) {
+    const qreal span = qMin(dashOn, length - t);
+    if (span <= 0.0) break;
+    painter.drawLine(a + unit * t, a + unit * (t + span));
+  }
 }
 
 void centeredText(QPainter& painter, const SequenceLabelDocument& label, const QRectF& rect,
@@ -166,11 +184,7 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     // BLACK (color0) instead of no brush.
     painter.setBrush(box.fill == QLatin1String("transparent")
                          ? QBrush(Qt::NoBrush) : QBrush(color(box.fill)));
-    if (scene.handDrawn)
-      rough::roughRect(painter, box.rect, scene.handDrawnSeed,
-                       color(box.fill), color(scene.style.boxStroke), 1.0);
-    else
-      painter.drawRect(box.rect);
+    painter.drawRect(box.rect);
     if (!box.label.isEmpty()) centeredText(
         painter, scene.boxLabels[index], box.labelRect, scene.style,
         scene.style.labelTextColor, flowchart::FlowLabelAlign::Center, 0.0,
@@ -179,7 +193,11 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
   for (qsizetype index = 0; index < scene.participants.size(); ++index) {
     const auto& actor = scene.participants[index];
     if (!mermaidPrimitiveIsVisible(participantBounds(actor), options)) continue;
-    painter.setPen(QPen(color(scene.style.lifelineColor), 0.5, Qt::DashLine));
+    // Lifelines are SOLID 2px (golden basic.png): the sheet's bare
+    // `#id .actor-man circle, #id line { fill: ...; stroke-width: 2px }` tag
+    // rule beats the 0.5px presentation attribute, and nothing declares a
+    // dasharray (computed stroke-dasharray: none).
+    painter.setPen(QPen(color(scene.style.lifelineColor), 2.0));
     painter.drawLine(QPointF(actor.anchorX, actor.lifelineStartY),
                      QPointF(actor.anchorX, actor.lifelineStopY));
     if (actor.drawTop) participantShape(painter, actor, scene.participantLabels[index], false, scene.style);
@@ -189,60 +207,60 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     if (!mermaidPrimitiveIsVisible(activation.rect, options)) continue;
     painter.setPen(QPen(color(scene.style.activationStroke), 1.0));
     painter.setBrush(color(scene.style.activationFill));
-    if (scene.handDrawn)
-      rough::roughRect(painter, activation.rect, scene.handDrawnSeed,
-                       color(scene.style.activationFill),
-                       color(scene.style.activationStroke), 1.0);
-    else
-      painter.drawRect(activation.rect);
+    painter.drawRect(activation.rect);
   }
   for (qsizetype index = 0; index < scene.fragments.size(); ++index) {
     const auto& fragment = scene.fragments[index];
     if (!mermaidPrimitiveIsVisible(fragment.rect, options)) continue;
     if (fragment.kind == QLatin1String("rect")) {
       // `rect <color>` is a borderless background highlight over the contained
-      // messages (mermaid drawBackgroundRect). Its label IS the color spec; there
-      // is no tag box, fragment label, or section divider — unlike loop/alt/etc.
-      if (!fragment.label.trimmed().isEmpty()) {
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(color(fragment.label));
-        painter.drawRect(fragment.rect);
-      }
+      // messages (mermaid drawBackgroundRect). Its label IS the color spec; a
+      // colorless rect falls back to the RAW themeVariables chain. There is no
+      // tag box, fragment label, or section divider — unlike loop/alt/etc.
+      const QString fillSpec = fragment.label.trimmed().isEmpty()
+                                   ? scene.style.rectFallbackFill
+                                   : fragment.label;
+      painter.setPen(Qt::NoPen);
+      painter.setBrush(color(fillSpec));
+      painter.drawRect(fragment.rect);
       continue;
     }
-    painter.setPen(QPen(color(scene.style.fragmentStroke), 2.0));
+    // `.loopLine` (styles.js): stroke-width 2px, stroke-dasharray 2,2 — the
+    // fragment border is four DASHED lines in every theme (golden
+    // nested-fragment.png: crisp 2px on / 2px off, per-edge phase restart).
+    // Qt solidifies sub-5px dash periods, hence the manual segmentation; the
+    // pen must be FlatCap (SVG's butt default — SquareCap would extend each
+    // 2px segment by half the width on both ends and fuse the dash row).
+    QPen borderPen(color(scene.style.fragmentStroke), 2.0);
+    borderPen.setCapStyle(Qt::FlatCap);
+    painter.setPen(borderPen);
     painter.setBrush(scene.style.fragmentFill == QLatin1String("transparent")
-                         ? Qt::NoBrush : QBrush(color(scene.style.fragmentFill)));
-    if (scene.handDrawn)
-      rough::roughRect(painter, fragment.rect, scene.handDrawnSeed,
-                       scene.style.fragmentFill == QLatin1String("transparent")
-                           ? QColor(Qt::transparent) : color(scene.style.fragmentFill),
-                       color(scene.style.fragmentStroke), 2.0);
-    else
-      painter.drawRect(fragment.rect);
+                         ? QBrush(Qt::NoBrush) : QBrush(color(scene.style.fragmentFill)));
+    if (scene.style.fragmentFill != QLatin1String("transparent"))
+      painter.fillRect(fragment.rect, color(scene.style.fragmentFill));
+    drawDashedEdge(painter, fragment.rect.topLeft(), fragment.rect.topRight(), 2.0, 2.0);
+    drawDashedEdge(painter, fragment.rect.topRight(), fragment.rect.bottomRight(), 2.0, 2.0);
+    drawDashedEdge(painter, fragment.rect.bottomLeft(), fragment.rect.bottomRight(), 2.0, 2.0);
+    drawDashedEdge(painter, fragment.rect.topLeft(), fragment.rect.bottomLeft(), 2.0, 2.0);
     const QRectF tag(fragment.rect.x(), fragment.rect.y(), 50.0, 20.0);
     painter.setPen(QPen(color(scene.style.labelStroke), 1.0));
     painter.setBrush(color(scene.style.labelFill));
-    if (scene.handDrawn)
-      rough::roughRect(painter, tag, scene.handDrawnSeed,
-                       color(scene.style.labelFill), color(scene.style.labelStroke), 1.0);
-    else
-      painter.drawRect(tag);
+    painter.drawRect(tag);
     centeredText(painter, scene.fragmentKindLabels[index], tag, scene.style,
                  scene.style.labelTextColor);
     centeredText(painter, scene.fragmentLabels[index],
                  QRectF(fragment.rect.x() + 50.0, fragment.rect.y(),
                         fragment.rect.width() - 50.0, 30.0), scene.style,
                  scene.style.loopTextColor);
-    QPen sectionPen(color(scene.style.fragmentStroke), 1.0, Qt::DashLine);
+    // Section separators are loopLines with an INLINE stroke-dasharray "3, 3"
+    // (drawLoop) overriding the class rule; stroke-width stays 2px. Manual
+    // segmentation for the same sub-5px-period reason as the border.
+    QPen sectionPen(color(scene.style.fragmentStroke), 2.0);
+    sectionPen.setCapStyle(Qt::FlatCap);
     painter.setPen(sectionPen);
     for (qreal y : fragment.sectionY) {
-      if (scene.handDrawn)
-        rough::roughLine(painter, QPointF(fragment.rect.left(), y),
-                         QPointF(fragment.rect.right(), y), scene.handDrawnSeed,
-                         color(scene.style.fragmentStroke), 1.0);
-      else
-        painter.drawLine(QPointF(fragment.rect.left(), y), QPointF(fragment.rect.right(), y));
+      drawDashedEdge(painter, QPointF(fragment.rect.left(), y),
+                     QPointF(fragment.rect.right(), y), 3.0, 3.0);
     }
   }
   for (qsizetype index = 0; index < scene.notes.size(); ++index) {
@@ -250,11 +268,7 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
     if (!mermaidPrimitiveIsVisible(note.rect, options)) continue;
     painter.setPen(QPen(color(scene.style.noteStroke), 1.0));
     painter.setBrush(color(scene.style.noteFill));
-    if (scene.handDrawn)
-      rough::roughRect(painter, note.rect, scene.handDrawnSeed,
-                       color(scene.style.noteFill), color(scene.style.noteStroke), 1.0);
-    else
-      painter.drawRect(note.rect);
+    painter.drawRect(note.rect);
     centeredText(painter, scene.noteLabels[index], note.rect, scene.style,
                  scene.style.noteTextColor,
                  effectiveAlign(scene.noteLabels[index], scene.style.noteAlign),
@@ -267,23 +281,28 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
         numbersByMessage.value(message.messageIndex, nullptr);
     if (!mermaidPrimitiveIsVisible(messageBounds(message, number), options))
       continue;
-    QPen pen(color(scene.style.signalColor), 2.0);
-    if (message.dashed) pen.setDashPattern({3.0, 3.0});
+    // `.messageLine0/1 { stroke-width: 1.5 }` wins the cascade over the
+    // renderer's stroke-width=2 presentation attribute; dotted arrows carry an
+    // INLINE stroke-dasharray "3, 3" (golden basic.png: 1.5px lines, crisp
+    // 3on/3off). Straight spans are segmented manually; the curved self-loop
+    // path keeps a CustomDashLine pen ({2,2} at the 1.5px width = 3/3, a
+    // 6px period Qt renders correctly). FlatCap everywhere: SVG lines are
+    // butt-capped, and SquareCap would lengthen each dash by half the width.
+    QPen pen(color(scene.style.signalColor), 1.5);
+    pen.setCapStyle(Qt::FlatCap);
+    if (message.dashed) pen.setDashPattern({2.0, 2.0});
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
     if (message.painterPath.isEmpty()) {
-      if (scene.handDrawn)
-        rough::roughLine(painter, QPointF(message.startX, message.lineY),
-                         QPointF(message.stopX, message.lineY), scene.handDrawnSeed,
-                         color(scene.style.signalColor), 2.0);
-      else
-        painter.drawLine(QPointF(message.startX, message.lineY), QPointF(message.stopX, message.lineY));
+      if (message.dashed) {
+        drawDashedEdge(painter, QPointF(message.startX, message.lineY),
+                       QPointF(message.stopX, message.lineY), 3.0, 3.0);
+      } else {
+        painter.drawLine(QPointF(message.startX, message.lineY),
+                         QPointF(message.stopX, message.lineY));
+      }
     } else {
-      if (scene.handDrawn)
-        rough::roughPath(painter, message.painterPath, scene.handDrawnSeed,
-                         color(scene.style.signalColor), 2.0);
-      else
-        painter.drawPath(message.painterPath);
+      painter.drawPath(message.painterPath);
     }
     for (const QPointF& center : message.centralConnections) {
       painter.setPen(QPen(color(scene.style.signalColor), 1.0));

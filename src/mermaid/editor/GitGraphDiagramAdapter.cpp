@@ -296,8 +296,11 @@ struct GitGraphDiagramImpl final : Diagram {
           jsThemeColorLimit(pre.config).value_or(themeVars.themeColorLimit);
       const QString baseCss = gitGraphBaseCss(
           style, ruleCount,
-          themeVars.fontWeight.isEmpty() ? QStringLiteral("400")
-                                         : themeVars.fontWeight);
+          // gitGraph's redux geometry reads `options.noteFontWeight` (600 for
+          // the redux family) — NOT the separate fontWeight key; both agree
+          // per-theme, only user overrides distinguish them.
+          themeVars.noteFontWeight.isEmpty() ? QStringLiteral("400")
+                                             : themeVars.noteFontWeight);
       // Mermaid paints `#id { font-family; font-size; fill: textColor }`
       // directly on the svg element; `svg {}` user rules are scoped to
       // `#id svg` and can never reach the root itself.

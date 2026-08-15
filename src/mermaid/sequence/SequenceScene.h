@@ -22,6 +22,10 @@ struct SequenceSceneStyle {
   QString activationFill = QStringLiteral("#f4f4f4");
   QString activationStroke = QStringLiteral("#666666");
   QString fragmentFill = QStringLiteral("transparent");
+  // Colorless `rect` fragments fall back to the renderer's RAW themeVariables
+  // chain (rectBkgColor || actorBkg || rgba(128,128,128,0.5)) — distinct from
+  // every stylesheet-consumed slot, which uses the resolved theme.
+  QString rectFallbackFill = QStringLiteral("rgba(128, 128, 128, 0.5)");
   QString fragmentStroke = QStringLiteral("#666666");
   QString loopTextColor = QStringLiteral("#333333");
   QString labelFill = QStringLiteral("#eaeaea");
@@ -121,10 +125,10 @@ struct SequenceScene : MermaidScene {
   bool forceMenus = false;
   QVector<InteractionRegion> interactionRegions_;  // precomputed at build
   SequenceSceneStyle style;
-  // handDrawn (rough) look — gated in the painter, only set when the diagram
-  // config requests `look: handDrawn`. Default rendering is unaffected.
-  bool handDrawn = false;
-  quint32 handDrawnSeed = 0;
+  // No handDrawn surface: mermaid 11.16's sequence renderer never branches on
+  // config.look (a look:handDrawn source renders the identical classic SVG —
+  // probed; only render-id counters move). `look`'s config-matrix scope
+  // deliberately excludes this family.
 };
 
 SequenceScene buildSequenceScene(const SequenceLayoutResult& layout,

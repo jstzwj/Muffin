@@ -168,4 +168,12 @@ RequirementPlacementResult layoutRequirementDiagramDagre(
     const QString& fontFamily = QStringLiteral("Noto Sans"), qreal fontSize = 16.0,
     bool htmlLabels = true);
 
+// htmlLabels:false edge-label box (upstream insertEdgeLabel + createText →
+// createFormattedText): the dagre/painted size is the SVG <text> getBBox —
+// advance width × (hhea cell height + (rows-1)·1.1em) — expanded by the 2px
+// background-rect padding per side. CSS line-height does not move SVG tspans,
+// so the row pitch is the fixed 1.1em dy regardless of themeCSS.
+QSizeF requirementSvgEdgeLabelSize(const flowchart::FlowLabelDocument& document,
+                                   const QString& fontFamily, qreal fontSize);
+
 }  // namespace muffin::mermaid::requirement

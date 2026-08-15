@@ -110,7 +110,10 @@ StateScene buildStateScene(const StateLayoutInput& input,
     node.group = true;
     applyStateNodeStyles(node, scene.style.compositeTitleFill,
                          scene.style.compositeStroke,
-                         scene.style.textColor, scene.style.strokeWidth);
+                         scene.style.stateLabelColor.isEmpty()
+                             ? scene.style.textColor
+                             : scene.style.stateLabelColor,
+                         scene.style.strokeWidth);
     node.labelDocument = prepareLabel(node.label, scene.style.fontSize);
     const qreal titleHeight = flowchart::measureFlowLabel(
         node.labelDocument, scene.style.fontFamily, scene.style.fontSize,
@@ -156,7 +159,10 @@ StateScene buildStateScene(const StateLayoutInput& input,
     applyStateNodeStyles(node,
         note ? scene.style.noteFill : scene.style.stateFill,
         note ? scene.style.noteStroke : scene.style.stateStroke,
-        note ? scene.style.noteTextColor : scene.style.textColor,
+        note ? scene.style.noteTextColor
+             : (scene.style.stateLabelColor.isEmpty()
+                    ? scene.style.textColor
+                    : scene.style.stateLabelColor),
         scene.style.strokeWidth);
     if (handDrawn) {
       const QRectF localBounds(-node.bounds.width() / 2.0,

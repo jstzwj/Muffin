@@ -117,9 +117,10 @@ int main(int argc, char** argv) {
   }
 
   // --- look: handDrawn renders sequence/class/state through the rough painter
-  // without crashing, and the scene's handDrawn flag + seed propagate from the
-  // frontmatter config. Default-look tests never reach these branches, so this
-  // block is the guard that the handDrawn wiring (Task 5) stays functional.
+  // without crashing. Families that upstream routes through RoughJS (class,
+  // state) keep their handDrawn wiring; sequence deliberately does NOT —
+  // mermaid 11.16's sequence renderer ignores config.look entirely, so its
+  // scene must stay identical to the classic render (asserted below).
   {
     const QString handDrawnSources[] = {
         QStringLiteral("---\nconfig:\n  look: handDrawn\n  handDrawnSeed: 7\n---\n"
@@ -140,11 +141,21 @@ int main(int argc, char** argv) {
     const MermaidRenderEntry seq = cache.getSync(
         MermaidRenderCache::makeKey(handDrawnSources[0]), handDrawnSources[0]);
     require(seq.status == kReady, QStringLiteral("handDrawn sequence should be Ready"));
+    // Mermaid 11.16's sequence renderer never branches on config.look (the
+    // classic and handDrawn SVGs differ only in render-id counters, probed),
+    // so the sequence scene carries no handDrawn surface — it must render the
+    // IDENTICAL classic scene for a look:handDrawn source.
+    const MermaidRenderEntry classic = cache.getSync(
+        MermaidRenderCache::makeKey(QStringLiteral(
+            "sequenceDiagram\nAlice->>Bob: Hi\nBob-->>Alice: Yo\n"
+            "Note over Alice,Bob: shared\n")),
+        QStringLiteral("sequenceDiagram\nAlice->>Bob: Hi\nBob-->>Alice: Yo\n"
+                       "Note over Alice,Bob: shared\n"));
     const auto* sequenceScene = dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(seq.scene.get());
-    require(sequenceScene && sequenceScene->handDrawn,
-            QStringLiteral("sequence scene must reflect look: handDrawn"));
-    require(sequenceScene->handDrawnSeed == 7u,
-            QStringLiteral("handDrawnSeed must propagate to the sequence scene"));
+    const auto* classicScene = dynamic_cast<const muffin::mermaid::sequence::SequenceScene*>(classic.scene.get());
+    require(sequenceScene && classicScene &&
+                sequenceScene->toJsonObject() == classicScene->toJsonObject(),
+            QStringLiteral("look:handDrawn must leave the sequence scene unchanged"));
   }
 
   // --- shared title/accessibility metadata reaches the generic-title families ---

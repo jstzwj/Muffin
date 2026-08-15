@@ -16,6 +16,11 @@ struct StateSceneStyle {
   QString textColor = QStringLiteral("#333333");
   QString transitionColor = QStringLiteral("#333333");
   QString edgeLabelFill = QStringLiteral("#ECECFF");
+  // `.stateLabel text`/`.state-title` (stateLabelColor) and `.edgeLabel .label
+  // text` (transitionLabelColor, `|| tertiaryTextColor`) — resolved-theme
+  // slots distinct from textColor (defaults agree for every built-in theme).
+  QString stateLabelColor;
+  QString transitionLabelColor;
   QString compositeFill = QStringLiteral("white");
   QString compositeAltFill = QStringLiteral("#f0f0f0");
   QString compositeTitleFill = QStringLiteral("#ECECFF");

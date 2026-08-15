@@ -647,10 +647,18 @@ int main(int argc, char** argv) {
               !blockedKanbanTicket.contains("javascript:"),
           QStringLiteral("Kanban SVG ticket link sanitization drifted"));
 
-  require(MermaidRenderCache::renderMermaidSourceToSvg(
-              QStringLiteral("flowchart TB\nA -->"))
-              .svg.isEmpty(),
-          QStringLiteral("Invalid Mermaid source must not export partial SVG"));
+  // Invalid sources export the upstream error-diagram fallback (mermaid.core
+  // leaves the lightbulb SVG in the DOM for every parse/draw failure; mmdc
+  // serializes it) — never a partial diagram.
+  {
+    const QByteArray invalidSvg = MermaidRenderCache::renderMermaidSourceToSvg(
+        QStringLiteral("flowchart TB\nA -->")).svg;
+    require(!invalidSvg.isEmpty() &&
+                invalidSvg.contains("aria-roledescription=\"error\"") &&
+                !invalidSvg.contains("flowchart"),
+            QStringLiteral(
+                "Invalid Mermaid source must export the error fallback SVG"));
+  }
 
   qDebug() << "MermaidSvgExportTest: native families, SVG roots, ARIA,"
               " deterministic IDs, sizing, rendering, and safe links passed";

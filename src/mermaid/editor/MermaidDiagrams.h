@@ -45,6 +45,10 @@ const Diagram& railroadDiagramAdapter();
 const Diagram& railroadEbnfDiagramAdapter();
 const Diagram& railroadAbnfDiagramAdapter();
 const Diagram& railroadPegDiagramAdapter();
+// The two diagram types upstream registers before everything else: the error
+// diagram (lightbulb fallback visual) and the "---" frontmatter-guard stub.
+const Diagram& errorDiagramAdapter();
+const Diagram& dashDiagramAdapter();
 
 // Returns the Diagram that handles the detected type id, or nullptr if the
 // type is not natively rendered. The registry is the single source of truth

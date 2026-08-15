@@ -86,7 +86,7 @@ cose-bilkent. Its renderer emits the upstream migration warning and resolves
 `flowchart-elk`, `layout: elk`, and `flowchart.defaultRenderer: elk` through
 Dagre. The dedicated oracle freezes that registered-layout inventory, seven
 detector/config routes, geometry/scene equivalence, and three browser PNGs.
-The retained `elk.*` options are classified upstream-inert in the 532-row
+The retained `elk.*` options are classified upstream-inert in the 533-row
 matrix because no external loader consumes them.
 
 ### Phase 6: final global gate

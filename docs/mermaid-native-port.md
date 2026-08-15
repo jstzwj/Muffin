@@ -43,12 +43,27 @@ Muffin renders thirty-one Mermaid families through a native C++20/Qt pipeline:
 - Info diagram (`info`).
 - Railroad grammars (`railroad-beta`, `railroad-ebnf-beta`,
   `railroad-abnf-beta`, and `railroad-peg-beta`).
+- the error diagram: upstream's first-registered type. A literal `error`
+  source renders the fixed lightbulb SVG (viewBox `0 0 2412 512`, six
+  `.error-icon` paths, two `.error-text` lines at 150px/100px), and every
+  parse/detector-stage failure attaches the same scene as the fallback
+  visual for the export paths (PNG/SVG) — mirroring mermaid.core's
+  `Diagram.fromText("error")` path — while the diagnostic contract (exact
+  upstream messages) stays primary. The editor canvas deliberately keeps its
+  source + diagnostic panel for Error entries (a Muffin editing surface
+  locked by RenderMermaidBlockTest) instead of inlining the lightbulb.
+  `suppressErrorRendering` is stripped by the shared secure-source
+  sanitizer in both renderers, so the source API cannot disable the
+  fallback. The `"---"` frontmatter-guard diagram (registered second
+  upstream) returns the exact upstream parse-error message; frontmatter
+  YAML failures happen before mermaid's try/catch upstream and therefore
+  carry no fallback scene.
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. All 38 Mermaid 11.16 detector IDs now resolve
-through a native adapter. The Windows Conan Release gate is currently 289/289
+through a native adapter. The Windows Conan Release gate is currently 292/292
 tests, including the end-to-end
-`MuffinRenderMermaidBlockTest`.
+`MuffinRenderMermaidBlockTest` and the error-diagram parity test.
 
 All thirty-one native families now share `MermaidRenderMetadata` for the diagram
 title, accessible title/description, role description, title styling, and
@@ -428,9 +443,11 @@ available.
 declarations and writes the
 committed `tests/fixtures/mermaid/config-effect-matrix.json` oracle. The
 generator fails if an upstream family field is missing from the reviewed
-policy or the policy contains a stale field. The current matrix contains 532
-rows: 511 family-interface fields, five external-ELK option fields, and 16
-shared root/theme/security fields.
+policy or the policy contains a stale field. The current matrix contains 533
+rows: 511 family-interface fields, five external-ELK option fields, and 17
+shared root/theme/security fields (the `suppressErrorRendering` row records
+the shared sanitizer strip — through the Markdown source API the error
+diagram fallback stays enabled in both renderers).
 
 Each row records both upstream and native effects across these direct stages:
 
@@ -448,12 +465,16 @@ The reviewed statuses are deliberately not a yes/no support flag:
 
 | Status | Rows | Meaning |
 | --- | ---: | --- |
-| `parity` | 361 | Audited upstream and native stages agree |
-| `partial` | 1 | Supported values/variants are named; the remaining variant is explicit |
+| `parity` | 363 | Audited upstream and native stages agree |
 | `upstream-inert` | 125 | Mermaid retains the option but 11.16.0 does not consume it |
 | `legacy-only` | 19 | Applies to an old browser renderer, not the unified native scene |
 | `api-only` | 25 | Function-valued hooks cannot be expressed by Markdown JSON/YAML config |
 | `security-fixed` | 1 | Muffin intentionally keeps its strict desktop security policy |
+
+The `themeVariables.*` row moved from partial to parity: every one of the
+285 resolved inventory keys is byte-locked across all 11 themes through
+`FlowThemeVariables::get()` (26 live keys wired to their family consumers, 30
+upstream-dead keys modeled with zero-consumer evidence).
 
 `MuffinMermaidConfigEffectMatrixTest` validates the generated fixture digest,
 schema completeness, status invariants, all seven dimensions, and production
@@ -532,8 +553,11 @@ canvas, and determinism paths all consume the same immutable scene.
 
 The remaining boundaries are explicit rather than hidden parity claims:
 
-- global `htmlLabels:false` is partial; Requirement currently follows the
-  upstream `htmlLabels:true` text path;
+- ~~global `htmlLabels:false` is partial~~ closed: Requirement's
+  `htmlLabels:false` path follows upstream `createFormattedText` exactly —
+  SVG `<text>` rows at the fixed 1.1em dy from the font-cell top, the ±2px
+  background rect, and the advance × cell-height getBBox feeding Dagre
+  (pixel oracle: exact 253×718 canvas, IoU 0.999);
 - external `mermaid.initialize()` object/array configuration is not part of
   Muffin's Markdown source API. In particular, source-level custom
   `borderColorArray`/`bkgColorArray` values are ignored, matching Mermaid
@@ -544,6 +568,12 @@ resolve user CSS through the shared `MermaidCssCascade` against real 11.16.0
 DOM oracles (`mermaid-theme-css.json`, 117 cases). Wardley is the one
 upstream-inert exception — its `draw()` clears the svg before painting, so
 themeCSS never reaches the DOM there and native parity holds by construction.
+The error family resolves its six lightbulb paths individually
+(`ErrorElementCss.icons`, index-aligned): structural selectors such as
+`.error-icon:nth-of-type(2)` or `.error-icon + .error-icon` style single
+paths, and the `error-diagram.json` `themeCssPerPath` oracle locks every
+path's computed fill/stroke/stroke-width/opacity/display against the
+browser.
 
 ### Family expansion status
 
@@ -620,6 +650,7 @@ metadata, and fixed/max-width export behavior. C4 freezes its five diagram
 headers, recursive boundary placement, 20 element shapes, relationship routing,
 style-update commands, text wrapping, all 11 themes, diagnostics, metadata
 quirks, and fixed/max-width export behavior. Block, Swimlane, GitGraph, C4, and
-the four Railroad grammar frontends are complete; all 38 registered IDs are
-native. No family is treated as supported until its upstream
+the four Railroad grammar frontends are complete; all 38 registered detector
+IDs plus the pre-registered `error` and `"---"` diagram types are native. No
+family is treated as supported until its upstream
 oracle, native scene, pixel evidence, error paths, and export integration pass.

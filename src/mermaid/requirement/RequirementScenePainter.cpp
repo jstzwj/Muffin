@@ -213,11 +213,25 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
               edge.labelTextStyle, scene.style.fontFamily);
           const qreal labelSize = requirementEffectiveFontSize(
               edge.labelTextStyle, scene.style.fontSize);
-          const qreal labelHeight = edge.labelTextStyle.lineHeightPx >= 0.0
-              ? edge.labelTextStyle.lineHeightPx : labelSize * 1.5;
-          flowchart::paintFlowLabel(painter, edge.labelDocument, labelRect,
-                                    labelFamily, labelSize, labelHeight,
-                                    resolveColor(edge.labelColor), true);
+          if (scene.style.htmlLabels) {
+            const qreal labelHeight = edge.labelTextStyle.lineHeightPx >= 0.0
+                ? edge.labelTextStyle.lineHeightPx : labelSize * 1.5;
+            flowchart::paintFlowLabel(painter, edge.labelDocument, labelRect,
+                                      labelFamily, labelSize, labelHeight,
+                                      resolveColor(edge.labelColor), true);
+          } else {
+            // htmlLabels:false: createFormattedText positions the <text>
+            // inside the ±2px background rect with rows advancing at the fixed
+            // 1.1em dy from the font-cell top (CSS line-height is inert for
+            // SVG tspans); the cell-height line height reproduces the
+            // baseline = cell top + hhea ascent.
+            const flowchart::FlowLabelFontMetrics font =
+                flowchart::flowLabelFontBoundingMetrics(labelFamily, labelSize);
+            flowchart::paintFlowLabel(painter, edge.labelDocument,
+                                      labelRect.adjusted(2.0, 2.0, -2.0, -2.0),
+                                      labelFamily, labelSize, font.height(),
+                                      resolveColor(edge.labelColor), true);
+          }
           painter.restore();
         }
       }

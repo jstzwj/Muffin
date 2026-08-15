@@ -483,7 +483,8 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
                          const flowtheme::FlowThemeVariables& theme,
                          flowchart::FlowLook look,
                          quint32 handDrawnSeed,
-                         const FlowSceneTextOptions& textOptions) {
+                         const FlowSceneTextOptions& textOptions,
+                         qreal shapeRadius) {
   FlowScene scene;
   const bool swimlaneScene = std::any_of(
       layout.clusters.cbegin(), layout.clusters.cend(),
@@ -750,7 +751,8 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
           // n.width/n.height, but the already-created node is not regenerated
           // at the enlarged size. renderWidth/renderHeight preserve that
           // insertion-time geometry.
-          flowchart::flowShapeGeometry(*v, QSizeF(sn.width, sn.height), look);
+          flowchart::flowShapeGeometry(*v, QSizeF(sn.width, sn.height), look,
+                                       shapeRadius);
       sn.shapeKind = geom.kind;
       sn.cornerRadius = geom.cornerRadius;
       sn.radiusX = geom.radiusX;

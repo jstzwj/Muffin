@@ -67,7 +67,13 @@ struct ClassDiagramImpl : Diagram {
                               QStringLiteral("px");
       rootFallback.fontWeight = QStringLiteral("400");
       csscascade::ElementStyle labelFallback = rootFallback;
-      labelFallback.color = themeVars.primaryTextColor;
+      // `.nodeLabel, .edgeLabel { color: classText }` (class/styles.js) — the
+      // unified renderer's span label color. classText's per-theme derivation
+      // equals primaryTextColor; resolving it directly keeps a user
+      // classText override authoritative.
+      labelFallback.color = themeVars.classText.isEmpty()
+                                ? themeVars.primaryTextColor
+                                : themeVars.classText;
       labelFallback.fontWeight = QStringLiteral("700");
       csscascade::ElementStyle labelStyle = labelFallback;
       const QString themeCss =
@@ -109,11 +115,15 @@ struct ClassDiagramImpl : Diagram {
       style.clusterStroke = themeVars.border2;
       style.titleColor = themeVars.titleColor;
       style.strokeWidth = themeVars.strokeWidth;
-      if (configuredTheme.compare(QStringLiteral("dark"), Qt::CaseInsensitive) == 0) {
-        style.noteFill = QStringLiteral("#474949");
-        style.noteStroke = QStringLiteral("#2f2f2f");
-        style.noteTextColor = color::invert(themeVars.secondaryColor);
-      }
+      // Class notes go through the unified renderer's `note` shape, whose
+      // fill/stroke defaults read config.themeVariables.noteBkgColor/
+      // noteBorderColor — the MERGED object (user override ?: resolved theme
+      // value), so the classic #fff5ad note palette paints (probed + pixel
+      // golden). The note TEXT is `.noteLabel .nodeLabel { color:
+      // noteTextColor }` from the resolved theme.
+      style.noteFill = themeVars.noteBkgColor;
+      style.noteStroke = themeVars.noteBorderColor;
+      style.noteTextColor = themeVars.noteTextColor;
       style.fontFamily = measureOptions.fontFamily;
       style.fontSize = measureOptions.fontPixelSize;
       style.lineHeight = measureOptions.lineHeight;

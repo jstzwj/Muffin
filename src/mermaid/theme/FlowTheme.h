@@ -175,6 +175,124 @@ struct FlowThemeVariables {
   // `.node rect { fill: stateBkg || mainBkg }` — every built-in theme derives
   // stateBkg = mainBkg; only a user override can differ.
   QString stateBkg;
+  // Error-diagram stylesheet colors (`.error-icon` fill / `.error-text`
+  // fill+stroke in the shared getStyles base sheet). The Family-A themes
+  // derive them in updateColors from tertiaryColor/tertiaryTextColor; dark
+  // pins #a44141/#ddd and default/forest/neutral pin #552222 for both (theme
+  // constructor literals, chunk-CHAKFXHA.mjs).
+  QString errorBkgColor;
+  QString errorTextColor;
+
+  // Sequence stylesheet colors (sequence/styles.js consumes the RESOLVED
+  // theme, unlike the sequenceRenderer's raw `config.themeVariables` reads —
+  // see the rectBkgColor note in SequenceDiagramAdapter). Family-A derives
+  // with `||` chains; dark/default/forest/neutral assign unconditionally in
+  // updateColors (their calculate() re-applies user overrides afterwards, so
+  // overrides still win). sequenceNumberColor/activation*/note* carry
+  // constructor literals in some themes instead.
+  QString actorBkg;
+  QString actorBorder;
+  QString actorLineColor;
+  QString signalColor;
+  QString signalTextColor;
+  QString labelTextColor;
+  QString loopTextColor;
+  QString labelBoxBkgColor;
+  QString labelBoxBorderColor;
+  QString sequenceNumberColor;
+  QString activationBkgColor;
+  QString activationBorderColor;
+  // `rect` background in sequence/styles.js (`.rect2 fill`). Every theme
+  // derives `rectBkgColor || tertiaryColor`; the sequenceRenderer's loop-fill
+  // path reads the RAW user override instead (see adapter).
+  QString rectBkgColor;
+
+  // Note palette (sequence notes, state notes, class note text). noteBkgColor
+  // keeps the reduxDark family's two-tier default (#FEF9C3 via ??, then
+  // #fff5ad via ||) so an explicit empty override resolves to #fff5ad.
+  // noteFontWeight is gitGraph's redux branch-label weight (600) — sequence
+  // notes take their weight from the sequence CONFIG noteFontWeight instead.
+  QString noteBkgColor;
+  QString noteBorderColor;
+  QString noteTextColor;
+  QString noteFontWeight;
+
+  // State stylesheet colors (state/styles.js): transitions+markers
+  // (transitionColor), edge-label text (transitionLabelColor, `||
+  // tertiaryTextColor` — every theme's || textColor equals tertiaryTextColor
+  // usage because the resolved value is already final), state titles/labels
+  // (stateLabelColor, evaluated BEFORE stateBkg's own fallback), and the
+  // edge-label background rect (labelBackgroundColor, AFTER stateBkg).
+  // innerEndBackground feeds `.node circle.state-end`, which never matches the
+  // dagre-wrapper DOM upstream (the end dot comes from renderer attributes,
+  // `stateBorder ?? nodeBorder`) — modeled for theme completeness only.
+  QString transitionColor;
+  QString transitionLabelColor;
+  QString stateLabelColor;
+  QString labelBackgroundColor;
+  QString innerEndBackground;
+  // composite clusters' border (`|| nodeBorder`; neutral never derives it —
+  // no consumer reads it either way, value locked for inventory exactness).
+  QString compositeBorder;
+
+  // class/styles.js: `.nodeLabel,.edgeLabel{color}` / `.label text{fill}`
+  // (classText — note `g.classGroup text{fill: nodeBorder || classText}`
+  // always resolves to nodeBorder for built-in themes). personBkg/personBorder
+  // feed c4's `.person` rule (dead selector upstream: the renderer stamps
+  // class "person-man", so the rule matches nothing — values keep the
+  // builtInCss sheet exact).
+  QString classText;
+  QString personBkg;
+  QString personBorder;
+
+  // Constructor literals. `radius` is consumed ONLY through the RAW
+  // config.themeVariables read in shapes/roundedRect.ts (`radius ?? 5`), so
+  // the per-theme literals (neo 3 / redux 12) never reach that consumer; a
+  // user override does.
+  QString radius;
+
+  // Palette-feed scalars: scaleLabelColor fills cScaleLabel0..11 where the
+  // theme's loop reads it (base/dark/forest/neutral/neo/redux family — not
+  // default, whose sentinel-guarded loop reads labelTextColor directly);
+  // branchLabelColor fills gitBranchLabel0..7 the same way.
+  QString scaleLabelColor;
+  QString branchLabelColor;
+
+  // Upstream-derived but unconsumed slots (grep-verified zero renderer reads
+  // outside the theme blocks in the 11.16 bundle). Modeled so the full
+  // 285-key inventory walk locks their per-theme values:
+  //  - pie0: dark/neutral's pie loop starts at i=0 (pie0 = cScale0).
+  //  - surface0-4/surfacePeer0-4: per-theme adjust(mainBkg, …) loops.
+  //  - attributeBackgroundColor{Odd,Even}: dark lightens its background;
+  //    every other theme uses the module-level #ffffff/#f2f2f2 locals.
+  //  - rowOdd/rowEven: gantt-history leftovers (base/dark/default/forest/
+  //    neutral only).
+  //  - erEdgeLabelBackground/stateEdgeLabelBackground: redux-family literals.
+  //  - darkTextColor: dark-variant lighten(invert("#323D47"), 10).
+  //  - filterColor/rootLabelColor: redux / redux-dark-color literals.
+  //  - wardleyEvolutionColor: base/dark/default/forest/neutral literals (the
+  //    wardley renderer clears the svg before painting — its stylesheet, and
+  //    therefore this key, is upstream-inert).
+  //  - labelColor: default/forest/neutral ctor "black"; dark keeps the raw
+  //    "calculated" sentinel (no updateColors line rewrites it).
+  //  - note/critical/done: neutral-only ctor literals.
+  QString pie0;
+  QString surface[5];
+  QString surfacePeer[5];
+  QString attributeBackgroundColorOdd;
+  QString attributeBackgroundColorEven;
+  QString rowOdd;
+  QString rowEven;
+  QString erEdgeLabelBackground;
+  QString stateEdgeLabelBackground;
+  QString darkTextColor;
+  QString filterColor;
+  QString rootLabelColor;
+  QString wardleyEvolutionColor;
+  QString labelColor;
+  QString note;
+  QString critical;
+  QString done;
   QString primaryBorderColor;
   QString primaryTextColor;
   QString secondaryBorderColor;

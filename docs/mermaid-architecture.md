@@ -12,7 +12,7 @@
 | **几何/布局** | 节点、边、簇的坐标与 dagre/ELK 输出一致 | dagre-snapshots JSON oracle |
 | **结构/语义** | SVG 的元素树、class、可访问性属性对齐 | 语义 SVG diff（结构 + 容差） |
 | **视觉** | 像素级在容差内一致 | golden pixel 对比 |
-| **配置** | 每个 config key 的效果与上游一致 | config-effect-matrix（532 行，逐 key 标 parity/partial/deferred） |
+| **配置** | 每个 config key 的效果与上游一致 | config-effect-matrix（533 行，逐 key 标 parity/partial/deferred） |
 
 **不追求「字节同」的 SVG**：Muffin 的 SVG 由 `QSvgGenerator`（经 painter）产出，再由 `MermaidSvgExporter` 归一化成 mermaid 形态。字节级与 mermaid 手写 SVG 不同是必然的；parity 以**视觉 + 结构 + 几何**为准。
 
@@ -150,21 +150,80 @@ oracle 的坐标容差，不是随机性掩码。ER 已加入字节级 SVG 双�
 **2026-08-14 现状**：全部 38 个 Mermaid 11.16 detector ID 均通过单一 scene 指针和 `Diagram` registry
 进入族无关的 editor/PNG/SVG/canvas/interaction 路径；各 adapter 分离在各自
 TU。新增的 Pie、Quadrant、Journey、Radar、XYChart、Timeline、Packet、Kanban、Mindmap、Block、Swimlane、GitGraph、C4、TreeView、Event Modeling、Ishikawa、Venn、Sankey、Treemap、Cynefin、Wardley、Architecture、Gantt 和 Info 均有真实 Mermaid 11.16.0 语法、几何和像素
-oracle。完整 Release 门禁为 291/291。配置矩阵现为 532 行（361 parity /
-1 partial / 125 upstream-inert /
-19 legacy-only / 25 api-only / 1 security-fixed）。themeCSS 已从
+oracle。完整 Release 门禁为 292/292。配置矩阵现为 533 行（363 parity /
+0 partial / 125 upstream-inert /
+19 legacy-only / 25 api-only / 1 security-fixed）。上游最先注册的 error 图族
+（字面 `error` 源的灯泡 SVG + parse/detector 失败的 fallback 场景 + `---`
+frontmatter 守卫消息）现已有原生 scene/adapter 与 11 主题
+errorBkgColor/errorTextColor 接线。themeCSS 已从
 unsupported 升级为 parity：34 个 family interface 全部经
 `MermaidCssCascade` 消费用户 CSS，对照 `mermaid-theme-css.json`
 117 案真实 DOM oracle（Wardley 上游惰性，native 天然 parity）。
-themeVariables.\* 保持 partial 但已精确化：`theme-variables-inventory.json`
-285 key × 11 主题全量 golden，227 key 经 `FlowThemeVariables::get()`
-逐值锁定，其余 58 个（上游派生但无消费方的调色板槽、sequence 局部
-key、family 局部样式）在 `MermaidThemeTest::themeVariablesRemainingKeys`
-逐 key 列明理由；本轮同时修复了 state 特殊形状真实渲染发散
+themeVariables.\* 已完成收口：`theme-variables-inventory.json`
+285 key × 11 主题全量 golden，**全部经 `FlowThemeVariables::get()` 逐值锁定**
+（原 56 个 remaining 清零——26 个活键按 11.16 每主题 `||` 派生链/构造器
+字面量建模并接入家族消费者；30 个上游死键同样建模锁值并注明零消费证据）。
+本轮（P2）同步修复了多处以 IoU 容差掩盖的真实渲染发散：sequence 样式表
+从「dark 硬编码 + 原始 override 直读」改为消费 resolved 主题（dark
+activation/note/labelBox 精确值、非 default 主题全部 11 主题正确、
+loopLine 边框 = labelBoxBorderColor 虚线 2,2、loop 无背景矩形、
+`rect` 片段走 config.themeVariables 合并读）、state 的
+transition/note/stateLabel/edge-label 背景色（含 0.5 opacity）改接中央派生、
+class 的 classText/note 调色板、C4 `.person` 规则按主题取
+personBorder/personBkg、gitGraph redux 分支标签字重改读 `noteFontWeight`
+正键、flowchart/Swimlane 圆角矩形的 `themeVariables.radius`（合并读：
+用户 override ?: 主题字面量——neo 3 / redux 12 现在真实生效）。
+scaleLabelColor/branchLabelColor 的 override 传播与 dark 的 labelColor
+"calculated" 哨兵泄漏均有断言锁定。此前的 state 特殊形状修复
 （start 圆 `specialStateColor`、end 内点 `stateBorder ?? nodeBorder`、
-end 环 `mainBkg` 填充）与 redux 族构造器 gradient 字面量缺失。
-Requirement 的全局 `htmlLabels:false` 保持 partial；外部 `mermaid.initialize()` 配置不属于当前
+end 环 `mainBkg` 填充）与 redux 族构造器 gradient 字面量缺失一并保留。
+Requirement 的全局 `htmlLabels:false` 已收口（P3，08-15）：false 路径按上游
+`createFormattedText` 精确实现——SVG `<text>` 行距固定 1.1em dy（CSS
+line-height 对 SVG tspan 无效）、±2px 背景 rect、getBBox（advance × hhea
+字胞高 + (rows-1)·1.1em）+4 喂 Dagre 与绘制；像素 oracle 追加
+`html-labels-false` 案（**画布 253×718 精确一致，IoU 0.999**，收口前
+710/0.978）。Linux 6 个字体 golden 的 skip 理由已精确化：bundled Noto
+已经跨平台注册、几何走 OpenType design metrics，剩余分歧是 FreeType vs
+DirectWrite 光栅边缘像素——收口需在 Linux 上重生成/双平台浏览器金图（平台
+基建项）。外部 `mermaid.initialize()` 配置不属于当前
 Markdown source API。
+
+**Codex 审核修复（08-15 第二轮，292/292）**：① sequence 笔级 parity 根因
+收口——QPen dash 单位是笔宽的倍数，且 Qt 光栅引擎会把周期 <5px 的
+CustomDashLine 固化成实线、默认 SquareCap 又把每段两头各延长半个笔宽，
+因此 loopLine（2,2@2px）、section 分隔（3,3@2px）、dotted 消息（3,3@1.5px）
+改为**手工分段绘制**（`drawDashedEdge`，FlatCap，逐边相位重置——与上游 4 条
+独立 `<line class="loopLine">` 同构；浏览器金图实测 2on/2off 无 AA 补隙）；
+lifeline 按 CSS 裸 `line{stroke-width:2px}` 规则改 **2px 实线**（attr 0.5px
+被覆盖、无 dasharray）、消息线宽改 **1.5px**（`.messageLine0/1` 赢 attr 2）；
+`look: handDrawn` 对 sequence **上游无效**（classic/handDrawn SVG 仅差 render
+id 计数器，浏览器实证），sequence 场景删除 rough 分支并以 toJsonObject 相等
+断言锁定惰性；② error 图族 themeCSS 等价性——内容 `<g>` 改为 svg 根直接
+子节点（含 `<style>` 占位，`g:nth-of-type(2)` 结构选择器经浏览器 oracle
+锁定）、图标补 stroke/strokeWidth 通道、文本 fill/stroke **双通道绘制**
+（drawText 填充 + QPainterPath 描边，像素 IoU 0.926→0.950）；③ error SVG
+viewBox 高度改 **108.671875**（LayoutUnit floor64 金值，新
+`svgClientViewBox()` 通道），PNG 光栅仍 109；④ state 边标签背景
+`opacity:0.5` 与 fill 自带 alpha **相乘**（rgba 0.2→0.1）；⑤ error fallback
+scene 的产品声明收窄为 PNG/SVG 导出（编辑器画布保留源码+诊断面板的产品
+路径，RenderMermaidBlockTest 锁定）。后续审计项：class/journey/requirement/
+gitGraph/c4 的 linkStyle dash 仍有未按笔宽归一化的写法（各有金图锁定，
+未在本轮范围内盲改）。
+
+**Codex 审核修复（08-15 第三轮，292/292）**：error 图标的 themeCSS
+逐路径闭环——此前 adapter 虽为六条灯泡 path 各建了 `icon0..icon5`
+CSS 元素，却只读取 `icon0` 折叠进单一 `scene.css.icon`，painter 再用
+这份样式画全部六条 path，`.error-icon:nth-of-type(2)`、
+`.error-icon + .error-icon` 这类合法规则因此与浏览器不一致（第二到第
+六条 path 的差异化 computed 值被丢弃）。现 `ErrorElementCss.icons`
+是与 `iconPaths` 索引对齐的 `QVector<ErrorIconCss>`，adapter 逐个读
+取 `iconN`，painter 逐 path 消费 fill/stroke/stroke-width/opacity/
+display。fixture 新增 `themeCssPerPath` 浏览器案（:nth-of-type(2)
+单独填色、相邻选择器只描 1..5 号、单 path opacity 0.5 / stroke-width
+4px / display:none），`themeCssStructure` 的图标 computed 值也改为
+六条全捕获（此前只读首条 path，正是漏检根因）；测试逐 path 断言
++差异锁（icon0/1 fill 不同、仅 1..5 有描边）。fixture 重生成双跑
+字节一致（`6a7f55da…`）。
 
 ---
 

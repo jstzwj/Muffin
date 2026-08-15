@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("39e821622ad80c9c599aa99ad55fa72b626b50cda8b056039c03f3c6e1169ffd"),
+              QLatin1String("cd5f59617ce7891c48a83b34527c56b734be9e7fe734f82a4b14ebe34e34102f"),
           QStringLiteral("Requirement pixel fixture changed; audit and update its digest"));
   const QDir fixtureDir = QFileInfo(manifestPath).dir();
   qreal minimumIou = 1.0;
@@ -108,6 +108,8 @@ int main(int argc, char** argv) {
         editor::MermaidRenderCache::renderMermaidSourceToPng(source, dpr);
     const QImage native = decodePng(result.dataUrl);
     require(!native.isNull(), id + QStringLiteral(": production PNG must decode"));
+    if (qEnvironmentVariableIsSet("MUFFIN_SAVE_NATIVE"))
+      native.save(QStringLiteral("build/native-%1.png").arg(id));
     const qreal widthDiff = std::abs(native.width() - browser.width());
     const qreal heightDiff = std::abs(native.height() - browser.height());
     const qreal iou = alphaIou(native, browser);

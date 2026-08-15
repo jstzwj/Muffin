@@ -119,11 +119,12 @@ c4::C4Config c4Config(const QJsonObject& raw) {
 // c4's getStyles is a single `.person { stroke; fill }` rule. The renderer
 // hardcodes class "person-man" on every shape group, so the selector matches
 // nothing in the DOM — dead upstream and dead here. The personBorder /
-// personBkg themeVariables pair behind it is not ported yet (themeVariables
-// partial closure); the pinned literals are the default-theme values.
-QString c4BaseCss() {
-  return QStringLiteral(
-      ".person { stroke: hsl(240, 60%, 86.2745098039%); fill: #ECECFF; }\n");
+// personBkg themeVariables pair behind it derives like every other theme
+// (primaryBorderColor / mainBkg) and is wired here so the sheet matches the
+// active theme instead of pinned default-theme literals.
+QString c4BaseCss(const flowtheme::FlowThemeVariables& themeVars) {
+  return QStringLiteral(".person { stroke: %1; fill: %2; }\n")
+      .arg(themeVars.personBorder, themeVars.personBkg);
 }
 
 // The inline style byTspan paints on every label line: only !important
@@ -410,7 +411,7 @@ struct C4DiagramImpl final : Diagram {
       }
 
       const QHash<QString, ElementStyle> css = csscascade::resolveElements(
-          themeCss, tree, c4BaseCss());
+          themeCss, tree, c4BaseCss(themeVars));
       const CssLengthContext familyCtx =
           pieCssLengthContext(style.rootFontFamily, style.rootFontSize);
       const auto convert = [&](const ElementStyle& resolved) {

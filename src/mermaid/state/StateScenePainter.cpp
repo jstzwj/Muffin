@@ -131,13 +131,21 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
     }
     QPen pen(edgeColor, edgeWidth);
     if (!edge.strokeDasharray.isEmpty()) {
+      // CSS stroke-dasharray is in user units; QPen dash entries are
+      // multiples of the pen width, so normalize by edgeWidth. SVG lines are
+      // butt-capped by default — SquareCap would extend each dash by half the
+      // width on both ends.
       QVector<qreal> dash;
       for (const QString& token : edge.strokeDasharray.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
         bool ok = false;
         const qreal d = token.trimmed().toDouble(&ok);
         if (ok && d > 0.0) dash.append(d);
       }
-      if (!dash.isEmpty()) pen.setDashPattern(dash);
+      if (!dash.isEmpty() && edgeWidth > 0.0) {
+        for (qreal& entry : dash) entry /= edgeWidth;
+        pen.setDashPattern(dash);
+        pen.setCapStyle(Qt::FlatCap);
+      }
     }
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
@@ -160,9 +168,17 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
     if (!mermaidPrimitiveIsVisible(
             edge.labelBounds.isValid() ? edge.labelBounds : bounds, options))
       continue;
-    painter.fillRect(bounds, color(scene.style.edgeLabelFill));
+    // `.edgeLabel .label rect { fill: labelBackgroundColor; opacity: 0.5 }` —
+    // element opacity MULTIPLIES the fill color's own alpha channel (an
+    // rgba(…,0.2) override renders at 0.1); the text takes
+    // transitionLabelColor (`|| tertiaryTextColor`).
+    QColor labelBackground = color(scene.style.edgeLabelFill);
+    labelBackground.setAlphaF(labelBackground.alphaF() * 0.5);
+    painter.fillRect(bounds, labelBackground);
     paintLabel(painter, edge.labelDocument, bounds, scene.style,
-               color(scene.style.textColor));
+               color(scene.style.transitionLabelColor.isEmpty()
+                         ? scene.style.textColor
+                         : scene.style.transitionLabelColor));
   }
   for (const StateSceneNode& node : scene.nodes) {
     if (!mermaidPrimitiveIsVisible(node.bounds, options)) continue;

@@ -552,7 +552,8 @@ QPainterPath flowShapeHorizontalCylinderPath(const QRectF& bounds, qreal rx, qre
   return path;
 }
 
-FlowShapeGeometry flowShapeGeometry(const FlowVertex& vertex, const QSizeF& size, FlowLook look) {
+FlowShapeGeometry flowShapeGeometry(const FlowVertex& vertex, const QSizeF& size,
+                                    FlowLook look, qreal shapeRadius) {
   FlowShapeGeometry result;
   result.bounds = QRectF(-size.width() / 2.0, -size.height() / 2.0,
                         size.width(), size.height());
@@ -581,7 +582,7 @@ FlowShapeGeometry flowShapeGeometry(const FlowVertex& vertex, const QSizeF& size
   }
   if (type == QLatin1String("round")) {
     result.kind = QStringLiteral("roundedRect");
-    result.cornerRadius = 5.0;
+    result.cornerRadius = shapeRadius;
   } else if (type == QLatin1String("circle") ||
              type == QLatin1String("double_circle") ||
              type == QLatin1String("filled_circle") ||

@@ -192,6 +192,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
                          const flowtheme::FlowThemeVariables& theme,
                          flowchart::FlowLook look = flowchart::FlowLook::Classic,
                          quint32 handDrawnSeed = 0,
-                         const FlowSceneTextOptions& textOptions = {});
+                         const FlowSceneTextOptions& textOptions = {},
+                         qreal shapeRadius = 5.0);
 
 }  // namespace muffin::mermaid::flowscene

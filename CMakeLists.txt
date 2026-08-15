@@ -516,6 +516,7 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/editor/ArchitectureDiagramAdapter.cpp
   src/mermaid/editor/BlockDiagramAdapter.cpp
   src/mermaid/editor/RailroadDiagramAdapter.cpp
+  src/mermaid/editor/ErrorDiagramAdapter.cpp
   src/mermaid/MermaidFontRegistry.cpp
   src/mermaid/MermaidFontRegistry.h
   src/mermaid/flowchart/Flowchart.cpp
@@ -684,6 +685,10 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/railroad/RailroadScene.h
   src/mermaid/railroad/RailroadScenePainter.cpp
   src/mermaid/railroad/RailroadScenePainter.h
+  src/mermaid/error/ErrorScene.cpp
+  src/mermaid/error/ErrorScene.h
+  src/mermaid/error/ErrorScenePainter.cpp
+  src/mermaid/error/ErrorScenePainter.h
   src/mermaid/gantt/GanttDiagram.cpp
   src/mermaid/gantt/GanttDiagram.h
   src/mermaid/gantt/GanttScene.cpp

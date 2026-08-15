@@ -191,7 +191,7 @@ struct SwimlaneDiagramImpl : Diagram {
     sceneTextOptions.css = &css;
     flowscene::FlowScene scene = flowscene::buildFlowScene(
         chart.data(), layout, themeVars, look, handDrawnSeed,
-        sceneTextOptions);
+        sceneTextOptions, rawShapeRadius(themeVars));
     scene.markerDiagramType = QStringLiteral("swimlane");
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;

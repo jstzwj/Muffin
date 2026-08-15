@@ -1,6 +1,7 @@
 #include "mermaid/state/StateDiagram.h"
 #include "mermaid/state/StateLayout.h"
 #include "mermaid/state/StateScene.h"
+#include "mermaid/state/StateScenePainter.h"
 #include "mermaid/MermaidFontRegistry.h"
 
 #include <QFile>
@@ -112,6 +113,40 @@ int main(int argc, char** argv) {
     fail(QStringLiteral("style-cascade parse failed: %1").arg(error.what()));
   } catch (const std::exception& error) {
     fail(QStringLiteral("style-cascade threw: %1").arg(error.what()));
+  }
+
+  // `.edgeLabel .label rect { fill: labelBackgroundColor; opacity: 0.5 }`:
+  // the element opacity MULTIPLIES the fill color's own alpha — an
+  // rgba(…,0.2) override must paint at 0.1, an opaque color at 0.5. A
+  // setAlpha(128) override (the old bug) renders the rgba case at ~0.5.
+  {
+    const auto labelBackgroundAlpha = [](const QString& fill) {
+      StateScene scene;
+      scene.style.edgeLabelFill = fill;
+      scene.style.transitionLabelColor = QStringLiteral("transparent");
+      StateSceneEdge edge;
+      edge.id = QStringLiteral("e1");
+      edge.start = edge.end = QStringLiteral("s");
+      edge.label = QStringLiteral(" ");
+      edge.labelPosition = QPointF(60.0, 60.0);
+      edge.labelSize = QSizeF(80.0, 24.0);
+      scene.edges.append(std::move(edge));
+      scene.nodes.append(StateSceneNode{});
+      scene.nodes.last().id = QStringLiteral("s");
+      scene.nodes.last().bounds = QRectF(0.0, 0.0, 10.0, 10.0);
+      scene.bounds = QRectF(0.0, 0.0, 120.0, 120.0);
+      const QImage image = renderStateSceneToImage(scene);
+      const int alpha = image.pixelColor(30, 59).alpha();
+      return alpha;
+    };
+    const int rgbaAlpha = labelBackgroundAlpha(QStringLiteral("rgba(200, 0, 0, 0.2)"));
+    if (std::abs(rgbaAlpha - 26) > 3)
+      fail(QStringLiteral("rgba(0.2) edge-label background alpha %1 != ~26 (0.2*0.5)")
+               .arg(rgbaAlpha));
+    const int opaqueAlpha = labelBackgroundAlpha(QStringLiteral("#ECECFF"));
+    if (std::abs(opaqueAlpha - 128) > 3)
+      fail(QStringLiteral("opaque edge-label background alpha %1 != ~128")
+               .arg(opaqueAlpha));
   }
   return 0;
 }

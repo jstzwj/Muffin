@@ -59,6 +59,10 @@ void applyBase(FlowThemeVariables& t) {
   t.fontFamily = QStringLiteral("\"trebuchet ms\", verdana, arial, sans-serif");
   t.fontSize = QStringLiteral("16px");
   t.fontWeight = QStringLiteral("normal");
+  // base ctor literals (dist theme-base constructor): note palette + radius.
+  t.noteBkgColor = QStringLiteral("#fff5ad");
+  t.noteTextColor = QStringLiteral("#333");
+  t.radius = QStringLiteral("5");
   setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
             QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,1))"));
 }
@@ -97,6 +101,14 @@ void applyDark(FlowThemeVariables& t) {
   t.titleColor = QStringLiteral("#F9FFFE");
   t.edgeLabelBackground = QStringLiteral("calculated");
   t.clusterBkg = QStringLiteral("#302F3D");  // constructor overrides the "calculated" above
+  // dark ctor literals: radius, sequenceNumberColor, the dark-variant
+  // darkTextColor, and labelColor — whose raw "calculated" sentinel is never
+  // rewritten (dark's updateColors has no labelColor line), so the sentinel
+  // string itself is the final upstream value.
+  t.radius = QStringLiteral("5");
+  t.sequenceNumberColor = QStringLiteral("black");
+  t.darkTextColor = lighten(invert(QStringLiteral("#323D47")), 10);
+  t.labelColor = QStringLiteral("calculated");
   setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
             QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,1))"));
 }
@@ -140,6 +152,14 @@ void applyDefault(FlowThemeVariables& t) {
   t.edgeLabelBackground = QStringLiteral("calculated");
   t.actorTextColor = QStringLiteral("black");
   t.clusterBkg = QStringLiteral("#FBFBFF");
+  // default ctor literals (dist theme-default constructor): the sequence
+  // palette slots that carry literals instead of "calculated" sentinels.
+  t.radius = QStringLiteral("5");
+  t.labelColor = QStringLiteral("black");
+  t.noteBkgColor = QStringLiteral("#fff5ad");
+  t.activationBorderColor = QStringLiteral("#666");
+  t.activationBkgColor = QStringLiteral("#f4f4f4");
+  t.sequenceNumberColor = QStringLiteral("white");
   setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
             QStringLiteral("drop-shadow(1px 2px 2px rgba(185, 185, 185, 1))"));
 }
@@ -179,6 +199,18 @@ void applyForest(FlowThemeVariables& t) {
   t.titleColor = QStringLiteral("#333");
   t.edgeLabelBackground = QStringLiteral("#e8e8e8");
   t.actorTextColor = QStringLiteral("black");
+  // forest ctor literals: the sequence palette slots that carry literals
+  // instead of "calculated" sentinels (labelBoxBorderColor's #326932 is the
+  // one forest-specific literal; the rest match the default theme's).
+  t.radius = QStringLiteral("5");
+  t.labelColor = QStringLiteral("black");
+  t.signalColor = QStringLiteral("#333");
+  t.signalTextColor = QStringLiteral("#333");
+  t.labelBoxBorderColor = QStringLiteral("#326932");
+  t.noteBkgColor = QStringLiteral("#fff5ad");
+  t.activationBorderColor = QStringLiteral("#666");
+  t.activationBkgColor = QStringLiteral("#f4f4f4");
+  t.sequenceNumberColor = QStringLiteral("white");
   setShadow(t, QStringLiteral("#b9b9b9"), 0.5, 1.0, 2.0,
             QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,0.5))"));
 }
@@ -217,6 +249,17 @@ void applyNeutral(FlowThemeVariables& t) {
   t.edgeLabelBackground = QStringLiteral("white");
   t.actorTextColor = QStringLiteral("calculated");
   t.text = QStringLiteral("#333");
+  // neutral ctor literals for the upstream-dead slots (note/critical/done are
+  // neutral-only; labelColor "black"; radius 5). The derived neutral values
+  // for the sequence/state palette live in updateColorsNeutral.
+  t.radius = QStringLiteral("5");
+  t.labelColor = QStringLiteral("black");
+  t.note = QStringLiteral("#ffa");
+  t.critical = QStringLiteral("#d42");
+  t.done = QStringLiteral("#bbb");
+  t.activationBorderColor = QStringLiteral("#666");
+  t.activationBkgColor = QStringLiteral("#f4f4f4");
+  t.sequenceNumberColor = QStringLiteral("white");
   setShadow(t, QStringLiteral("#b9b9b9"), 1.0, 1.0, 2.0,
             QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,1))"));
 }
@@ -239,6 +282,7 @@ void applyNeo(FlowThemeVariables& t) {
   t.useGradient = true;
   t.gradientStart = QStringLiteral("#0042eb");
   t.gradientStop = QStringLiteral("#eb0042");
+  t.radius = QStringLiteral("3");
   setShadow(t, QStringLiteral("#000000"), 0.25, 0.0, 1.0,
             QStringLiteral("drop-shadow( 0px 1px 2px rgba(0, 0, 0, 0.25));"));
 }
@@ -265,8 +309,27 @@ void applyNeoDark(FlowThemeVariables& t) {
   t.useGradient = true;
   t.gradientStart = QStringLiteral("#0042eb");
   t.gradientStop = QStringLiteral("#eb0042");
+  t.radius = QStringLiteral("3");
+  // dark-variant literal shared with dark/neo-dark/redux-dark(-color).
+  t.darkTextColor = lighten(invert(QStringLiteral("#323D47")), 10);
   setShadow(t, QStringLiteral("#b9b9b9"), 0.2, 1.0, 2.0,
             QStringLiteral("drop-shadow( 1px 2px 2px rgba(185,185,185,0.2))"));
+}
+
+// redux-family ctor literals shared by all four variants (dist theme-redux*
+// constructors): note text/border/weight, radius, and the dark-dependent
+// filterColor/erEdgeLabelBackground pair.
+void applyReduxSequenceLiterals(FlowThemeVariables& t) {
+  t.noteTextColor = QStringLiteral("#28253D");
+  t.noteBorderColor = QStringLiteral("#FACC15");
+  t.noteFontWeight = QStringLiteral("600");
+  t.radius = QStringLiteral("12");
+}
+
+void applyReduxLegacyLiterals(FlowThemeVariables& t, bool dark) {
+  t.filterColor = dark ? QStringLiteral("#FFFFFF") : QStringLiteral("#000000");
+  t.erEdgeLabelBackground =
+      dark ? QStringLiteral("#16141F") : QStringLiteral("#FFFFFF");
 }
 
 void applyRedux(FlowThemeVariables& t) {
@@ -288,6 +351,11 @@ void applyRedux(FlowThemeVariables& t) {
   t.tertiaryColor = QStringLiteral("#ffffff");
   t.clusterBkg = QStringLiteral("#F9F9FB");
   t.clusterBorder = QStringLiteral("#BDBCCC");
+  t.actorBorder = QStringLiteral("#28253D");
+  t.noteBkgColor = QStringLiteral("#fff5ad");
+  t.stateEdgeLabelBackground = QStringLiteral("#FFFFFF");
+  applyReduxSequenceLiterals(t);
+  applyReduxLegacyLiterals(t, /*dark=*/false);
   setShadow(t, QStringLiteral("#000000"), 0.06, 4.0, 4.0,
             QStringLiteral("url(#drop-shadow)"));
 }
@@ -319,6 +387,16 @@ void applyReduxDark(FlowThemeVariables& t) {
   t.gradientStop = QStringLiteral("#eb0042");
   t.clusterBkg = QStringLiteral("#1E1A2E");
   t.clusterBorder = QStringLiteral("#BDBCCC");
+  // redux-dark ctor: the sequence palette literals (actorBorder/signalColor/
+  // labelBoxBorderColor) plus the shared redux family set.
+  t.actorBorder = QStringLiteral("#FFFFFF");
+  t.signalColor = QStringLiteral("#FFFFFF");
+  t.labelBoxBorderColor = QStringLiteral("#BDBCCC");
+  t.noteBkgColor = QStringLiteral("#FEF9C3");
+  t.stateEdgeLabelBackground = QStringLiteral("#16141F");
+  t.darkTextColor = lighten(invert(QStringLiteral("#323D47")), 10);
+  applyReduxSequenceLiterals(t);
+  applyReduxLegacyLiterals(t, /*dark=*/true);
   setShadow(t, QStringLiteral("#ffffff"), 0.06, 4.0, 4.0,
             QStringLiteral("url(#drop-shadow)"));
 }
@@ -353,6 +431,10 @@ void applyReduxColor(FlowThemeVariables& t) {
   t.gradientStart = QStringLiteral("#0042eb");  // redux-color ctor line 3196
   t.gradientStop = QStringLiteral("#eb0042");
   t.tertiaryColor = QStringLiteral("#ffffff");
+  t.actorBorder = QStringLiteral("#28253D");
+  t.noteBkgColor = QStringLiteral("#fff5ad");
+  applyReduxSequenceLiterals(t);
+  applyReduxLegacyLiterals(t, /*dark=*/false);
   setShadow(t, QStringLiteral("#000000"), 0.06, 4.0, 4.0,
             QStringLiteral("url(#drop-shadow)"));
   // colorIndex palette (chunk-CHAKFXHA.mjs:3936-3987): 12 Tailwind *-400 border
@@ -371,6 +453,8 @@ void applyReduxDarkColor(FlowThemeVariables& t) {
   // (chunk-CHAKFXHA.mjs:4327): nodes cycle stroke only; fill falls back to mainBkg.
   applyReduxDark(t);
   applyReduxColorBorderPalette(t);
+  // redux-dark-color ctor line 5400: the only rootLabelColor literal.
+  t.rootLabelColor = QStringLiteral("#FFFFFF");
 }
 
 void applyRawConstructor(FlowThemeId id, FlowThemeVariables& t) {
@@ -468,6 +552,93 @@ void populateVenn(FlowThemeId id, FlowThemeVariables& t);
 void populateGitGraph(FlowThemeId id, FlowThemeVariables& t);
 void populateRequirement(FlowThemeId id, FlowThemeVariables& t);
 
+// The upstream-dead palette slots (surface*/surfacePeer* loops, the gantt-
+// history rowOdd/rowEven pair, attributeBackgroundColor, wardleyEvolutionColor
+// and dark/neutral's pie0). No renderer consumes these keys in 11.16 — the
+// values are locked so the full theme-variables inventory walk stays exact.
+void populateLegacySlots(FlowThemeId id, FlowThemeVariables& t) {
+  for (int i = 0; i < 5; ++i) {
+    QString surface, peer;
+    const qreal step = static_cast<qreal>(i);
+    switch (id) {
+      case FlowThemeId::Base:
+      case FlowThemeId::Neo:
+      case FlowThemeId::NeoDark:
+      case FlowThemeId::Redux:
+      case FlowThemeId::ReduxDark:
+      case FlowThemeId::ReduxColor:
+      case FlowThemeId::ReduxDarkColor:
+        // multiplier = darkMode ? -4 : -1 → always -1 for built-ins.
+        surface = adjust(t.mainBkg, {.h = 180.0, .s = -15.0, .l = -(5.0 + 3.0 * step)});
+        peer = adjust(t.mainBkg, {.h = 180.0, .s = -15.0, .l = -(8.0 + 3.0 * step)});
+        break;
+      case FlowThemeId::Dark:
+        surface = adjust(t.mainBkg, {.h = 30.0, .s = -30.0, .l = 10.0 - 4.0 * step});
+        peer = adjust(t.mainBkg, {.h = 30.0, .s = -30.0, .l = 7.0 - 4.0 * step});
+        break;
+      case FlowThemeId::Default:
+        surface = adjust(t.mainBkg, {.h = 30.0, .l = -(5.0 + 5.0 * step)});
+        peer = adjust(t.mainBkg, {.h = 30.0, .l = -(7.0 + 5.0 * step)});
+        break;
+      case FlowThemeId::Forest:
+        surface = adjust(t.mainBkg, {.h = 30.0, .s = -30.0, .l = -(5.0 + 5.0 * step)});
+        peer = adjust(t.mainBkg, {.h = 30.0, .s = -30.0, .l = -(8.0 + 5.0 * step)});
+        break;
+      case FlowThemeId::Neutral:
+        surface = adjust(t.mainBkg, {.l = -(5.0 + 5.0 * step)});
+        peer = adjust(t.mainBkg, {.l = -(8.0 + 5.0 * step)});
+        break;
+    }
+    assignIfEmpty(t.surface[i], surface);
+    assignIfEmpty(t.surfacePeer[i], peer);
+  }
+  // attributeBackgroundColor: every theme pairs the module-level
+  // #ffffff/#f2f2f2 locals; dark alone lightens its own background.
+  if (id == FlowThemeId::Dark) {
+    assignIfEmpty(t.attributeBackgroundColorOdd, lighten(t.background, 12));
+    assignIfEmpty(t.attributeBackgroundColorEven, lighten(t.background, 2));
+  } else {
+    assignIfEmpty(t.attributeBackgroundColorOdd, QStringLiteral("#ffffff"));
+    assignIfEmpty(t.attributeBackgroundColorEven, QStringLiteral("#f2f2f2"));
+  }
+  // rowOdd/rowEven exist only in base/dark/default/forest/neutral (the light
+  // arm of each block's darkMode branch; the trailing `|| "#ffffff"` tier is
+  // unreachable — khroma lighten never returns a falsy string).
+  switch (id) {
+    case FlowThemeId::Base:
+      assignIfEmpty(t.rowOdd, lighten(t.mainBkg, 75));
+      assignIfEmpty(t.rowEven, lighten(t.mainBkg, 5));
+      break;
+    case FlowThemeId::Dark:
+      assignIfEmpty(t.rowOdd, lighten(t.mainBkg, 5));
+      assignIfEmpty(t.rowEven, darken(t.mainBkg, 10));
+      break;
+    case FlowThemeId::Default:
+      assignIfEmpty(t.rowOdd, lighten(t.primaryColor, 75));
+      assignIfEmpty(t.rowEven, lighten(t.primaryColor, 1));
+      break;
+    case FlowThemeId::Forest:
+      assignIfEmpty(t.rowOdd, lighten(t.mainBkg, 75));
+      assignIfEmpty(t.rowEven, lighten(t.mainBkg, 20));
+      break;
+    case FlowThemeId::Neutral:
+      assignIfEmpty(t.rowOdd, lighten(t.mainBkg, 75));
+      assignIfEmpty(t.rowEven, QStringLiteral("#f4f4f4"));
+      break;
+    default:
+      break;
+  }
+  // wardleyEvolutionColor: five themes derive it (dark pins #ff6b6b); the
+  // neo/redux family never writes the key.
+  if (id == FlowThemeId::Base || id == FlowThemeId::Default ||
+      id == FlowThemeId::Forest || id == FlowThemeId::Neutral)
+    assignIfEmpty(t.wardleyEvolutionColor, QStringLiteral("#dc3545"));
+  else if (id == FlowThemeId::Dark)
+    assignIfEmpty(t.wardleyEvolutionColor, QStringLiteral("#ff6b6b"));
+  // pie0: only dark/neutral's pie loop starts at i=0 (pie0 = cScale0).
+  if (id == FlowThemeId::Dark || id == FlowThemeId::Neutral) t.pie0 = t.cScale[0];
+}
+
 void populateGitGraph(FlowThemeId id, FlowThemeVariables& t) {
   if (t.git[0].isEmpty() && !t.git0.isEmpty()) t.git[0] = t.git0;
   if (t.gitBranchLabel[0].isEmpty() && !t.gitBranchLabel0.isEmpty())
@@ -528,13 +699,12 @@ void populateGitGraph(FlowThemeId id, FlowThemeVariables& t) {
   QString labelColor = t.primaryTextColor;
   if (id == FlowThemeId::Dark)
     labelColor = QStringLiteral("lightgrey");
-  else if (id == FlowThemeId::NeoDark || id == FlowThemeId::ReduxDark ||
-           id == FlowThemeId::ReduxDarkColor)
-    labelColor = QStringLiteral("#e0dfdf");
   else if (id == FlowThemeId::Default || id == FlowThemeId::Forest)
     labelColor = QStringLiteral("black");
-  else if (id == FlowThemeId::Neutral)
-    labelColor = t.text;
+  else if (!t.branchLabelColor.isEmpty())
+    // base/neutral/neo/redux family: gitBranchLabel{i} = `|| branchLabelColor`
+    // (the dark-variant FamilyA lands on #e0dfdf through labelTextColor).
+    labelColor = t.branchLabelColor;
 
   if (id == FlowThemeId::Neutral) {
     for (int i = 0; i < 8; ++i)
@@ -605,6 +775,11 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   assignIfEmpty(t.tertiaryBorderColor, tertiaryBorderColor);
   assignIfEmpty(t.secondaryTextColor, invert(t.secondaryColor));
   assignIfEmpty(t.tertiaryTextColor, invert(t.tertiaryColor));
+  // Family-A updateColors tail: error-icon/error-text derive from the
+  // tertiary palette (base line 158-159, neo/redux variants line 978/1351/
+  // 1753/2045). `||` semantics keep user overrides.
+  assignIfEmpty(t.errorBkgColor, t.tertiaryColor);
+  assignIfEmpty(t.errorTextColor, t.tertiaryTextColor);
   assignIfEmpty(t.lineColor, invert(t.background));
   assignIfEmpty(t.arrowheadColor, invert(t.background));
   assignIfEmpty(t.textColor, t.primaryTextColor);
@@ -627,6 +802,40 @@ void updateColorsFamilyA(FlowThemeVariables& t, const QString& primaryTextColorD
   assignIfEmpty(t.titleColor, t.tertiaryTextColor);
   assignIfEmpty(t.edgeLabelBackground, t.secondaryColor);  // darkMode false
   assignIfEmpty(t.nodeTextColor, t.primaryTextColor);
+  // Sequence/state/class/c4 stylesheet derivations (base updateColors lines
+  // 1879-1935, shared verbatim by the neo/redux constructors). All `||`
+  // chains, so constructor literals (redux's noteBorderColor #FACC15,
+  // redux-dark's actorBorder #FFFFFF, …) survive.
+  assignIfEmpty(t.actorBorder, t.primaryBorderColor);
+  assignIfEmpty(t.actorBkg, t.mainBkg);
+  assignIfEmpty(t.actorLineColor, t.actorBorder);
+  assignIfEmpty(t.labelBoxBkgColor, t.actorBkg);
+  assignIfEmpty(t.signalColor, t.textColor);
+  assignIfEmpty(t.signalTextColor, t.textColor);
+  assignIfEmpty(t.labelBoxBorderColor, t.actorBorder);
+  assignIfEmpty(t.labelTextColor, t.actorTextColor);
+  assignIfEmpty(t.loopTextColor, t.actorTextColor);
+  assignIfEmpty(t.activationBorderColor, darken(t.secondaryColor, 10));
+  assignIfEmpty(t.activationBkgColor, t.secondaryColor);
+  assignIfEmpty(t.sequenceNumberColor, invert(t.lineColor));
+  assignIfEmpty(t.rectBkgColor, t.tertiaryColor);
+  assignIfEmpty(t.noteBkgColor, QStringLiteral("#fff5ad"));
+  assignIfEmpty(t.noteBorderColor, mkBorder(t.noteBkgColor, false));
+  assignIfEmpty(t.noteTextColor, QStringLiteral("#333"));
+  assignIfEmpty(t.noteFontWeight, QStringLiteral("normal"));
+  assignIfEmpty(t.personBorder, t.primaryBorderColor);
+  assignIfEmpty(t.personBkg, t.mainBkg);
+  assignIfEmpty(t.transitionColor, t.lineColor);
+  assignIfEmpty(t.transitionLabelColor, t.textColor);
+  // Evaluated BEFORE the shared stateBkg fallback (see updateColors tail), so
+  // an explicit user stateBkg override feeds the label while the derived
+  // stateBkg (= mainBkg) does not — upstream's derivation-order quirk.
+  assignIfEmpty(t.stateLabelColor,
+                t.stateBkg.isEmpty() ? t.primaryTextColor : t.stateBkg);
+  assignIfEmpty(t.classText, t.textColor);
+  // Palette-feed scalars (darkMode undefined → the light arm).
+  assignIfEmpty(t.scaleLabelColor, t.labelTextColor);
+  assignIfEmpty(t.branchLabelColor, t.labelTextColor);
   // The light non-base themes (neo/redux/redux-color) bind a LOCAL primaryColor
   // constant "#ECECFE" in upstream's updateColors — distinct from
   // themeVariables.primaryColor — and derive BOTH the pie and quadrant palettes
@@ -668,7 +877,7 @@ void finishCScale(FlowThemeVariables& t, bool darkMode,
     }
     assignIfEmpty(t.cScaleLabel[i],
                   (darkColorLabels && !t.cScale[i].isEmpty()) ? darken(t.cScale[i], 75)
-                                                              : t.primaryTextColor);
+                                                              : t.scaleLabelColor);
   }
 }
 
@@ -909,13 +1118,22 @@ void updateDefaultForestCScale(FlowThemeVariables& t) {
 
 void updateColorsDefault(FlowThemeVariables& t) {
   updateDefaultForestCScale(t);
-  for (int i = 0; i < cScaleCount(t); ++i)
-    assignIfEmpty(t.cScaleLabel[i], (i == 0 || i == 3)
-                                              ? QStringLiteral("#ffffff")
-                                              : QStringLiteral("black"));
+  // Lines 2727-2733: the sentinel-guarded label block. A native empty
+  // labelTextColor == upstream's intact "calculated" sentinel, so the block
+  // only runs for a user override — or on default's SECOND updateColors pass,
+  // after the first pass replaced the sentinel (giving the #ffffff/black
+  // literals as invert(actorTextColor)/actorTextColor).
+  if (!t.labelTextColor.isEmpty()) {
+    assignIfEmpty(t.cScaleLabel[0], invert(t.labelTextColor));
+    assignIfEmpty(t.cScaleLabel[3], invert(t.labelTextColor));
+    for (int i = 0; i < cScaleCount(t); ++i)
+      assignIfEmpty(t.cScaleLabel[i], t.labelTextColor);
+  }
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
   t.specialStateColor = t.lineColor;  // default updateColors line 977 (unconditional)
+  t.errorBkgColor = QStringLiteral("#552222");   // default ctor line 900
+  t.errorTextColor = QStringLiteral("#552222");  // default ctor line 901
   assignIfEmpty(t.gradientStart, t.primaryBorderColor);   // default tail line 903
   assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   t.clusterBkg = t.secondBkg;
@@ -923,6 +1141,31 @@ void updateColorsDefault(FlowThemeVariables& t) {
   t.defaultLinkColor = t.lineColor;
   t.titleColor = t.textColor;
   t.edgeLabelBackground = t.labelBackground;
+  // Lines 2741-2774: the sequence/state palette, assigned unconditionally
+  // (calculate's post-pass re-applies user overrides afterwards).
+  t.actorBorder = t.border1;
+  t.actorBkg = t.mainBkg;
+  t.labelBoxBkgColor = t.actorBkg;
+  t.signalColor = t.textColor;
+  t.signalTextColor = t.textColor;
+  t.labelBoxBorderColor = t.actorBorder;
+  t.loopTextColor = t.actorTextColor;
+  t.noteBorderColor = t.border2;
+  t.noteTextColor = t.actorTextColor;
+  t.actorLineColor = t.actorBorder;
+  assignIfEmpty(t.rectBkgColor, t.tertiaryColor);
+  assignIfEmpty(t.transitionColor, t.lineColor);
+  assignIfEmpty(t.transitionLabelColor, t.textColor);
+  assignIfEmpty(t.stateLabelColor,
+                t.stateBkg.isEmpty() ? t.primaryTextColor : t.stateBkg);
+  t.classText = t.primaryTextColor;
+  t.personBorder = t.primaryBorderColor;
+  t.personBkg = t.mainBkg;
+  assignIfEmpty(t.noteFontWeight, QStringLiteral("normal"));  // line 2681
+  assignIfEmpty(t.scaleLabelColor, t.labelTextColor.isEmpty()
+                                       ? t.actorTextColor
+                                       : t.labelTextColor);
+  t.labelTextColor = t.actorTextColor;  // line 2748 — after the guarded block
   assignIfEmpty(t.taskTextDarkColor, QStringLiteral("black"));
   populateJourneyFillTypes(t, t.primaryColor, t.secondaryColor, true);
   populatePieScalars(t, t.taskTextDarkColor);
@@ -932,16 +1175,38 @@ void updateColorsDefault(FlowThemeVariables& t) {
 
 void updateColorsForest(FlowThemeVariables& t) {
   updateDefaultForestCScale(t);
-  for (int i = 0; i < cScaleCount(t); ++i)
-    assignIfEmpty(t.cScaleLabel[i], QStringLiteral("black"));
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
   t.specialStateColor = t.lineColor;  // forest updateColors line 1350 (unconditional)
+  t.errorBkgColor = QStringLiteral("#552222");   // forest ctor line 1280
+  t.errorTextColor = QStringLiteral("#552222");  // forest ctor line 1281
   assignIfEmpty(t.gradientStart, t.primaryBorderColor);   // forest tail line 1283
   assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   t.clusterBkg = t.secondBkg;
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
+  // Lines 3089-3097 + 3119-3155: the sequence/state palette. Forest derives
+  // cScaleLabel through scaleLabelColor (no sentinel guard, unlike default).
+  t.actorBorder = darken(t.mainBkg, 20);
+  t.actorBkg = t.mainBkg;
+  t.labelBoxBkgColor = t.actorBkg;
+  t.labelTextColor = t.actorTextColor;
+  t.loopTextColor = t.actorTextColor;
+  t.noteBorderColor = t.border2;
+  t.noteTextColor = t.actorTextColor;
+  t.actorLineColor = t.actorBorder;
+  assignIfEmpty(t.rectBkgColor, t.tertiaryColor);
+  assignIfEmpty(t.transitionColor, t.lineColor);
+  assignIfEmpty(t.transitionLabelColor, t.textColor);
+  assignIfEmpty(t.stateLabelColor,
+                t.stateBkg.isEmpty() ? t.primaryTextColor : t.stateBkg);
+  t.classText = t.primaryTextColor;
+  t.personBorder = t.primaryBorderColor;
+  t.personBkg = t.mainBkg;
+  assignIfEmpty(t.scaleLabelColor, t.labelTextColor);
+  for (int i = 0; i < cScaleCount(t); ++i)
+    assignIfEmpty(t.cScaleLabel[i], t.scaleLabelColor);
+  assignIfEmpty(t.noteFontWeight, QStringLiteral("normal"));  // forest line 3078
   // forest keeps constructor titleColor (#333) and edgeLabelBackground (#e8e8e8).
   assignIfEmpty(t.taskTextDarkColor, QStringLiteral("black"));
   populateJourneyFillTypes(t, t.primaryColor, t.secondaryColor, true);
@@ -959,11 +1224,38 @@ void updateColorsDark(FlowThemeVariables& t) {
   t.nodeBkg = t.mainBkg;
   t.nodeBorder = t.border1;
   t.specialStateColor = QStringLiteral("#f4f4f4");  // dark updateColors line 563 literal
+  t.errorBkgColor = QStringLiteral("#a44141");  // dark ctor line 508
+  t.errorTextColor = QStringLiteral("#ddd");    // dark ctor line 509
   assignIfEmpty(t.gradientStart, t.primaryBorderColor);   // dark tail line 511
   assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   t.clusterBkg = t.secondBkg;
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
+  // Lines 2312-2327 + 2338-2347 + 2497: the sequence/state palette, all
+  // unconditional (ctor "calculated" sentinels are overwritten in place).
+  t.actorBorder = t.border1;
+  t.actorBkg = t.mainBkg;
+  t.actorLineColor = t.actorBorder;
+  t.signalColor = t.mainContrastColor;
+  t.signalTextColor = t.mainContrastColor;
+  t.labelBoxBkgColor = t.actorBkg;
+  t.labelBoxBorderColor = t.actorBorder;
+  t.labelTextColor = t.mainContrastColor;
+  t.loopTextColor = t.mainContrastColor;
+  t.noteBorderColor = t.secondaryBorderColor;
+  t.noteBkgColor = t.secondBkg;
+  t.noteTextColor = t.secondaryTextColor;
+  t.activationBorderColor = t.border1;
+  t.activationBkgColor = t.secondBkg;
+  assignIfEmpty(t.noteFontWeight, QStringLiteral("normal"));
+  assignIfEmpty(t.rectBkgColor, t.tertiaryColor);
+  assignIfEmpty(t.transitionColor, t.lineColor);
+  assignIfEmpty(t.transitionLabelColor, t.textColor);
+  assignIfEmpty(t.stateLabelColor,
+                t.stateBkg.isEmpty() ? t.primaryTextColor : t.stateBkg);
+  t.classText = t.primaryTextColor;
+  t.personBorder = t.primaryBorderColor;
+  t.personBkg = t.mainBkg;
   t.edgeLabelBackground = lighten(t.labelBackground, 25);
   // cScale: dark sets cScale1..12 to literal hex UNCONDITIONALLY (chunk lines
   // 1309-1320), then the `||` block keeps them; cScale0 = primaryColor. cScale12
@@ -983,10 +1275,13 @@ void updateColorsDark(FlowThemeVariables& t) {
   t.cScale[10] = QStringLiteral("#00296f");
   t.cScale[11] = QStringLiteral("#01629c");
   t.cScale[12] = QStringLiteral("#010029");
+  // dark line 2393: `scaleLabelColor || (darkMode ? "black" : labelTextColor)`
+  // — darkMode undefined, so labelTextColor (already = mainContrastColor).
+  assignIfEmpty(t.scaleLabelColor, t.labelTextColor);
   for (int i = 0; i < cScaleCount(t); ++i) {
     assignIfEmpty(t.cScaleInv[i], invert(t.cScale[i]));
     assignIfEmpty(t.cScalePeer[i], lighten(t.cScale[i], 10));
-    assignIfEmpty(t.cScaleLabel[i], t.mainContrastColor);
+    assignIfEmpty(t.cScaleLabel[i], t.scaleLabelColor);
   }
   // dark's final nodeBorder override (line 1502): nodeBorder = nodeBorder || "#999".
   assignIfEmpty(t.nodeBorder, QStringLiteral("#999"));
@@ -1007,11 +1302,36 @@ void updateColorsNeutral(FlowThemeVariables& t) {
   // specialStateColor literal (both distinct from lineColor #666).
   assignIfEmpty(t.stateBorder, QStringLiteral("#000"));
   t.specialStateColor = QStringLiteral("#222");
+  t.errorBkgColor = QStringLiteral("#552222");   // neutral ctor line 1662
+  t.errorTextColor = QStringLiteral("#552222");  // neutral ctor line 1663
   assignIfEmpty(t.gradientStart, t.primaryBorderColor);   // neutral tail line 1665
   assignIfEmpty(t.gradientStop, t.secondaryBorderColor);
   t.clusterBkg = t.secondBkg;
   t.clusterBorder = t.border2;
   t.defaultLinkColor = t.lineColor;
+  // Lines 3481-3494 + 3551-3553 + 3564 + 3689: the sequence/state palette,
+  // unconditional (ctor "calculated" sentinels overwritten in place).
+  t.actorBorder = lighten(t.border1, 23);
+  t.actorBkg = t.mainBkg;
+  t.actorLineColor = t.actorBorder;
+  t.signalColor = t.text;
+  t.signalTextColor = t.text;
+  t.labelBoxBkgColor = t.actorBkg;
+  t.labelBoxBorderColor = t.actorBorder;
+  t.labelTextColor = t.text;
+  t.loopTextColor = t.text;
+  t.noteBorderColor = QStringLiteral("#999");
+  t.noteBkgColor = QStringLiteral("#666");
+  t.noteTextColor = QStringLiteral("#fff");
+  assignIfEmpty(t.noteFontWeight, QStringLiteral("normal"));
+  assignIfEmpty(t.rectBkgColor, t.tertiaryColor);
+  assignIfEmpty(t.transitionColor, QStringLiteral("#000"));
+  assignIfEmpty(t.transitionLabelColor, t.textColor);
+  assignIfEmpty(t.stateLabelColor,
+                t.stateBkg.isEmpty() ? t.primaryTextColor : t.stateBkg);
+  t.classText = t.primaryTextColor;
+  t.personBorder = t.primaryBorderColor;
+  t.personBkg = t.mainBkg;
   t.titleColor = t.text;
   t.actorTextColor = t.text;  // upstream @1674, unconditional
   // cScale: all literals (neutral lines 2418-2429).
@@ -1024,10 +1344,16 @@ void updateColorsNeutral(FlowThemeVariables& t) {
     assignIfEmpty(t.cScale[i], literals[i]);
     assignIfEmpty(t.cScaleInv[i], invert(t.cScale[i]));
     assignIfEmpty(t.cScalePeer[i], darken(t.cScale[i], 10));  // darkMode false
-    assignIfEmpty(t.cScaleLabel[i], (i == 0 || i == 2)
-                                              ? QStringLiteral("#F4F4F4")
-                                              : QStringLiteral("#333"));
   }
+  // Lines 3517-3521: scaleLabelColor feeds the label loop; slots 0/2 take
+  // cScale1 first (both #F4F4F4 for the literal palette).
+  assignIfEmpty(t.cScaleLabel[0], t.cScale[1]);
+  assignIfEmpty(t.cScaleLabel[2], t.cScale[1]);
+  assignIfEmpty(t.scaleLabelColor, t.labelTextColor);
+  for (int i = 0; i < 12; ++i)
+    assignIfEmpty(t.cScaleLabel[i], t.scaleLabelColor);
+  // Line 3689: git's branch-label scalar (light arm — darkMode undefined).
+  assignIfEmpty(t.branchLabelColor, t.labelTextColor);
   // neutral does NOT derive nodeTextColor (getStyles falls back to textColor).
   // neutral sets taskTextDarkColor UNCONDITIONALLY (= this.text; chunk line 1729),
   // so a taskTextDarkColor override is clobbered during updateColors and does NOT
@@ -1344,8 +1670,19 @@ void updateColors(FlowThemeId id, FlowThemeVariables& t) {
     case FlowThemeId::Neutral: updateColorsNeutral(t); break;
   }
   // Every theme's updateColors ends with `stateBkg = stateBkg || mainBkg`
-  // (base line 151, dark line 556, default line 966, ...).
+  // (base line 151, dark line 556, default line 966, ...) followed by
+  // labelBackgroundColor (`|| stateBkg`, so the settled stateBkg feeds it),
+  // compositeBorder (`|| nodeBorder` — neutral never derives it) and
+  // innerEndBackground (unconditional; dark/forest/neutral take
+  // primaryBorderColor, every other theme nodeBorder).
   if (t.stateBkg.isEmpty()) t.stateBkg = t.mainBkg;
+  assignIfEmpty(t.labelBackgroundColor, t.stateBkg);
+  if (id != FlowThemeId::Neutral) assignIfEmpty(t.compositeBorder, t.nodeBorder);
+  t.innerEndBackground = (id == FlowThemeId::Dark || id == FlowThemeId::Forest ||
+                          id == FlowThemeId::Neutral)
+                             ? t.primaryBorderColor
+                             : t.nodeBorder;
+  populateLegacySlots(id, t);
   populateGitGraph(id, t);
   populatePacket(id, t);
   populateArchitecture(id, t);
@@ -1584,6 +1921,69 @@ QString FlowThemeVariables::get(const QString& key) const {
   if (key == QStringLiteral("specialStateColor")) return specialStateColor;
   if (key == QStringLiteral("stateBorder")) return stateBorder;
   if (key == QStringLiteral("stateBkg")) return stateBkg;
+  if (key == QStringLiteral("errorBkgColor")) return errorBkgColor;
+  if (key == QStringLiteral("errorTextColor")) return errorTextColor;
+  // Sequence palette (sequence/styles.js consumes the resolved theme).
+  if (key == QStringLiteral("actorBkg")) return actorBkg;
+  if (key == QStringLiteral("actorBorder")) return actorBorder;
+  if (key == QStringLiteral("actorLineColor")) return actorLineColor;
+  if (key == QStringLiteral("signalColor")) return signalColor;
+  if (key == QStringLiteral("signalTextColor")) return signalTextColor;
+  if (key == QStringLiteral("labelTextColor")) return labelTextColor;
+  if (key == QStringLiteral("loopTextColor")) return loopTextColor;
+  if (key == QStringLiteral("labelBoxBkgColor")) return labelBoxBkgColor;
+  if (key == QStringLiteral("labelBoxBorderColor")) return labelBoxBorderColor;
+  if (key == QStringLiteral("sequenceNumberColor")) return sequenceNumberColor;
+  if (key == QStringLiteral("activationBkgColor")) return activationBkgColor;
+  if (key == QStringLiteral("activationBorderColor")) return activationBorderColor;
+  if (key == QStringLiteral("rectBkgColor")) return rectBkgColor;
+  // Note palette + weight (gitGraph redux branch labels).
+  if (key == QStringLiteral("noteBkgColor")) return noteBkgColor;
+  if (key == QStringLiteral("noteBorderColor")) return noteBorderColor;
+  if (key == QStringLiteral("noteTextColor")) return noteTextColor;
+  if (key == QStringLiteral("noteFontWeight")) return noteFontWeight;
+  // State palette (state/styles.js).
+  if (key == QStringLiteral("transitionColor")) return transitionColor;
+  if (key == QStringLiteral("transitionLabelColor")) return transitionLabelColor;
+  if (key == QStringLiteral("stateLabelColor")) return stateLabelColor;
+  if (key == QStringLiteral("labelBackgroundColor")) return labelBackgroundColor;
+  if (key == QStringLiteral("innerEndBackground")) return innerEndBackground;
+  if (key == QStringLiteral("compositeBorder")) return compositeBorder;
+  // class/c4 scalars + radius + palette-feed scalars.
+  if (key == QStringLiteral("classText")) return classText;
+  if (key == QStringLiteral("personBkg")) return personBkg;
+  if (key == QStringLiteral("personBorder")) return personBorder;
+  if (key == QStringLiteral("radius")) return radius;
+  if (key == QStringLiteral("scaleLabelColor")) return scaleLabelColor;
+  if (key == QStringLiteral("branchLabelColor")) return branchLabelColor;
+  // Upstream-dead but derived slots.
+  if (key == QStringLiteral("pie0")) return pie0;
+  if (key.startsWith(QStringLiteral("surface")) && key.size() == 8) {
+    const int index = key.mid(7).toInt();
+    if (index >= 0 && index < 5) return surface[index];
+  }
+  if (key.startsWith(QStringLiteral("surfacePeer")) && key.size() == 12) {
+    const int index = key.mid(11).toInt();
+    if (index >= 0 && index < 5) return surfacePeer[index];
+  }
+  if (key == QStringLiteral("attributeBackgroundColorOdd"))
+    return attributeBackgroundColorOdd;
+  if (key == QStringLiteral("attributeBackgroundColorEven"))
+    return attributeBackgroundColorEven;
+  if (key == QStringLiteral("rowOdd")) return rowOdd;
+  if (key == QStringLiteral("rowEven")) return rowEven;
+  if (key == QStringLiteral("erEdgeLabelBackground")) return erEdgeLabelBackground;
+  if (key == QStringLiteral("stateEdgeLabelBackground")) return stateEdgeLabelBackground;
+  if (key == QStringLiteral("darkTextColor")) return darkTextColor;
+  if (key == QStringLiteral("filterColor")) return filterColor;
+  if (key == QStringLiteral("rootLabelColor")) return rootLabelColor;
+  if (key == QStringLiteral("wardleyEvolutionColor")) return wardleyEvolutionColor;
+  if (key == QStringLiteral("labelColor")) return labelColor;
+  if (key == QStringLiteral("note")) return note;
+  if (key == QStringLiteral("critical")) return critical;
+  if (key == QStringLiteral("done")) return done;
+  if (key == QStringLiteral("contrast")) return contrast;
+  if (key == QStringLiteral("text")) return text;
   if (key == QStringLiteral("primaryBorderColor")) return primaryBorderColor;
   if (key == QStringLiteral("primaryTextColor")) return primaryTextColor;
   if (key == QStringLiteral("secondaryBorderColor")) return secondaryBorderColor;
@@ -1810,6 +2210,63 @@ void FlowThemeVariables::set(const QString& key, const QString& value) {
   else if (key == QStringLiteral("specialStateColor")) specialStateColor = value;
   else if (key == QStringLiteral("stateBorder")) stateBorder = value;
   else if (key == QStringLiteral("stateBkg")) stateBkg = value;
+  else if (key == QStringLiteral("errorBkgColor")) errorBkgColor = value;
+  else if (key == QStringLiteral("actorBkg")) actorBkg = value;
+  else if (key == QStringLiteral("actorBorder")) actorBorder = value;
+  else if (key == QStringLiteral("actorLineColor")) actorLineColor = value;
+  else if (key == QStringLiteral("signalColor")) signalColor = value;
+  else if (key == QStringLiteral("signalTextColor")) signalTextColor = value;
+  else if (key == QStringLiteral("labelTextColor")) labelTextColor = value;
+  else if (key == QStringLiteral("loopTextColor")) loopTextColor = value;
+  else if (key == QStringLiteral("labelBoxBkgColor")) labelBoxBkgColor = value;
+  else if (key == QStringLiteral("labelBoxBorderColor")) labelBoxBorderColor = value;
+  else if (key == QStringLiteral("sequenceNumberColor")) sequenceNumberColor = value;
+  else if (key == QStringLiteral("activationBkgColor")) activationBkgColor = value;
+  else if (key == QStringLiteral("activationBorderColor")) activationBorderColor = value;
+  else if (key == QStringLiteral("rectBkgColor")) rectBkgColor = value;
+  else if (key == QStringLiteral("noteBkgColor")) noteBkgColor = value;
+  else if (key == QStringLiteral("noteBorderColor")) noteBorderColor = value;
+  else if (key == QStringLiteral("noteTextColor")) noteTextColor = value;
+  else if (key == QStringLiteral("noteFontWeight")) noteFontWeight = value;
+  else if (key == QStringLiteral("transitionColor")) transitionColor = value;
+  else if (key == QStringLiteral("transitionLabelColor")) transitionLabelColor = value;
+  else if (key == QStringLiteral("stateLabelColor")) stateLabelColor = value;
+  else if (key == QStringLiteral("labelBackgroundColor")) labelBackgroundColor = value;
+  else if (key == QStringLiteral("innerEndBackground")) innerEndBackground = value;
+  else if (key == QStringLiteral("compositeBorder")) compositeBorder = value;
+  else if (key == QStringLiteral("classText")) classText = value;
+  else if (key == QStringLiteral("personBkg")) personBkg = value;
+  else if (key == QStringLiteral("personBorder")) personBorder = value;
+  else if (key == QStringLiteral("radius")) radius = value;
+  else if (key == QStringLiteral("scaleLabelColor")) scaleLabelColor = value;
+  else if (key == QStringLiteral("branchLabelColor")) branchLabelColor = value;
+  else if (key == QStringLiteral("pie0")) pie0 = value;
+  else if (key.startsWith(QStringLiteral("surface")) && key.size() == 8) {
+    const int index = key.mid(7).toInt();
+    if (index >= 0 && index < 5) surface[index] = value;
+  } else if (key.startsWith(QStringLiteral("surfacePeer")) && key.size() == 12) {
+    const int index = key.mid(11).toInt();
+    if (index >= 0 && index < 5) surfacePeer[index] = value;
+  }
+  else if (key == QStringLiteral("attributeBackgroundColorOdd"))
+    attributeBackgroundColorOdd = value;
+  else if (key == QStringLiteral("attributeBackgroundColorEven"))
+    attributeBackgroundColorEven = value;
+  else if (key == QStringLiteral("rowOdd")) rowOdd = value;
+  else if (key == QStringLiteral("rowEven")) rowEven = value;
+  else if (key == QStringLiteral("erEdgeLabelBackground")) erEdgeLabelBackground = value;
+  else if (key == QStringLiteral("stateEdgeLabelBackground")) stateEdgeLabelBackground = value;
+  else if (key == QStringLiteral("darkTextColor")) darkTextColor = value;
+  else if (key == QStringLiteral("filterColor")) filterColor = value;
+  else if (key == QStringLiteral("rootLabelColor")) rootLabelColor = value;
+  else if (key == QStringLiteral("wardleyEvolutionColor")) wardleyEvolutionColor = value;
+  else if (key == QStringLiteral("labelColor")) labelColor = value;
+  else if (key == QStringLiteral("note")) note = value;
+  else if (key == QStringLiteral("critical")) critical = value;
+  else if (key == QStringLiteral("done")) done = value;
+  else if (key == QStringLiteral("contrast")) contrast = value;
+  else if (key == QStringLiteral("text")) text = value;
+  else if (key == QStringLiteral("errorTextColor")) errorTextColor = value;
   else if (key == QStringLiteral("primaryBorderColor")) primaryBorderColor = value;
   else if (key == QStringLiteral("primaryTextColor")) primaryTextColor = value;
   else if (key == QStringLiteral("secondaryBorderColor")) secondaryBorderColor = value;

@@ -865,6 +865,64 @@ void checkThemeOverridesTclJs() {
 // propagates for Dark. A direct pieTitleTextColor override always wins.
 // Quadrant point/axis/title text derive from primaryTextColor, borders from
 // primaryBorderColor.
+// P2 closure: the palette-feed scalars propagate into their slot arrays like
+// 11.16's derivation loops, and the dark labelColor sentinel leaks verbatim.
+void checkPaletteFeedScalarOverrides() {
+  const FlowThemeVariables base = resolveFlowTheme(FlowThemeId::Base);
+  QHash<QString, QString> scaleOv;
+  scaleOv.insert(QStringLiteral("scaleLabelColor"), QStringLiteral("#123456"));
+  const FlowThemeVariables baseScale = resolveFlowTheme(FlowThemeId::Base, scaleOv);
+  require(baseScale.get(QStringLiteral("scaleLabelColor")) ==
+                  QLatin1String("#123456") &&
+              baseScale.get(QStringLiteral("cScaleLabel0")) ==
+                  QLatin1String("#123456") &&
+              baseScale.get(QStringLiteral("cScaleLabel5")) ==
+                  QLatin1String("#123456") &&
+              base.get(QStringLiteral("cScaleLabel0")) != QLatin1String("#123456"),
+          "scaleLabelColor override must propagate to every cScaleLabel slot");
+  // default/forest's label loop is sentinel-guarded (reads labelTextColor
+  // directly), so a scaleLabelColor override stays self-contained there.
+  const FlowThemeVariables defBase = resolveFlowTheme(FlowThemeId::Default);
+  const FlowThemeVariables defScale = resolveFlowTheme(FlowThemeId::Default, scaleOv);
+  require(defScale.get(QStringLiteral("scaleLabelColor")) ==
+                  QLatin1String("#123456") &&
+              defScale.get(QStringLiteral("cScaleLabel0")) ==
+                  defBase.get(QStringLiteral("cScaleLabel0")) &&
+              defScale.get(QStringLiteral("cScaleLabel5")) ==
+                  defBase.get(QStringLiteral("cScaleLabel5")),
+          "default cScaleLabel must ignore a scaleLabelColor override");
+  QHash<QString, QString> branchOv;
+  branchOv.insert(QStringLiteral("branchLabelColor"), QStringLiteral("#654321"));
+  const FlowThemeVariables baseBranch =
+      resolveFlowTheme(FlowThemeId::Base, branchOv);
+  require(baseBranch.get(QStringLiteral("gitBranchLabel0")) ==
+                  QLatin1String("#654321") &&
+              baseBranch.get(QStringLiteral("gitBranchLabel7")) ==
+                  QLatin1String("#654321"),
+          "branchLabelColor override must propagate to the gitBranchLabel slots");
+  const FlowThemeVariables dark = resolveFlowTheme(FlowThemeId::Dark);
+  require(dark.get(QStringLiteral("labelColor")) ==
+              QLatin1String("calculated"),
+          "dark labelColor keeps the raw 'calculated' sentinel upstream leaks");
+  require(resolveFlowTheme(FlowThemeId::Default)
+                  .get(QStringLiteral("labelColor")) ==
+              QLatin1String("black"),
+          "default labelColor ctor literal");
+  // noteFontWeight: 600 only for the redux family; sequence rect fallback and
+  // radius literals lock the merged-read channels.
+  for (FlowThemeId reduxId : {FlowThemeId::Redux, FlowThemeId::ReduxDark,
+                              FlowThemeId::ReduxColor, FlowThemeId::ReduxDarkColor})
+    require(resolveFlowTheme(reduxId).get(QStringLiteral("noteFontWeight")) ==
+                QLatin1String("600"),
+            "redux family noteFontWeight literal 600");
+  require(resolveFlowTheme(FlowThemeId::Neo).get(QStringLiteral("radius")) ==
+              QLatin1String("3"),
+          "neo radius ctor literal 3");
+  require(resolveFlowTheme(FlowThemeId::Redux).get(QStringLiteral("radius")) ==
+              QLatin1String("12"),
+          "redux radius ctor literal 12");
+}
+
 void checkScalarDependencyOverrides() {
   const auto resolved = [](FlowThemeId id, const QHash<QString, QString>& ov) {
     return resolveFlowTheme(id, ov);
@@ -985,93 +1043,20 @@ void checkScalarDependencyOverrides() {
   }
 }
 
-// Gate D: walk EVERY resolved themeVariables key from the 285-key inventory
-// (theme-variables-inventory.json — union of all 11 built-in themes' golden
-// values plus upstream dist consumer classification) through
-// FlowThemeVariables::get(). Keys whose golden value the native model does not
-// yet reproduce are enumerated in `remaining` — the precise partial-closure
-// list the config matrix themeVariables.* row points at. Grouped rationale:
-//  - upstream-derived but never consumed by any 11.16 renderer (loop-written
-//    palette slots / ctor leftovers): pie0, surface0-4, surfacePeer0-4,
-//    darkTextColor, filterColor, rootLabelColor, contrast, text, note,
-//    critical, done, scaleLabelColor, labelColor ("calculated" ctor leftover),
-//    innerEndBackground (`.node circle.state-end` never matches the
-//    dagre-wrapper DOM);
-//  - sequence-local keys resolved inside SequenceDiagramAdapter (values pass
-//    the sequence pixel/oracle gates): actorBkg, actorBorder, actorLineColor,
-//    loopTextColor, labelTextColor, labelBoxBkgColor, labelBoxBorderColor,
-//    activationBkgColor, activationBorderColor, sequenceNumberColor,
-//    signalColor, signalTextColor;
-//  - state/gantt/class/er/git/wardley-local keys resolved by the family
-//    adapter or unconsumed: noteBkgColor, noteBorderColor, noteTextColor,
-//    noteFontWeight, stateLabelColor, stateEdgeLabelBackground,
-//    transitionColor, transitionLabelColor, compositeBorder, classText,
-//    attributeBackgroundColorEven/Odd, branchLabelColor, erEdgeLabelBackground,
-//    wardleyEvolutionColor, rowEven, rowOdd, rectBkgColor,
-//    labelBackgroundColor, errorBkgColor, errorTextColor, personBkg,
-//    personBorder, radius.
-// Every removal from this list is a closed themeVariables key; keep sorted.
+// Gate D + P2 closure: walk EVERY resolved themeVariables key from the
+// 285-key inventory (theme-variables-inventory.json — union of all 11 built-in
+// themes' golden values plus upstream dist consumer classification) through
+// FlowThemeVariables::get(). The former `remaining` exception list is now
+// EMPTY: every key is derived natively with upstream's per-theme formulas.
+// Keys with no 11.16 renderer consumer (surface*/surfacePeer* loops, pie0,
+// rowOdd/rowEven, attributeBackgroundColor*, darkTextColor, filterColor,
+// rootLabelColor, wardleyEvolutionColor, er/stateEdgeLabelBackground,
+// labelColor, note/critical/done, contrast, text) are still modeled and
+// golden-locked — documented upstream-dead, see FlowTheme.h. Live keys
+// (sequence/state/class/c4 palettes, radius, scaleLabelColor,
+// branchLabelColor, noteFontWeight) additionally feed their family consumers.
 const QStringList& themeVariablesRemainingKeys() {
-  static const QStringList remaining = {
-      QStringLiteral("activationBkgColor"),
-      QStringLiteral("activationBorderColor"),
-      QStringLiteral("actorBkg"),
-      QStringLiteral("actorBorder"),
-      QStringLiteral("actorLineColor"),
-      QStringLiteral("attributeBackgroundColorEven"),
-      QStringLiteral("attributeBackgroundColorOdd"),
-      QStringLiteral("branchLabelColor"),
-      QStringLiteral("classText"),
-      QStringLiteral("compositeBorder"),
-      QStringLiteral("contrast"),
-      QStringLiteral("critical"),
-      QStringLiteral("darkTextColor"),
-      QStringLiteral("done"),
-      QStringLiteral("erEdgeLabelBackground"),
-      QStringLiteral("errorBkgColor"),
-      QStringLiteral("errorTextColor"),
-      QStringLiteral("filterColor"),
-      QStringLiteral("innerEndBackground"),
-      QStringLiteral("labelBackgroundColor"),
-      QStringLiteral("labelBoxBkgColor"),
-      QStringLiteral("labelBoxBorderColor"),
-      QStringLiteral("labelColor"),
-      QStringLiteral("labelTextColor"),
-      QStringLiteral("loopTextColor"),
-      QStringLiteral("note"),
-      QStringLiteral("noteBkgColor"),
-      QStringLiteral("noteBorderColor"),
-      QStringLiteral("noteFontWeight"),
-      QStringLiteral("noteTextColor"),
-      QStringLiteral("personBkg"),
-      QStringLiteral("personBorder"),
-      QStringLiteral("pie0"),
-      QStringLiteral("radius"),
-      QStringLiteral("rectBkgColor"),
-      QStringLiteral("rootLabelColor"),
-      QStringLiteral("rowEven"),
-      QStringLiteral("rowOdd"),
-      QStringLiteral("scaleLabelColor"),
-      QStringLiteral("sequenceNumberColor"),
-      QStringLiteral("signalColor"),
-      QStringLiteral("signalTextColor"),
-      QStringLiteral("stateEdgeLabelBackground"),
-      QStringLiteral("stateLabelColor"),
-      QStringLiteral("surface0"),
-      QStringLiteral("surface1"),
-      QStringLiteral("surface2"),
-      QStringLiteral("surface3"),
-      QStringLiteral("surface4"),
-      QStringLiteral("surfacePeer0"),
-      QStringLiteral("surfacePeer1"),
-      QStringLiteral("surfacePeer2"),
-      QStringLiteral("surfacePeer3"),
-      QStringLiteral("surfacePeer4"),
-      QStringLiteral("text"),
-      QStringLiteral("transitionColor"),
-      QStringLiteral("transitionLabelColor"),
-      QStringLiteral("wardleyEvolutionColor"),
-  };
+  static const QStringList remaining = {};
   return remaining;
 }
 
@@ -1156,6 +1141,7 @@ int main(int argc, char** argv) {
   checkTclNoOverflow();
   checkThemeOverridesTclJs();
   checkScalarDependencyOverrides();
+  checkPaletteFeedScalarOverrides();
   checkFontWeightOverrides();
   checkPacketThemeOverrides();
   checkEventModelingThemeOverrides();

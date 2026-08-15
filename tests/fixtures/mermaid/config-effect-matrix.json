@@ -53,8 +53,7 @@
     "note": "Effects are direct observable stages; export includes PNG and native SVG. Absolute marker URL parity is evaluated with an explicit document URL export context."
   },
   "summary": {
-    "parity": 361,
-    "partial": 1,
+    "parity": 363,
     "upstream-inert": 125,
     "security-fixed": 1,
     "api-only": 25,
@@ -155,7 +154,7 @@
         "railroadAbnf",
         "railroadPeg"
       ],
-      "status": "partial",
+      "status": "parity",
       "upstream": [
         "parsed",
         "text",
@@ -172,7 +171,7 @@
         "viewport",
         "export"
       ],
-      "note": "Exhaustive per-key golden over the 285-key resolved inventory (theme-variables-inventory.json): 227 keys byte-locked across all 11 themes via FlowThemeVariables::get(); the remaining 58 are enumerated with per-key rationale in MermaidThemeTest's themeVariablesRemainingKeys (upstream-unconsumed palette slots, sequence-local keys resolved in the adapter, and family-local styles)."
+      "note": "Exhaustive per-key golden over the 285-key resolved inventory (theme-variables-inventory.json): every key byte-locked across all 11 themes via FlowThemeVariables::get(). The 26 live keys follow the per-theme 11.16 derivation chains (sequence/state/class/c4 palettes, radius, scaleLabelColor/branchLabelColor, noteFontWeight) and feed their family consumers; the 30 upstream-dead keys are modeled and locked with zero-consumer evidence in FlowTheme.h."
     },
     {
       "path": "fontFamily",
@@ -577,6 +576,49 @@
         "parsed"
       ],
       "note": "The desktop renderer always applies its strict URL and content policy."
+    },
+    {
+      "path": "suppressErrorRendering",
+      "families": [
+        "flowchart",
+        "swimlane",
+        "sequence",
+        "class",
+        "state",
+        "er",
+        "requirement",
+        "pie",
+        "quadrantChart",
+        "journey",
+        "radar",
+        "xyChart",
+        "timeline",
+        "packet",
+        "kanban",
+        "mindmap",
+        "block",
+        "gitGraph",
+        "c4",
+        "gantt",
+        "info",
+        "treeView",
+        "eventmodeling",
+        "ishikawa",
+        "venn",
+        "sankey",
+        "treemap",
+        "cynefin",
+        "wardley-beta",
+        "architecture"
+      ],
+      "status": "parity",
+      "upstream": [
+        "parsed"
+      ],
+      "native": [
+        "parsed"
+      ],
+      "note": "Mermaid's secure source config strips this key, so through the Markdown source API the parse/draw-failure fallback (the error diagram) stays enabled in both renderers; only an external initialize() can suppress it, which is outside the source API."
     },
     {
       "path": "arrowMarkerAbsolute",
@@ -11494,5 +11536,5 @@
       "default": "sunday"
     }
   ],
-  "fixtureSha256": "ae74588dd16bb4d1db19cec67ea0a8dd826e611516a92aa0bc4e99d1a848e1b1"
+  "fixtureSha256": "9d8947bb58fd53cef9da07b38d679d6b7d81d7807c6b8513c50eeb981f0ae9ef"
 }

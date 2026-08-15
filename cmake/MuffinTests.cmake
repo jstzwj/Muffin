@@ -26,6 +26,7 @@ muffin_add_test(NAME MuffinMermaidRenderCacheTest SOURCE tests/mermaid/MermaidRe
 muffin_add_test(NAME MuffinMermaidSvgExportTest SOURCE tests/mermaid/MermaidSvgExportTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui Qt6::Svg RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidConfigEffectMatrixTest SOURCE tests/mermaid/MermaidConfigEffectMatrixTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/config-effect-matrix.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRemainingParityTest SOURCE tests/mermaid/MermaidRemainingParityTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/remaining-parity.json RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidErrorDiagramTest SOURCE tests/mermaid/MermaidErrorDiagramTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/error-diagram.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidThemeCssTest SOURCE tests/mermaid/MermaidThemeCssTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/mermaid-theme-css.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidSceneCullingTest SOURCE tests/mermaid/MermaidSceneCullingTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderMermaidBlockTest SOURCE tests/render/RenderMermaidBlockTest.cpp LINK MuffinUi RESOURCE_LOCK)

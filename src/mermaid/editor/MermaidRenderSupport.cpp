@@ -321,6 +321,17 @@ std::optional<int> jsThemeColorLimit(const QJsonObject& config) {
   return c >= kIntMax ? std::numeric_limits<int>::max() : static_cast<int>(c);
 }
 
+qreal rawShapeRadius(const flowtheme::FlowThemeVariables& theme) {
+  // shapes/roundedRect reads config.themeVariables.radius — the MERGED object
+  // (user override ?: resolved theme value; `?? 5` only for null/undefined,
+  // which never happens for the 11 built-ins since every constructor pins the
+  // literal). theme.radius after resolveFlowTheme is exactly that merged
+  // value. Invalid numbers fall back to 5 (the CSSOM drops an invalid rx).
+  bool ok = false;
+  const qreal radius = theme.radius.toDouble(&ok);
+  return ok && radius > 0.0 ? radius : 5.0;
+}
+
 qreal pixelValue(const QString& value, qreal fallback) {
   static const QRegularExpression number(QStringLiteral(R"(^\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))px\s*$)"),
                                           QRegularExpression::CaseInsensitiveOption);

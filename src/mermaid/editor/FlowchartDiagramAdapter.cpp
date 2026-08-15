@@ -177,7 +177,7 @@ struct FlowchartDiagramImpl : Diagram {
     sceneTextOptions.css = &css;
     flowscene::FlowScene scene = flowscene::buildFlowScene(
         chart.data(), layout, themeVars, look, handDrawnSeed,
-        sceneTextOptions);
+        sceneTextOptions, rawShapeRadius(themeVars));
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     // Chromium screenshots the fractional SVG client box at the nearest
