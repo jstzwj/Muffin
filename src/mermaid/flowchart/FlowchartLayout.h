@@ -37,9 +37,11 @@ struct FlowLayoutNode {
   qreal y = 0.0;
   qreal width = 0.0;
   qreal height = 0.0;
-  // Some renderers (notably hand-drawn Swimlane) lay out by the generated
-  // SVG group's getBBox while retaining the pre-RoughJS shape dimensions for
-  // painting. Zero means the rendered dimensions equal width/height.
+  // Some handlers lay out with dimensions adjusted after the SVG shape was
+  // created (classic fork adds state.padding/2), while hand-drawn Swimlane
+  // lays out by the generated RoughJS group's getBBox. Preserve the actual
+  // path dimensions for painting and root getBBox parity. Zero means the
+  // rendered dimensions equal width/height.
   qreal renderWidth = 0.0;
   qreal renderHeight = 0.0;
   int rank = 0;

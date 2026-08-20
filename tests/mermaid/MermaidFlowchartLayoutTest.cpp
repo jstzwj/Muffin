@@ -295,6 +295,18 @@ int main(int argc, char** argv) {
       require(std::abs(node.y - expected.value(QStringLiteral("dy")).toDouble()) <= 0.002,
               QStringLiteral("Flowchart geometry %1/%2 y mismatch: native=%3 upstream=%4")
                   .arg(id, node.id).arg(node.y).arg(expected.value(QStringLiteral("dy")).toDouble()));
+      const auto semanticNode = std::find_if(
+          chart.data().vertices.cbegin(), chart.data().vertices.cend(),
+          [&](const FlowVertex& vertex) { return vertex.id == node.id; });
+      if (semanticNode != chart.data().vertices.cend() &&
+          canonicalShape(semanticNode->type) == QLatin1String("fork")) {
+        require(std::abs(node.renderWidth -
+                         expected.value(QStringLiteral("width")).toDouble()) <= 0.002 &&
+                    std::abs(node.renderHeight -
+                             expected.value(QStringLiteral("height")).toDouble()) <= 0.002,
+                QStringLiteral("Flowchart fork %1 rendered bounds mismatch")
+                    .arg(node.id));
+      }
     }
     require(actual.edges.size() == expectedEdges.size(), QStringLiteral("Flowchart geometry %1 edge count mismatch").arg(id));
     for (qsizetype i = 0; i < actual.edges.size(); ++i) {
@@ -553,10 +565,14 @@ int main(int argc, char** argv) {
                    shape.value(QStringLiteral("tag")).toString() == QLatin1String("polygon")) {
           require(native.kind == QLatin1String("polygon") && native.points.size() == 4,
                   QStringLiteral("Flowchart shape %1 polygon mismatch").arg(vertex.id));
-          for (const QPointF& point : native.points) {
-            require(std::abs(std::abs(point.x()) + std::abs(point.y()) - native.bounds.width() / 2.0) <= 0.002,
-                    QStringLiteral("Flowchart shape %1 diamond point mismatch").arg(vertex.id));
-          }
+          QPolygonF polygon(native.points);
+          const QRectF polygonBounds = polygon.boundingRect();
+          require(std::abs(polygonBounds.width() - native.bounds.width()) <= 0.002 &&
+                      std::abs(polygonBounds.height() - native.bounds.height()) <= 0.002 &&
+                      std::abs(polygonBounds.center().x() - 0.5) <= 0.002 &&
+                      std::abs(polygonBounds.center().y()) <= 0.002,
+                  QStringLiteral("Flowchart shape %1 diamond transform mismatch")
+                      .arg(vertex.id));
         }
         const QJsonObject pixel = expected.value(QStringLiteral("pixel")).toObject();
         // Expanded shapes whose handler draws the background via rc.path/rc.circle
@@ -594,6 +610,10 @@ int main(int argc, char** argv) {
           // with WindingFill, built by the shared helper.
           painter.drawPath(flowShapeHorizontalCylinderPath(native.bounds, native.radiusX, native.radiusY));
         } else if (native.kind == QLatin1String("polygon")) {
+          const QRectF polygonBounds = QPolygonF(native.points).boundingRect();
+          painter.resetTransform();
+          painter.translate(2.0 - polygonBounds.left(),
+                            2.0 - polygonBounds.top());
           painter.drawPolygon(QPolygonF(native.points));
         } else {
           painter.drawRect(native.bounds);

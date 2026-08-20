@@ -315,41 +315,6 @@ int main(int argc, char** argv) {
     };
     int flowchartBoxesChecked = 0;
     QStringList flowchartBoxMismatches;
-    // PENDING-FAIL registry — NOT a whitelist. These viewBox components
-    // still diverge from the browser; the exact delta is locked (a drift in
-    // EITHER direction fails, so fixing one self-trips this registry) while
-    // every entry prints a loud PENDING-FAIL line naming its root cause.
-    // MUFFIN_STRICT_PARITY=1 turns them into hard failures for parity work.
-    // Values are recorded under the ctest preset environment (DirectWrite;
-    // an externally exported QT_QPA_PLATFORM changes the fallback engine and
-    // shifts the CJK entries) — the whole block is Windows-only for the same
-    // reason (mac/Linux shaping backends are the recorded platform
-    // workstream).
-    const struct {
-      const char* id;
-      int component;
-      double expectedDelta;
-      const char* reason;
-    } pendingDivergences[] = {
-        {"label-bidi", 2, -0.828125,
-         "bidi shaper residue: Qt itemization vs Chromium on mixed-direction labels"},
-        {"label-cjk", 2, 0.46875,
-         "CJK fallback stack: Qt's fallback face differs from Chromium's per-script chain"},
-        {"label-font-fallback", 2, -0.078125,
-         "fallback-face resolution for a non-primary-script glyph"},
-        {"label-cjk-bidi-markdown-lines", 2, 0.609375,
-         "CJK fallback + bidi across markdown lines"},
-        {"basic-shapes", 2, -0.507812,
-         "shape inline-box vs node-box ink extents"},
-        {"edge-long-label-bidirectional", 2, -1.140625,
-         "bidi shaper residue on edge labels"},
-        {"expanded-shapes-2", 0, -2.3863296508789062,
-         "shape ink extents: doc/docs path geometry inset vs the layout box"},
-        {"expanded-shapes-2", 3, 2.031312,
-         "shape ink extents: doc/docs path geometry inset vs the layout box"},
-    };
-    const bool strictParity = qEnvironmentVariableIsSet("MUFFIN_STRICT_PARITY");
-    int pendingDivergenceComponents = 0;
 #ifdef Q_OS_WIN
     for (const QJsonValue& caseValue : loadFixtureCases(
              QStringLiteral("flowchart-geometry.json"))) {
@@ -387,30 +352,7 @@ int main(int argc, char** argv) {
         const double delta = exportedBox.at(component).toDouble() -
                              parts.at(component).toDouble();
         const QString id = fixtureCase.value(QStringLiteral("id")).toString();
-        const auto known = std::find_if(
-            std::begin(pendingDivergences), std::end(pendingDivergences),
-            [&](const auto& entry) {
-              return id == QLatin1String(entry.id) &&
-                  component == entry.component;
-            });
-        if (known != std::end(pendingDivergences)) {
-          if (std::abs(delta - known->expectedDelta) > 0.05) {
-            flowchartBoxMismatches.append(
-                QStringLiteral("%1[%2] PENDING divergence drifted %3 (recorded %4 — update the registry when fixing)")
-                    .arg(id).arg(component).arg(delta)
-                    .arg(known->expectedDelta));
-          } else {
-            ++pendingDivergenceComponents;
-            std::fprintf(stderr,
-                         "PENDING-FAIL flowchart %s[%d] delta %+g — %s\n",
-                         known->id, component, delta, known->reason);
-            if (strictParity)
-              flowchartBoxMismatches.append(
-                  QStringLiteral("%1[%2] strict parity: pending divergence not fixed (%3)")
-                      .arg(id).arg(component)
-                      .arg(QString::fromUtf8(known->reason)));
-          }
-        } else if (std::abs(delta) > 0.2) {
+        if (std::abs(delta) > 0.2) {
           flowchartBoxMismatches.append(
               QStringLiteral("%1[%2] %3 vs %4")
                   .arg(id).arg(component)
@@ -419,24 +361,9 @@ int main(int argc, char** argv) {
       }
       ++flowchartBoxesChecked;
     }
-    require(flowchartBoxesChecked >= 30,
+    require(flowchartBoxesChecked >= 70,
             QStringLiteral("flowchart fractional viewBox coverage regressed: %1")
                 .arg(flowchartBoxesChecked));
-    // Every registry entry must have been hit — a fix that closes one drifts
-    // its locked delta and trips above; a fixture change that hides one
-    // trips here.
-    require(pendingDivergenceComponents ==
-                int(std::end(pendingDivergences) - std::begin(pendingDivergences)),
-            QStringLiteral("pending divergence registry hit %1 of %2 — update the registry")
-                .arg(pendingDivergenceComponents)
-                .arg(int(std::end(pendingDivergences) -
-                         std::begin(pendingDivergences))));
-    if (pendingDivergenceComponents > 0)
-      std::fprintf(stderr,
-                   "NOTE: %d flowchart viewBox components still diverge from the "
-                   "browser (PENDING FIX — see PENDING-FAIL lines above; "
-                   "MUFFIN_STRICT_PARITY=1 fails them)\n",
-                   pendingDivergenceComponents);
     require(flowchartBoxMismatches.isEmpty(),
             QStringLiteral("flowchart viewBox divergence (%1 of %2): %3")
                 .arg(flowchartBoxMismatches.size())

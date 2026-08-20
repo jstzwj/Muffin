@@ -256,9 +256,44 @@ int main(int argc, char** argv) {
   require(characterBoxes >= 150 && visualBidiRuns >= 20 && rtlCases >= 5,
           QStringLiteral("Flowchart glyph/bidi oracle coverage regressed"));
 #ifdef Q_OS_WIN
+  // Plain Arial must follow Chromium's system-font fallback mapping before
+  // shaping. These line widths were captured from Mermaid 11.16 in Chrome;
+  // they cover CJK, RTL, mixed scripts, emoji, Korean and Greek. Measuring
+  // the whole line through Qt's fallback chain misses these by up to 0.8px.
+  {
+    const auto plainWidth = [](const QString& text) {
+      auto document = flowchart::parseFlowLabel(text, QStringLiteral("text"));
+      flowchart::prepareFlowLabelMath(document, 16.0);
+      return flowchart::layoutFlowLabel(
+                 document, QStringLiteral("Arial"), 16.0, 24.0)
+          .size.width();
+    };
+    near(plainWidth(QStringLiteral("\u4e2d\u6587\u6807\u7b7e")),
+         64.0, 0.01, QStringLiteral("Arial Chinese fallback width"));
+    near(plainWidth(QStringLiteral("\u65e5\u672c\u8a9e\u30c6\u30ad\u30b9\u30c8")),
+         111.53125, 0.01, QStringLiteral("Arial Japanese fallback width"));
+    near(plainWidth(QStringLiteral("\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd")),
+         65.890625, 0.01, QStringLiteral("Arial Hebrew fallback width"));
+    near(plainWidth(QStringLiteral("English \u0627\u0644\u0639\u0631\u0628\u064a\u0629")),
+         91.484375, 0.01,
+         QStringLiteral("Arial Latin-Arabic fallback width"));
+    near(plainWidth(QStringLiteral("Arial \u4e2d\u6587 \u0627\u0644\u0639\u0631\u0628\u064a\u0629 \U0001f600")),
+         133.890625, 0.01,
+         QStringLiteral("Arial CJK-Arabic-emoji fallback width"));
+    near(plainWidth(QStringLiteral("\ud55c\uae00 \u0395\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac")),
+         100.625, 0.02,
+         QStringLiteral("Arial Korean-Greek fallback width"));
+    auto arabic = flowchart::parseFlowLabel(
+        QStringLiteral("\u0645\u0631\u062d\u0628\u0627 \u0628\u0627\u0644\u0639\u0627\u0644\u0645"),
+        QStringLiteral("text"));
+    near(flowchart::measureFlowSvgTextBounds(
+             arabic, QStringLiteral("Arial"), 16.0).width(),
+         64.90625, 0.02,
+         QStringLiteral("Arial Arabic SVG glyph-ink width"));
+  }
   // The styled inline box measures through REAL shaping (the review's kern
   // counterexample): Arial Bold "AV" at 16px is 21.046875px in Chrome —
-  // HarfBuzz 26.6 positions with GPOS kerning — while the nominal hmtx sum
+  // HarfBuzz 1/128px advances with GPOS kerning — while the nominal hmtx sum
   // is 22.234375 and an unshaped DWrite float sum 21.0390625 (the per-glyph
   // 1/64 rounding lands the A+kern advance on a half sixty-fourth).
   {

@@ -20,16 +20,17 @@ struct FlowShapeGeometry {
   QVector<QPointF> points;
 };
 
-// Outline polygon for polygon-geometry shapes, centred at the origin so that its
-// bounding box is (-width/2, -height/2, width, height) — i.e. the polygon's bbox
-// equals the node's label-container bbox, which updateNodeBounds captures as
-// node.width/height. Empty for rect/ellipse/cylinder/stadium/subroutine shapes.
+// Outline polygon for polygon-geometry shapes in the handler's rendered local
+// coordinates. Most are centred at the origin; question keeps its upstream
+// +0.5px x adjustment, and bang/cloud retain the offset produced by translating
+// their SVG arc path by (-w/2,-h/2). The bbox size still equals the node's
+// label-container bbox. Empty for rect/ellipse/cylinder/stadium/subroutine shapes.
 // The points are 1:1 ports of each upstream shape handler's `points` array after
 // the handler's centring transform (insertPolygonShape's translate(-w/2, h/2),
 // triangle's translate(-h/2, h/2), slopedRect's translate(0, h/4), etc.) is
-// applied — i.e. the points as they appear in the rendered SVG. Because the
-// polygon bbox aligns with the node bbox, intersectPolygon can use these same
-// centred points directly (min point = (-w/2, -h/2) maps to the node's top-left).
+// applied — i.e. the points as they appear in the rendered SVG. Intersection
+// maps the polygon's minimum corner to the dagre node's top-left, matching the
+// upstream polygon helper even for a locally offset silhouette.
 QVector<QPointF> flowShapePolygonPoints(const QString& canonicalType, qreal width, qreal height,
                                         FlowLook look = FlowLook::Classic);
 

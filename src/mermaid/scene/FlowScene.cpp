@@ -759,6 +759,18 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       sn.radiusY = geom.radiusY;
       sn.points = geom.points;
       sn.shapePaths = buildShapePaths(sn);
+      if (look != flowchart::FlowLook::HandDrawn) {
+        bool initialized = false;
+        for (const FlowSceneShapePath& item : sn.shapePaths) {
+          if (item.path.isEmpty()) continue;
+          const QRectF itemBounds = item.path.boundingRect();
+          if (!itemBounds.isValid()) continue;
+          sn.paintedBounds = initialized
+              ? sn.paintedBounds.united(itemBounds) : itemBounds;
+          initialized = true;
+        }
+        if (initialized) sn.paintedBounds.translate(sn.cx, sn.cy);
+      }
       if (swimlaneScene && look == flowchart::FlowLook::HandDrawn) {
         rough::Options options;
         options.seed = handDrawnSeed;
@@ -862,8 +874,7 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
     }
     scene.nodes.append(sn);
     if (!scene.nodes.last().boundsVisible) continue;
-    const QRectF nodeBounds = look == flowchart::FlowLook::HandDrawn &&
-                                     !scene.nodes.last().paintedBounds.isNull()
+    const QRectF nodeBounds = !scene.nodes.last().paintedBounds.isNull()
         ? scene.nodes.last().paintedBounds
         : QRectF(n.x - n.width / 2.0, n.y - n.height / 2.0, n.width, n.height);
     const qreal left = nodeBounds.left(), right = nodeBounds.right();

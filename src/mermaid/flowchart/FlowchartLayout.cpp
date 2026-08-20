@@ -273,6 +273,11 @@ FlowEdgeLabelLayout layoutFlowchartEdgeLabel(
     content = measureFlowLabel(result.document, options.fontFamily,
                                options.fontPixelSize, options.lineHeight);
   }
+  if (!options.htmlLabels) {
+    const QRectF ink = measureFlowSvgTextBounds(
+        result.document, options.fontFamily, options.fontPixelSize);
+    content.setWidth(std::max(content.width(), ink.width()));
+  }
   result.size = content;
   if (options.edgeLabelRectNode)
     return result;
@@ -865,6 +870,12 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     node.y = (n ? n->y.value_or(0.0) : 0.0) - origin.y();
     node.width = n ? n->width : 0.0;
     node.height = n ? n->height : 0.0;
+    if (options.look == FlowLook::Classic &&
+        canonicalShape(v.type) == QLatin1String("fork")) {
+      const QSizeF rendered = measuredNodes.value(v.id);
+      node.renderWidth = rendered.width();
+      node.renderHeight = rendered.height();
+    }
     node.rank = (n && n->rank.has_value()) ? *n->rank : 0;
     result.nodes.push_back(node);
   }

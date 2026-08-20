@@ -29,6 +29,7 @@
 #define NOMINMAX
 #endif
 #include <dwrite.h>
+#include <dwrite_2.h>
 #include <windows.h>
 #endif
 
@@ -274,9 +275,9 @@ private:
 // changes the faces the layout positions with — and QRawFont::fromFont is
 // unusable under the offscreen platform. Resolve the real face through
 // DirectWrite's system collection, itemize with the analyzer
-// (AnalyzeScript + AnalyzeBidi), then SHAPE EACH RUN WITH HARFBUZZ over the
-// same face's tables at a 26.6 scale — Chromium's own engine and LayoutUnit
-// arithmetic. DWrite's shaping calls were not equivalent: nominal hmtx sums
+// (AnalyzeScript + AnalyzeBidi), then SHAPE EACH ATOMIC FONT RUN WITH HARFBUZZ
+// over its mapped face's tables at a 1/128px integer scale before the
+// LayoutUnit snap. DWrite's shaping calls were not equivalent: nominal hmtx sums
 // skip kerning (Arial Bold "AV" sums 22.234375px where Chrome's inline box
 // is 21.046875px), its float advances need hand quantization, and its
 // per-script feature defaults kern Latin but NOT Hebrew (Arial's Hebrew
@@ -334,9 +335,9 @@ public:
     return S_OK;
   }
   HRESULT STDMETHODCALLTYPE GetNumberSubstitution(
-      UINT32, UINT32* textLength,
+      UINT32 position, UINT32* textLength,
       IDWriteNumberSubstitution** substitution) override {
-    *textLength = length_;
+    *textLength = length_ > position ? length_ - position : 0;
     *substitution = nullptr;
     return S_OK;
   }
@@ -410,8 +411,8 @@ namespace {
 // GetGlyphs/GetGlyphPlacements pipeline diverges from the browser — its
 // per-script defaults kern Latin but NOT Hebrew (Arial's Hebrew GPOS pairs
 // go unapplied), and its float advances need hand quantization. Feeding the
-// same tables to HarfBuzz with a 26.6 scale lands advances DIRECTLY on
-// Chromium's LayoutUnit grid.
+// same tables to HarfBuzz at 1/128px precision preserves its float advances;
+// each atomic run is then snapped once to Chromium's LayoutUnit grid.
 void destroyHbTableBytes(void* data) { delete static_cast<QByteArray*>(data); }
 struct HbFaceSource {
   IDWriteFontFace* face;  // holds one reference for the hb_face lifetime
@@ -464,16 +465,22 @@ public:
       return;
     if (FAILED(factory_->GetSystemFontCollection(&collection_, false))) return;
     if (FAILED(factory_->CreateTextAnalyzer(&analyzer_))) return;
+    if (SUCCEEDED(factory_->QueryInterface(
+            __uuidof(IDWriteFactory2),
+            reinterpret_cast<void**>(&factory2_))))
+      factory2_->GetSystemFontFallback(&fallback_);
   }
   ~SystemDWriteStyledFace() {
+    if (fallback_) fallback_->Release();
+    if (factory2_) factory2_->Release();
     if (analyzer_) analyzer_->Release();
     if (collection_) collection_->Release();
     if (factory_) factory_->Release();
   }
-  qreal shapedAdvance(const QString& text, const QFont& font) const {
+  qreal shapedAdvance(const QString& text, const QFont& font,
+                      qreal* inkLeft = nullptr,
+                      qreal* inkRight = nullptr) const {
     if (!analyzer_ || !collection_ || text.isEmpty()) return -1.0;
-    IDWriteFontFace* face = resolveFace(font);
-    if (!face) return -1.0;
     const std::wstring characters = text.toStdWString();
     StyledTextAnalysisSource source(characters.c_str(),
                                     UINT32(characters.size()));
@@ -487,11 +494,10 @@ public:
                                         &sink)) ||
         FAILED(analyzer_->AnalyzeBidi(&source, 0, UINT32(characters.size()),
                                       &sink))) {
-      face->Release();
       return -1.0;
     }
-    // HarfBuzz over the SAME face's tables — Chromium's exact shaping engine
-    // and arithmetic. Scaled so ONE FONT UNIT = 1/128 px (Chromium's hb font
+    // HarfBuzz over each mapped face's tables — Chromium's exact shaping
+    // engine and arithmetic. Scaled so ONE FONT UNIT = 1/128 px (Chromium's hb font
     // funcs return FLOAT advances: canvas measureText shows Arial Bold alef
     // at 1193/128 = 9.3203125px, a half sixty-fourth HB's integer 26.6
     // advances cannot represent). Each itemized run's float sum then snaps
@@ -499,15 +505,17 @@ public:
     // never per glyph: mixed runs round independently (Hebrew+Latin "אA" =
     // 597+740 = 20.890625), and the kerned AV run rounds as a whole
     // ((1479+1366-152)/128 = 21.0390625 -> 21.046875).
-    face->AddRef();
-    auto* hbSource = new HbFaceSource{face};
-    hb_face_t* hbFace =
-        hb_face_create_for_tables(hbDWriteTable, hbSource, destroyHbFaceSource);
-    hb_font_t* hbFont = hb_font_create(hbFace);
-    hb_ot_font_set_funcs(hbFont);
-    hb_font_set_scale(hbFont, int(font.pixelSize() * 128.0),
-                      int(font.pixelSize() * 128.0));
+    std::vector<FontRun> fontRuns;
+    if (!resolveFontRuns(source, characters, UINT32(characters.size()), font,
+                         fontRuns))
+      return -1.0;
+    const auto releaseFontRuns = [&fontRuns] {
+      for (FontRun& run : fontRuns)
+        if (run.face) run.face->Release();
+    };
     qreal advance = 0.0;
+    qreal minimumInk = std::numeric_limits<qreal>::max();
+    qreal maximumInk = std::numeric_limits<qreal>::lowest();
     bool ok = true;
     // ATOMIC runs: the INTERSECTION of the script runs and the bidi ranges.
     // Chromium itemizes on BOTH boundary sets, and each resulting run snaps
@@ -519,6 +527,7 @@ public:
     for (const StyledScriptSink::Run& run : sink.runs) cuts.push_back(run.start);
     for (const StyledScriptSink::BidiRange& range : sink.bidiRanges)
       cuts.push_back(range.start);
+    for (const FontRun& run : fontRuns) cuts.push_back(run.start);
     std::sort(cuts.begin(), cuts.end());
     cuts.erase(std::unique(cuts.begin(), cuts.end()), cuts.end());
     cuts.push_back(UINT32(characters.size()));
@@ -531,8 +540,30 @@ public:
         if (start >= run.start && start < run.start + run.length) {
           script = &run;
           break;
+      }
+      if (!script) {
+        ok = false;
+        break;
+      }
+      const FontRun* mapped = nullptr;
+      for (const FontRun& run : fontRuns)
+        if (start >= run.start && start < run.start + run.length) {
+          mapped = &run;
+          break;
         }
-      if (!script) continue;
+      if (!mapped || !mapped->face) {
+        ok = false;
+        break;
+      }
+      mapped->face->AddRef();
+      auto* hbSource = new HbFaceSource{mapped->face};
+      hb_face_t* hbFace = hb_face_create_for_tables(
+          hbDWriteTable, hbSource, destroyHbFaceSource);
+      hb_font_t* hbFont = hb_font_create(hbFace);
+      hb_ot_font_set_funcs(hbFont);
+      const int hbScale = std::max(
+          1, int(std::round(font.pixelSize() * mapped->scale * 128.0)));
+      hb_font_set_scale(hbFont, hbScale, hbScale);
       // The run's resolved direction feeds the buffer, exactly like the
       // browser shapes each bidi run. The per-glyph ADVANCE SUM is invariant
       // to visual reordering, so summing the runs reproduces Chromium's
@@ -568,21 +599,158 @@ public:
           ok = false;
           break;
         }
+        hb_glyph_extents_t extents{};
+        if (hb_font_get_glyph_extents(hbFont, infos[index].codepoint,
+                                      &extents)) {
+          const qreal first = advance / 64.0 +
+              qreal(runAdvance + positions[index].x_offset +
+                    extents.x_bearing) / 128.0;
+          const qreal second = first + qreal(extents.width) / 128.0;
+          minimumInk = std::min(minimumInk, std::min(first, second));
+          maximumInk = std::max(maximumInk, std::max(first, second));
+        }
         runAdvance += positions[index].x_advance;
       }
       // LayoutUnit::FromFloatRound of the run's float advance sum:
       // round(x/2) maps 1/128 units to the nearest 1/64 (halves up).
       advance += std::round(qreal(runAdvance) / 2.0);
       hb_buffer_destroy(buffer);
+      hb_font_destroy(hbFont);
+      hb_face_destroy(hbFace);
       if (!ok) break;
     }
-    hb_font_destroy(hbFont);
-    hb_face_destroy(hbFace);
-    face->Release();
+    releaseFontRuns();
+    if (ok && inkLeft && inkRight) {
+      if (minimumInk == std::numeric_limits<qreal>::max()) {
+        *inkLeft = 0.0;
+        *inkRight = 0.0;
+      } else {
+        *inkLeft = minimumInk;
+        *inkRight = maximumInk;
+      }
+    }
     return ok ? advance / 64.0 : -1.0;
   }
 
 private:
+  struct FontRun {
+    UINT32 start = 0;
+    UINT32 length = 0;
+    IDWriteFontFace* face = nullptr;
+    FLOAT scale = 1.0f;
+  };
+
+  static UINT32 codePointAt(const std::wstring& text, UINT32 position,
+                            UINT32* units) {
+    const UINT32 first = UINT32(text.at(position));
+    if (first >= 0xD800 && first <= 0xDBFF &&
+        position + 1 < UINT32(text.size())) {
+      const UINT32 second = UINT32(text.at(position + 1));
+      if (second >= 0xDC00 && second <= 0xDFFF) {
+        *units = 2;
+        return 0x10000 + ((first - 0xD800) << 10) + (second - 0xDC00);
+      }
+    }
+    *units = 1;
+    return first;
+  }
+
+  static QString blinkFallbackFamily(const std::wstring& text,
+                                     UINT32 position) {
+    UINT32 units = 0;
+    const UINT32 codepoint = codePointAt(text, position, &units);
+    Q_UNUSED(units);
+    const bool han =
+        (codepoint >= 0x3400 && codepoint <= 0x4DBF) ||
+        (codepoint >= 0x4E00 && codepoint <= 0x9FFF) ||
+        (codepoint >= 0xF900 && codepoint <= 0xFAFF) ||
+        (codepoint >= 0x20000 && codepoint <= 0x323AF);
+    if (han) return QStringLiteral("Noto Sans SC");
+    if ((codepoint >= 0x3040 && codepoint <= 0x30FF) ||
+        (codepoint >= 0x31F0 && codepoint <= 0x31FF) ||
+        (codepoint >= 0xFF66 && codepoint <= 0xFF9D))
+      return QStringLiteral("Noto Sans JP");
+    if ((codepoint >= 0x1100 && codepoint <= 0x11FF) ||
+        (codepoint >= 0x3130 && codepoint <= 0x318F) ||
+        (codepoint >= 0xA960 && codepoint <= 0xA97F) ||
+        (codepoint >= 0xAC00 && codepoint <= 0xD7AF))
+      return QStringLiteral("Malgun Gothic");
+    if (codepoint >= 0x1F000 && codepoint <= 0x1FAFF)
+      return QStringLiteral("Segoe UI Emoji");
+    return {};
+  }
+
+  bool resolveFontRuns(StyledTextAnalysisSource& source,
+                       const std::wstring& characters, UINT32 length,
+                       const QFont& font,
+                       std::vector<FontRun>& runs) const {
+    const std::wstring family = font.family().toStdWString();
+    const DWRITE_FONT_WEIGHT weight = font.weight() >= QFont::Bold
+        ? DWRITE_FONT_WEIGHT_BOLD : DWRITE_FONT_WEIGHT_NORMAL;
+    const DWRITE_FONT_STYLE style = font.italic()
+        ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
+    // Chromium's Windows test environment resolves missing Arial glyphs
+    // through these platform families. Explicit non-Arial families must keep
+    // their own DirectWrite fallback chain.
+    const bool useBlinkArialFallback =
+        font.family().compare(QStringLiteral("Arial"),
+                              Qt::CaseInsensitive) == 0;
+    UINT32 position = 0;
+    while (position < length) {
+      const QString preferredFamily = useBlinkArialFallback
+          ? blinkFallbackFamily(characters, position) : QString{};
+      if (!preferredFamily.isEmpty()) {
+        UINT32 mappedLength = 0;
+        while (position + mappedLength < length &&
+               blinkFallbackFamily(characters, position + mappedLength) ==
+                   preferredFamily) {
+          UINT32 units = 0;
+          codePointAt(characters, position + mappedLength, &units);
+          mappedLength += units;
+        }
+        QFont preferred(font);
+        preferred.setFamily(preferredFamily);
+        if (IDWriteFontFace* face = resolveFace(preferred)) {
+          runs.push_back(FontRun{position, mappedLength, face, 1.0f});
+          position += mappedLength;
+          continue;
+        }
+      }
+      UINT32 mappedLength = length - position;
+      FLOAT scale = 1.0f;
+      IDWriteFont* mappedFont = nullptr;
+      if (fallback_) {
+        const HRESULT mapped = fallback_->MapCharacters(
+            &source, position, length - position, collection_, family.c_str(),
+            weight, style, DWRITE_FONT_STRETCH_NORMAL, &mappedLength,
+            &mappedFont, &scale);
+        if (FAILED(mapped) || mappedLength == 0) {
+          if (mappedFont) mappedFont->Release();
+          for (FontRun& run : runs)
+            if (run.face) run.face->Release();
+          runs.clear();
+          return false;
+        }
+      }
+      IDWriteFontFace* face = nullptr;
+      if (mappedFont) {
+        mappedFont->CreateFontFace(&face);
+        mappedFont->Release();
+      } else {
+        face = resolveFace(font);
+      }
+      if (!face) {
+        for (FontRun& run : runs)
+          if (run.face) run.face->Release();
+        runs.clear();
+        return false;
+      }
+      runs.push_back(FontRun{position, mappedLength, face, scale});
+      position += mappedLength;
+    }
+    return !runs.empty();
+  }
+
   IDWriteFontFace* resolveFace(const QFont& font) const {
     const std::wstring family = font.family().toStdWString();
     UINT32 familyIndex = 0;
@@ -623,19 +791,26 @@ private:
   }
 
   IDWriteFactory* factory_ = nullptr;
+  IDWriteFactory2* factory2_ = nullptr;
+  IDWriteFontFallback* fallback_ = nullptr;
   IDWriteFontCollection* collection_ = nullptr;
   IDWriteTextAnalyzer* analyzer_ = nullptr;
 };
 
-qreal styledSegmentDesignAdvance(const QString& text, const QFont& font) {
+qreal styledSegmentDesignAdvance(const QString& text, const QFont& font,
+                                 qreal* inkLeft = nullptr,
+                                 qreal* inkRight = nullptr) {
   static const SystemDWriteStyledFace face;
-  return face.shapedAdvance(text, font);
+  return face.shapedAdvance(text, font, inkLeft, inkRight);
 }
 #else
 // Non-Windows: no shaping backend is linked (Qt exposes no shaping API and
 // the nominal hmtx sum skips kerning/ligatures) — the legacy full-line width
 // stands. Tracking lives with the Linux-font golden workstream.
-qreal styledSegmentDesignAdvance(const QString&, const QFont&) { return -1.0; }
+qreal styledSegmentDesignAdvance(const QString&, const QFont&,
+                                 qreal* = nullptr, qreal* = nullptr) {
+  return -1.0;
+}
 #endif
 
 ShapedTextMetrics shapeTextRangePass(const FlowLabelDocument& label,
@@ -903,11 +1078,10 @@ int graphemeClusterCount(const QString& text) {
 
 // The USED advance width of a style-carrying window: Chromium measures each
 // inline box with its real face, and there is no kerning between boxes. Plain
-// gaps keep the full design-metric shape; styled segments take their real
-// face's hmtx design-advance sum. ALL-OR-NOTHING — when any styled segment
-// mixes scripts (DirectWrite reports a missing glyph) or swaps families (a
-// code span), the legacy full-line width stands so the fallback-run
-// machinery keeps owning such labels.
+// gaps keep the full design-metric shape; styled segments take their mapped
+// faces' HarfBuzz-shaped advances. If font mapping or shaping fails, or an
+// inline format explicitly swaps families (a code span), retain the legacy
+// full-line width so its paint positions and measurement stay coherent.
 qreal styledRangeWidth(const FlowLabelDocument& label, qsizetype start,
                        qsizetype length, const QFont& font) {
   qreal width = 0.0;
@@ -945,7 +1119,7 @@ qreal styledRangeWidth(const FlowLabelDocument& label, qsizetype start,
     // CSS letter-/word-spacing add to the inline box exactly like the plain
     // runs (the legacy gap pass shapes them through the base font), and the
     // two ADD — an else-if dropped word-spacing whenever letter-spacing was
-    // declared. Chromium applies letter-spacing AFTER EVERY GRAPHENE
+    // declared. Chromium applies letter-spacing AFTER EVERY GRAPHEME
     // CLUSTER, including the trailing one and space characters, while a
     // combining mark joins its base's cluster ("A" + U+0301 is ONE unit);
     // word-spacing applies after every word separator (U+0020 and U+00A0).
@@ -993,6 +1167,27 @@ ShapedTextMetrics shapeTextRange(const FlowLabelDocument& label,
     if (hasSyntheticStyle) {
       const qreal styled = styledRangeWidth(label, start, length, font);
       if (styled >= 0.0) painted.width = styled;
+    } else if (!font.family().contains(QStringLiteral("Noto Sans"),
+                                       Qt::CaseInsensitive)) {
+      const QString segment = label.text.mid(start, length);
+      qreal systemInkLeft = 0.0;
+      qreal systemInkRight = 0.0;
+      const qreal design = styledSegmentDesignAdvance(
+          segment, font, &systemInkLeft, &systemInkRight);
+      if (design >= 0.0) {
+        qreal letter = font.letterSpacing();
+        if (font.letterSpacingType() == QFont::PercentageSpacing)
+          letter = font.pixelSize() * letter / 100.0;
+        painted.width = design +
+            letter * qreal(graphemeClusterCount(segment)) +
+            font.wordSpacing() *
+                qreal(segment.count(QLatin1Char(' ')) +
+                      segment.count(QChar(0x00A0)));
+        painted.inkLeft = systemInkLeft;
+        painted.inkRight = systemInkRight;
+        painted.inkWidth = std::max<qreal>(
+            0.0, systemInkRight - systemInkLeft);
+      }
     }
     return painted;
   }
@@ -1955,18 +2150,34 @@ QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
           return run.fontFamily.compare(QStringLiteral("Noto Sans"),
                                         Qt::CaseInsensitive) != 0;
         });
+    const bool hasRtlRun = std::any_of(
+        shaped.runs.cbegin(), shaped.runs.cend(),
+        [](const FlowLabelVisualRun& run) { return run.rightToLeft; });
+    const bool systemSvgText =
+        !font.family().contains(QStringLiteral("Noto Sans"),
+                                Qt::CaseInsensitive);
     // Skia emboldens a registered Regular webfont by one CSS pixel at 16px.
     // Qt's synthetic face has a different outline overhang, while both retain
-    // the same OpenType advance. Model Chromium's synthetic stroke directly.
-    const qreal boldOverhang = syntheticBold ? fontPixelSize / 16.0 : 0.0;
+    // the same OpenType advance. Arial resolves a real bold system face and
+    // must not receive that synthetic stroke expansion.
+    const qreal boldOverhang = syntheticBold && !systemSvgText
+        ? fontPixelSize / 16.0 : 0.0;
     const ShapedTextMetrics regularOutline = syntheticBold
         ? shapeTextRangePass(label, line.start, line.length, font, false)
         : ShapedTextMetrics{};
+    // Blink encloses the leading system-font glyph ink at the CSS-pixel
+    // boundary before returning SVGTextElement.getBBox(). Arial's capital A
+    // has a tiny negative design bearing (-3/2048 em): at 16px that becomes
+    // -0.0234375, but the browser reports a -1px left edge. Keeping the raw
+    // fractional bearing under-measures centred tspans by almost one pixel.
+    const qreal plainInkLeft = shaped.inkWidth > 0.0
+        ? std::min<qreal>(0.0, shaped.inkLeft) : 0.0;
     const qreal lineLeft = syntheticBold ? -boldOverhang
         : syntheticItalic ? 0.0
-        : shaped.inkWidth > 0.0 ? std::min<qreal>(0.0, shaped.inkLeft) : 0.0;
+        : systemSvgText ? std::floor(plainInkLeft) : plainInkLeft;
     const qreal lineRight = syntheticBold
-        ? (hasFallbackRun
+        ? (systemSvgText ? shaped.width
+           : hasFallbackRun
                ? shaped.width + boldOverhang
                : std::max(regularOutline.width,
                           regularOutline.inkLeft + regularOutline.inkRight +
@@ -1974,7 +2185,13 @@ QRectF measureFlowSvgTextBounds(const FlowLabelDocument& label,
         : syntheticItalic ? shaped.width
         : shaped.inkWidth > 0.0 ? std::max(shaped.width, shaped.inkRight)
                                 : shaped.width;
-    const qreal chromiumRight = lineRight +
+    // Skia's hinted Arial box exposes the RTL leading glyph beyond the
+    // logical right edge even though the unhinted glyf outline does not.
+    // Chrome Canvas TextMetrics and SVG getBBox both report 0.6875px at 16px.
+    const qreal systemRtlInk = systemSvgText && hasRtlRun &&
+            !syntheticBold && !syntheticItalic
+        ? fontPixelSize * 11.0 / 256.0 : 0.0;
+    const qreal chromiumRight = lineRight + systemRtlInk +
         (!syntheticBold && !syntheticItalic && cjkOutline
              ? fontPixelSize / 16.0 : 0.0);
     left = std::min(left, lineLeft);

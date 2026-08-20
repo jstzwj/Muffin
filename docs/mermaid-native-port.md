@@ -747,15 +747,16 @@ client-box channel with `diagramPadding` as the viewBox padding: the layout
 keeps Dagre's ABSOLUTE margin-anchored coordinates (`preserveDagreCoordinates`
 + the wrapper's hardcoded margin 8 via `dagreWrapperMargin`; classes keep
 their own fixture-locked anchoring), and `useMaxWidth:false` writes the same
-fractional box as the width/height attributes. Styled (bold/italic) inline
-boxes measure through their real face's SHAPED advances — Qt's text
-layout keeps the base face's advance table for weighted fonts, so
-`styledRangeWidth` itemizes each segment with DirectWrite
-(AnalyzeScript + AnalyzeBidi) at the INTERSECTION of script and bidi
-boundaries — each atomic run takes its own resolved level and rounds
-independently (a digit inside Hebrew keeps one script run but bidi level
-2: Chrome's "א1ב" = 597+570+590, three roundings) — and then SHAPES
-EVERY RUN WITH HARFBUZZ over the same
+fractional box as the width/height attributes. Plain and styled Arial inline
+boxes measure through their real faces' SHAPED advances — Qt's text layout
+keeps the base face's advance table for weighted fonts, so the Windows path
+itemizes each segment with DirectWrite (AnalyzeScript + AnalyzeBidi) at the
+INTERSECTION of script, bidi, and mapped-font boundaries. Missing Arial glyphs
+follow the Chrome oracle's platform chain (Noto Sans SC/JP, Malgun Gothic, and
+Segoe UI Emoji); explicit non-Arial families retain DirectWrite's own fallback
+chain. Each atomic run takes its resolved level and rounds independently (a
+digit inside Hebrew keeps one script run but bidi level 2: Chrome's "א1ב" =
+597+570+590, three roundings), then SHAPES WITH HARFBUZZ over the mapped
 face's tables (`hb_face_create_for_tables` fed by
 `IDWriteFontFace::TryGetFontTable`; kerning, ligatures, GSUB/GPOS — with
 the `kern` feature explicitly on, as Chromium's font-kerning:auto does).
@@ -777,15 +778,15 @@ the single UTF-16 unit at the glyph's cluster start, so a NON-BMP
 ignorable cluster (language tag U+E0001, VS17 U+E0100) tests its high
 surrogate — never ignorable — and still receives a unit when shaped
 (Chrome: standalone VS16/VS1/FVS1 gain none, "A"+U+E0001 gains two).
-All-or-nothing: missing-glyph segments fall
-back to the legacy full-line width (other platforms too — no shaping
-backend is linked there; tracked with the
-Linux-font workstream). All 70 geometry cases are oracle-locked (63 exact
-at 0.2 tolerance; 7 known measurement divergences — bidi shaper residue,
-CJK fallback stacks, shape ink extents — print as PENDING-FAIL entries
-with their root cause, stay drift-locked in both directions so a fix
-self-trips the registry, and hard-fail under `MUFFIN_STRICT_PARITY=1`;
-the oracle is Windows-only since the deltas are DirectWrite-recorded). GitGraph freezes its Jison grammar/database,
+On non-Windows platforms, segments without a shaping backend still use the
+legacy full-line width; that remains tracked by the Linux-font workstream.
+All 70 Windows flowchart geometry cases now hard-fail by default when any
+viewBox component differs by more than 0.2px. The former 7-case/8-component
+registry was removed after closing its three root causes: per-script platform
+font fallback, SVG text ink (`getBBox()` rather than logical advance), and
+actual shape ink bounds (including diamond, fork, and bang offsets). The
+oracle remains Windows-only because its font chain is platform-recorded.
+GitGraph freezes its Jison grammar/database,
 branch ordering, sequential and parent-driven parallel layouts in all three
 directions, merge/cherry-pick routing, labels/tags, 11 themes, diagnostics,
 metadata, and fixed/max-width export behavior. C4 freezes its five diagram

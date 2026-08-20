@@ -686,13 +686,12 @@ Codex 复审第九轮后的 4 P1 + 1 P2 全部收口：
   对像素解析、逐字符/逐分隔符计数）；混方向（SetBidiLevel 非 0）回退。
   非 Windows 显式文档化回退（无 shaping 后端——Linux 字体平台工作
   流）。AV 反例固化为 LabelOracle 回归锁（Q_OS_WIN）。
-- **P1 门禁白名单 → 待修失败项**：7 案 8 分量的已知分歧从静默白名单
-  改为 **PENDING-FAIL 登记**——每条 stderr 响亮输出根因（bidi shaper
-  残差/CJK 回退栈/形状 ink 外扩）、精确 delta 双向漂移锁（修复即自我
-  引爆）、登记计数锁（fixture 变化藏案即失败）、`MUFFIN_STRICT_PARITY=1`
-  硬失败模式（实测 8 条全红）。70 案 oracle 与登记表 Q_OS_WIN 门控
-  （DirectWrite 录值；mac/Linux shaping 后端是已记录的平台工作流，
-  防 CI 假红）。
+- **P1 门禁白名单 → 待修失败项（第十轮历史状态）**：7 案 8 分量的
+  已知分歧从静默白名单改为显式登记——每条 stderr 输出根因（bidi
+  shaper 残差/CJK 回退栈/形状 ink 外扩）、精确 delta 双向漂移锁、
+  登记计数锁，并提供可选硬失败模式。该登记已在第十四轮根因关闭后
+  删除；70 案现为默认硬失败。oracle 保持 Q_OS_WIN 门控（Windows 字体
+  链录值；mac/Linux shaping 后端是已记录的平台工作流，防 CI 假红）。
 - **P2 构建新鲜度自动门禁**：新增 `MuffinBuildFreshnessTest`（第 293
   个测试）——按依赖域校验：MuffinCore.lib ≥ 全部 src/mermaid 源、每个
   mermaid 测试 exe ≥ 自己的源 + lib、Muffin.exe ≥ 双 lib；陈旧即 FAIL
@@ -766,8 +765,7 @@ Codex 复审第十轮后的 4 P1 + 1 P2 全收口：
   Muffin 的精确源列表）——测试读 manifest 校验：lib≥其源列表、每个
   exe≥own 源+所链一方库、app≥双库。
 - 门禁：**293/293 三跑全绿**（186.54s/175s/——）、dist 刷新（21:00）、
-  `git diff --check` 仅既有换行警告、MUFFIN_STRICT_PARITY=1 登记项
-  如常输出。
+  `git diff --check` 仅既有换行警告；当时的 8 个登记差异均稳定复现。
 - **教训**：①**TryGetFontTable 的第 5 参 exists 是必填 _Out_ BOOL\***
   ——传 nullptr 会在 DWrite.dll 内部 AV 崩溃（事件日志定位 faulting
   module 才破案）；②python heredoc 往 C++ 里写调试 fprintf 的 `\n`
@@ -843,6 +841,32 @@ Codex 复审第十二轮后的 1 P1（variation selector spacing）收口：
   ignorable 簇**——纯 UAX #29 与纯类别扫描都不对，两个 Chrome 反例
   分别证伪二者；③manifest 记录传递依赖要在 CMake 端闭包展开（读取
   方只认名字表，展开一次写死即可）。
+
+**Flowchart 第十四轮 parity 收口（08-20）**：第十轮登记的 7 案 8 个
+viewBox 分量全部根因关闭，登记表与可选严格模式删除，70 案改为默认
+硬失败（任一分量偏差 >0.2px 即失败）：
+
+- **字体回退与 bidi**：DirectWrite 的 script/bidi 分段再与 mapped-font
+  边界求交，每个原子 run 用对应 face 的 OpenType 表交给 HarfBuzz，独立
+  LayoutUnit 取整。Arial 缺字按 Chrome Windows oracle 的平台链解析：
+  Han→Noto Sans SC、假名→Noto Sans JP、Hangul→Malgun Gothic、emoji→
+  Segoe UI Emoji；显式非 Arial 字体不套用该链。LabelOracle 新增中/日/
+  韩/希伯来/阿拉伯/希腊/emoji 及混合方向实录锁。
+- **SVG 文字 ink**：`htmlLabels:false` 的边标签布局宽度使用
+  `measureFlowSvgTextBounds()`，把 SVG `<text>.getBBox()` 与逻辑 advance
+  分开建模；锁定 Arial 首字形负 bearing 的 CSS 像素包围和 RTL 右侧
+  hinted ink。系统 Arial 使用真实 bold face，不再误加 Noto webfont 的
+  synthetic-bold 外扩。
+- **形状 ink 与根边界**：smooth scene 根 bounds 并入真实 shape path；
+  diamond 复现上游 +0.5px transform，bang/cloud 保留上游以 path 尺寸
+  为原点的局部偏移，classic fork 区分 70px painted path 与加 padding 后
+  的 74px Dagre box。布局、形状和 SVG 导出均有回归锁。
+- **边界说明**：这一结论只覆盖 Windows 规范环境的 70 案 flowchart
+  viewBox oracle；非 Windows 字体 shaping 仍属平台工作流，State 已登记
+  的 compound/note rank、fork+note、handDrawn ink 等布局差异不因此关闭。
+- 门禁：Release 完整构建通过；**293/293 两轮全绿**（282.77s / 242.43s，
+  均含构建新鲜度测试）；dist 已刷新，Release/dist `Muffin.exe` 大小、
+  时间戳与 SHA-256 一致；`git diff --check` 无空白错误。
 
 ---
 

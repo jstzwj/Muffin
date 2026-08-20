@@ -147,6 +147,15 @@ QVector<QPointF> centreOnBbox(QVector<QPointF> pts) {
   return pts;
 }
 
+QVector<QPointF> translateFromPathOrigin(QVector<QPointF> pts,
+                                         qreal width, qreal height) {
+  for (QPointF& point : pts) {
+    point.rx() -= width / 2.0;
+    point.ry() -= height / 2.0;
+  }
+  return pts;
+}
+
 QSizeF bboxOf(const QVector<QPointF>& pts) {
   qreal minX = std::numeric_limits<qreal>::infinity();
   qreal maxX = -std::numeric_limits<qreal>::infinity();
@@ -225,8 +234,11 @@ QVector<QPointF> cloudOutline(qreal w, qreal h) {
 QVector<QPointF> flowShapePolygonPoints(const QString& type, qreal w, qreal h, FlowLook look) {
   const qreal W = w, H = h;
   if (type == QLatin1String("diamond")) {
-    return {QPointF(0.0, H / 2.0), QPointF(W / 2.0, 0.0),
-            QPointF(0.0, -H / 2.0), QPointF(-W / 2.0, 0.0)};
+    // question.ts replaces insertPolygonShape's centred transform with
+    // translate(-s/2 + 0.5, s/2). The visible diamond is therefore shifted
+    // exactly half a pixel to the right of the dagre node centre.
+    return {QPointF(0.5, H / 2.0), QPointF(W / 2.0 + 0.5, 0.0),
+            QPointF(0.5, -H / 2.0), QPointF(-W / 2.0 + 0.5, 0.0)};
   }
   if (type == QLatin1String("odd")) {
     const qreal baseWidth = W - H / 4.0;
@@ -573,11 +585,19 @@ FlowShapeGeometry flowShapeGeometry(const FlowVertex& vertex, const QSizeF& size
   // silhouette only.
   if (type == QLatin1String("bang") || type == QLatin1String("cloud")) {
     const QSizeF label = measureLabel(vertex.text, FlowTextOptions{});
-    const QVector<QPointF> raw = (type == QLatin1String("bang"))
-        ? bangOutline(label.width() + 75.0, label.height() + 60.0)
-        : cloudOutline(label.width() + 15.0, label.height() + 15.0);
+    const qreal pathWidth = label.width() +
+        (type == QLatin1String("bang") ? 75.0 : 15.0);
+    const qreal pathHeight = label.height() +
+        (type == QLatin1String("bang") ? 60.0 : 15.0);
+    QVector<QPointF> raw = type == QLatin1String("bang")
+        ? bangOutline(pathWidth, pathHeight)
+        : cloudOutline(pathWidth, pathHeight);
     result.kind = QStringLiteral("polygon");
-    result.points = centreOnBbox(raw);
+    // bang.ts/cloud.ts translate the path by (-w/2,-h/2), not by its actual
+    // arc bbox centre. SVG arc correction makes that distinction visible:
+    // the bang silhouette in the 11.16 fixture is +2.38632965px off-centre.
+    result.points = translateFromPathOrigin(std::move(raw), pathWidth,
+                                            pathHeight);
     return result;
   }
   if (type == QLatin1String("round")) {
