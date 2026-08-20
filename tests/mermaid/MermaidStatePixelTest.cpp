@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 
 using namespace muffin::mermaid;
@@ -73,9 +74,6 @@ qreal foregroundRgbaSimilarity(const QImage& first, const QImage& second) {
   }
   return united ? 1.0 - difference / (united * 4.0 * 255.0) : 1.0;
 }
-qreal relativeDifference(qreal actual, qreal expected) {
-  return expected == 0.0 ? std::abs(actual) : std::abs(actual - expected) / expected;
-}
 }
 
 int main(int argc, char** argv) {
@@ -88,7 +86,7 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("3edaf534fa51b0963998342a62d365997600dc06ce243c4c7370f3a854ae3e18"),
+              QLatin1String("02a803180b4aae64851813603454d624ef2ce0353b37cfb95ee8aa32c35e21ae"),
           QStringLiteral("State pixel fixture changed; audit and update its digest"));
   const QDir fixtureDir = QFileInfo(manifestPath).dir();
   editor::MermaidRenderCache cache;
@@ -110,30 +108,68 @@ int main(int argc, char** argv) {
     require(entry.status == editor::MermaidRenderStatus::Ready && stateScene != nullptr,
             id + QStringLiteral(": native render failed: ") + entry.errorMessage);
     const qreal dpr = fixture.value(QStringLiteral("dpr")).toDouble(1.0);
-    const QImage native = state::renderStateSceneToImage(*stateScene, dpr, 0.0);
-    const qreal widthDifference = relativeDifference(native.width(), browser.width());
-    const qreal heightDifference = relativeDifference(native.height(), browser.height());
+    // Titled cases exercise the PRODUCTION export path: the title strip is
+    // composited above the content exactly as the editor/print paths do —
+    // the scene-only raster would silently skip the band.
+    QImage native;
+    if (fixture.value(QStringLiteral("title")).toBool()) {
+      const QString dataUrl =
+          editor::MermaidRenderCache::renderMermaidSourceToPngDataUrl(source, dpr);
+      const int comma = dataUrl.indexOf(QLatin1Char(','));
+      require(comma > 0, id + QStringLiteral(": production PNG export failed"));
+      native = QImage::fromData(QByteArray::fromBase64(dataUrl.mid(comma + 1).toLatin1()), "PNG");
+      require(!native.isNull(), id + QStringLiteral(": production PNG undecodable"));
+      // The production raster is DPR-aware already.
+      native = native.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    } else {
+      native = state::renderStateSceneToImage(*stateScene, dpr, 0.0);
+    }
+    // Pixel triage hook (mirrors the requirement suite): dump the native
+    // raster next to the browser PNG when MUFFIN_SAVE_NATIVE points at a
+    // directory.
+    if (const QString saveDir = QString::fromLocal8Bit(qgetenv("MUFFIN_SAVE_NATIVE"));
+        !saveDir.isEmpty()) {
+      QDir().mkpath(saveDir);
+      native.save(QDir(saveDir).filePath(id + QStringLiteral("-native.png")));
+    }
     const qreal iou = alphaIou(native, browser);
     const qreal rgbaSimilarity = foregroundRgbaSimilarity(native, browser);
-    qDebug().noquote() << QStringLiteral("%1 native=%2x%3 browser=%4x%5 iou=%6 rgba=%7")
-        .arg(id).arg(native.width()).arg(native.height()).arg(browser.width())
-        .arg(browser.height()).arg(iou, 0, 'f', 3).arg(rgbaSimilarity, 0, 'f', 3);
-    require(widthDifference <= 0.01 && heightDifference <= 0.01,
-            QStringLiteral("%1: native/browser canvas differs by %2%% x %3%%")
-                .arg(id).arg(widthDifference * 100.0, 0, 'f', 2)
-                .arg(heightDifference * 100.0, 0, 'f', 2));
-    require(iou >= 0.84, id + QStringLiteral(": native/browser alpha IoU regressed"));
-    require(rgbaSimilarity >= 0.70,
+    std::fprintf(stderr, "%s native=%dx%d browser=%dx%d iou=%.3f rgba=%.3f\n",
+                 qPrintable(id), native.width(), native.height(), browser.width(),
+                 browser.height(), iou, rgbaSimilarity);
+    // Chromium element screenshots snap the fractional client box to the
+    // nearest device pixel and the native raster now follows the same rule —
+    // the canvases must agree exactly (the old 1% tolerance hid the
+    // 132-vs-131 / 1105-vs-1104 / 289-vs-288 off-by-one rows).
+    require(native.width() == browser.width() &&
+                native.height() == browser.height(),
+            QStringLiteral("%1: native/browser canvas differs: %2x%3 vs %4x%5")
+                .arg(id).arg(native.width()).arg(native.height())
+                .arg(browser.width()).arg(browser.height()));
+    require(iou >= 0.90, id + QStringLiteral(": native/browser alpha IoU regressed"));
+    require(rgbaSimilarity >= 0.93,
             id + QStringLiteral(": native/browser foreground RGBA regressed"));
     minimumIou = std::min(minimumIou, iou);
     dprVariants += dpr != 1.0;
     darkCases += fixture.value(QStringLiteral("theme")).toString() == QLatin1String("dark");
     clusterCases += !stateScene->clusters.isEmpty();
-    const QImage repeated = state::renderStateSceneToImage(*stateScene, dpr, 0.0);
+    QImage repeated;
+    if (fixture.value(QStringLiteral("title")).toBool()) {
+      const QString dataUrl =
+          editor::MermaidRenderCache::renderMermaidSourceToPngDataUrl(source, dpr);
+      const int comma = dataUrl.indexOf(QLatin1Char(','));
+      repeated = QImage::fromData(QByteArray::fromBase64(
+          dataUrl.mid(comma + 1).toLatin1()), "PNG");
+      repeated = repeated.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    } else {
+      repeated = state::renderStateSceneToImage(*stateScene, dpr, 0.0);
+    }
     require(native == repeated, id + QStringLiteral(": native raster is non-deterministic"));
   }
   require(dprVariants >= 3 && darkCases >= 1 && clusterCases >= 2,
           QStringLiteral("State pixel matrix coverage regressed"));
-  qDebug() << "MermaidStatePixelTest: 5 cases passed; minimum alpha IoU" << minimumIou;
+  std::fprintf(stderr, "MermaidStatePixelTest: %d cases passed; minimum alpha IoU %.3f\n",
+               static_cast<int>(root.value(QStringLiteral("cases")).toArray().size()),
+               minimumIou);
   return 0;
 }

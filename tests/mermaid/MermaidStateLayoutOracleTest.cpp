@@ -1,4 +1,5 @@
 #include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/MermaidPreprocessor.h"
 #include "mermaid/state/StateDiagram.h"
 #include "mermaid/state/StateLayout.h"
 
@@ -8,13 +9,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 
 using namespace muffin::mermaid::state;
 
 namespace {
 [[noreturn]] void fail(const QString& message) {
-  qCritical().noquote() << message;
+  std::fprintf(stderr, "FAIL: %s\n", qPrintable(message));
+  std::fflush(stderr);
   std::exit(1);
 }
 QPointF point(const QJsonObject& value) {
@@ -57,12 +60,17 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   if (root.value(QStringLiteral("fixtureSha256")).toString() !=
-      QLatin1String("406a561cb5a124331b36978ff1a02502d74befc02785466329da9e83e15b63a9"))
+      QLatin1String("37694df59c763191710c782df3e61a2e4fb6d01b5e6251b4fc8a0974342ff972"))
     fail(QStringLiteral("State layout fixture drifted"));
   for (const QJsonValue& value : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
-    const StateDiagram diagram = StateDiagram::parse(fixture.value(QStringLiteral("source")).toString());
+    // Preprocess like the render path: titled cases carry YAML frontmatter
+    // the family parser must not see.
+    const muffin::mermaid::MermaidPreprocessResult pre =
+        muffin::mermaid::preprocessDiagram(
+            fixture.value(QStringLiteral("source")).toString());
+    const StateDiagram diagram = StateDiagram::parse(pre.code);
     const StateLayoutInput input = buildStateLayoutInput(diagram.data());
     const StateLayoutMeasurements measurements = measureStateLayoutInput(
         input, muffin::mermaid::MermaidFontRegistry::cssFamilyStack(), 16.0);

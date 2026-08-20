@@ -7,6 +7,7 @@
 #include "document/SourceRangeUtil.h"
 #include "mermaid/scene/FlowScenePainter.h"
 #include "mermaid/MermaidRenderMetadata.h"
+#include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/classdiagram/ClassScenePainter.h"
 #include "mermaid/sequence/SequenceScenePainter.h"
 #include "mermaid/state/StateScenePainter.h"
@@ -1452,10 +1453,27 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
     const qreal drawH = natH * scale;
     const qreal dx = content.left() + qMax<qreal>(0.0, (content.width() - drawW) / 2.0);
     const qreal dy = content.top() + qMax<qreal>(0.0, (content.height() - drawH) / 2.0);
-    const qreal contentOffsetX = qMax<qreal>(
+    // Client-box families use the SAME mapping as the exported SVG/PNG: the
+    // fractional client box fills the canvas, content painted through
+    // translate(-clientBox.topLeft()), title at its scene-absolute anchor.
+    // Piecewise families keep the centered contentOffset model.
+    const QRectF clientBox = muffin::mermaid::editor::mermaidClientBox(
+        mermaidScene_, mermaidMetadata_);
+    qreal contentOffsetX = qMax<qreal>(
         0.0, (natW - mermaidMetadata_.contentSize.width()) / 2.0);
-    const qreal contentOffsetY =
+    qreal contentOffsetY =
         mermaidMetadata_.titleHeight + mermaidMetadata_.diagramPadding;
+    QRectF titleRect(0.0, 0.0, natW, mermaidMetadata_.titleHeight);
+    if (clientBox.isValid()) {
+      contentOffsetX = 0.0;
+      contentOffsetY = 0.0;
+      const qreal titleWidth =
+          muffin::mermaid::measureMermaidTitleWidth(mermaidMetadata_);
+      const qreal centerX = mermaidScene_->svgClientViewBox().center().x();
+      titleRect = QRectF(centerX - titleWidth / 2.0,
+                         -mermaidMetadata_.titleHeight, titleWidth,
+                         mermaidMetadata_.titleHeight);
+    }
     painter.setRenderHint(QPainter::Antialiasing, true);
     painter.setRenderHint(QPainter::TextAntialiasing, true);
     const QRectF sceneBounds = mermaidScene_->sceneBounds();
@@ -1464,25 +1482,32 @@ void BlockLayout::paintMermaidDiagram(QPainter& painter, const RenderTheme& them
     paintOptions.openSequenceMenus = state.openSequenceMenus;
     painter.translate(dx, dy);
     painter.scale(scale, scale);
-    muffin::mermaid::paintMermaidTitle(
-        mermaidMetadata_, painter,
-        QRectF(0.0, 0.0, natW, mermaidMetadata_.titleHeight));
+    if (!clientBox.isValid())
+      muffin::mermaid::paintMermaidTitle(mermaidMetadata_, painter, titleRect);
     if (mermaidViewportCullingEnabled_ && painter.hasClipping()) {
       const QRectF visibleCanvas = painter.clipBoundingRect().intersected(
-          QRectF(contentOffsetX, contentOffsetY,
-                 sceneBounds.width(), sceneBounds.height()));
+          clientBox.isValid()
+              ? QRectF(0.0, 0.0, natW, natH)
+              : QRectF(contentOffsetX, contentOffsetY,
+                       sceneBounds.width(), sceneBounds.height()));
       if (!visibleCanvas.isValid()) {
         painter.restore();
         return;
       }
       paintOptions.cullToVisibleRect = true;
-      paintOptions.visibleSceneRect = QRectF(
-          sceneBounds.left() + visibleCanvas.left() - contentOffsetX,
-          sceneBounds.top() + visibleCanvas.top() - contentOffsetY,
-          visibleCanvas.width(), visibleCanvas.height());
+      paintOptions.visibleSceneRect = clientBox.isValid()
+          ? visibleCanvas.translated(clientBox.topLeft())
+          : QRectF(
+                sceneBounds.left() + visibleCanvas.left() - contentOffsetX,
+                sceneBounds.top() + visibleCanvas.top() - contentOffsetY,
+                visibleCanvas.width(), visibleCanvas.height());
     }
-    painter.translate(contentOffsetX - sceneBounds.left(),
-                      contentOffsetY - sceneBounds.top());
+    if (clientBox.isValid()) painter.translate(-clientBox.topLeft());
+    else
+      painter.translate(contentOffsetX - sceneBounds.left(),
+                        contentOffsetY - sceneBounds.top());
+    if (clientBox.isValid())
+      muffin::mermaid::paintMermaidTitle(mermaidMetadata_, painter, titleRect);
     mermaidScene_->paint(painter, paintOptions);
   }
   painter.restore();
@@ -1575,9 +1600,18 @@ bool BlockLayout::mermaidScenePointAt(
   const qreal drawH = natH * s;
   const qreal dx = content.left() + qMax<qreal>(0.0, (content.width() - drawW) / 2.0);
   const qreal dy = content.top() + qMax<qreal>(0.0, (content.height() - drawH) / 2.0);
+  // Inverse of the paint transform: document → scene coordinates. Client-box
+  // families paint through translate(-clientBox.topLeft()) (the SVG/PNG
+  // mapping); piecewise families keep the centered contentOffset model.
+  const QRectF clientBox = muffin::mermaid::editor::mermaidClientBox(
+      mermaidScene_, mermaidMetadata_);
+  if (clientBox.isValid()) {
+    scenePos = QPointF((documentPos.x() - dx) / s + clientBox.left(),
+                       (documentPos.y() - dy) / s + clientBox.top());
+    return true;
+  }
   const qreal contentOffsetX = qMax<qreal>(
       0.0, (natW - mermaidMetadata_.contentSize.width()) / 2.0);
-  // Inverse of the paint transform: document → scene coordinates.
   scenePos = QPointF(
       (documentPos.x() - dx) / s - contentOffsetX +
           sceneBounds.left(),

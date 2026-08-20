@@ -493,6 +493,45 @@ MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(
     return result;
   result.metadata = entry.metadata;
   dpr = qMax<qreal>(0.25, dpr);
+  const QRectF clientBox = mermaidClientBox(entry);
+  if (clientBox.isValid()) {
+    // Client-box families raster in ONE pass through the exact SVG mapping:
+    // image = round(fractional client box × dpr), content painted through
+    // translate(-clientBox.topLeft()), title at its scene-absolute anchor
+    // (baseline -titleTopMargin, centered on the content viewBox). No
+    // per-piece rounding — a titled diagramPadding-8.25 flowchart renders
+    // round(207.84375) × round(119.5) = 208 × 120 with the baseline exact,
+    // where the piecewise composition produced 208 × 121 with the baseline
+    // ~0.75px low.
+    QImage image(qMax(1, qRound(clientBox.width() * dpr)),
+                 qMax(1, qRound(clientBox.height() * dpr)),
+                 QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::transparent);
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    painter.setRenderHint(QPainter::TextAntialiasing, true);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    painter.scale(dpr, dpr);
+    painter.translate(-clientBox.topLeft());
+    entry.scene->paint(painter, MermaidPaintOptions{});
+    if (entry.metadata.hasVisibleTitle()) {
+      const qreal titleWidth = measureMermaidTitleWidth(entry.metadata);
+      const qreal centerX = entry.scene->svgClientViewBox().center().x();
+      paintMermaidTitle(entry.metadata, painter,
+                        QRectF(centerX - titleWidth / 2.0,
+                               -entry.metadata.titleHeight,
+                               titleWidth, entry.metadata.titleHeight));
+    }
+    painter.end();
+    QByteArray png;
+    QBuffer buffer(&png);
+    if (!buffer.open(QIODevice::WriteOnly)) return result;
+    if (!image.save(&buffer, "PNG")) return result;
+    buffer.close();
+    result.dataUrl = QStringLiteral("data:image/png;base64,") +
+                     QString::fromLatin1(png.toBase64());
+    return result;
+  }
   QImage image = renderMermaidSceneToImage(
       entry.scene, dpr, entry.metadata.diagramPadding);
   if (entry.metadata.hasVisibleTitle()) {
@@ -505,10 +544,13 @@ MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(
                   QImage::Format_ARGB32_Premultiplied);
     titled.fill(Qt::transparent);
     QPainter painter(&titled);
-    const QPoint contentTopLeft(
-        qRound((canvasWidth - contentWidth) * dpr / 2.0),
-        qRound(entry.metadata.titleHeight * dpr));
-    painter.drawImage(contentTopLeft, image);
+    // Piecewise families center the content under the title strip when the
+    // title widened the canvas.
+    painter.drawImage(
+        QPoint(qRound((canvasWidth > contentWidth
+                           ? (canvasWidth - contentWidth) / 2.0 : 0.0) * dpr),
+               qRound(entry.metadata.titleHeight * dpr)),
+        image);
     painter.scale(dpr, dpr);
     paintMermaidTitle(entry.metadata, painter,
                       QRectF(0.0, 0.0, canvasWidth,

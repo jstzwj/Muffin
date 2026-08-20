@@ -9,6 +9,7 @@
 #include <QJsonObject>
 
 #include <cmath>
+#include <cstdio>
 #include <cstdlib>
 #include <algorithm>
 
@@ -16,7 +17,10 @@ using namespace muffin::mermaid;
 
 namespace {
 [[noreturn]] void fail(const QString& message) {
-  qCritical().noquote() << message;
+  // qCritical alone is swallowed without QT_FORCE_STDERR_LOGGING (the ctest
+  // preset does not set it) — flush assertions to stderr directly.
+  std::fprintf(stderr, "FAIL: %s\n", qPrintable(message));
+  std::fflush(stderr);
   std::exit(1);
 }
 
@@ -251,6 +255,192 @@ int main(int argc, char** argv) {
           QStringLiteral("Flowchart label oracle coverage regressed"));
   require(characterBoxes >= 150 && visualBidiRuns >= 20 && rtlCases >= 5,
           QStringLiteral("Flowchart glyph/bidi oracle coverage regressed"));
+#ifdef Q_OS_WIN
+  // The styled inline box measures through REAL shaping (the review's kern
+  // counterexample): Arial Bold "AV" at 16px is 21.046875px in Chrome —
+  // HarfBuzz 26.6 positions with GPOS kerning — while the nominal hmtx sum
+  // is 22.234375 and an unshaped DWrite float sum 21.0390625 (the per-glyph
+  // 1/64 rounding lands the A+kern advance on a half sixty-fourth).
+  {
+    auto document = flowchart::parseFlowLabel(
+        QStringLiteral("**AV**"), QStringLiteral("markdown"));
+    flowchart::prepareFlowLabelMath(document, 16.0);
+    const auto native = flowchart::layoutFlowLabel(
+        document, QStringLiteral("Arial"), 16.0, 24.0);
+    near(native.size.width(), 21.046875, 0.01,
+         QStringLiteral("Arial bold AV kern-shaped width"));
+  }
+  // RTL segments shape with their RESOLVED direction (AnalyzeBidi feeds
+  // SetBidiLevel; AnalyzeScript never does). The advance sum is
+  // order-invariant, so Chrome's inline box width is reproducible without
+  // reordering: bold "אב" 18.53125, contextual-form Arabic "سلام" 24.15625,
+  // mixed "אA" 20.890625 — all Chrome-recorded at Arial Bold 16px.
+  {
+    auto heb = flowchart::parseFlowLabel(
+        QStringLiteral("**אב**"), QStringLiteral("markdown"));
+    flowchart::prepareFlowLabelMath(heb, 16.0);
+    near(flowchart::layoutFlowLabel(heb, QStringLiteral("Arial"), 16.0, 24.0)
+             .size.width(),
+         18.53125, 0.01, QStringLiteral("Arial bold Hebrew shaped width"));
+    auto arab = flowchart::parseFlowLabel(
+        QStringLiteral("**سلام**"),
+        QStringLiteral("markdown"));
+    flowchart::prepareFlowLabelMath(arab, 16.0);
+    near(flowchart::layoutFlowLabel(arab, QStringLiteral("Arial"), 16.0, 24.0)
+             .size.width(),
+         24.15625, 0.01,
+         QStringLiteral("Arial bold Arabic contextual-form width"));
+    auto mixed = flowchart::parseFlowLabel(
+        QStringLiteral("**אA**"), QStringLiteral("markdown"));
+    flowchart::prepareFlowLabelMath(mixed, 16.0);
+    near(flowchart::layoutFlowLabel(mixed, QStringLiteral("Arial"), 16.0, 24.0)
+             .size.width(),
+         20.890625, 0.01,
+         QStringLiteral("Arial bold mixed-direction shaped width"));
+  }
+  // CSS spacing on the styled segment: letter-spacing applies after EVERY
+  // grapheme cluster (trailing one and spaces included; a combining mark
+  // joins its base), word-spacing after every separator (U+0020/U+00A0), and
+  // the two ADD. Chrome-recorded Arial Bold 16px: "A V" 26.078125 plain,
+  // 29.078125 letter 1px, 29.078125 word 3px, 32.078125 both — the previous
+  // else-if arithmetic gave 29.078125 for the both case (word dropped).
+  {
+    auto document = flowchart::parseFlowLabel(
+        QStringLiteral("**A V**"), QStringLiteral("markdown"));
+    flowchart::prepareFlowLabelMath(document, 16.0);
+    document.letterSpacingPx = 1.0;
+    document.wordSpacingPx = 3.0;
+    near(flowchart::layoutFlowLabel(document, QStringLiteral("Arial"), 16.0,
+                                    24.0)
+             .size.width(),
+         32.078125, 0.01,
+         QStringLiteral("Arial bold A V letter+word spacing width"));
+    document.wordSpacingPx = 0.0;
+    near(flowchart::layoutFlowLabel(document, QStringLiteral("Arial"), 16.0,
+                                    24.0)
+             .size.width(),
+         29.078125, 0.01,
+         QStringLiteral("Arial bold A V letter-only spacing width"));
+    document.letterSpacingPx = 0.0;
+    document.wordSpacingPx = 3.0;
+    near(flowchart::layoutFlowLabel(document, QStringLiteral("Arial"), 16.0,
+                                    24.0)
+             .size.width(),
+         29.078125, 0.01,
+         QStringLiteral("Arial bold A V word-only spacing width"));
+    // One letter unit for A + U+0301 (one grapheme cluster): the per-scalar
+    // count added 2 and measured 13.5625.
+    auto combining = flowchart::parseFlowLabel(
+        QStringLiteral("**Á**"), QStringLiteral("markdown"));
+    flowchart::prepareFlowLabelMath(combining, 16.0);
+    combining.letterSpacingPx = 1.0;
+    near(flowchart::layoutFlowLabel(combining, QStringLiteral("Arial"), 16.0,
+                                    24.0)
+             .size.width(),
+         12.5625, 0.01,
+         QStringLiteral("Arial bold combining-mark letter unit width"));
+    // Grapheme clusters beyond combining marks — all Chrome-recorded at
+    // Arial Bold 16px. ZWJ joins (or stands alone and the shaper drops it):
+    // "A"+ZWJ+"B" gains exactly TWO letter units; a LONE LEADING mark is its
+    // own cluster ("´A" gains 2 — a category-skip counter gave 1); bidi
+    // embedding controls are default-ignorable and receive NO unit
+    // (RLO+"AB"+PDF gains 2, not 4).
+    {
+      const auto width = [](flowchart::FlowLabelDocument document,
+                            qreal letter) {
+        flowchart::prepareFlowLabelMath(document, 16.0);
+        document.letterSpacingPx = letter;
+        return flowchart::layoutFlowLabel(
+                   document, QStringLiteral("Arial"), 16.0, 24.0)
+            .size.width();
+      };
+      const QString zwj = QStringLiteral("**A") + QChar(0x200D) +
+                          QStringLiteral("B**");
+      near(width(flowchart::parseFlowLabel(zwj, QStringLiteral("markdown")),
+                 0.0),
+           23.109375, 0.01,
+           QStringLiteral("Arial bold A-ZWJ-B zero-width joiner width"));
+      near(width(flowchart::parseFlowLabel(zwj, QStringLiteral("markdown")),
+                 1.0),
+           25.109375, 0.01,
+           QStringLiteral("Arial bold A-ZWJ-B letter units (2)"));
+      const QString leading = QStringLiteral("**") + QChar(0x0301) +
+                              QStringLiteral("A**");
+      near(width(flowchart::parseFlowLabel(leading,
+                                           QStringLiteral("markdown")), 0.0),
+           11.5625, 0.01,
+           QStringLiteral("Arial bold leading-mark half-up rounding"));
+      near(width(flowchart::parseFlowLabel(leading,
+                                           QStringLiteral("markdown")), 1.0),
+           13.5625, 0.01,
+           QStringLiteral("Arial bold leading-mark letter units (2)"));
+      const QString embedding = QStringLiteral("**") + QChar(0x202E) +
+                                QStringLiteral("AB") + QChar(0x202C) +
+                                QStringLiteral("**");
+      near(width(flowchart::parseFlowLabel(embedding,
+                                           QStringLiteral("markdown")), 1.0),
+           25.109375, 0.01,
+           QStringLiteral("Arial bold bidi-embedding controls unspaceable"));
+    }
+    // Script/bidi INTERSECTION: a digit inside Hebrew keeps one script run
+    // but its own bidi level — each atomic run rounds to LayoutUnit
+    // independently (Chrome "א1ב" = 597+570+590 = 27.453125; one whole-run
+    // rounding would give 27.4375). With letter-spacing: 3 more units.
+    {
+      auto heb1heb = flowchart::parseFlowLabel(
+          QStringLiteral("**א1ב**"), QStringLiteral("markdown"));
+      flowchart::prepareFlowLabelMath(heb1heb, 16.0);
+      near(flowchart::layoutFlowLabel(heb1heb, QStringLiteral("Arial"), 16.0,
+                                      24.0)
+               .size.width(),
+           27.453125, 0.01,
+           QStringLiteral("Arial bold digit-in-Hebrew per-run rounding"));
+      heb1heb.letterSpacingPx = 1.0;
+      near(flowchart::layoutFlowLabel(heb1heb, QStringLiteral("Arial"), 16.0,
+                                      24.0)
+               .size.width(),
+           30.453125, 0.01,
+           QStringLiteral("Arial bold digit-in-Hebrew letter units (3)"));
+    }
+    // Variation selectors are Mn — NOT Cf: the letter receiver test is the
+    // Blink TreatAsZeroWidthSpace UNIT check, so a standalone VS cluster
+    // gains NO unit (Chrome: VS16/VS1/FVS1 all 0 wide, plain and
+    // letter-spaced alike — the shaper hides them), while attached to a
+    // base it joins that base's cluster and glyph ("A"+VS16 11.5625 plain,
+    // +1 unit at 1px). The unit check reads a single UTF-16 unit, so
+    // NON-BMP ignorables (language tag U+E0001) test their high surrogate
+    // and still receive a unit when shaped — a Cf-category scan is wrong in
+    // BOTH directions.
+    {
+      const auto vsWidth = [](const QString& label, qreal letter) {
+        auto document = flowchart::parseFlowLabel(
+            label, QStringLiteral("markdown"));
+        flowchart::prepareFlowLabelMath(document, 16.0);
+        document.letterSpacingPx = letter;
+        return flowchart::layoutFlowLabel(
+                   document, QStringLiteral("Arial"), 16.0, 24.0)
+            .size.width();
+      };
+      const auto vsAlone = [](QChar selector) {
+        return QStringLiteral("**") + selector + QStringLiteral("**");
+      };
+      for (const QChar selector : {QChar(0xFE0F), QChar(0xFE00),
+                                   QChar(0x180B)}) {
+        const QString hex = QString::number(int(selector.unicode()), 16);
+        near(vsWidth(vsAlone(selector), 0.0), 0.0, 0.01,
+             QStringLiteral("Arial bold U+%1 hidden width").arg(hex));
+        near(vsWidth(vsAlone(selector), 1.0), 0.0, 0.01,
+             QStringLiteral("Arial bold U+%1 no letter unit").arg(hex));
+      }
+      const QString aVs16 = QStringLiteral("**A") + QChar(0xFE0F) +
+                            QStringLiteral("**");
+      near(vsWidth(aVs16, 0.0), 11.5625, 0.01,
+           QStringLiteral("Arial bold A+VS16 cluster width"));
+      near(vsWidth(aVs16, 1.0), 12.5625, 0.01,
+           QStringLiteral("Arial bold A+VS16 letter units (1)"));
+    }
+  }
+#endif
   qDebug() << "MermaidFlowchartLabelOracleTest:" << cases.size()
            << "cases and" << mathSpanCount << "Math spans passed";
   return 0;

@@ -1338,12 +1338,27 @@
     },
     {
       "id": "accessibility-click",
-      "source": "stateDiagram-v2\naccTitle: State model\naccDescr: Accessible state model\nstate Docs\nclick Docs \"https://example.com\" \"Open docs\"",
+      "source": "stateDiagram-v2\naccTitle: State model\naccDescr: Accessible state model\nstate Docs\nother --> Docs\nclick Docs \"https://example.com\" \"Open docs\"",
       "expected": {
         "root": [
           "State model",
           "Accessible state model",
           "Docs",
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "other",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "Docs",
+              "type": "default",
+              "description": ""
+            }
+          },
           {
             "stmt": "click",
             "id": {
@@ -1359,8 +1374,35 @@
         "direction": "TB",
         "accTitle": "State model",
         "accDescription": "Accessible state model",
-        "states": [],
-        "relations": [],
+        "states": [
+          {
+            "id": "other",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "Docs",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [
+          {
+            "id1": "other",
+            "id2": "Docs",
+            "relationTitle": ""
+          }
+        ],
         "classes": [],
         "links": [
           {
@@ -1377,8 +1419,317 @@
       },
       "layoutInput": {
         "direction": "TB",
-        "nodes": [],
-        "edges": []
+        "nodes": [
+          {
+            "id": "other",
+            "shape": "rect",
+            "label": "other",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Docs",
+            "shape": "rect",
+            "label": "Docs",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "other",
+            "end": "Docs",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "linkstyle-line-tokens",
+      "source": "stateDiagram-v2\nA --> B\nC --> D\nlinkStyle 0 stroke:#ff0000,stroke-width:3px",
+      "expected": {
+        "root": [
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "A",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "B",
+              "type": "default",
+              "description": ""
+            }
+          },
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "C",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "D",
+              "type": "default",
+              "description": ""
+            }
+          },
+          {
+            "stmt": "state",
+            "id": "linkStyle",
+            "type": "default",
+            "description": ""
+          },
+          {
+            "stmt": "state",
+            "id": "0",
+            "type": "default",
+            "description": ""
+          },
+          {
+            "stmt": "state",
+            "id": "stroke",
+            "type": "default",
+            "description": "#ff0000,stroke-width:3px"
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "A",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "B",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "C",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "D",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "linkStyle",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "0",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "stroke",
+            "type": "default",
+            "descriptions": [
+              "#ff0000,stroke-width:3px"
+            ],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [
+          {
+            "id1": "A",
+            "id2": "B",
+            "relationTitle": ""
+          },
+          {
+            "id1": "C",
+            "id2": "D",
+            "relationTitle": ""
+          }
+        ],
+        "classes": [],
+        "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "A",
+            "shape": "rect",
+            "label": "A",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "B",
+            "shape": "rect",
+            "label": "B",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "C",
+            "shape": "rect",
+            "label": "C",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "D",
+            "shape": "rect",
+            "label": "D",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "linkStyle",
+            "shape": "rect",
+            "label": "linkStyle",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "0",
+            "shape": "rect",
+            "label": "0",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "stroke",
+            "shape": "rect",
+            "label": "#ff0000,stroke-width:3px",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": []
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "A",
+            "end": "B",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge1",
+            "start": "C",
+            "end": "D",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          }
+        ]
       }
     },
     {
@@ -1579,5 +1930,5 @@
       }
     }
   ],
-  "fixtureSha256": "aa122ed6ddefe4db72019ef2cc054e1f2a982b77c28e4e42e9b2a26c37900e60"
+  "fixtureSha256": "1bd2b47de66e6f2d24f2278111966aa1e9958f094bd4b2c0a492c901ad437a58"
 }

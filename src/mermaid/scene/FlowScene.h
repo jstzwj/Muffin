@@ -151,6 +151,15 @@ struct FlowScene : MermaidScene {
   bool roundRasterExtentToNearestPixel() const override { return true; }
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   SvgMarkerProjection svgMarkerProjection() const override;
+  // Fractional client-box contract (upstream setupGraphViewbox): the svg
+  // root carries viewBox = content bbox ± diagramPadding with NO translate,
+  // so the fractional extents survive into the exported root exactly like
+  // the browser oracle (`0 0 426.75 70`). The flowchart default padding is
+  // 8; adapters overwrite it when the config requests another value.
+  QRectF svgClientViewBox() const override {
+    return bounds.adjusted(-clientPadding, -clientPadding,
+                           clientPadding, clientPadding);
+  }
   bool hasAnimation() const override {
     for (const auto& edge : edges)
       if (edge.animated) return true;
@@ -159,6 +168,8 @@ struct FlowScene : MermaidScene {
   const QVector<InteractionRegion>& interactionRegions() const override { return interactionRegions_; }
 
   QRectF bounds;          // diagram bounds (scene coords)
+  // flowchart.diagramPadding (viewBox padding, upstream default 8).
+  qreal clientPadding = 8.0;
   QString background;     // theme.background
   QString markerDiagramType = QStringLiteral("flowchart-v2");
   flowchart::FlowLook look = flowchart::FlowLook::Classic;

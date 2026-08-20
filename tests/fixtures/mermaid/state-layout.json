@@ -127,9 +127,11 @@
             "refX": "19",
             "refY": "7",
             "viewBox": "",
-            "childTag": "path"
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
           }
         ],
+        "anchors": [],
         "nodes": [
           {
             "id": "root_start",
@@ -176,19 +178,34 @@
             "id": "edge0",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           },
           {
             "id": "edge1",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           },
           {
             "id": "edge2",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           }
         ]
       }
@@ -231,9 +248,11 @@
             "refX": "19",
             "refY": "7",
             "viewBox": "",
-            "childTag": "path"
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
           }
         ],
+        "anchors": [],
         "nodes": [
           {
             "id": "long_id",
@@ -427,9 +446,11 @@
             "refX": "19",
             "refY": "7",
             "viewBox": "",
-            "childTag": "path"
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
           }
         ],
+        "anchors": [],
         "nodes": [
           {
             "id": "divider-id-1_start",
@@ -489,6 +510,28 @@
               "g",
               "g",
               "rect"
+            ],
+            "rects": [
+              {
+                "class": "outer",
+                "computed": {
+                  "fill": "rgb(236, 236, 255)",
+                  "stroke": "rgb(147, 112, 219)",
+                  "strokeWidth": "1px",
+                  "dasharray": "none",
+                  "rx": "5px"
+                }
+              },
+              {
+                "class": "inner",
+                "computed": {
+                  "fill": "rgb(255, 255, 255)",
+                  "stroke": "rgb(147, 112, 219)",
+                  "strokeWidth": "1px",
+                  "dasharray": "none",
+                  "rx": "0px"
+                }
+              }
             ]
           },
           {
@@ -496,6 +539,18 @@
             "classes": "statediagram-state statediagram-cluster statediagram-cluster-alt",
             "childTags": [
               "g"
+            ],
+            "rects": [
+              {
+                "class": "divider",
+                "computed": {
+                  "fill": "rgb(240, 240, 240)",
+                  "stroke": "rgb(147, 112, 219)",
+                  "strokeWidth": "1px",
+                  "dasharray": "10px, 10px",
+                  "rx": "auto"
+                }
+              }
             ]
           },
           {
@@ -503,6 +558,18 @@
             "classes": "statediagram-state statediagram-cluster statediagram-cluster-alt",
             "childTags": [
               "g"
+            ],
+            "rects": [
+              {
+                "class": "divider",
+                "computed": {
+                  "fill": "rgb(240, 240, 240)",
+                  "stroke": "rgb(147, 112, 219)",
+                  "strokeWidth": "1px",
+                  "dasharray": "10px, 10px",
+                  "rx": "auto"
+                }
+              }
             ]
           }
         ],
@@ -511,19 +578,34 @@
             "id": "edge0",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           },
           {
             "id": "edge1",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           },
           {
             "id": "edge2",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           }
         ]
       }
@@ -675,9 +757,11 @@
             "refX": "19",
             "refY": "7",
             "viewBox": "",
-            "childTag": "path"
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
           }
         ],
+        "anchors": [],
         "nodes": [
           {
             "id": "fork_state",
@@ -733,25 +817,160 @@
             "id": "edge0",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           },
           {
             "id": "edge1",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           },
           {
             "id": "edge2",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           },
           {
             "id": "edge3",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCL"
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "accessibility-click",
+      "source": "stateDiagram-v2\naccTitle: State model\naccDescr: Accessible state model\nstate Docs\nother --> Docs\nclick Docs \"https://example.com\" \"Open docs\"",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "other",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -28.492,
+              "y": -20,
+              "width": 56.984,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Docs",
+            "center": {
+              "x": 0,
+              "y": 90
+            },
+            "bbox": {
+              "x": -26.359,
+              "y": -20,
+              "width": 52.719,
+              "height": 40
+            },
+            "shape": "rect"
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M36.492,48L36.492,52.167C36.492,56.333,36.492,64.667,36.492,73C36.492,81.333,36.492,89.667,36.492,93.833L36.492,98",
+            "start": {
+              "x": 0,
+              "y": 20
+            },
+            "end": {
+              "x": 0,
+              "y": 70
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "0 0 72.984375 146"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "0 0 72.984375 146"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
+          }
+        ],
+        "anchors": [
+          {
+            "href": "https://example.com",
+            "title": "Open docs",
+            "wrapsClass": "node  statediagram-state"
+          }
+        ],
+        "nodes": [
+          {
+            "id": "other",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "Docs",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           }
         ]
       }
@@ -864,9 +1083,11 @@
             "refX": "19",
             "refY": "7",
             "viewBox": "",
-            "childTag": "path"
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
           }
         ],
+        "anchors": [],
         "nodes": [
           {
             "id": "Active",
@@ -905,6 +1126,18 @@
             "classes": "note-cluster",
             "childTags": [
               "rect"
+            ],
+            "rects": [
+              {
+                "class": "",
+                "computed": {
+                  "fill": "none",
+                  "stroke": "none",
+                  "strokeWidth": "1px",
+                  "dasharray": "none",
+                  "rx": "auto"
+                }
+              }
             ]
           }
         ],
@@ -913,17 +1146,2249 @@
             "id": "edge0",
             "classes": "edge-thickness-normal edge-pattern-solid transition",
             "markerEnd": "barbEnd",
-            "pathCommands": "MLCCCL"
+            "pathCommands": "MLCCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           },
           {
             "id": "Active-Active----note-1",
             "classes": "edge-thickness-normal edge-pattern-solid transition note-edge",
             "markerEnd": "",
-            "pathCommands": "MLCCCL"
+            "pathCommands": "MLCCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "5px"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "titled",
+      "source": "---\ntitle: Some Title\n---\nstateDiagram-v2\nA --> B",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "A",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "B",
+            "center": {
+              "x": 0,
+              "y": 90
+            },
+            "bbox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "shape": "rect"
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M21.203,48L21.203,52.167C21.203,56.333,21.203,64.667,21.203,73C21.203,81.333,21.203,89.667,21.203,93.833L21.203,98",
+            "start": {
+              "x": 0,
+              "y": 20
+            },
+            "end": {
+              "x": 0,
+              "y": 70
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "-30.9921875 -52 104.390625 198"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "-30.9921875 -52 104.390625 198"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
+          }
+        ],
+        "anchors": [],
+        "nodes": [
+          {
+            "id": "A",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          },
+          {
+            "id": "B",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0
+          }
+        ],
+        "clusters": [],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
           }
         ]
       }
     }
   ],
-  "fixtureSha256": "406a561cb5a124331b36978ff1a02502d74befc02785466329da9e83e15b63a9"
+  "themeCss": [
+    {
+      "id": "state-theme-structural",
+      "source": "stateDiagram-v2\nstate Running {\n  A --> B : label\n  B --> C\n}",
+      "themeCSS": ".node:nth-of-type(1) rect { fill: rgb(255,0,0) !important; } .node + .node rect { stroke: rgb(0,255,0); } path.transition { stroke: rgb(255,0,255); } g.edgePaths path:nth-of-type(2) { display: none !important; } .edgeLabel p { background-color: rgb(128,0,128) !important; } .statediagram-cluster rect.inner { fill: rgb(255,255,0) !important; }",
+      "look": "classic",
+      "client": {
+        "width": 112.40625,
+        "height": 385
+      },
+      "viewBox": "0 0 112.40625 385",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 26.234375,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(255, 0, 0)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 26.40625,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(0, 255, 0)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "C",
+          "bbox": {
+            "width": 26.125,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(0, 255, 0)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "statediagram-state statediagram-cluster",
+          "outer": {
+            "fill": "rgb(236, 236, 255)",
+            "opacity": "1",
+            "fillOpacity": "1"
+          },
+          "inner": {
+            "fill": "rgb(255, 255, 0)"
+          },
+          "divider": null,
+          "label": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)"
+          },
+          "labelP": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)",
+            "display": "block"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(255, 0, 255)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        },
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(255, 0, 255)",
+          "dasharray": "0px",
+          "display": "none",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgb(128, 0, 128)",
+          "opacity": "1",
+          "display": "block",
+          "visibility": "visible",
+          "fontSize": "16px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(51, 51, 51)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-hidden",
+      "source": "stateDiagram-v2\nA --> B\nnote right of A : note text",
+      "themeCSS": ".node rect { display:none !important; } .statediagram-note rect { fill: rgb(0,0,255) !important; } .note-edge { display:none !important; }",
+      "look": "classic",
+      "client": {
+        "width": 223.453125,
+        "height": 182
+      },
+      "viewBox": "-5.203125 -12 223.453125 182",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 10.234375,
+            "height": 24
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 10.40625,
+            "height": 24
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "note text",
+          "bbox": {
+            "width": 97.25,
+            "height": 54
+          },
+          "shapeTag": "path",
+          "shape": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "none",
+            "strokeWidth": "0px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(0, 0, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(0, 0, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": {
+            "stroke": "rgb(170, 170, 51)",
+            "strokeWidth": "1.3px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          }
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "note-cluster",
+          "outer": null,
+          "inner": null,
+          "divider": null,
+          "label": null,
+          "labelP": null
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        },
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition note-edge",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "5px",
+          "display": "none",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-font",
+      "source": "stateDiagram-v2\nA --> B : label",
+      "themeCSS": ".nodeLabel { font-size: 23px !important; }",
+      "look": "classic",
+      "client": {
+        "width": 52.109375,
+        "height": 191
+      },
+      "viewBox": "0 0 52.109375 191",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 30.703125,
+            "height": 50.5
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "23px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "23px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 30.953125,
+            "height": 50.5
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "23px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "23px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgba(232, 232, 232, 0.8)",
+          "opacity": "1",
+          "display": "block",
+          "visibility": "visible",
+          "fontSize": "16px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(51, 51, 51)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-cluster-font",
+      "source": "stateDiagram-v2\nstate Running {\n  A --> B\n}",
+      "themeCSS": ".cluster-label { font-size: 31px !important; }",
+      "look": "classic",
+      "client": {
+        "width": 146.984375,
+        "height": 246
+      },
+      "viewBox": "0 0 146.984375 246",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 26.234375,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 26.40625,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "statediagram-state statediagram-cluster",
+          "outer": {
+            "fill": "rgb(236, 236, 255)",
+            "opacity": "1",
+            "fillOpacity": "1"
+          },
+          "inner": {
+            "fill": "rgb(255, 255, 255)"
+          },
+          "divider": null,
+          "label": {
+            "fontSize": "31px",
+            "color": "rgb(19, 19, 0)"
+          },
+          "labelP": {
+            "fontSize": "31px",
+            "color": "rgb(19, 19, 0)",
+            "display": "block"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-paint-semantics",
+      "source": "stateDiagram-v2\nA --> B : label\nnote right of A : note text",
+      "themeCSS": ".node rect { stroke: none; visibility: hidden; } .nodeLabel { visibility: hidden; } .edgeLabel p { background-color: transparent; }",
+      "look": "classic",
+      "client": {
+        "width": 249.5,
+        "height": 233.984375
+      },
+      "viewBox": "0 0 249.5078125 234",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 26.234375,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "none",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "hidden",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "hidden"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "hidden",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 26.40625,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "none",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "hidden",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "hidden"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "hidden",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "note text",
+          "bbox": {
+            "width": 97.25,
+            "height": 54
+          },
+          "shapeTag": "path",
+          "shape": {
+            "fill": "rgb(255, 245, 173)",
+            "stroke": "none",
+            "strokeWidth": "0px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(0, 0, 0)",
+            "fontSize": "16px",
+            "visibility": "hidden"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(0, 0, 0)",
+            "display": "block",
+            "visibility": "hidden",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": {
+            "stroke": "rgb(170, 170, 51)",
+            "strokeWidth": "1.3px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          }
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "note-cluster",
+          "outer": null,
+          "inner": null,
+          "divider": null,
+          "label": null,
+          "labelP": null
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        },
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition note-edge",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "5px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgba(0, 0, 0, 0)",
+          "opacity": "1",
+          "display": "block",
+          "visibility": "visible",
+          "fontSize": "16px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(51, 51, 51)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-marker",
+      "source": "stateDiagram-v2\nA --> B",
+      "themeCSS": "defs [id$=\"-barbEnd\"] { fill: rgb(0,128,0) !important; stroke: rgb(0,128,0) !important; opacity: 0.2; stroke-width: 4px; } path.transition { stroke: none; }",
+      "look": "classic",
+      "client": {
+        "width": 42.40625,
+        "height": 146
+      },
+      "viewBox": "0 0 42.40625 146",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 26.234375,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 26.40625,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "none",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [],
+      "markers": [
+        {
+          "fill": "rgb(0, 128, 0)",
+          "stroke": "rgb(0, 128, 0)",
+          "opacity": "1",
+          "strokeWidth": "4px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "0.2"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-opacity",
+      "source": "stateDiagram-v2\nstate Running {\n  A --> B : label\n}",
+      "themeCSS": ".node rect { opacity: 0.2; } path.transition { stroke-opacity: 0.4; } .statediagram-cluster rect.outer { fill-opacity: 0.6; } defs [id$=\"-barbEnd\"] { fill-opacity: 0.3; } .edgeLabel p { opacity: 0.5; }",
+      "look": "classic",
+      "client": {
+        "width": 112.40625,
+        "height": 270
+      },
+      "viewBox": "0 0 112.40625 270",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 26.234375,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "0.2",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 26.40625,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "0.2",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "statediagram-state statediagram-cluster",
+          "outer": {
+            "fill": "rgb(236, 236, 255)",
+            "opacity": "1",
+            "fillOpacity": "0.6"
+          },
+          "inner": {
+            "fill": "rgb(255, 255, 255)"
+          },
+          "divider": null,
+          "label": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)"
+          },
+          "labelP": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)",
+            "display": "block"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "0.4"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgba(232, 232, 232, 0.8)",
+          "opacity": "0.5",
+          "display": "block",
+          "visibility": "visible",
+          "fontSize": "16px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(51, 51, 51)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "0.3",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-dom",
+      "source": "stateDiagram-v2\nstate Running {\n  b2 : row one\n  b2 : row two\n  b2 --> C\n}\nclick b2 \"https://example.com\" \"tip\"",
+      "themeCSS": "a[title=\"tip\"] .node rect { fill: rgb(255,0,0) !important; } g.label foreignObject:nth-of-type(2) { visibility: hidden; }",
+      "look": "classic",
+      "client": {
+        "width": 154.984375,
+        "height": 271
+      },
+      "viewBox": "0 0 154.984375 271",
+      "nodes": [
+        {
+          "label": "row onerow two",
+          "bbox": {
+            "width": 68.984375,
+            "height": 65
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(255, 0, 0)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": {
+            "visibility": "hidden",
+            "display": "block"
+          },
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "hidden"
+          },
+          "strokeShape": null
+        },
+        {
+          "label": "C",
+          "bbox": {
+            "width": 26.125,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "statediagram-state statediagram-cluster",
+          "outer": {
+            "fill": "rgb(236, 236, 255)",
+            "opacity": "1",
+            "fillOpacity": "1"
+          },
+          "inner": {
+            "fill": "rgb(255, 255, 255)"
+          },
+          "divider": null,
+          "label": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)"
+          },
+          "labelP": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)",
+            "display": "block"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-handdrawn",
+      "source": "stateDiagram-v2\nA --> B : go\nnote right of A : n",
+      "themeCSS": "defs [id$=\"-barbEnd\"] { opacity: 0.5; } .rough-node path:nth-of-type(2) { stroke: none; } path.transition { stroke-width: 2px; }",
+      "look": "handDrawn",
+      "client": {
+        "width": 192.40625,
+        "height": 239.140625
+      },
+      "viewBox": "0.04848670959472656 -0.04143714904785156 192.41506958007812 239.161376953125",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 28.58757781982422,
+            "height": 42.779991149902344
+          },
+          "shapeTag": "path",
+          "shape": {
+            "fill": "none",
+            "stroke": "rgb(236, 236, 255)",
+            "strokeWidth": "4px",
+            "dasharray": "0px, 0px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": {
+            "stroke": "none",
+            "strokeWidth": "1.3px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          }
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 28.75945281982422,
+            "height": 42.779991149902344
+          },
+          "shapeTag": "path",
+          "shape": {
+            "fill": "none",
+            "stroke": "rgb(236, 236, 255)",
+            "strokeWidth": "4px",
+            "dasharray": "0px, 0px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": {
+            "stroke": "none",
+            "strokeWidth": "1.3px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          }
+        },
+        {
+          "label": "n",
+          "bbox": {
+            "width": 42.70410919189453,
+            "height": 56.339935302734375
+          },
+          "shapeTag": "path",
+          "shape": {
+            "fill": "none",
+            "stroke": "rgb(255, 245, 173)",
+            "strokeWidth": "4px",
+            "dasharray": "0px, 0px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(0, 0, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(0, 0, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": {
+            "stroke": "none",
+            "strokeWidth": "1.3px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          }
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "note-cluster",
+          "outer": null,
+          "inner": null,
+          "divider": null,
+          "label": null,
+          "labelP": null
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        },
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition transition note-edge",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "5px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgba(232, 232, 232, 0.8)",
+          "opacity": "1",
+          "display": "block",
+          "visibility": "visible",
+          "fontSize": "16px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(51, 51, 51)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "0.5"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-label-p",
+      "source": "stateDiagram-v2\nA --> B : label",
+      "themeCSS": ".edgeLabel p { font-size: 31px; color: rgb(255,0,0); }",
+      "look": "classic",
+      "client": {
+        "width": 85.9375,
+        "height": 192.5
+      },
+      "viewBox": "0 0 85.9375 192.5",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 26.234375,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 26.40625,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgba(232, 232, 232, 0.8)",
+          "opacity": "1",
+          "display": "block",
+          "visibility": "visible",
+          "fontSize": "31px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(255, 0, 0)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-label-p-node-cluster",
+      "source": "stateDiagram-v2\nstate Running {\n  A --> B : label\n}",
+      "themeCSS": ".nodeLabel p { font-size: 24px; color: rgb(0,0,255); } .cluster-label p { font-size: 28px; }",
+      "look": "classic",
+      "client": {
+        "width": 135.078125,
+        "height": 294
+      },
+      "viewBox": "0 0 135.078125 294",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 31.34375,
+            "height": 52
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "24px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(0, 0, 255)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 31.609375,
+            "height": 52
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "24px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(0, 0, 255)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "statediagram-state statediagram-cluster",
+          "outer": {
+            "fill": "rgb(236, 236, 255)",
+            "opacity": "1",
+            "fillOpacity": "1"
+          },
+          "inner": {
+            "fill": "rgb(255, 255, 255)"
+          },
+          "divider": null,
+          "label": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)"
+          },
+          "labelP": {
+            "fontSize": "28px",
+            "color": "rgb(0, 0, 255)",
+            "display": "block"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgba(232, 232, 232, 0.8)",
+          "opacity": "1",
+          "display": "block",
+          "visibility": "visible",
+          "fontSize": "16px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(51, 51, 51)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-label-p-hidden",
+      "source": "stateDiagram-v2\nA --> B : label",
+      "themeCSS": ".edgeLabel p { display: none; }",
+      "look": "classic",
+      "client": {
+        "width": 42.40625,
+        "height": 146
+      },
+      "viewBox": "0 0 42.40625 146",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 26.234375,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 26.40625,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgba(232, 232, 232, 0.8)",
+          "opacity": "1",
+          "display": "none",
+          "visibility": "visible",
+          "fontSize": "16px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(51, 51, 51)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-label-p-hidden-node",
+      "source": "stateDiagram-v2\nA --> B : label",
+      "themeCSS": ".nodeLabel p { display: none; }",
+      "look": "classic",
+      "client": {
+        "width": 52.109375,
+        "height": 122
+      },
+      "viewBox": "0 0 52.109375 122",
+      "nodes": [
+        {
+          "label": "A",
+          "bbox": {
+            "width": 16,
+            "height": 16
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        },
+        {
+          "label": "B",
+          "bbox": {
+            "width": 16,
+            "height": 16
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "none",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [
+        {
+          "background": "rgba(232, 232, 232, 0.8)",
+          "opacity": "1",
+          "display": "block",
+          "visibility": "visible",
+          "fontSize": "16px",
+          "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+          "color": "rgb(51, 51, 51)"
+        }
+      ],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-desc-p",
+      "source": "stateDiagram-v2\nstate Running {\n  b2 : row one\n  b2 : row two\n  b2 --> C\n}",
+      "themeCSS": "g.label foreignObject:nth-of-type(2) p { font-size: 24px; color: rgb(0,128,0); }",
+      "look": "classic",
+      "client": {
+        "width": 184.625,
+        "height": 283
+      },
+      "viewBox": "0 0 184.625 283",
+      "nodes": [
+        {
+          "label": "row onerow two",
+          "bbox": {
+            "width": 98.625,
+            "height": 77
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": {
+            "visibility": "visible",
+            "display": "block"
+          },
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": {
+            "fontSize": "24px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(0, 128, 0)",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "strokeShape": null
+        },
+        {
+          "label": "C",
+          "bbox": {
+            "width": 26.125,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "statediagram-state statediagram-cluster",
+          "outer": {
+            "fill": "rgb(236, 236, 255)",
+            "opacity": "1",
+            "fillOpacity": "1"
+          },
+          "inner": {
+            "fill": "rgb(255, 255, 255)"
+          },
+          "divider": null,
+          "label": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)"
+          },
+          "labelP": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)",
+            "display": "block"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-desc-p-hidden",
+      "source": "stateDiagram-v2\nstate Running {\n  b2 : row one\n  b2 : row two\n  b2 --> C\n}",
+      "themeCSS": "g.label foreignObject:nth-of-type(2) p { display: none; }",
+      "look": "classic",
+      "client": {
+        "width": 154.984375,
+        "height": 238
+      },
+      "viewBox": "0 0 154.984375 238",
+      "nodes": [
+        {
+          "label": "row onerow two",
+          "bbox": {
+            "width": 68.984375,
+            "height": 32
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": {
+            "visibility": "visible",
+            "display": "block"
+          },
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "none",
+            "visibility": "visible"
+          },
+          "strokeShape": null
+        },
+        {
+          "label": "C",
+          "bbox": {
+            "width": 26.125,
+            "height": 40
+          },
+          "shapeTag": "rect",
+          "shape": {
+            "fill": "rgb(236, 236, 255)",
+            "stroke": "rgb(147, 112, 219)",
+            "strokeWidth": "1px",
+            "dasharray": "none",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": null,
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": null,
+          "strokeShape": null
+        }
+      ],
+      "clusters": [
+        {
+          "classes": "statediagram-state statediagram-cluster",
+          "outer": {
+            "fill": "rgb(236, 236, 255)",
+            "opacity": "1",
+            "fillOpacity": "1"
+          },
+          "inner": {
+            "fill": "rgb(255, 255, 255)"
+          },
+          "divider": null,
+          "label": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)"
+          },
+          "labelP": {
+            "fontSize": "16px",
+            "color": "rgb(19, 19, 0)",
+            "display": "block"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "class": "edge-thickness-normal edge-pattern-solid transition",
+          "stroke": "rgb(51, 51, 51)",
+          "dasharray": "0px",
+          "display": "inline",
+          "strokeOpacity": "1"
+        }
+      ],
+      "edgeLabelP": [],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    }
+  ],
+  "fixtureSha256": "37694df59c763191710c782df3e61a2e4fb6d01b5e6251b4fc8a0974342ff972"
 }

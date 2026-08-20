@@ -164,6 +164,7 @@ struct SwimlaneDiagramImpl : Diagram {
       dagreOptions.rankSpacing = swimlaneOptions.rankSpacing;
       dagreOptions.curve = swimlaneOptions.curve;
       dagreOptions.preserveDagreCoordinates = true;
+      dagreOptions.dagreWrapperMargin = 8.0;
       dagreOptions.diagramPadding = diagramPadding;
       dagreOptions.preparedEdgeLabels = swimlaneOptions.preparedEdgeLabels;
       for (auto it = swimlaneOptions.preparedEdgeLabels.cbegin();
@@ -193,6 +194,9 @@ struct SwimlaneDiagramImpl : Diagram {
         chart.data(), layout, themeVars, look, handDrawnSeed,
         sceneTextOptions, rawShapeRadius(themeVars));
     scene.markerDiagramType = QStringLiteral("swimlane");
+    // The svg root's viewBox padding (setupGraphViewbox, upstream default
+    // 8) — feeds the fractional client-box channel like flowchart.
+    scene.clientPadding = diagramPadding;
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     entry.naturalSize = QSize(qCeil(scene.bounds.width()),

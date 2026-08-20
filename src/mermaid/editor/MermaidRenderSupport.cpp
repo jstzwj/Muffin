@@ -641,7 +641,8 @@ MermaidRenderMetadata renderMetadata(
     const QString& diagramTitle, const QString& accessibleTitle,
     const QString& accessibleDescription, const QString& titleColor,
     const QString& fontFamily, qreal titleFontSize,
-    qreal titleTopMargin, qreal diagramPadding) {
+    qreal titleTopMargin, qreal diagramPadding,
+    qreal titleBandPadding) {
   MermaidRenderMetadata metadata;
   metadata.diagramType = diagramType;
   metadata.roleDescription = diagramType;
@@ -653,6 +654,7 @@ MermaidRenderMetadata renderMetadata(
   metadata.titleFontSize = titleFontSize;
   metadata.titleTopMargin = titleTopMargin;
   metadata.diagramPadding = qMax<qreal>(0.0, diagramPadding);
+  metadata.titleBandPadding = titleBandPadding;
   QString configSection = QStringLiteral("state");
   if (diagramType.startsWith(QLatin1String("flowchart")))
     configSection = QStringLiteral("flowchart");
@@ -675,21 +677,91 @@ MermaidRenderMetadata renderMetadata(
   return metadata;
 }
 
+QRectF mermaidClientBox(const std::shared_ptr<const MermaidScene>& scene,
+                        const MermaidRenderMetadata& metadata) {
+  if (!scene) return {};
+  const QRectF clientViewBox = scene->svgClientViewBox();
+  if (!clientViewBox.isValid()) return {};
+  // Upstream (state draw + rendering-util, browser-verified): the renderer
+  // inserts the title BEFORE sizing the viewport — insertTitle anchors the
+  // text baseline at ABSOLUTE -titleTopMargin (text y attr), centered
+  // (text-anchor:middle) on the content bbox — then setupViewPortForSVG /
+  // setupGraphViewbox write viewBox = svgBBox(content ∪ title) ± padding
+  // with NO translate, so the origin carries the content's raw coordinates.
+  // Chrome's text getBBox uses rounded integer font metrics for ascent and
+  // descent (the same quantization the raster titleHeight applies).
+  QRectF clientBox = clientViewBox;
+  if (metadata.hasVisibleTitle()) {
+    QFont titleFace(metadata.fontFamily);
+    titleFace.setPixelSize(qMax(1, qRound(metadata.titleFontSize)));
+    const qreal ascent = qRound(QFontMetricsF(titleFace).ascent());
+    const qreal descent = qRound(QFontMetricsF(titleFace).descent());
+    const qreal titleWidth = measureMermaidTitleWidth(metadata);
+    const qreal padding = metadata.titleBandPadding >= 0.0
+        ? metadata.titleBandPadding : metadata.diagramPadding;
+    const QRectF titleBox(
+        clientViewBox.center().x() - titleWidth / 2.0,
+        -metadata.titleTopMargin - ascent,
+        titleWidth, ascent + descent);
+    clientBox = clientBox.united(titleBox.adjusted(-padding, -padding,
+                                                   padding, padding));
+  }
+  return clientBox;
+}
+
+QRectF mermaidClientBox(const MermaidRenderEntry& entry) {
+  return mermaidClientBox(entry.scene, entry.metadata);
+}
+
 void finalizeReadyEntry(MermaidRenderEntry& entry,
                         MermaidRenderMetadata metadata) {
+  const QRectF clientBox = mermaidClientBox(entry.scene, metadata);
+  if (clientBox.isValid()) {
+    // Client-box families: ONE rounding of the FRACTIONAL total box
+    // (Chromium screenshots the replaced element at the nearest device
+    // pixel). The piecewise path below would qRound the content and qCeil
+    // the title band separately — a diagramPadding of 8.25 with a title
+    // rastered 71 + ceil(52.25) = 124 instead of round(119.5) = 120, with
+    // the title baseline pushed ~0.75px low.
+    metadata.contentSize = clientBox.size();
+    entry.naturalSize = QSize(qMax(1, qRound(clientBox.width())),
+                              qMax(1, qRound(clientBox.height())));
+    if (metadata.hasVisibleTitle()) {
+      QFont titleFace(metadata.fontFamily);
+      titleFace.setPixelSize(qMax(1, qRound(metadata.titleFontSize)));
+      const qreal ascent = QFontMetricsF(titleFace).ascent();
+      const qreal bandPadding = metadata.titleBandPadding >= 0.0
+          ? metadata.titleBandPadding : metadata.diagramPadding;
+      // Integer titleHeight for the paint-time title strip; the BASELINE
+      // position is independent of this ceil (bottom-anchored at
+      // -titleTopMargin).
+      metadata.titleHeight = qCeil(
+          metadata.titleTopMargin + qRound(ascent) + bandPadding);
+    }
+    entry.metadata = std::move(metadata);
+    return;
+  }
   metadata.contentSize = QSizeF(entry.naturalSize);
   entry.naturalSize = QSize(
       qCeil(metadata.contentSize.width() + 2.0 * metadata.diagramPadding),
       qCeil(metadata.contentSize.height() + 2.0 * metadata.diagramPadding));
   if (metadata.hasVisibleTitle()) {
-    // Mermaid places its title 25 px above the diagram and reserves about a
-    // 40 px strip in the resulting SVG viewBox. Grow for larger configured
-    // margins while retaining that 11.16 default geometry.
-    metadata.titleHeight = qCeil(qMax(
-        40.0, metadata.titleTopMargin +
-                  qMax(15.0, metadata.titleFontSize * 0.75)));
+    // Upstream (insertTitle + setupGraphViewbox, browser-verified against
+    // the pinned Noto face): the title text bbox sits titleTopMargin +
+    // round(font ascent) above the content box and the viewbox adds the
+    // family padding above the union — a 25+19+8 = 52px strip for the
+    // default state/flowchart geometry.
+    QFont titleFace(metadata.fontFamily);
+    titleFace.setPixelSize(qMax(1, qRound(metadata.titleFontSize)));
+    const qreal ascent = QFontMetricsF(titleFace).ascent();
+    const qreal bandPadding = metadata.titleBandPadding >= 0.0
+        ? metadata.titleBandPadding : metadata.diagramPadding;
+    metadata.titleHeight = qCeil(
+        metadata.titleTopMargin + qRound(ascent) + bandPadding);
     const qreal titleWidth = measureMermaidTitleWidth(metadata) + 16.0;
-    entry.naturalSize.setWidth(qCeil(qMax(
+    // The raster client box snaps to the NEAREST device pixel (Chromium
+    // element screenshots); ceil would inflate a 104.39px title to 105.
+    entry.naturalSize.setWidth(qRound(qMax(
         static_cast<qreal>(entry.naturalSize.width()), titleWidth)));
     entry.naturalSize.setHeight(qCeil(
         entry.naturalSize.height() + metadata.titleHeight));

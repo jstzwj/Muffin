@@ -6,6 +6,7 @@
 #include <QMap>
 
 #include <algorithm>
+#include <limits>
 
 namespace muffin::mermaid::state {
 namespace {
@@ -99,9 +100,6 @@ private:
         edge.label = item.value(QStringLiteral("description")).toString();
         edge.arrowTypeEnd = look_ == QLatin1String("neo")
             ? QStringLiteral("arrow_barb_neo") : QStringLiteral("arrow_barb");
-        if (relationIndex_ < data_.relations.size())
-          edge.linkStyles = data_.relations.at(relationIndex_).linkStyles;
-        ++relationIndex_;
         result_.edges.append(std::move(edge));
         ++graphItemCount_;
       }
@@ -183,10 +181,11 @@ private:
       if (node.label.isArray()) {
         const QJsonArray labels = node.label.toArray();
         node.label = labels.isEmpty() ? QJsonValue(QString{}) : labels.first();
+        // Upstream keeps NodeData.description as an ARRAY (empty when the
+        // description had a single row — the row IS the label).
         QJsonArray descriptions;
         for (qsizetype i = 1; i < labels.size(); ++i) descriptions.append(labels.at(i));
-        node.description = descriptions.isEmpty() ? QJsonValue::Null
-                                                   : QJsonValue(descriptions);
+        node.description = descriptions;
       }
       if (!parent.isEmpty() && parent.value(QStringLiteral("id")).toString() != QLatin1String("root"))
         node.parentId = parent.value(QStringLiteral("id")).toString();
@@ -230,11 +229,6 @@ private:
   QMap<QString, CachedNode> cache_;
   StateLayoutInput result_;
   int graphItemCount_ = 0;
-  // Index into data_.relations for linkStyle attachment. Aligns with
-  // data_.relations for flat diagrams (the common case); compound-state
-  // nesting is a known edge case for index-based linkStyle (same semantics as
-  // upstream). Bounds-checked so out-of-range edges simply get no linkStyle.
-  int relationIndex_ = 0;
 };
 
 QJsonArray strings(const QStringList& values) {
@@ -250,53 +244,150 @@ StateLayoutInput buildStateLayoutInput(const StateDiagramData& data, QString loo
 
 StateLayoutMeasurements measureStateLayoutInput(
     const StateLayoutInput& input, QString fontFamily, qreal fontSize,
-    bool handDrawn, quint32 handDrawnSeed, bool shapeHidden) {
+    bool handDrawn, quint32 handDrawnSeed, bool shapeHidden,
+    const QHash<QString, StateMeasureCss>* nodeCss,
+    const QHash<QString, StateMeasureCss>* edgeLabelCss) {
   StateLayoutMeasurements result;
-  flowchart::FlowTextOptions options;
-  options.fontFamily = std::move(fontFamily);
-  options.fontPixelSize = fontSize;
-  options.lineHeight = fontSize * 1.5;
-  options.horizontalPadding = 16.0;
-  options.verticalPadding = 16.0;
-  // State labels are foreignObject inline boxes. Use Blink's HarfBuzz /
-  // LayoutUnit contract before RoughJS and Dagre consume their dimensions.
-  options.chromiumInlineWidth = true;
+  auto optionsFor = [&](const QString& family, qreal size) {
+    flowchart::FlowTextOptions options;
+    options.fontFamily = family.isEmpty() ? fontFamily : family;
+    options.fontPixelSize = size > 0.0 ? size : fontSize;
+    options.lineHeight = options.fontPixelSize * 1.5;
+    options.horizontalPadding = 16.0;
+    options.verticalPadding = 16.0;
+    // State labels are foreignObject inline boxes. Use Blink's HarfBuzz /
+    // LayoutUnit contract before RoughJS and Dagre consume their dimensions.
+    options.chromiumInlineWidth = true;
+    return options;
+  };
+  const flowchart::FlowTextOptions defaultOptions = optionsFor(QString(), 0.0);
   for (const StateLayoutNodeInput& node : input.nodes) {
     if (node.isGroup) {
       if (node.shape != QLatin1String("noteGroup")) {
+        // Cluster titles measure with their cluster-label <p>'s computed
+        // font (themeCSS `.cluster-label {font-size:31px}` grows the box);
+        // display:none on the p collapses the title band to nothing.
+        const StateMeasureCss* clusterCss = nullptr;
+        if (nodeCss) {
+          const auto it = nodeCss->constFind(node.id);
+          if (it != nodeCss->constEnd() &&
+              (it->fontSize > 0.0 || !it->fontFamily.isEmpty() || it->labelHidden))
+            clusterCss = &it.value();
+        }
         result.clusterLabels.insert(
-            node.id, flowchart::measureLabel(node.label.toString(),
-                                              QStringLiteral("markdown"), options));
+            node.id, clusterCss && clusterCss->labelHidden
+                ? QSizeF(0.0, 0.0)
+                : flowchart::measureLabel(node.label.toString(),
+                                          QStringLiteral("markdown"),
+                                          clusterCss
+                                              ? optionsFor(clusterCss->fontFamily,
+                                                           clusterCss->fontSize)
+                                              : defaultOptions));
       }
       continue;
     }
+    const StateMeasureCss* css = nullptr;
+    if (nodeCss) {
+      const auto it = nodeCss->constFind(node.id);
+      if (it != nodeCss->constEnd() &&
+          (it->fontSize > 0.0 || !it->fontFamily.isEmpty() || it->labelHidden ||
+           it->descFontSize > 0.0 || !it->descFontFamily.isEmpty() ||
+           it->descHidden))
+        css = &it.value();
+    }
+    const flowchart::FlowTextOptions options =
+        css ? optionsFor(css->fontFamily, css->fontSize) : defaultOptions;
     const QString shape = node.shape.isEmpty() ? QStringLiteral("rect") : node.shape;
+    // `.node rect { display:none }` collapses the drawState temp group for
+    // rect-bearing shapes (rect/rectWithTitle measure 0x0). Note nodes keep
+    // their size: the note shape measures label+padding via labelHelper, not
+    // the rect-only temp group (browser-verified: the hidden case's note
+    // still reserves its full box).
+    const bool hidden = shape != QLatin1String("note") &&
+        (shapeHidden || (nodeCss && nodeCss->value(node.id).shapeHidden));
     QSizeF size;
     QSizeF paintedSize;
     if (shape == QLatin1String("stateStart") || shape == QLatin1String("stateEnd"))
       size = paintedSize = QSizeF(14.0, 14.0);
     else if (shape == QLatin1String("fork") || shape == QLatin1String("join")) {
-      size = QSizeF(70.0, 14.0);
+      // The dagre box carries 2px of padding on every side of the painted
+      // 70x10 bar (browser-verified: single-column fork layouts center at
+      // margin + 37, putting the painted left edge at 10 — the viewBox
+      // origin's +2 in the pseudostates fixture).
+      size = QSizeF(74.0, 14.0);
       paintedSize = QSizeF(70.0, 10.0);
     } else if (shape == QLatin1String("choice"))
       size = paintedSize = QSizeF(28.0, 28.0);
-    else {
+    if (hidden && shape != QLatin1String("note") &&
+        shape != QLatin1String("rect") && shape != QLatin1String("rectWithTitle")) {
+      // display:none on a pseudostate's circle/paths also collapses the
+      // drawState temp group to 0x0 — dagre gets a point node while the
+      // label (if any) keeps painting at the centre.
+      paintedSize = size;
+      size = QSizeF(0.0, 0.0);
+    } else if (shape != QLatin1String("stateStart") &&
+               shape != QLatin1String("stateEnd") &&
+               shape != QLatin1String("fork") &&
+               shape != QLatin1String("join") &&
+               shape != QLatin1String("choice")) {
       QStringList lines;
       if (node.label.isString()) lines.append(node.label.toString());
+      QStringList descLines;
       if (node.description.isArray())
-        for (const QJsonValue& value : node.description.toArray()) lines.append(value.toString());
-      size = flowchart::measureLabel(lines.join(QLatin1Char('\n')), QStringLiteral("markdown"), options);
+        for (const QJsonValue& value : node.description.toArray())
+          descLines.append(value.toString());
+      lines += descLines;
+      // display:none on the label <p> collapses the fo content: the label
+      // box measures 0x0 (an EMPTY measureLabel still carries one line box —
+      // height 1.5em), and the node keeps only its shape padding (a plain
+      // rect becomes 16x16 — browser-verified), while the text (if any)
+      // still paints at the centre.
+      if (css && css->labelHidden) {
+        size = QSizeF(0.0, 0.0);
+      } else if (shape == QLatin1String("rectWithTitle")) {
+        // rectWithTitle measures its TITLE and its DESCRIPTION ROWS
+        // separately (two foreignObjects, each with its own <p>): the rows
+        // use the desc p's computed font — width = max(title, rows), height
+        // = title + rows (identical to the joined measure when the fonts
+        // match). A display:none desc p (or no description statements at
+        // all) collapses the second fo to 0x0, and a 0x0 foreignObject is
+        // EXCLUDED from label.getBBox(): the box is the title alone and the
+        // 9px title-rows gap vanishes (vertical add-on 17 -> 8 below).
+        const bool descCollapsed =
+            descLines.isEmpty() || (css && css->descHidden);
+        const flowchart::FlowTextOptions descOptions =
+            css && (css->descFontSize > 0.0 || !css->descFontFamily.isEmpty())
+            ? optionsFor(css->descFontFamily, css->descFontSize) : options;
+        const QSizeF title = flowchart::measureLabel(
+            node.label.toString(), QStringLiteral("markdown"), options);
+        if (descCollapsed) {
+          size = title;
+        } else {
+          const QSizeF rows = flowchart::measureLabel(
+              descLines.join(QLatin1Char('\n')), QStringLiteral("markdown"),
+              descOptions);
+          size = QSizeF(std::max(title.width(), rows.width()),
+                        title.height() + rows.height());
+        }
+      } else {
+        size = flowchart::measureLabel(lines.join(QLatin1Char('\n')), QStringLiteral("markdown"), options);
+      }
       // drawState measures a temporary group that contains only the shape
       // (labels are inserted later at the dagre node centre), so the dagre
       // node size = rect box = label + 2*padding. `.node rect { display:none }`
       // removes that box: dagre gets a 0x0 node (rank centres collapse to the
       // bare ranksep) while the label still paints at the centre (probed vs
       // 11.16.0: nodes 24 tall, centre gap 50, painted gap 26).
-      if (shapeHidden) {
+      if (hidden) {
         paintedSize = size;
         size = QSizeF(0.0, 0.0);
       } else {
-        if (shape == QLatin1String("rectWithTitle")) size += QSizeF(8.0, 17.0);
+        // rectWithTitle vertical add-on: rows render -> 9px gap after the
+        // title (halfPadding + 5 upstream) + 8px padding; rows collapsed ->
+        // padding only (browser: 65 -> 32 tall with the same title).
+        if (shape == QLatin1String("rectWithTitle"))
+          size += QSizeF(8.0, descLines.isEmpty() || (css && css->descHidden)
+                                  ? 8.0 : 17.0);
         else if (shape == QLatin1String("note")) size += QSizeF(30.0, 30.0);
         else size += QSizeF(16.0, 16.0);
         paintedSize = size;
@@ -320,8 +411,19 @@ StateLayoutMeasurements measureStateLayoutInput(
     flowchart::FlowEdge projected;
     projected.text = edge.label.toString();
     projected.labelType = QStringLiteral("markdown");
-    result.edgeLabels.insert(edge.id, flowchart::measureLabel(
-        projected.text, QStringLiteral("markdown"), options));
+    const StateMeasureCss* css = nullptr;
+    if (edgeLabelCss) {
+      const auto it = edgeLabelCss->constFind(edge.id);
+      if (it != edgeLabelCss->constEnd()) css = &it.value();
+    }
+    // display:none on the label <p> collapses the whole label box: the edge
+    // reserves NO space (paths and viewBox shrink — the browser drops the fo
+    // content from getBBox), not just the paint.
+    result.edgeLabels.insert(edge.id, css && css->labelHidden
+        ? QSizeF(0.0, 0.0)
+        : flowchart::measureLabel(
+              projected.text, QStringLiteral("markdown"),
+              css ? optionsFor(css->fontFamily, css->fontSize) : defaultOptions));
   }
   return result;
 }
@@ -360,13 +462,29 @@ StatePlacementResult layoutStateDiagramDagre(
     projectedEdge.end = edge.end;
     projectedEdge.text = edge.label.toString();
     projectedEdge.labelType = QStringLiteral("markdown");
+    // arrow_barb_neo (the neo look) shortens the rendered path by 5.5px so
+    // the -margin marker keeps its stroke gap (upstream markerOffsets).
+    projectedEdge.type = edge.arrowTypeEnd;
     projected.edges.append(std::move(projectedEdge));
   }
   flowchart::FlowLayoutOptions options;
   options.nodeSpacing = nodeSpacing;
   options.rankSpacing = rankSpacing;
   options.nodePadding = 8.0;
+  // The shared dagre-wrapper render() hardcodes marginx/marginy = 8 for
+  // EVERY family (dagre-VKFMJZFB buildGraph) — translateGraph then places
+  // the content bbox at (8, 8), which is what the un-translated
+  // setupViewPortForSVG viewBox origin observes (node left edges sit at
+  // exactly 8, browser-verified). The absolute coordinates must survive
+  // extraction (no first-vertex re-centering) so the scene bounds carry
+  // the browser's raw origin.
+  options.diagramPadding = 8.0;
+  options.preserveDagreCoordinates = true;
   options.measuredEdgeLabels = measurements.edgeLabels;
+  // Composite width mirrors roundedWithTitle's render-time max
+  // (`node.width <= bbox.width + node.padding ? bbox.width + padding : ...`)
+  // — the cluster title (css font included) can outgrow the dagre box.
+  options.measuredClusterLabels = measurements.clusterLabels;
   if (handDrawn) {
     options.preserveRecursiveSvgFrame = true;
     options.clusterSizeTransform = [&, handDrawnSeed](
@@ -432,6 +550,31 @@ StatePlacementResult layoutStateDiagramDagre(
           for (QPointF& point : segment) reflect(point);
         if (edge.labelPosition) reflect(*edge.labelPosition);
         edge.path.clear();
+      }
+      // Mirroring across the axis moves the ABSOLUTE origin (the un-reflected
+      // dagre output had translateGraph place its bbox at marginx). Re-anchor
+      // the reflected content so the leftmost node/cluster edge sits at the
+      // wrapper's hardcoded margin again — the browser's dagre produces the
+      // note side natively, so its origin never moves.
+      qreal reflectedMin = std::numeric_limits<qreal>::max();
+      for (const StatePlacementNode& node : result.nodes)
+        reflectedMin = std::min(reflectedMin, node.center.x() - node.size.width() / 2.0);
+      for (const StatePlacementCluster& cluster : result.clusters)
+        reflectedMin = std::min(reflectedMin, cluster.center.x() - cluster.size.width() / 2.0);
+      if (reflectedMin != std::numeric_limits<qreal>::max()) {
+        const qreal shift = 8.0 - reflectedMin;
+        if (!qFuzzyIsNull(shift)) {
+          for (StatePlacementNode& node : result.nodes) node.center.setX(node.center.x() + shift);
+          for (StatePlacementCluster& cluster : result.clusters)
+            cluster.center.setX(cluster.center.x() + shift);
+          for (StatePlacementEdge& edge : result.edges) {
+            for (QPointF& point : edge.points) point.setX(point.x() + shift);
+            for (QVector<QPointF>& segment : edge.segments)
+              for (QPointF& point : segment) point.setX(point.x() + shift);
+            if (edge.labelPosition) edge.labelPosition->setX(edge.labelPosition->x() + shift);
+            edge.path.clear();
+          }
+        }
       }
       break;
     }

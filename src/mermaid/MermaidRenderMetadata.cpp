@@ -1,10 +1,13 @@
 #include "mermaid/MermaidRenderMetadata.h"
 
+#include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFont>
 #include <QFontMetricsF>
 #include <QPainter>
+
+#include <cmath>
 
 namespace muffin::mermaid {
 namespace {
@@ -33,19 +36,35 @@ QString MermaidRenderMetadata::accessibleName() const {
 
 qreal measureMermaidTitleWidth(const MermaidRenderMetadata& metadata) {
   if (!metadata.hasVisibleTitle()) return 0.0;
-  return QFontMetricsF(titleFont(metadata)).horizontalAdvance(
-      singleLineTitle(metadata.title));
+  const QString text = singleLineTitle(metadata.title);
+  // getComputedTextLength parity: the browser's title bbox width is the
+  // LayoutUnit-quantized design advance (ceil to 1/64), not QFontMetricsF's
+  // hinted advance (which drifts ~1.6px for an 18px title).
+  flowchart::FlowLabelDocument document;
+  document.text = text;
+  const qreal advance = flowchart::measureOpenTypeDesignAdvance(
+                            document, metadata.fontFamily,
+                            metadata.titleFontSize)
+                            .value_or(QFontMetricsF(titleFont(metadata))
+                                          .horizontalAdvance(text));
+  return std::ceil(advance * 64.0 - 1e-9) / 64.0;
 }
 
 void paintMermaidTitle(const MermaidRenderMetadata& metadata,
                        QPainter& painter, const QRectF& titleRect) {
   if (!metadata.hasVisibleTitle() || titleRect.isEmpty()) return;
   painter.save();
-  painter.setFont(titleFont(metadata));
+  const QFont font = titleFont(metadata);
+  painter.setFont(font);
   painter.setPen(color::toQColor(metadata.titleColor));
-  painter.drawText(titleRect, Qt::AlignHCenter | Qt::AlignVCenter |
-                                  Qt::TextSingleLine,
-                   singleLineTitle(metadata.title));
+  // Upstream insertTitle places the title BASELINE titleTopMargin above the
+  // content bbox (text y = -titleTopMargin, text-anchor:middle on the
+  // content bbox center) — not vertically centered in the reserved strip.
+  const QString text = singleLineTitle(metadata.title);
+  const qreal baseline = titleRect.bottom() - metadata.titleTopMargin;
+  const qreal advance = measureMermaidTitleWidth(metadata);
+  painter.drawText(QPointF(titleRect.center().x() - advance / 2.0, baseline),
+                   text);
   painter.restore();
 }
 

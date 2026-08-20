@@ -88,7 +88,10 @@ private:
       StateTokenCursor line = cursor_.consumeLine();
       if (!line.atEnd()) {
         const QJsonValue statement = parseStatement(line, depth);
-        if (!statement.isUndefined()) document.append(statement);
+        if (statement.isArray())
+          for (const QJsonValue& item : statement.toArray()) document.append(item);
+        else if (!statement.isUndefined())
+          document.append(statement);
       }
       cursor_.skipSeparators();
     }
@@ -110,7 +113,6 @@ private:
       case StateTokenKind::ClassDef: return parseClassDef(line);
       case StateTokenKind::Class: return parseApplyClass(line);
       case StateTokenKind::Style: return parseStyle(line);
-      case StateTokenKind::LinkStyle: return parseLinkStyle(line);
       case StateTokenKind::Click: return parseClick(line);
       case StateTokenKind::HideEmpty:
       case StateTokenKind::Scale: return line.raw(source_);
@@ -200,28 +202,43 @@ private:
     return result;
   }
 
+  // The 11.16 grammar accepts several statements on one line (newlines are
+  // plain whitespace to it), so unknown keywords such as
+  // `linkStyle 0 stroke:red` lex as ids and become plain states — "linkStyle",
+  // "0", and "stroke" carrying the raw remainder as its description. Bare ids
+  // wrap into {stmt:state,…} objects (jison cases 44/45), unlike the
+  // `state X` form which yields the bare string (browser-verified).
   QJsonValue parseIdStatement(StateTokenCursor line) {
-    QJsonObject left = parseEndpoint(line);
-    if (line.match(StateTokenKind::Arrow)) {
-      if (line.atEnd()) throw unexpected(line, QStringLiteral("statement"));
-      QJsonObject right = parseEndpoint(line);
-      QJsonObject relation{{QStringLiteral("stmt"), QStringLiteral("relation")},
-                           {QStringLiteral("state1"), left},
-                           {QStringLiteral("state2"), right}};
-      if (line.match(StateTokenKind::Colon)) {
-        relation.insert(QStringLiteral("description"), line.raw(source_).trimmed());
-        while (!line.atEnd()) line.consume();
+    QJsonArray statements;
+    while (!line.atEnd()) {
+      QJsonObject left = parseEndpoint(line);
+      if (line.match(StateTokenKind::Arrow)) {
+        if (line.atEnd()) throw unexpected(line, QStringLiteral("statement"));
+        QJsonObject right = parseEndpoint(line);
+        QJsonObject relation{{QStringLiteral("stmt"), QStringLiteral("relation")},
+                             {QStringLiteral("state1"), left},
+                             {QStringLiteral("state2"), right}};
+        if (line.match(StateTokenKind::Colon)) {
+          relation.insert(QStringLiteral("description"), line.raw(source_).trimmed());
+          while (!line.atEnd()) line.consume();
+        }
+        if (!line.atEnd()) throw unexpected(line, QStringLiteral("statement"));
+        statements.append(relation);
+        return statements.size() == 1 ? statements.first() : QJsonValue(statements);
       }
-      if (!line.atEnd()) throw unexpected(line, QStringLiteral("statement"));
-      return relation;
+      if (line.match(StateTokenKind::Colon)) {
+        left.insert(QStringLiteral("description"), line.raw(source_).trimmed());
+        while (!line.atEnd()) line.consume();
+        statements.append(left);
+        return statements.size() == 1 ? statements.first() : QJsonValue(statements);
+      }
+      if (line.atEnd()) {
+        statements.append(left);
+        return statements.size() == 1 ? statements.first() : QJsonValue(statements);
+      }
+      statements.append(left);
     }
-    if (line.match(StateTokenKind::Colon)) {
-      QJsonObject result = left;
-      result.insert(QStringLiteral("description"), line.raw(source_).trimmed());
-      return result;
-    }
-    if (!line.atEnd()) throw unexpected(line, QStringLiteral("statement"));
-    return left.value(QStringLiteral("id"));
+    return statements.size() == 1 ? statements.first() : QJsonValue(statements);
   }
 
   QJsonObject parseEndpoint(StateTokenCursor& line) {
@@ -309,17 +326,6 @@ private:
     return QJsonObject{{QStringLiteral("stmt"), QStringLiteral("style")},
                        {QStringLiteral("id"), id},
                        {QStringLiteral("styleClass"), line.raw(source_).trimmed()}};
-  }
-  // linkStyle <index> <decls> — styles transitions by 0-based source-order index.
-  QJsonValue parseLinkStyle(StateTokenCursor line) {
-    line.consume();
-    if (line.atEnd()) throw unexpected(line, QStringLiteral("linkStyleStatement"));
-    bool ok = false;
-    const int index = line.consume().text.trimmed().toInt(&ok);
-    if (!ok || index < 0) throw unexpected(line, QStringLiteral("linkStyleStatement"));
-    return QJsonObject{{QStringLiteral("stmt"), QStringLiteral("linkStyle")},
-                       {QStringLiteral("index"), index},
-                       {QStringLiteral("styles"), line.raw(source_).trimmed()}};
   }
   QJsonValue parseClick(StateTokenCursor line) {
     line.consume();
@@ -459,14 +465,6 @@ private:
         data_.links.append({item.value(QStringLiteral("id")),
                             item.value(QStringLiteral("url")).toString(),
                             item.value(QStringLiteral("tooltip")).toString()});
-      } else if (kind == QLatin1String("linkStyle")) {
-        const int index = item.value(QStringLiteral("index")).toInt();
-        if (index >= 0 && index < data_.relations.size()) {
-          QStringList styles;
-          for (const QString& s : item.value(QStringLiteral("styles")).toString().split(QLatin1Char(','), Qt::SkipEmptyParts))
-            styles.append(s.trimmed());
-          data_.relations[index].linkStyles = styles;
-        }
       }
     }
   }

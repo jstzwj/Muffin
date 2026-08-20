@@ -113,6 +113,11 @@ struct FlowLayoutOptions {
   // its first semantic node, while Swimlane's explicit Dagre fallback keeps
   // the coordinates emitted by Dagre and lets setupGraphViewbox add padding.
   bool preserveDagreCoordinates = false;
+  // Margin the shared dagre-wrapper render() applies via translateGraph.
+  // The wrapper hardcodes 8 for the families that render through it
+  // (flowchart/swimlane); other consumers of this pipeline default to
+  // diagramPadding to preserve their own fixture-locked anchoring.
+  qreal dagreWrapperMargin = -1.0;
 };
 
 struct FlowTextOptions {

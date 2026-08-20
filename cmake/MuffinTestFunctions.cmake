@@ -14,6 +14,49 @@
 # inferred from LINK: it depends on whether the test instantiates a QApplication, not on the
 # library it links (six blocks/controller tests link MuffinUi but never create a GUI, so they
 # correctly omit the lock and stay parallel).
+#
+# Every registration also appends to the build-freshness manifest — the
+# AUTHORITATIVE target→sources+libs map MermaidBuildFreshnessTest consumes.
+# Deriving a test's source by stripping the "Muffin" prefix from its exe name
+# silently missed real tests whose name deliberately differs from the file
+# (MuffinMermaidC4EdgeParityTest compiles MermaidC4GeometryOracleTest.cpp).
+set(MUFFIN_FRESHNESS_MANIFEST "${CMAKE_BINARY_DIR}/mermaid-build-freshness-manifest.txt")
+file(WRITE "${MUFFIN_FRESHNESS_MANIFEST}"
+     "# Generated at configure time — consumed by MuffinBuildFreshnessTest\n")
+
+# First-party link CLOSURE for the manifest: a test linking MuffinUi
+# transitively links MuffinCore (PUBLIC). Recording only the direct LINK
+# would let a Ui-listed test skip relinking after a Core-only rebuild
+# without the freshness gate noticing — exactly the MSB8028 incident class.
+function(muffin_freshness_link_closure out_var)
+  set(accumulator "")
+  set(expanded "")
+  set(queue ${ARGN})
+  while(NOT queue STREQUAL "")
+    list(GET queue 0 item)
+    list(REMOVE_AT queue 0)
+    if(NOT item MATCHES "^Muffin")
+      continue()
+    endif()
+    if(NOT item IN_LIST accumulator)
+      list(APPEND accumulator "${item}")
+    endif()
+    if(item IN_LIST expanded OR NOT TARGET ${item})
+      continue()
+    endif()
+    list(APPEND expanded "${item}")
+    get_target_property(iface_links ${item} INTERFACE_LINK_LIBRARIES)
+    get_target_property(direct_links ${item} LINK_LIBRARIES)
+    foreach(dep IN LISTS iface_links direct_links)
+      if(dep MATCHES "^Muffin" AND NOT dep IN_LIST accumulator)
+        list(APPEND queue "${dep}")
+      endif()
+    endforeach()
+  endwhile()
+  list(REMOVE_DUPLICATES accumulator)
+  set(${out_var} "${accumulator}" PARENT_SCOPE)
+endfunction()
+
 function(muffin_add_test)
   set(options RESOURCE_LOCK)
   set(oneValueArgs NAME SOURCE LINK FIXTURE)
@@ -24,6 +67,10 @@ function(muffin_add_test)
       ${MUFFIN_TEST_SOURCE}
       ${MUFFIN_TEST_EXTRA_SOURCES})
   target_link_libraries(${MUFFIN_TEST_NAME} PRIVATE ${MUFFIN_TEST_LINK} ${MUFFIN_TEST_EXTRA_LINK})
+  muffin_freshness_link_closure(freshness_links
+      ${MUFFIN_TEST_LINK} ${MUFFIN_TEST_EXTRA_LINK})
+  file(APPEND "${MUFFIN_FRESHNESS_MANIFEST}"
+       "TEST\t${MUFFIN_TEST_NAME}\t${MUFFIN_TEST_SOURCE};${MUFFIN_TEST_EXTRA_SOURCES}\t${freshness_links}\n")
 
   if(MUFFIN_TEST_FIXTURE)
     add_test(NAME ${MUFFIN_TEST_NAME}

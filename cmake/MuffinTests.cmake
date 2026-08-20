@@ -23,7 +23,7 @@ muffin_add_test(NAME MuffinMermaidSecurityTest SOURCE tests/mermaid/MermaidSecur
 muffin_add_test(NAME MuffinMermaidFuzzTest SOURCE tests/mermaid/MermaidFuzzTest.cpp LINK MuffinCore)
 set_tests_properties(MuffinMermaidFuzzTest PROPERTIES RUN_SERIAL TRUE)
 muffin_add_test(NAME MuffinMermaidRenderCacheTest SOURCE tests/mermaid/MermaidRenderCacheTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
-muffin_add_test(NAME MuffinMermaidSvgExportTest SOURCE tests/mermaid/MermaidSvgExportTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui Qt6::Svg RESOURCE_LOCK)
+muffin_add_test(NAME MuffinMermaidSvgExportTest SOURCE tests/mermaid/MermaidSvgExportTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui Qt6::Svg FIXTURE tests/fixtures/mermaid/mermaid-theme-css.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidConfigEffectMatrixTest SOURCE tests/mermaid/MermaidConfigEffectMatrixTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/config-effect-matrix.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidRemainingParityTest SOURCE tests/mermaid/MermaidRemainingParityTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/remaining-parity.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidErrorDiagramTest SOURCE tests/mermaid/MermaidErrorDiagramTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/error-diagram.json RESOURCE_LOCK)
@@ -57,6 +57,16 @@ muffin_add_test(NAME MuffinMermaidStateUpstreamContractTest SOURCE tests/mermaid
 muffin_add_test(NAME MuffinMermaidStateDifferentialFuzzTest SOURCE tests/mermaid/MermaidStateDifferentialFuzzTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/state-differential-fuzz.json)
 muffin_add_test(NAME MuffinMermaidStateSceneTest SOURCE tests/mermaid/MermaidStateSceneTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/state-db.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidStateLayoutOracleTest SOURCE tests/mermaid/MermaidStateLayoutOracleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/state-layout.json RESOURCE_LOCK)
+# Windows-only: the gate checks MSVC incremental-build staleness via
+# MuffinCore.lib/MuffinUi.lib and *.exe artifacts that carry platform-specific
+# names (macOS/Linux produce .a/.so and extensionless test binaries), so
+# registering it there would fail on artifacts it can never find.
+if(WIN32)
+  muffin_add_test(NAME MuffinBuildFreshnessTest SOURCE tests/mermaid/MermaidBuildFreshnessTest.cpp LINK Qt6::Core)
+  target_compile_definitions(MuffinBuildFreshnessTest PRIVATE
+      MUFFIN_SOURCE_ROOT="${CMAKE_SOURCE_DIR}"
+      MUFFIN_BUILD_MANIFEST="${MUFFIN_FRESHNESS_MANIFEST}")
+endif()
 muffin_add_test(NAME MuffinMermaidStateLinkStyleTest SOURCE tests/mermaid/MermaidStateLinkStyleTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidStateSvgStructuralTest SOURCE tests/mermaid/MermaidStateSvgStructuralTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/state-layout.json RESOURCE_LOCK)
 muffin_add_test(NAME MuffinMermaidStatePixelTest SOURCE tests/mermaid/MermaidStatePixelTest.cpp LINK MuffinCore EXTRA_LINK Qt6::Gui FIXTURE tests/fixtures/mermaid/state-pixel/manifest.json RESOURCE_LOCK)
@@ -331,3 +341,27 @@ muffin_add_test(NAME MuffinTranslationResourceTest SOURCE tests/app/TranslationR
 
 # --- spell check (needs the bundled dictionaries, hence dicts.qrc as an extra source) ---
 muffin_add_test(NAME MuffinSpellCheckerTest SOURCE tests/spellcheck/SpellCheckerTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_DICTS_QRC} RESOURCE_LOCK)
+
+# Close the build-freshness manifest: the two first-party libraries and the
+# app contribute their exact compiled source lists (relative paths resolve
+# against the source root; generated/binary-dir entries are skipped by the
+# consumer). This is what lets the mtime gate cover src/theme and every other
+# tree MuffinCore compiles — not just src/mermaid.
+function(muffin_freshness_append_target_lines kind target)
+  get_target_property(freshness_sources ${target} SOURCES)
+  if(NOT freshness_sources)
+    return()
+  endif()
+  set(freshness_paths "")
+  foreach(src IN LISTS freshness_sources)
+    if(NOT IS_ABSOLUTE "${src}")
+      set(src "${CMAKE_CURRENT_SOURCE_DIR}/${src}")
+    endif()
+    list(APPEND freshness_paths "${src}")
+  endforeach()
+  string(JOIN ";" joined ${freshness_paths})
+  file(APPEND "${MUFFIN_FRESHNESS_MANIFEST}" "${kind}\t${target}\t${joined}\n")
+endfunction()
+muffin_freshness_append_target_lines(LIB MuffinCore)
+muffin_freshness_append_target_lines(LIB MuffinUi)
+muffin_freshness_append_target_lines(APP Muffin)

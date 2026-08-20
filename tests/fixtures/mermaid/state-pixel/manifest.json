@@ -68,7 +68,77 @@
       "width": 288,
       "height": 210,
       "sha256": "3fbe77cf8e209db99535ad720c59c4e12137bec7347667ed0f5caf36f3128b49"
+    },
+    {
+      "id": "neo-look",
+      "dpr": 1,
+      "theme": "default",
+      "look": "neo",
+      "source": "%%{init: {\"look\":\"neo\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nstate Running {\n  Idle2 --> Ready\n}\nActive --> Running\nRunning --> [*]",
+      "file": "neo-look.png",
+      "cssWidth": 147.953125,
+      "cssHeight": 578,
+      "viewBox": "0 0 147.953125 578",
+      "width": 148,
+      "height": 578,
+      "sha256": "7d8e341a2ed3b115df34de21366fc4e112f5caef9df318c0c938ba79e8bbd9ed"
+    },
+    {
+      "id": "neo-pseudostates",
+      "dpr": 1,
+      "theme": "default",
+      "look": "neo",
+      "source": "%%{init: {\"look\":\"neo\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\nstate fork_state <<fork>>\nstate join_state <<join>>\nstate choice_state <<choice>>\nfork_state --> A\nA --> choice_state\nchoice_state --> B\nB --> join_state\njoin_state --> [*]",
+      "file": "neo-pseudostates.png",
+      "cssWidth": 86,
+      "cssHeight": 414,
+      "viewBox": "2 2 86 414",
+      "width": 86,
+      "height": 414,
+      "sha256": "4aa92f6c8413f401059eeb8c3ebe1e63c9b8c5c046a027730d96d17fb12521fd"
+    },
+    {
+      "id": "titled",
+      "dpr": 1,
+      "theme": "default",
+      "title": true,
+      "source": "---\ntitle: Some Title\n---\nstateDiagram-v2\nA --> B",
+      "file": "titled.png",
+      "cssWidth": 104.390625,
+      "cssHeight": 198,
+      "viewBox": "-30.9921875 -52 104.390625 198",
+      "width": 104,
+      "height": 198,
+      "sha256": "9be5757e71c92e1a86a122ab0398fb3107f00aef4b8d3c94418ba9370c11d831"
+    },
+    {
+      "id": "redux-dark-neo",
+      "dpr": 1,
+      "theme": "redux-dark",
+      "look": "neo",
+      "source": "%%{init: {\"theme\":\"redux-dark\",\"look\":\"neo\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]",
+      "file": "redux-dark-neo.png",
+      "cssWidth": 71.34375,
+      "cssHeight": 289,
+      "viewBox": "0 0 71.34375 289",
+      "width": 71,
+      "height": 289,
+      "sha256": "2df506ad1a67a383b122041dbc336b18d5ac6c77cdea5c133334ffe8c41a8407"
+    },
+    {
+      "id": "neo-shadow-off",
+      "dpr": 1,
+      "theme": "default",
+      "look": "neo",
+      "source": "%%{init: {\"look\":\"neo\",\"handDrawnSeed\":42,\"themeCSS\":\".node rect { visibility: hidden; }\"}}%%\nstateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]",
+      "file": "neo-shadow-off.png",
+      "cssWidth": 76.96875,
+      "cssHeight": 298,
+      "viewBox": "0 0 76.96875 298",
+      "width": 77,
+      "height": 298,
+      "sha256": "28388c79e3a50844e3c038526aa2fa19736b74a368f9147393c77ac9539d6e8e"
     }
   ],
-  "fixtureSha256": "3edaf534fa51b0963998342a62d365997600dc06ce243c4c7370f3a854ae3e18"
+  "fixtureSha256": "02a803180b4aae64851813603454d624ef2ce0353b37cfb95ee8aa32c35e21ae"
 }

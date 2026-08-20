@@ -487,21 +487,42 @@ void compareState(const QJsonObject& fixture) {
   compareRoundedClient(fixture, entry);
   require(!scene->nodes.isEmpty(), id + QStringLiteral(": missing state nodes"));
   const QJsonObject matches = fixture.value(QStringLiteral("matches")).toObject();
-  const QJsonObject rect = matches.value(QStringLiteral(".node rect"))
-                               .toArray().first().toObject();
-  sameColor(scene->nodes.first().fill, computed(rect, "fill"),
-            id + QStringLiteral("/node/fill"));
-  sameColor(scene->nodes.first().stroke, computed(rect, "stroke"),
-            id + QStringLiteral("/node/stroke"));
-  near(scene->nodes.first().strokeWidth,
-       computed(rect, "strokeWidth").chopped(2).toDouble(),
-       id + QStringLiteral("/node/strokeWidth"), 0.001);
-  const QJsonObject label = matches.value(QStringLiteral(".nodeLabel"))
-                                .toArray().first().toObject();
-  sameColor(scene->nodes.first().textColor, computed(label, "color"),
-            id + QStringLiteral("/label/color"));
-  near(scene->style.fontSize, computed(label, "fontSize").chopped(2).toDouble(),
-       id + QStringLiteral("/label/fontSize"), 0.001);
+  // Per-node comparison in DOM order: `.node .label-container` picks the
+  // shape rects only (`.node rect` also matches the 0×0 svg-background rect
+  // each html label carries — 2 entries per node). The scene's per-element
+  // themeCSS slots (shapeCss/labelCss) carry the computed values; empty
+  // slots keep the resolved-theme defaults.
+  const QJsonArray rects =
+      matches.value(QStringLiteral(".node .label-container")).toArray();
+  require(rects.size() == static_cast<int>(scene->nodes.size()),
+          id + QStringLiteral("/node/count"));
+  for (int index = 0; index < rects.size(); ++index) {
+    const state::StateSceneNode& node = scene->nodes.at(index);
+    const QJsonObject rect = rects.at(index).toObject();
+    sameColor(node.shapeCss.fill.isEmpty() ? node.fill : node.shapeCss.fill,
+              computed(rect, "fill"), id + QStringLiteral("/node%1/fill").arg(index));
+    sameColor(node.shapeCss.stroke.isEmpty() ? node.stroke : node.shapeCss.stroke,
+              computed(rect, "stroke"),
+              id + QStringLiteral("/node%1/stroke").arg(index));
+    const qreal strokeWidth = node.shapeCss.strokeWidthPx > 0.0
+        ? node.shapeCss.strokeWidthPx : node.strokeWidth;
+    near(strokeWidth, computed(rect, "strokeWidth").chopped(2).toDouble(),
+         id + QStringLiteral("/node%1/strokeWidth").arg(index), 0.001);
+  }
+  const QJsonArray labels = matches.value(QStringLiteral(".nodeLabel")).toArray();
+  require(labels.size() == static_cast<int>(scene->nodes.size()),
+          id + QStringLiteral("/label/count"));
+  for (int index = 0; index < labels.size(); ++index) {
+    const state::StateSceneNode& node = scene->nodes.at(index);
+    const QJsonObject label = labels.at(index).toObject();
+    sameColor(node.labelCss.color.isEmpty() ? node.textColor : node.labelCss.color,
+              computed(label, "color"),
+              id + QStringLiteral("/label%1/color").arg(index));
+    const qreal fontSize = node.labelCss.fontSize > 0.0
+        ? node.labelCss.fontSize : scene->style.fontSize;
+    near(fontSize, computed(label, "fontSize").chopped(2).toDouble(),
+         id + QStringLiteral("/label%1/fontSize").arg(index), 0.001);
+  }
 }
 
 QString mindmapSemanticId(const QString& owner) {

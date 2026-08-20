@@ -91,12 +91,20 @@ int main(int argc, char** argv) {
     require(e.status == kReady, QStringLiteral("valid flowchart should be Ready (got %1)").arg((int)e.status));
     require(e.scene != nullptr, QStringLiteral("Ready entry must carry a scene"));
     require(e.naturalSize.width() > 0 && e.naturalSize.height() > 0, QStringLiteral("natural size must be positive"));
+    // Client-box contract: contentSize IS the fractional client box (bounds
+    // ± the configured viewport padding) and the raster is its NEAREST-pixel
+    // rounding — Chromium's replaced-element screenshot, replacing the old
+    // piecewise qCeil(contentSize + 2×padding).
+    const QRectF clientBox = e.scene->svgClientViewBox();
     require(e.metadata.title.isEmpty() && e.metadata.titleHeight == 0.0 &&
                 e.metadata.diagramPadding == 8.0 &&
-                e.naturalSize.width() ==
-                    qCeil(e.metadata.contentSize.width() + 16.0) &&
-                e.naturalSize.height() ==
-                    qCeil(e.metadata.contentSize.height() + 16.0),
+                clientBox.isValid() &&
+                std::abs(clientBox.width() -
+                         e.metadata.contentSize.width()) < 0.01 &&
+                std::abs(clientBox.height() -
+                         e.metadata.contentSize.height()) < 0.01 &&
+                e.naturalSize.width() == qRound(clientBox.width()) &&
+                e.naturalSize.height() == qRound(clientBox.height()),
             QStringLiteral("untitled flowcharts must retain configured viewport padding"));
     // Second getSync hits the cache (same entry, no re-render).
     const MermaidRenderEntry e2 = cache.getSync(key, flow);
@@ -223,14 +231,29 @@ int main(int argc, char** argv) {
                   !entry.metadata.roleDescription.isEmpty(),
               value.family +
                   QStringLiteral(" title/accessibility metadata drifted"));
+      // Two title-reservation contracts: client-box families fold the title
+      // band INTO the fractional client box (contentSize carries it; the
+      // raster is one nearest-pixel rounding), piecewise families add the
+      // reserved strip on top of the padded content.
+      const bool clientContract = entry.scene &&
+          entry.scene->svgClientViewBox().isValid();
       require(entry.metadata.titleHeight >= 40.0 &&
                   entry.metadata.contentSize.width() > 0.0 &&
                   entry.metadata.contentSize.height() > 0.0 &&
-                  entry.naturalSize.width() >=
-                      qCeil(entry.metadata.contentSize.width()) &&
-                  entry.naturalSize.height() >=
-                      qCeil(entry.metadata.contentSize.height() +
-                            entry.metadata.titleHeight),
+                  entry.naturalSize.width() + 0.5 >=
+                      entry.metadata.contentSize.width() &&
+                  (clientContract
+                       ? (entry.naturalSize.width() ==
+                              qRound(entry.metadata.contentSize.width()) &&
+                          entry.naturalSize.height() ==
+                              qRound(entry.metadata.contentSize.height()) &&
+                          entry.metadata.contentSize.height() >
+                              entry.metadata.titleHeight)
+                       : (entry.naturalSize.width() >=
+                              qCeil(entry.metadata.contentSize.width()) &&
+                          entry.naturalSize.height() >=
+                              qCeil(entry.metadata.contentSize.height() +
+                                    entry.metadata.titleHeight))),
               value.family + QStringLiteral(" title canvas was not reserved"));
       const MermaidPngRenderResult png =
           MermaidRenderCache::renderMermaidSourceToPng(value.source, 1.0);

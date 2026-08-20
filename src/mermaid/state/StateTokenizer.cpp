@@ -23,7 +23,9 @@ const QHash<QString, StateTokenKind>& keywords() {
       {QStringLiteral("classdef"), StateTokenKind::ClassDef},
       {QStringLiteral("class"), StateTokenKind::Class},
       {QStringLiteral("style"), StateTokenKind::Style},
-      {QStringLiteral("linkstyle"), StateTokenKind::LinkStyle},
+      // No "linkStyle" keyword: 11.16's state grammar has no linkStyle
+      // production, so `linkStyle 0 stroke:red` lexes as plain ids (states
+      // "linkStyle", "0", "stroke" + description) exactly like upstream.
       {QStringLiteral("click"), StateTokenKind::Click},
       {QStringLiteral("href"), StateTokenKind::Href},
       {QStringLiteral("default"), StateTokenKind::Default},

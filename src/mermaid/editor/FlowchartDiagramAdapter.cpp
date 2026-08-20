@@ -111,6 +111,14 @@ struct FlowchartDiagramImpl : Diagram {
     layoutOptions.nodePadding = padding;
     layoutOptions.nodeSpacing = configNumber(flowConfig, QStringLiteral("nodeSpacing"), 50.0);
     layoutOptions.rankSpacing = configNumber(flowConfig, QStringLiteral("rankSpacing"), 50.0);
+    // Client-box contract: upstream's viewBox = inkBBox ± padding with NO
+    // translate, so the scene must keep dagre's ABSOLUTE margin-anchored
+    // coordinates (translateGraph places the node bbox at (8, 8)) — the old
+    // first-vertex re-centering moved the origin and broke the fractional
+    // viewBox oracle. The wrapper margin is HARDCODED 8 upstream, independent
+    // of diagramPadding.
+    layoutOptions.preserveDagreCoordinates = true;
+    layoutOptions.dagreWrapperMargin = 8.0;
     const QJsonObject subGraphTitleMargin = flowConfig.value(
         QStringLiteral("subGraphTitleMargin")).toObject();
     layoutOptions.subGraphTitleTopMargin = configNumber(
@@ -178,6 +186,9 @@ struct FlowchartDiagramImpl : Diagram {
     flowscene::FlowScene scene = flowscene::buildFlowScene(
         chart.data(), layout, themeVars, look, handDrawnSeed,
         sceneTextOptions, rawShapeRadius(themeVars));
+    // The svg root's viewBox padding (setupGraphViewbox, upstream default
+    // 8) — feeds the fractional client-box channel.
+    scene.clientPadding = diagramPadding;
     MermaidRenderEntry entry;
     entry.status = MermaidRenderStatus::Ready;
     // Chromium screenshots the fractional SVG client box at the nearest

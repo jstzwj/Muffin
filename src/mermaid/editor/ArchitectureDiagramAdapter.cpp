@@ -251,10 +251,19 @@ struct ArchitectureDiagramImpl final : Diagram {
     architecture::ArchitectureScene scene = architecture::buildArchitectureScene(
         data, std::move(config), std::move(style),
         themeCssActive ? &overrides : nullptr);
+    // Upstream architecture stores the `title` statement in the DB but its
+    // draw() NEVER calls insertTitle — the browser's Architecture Title
+    // oracle (architecture-geometry.json `title` case) has no title element
+    // and the SAME viewBox as the untitled single-default case
+    // (-40 -22 160 185.28125). Pass an empty diagramTitle AND force
+    // metadata.title empty (renderMetadata would otherwise pull in a
+    // frontmatter title and paint a phantom shared title band that widens
+    // the client box); accTitle/accDescr keep their accessibility roles.
     MermaidRenderMetadata metadata = renderMetadata(
-        pre, type, data.title, data.accTitle, data.accDescr,
+        pre, type, QString(), data.accTitle, data.accDescr,
         scene.style.textColor, scene.style.fontFamily,
         qreal(jsNumberValue(scene.config.fontSize)));
+    metadata.title = QString();
     metadata.svgUseMaxWidth = scene.useMaxWidth;
 
     MermaidRenderEntry entry;

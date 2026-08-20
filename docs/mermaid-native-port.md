@@ -573,7 +573,101 @@ The error family resolves its six lightbulb paths individually
 `.error-icon:nth-of-type(2)` or `.error-icon + .error-icon` style single
 paths, and the `error-diagram.json` `themeCssPerPath` oracle locks every
 path's computed fill/stroke/stroke-width/opacity/display against the
-browser.
+browser. State resolves themeCSS against its full 11.16 DOM (clusters/
+edgePaths/edgeLabels/nodes groups, per-node shape + label-span stacks,
+`path.transition`, the edge-label `fo/div/span/p` chain): per-element
+`StateElementCss` slots carry computed values into measurement (label
+fonts, `.node rect{display:none}` — note nodes keep their size) and
+painting, locked by the `state-layout.json` themeCss differential cases.
+
+### State diagram contract (11.16.0)
+
+State parity is evidence-based, not blanket: the marker is the concave
+`M 19,7 L9,13 L14,7 L9,1 Z` barb whose fill/stroke is the GLOBAL
+transitionColor via `defs [id$="-barbEnd"]` (themeCSS can restyle the marker
+without touching per-edge strokes; the raster arrowhead follows the same
+slot, and `stroke: none` disables either channel independently). Under
+`look: neo` edges reference the `-margin` clone (refX 17, tip 2px past a
+5.5px-shortened endpoint — `markerOffsets.arrow_barb_neo`), the common neo
+sheet adds `drop-shadow(...)` filters to node rects/circles, the note/end
+`g.outer-path`, and cluster outers (blur σ = radius/2; the redux-dark
+family's `url(#drop-shadow)` resolves to a flat feDropShadow — dx4 dy4,
+flood color/opacity from the theme — and the tint's own alpha multiplies
+the coverage), and restyles every node shape stroke to `nodeBorder` at 1px.
+Note/choice/fork/stateEnd shapes are rough.js output even under classic
+look (roughness 0, solid fill — geometrically straight edges as a fill path
++ stroke path pair at the 1.3px `userNodeOverrides` default); themeCSS
+resolves them as separate path elements, each with independent
+display/visibility. Concurrent `--` partitions are single dashed grey
+rects (10/10, altBackground), note connectors are the only dashed edges
+(`.note-edge { stroke-dasharray: 5 }`), `click` statements become node
+interaction regions (upstream wraps the node's `<g>` in an `<a xlink:href>`
+— also modeled in the themeCSS DOM so anchor-descendant selectors
+resolve), and the grammar has **no linkStyle** — `linkStyle 0 stroke:red`
+parses as three plain state tokens. Edge-label backgrounds are the `<p>`'s
+`edgeLabelBackground` (html labels; the SVG-label `rect` rule is dead),
+`background-color: transparent` clears it, and edge-label boxes join the
+scene bounds exactly like `svg.getBBox()` does. `visibility: hidden` hides
+only paint (frames stay; display:none also collapses the layout box —
+including pseudostate circles/paths), `fill:none`/`stroke:none`/declared
+`stroke-width: 0` disable the pen/brush rather than degrading to black,
+and cluster titles measure with their `.cluster-label` computed font.
+The CSS opacity model composes each factor EXACTLY ONCE: the element
+`opacity` slot carries the effective (ancestor-folded) value while
+`fill-opacity`/`stroke-opacity` stay PURE declared factors, so the used
+channel alpha is color alpha × opacity × channel (`opacity: 0.2`
+renders 0.2, not 0.04 — the cascade engine's effective channel values
+already fold the element opacity and must not be multiplied again).
+A DECLARED `stroke-width: 0` disables the pen through `strokeWidthSet`
+(no theme-width fallback), rect.inner is ONE element whose fill and
+stroke channels both compose on the `innerCss` slot (a hidden inner
+blanks the body, not just the outline), and the label `<p>` is the
+TEXT carrier: it sits INSIDE the span, so its computed font/color
+(folding the span chain) drive measurement AND paint while its own
+channels ride `labelBackgroundCss` on edges (`.edgeLabel p {
+font-size:31px; color:red }` grows the chip and the viewBox) and
+`labelTextCss`/`descriptionTextCss` on nodes/clusters — the
+rectWithTitle rows are the second foreignObject's own `<p>` and
+measure separately (width = max(title, rows), height = title + rows).
+`display:none` on a `<p>` collapses the LABEL BOX (a plain node shrinks
+to its padding-only 16×16 rect, the cluster title band to zero, the
+edge label reserves no space), not just the paint; on the DESCRIPTION
+`<p>` it collapses the description block — the second foreignObject
+measures 0×0 and a 0×0 foreignObject is EXCLUDED from label.getBBox(),
+so the titled node's dagre box is the title alone (65 → 32 tall, the
+9px title-rows gap vanishes with the rows) while the divider line
+still paints inside the title-only box.
+The drop-shadow filter input is the element's actual rendering (per
+channel: color alpha × fill-/stroke-opacity × element opacity; a hidden
+or none-painted shape casts no shadow; a filtered GROUP like stateEnd's
+g.outer-path contributes each region separately — a transparent ring
+with a visible inner dot casts a dot-sized shadow), and the marker's own CSS carries
+display/visibility/opacity/stroke-width plus per-channel opacities — the
+rendered arrowhead composites at the MARKER's opacity times the path's
+(`defs [id$="-barbEnd"]` matches the id-carrying marker element; opacity
+does not inherit, but fill-opacity DOES — a marker-element fill-opacity
+reaches the path by inheritance). Cluster frames hide PER ELEMENT:
+`rect.outer`, the label span, and `rect.inner` are siblings, and the
+handDrawn renderer consumes the same pen gates as the smooth path
+(including the note connector's 5,5 dash).
+Titled diagrams reserve a 25 + round(font ascent) + 8 band above the
+content (the title baseline sits at the ABSOLUTE -titleTopMargin,
+centered on the content bbox at insert time), the title box can widen
+the client box, and the exported SVG root carries the exact fractional
+client viewBox and max-width — ORIGIN included (upstream writes
+svgBBox(content ∪ title) ± padding with no translate; the scene keeps
+the wrapper's dagre marginx/marginy of 8 absolute coordinates, fork/join
+dagre boxes are 74×14 around the painted 70×10 bar, and the note-side
+reflection re-anchors to the margin) — while the production raster snaps
+to the nearest device pixel. Under `look: handDrawn` the node class
+token becomes `rough-node` (`.node` selectors stop matching), plain
+rects render as the rough pair whose fill path carries the hachure via
+its stroke, and the rough renderer consumes the same CSS gates as the
+smooth path. Pre-existing layout divergences remain open and
+are tracked in `mermaid-architecture.md` (external-edge-into-cluster
+cluster height, note-group ranking beside a composite, the
+fork+note zig-zag, and handDrawn rough ink extents); until they
+close, state is described as oracle-locked rather than strictly 1:1.
 
 ### Family expansion status
 
@@ -643,7 +737,55 @@ equivalence, and three browser PNGs freeze that behavior.
 Architecture freezes its Langium grammar/database, Cytoscape 3.34 + fCoSE 2.2
 non-random and spectral-randomized layouts, compound groups, directional ports,
 orthogonal routing, icons, labels, all 11 themes, diagnostics, metadata, and
-fixed/max-width export behavior. GitGraph freezes its Jison grammar/database,
+fixed/max-width export behavior. Its `title` statement is stored in the DB but
+never rendered (draw() does not call insertTitle — the browser Title oracle
+carries no title element and the untitled viewBox), so the shared title band
+stays off and accTitle/accDescr keep their accessibility roles. The flowchart
+family (with Swimlane) carries the exact FRACTIONAL viewBox extents upstream
+writes (`0 0 426.75 70`) through `FlowScene::svgClientViewBox()` — the shared
+client-box channel with `diagramPadding` as the viewBox padding: the layout
+keeps Dagre's ABSOLUTE margin-anchored coordinates (`preserveDagreCoordinates`
++ the wrapper's hardcoded margin 8 via `dagreWrapperMargin`; classes keep
+their own fixture-locked anchoring), and `useMaxWidth:false` writes the same
+fractional box as the width/height attributes. Styled (bold/italic) inline
+boxes measure through their real face's SHAPED advances — Qt's text
+layout keeps the base face's advance table for weighted fonts, so
+`styledRangeWidth` itemizes each segment with DirectWrite
+(AnalyzeScript + AnalyzeBidi) at the INTERSECTION of script and bidi
+boundaries — each atomic run takes its own resolved level and rounds
+independently (a digit inside Hebrew keeps one script run but bidi level
+2: Chrome's "א1ב" = 597+570+590, three roundings) — and then SHAPES
+EVERY RUN WITH HARFBUZZ over the same
+face's tables (`hb_face_create_for_tables` fed by
+`IDWriteFontFace::TryGetFontTable`; kerning, ligatures, GSUB/GPOS — with
+the `kern` feature explicitly on, as Chromium's font-kerning:auto does).
+The font is scaled so one font unit = 1/128 px — Chromium's hb font funcs
+return FLOAT advances (canvas measureText shows Arial Bold alef at
+1193/128 = 9.3203125px, a half sixty-fourth), and each itemized run's
+float sum snaps to LayoutUnit ONCE (round to the nearest 1/64, halves
+away from zero), never per glyph: the kerned Arial Bold "AV" run rounds
+21.0390625 → 21.046875, a Hebrew pair lands on the exact 18.53125, and
+mixed "אA" rounds its Hebrew and Latin runs independently (597 + 740 =
+20.890625). CSS letter/word spacing adds per grapheme cluster / word
+separator and the two ADD — the letter receivers are real UAX #29
+grapheme clusters (QTextBoundaryFinder) EXCEPT clusters whose FIRST
+UTF-16 unit fails Blink's TreatAsZeroWidthSpace test (FormFeed/CR/
+object-replacement or a BMP Default_Ignorable: bidi embedding controls,
+standalone ZWJ/ZWNJ AND the Mn variation selectors FE00..FE0F/180B..180F
+receive no spacing). Blink's `ShapeResultSpacing::ComputeSpacing` reads
+the single UTF-16 unit at the glyph's cluster start, so a NON-BMP
+ignorable cluster (language tag U+E0001, VS17 U+E0100) tests its high
+surrogate — never ignorable — and still receives a unit when shaped
+(Chrome: standalone VS16/VS1/FVS1 gain none, "A"+U+E0001 gains two).
+All-or-nothing: missing-glyph segments fall
+back to the legacy full-line width (other platforms too — no shaping
+backend is linked there; tracked with the
+Linux-font workstream). All 70 geometry cases are oracle-locked (63 exact
+at 0.2 tolerance; 7 known measurement divergences — bidi shaper residue,
+CJK fallback stacks, shape ink extents — print as PENDING-FAIL entries
+with their root cause, stay drift-locked in both directions so a fix
+self-trips the registry, and hard-fail under `MUFFIN_STRICT_PARITY=1`;
+the oracle is Windows-only since the deltas are DirectWrite-recorded). GitGraph freezes its Jison grammar/database,
 branch ordering, sequential and parent-driven parallel layouts in all three
 directions, merge/cherry-pick routing, labels/tags, 11 themes, diagnostics,
 metadata, and fixed/max-width export behavior. C4 freezes its five diagram

@@ -5,6 +5,7 @@
 #include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/MermaidRenderMetadata.h"
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/scene/FlowScenePainter.h"
 
@@ -29,6 +30,16 @@ constexpr auto kXLinkNamespace = "http://www.w3.org/1999/xlink";
 
 struct SvgCanvas {
   QSize size;
+  // The exact fractional client box the serialized root carries (viewBox
+  // origin + dimensions + max-width): the scene's svgClientViewBox united
+  // with the title text box (upstream: no translate — the raw scene origin
+  // survives into the viewBox). `size` stays the integer raster canvas
+  // (naturalSize). Invalid for families without a client-box contract.
+  QRectF clientBox;
+  // The title strip in PAINTER coordinates (bottom() == baseline +
+  // titleTopMargin): scene-absolute for clientBox families, canvas-relative
+  // otherwise.
+  QRectF titleRect;
   QPointF sceneOffset;
 };
 
@@ -89,14 +100,38 @@ SvgCanvas svgCanvas(const MermaidRenderEntry& entry) {
   canvas.size = entry.naturalSize.expandedTo(QSize(1, 1));
   const qreal titleHeight = entry.metadata.titleHeight;
   if (entry.scene) {
-    // Every family exposes one base extent (sceneBounds, or sequence's resolved
-    // viewport); apply the diagram padding uniformly, then center it below the
-    // title strip.
+    // Client-box families (state/error/architecture): paint in the SCENE's
+    // own coordinates and let the root viewBox carry the raw fractional
+    // origin — the browser model (setupViewPortForSVG writes
+    // svgBBox(content ∪ title) ± padding with no translate). The title
+    // anchors at its scene-absolute position (baseline -titleTopMargin,
+    // centered on the content bbox center).
+    canvas.clientBox = mermaidClientBox(entry);
+    if (canvas.clientBox.isValid()) {
+      if (entry.metadata.hasVisibleTitle()) {
+        const qreal titleWidth = measureMermaidTitleWidth(entry.metadata);
+        const qreal centerX =
+            entry.scene->svgClientViewBox().center().x();
+        canvas.titleRect = QRectF(centerX - titleWidth / 2.0, -titleHeight,
+                                  titleWidth, titleHeight);
+      }
+      return canvas;
+    }
+    // Every other family exposes one base extent (sceneBounds, or sequence's
+    // resolved viewport); apply the diagram padding uniformly, then center it
+    // below the title strip.
     const qreal padding = entry.metadata.diagramPadding;
     const QRectF extent =
         entry.scene->renderBounds().adjusted(-padding, -padding, padding, padding);
+    qreal clientWidth = extent.width();
+    if (entry.metadata.hasVisibleTitle())
+      clientWidth = qMax(clientWidth,
+                         measureMermaidTitleWidth(entry.metadata) + 16.0);
+    const QSizeF clientSize(clientWidth, extent.height() + titleHeight);
+    canvas.clientBox = QRectF(QPointF(0.0, 0.0), clientSize);
+    canvas.titleRect = QRectF(0.0, 0.0, clientSize.width(), titleHeight);
     canvas.sceneOffset = QPointF(
-        (canvas.size.width() - extent.width()) / 2.0 - extent.left(),
+        (clientWidth - extent.width()) / 2.0 - extent.left(),
         titleHeight - extent.top());
   }
   return canvas;
@@ -112,9 +147,7 @@ void paintEntry(const MermaidRenderEntry& entry, const SvgCanvas& canvas,
     entry.scene->paint(painter, options);
   }
   painter.restore();
-  paintMermaidTitle(entry.metadata, painter,
-                    QRectF(0.0, 0.0, canvas.size.width(),
-                           entry.metadata.titleHeight));
+  paintMermaidTitle(entry.metadata, painter, canvas.titleRect);
 }
 
 QString cssEscapeUrl(QString value) {
@@ -395,16 +428,19 @@ QByteArray normalizeSvg(const QByteArray& generated,
                   ? QStringLiteral("mfn-mermaid")
                   : QStringLiteral("mfn-mermaid ") + entry.metadata.cssClass);
           if (entry.metadata.svgEmitViewBox) {
-            // Scenes whose client box is fractional (the error diagram:
-            // LayoutUnit 108.671875 vs the raster-rounded 109 canvas) carry
-            // the exact value so the exported intrinsic height matches the
-            // browser replaced-element box.
-            const QRectF clientViewBox =
-                entry.scene ? entry.scene->svgClientViewBox() : QRectF();
-            const QString viewBoxValue = clientViewBox.isValid()
-                ? QStringLiteral("0 0 %1 %2")
-                      .arg(formatSvgLength(clientViewBox.width()))
-                      .arg(formatSvgLength(clientViewBox.height()))
+            // Scenes with a client-box contract (state getBBox extents, the
+            // error diagram's LayoutUnit 108.671875, architecture's fcose
+            // union) carry the exact fractional box — origin included (the
+            // browser writes svgBBox ± padding with no translate), with the
+            // title union so a titled export never clips its own title.
+            const bool clientMode =
+                entry.scene && entry.scene->svgClientViewBox().isValid();
+            const QString viewBoxValue = clientMode
+                ? QStringLiteral("%1 %2 %3 %4")
+                      .arg(formatSvgLength(canvas.clientBox.x()),
+                           formatSvgLength(canvas.clientBox.y()),
+                           formatSvgLength(canvas.clientBox.width()),
+                           formatSvgLength(canvas.clientBox.height()))
                 : QStringLiteral("0 0 %1 %2")
                       .arg(canvas.size.width())
                       .arg(canvas.size.height());
@@ -412,14 +448,30 @@ QByteArray normalizeSvg(const QByteArray& generated,
           }
           if (entry.metadata.svgUseMaxWidth) {
             writer.writeAttribute(QStringLiteral("width"), QStringLiteral("100%"));
+            // The browser pins max-width to the fractional viewBox width
+            // (e.g. 104.390625px), not the raster-rounded canvas int.
+            const bool clientMode =
+                entry.scene && entry.scene->svgClientViewBox().isValid();
+            const QString maxWidth = clientMode
+                ? formatSvgLength(canvas.clientBox.width())
+                : QString::number(canvas.size.width());
             writer.writeAttribute(
                 QStringLiteral("style"),
-                QStringLiteral("max-width: %1px;").arg(canvas.size.width()));
+                QStringLiteral("max-width: %1px;").arg(maxWidth));
           } else {
-            writer.writeAttribute(QStringLiteral("width"),
-                                  QString::number(canvas.size.width()));
-            writer.writeAttribute(QStringLiteral("height"),
-                                  QString::number(canvas.size.height()));
+            // Fixed sizing writes the FRACTIONAL client box exactly like the
+            // browser (upstream svg.attr('width', viewBoxWidth) — e.g.
+            // width="207.84375" height="70.5", NOT the raster-rounded ints).
+            const bool clientMode =
+                entry.scene && entry.scene->svgClientViewBox().isValid();
+            writer.writeAttribute(
+                QStringLiteral("width"),
+                clientMode ? formatSvgLength(canvas.clientBox.width())
+                           : QString::number(canvas.size.width()));
+            writer.writeAttribute(
+                QStringLiteral("height"),
+                clientMode ? formatSvgLength(canvas.clientBox.height())
+                           : QString::number(canvas.size.height()));
           }
           writer.writeAttribute(QStringLiteral("role"),
                                 QStringLiteral("graphics-document document"));
@@ -505,7 +557,12 @@ QByteArray renderMermaidEntryToSvg(const MermaidRenderEntry& entry,
   QSvgGenerator generator;
   generator.setOutputDevice(&buffer);
   generator.setSize(canvas.size);
-  generator.setViewBox(QRectF(QPointF(0.0, 0.0), QSizeF(canvas.size)));
+  // Client-box families paint in the scene's own coordinates: the generator
+  // viewBox must MATCH the serialized root viewBox (raw fractional origin),
+  // or the child coordinates would not line up with the replaced attribute.
+  generator.setViewBox(entry.scene && entry.scene->svgClientViewBox().isValid()
+                           ? canvas.clientBox
+                           : QRectF(QPointF(0.0, 0.0), QSizeF(canvas.size)));
   generator.setResolution(96);
   QPainter painter;
   if (!painter.begin(&generator)) return {};

@@ -42,12 +42,35 @@ struct StateLayoutEdgeInput {
   QString labelStyle;
   QString thickness = QStringLiteral("normal");
   QString classes = QStringLiteral("transition");
-  QStringList linkStyles;  // linkStyle declarations (key:value), applied at paint
 };
 struct StateLayoutInput {
   QString direction = QStringLiteral("TB");
   QVector<StateLayoutNodeInput> nodes;
   QVector<StateLayoutEdgeInput> edges;
+};
+
+// Per-element themeCSS feedback for measurement: label font (empty/0 keeps
+// the shared font) and the `.node rect { display:none }` box removal.
+struct StateMeasureCss {
+  QString fontFamily;
+  qreal fontSize = 0.0;
+  bool shapeHidden = false;
+  // display:none on the label's <p> collapses the LABEL BOX (the fo renders
+  // nothing): a node shrinks to its padding-only rect (16x16, browser-
+  // verified), a cluster title band to zero, and an edge label reserves no
+  // space. visibility keeps the box — paint-only.
+  bool labelHidden = false;
+  // rectWithTitle description rows are their OWN <p> (the second fo): their
+  // computed font measures the rows independently of the title's.
+  QString descFontFamily;
+  qreal descFontSize = 0.0;
+  // display:none on the DESC p collapses the description block in the LAYOUT:
+  // the second fo's div measures 0x0 and a 0x0 foreignObject is EXCLUDED from
+  // label.getBBox(), so the titled node's dagre box is the TITLE alone
+  // (browser: 64.921875x65 -> x32; vertical add-on drops 17 -> 8 — the 9px
+  // title-rows gap only exists while the rows render). The divider line
+  // STILL paints (its own element, still inside the title-only box).
+  bool descHidden = false;
 };
 
 struct StateLayoutMeasurements {
@@ -89,9 +112,12 @@ StateLayoutMeasurements measureStateLayoutInput(
     const StateLayoutInput& input, QString fontFamily = QStringLiteral("Noto Sans"),
     qreal fontSize = 16.0, bool handDrawn = false,
     quint32 handDrawnSeed = 0,
-    // shapeHidden: `.node rect { display:none }` — plain nodes measure as the
-    // label bbox alone (no shape padding).
-    bool shapeHidden = false);
+    // shapeHidden: the legacy global `.node rect { display:none }` fold —
+    // plain nodes measure as the label bbox alone (no shape padding). The
+    // per-node css hash refines it element-by-element.
+    bool shapeHidden = false,
+    const QHash<QString, StateMeasureCss>* nodeCss = nullptr,
+    const QHash<QString, StateMeasureCss>* edgeLabelCss = nullptr);
 StatePlacementResult layoutStateDiagramDagre(
     const StateLayoutInput& input, const StateLayoutMeasurements& measurements,
     qreal nodeSpacing = 50.0, qreal rankSpacing = 50.0,

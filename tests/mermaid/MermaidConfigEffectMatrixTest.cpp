@@ -941,12 +941,20 @@ int main(int argc, char** argv) {
       "%%{init: {\"flowchart\": {\"diagramPadding\": 30}}}%%\n"
       "flowchart TB\nA --> B");
   const MermaidRenderEntry flow = render(paddedFlow);
+  // Client-box contract: contentSize IS the fractional client box (content
+  // bounds ± the configured padding) and the raster snaps to the nearest
+  // device pixel — replacing the piecewise qCeil(contentSize + 2×padding).
+  const QRectF flowClientBox = flow.scene->svgClientViewBox();
   require(flow.status == MermaidRenderStatus::Ready && flow.scene &&
               flow.metadata.diagramPadding == 30.0 &&
-              flow.naturalSize.width() ==
-                  qCeil(flow.metadata.contentSize.width() + 60.0) &&
-              flow.naturalSize.height() ==
-                  qCeil(flow.metadata.contentSize.height() + 60.0),
+              flowClientBox.isValid() &&
+              std::abs(flowClientBox.width() -
+                       flow.metadata.contentSize.width()) < 0.01 &&
+              std::abs(flowClientBox.height() -
+                       flow.metadata.contentSize.height()) < 0.01 &&
+              flowClientBox.width() > flow.scene->sceneBounds().width() &&
+              flow.naturalSize.width() == qRound(flowClientBox.width()) &&
+              flow.naturalSize.height() == qRound(flowClientBox.height()),
           QStringLiteral("flowchart.diagramPadding did not reach viewport geometry"));
   const QImage flowPng = pngImage(paddedFlow);
   require(!flowPng.isNull() && flowPng.size() == flow.naturalSize,

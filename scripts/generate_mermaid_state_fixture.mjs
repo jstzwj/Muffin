@@ -59,7 +59,14 @@ const cases = [
   ].join("\n") },
   { id: "accessibility-click", source: [
     "stateDiagram-v2", "accTitle: State model", "accDescr: Accessible state model",
-    "state Docs", 'click Docs "https://example.com" "Open docs"',
+    "state Docs", "other --> Docs", 'click Docs "https://example.com" "Open docs"',
+  ].join("\n") },
+  // 11.16 has NO linkStyle production: the line lexes as plain ids and
+  // becomes states "linkStyle", "0", and "stroke" (raw remainder as the
+  // description) — edges stay untouched.
+  { id: "linkstyle-line-tokens", source: [
+    "stateDiagram-v2", "A --> B", "C --> D",
+    "linkStyle 0 stroke:#ff0000,stroke-width:3px",
   ].join("\n") },
   { id: "unicode-comments", source: [
     "stateDiagram-v2", "%% ignored", "待机 --> 运行 : تشغيل", "运行 --> שלום",

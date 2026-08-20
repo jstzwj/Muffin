@@ -67,8 +67,7 @@ inline QVector<rough::Drawable> stateRoughNodeDrawables(
   return result;
 }
 
-inline QRectF stateRoughBounds(const QVector<rough::Drawable>& drawables) {
-  QRectF bounds;
+inline QRectF stateRoughBounds(const QVector<rough::Drawable>& drawables) {  QRectF bounds;
   bool initialized = false;
   for (const rough::Drawable& drawable : drawables) {
     const QRectF current = rough::tightBounds(drawable);
@@ -110,6 +109,24 @@ inline QVector<rough::Drawable> stateRoughClusterDrawables(
   result.append(rough::rectangle(bounds.left(), innerY, bounds.width(),
                                   innerHeight, inner));
   return result;
+}
+
+// `--` partition (divider cluster): ONE dashed grey rect — upstream draws
+// rc.rectangle(x, y, w, h, { fill: "lightgrey", roughness: 0.5, stroke:
+// nodeBorder, seed }) and dashes the stroke via strokeLineDash [5] (the
+// painter supplies the dash pattern on its stroke pen).
+inline QVector<rough::Drawable> stateRoughDividerDrawables(
+    const QRectF& bounds, quint32 seed, const QString& stroke,
+    qreal strokeWidth = 1.0) {
+  rough::Options options;
+  options.seed = seed;
+  options.roughness = 0.5;
+  options.fill = QStringLiteral("lightgrey");
+  options.fillStyle = QStringLiteral("solid");
+  options.stroke = stroke;
+  options.strokeWidth = strokeWidth;
+  return {rough::rectangle(bounds.left(), bounds.top(), bounds.width(),
+                           bounds.height(), options)};
 }
 
 }  // namespace muffin::mermaid::state

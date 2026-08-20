@@ -14,8 +14,13 @@
 #include <QHash>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QRectF>
 #include <QString>
 #include <QStringList>
+
+#include <memory>
+
+class MermaidScene;
 
 #include <optional>
 
@@ -164,8 +169,27 @@ MermaidRenderMetadata renderMetadata(const MermaidPreprocessResult& pre,
                                      const QString& fontFamily,
                                      qreal titleFontSize,
                                      qreal titleTopMargin = 25.0,
-                                     qreal diagramPadding = 0.0);
+                                     qreal diagramPadding = 0.0,
+                                     // Families whose viewbox padding is
+                                     // already folded into their scene
+                                     // bounds (state) pass it here so the
+                                     // title band gets the same padding.
+                                     qreal titleBandPadding = -1.0);
 
 void finalizeReadyEntry(MermaidRenderEntry& entry, MermaidRenderMetadata metadata);
+// Fractional client box (scene-absolute, title union) for scenes with a
+// client-box contract; invalid otherwise. The (scene, metadata) core serves
+// consumers that hold the parts rather than an entry.
+QRectF mermaidClientBox(const std::shared_ptr<const MermaidScene>& scene,
+                        const MermaidRenderMetadata& metadata);
+
+// The exact browser client box for entries whose scene exposes
+// svgClientViewBox() (state, error, architecture): upstream unions the
+// title text bbox (baseline at ABSOLUTE -titleTopMargin, centered on the
+// content bbox) with the content box and pads the union — no translate —
+// so the box carries the scene's raw fractional origin. Returns an invalid
+// QRectF when the family has no client-box contract (callers keep the
+// integer raster canvas / centered extent).
+QRectF mermaidClientBox(const MermaidRenderEntry& entry);
 
 }  // namespace muffin::mermaid::editor

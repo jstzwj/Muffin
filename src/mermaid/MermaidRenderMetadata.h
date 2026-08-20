@@ -24,6 +24,13 @@ struct MermaidRenderMetadata {
   qreal titleTopMargin = 25.0;
   qreal titleHeight = 0.0;
   qreal diagramPadding = 0.0;
+  // The family viewbox padding that also pads the title box above the
+  // content (upstream insertTitle + setupGraphViewbox: the title baseline
+  // sits titleTopMargin above the content bbox and the viewbox adds the
+  // family padding around the union). Families whose padding is already
+  // folded into their scene bounds (state) pass their padding here instead
+  // of diagramPadding.
+  qreal titleBandPadding = -1.0;  // < 0: use diagramPadding
   QSizeF contentSize;
 
   // SVG-only root element contract. These values are retained beside the

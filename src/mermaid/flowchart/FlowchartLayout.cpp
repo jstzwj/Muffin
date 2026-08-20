@@ -190,6 +190,10 @@ void clipFlowEdgeForMarkers(QVector<QPointF>& points, const QString& type) {
   const bool filled = type == QLatin1String("arrow_point") ||
                       type == QLatin1String("double_arrow_point");
   if (filled) clipMarker(points, 4.0);
+  // neo look: state edges carry arrow_barb_neo, whose upstream
+  // markerOffsets entry (5.5) pulls the endpoint back — the -margin marker
+  // then tips 2px past the shortened end (the deliberate stroke gap).
+  if (type == QLatin1String("arrow_barb_neo")) clipMarker(points, 5.5);
   if (type == QLatin1String("double_arrow_point") && points.size() >= 2) {
     const QPointF delta = points.first() - points.at(1);
     const qreal length = std::hypot(delta.x(), delta.y());
@@ -665,8 +669,16 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
   gl.edgesep = options.edgeSpacing;
   gl.ranksep = options.rankSpacing;
   gl.nodePadding = options.nodePadding;
-  gl.marginx = options.diagramPadding;
-  gl.marginy = options.diagramPadding;
+  // The shared dagre-wrapper render() hardcodes marginx/marginy = 8,
+  // independent of diagramPadding — translateGraph anchors the node bbox at
+  // (8, 8) and setupGraphViewbox's viewBox = inkBBox ± padding carries
+  // origin = 8 - padding. Flowchart/Swimlane set this explicitly; the other
+  // families sharing this pipeline keep their own (fixture-locked) margin
+  // semantics via diagramPadding.
+  gl.marginx = options.dagreWrapperMargin >= 0.0
+      ? options.dagreWrapperMargin : options.diagramPadding;
+  gl.marginy = options.dagreWrapperMargin >= 0.0
+      ? options.dagreWrapperMargin : options.diagramPadding;
   g.setGraph(gl);
 
   // flowDb.getData() emits cluster nodes first, in reverse declaration order,
@@ -774,8 +786,12 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
     FlowEdgeLabelLayout prepared = options.preparedEdgeLabels.value(edge.id);
     if (prepared.document.text.isNull())
       prepared = layoutFlowchartEdgeLabel(edge);
-    const QSizeF measured = options.measuredEdgeLabels.value(edge.id);
-    if (measured.isValid() && !measured.isEmpty()) prepared.size = measured;
+    // A measured 0x0 is AUTHORITATIVE, not "absent": state's display:none on
+    // the edge-label <p> collapses the fo content — the label reserves no
+    // space (edges and viewBox shrink like the browser's getBBox).
+    const auto measuredIt = options.measuredEdgeLabels.constFind(edge.id);
+    if (measuredIt != options.measuredEdgeLabels.constEnd())
+      prepared.size = measuredIt.value();
     return prepared;
   };
   auto edgeLabel = [&](const FlowEdge& edge) {

@@ -24,6 +24,32 @@ const cases = [
     "%%{init: {\"theme\":\"dark\"}}%%\nstateDiagram-v2\nstate fork_state <<fork>>\nstate join_state <<join>>\nstate choice_state <<choice>>\nfork_state --> A\nA --> choice_state\nchoice_state --> B\nB --> join_state" },
   { id: "note", dpr: 1, theme: "default", source:
     "stateDiagram-v2\nActive --> Done\nnote right of Active : Inline note" },
+  { id: "neo-look", dpr: 1, theme: "default", look: "neo", source:
+    // The look rides the init directive so the native production parse
+    // (%%{init}%% config merge) renders the same neo pipeline as the
+    // browser's initialize() — the manifest's `look` is documentation.
+    // handDrawnSeed freezes the browser's rough.js RNG: neo rough strokes
+    // carry random (but collinear) control points, and Skia's cubic AA
+    // jitters sub-pixel between renders unless seeded.
+    "%%{init: {\"look\":\"neo\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nstate Running {\n  Idle2 --> Ready\n}\nActive --> Running\nRunning --> [*]" },
+  { id: "neo-pseudostates", dpr: 1, theme: "default", look: "neo", source:
+    "%%{init: {\"look\":\"neo\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\nstate fork_state <<fork>>\nstate join_state <<join>>\nstate choice_state <<choice>>\nfork_state --> A\nA --> choice_state\nchoice_state --> B\nB --> join_state\njoin_state --> [*]" },
+  // Title band: the production PNG composites the title strip above the
+  // content — the browser client box grows by 25 + font ascent + 8 (52 for
+  // the pinned Noto 18px title) and widens for the title box.
+  { id: "titled", dpr: 1, theme: "default", title: true, source:
+    "---\ntitle: Some Title\n---\nstateDiagram-v2\nA --> B" },
+  // redux-dark neo: the url(#drop-shadow) form reference resolves to a
+  // flat feDropShadow (dx4 dy4 stdDeviation 0, flood white 6%) — the
+  // synthesized flat drop-shadow must paint it.
+  { id: "redux-dark-neo", dpr: 1, theme: "redux-dark", look: "neo", source:
+    "%%{init: {\"theme\":\"redux-dark\",\"look\":\"neo\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]" },
+  // neo + visibility:hidden: the drop-shadow filter input is the element's
+  // own rendering — a hidden rect paints nothing AND casts no shadow.
+  { id: "neo-shadow-off", dpr: 1, theme: "default", look: "neo", source:
+    `%%{init: ${JSON.stringify({ look: "neo", handDrawnSeed: 42,
+      themeCSS: ".node rect { visibility: hidden; }" })}}%%\n` +
+    "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]" },
 ];
 
 const notoDir = path.resolve("third_party", "noto", "fonts");
@@ -67,7 +93,7 @@ try {
       await document.fonts.ready;
       mermaid.initialize({ startOnLoad: false, securityLevel: "strict",
         theme: fixture.theme, fontFamily, themeVariables: { fontFamily },
-        look: "classic", state: { padding: 8 } });
+        look: fixture.look ?? "classic", state: { padding: 8 } });
       const { svg } = await mermaid.render(`state-pixel-${fixture.id}`, fixture.source);
       document.body.style.margin = "0";
       document.getElementById("container").innerHTML = svg;

@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     styleCases += !expected.value(QStringLiteral("classes")).toArray().isEmpty();
     linkCases += !expected.value(QStringLiteral("links")).toArray().isEmpty();
   }
-  require(cases.size() == 9 && compositeCases == 1 && noteCases == 1 &&
+  require(cases.size() == 10 && compositeCases == 1 && noteCases == 1 &&
               styleCases == 1 && linkCases == 1,
           QStringLiteral("State upstream semantic matrix regressed"));
   const QVector<StateProductionMapping> mappings = stateProductionMappings();
@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
                 !mappings.at(index).oracleCase.isEmpty(),
             QStringLiteral("State production mapping %1 is incomplete").arg(index + 1));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("aa122ed6ddefe4db72019ef2cc054e1f2a982b77c28e4e42e9b2a26c37900e60"),
+              QLatin1String("1bd2b47de66e6f2d24f2278111966aa1e9958f094bd4b2c0a492c901ad437a58"),
           QStringLiteral("State upstream fixture changed; audit and update its digest"));
   qDebug() << "MermaidStateUpstreamContractTest:" << cases.size()
            << "cases and" << productionIds.size() << "productions passed";

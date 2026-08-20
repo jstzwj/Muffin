@@ -151,6 +151,11 @@ struct ArchitectureScene final : MermaidScene {
 
   QRectF sceneBounds() const override { return bounds; }
   QRectF renderBounds() const override { return rasterBounds; }
+  // The exported root carries the browser's exact fractional viewBox
+  // (upstream setupGraphViewbox reads svgBBox + padding with no translate —
+  // the theme-css oracle locks values like -327.624 … 727.186), not the
+  // raster-rounded canvas ints.
+  QRectF svgClientViewBox() const override { return bounds; }
   void paint(QPainter& painter,
              const MermaidPaintOptions& options = {}) const override;
   QJsonObject toJsonObject() const override;
