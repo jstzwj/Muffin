@@ -49,8 +49,15 @@ private:
       return;
     const auto it = std::find_if(result_.nodes.begin(), result_.nodes.end(),
         [&](const StateLayoutNodeInput& value) { return value.id == node.id; });
-    if (it == result_.nodes.end()) result_.nodes.append(std::move(node));
-    else *it = std::move(node);
+    if (it == result_.nodes.end()) {
+      result_.nodes.append(std::move(node));
+    } else {
+      // Upstream uses Object.assign(existingNodeData, nodeData). A root-level
+      // reference has no parentId property, so it cannot detach a state that
+      // was already parented while traversing a composite document.
+      if (node.parentId.isEmpty()) node.parentId = it->parentId;
+      *it = std::move(node);
+    }
   }
   QString classesFor(const QString& id) const {
     const StateNode* state = states_.value(id, nullptr);
@@ -441,7 +448,7 @@ StatePlacementResult layoutStateDiagramDagre(
       group.id = node.id;
       group.title = node.label.toString();
       group.dir = node.direction;
-      group.hasExplicitDir = !node.direction.isEmpty();
+      group.hasExplicitDir = node.explicitDirection;
       for (const StateLayoutNodeInput& child : input.nodes)
         if (child.parentId == node.id) group.nodes.append(child.id);
       projected.subgraphs.prepend(std::move(group));

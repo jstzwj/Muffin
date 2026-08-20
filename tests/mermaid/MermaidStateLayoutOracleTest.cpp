@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   if (root.value(QStringLiteral("fixtureSha256")).toString() !=
-      QLatin1String("37694df59c763191710c782df3e61a2e4fb6d01b5e6251b4fc8a0974342ff972"))
+      QLatin1String("78a66011d7c9d143eaecb609b6fc3ee374126b5914d052ef7a78e191ee983461"))
     fail(QStringLiteral("State layout fixture drifted"));
   for (const QJsonValue& value : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = value.toObject();
@@ -75,9 +75,17 @@ int main(int argc, char** argv) {
     const StateLayoutMeasurements measurements = measureStateLayoutInput(
         input, muffin::mermaid::MermaidFontRegistry::cssFamilyStack(), 16.0);
     const StatePlacementResult placed = layoutStateDiagramDagre(input, measurements);
-    const QPointF origin = placed.nodes.isEmpty() ? QPointF{} : placed.nodes.first().center;
     const QJsonObject geometry = fixture.value(QStringLiteral("geometry")).toObject();
-    for (const QJsonValue& nodeValue : geometry.value(QStringLiteral("nodes")).toArray()) {
+    const QJsonArray expectedNodes = geometry.value(QStringLiteral("nodes")).toArray();
+    QPointF origin;
+    if (!expectedNodes.isEmpty()) {
+      const QString originId = expectedNodes.first().toObject()
+                                   .value(QStringLiteral("id")).toString();
+      const StatePlacementNode* originNode = findById(placed.nodes, originId);
+      if (!originNode) fail(id + QStringLiteral(": missing origin node ") + originId);
+      origin = originNode->center;
+    }
+    for (const QJsonValue& nodeValue : expectedNodes) {
       const QJsonObject expected = nodeValue.toObject();
       const QString nodeId = expected.value(QStringLiteral("id")).toString();
       const StatePlacementNode* actual = findById(placed.nodes, nodeId);

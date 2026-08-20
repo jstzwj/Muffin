@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("37694df59c763191710c782df3e61a2e4fb6d01b5e6251b4fc8a0974342ff972"),
+              QLatin1String("78a66011d7c9d143eaecb609b6fc3ee374126b5914d052ef7a78e191ee983461"),
           QStringLiteral("State structural fixture drifted"));
   require(root.value(QStringLiteral("fontMode")).toString() ==
               QLatin1String("bundled-noto-2.13b171"),

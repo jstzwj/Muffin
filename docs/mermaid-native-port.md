@@ -663,11 +663,14 @@ to the nearest device pixel. Under `look: handDrawn` the node class
 token becomes `rough-node` (`.node` selectors stop matching), plain
 rects render as the rough pair whose fill path carries the hachure via
 its stroke, and the rough renderer consumes the same CSS gates as the
-smooth path. Pre-existing layout divergences remain open and
-are tracked in `mermaid-architecture.md` (external-edge-into-cluster
-cluster height, note-group ranking beside a composite, the
-fork+note zig-zag, and handDrawn rough ink extents); until they
-close, state is described as oracle-locked rather than strictly 1:1.
+smooth path. External edges into a composite and note groups beside a
+composite now follow upstream's non-extracted compound path: inherited
+`dir` is not mistaken for the omitted `explicitDir`, and later root-level
+references preserve an existing `parentId` like `Object.assign`. Remaining
+layout divergences are tracked in `mermaid-architecture.md` (the fork+note
+zig-zag, handDrawn rough ink extents, and the handDrawn rectWithTitle
+single-foreignObject quirk); until they close, state is described as
+oracle-locked rather than strictly 1:1.
 
 ### Family expansion status
 

@@ -18,6 +18,8 @@ if (pkg.version !== "11.16.0" || stateDb.upstream.version !== pkg.version)
 const selected = new Set([
   "transitions-start-end", "aliases-descriptions",
   "composite-direction-concurrency", "pseudostates", "accessibility-click",
+  "external-edge-into-composite", "external-edge-into-explicit-composite",
+  "note-after-composite",
 ]);
 const cases = stateDb.cases.filter((item) => selected.has(item.id)).map((item) => ({
   id: item.id, source: item.source,

@@ -862,11 +862,39 @@ viewBox 分量全部根因关闭，登记表与可选严格模式删除，70 案
   为原点的局部偏移，classic fork 区分 70px painted path 与加 padding 后
   的 74px Dagre box。布局、形状和 SVG 导出均有回归锁。
 - **边界说明**：这一结论只覆盖 Windows 规范环境的 70 案 flowchart
-  viewBox oracle；非 Windows 字体 shaping 仍属平台工作流，State 已登记
-  的 compound/note rank、fork+note、handDrawn ink 等布局差异不因此关闭。
+  viewBox oracle；非 Windows 字体 shaping 仍属平台工作流。State 的
+  compound/note rank 已在第十五轮关闭；fork+note、handDrawn ink 等布局
+  差异仍保持开放。
 - 门禁：Release 完整构建通过；**293/293 两轮全绿**（282.77s / 242.43s，
   均含构建新鲜度测试）；dist 已刷新，Release/dist `Muffin.exe` 大小、
   时间戳与 SHA-256 一致；`git diff --check` 无空白错误。
+
+**State 第十五轮 compound/note rank 收口（08-20）**：关闭第四轮登记的
+两项布局发散：外部边进入复合簇时簇高多一档 ranksep，以及 note-group
+与复合簇同图时 note 落到中间 rank。
+
+- **节点更新语义**：上游 `insertOrUpdateNode` 使用
+  `Object.assign(existingNodeData, nodeData)`；后出现的根级 note 引用没有
+  `parentId` 属性，因此不会把已经归入复合状态的节点重新脱离。native
+  原先整对象覆盖会清空 `parentId`，现保留既有父节点，新的
+  `note-after-composite` DB oracle 逐字段锁定。
+- **cluster 提取语义**：State cache 记录 `explicitDir`，但 Mermaid 11.16.0
+  构造 `NodeData` 时没有复制它；继承的 `dir:"TB"` 和显式
+  `direction LR` 都不能被反推为 `explicitDir:true`。native 原先以
+  `!direction.isEmpty()` 伪造显式方向，使跨簇边强制走递归提取路径，导致
+  cluster 原子化后高度 +50，并把 note 拆到后续 rank。投影现消费真实
+  `explicitDirection`；默认 TB 与显式 LR 的两个外部入簇反例都锁定为
+  上游 non-extracted compound 几何。
+- **oracle**：state DB 从 10 案扩到 13 案，state layout 从 7 案扩到
+  10 案；新增 `external-edge-into-composite`、
+  `external-edge-into-explicit-composite`、`note-after-composite`，逐节点/
+  簇/边/viewBox 精确比对。layout oracle 原点改按浏览器首个语义节点 ID
+  查找，避免 compound 输出重排掩盖真实坐标。fixture 双跑字节一致。
+- **剩余开放项**：fork/join + note 的 zig-zag、handDrawn rough ink 外扩、
+  handDrawn rectWithTitle 的单 foreignObject plain-shape quirk。
+- **门禁**：Release 完整构建通过；**293/293 全绿**（237.80s，含构建
+  新鲜度测试）；dist 已刷新，Release/dist `Muffin.exe` 的大小、时间戳与
+  SHA-256 一致；fixture 双跑字节一致，`git diff --check` 无空白错误。
 
 ---
 

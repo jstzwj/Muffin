@@ -1261,6 +1261,574 @@
       }
     },
     {
+      "id": "external-edge-into-composite",
+      "source": "stateDiagram-v2\nA --> B\nstate Running {\n  B --> C\n}",
+      "expected": {
+        "root": [
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "A",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "B",
+              "type": "default",
+              "description": ""
+            }
+          },
+          {
+            "stmt": "state",
+            "id": "Running",
+            "type": "default",
+            "description": "",
+            "doc": [
+              {
+                "stmt": "relation",
+                "state1": {
+                  "stmt": "state",
+                  "id": "B",
+                  "type": "default",
+                  "description": ""
+                },
+                "state2": {
+                  "stmt": "state",
+                  "id": "C",
+                  "type": "default",
+                  "description": ""
+                }
+              }
+            ]
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "A",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "B",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "Running",
+            "type": "default",
+            "descriptions": [],
+            "doc": [
+              {
+                "stmt": "relation",
+                "state1": {
+                  "stmt": "state",
+                  "id": "B",
+                  "type": "default",
+                  "description": ""
+                },
+                "state2": {
+                  "stmt": "state",
+                  "id": "C",
+                  "type": "default",
+                  "description": ""
+                }
+              }
+            ],
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [
+          {
+            "id1": "A",
+            "id2": "B",
+            "relationTitle": ""
+          }
+        ],
+        "classes": [],
+        "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "A",
+            "shape": "rect",
+            "label": "A",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "B",
+            "shape": "rect",
+            "label": "B",
+            "parentId": "Running",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Running",
+            "shape": "roundedWithTitle",
+            "label": "Running",
+            "parentId": null,
+            "dir": "TB",
+            "explicitDir": false,
+            "isGroup": true,
+            "cssClasses": " statediagram-state statediagram-cluster ",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "C",
+            "shape": "rect",
+            "label": "C",
+            "parentId": "Running",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "A",
+            "end": "B",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge1",
+            "start": "B",
+            "end": "C",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "external-edge-into-explicit-composite",
+      "source": "stateDiagram-v2\nA --> B\nstate Running {\n  direction LR\n  B --> C\n}",
+      "expected": {
+        "root": [
+          {
+            "stmt": "relation",
+            "state1": {
+              "stmt": "state",
+              "id": "A",
+              "type": "default",
+              "description": ""
+            },
+            "state2": {
+              "stmt": "state",
+              "id": "B",
+              "type": "default",
+              "description": ""
+            }
+          },
+          {
+            "stmt": "state",
+            "id": "Running",
+            "type": "default",
+            "description": "",
+            "doc": [
+              {
+                "stmt": "dir",
+                "value": "LR"
+              },
+              {
+                "stmt": "relation",
+                "state1": {
+                  "stmt": "state",
+                  "id": "B",
+                  "type": "default",
+                  "description": ""
+                },
+                "state2": {
+                  "stmt": "state",
+                  "id": "C",
+                  "type": "default",
+                  "description": ""
+                }
+              }
+            ]
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "A",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "B",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "Running",
+            "type": "default",
+            "descriptions": [],
+            "doc": [
+              {
+                "stmt": "dir",
+                "value": "LR"
+              },
+              {
+                "stmt": "relation",
+                "state1": {
+                  "stmt": "state",
+                  "id": "B",
+                  "type": "default",
+                  "description": ""
+                },
+                "state2": {
+                  "stmt": "state",
+                  "id": "C",
+                  "type": "default",
+                  "description": ""
+                }
+              }
+            ],
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [
+          {
+            "id1": "A",
+            "id2": "B",
+            "relationTitle": ""
+          }
+        ],
+        "classes": [],
+        "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "A",
+            "shape": "rect",
+            "label": "A",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "B",
+            "shape": "rect",
+            "label": "B",
+            "parentId": "Running",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "Running",
+            "shape": "roundedWithTitle",
+            "label": "Running",
+            "parentId": null,
+            "dir": "LR",
+            "explicitDir": false,
+            "isGroup": true,
+            "cssClasses": " statediagram-state statediagram-cluster ",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "C",
+            "shape": "rect",
+            "label": "C",
+            "parentId": "Running",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "A",
+            "end": "B",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "edge1",
+            "start": "B",
+            "end": "C",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          }
+        ]
+      }
+    },
+    {
+      "id": "note-after-composite",
+      "source": "stateDiagram-v2\nstate Running {\n  B --> C\n}\nnote right of B : Nested note",
+      "expected": {
+        "root": [
+          {
+            "stmt": "state",
+            "id": "Running",
+            "type": "default",
+            "description": "",
+            "doc": [
+              {
+                "stmt": "relation",
+                "state1": {
+                  "stmt": "state",
+                  "id": "B",
+                  "type": "default",
+                  "description": ""
+                },
+                "state2": {
+                  "stmt": "state",
+                  "id": "C",
+                  "type": "default",
+                  "description": ""
+                }
+              }
+            ]
+          },
+          {
+            "stmt": "state",
+            "id": "B",
+            "note": {
+              "position": "right of",
+              "text": "Nested note"
+            }
+          }
+        ],
+        "direction": "TB",
+        "accTitle": "",
+        "accDescription": "",
+        "states": [
+          {
+            "id": "Running",
+            "type": "default",
+            "descriptions": [],
+            "doc": [
+              {
+                "stmt": "relation",
+                "state1": {
+                  "stmt": "state",
+                  "id": "B",
+                  "type": "default",
+                  "description": ""
+                },
+                "state2": {
+                  "stmt": "state",
+                  "id": "C",
+                  "type": "default",
+                  "description": ""
+                }
+              }
+            ],
+            "note": null,
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          },
+          {
+            "id": "B",
+            "type": "default",
+            "descriptions": [],
+            "doc": null,
+            "note": {
+              "position": "right of",
+              "text": "Nested note"
+            },
+            "classes": [],
+            "styles": [],
+            "textStyles": []
+          }
+        ],
+        "relations": [],
+        "classes": [],
+        "links": []
+      },
+      "layoutInput": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "Running",
+            "shape": "roundedWithTitle",
+            "label": "Running",
+            "parentId": null,
+            "dir": "TB",
+            "explicitDir": false,
+            "isGroup": true,
+            "cssClasses": " statediagram-state statediagram-cluster ",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "B",
+            "shape": "rect",
+            "label": "B",
+            "parentId": "Running",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "C",
+            "shape": "rect",
+            "label": "C",
+            "parentId": "Running",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": null,
+            "description": null
+          },
+          {
+            "id": "B----parent",
+            "shape": "noteGroup",
+            "label": "Nested note",
+            "parentId": null,
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": true,
+            "cssClasses": " statediagram-state",
+            "cssStyles": [],
+            "position": "right of",
+            "description": null
+          },
+          {
+            "id": "B----note-1",
+            "shape": "note",
+            "label": "Nested note",
+            "parentId": "B----parent",
+            "dir": null,
+            "explicitDir": false,
+            "isGroup": false,
+            "cssClasses": "statediagram-note",
+            "cssStyles": [],
+            "position": "right of",
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "start": "B",
+            "end": "C",
+            "label": "",
+            "arrowhead": "normal",
+            "arrowTypeEnd": "arrow_barb",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition"
+          },
+          {
+            "id": "B-B----note-1",
+            "start": "B",
+            "end": "B----note-1",
+            "label": null,
+            "arrowhead": "none",
+            "arrowTypeEnd": "",
+            "style": "fill:none",
+            "labelStyle": "",
+            "thickness": "normal",
+            "classes": "transition note-edge"
+          }
+        ]
+      }
+    },
+    {
       "id": "styles-classes",
       "source": "stateDiagram-v2\nstate A\nstate B\nclassDef hot fill:#f00,color:#fff\nclass A,B hot\nstyle B fill:#0f0,stroke:#333",
       "expected": {
@@ -1930,5 +2498,5 @@
       }
     }
   ],
-  "fixtureSha256": "1bd2b47de66e6f2d24f2278111966aa1e9958f094bd4b2c0a492c901ad437a58"
+  "fixtureSha256": "1f87e0533d45f0df27a80efa97222e92f91593ef9ef7c60da9d2daca16ee3f00"
 }

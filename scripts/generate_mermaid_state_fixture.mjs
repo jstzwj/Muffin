@@ -53,6 +53,25 @@ const cases = [
     "stateDiagram-v2", "state Active", "note right of Active : Inline note",
     "note left of Active", "  Multiline note", "end note",
   ].join("\n") },
+  // A root edge may reference a state before its later composite declaration.
+  // The subsequent child fetch reparents B into Running; the boundary-crossing
+  // edge keeps the composite on Dagre's non-extracted compound path.
+  { id: "external-edge-into-composite", source: [
+    "stateDiagram-v2", "A --> B", "state Running {", "  B --> C", "}",
+  ].join("\n") },
+  // State's NodeData omits the cache-only explicitDir flag. Even a direction
+  // statement therefore cannot force recursive extraction when an edge crosses
+  // the cluster boundary; lock that upstream quirk separately from inherited TB.
+  { id: "external-edge-into-explicit-composite", source: [
+    "stateDiagram-v2", "A --> B", "state Running {", "  direction LR",
+    "  B --> C", "}",
+  ].join("\n") },
+  // insertOrUpdateNode uses Object.assign: a later root-level note statement
+  // has no parentId property and therefore must not erase B's existing parent.
+  { id: "note-after-composite", source: [
+    "stateDiagram-v2", "state Running {", "  B --> C", "}",
+    "note right of B : Nested note",
+  ].join("\n") },
   { id: "styles-classes", source: [
     "stateDiagram-v2", "state A", "state B", "classDef hot fill:#f00,color:#fff",
     "class A,B hot", "style B fill:#0f0,stroke:#333",
