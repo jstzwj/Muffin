@@ -13,6 +13,7 @@
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/scene/SvgPathParse.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
@@ -198,8 +199,12 @@ void muffin::mermaid::er::paintErScene(const ErScene& scene, QPainter& painter,
 
     QPen pen(relationshipColor, scene.style.relationshipStrokeWidth);
     if (!rel.identifying) {
-      pen.setStyle(Qt::CustomDashLine);
-      pen.setDashPattern({6.0, 4.0});
+      // Chrome computes stroke-dasharray "8px, 8px" on .edge-pattern-dashed:
+      // the er stylesheet's own 8,8 rule overrides the common sheet's `3`
+      // (equal specificity, later rule wins) — er-geometry.json pins the
+      // probed value. QPen entries are pen-width multiples, so normalize.
+      pen.setDashPattern(scene::parseAndNormalizeSvgDashPattern(
+          QStringLiteral("8,8"), scene.style.relationshipStrokeWidth));
     }
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);

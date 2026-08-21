@@ -171,6 +171,11 @@ try {
           // Identifying relationships render with edge-pattern-solid; non-identifying
           // (..) render dashed/dotted.
           const identifying = klass.includes("edge-pattern-solid");
+          // Computed stroke channel: the er stylesheet's own
+          // `.edge-pattern-dashed { stroke-dasharray: 8,8; }` overrides the common
+          // sheet's `3` (equal specificity, later rule wins), so this records the
+          // value Chrome actually paints — the painter's dash constant must match.
+          const computed = getComputedStyle(edge);
           return {
             path: relativePath(edge.getAttribute("d"), originX, originY, elementMatrix(edge, rootInverse)),
             // The marker drawn at an entity end shows THAT entity's cardinality:
@@ -180,6 +185,8 @@ try {
             cardA: markerStart ? cardName[markerStart] : null,
             cardB: markerEnd ? cardName[markerEnd] : null,
             identifying,
+            strokeDasharray: computed.strokeDasharray,
+            strokeWidth: computed.strokeWidth,
           };
         });
 

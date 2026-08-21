@@ -346,7 +346,7 @@ int main(int argc, char** argv) {
                  QStringLiteral("shape/render integration"));
 
   const QByteArray pixelDigest = combinedFileDigest(pixelDir, files);
-  require(pixelDigest == QByteArrayLiteral("939c7eb71632eb649e66e7aab594630ff126f2a7c61afa9f113696aaca9a4fb4"),
+  require(pixelDigest == QByteArrayLiteral("76077b6272d43504760cfe35ca009888fcc15368275ddfcbb9870a11fe672ca8"),
           QStringLiteral("Flowchart pixel fixture digest drifted: %1")
               .arg(QString::fromLatin1(pixelDigest)));
 

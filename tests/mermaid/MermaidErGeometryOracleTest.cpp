@@ -148,6 +148,20 @@ int main(int argc, char** argv) {
         continue;
       }
       consumed[match] = 1;
+      if (!identifying) {
+        // Probe lock for the non-identifying dashed relationship: Chrome
+        // computes stroke-dasharray "8px, 8px" @ 1px on .edge-pattern-dashed
+        // (the er stylesheet's own 8,8 rule overrides the common sheet's `3`).
+        // ErScenePainter and ErScene::svgMarkerProjection must match this.
+        const QJsonObject matched = expectedRels[match].toObject();
+        if (matched.value(QStringLiteral("strokeDasharray")).toString() != QLatin1String("8px, 8px") ||
+            matched.value(QStringLiteral("strokeWidth")).toString() != QLatin1String("1px")) {
+          assertErrors << prefix + QStringLiteral(
+                           ": expected non-identifying dash 8px,8px@1px, fixture says %1 @ %2")
+                               .arg(matched.value(QStringLiteral("strokeDasharray")).toString(),
+                                    matched.value(QStringLiteral("strokeWidth")).toString());
+        }
+      }
       reportNotes += parity::comparePath(rel.value(QStringLiteral("path")).toString(),
                                          expectedRels[match].toObject().value(QStringLiteral("path")).toString(),
                                          parity::Tier{kPath}, prefix);

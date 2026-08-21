@@ -91,25 +91,33 @@
             "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
             "cardA": "ExactlyOne",
             "cardB": "ExactlyOne",
-            "identifying": true
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
           },
           {
             "path": "M240,42L240,50.583C240,59.167,240,76.333,240,93.5C240,110.667,240,127.833,240,136.417L240,145",
             "cardA": "ZeroOrOne",
             "cardB": "ZeroOrOne",
-            "identifying": true
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
           },
           {
             "path": "M480,42L480,50.583C480,59.167,480,76.333,480,93.5C480,110.667,480,127.833,480,136.417L480,145",
             "cardA": "OneOrMore",
             "cardB": "OneOrMore",
-            "identifying": true
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
           },
           {
             "path": "M720,42L720,50.583C720,59.167,720,76.333,720,93.5C720,110.667,720,127.833,720,136.417L720,145",
             "cardA": "ZeroOrMore",
             "cardB": "ZeroOrMore",
-            "identifying": true
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
           }
         ]
       }
@@ -161,7 +169,9 @@
             "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
             "cardA": "ExactlyOne",
             "cardB": "ZeroOrMore",
-            "identifying": true
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
           }
         ]
       }
@@ -240,7 +250,9 @@
             "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
             "cardA": "ExactlyOne",
             "cardB": "ExactlyOne",
-            "identifying": true
+            "identifying": true,
+            "strokeDasharray": "0px",
+            "strokeWidth": "1px"
           }
         ]
       }
@@ -274,7 +286,9 @@
             "path": "M0,42L0,50.583C0,59.167,0,76.333,0,93.5C0,110.667,0,127.833,0,136.417L0,145",
             "cardA": "OneOrMore",
             "cardB": "OneOrMore",
-            "identifying": false
+            "identifying": false,
+            "strokeDasharray": "8px, 8px",
+            "strokeWidth": "1px"
           }
         ]
       }

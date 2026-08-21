@@ -376,9 +376,10 @@ coords.
 
 ### 5.6 Relationship line style
 - `identifying == true`  → solid pen (`Qt::SolidLine`).
-- `identifying == false` → dashed pen, pattern `[6,4]` × strokeWidth
-  (`Qt::CustomDashLine`), matching mermaid's `.er.relationshipLine` non-identifying
-  rendering.
+- `identifying == false` → dashed pen, pattern `[8,8]` normalized by
+  `scene::parseAndNormalizeSvgDashPattern`, matching the Chrome-computed
+  `stroke-dasharray: 8px, 8px` on `.edge-pattern-dashed` (the er stylesheet's
+  own 8,8 rule overrides the common sheet's `3`; probed in er-geometry.json).
 
 ---
 

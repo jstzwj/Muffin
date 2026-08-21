@@ -522,4 +522,36 @@ table.push({
     "edgeFast@{ animate: true, animation: fast, curve: linear }",
   ].join("\n"),
 });
+// Axis 3b — linkStyle stroke-dasharray normalization. QPen dash entries are
+// pen-width multiples while SVG dash lengths are CSS pixels, so a 3px pen with
+// dasharray 6 must paint 6px dashes (the pre-normalization painter doubled the
+// period). The 1px control isolates the width division; the odd-length case
+// locks SVG's duplicate rule ("5" => 5,5) at a non-1px width.
+table.push({
+  id: "linkstyle-dash-3px",
+  theme: "default",
+  source: [
+    "flowchart LR",
+    "A[Alpha] --> B[Beta]",
+    "linkStyle 0 stroke-width:3px,stroke-dasharray:6",
+  ].join("\n"),
+});
+table.push({
+  id: "linkstyle-dash-1px-control",
+  theme: "default",
+  source: [
+    "flowchart LR",
+    "A[Alpha] --> B[Beta]",
+    "linkStyle 0 stroke-dasharray:6",
+  ].join("\n"),
+});
+table.push({
+  id: "linkstyle-dash-odd",
+  theme: "default",
+  source: [
+    "flowchart LR",
+    "A[Alpha] --> B[Beta]",
+    "linkStyle 0 stroke-width:2px,stroke-dasharray:5",
+  ].join("\n"),
+});
 export const cases = table;

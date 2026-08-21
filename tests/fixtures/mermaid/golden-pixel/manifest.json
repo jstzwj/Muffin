@@ -6851,7 +6851,7 @@
       "dpr": 1,
       "mathCropKind": "accent",
       "mathCropFile": "flow-math-crop-accent-label.png",
-      "mathCropSha256": "9ee525ca2464a050f80d186ca9857dfe89b45d1f7257a565383681f39a2d9893",
+      "mathCropSha256": "5349eca163617dfdd3c8d2722336f08b6b547a54d5678b4ec9ec82a4b20fd717",
       "content": {
         "width": 242.5625,
         "height": 62.75,
@@ -11709,6 +11709,48 @@
       },
       "enforceInterior": true,
       "file": "animated-edge-static-initial.png"
+    },
+    {
+      "id": "linkstyle-dash-3px",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
+      "source": "flowchart LR\nA[Alpha] --> B[Beta]\nlinkStyle 0 stroke-width:3px,stroke-dasharray:6",
+      "dpr": 1,
+      "content": {
+        "width": 243.84375,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "linkstyle-dash-3px.png"
+    },
+    {
+      "id": "linkstyle-dash-1px-control",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
+      "source": "flowchart LR\nA[Alpha] --> B[Beta]\nlinkStyle 0 stroke-dasharray:6",
+      "dpr": 1,
+      "content": {
+        "width": 243.84375,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "linkstyle-dash-1px-control.png"
+    },
+    {
+      "id": "linkstyle-dash-odd",
+      "theme": "default",
+      "look": "classic",
+      "fontMode": "system",
+      "source": "flowchart LR\nA[Alpha] --> B[Beta]\nlinkStyle 0 stroke-width:2px,stroke-dasharray:5",
+      "dpr": 1,
+      "content": {
+        "width": 243.84375,
+        "height": 54
+      },
+      "enforceInterior": true,
+      "file": "linkstyle-dash-odd.png"
     }
   ]
 }

@@ -371,7 +371,9 @@ muffin::mermaid::SvgMarkerProjection er::ErScene::svgMarkerProjection() const {
     edge.markerEnd = key(source.cardB, false);
     edge.stroke = style.relationshipColor;
     edge.strokeWidth = QString::number(style.relationshipStrokeWidth);
-    if (!source.identifying) edge.strokeDasharray = QStringLiteral("6,4");
+    // Chrome-computed dash on .edge-pattern-dashed is "8px, 8px" (the er
+    // sheet's 8,8 overrides the common sheet's `3`); see er-geometry.json.
+    if (!source.identifying) edge.strokeDasharray = QStringLiteral("8,8");
     projection.edges.append(edge);
   }
   return projection;

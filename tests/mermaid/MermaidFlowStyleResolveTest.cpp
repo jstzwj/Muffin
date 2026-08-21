@@ -1,4 +1,5 @@
 #include "mermaid/flowchart/Flowchart.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/FlowTheme.h"
 #include "mermaid/theme/FlowStyleResolve.h"
 #include "mermaid/theme/MermaidColor.h"
@@ -53,6 +54,42 @@ double pxToNumber(const QString& s) {
   static const QRegularExpression re(QStringLiteral("(\\d+(?:\\.\\d+)?)"));
   const QRegularExpressionMatch m = re.match(s);
   return m.hasMatch() ? m.captured(1).toDouble() : -1.0;
+}
+
+// Raw CSS dash tokens (no width division): "4 2" and "4px, 2px" both give
+// {4,2}; "none"/empty gives {}. Chrome reports the common sheet's solid-edge
+// `stroke-dasharray: 0` as "0px" while native carries no dasharray at all, so
+// the equality below treats all-zero and empty as the same solid line.
+QVector<qreal> cssDashTokens(const QString& s) {
+  const QString value = s.trimmed();
+  if (value.isEmpty() || value.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0)
+    return {};
+  QVector<qreal> tokens;
+  for (QString part : value.split(QRegularExpression(QStringLiteral("[\\s,]+")), Qt::SkipEmptyParts)) {
+    if (part.endsWith(QLatin1String("px"), Qt::CaseInsensitive)) part.chop(2);
+    bool ok = false;
+    const qreal number = part.trimmed().toDouble(&ok);
+    if (!ok) return {};
+    tokens.append(number);
+  }
+  return tokens;
+}
+
+bool dashArraysEqual(const QString& native, const QString& golden) {
+  const QVector<qreal> a = cssDashTokens(native);
+  const QVector<qreal> b = cssDashTokens(golden);
+  const auto allZero = [](const QVector<qreal>& v) {
+    for (qreal value : v)
+      if (value != 0.0) return false;
+    return true;
+  };
+  const bool aSolid = a.isEmpty() || allZero(a);
+  const bool bSolid = b.isEmpty() || allZero(b);
+  if (aSolid || bSolid) return aSolid == bSolid;
+  if (a.size() != b.size()) return false;
+  for (qsizetype i = 0; i < a.size(); ++i)
+    if (std::abs(a.at(i) - b.at(i)) > 0.002) return false;
+  return true;
 }
 }  // namespace
 
@@ -113,6 +150,9 @@ int main(int argc, char** argv) {
     require(std::abs(pxToNumber(r.strokeWidth) - pxToNumber(e.value(QStringLiteral("strokeWidth")).toString())) <= 0.002,
             QStringLiteral("Edge L%1 strokeWidth mismatch: native=%2 golden=%3")
                 .arg(i).arg(r.strokeWidth).arg(e.value(QStringLiteral("strokeWidth")).toString()));
+    require(dashArraysEqual(r.strokeDasharray, e.value(QStringLiteral("strokeDasharray")).toString()),
+            QStringLiteral("Edge L%1 strokeDasharray mismatch: native=%2 golden=%3")
+                .arg(i).arg(r.strokeDasharray, e.value(QStringLiteral("strokeDasharray")).toString()));
   }
 
   // classDef `default` auto-applies to every vertex (mermaid.js:48113 prepends
@@ -142,6 +182,33 @@ int main(int argc, char** argv) {
             QStringLiteral("compiledClassStyles lost stroke: %1").arg(merged.join(QLatin1Char(','))));
     require(merged.contains(QStringLiteral("stroke-width:4px")),
             QStringLiteral("compiledClassStyles lost stroke-width: %1").arg(merged.join(QLatin1Char(','))));
+  }
+
+  // SvgStroke painter-level dash contract (the cascade above only carries the
+  // raw CSS token string; the painters consume this normalizer):
+  //  - CSS lengths divide by the pen width, odd lists duplicate (SVG "3" = 3,3)
+  //  - "none"/unparseable/negative/all-zero patterns and width <= 0 -> solid
+  //  - the ER non-identifying probe value (er-geometry.json) round-trips.
+  {
+    using scene::parseAndNormalizeSvgDashPattern;
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("2"), 1.0) == QVector<qreal>{2.0, 2.0},
+            QStringLiteral("dash '2'@1px must normalize to {2,2}"));
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("6px"), 3.0) == QVector<qreal>{2.0, 2.0},
+            QStringLiteral("dash '6px'@3px must normalize to {2,2}"));
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("5"), 2.0) == QVector<qreal>{2.5, 2.5},
+            QStringLiteral("dash '5'@2px must normalize to {2.5,2.5}"));
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("8,8"), 1.0) == QVector<qreal>{8.0, 8.0},
+            QStringLiteral("dash '8,8'@1px must normalize to {8,8}"));
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("none"), 1.0).isEmpty(),
+            QStringLiteral("dash 'none' must be solid"));
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("garbage"), 1.0).isEmpty(),
+            QStringLiteral("unparseable dash must be solid"));
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("4 -2"), 1.0).isEmpty(),
+            QStringLiteral("negative dash entry must be solid"));
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("0 0"), 1.0).isEmpty(),
+            QStringLiteral("all-zero dash must be solid"));
+    require(parseAndNormalizeSvgDashPattern(QStringLiteral("4 2"), 0.0).isEmpty(),
+            QStringLiteral("zero pen width must be solid"));
   }
 
   qDebug().noquote() << "MermaidFlowStyleResolveTest: cascade matches golden";

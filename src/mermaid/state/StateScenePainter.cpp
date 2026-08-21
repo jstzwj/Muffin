@@ -2,6 +2,7 @@
 
 #include "mermaid/rough/RoughPaint.h"
 #include "mermaid/scene/SvgPathParse.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QImage>
@@ -79,14 +80,13 @@ QPainterPath edgePath(const StateSceneEdge& edge) {
 // extend every dash by half the width on both ends.
 QPen dashedPen(const QColor& strokeColor, qreal width, const QString& dasharray) {
   QPen pen(strokeColor, width);
-  QVector<qreal> dash;
-  for (const QString& token : dasharray.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
-    bool ok = false;
-    const qreal d = token.trimmed().toDouble(&ok);
-    if (ok && d > 0.0) dash.append(d);
-  }
-  if (!dash.isEmpty() && width > 0.0) {
-    for (qreal& entry : dash) entry /= width;
+  // Shared SvgStroke normalizer (px-suffix strip, odd-length duplication,
+  // reject negative/all-zero/unparseable). The only runtime input today is the
+  // note-edge constant "5,5" (StateScene.cpp), which normalizes identically to
+  // the previous drop-invalid-token parse — {5/w, 5/w} with FlatCap.
+  const QVector<qreal> dash =
+      scene::parseAndNormalizeSvgDashPattern(dasharray, width);
+  if (!dash.isEmpty()) {
     pen.setDashPattern(dash);
     pen.setCapStyle(Qt::FlatCap);
   }

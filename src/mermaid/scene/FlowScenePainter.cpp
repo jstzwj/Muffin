@@ -5,6 +5,7 @@
 #include "mermaid/rough/RoughOps.h"
 #include "mermaid/rough/RoughPaint.h"
 #include "mermaid/scene/FlowMarkers.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
@@ -452,13 +453,16 @@ void paintFlowScene(const FlowScene& scene, QPainter& painter,
         const qreal offset = 900.0 * (1.0 - elapsed / duration);
         pen.setDashOffset(offset / width);
       } else if (!e.strokeDasharray.isEmpty()) {
-        QStringList parts = e.strokeDasharray.split(QRegularExpression(QStringLiteral("[\\s,]+")), Qt::SkipEmptyParts);
-        QVector<qreal> dash; for (const QString& s : parts) dash.append(s.toDouble());
-        // Qt requires an even-length pattern (dash/gap pairs). A mermaid dotted edge
-        // has dasharray "2" (one value); duplicate an odd-length pattern so Qt
-        // doesn't warn + fall back to a solid line.
-        if (dash.size() % 2 != 0) dash += dash;
-        pen.setDashPattern(dash);
+        // SVG dash lengths are CSS pixels while QPen entries are pen-width
+        // multiples, so normalize through the shared SvgStroke helper: it also
+        // strips "px" suffixes, duplicates an odd-length list ("2" => 2,2) and
+        // rejects negative/all-zero/unparseable patterns. The previous
+        // hand-rolled parse never divided by the width, doubling the rendered
+        // period for stroke-width != 1 (e.g. linkStyle stroke-width:3px with
+        // dasharray 6 painted 18px dashes).
+        const QVector<qreal> dash = scene::parseAndNormalizeSvgDashPattern(
+            e.strokeDasharray, std::max<qreal>(0.001, pen.widthF()));
+        if (!dash.isEmpty()) pen.setDashPattern(dash);
       }
       pen.setCapStyle(Qt::RoundCap); pen.setJoinStyle(Qt::RoundJoin);
       if (scene.look == flowchart::FlowLook::HandDrawn) {
