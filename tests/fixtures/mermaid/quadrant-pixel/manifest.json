@@ -15,6 +15,16 @@
       "sha256": "df9e1584bcdf52800c5bfe133c2f9da1f97482067f5429e3bacf21a31c733ab2"
     },
     {
+      "id": "base",
+      "dpr": 1,
+      "theme": "base",
+      "source": "%%{init: {\"theme\":\"base\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "base.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "dda757cca9837ca5d6d04cb2bc668b5e054cdab44713510dd37f4b27ef44b0a7"
+    },
+    {
       "id": "dark",
       "dpr": 1,
       "theme": "dark",
@@ -23,7 +33,87 @@
       "width": 500,
       "height": 500,
       "sha256": "e88fbeac7252b72d79cc7b74918c7a357a5f89c4eae3c0af00bd61d034e797fd"
+    },
+    {
+      "id": "forest",
+      "dpr": 1,
+      "theme": "forest",
+      "source": "%%{init: {\"theme\":\"forest\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "forest.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "b821d6fd9fa145cebd29e1a08313d5ce8b9016d00882fbeaf6261dfb1b6611d4"
+    },
+    {
+      "id": "neutral",
+      "dpr": 1,
+      "theme": "neutral",
+      "source": "%%{init: {\"theme\":\"neutral\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "neutral.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "fcda6c670c64ac88f7fa58336f37d54fbe20bc4cb6d46a78861a391936f0cb8f"
+    },
+    {
+      "id": "neo",
+      "dpr": 1,
+      "theme": "neo",
+      "source": "%%{init: {\"theme\":\"neo\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "neo.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "814e6b3446d3ead36a6b4ec2ad4d441b89d1d4beb09ee0526968287b4e0dc1f0"
+    },
+    {
+      "id": "neo-dark",
+      "dpr": 1,
+      "theme": "neo-dark",
+      "source": "%%{init: {\"theme\":\"neo-dark\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "neo-dark.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "fd5e345cc5a2e921511d0dea6df93b7cf9201a1ee79c0e7094671bd064e42e89"
+    },
+    {
+      "id": "redux",
+      "dpr": 1,
+      "theme": "redux",
+      "source": "%%{init: {\"theme\":\"redux\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "redux.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "619efb2d45d50feee97ddc76425a9397b27b745c10af57fc3615c484b80b4a60"
+    },
+    {
+      "id": "redux-dark",
+      "dpr": 1,
+      "theme": "redux-dark",
+      "source": "%%{init: {\"theme\":\"redux-dark\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "redux-dark.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "fd5e345cc5a2e921511d0dea6df93b7cf9201a1ee79c0e7094671bd064e42e89"
+    },
+    {
+      "id": "redux-color",
+      "dpr": 1,
+      "theme": "redux-color",
+      "source": "%%{init: {\"theme\":\"redux-color\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "redux-color.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "7b7a104e4dcf678508cae34c21242eefd3557e3985221a4266e59379c3d58d45"
+    },
+    {
+      "id": "redux-dark-color",
+      "dpr": 1,
+      "theme": "redux-dark-color",
+      "source": "%%{init: {\"theme\":\"redux-dark-color\"}}%%\nquadrantChart\ntitle Reach vs Engagement\nx-axis Low --> High\ny-axis Down --> Up\nquadrant-1 Plan\nquadrant-2 Strategy\nquadrant-3 Hold\nquadrant-4 Harvest\n\"Fast\": [0.8, 0.85]\n\"Slow\": [0.2, 0.15]\n\"Steady\": [0.5, 0.5]",
+      "file": "redux-dark-color.png",
+      "width": 500,
+      "height": 500,
+      "sha256": "fd5e345cc5a2e921511d0dea6df93b7cf9201a1ee79c0e7094671bd064e42e89"
     }
   ],
-  "fixtureSha256": "56ef4d7ead82be3d97b4be7ee261beeb104b8d10d5a47dc8b4952274daf4ef94"
+  "fixtureSha256": "154db3e7608e817a2ffe14198ec05b8a7362748ceb6ff4ff50b4dd3d20261ec6"
 }

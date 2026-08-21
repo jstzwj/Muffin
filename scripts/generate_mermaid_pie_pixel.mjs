@@ -34,24 +34,26 @@ if (pkg.version !== "11.16.0")
 // The scout canonical 3-slice source (Dogs/Cats/Fish) — same input as the
 // render-oracle probe (STEP0_REPORT.md §6) so palette fills match the recorded
 // default/dark values (#ECECFF/#ffffde/hsl(80,...) and #0b0000/#4d1037/#3f5258).
-const cases = [
-  {
-    id: "default",
-    dpr: 1,
-    theme: "default",
-    renderId: "pie-pixel-default",
-    source: "pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
-  },
-  {
-    id: "dark",
-    dpr: 1,
-    theme: "dark",
-    renderId: "pie-pixel-dark",
-    // Self-declares its theme so the native pipeline (which renders from
-    // `source`) produces dark to match this golden, not default.
-    source: "%%{init: {\"theme\":\"dark\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
-  },
+const pieSource = "pie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36";
+
+// All 11 built-in themes (mirroring the flowchart golden-pixel theme axis).
+// The default case renders the bare source; every other theme self-declares
+// via %%{init}%% so the native pipeline (which renders from `source`) produces
+// the same theme as this golden.
+const themes = [
+  "default", "base", "dark", "forest", "neutral",
+  "neo", "neo-dark", "redux", "redux-dark", "redux-color", "redux-dark-color",
 ];
+const cases = themes.map((theme) => ({
+  id: theme,
+  dpr: 1,
+  theme,
+  renderId: `pie-pixel-${theme}`,
+  source:
+    theme === "default"
+      ? pieSource
+      : `%%{init: {"theme":"${theme}"}}%%\n${pieSource}`,
+}));
 
 const notoDir = path.resolve("third_party", "noto", "fonts");
 const fonts = [

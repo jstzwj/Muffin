@@ -13,6 +13,7 @@
 #include <QImage>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 
 #include <algorithm>
 #include <cmath>
@@ -65,13 +66,15 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("56ef4d7ead82be3d97b4be7ee261beeb104b8d10d5a47dc8b4952274daf4ef94"),
+              QLatin1String("154db3e7608e817a2ffe14198ec05b8a7362748ceb6ff4ff50b4dd3d20261ec6"),
           QStringLiteral("Quadrant pixel fixture changed; audit and update its digest"));
   const QDir dir = QFileInfo(QString::fromLocal8Bit(argv[1])).dir();
   qreal minIou = 1.0;
+  QSet<QString> coveredThemes;
   for (const QJsonValue& cv : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject f = cv.toObject();
     const QString id = f.value(QStringLiteral("id")).toString();
+    coveredThemes.insert(f.value(QStringLiteral("theme")).toString());
     const QString pngPath = dir.filePath(f.value(QStringLiteral("file")).toString());
     require(sha256(pngPath) == f.value(QStringLiteral("sha256")).toString().toLatin1(), id + ": browser PNG hash drifted");
     const QImage browser(pngPath);
@@ -90,6 +93,16 @@ int main(int argc, char** argv) {
     require(rgba >= 0.85, id + QStringLiteral(": foreground RGBA regressed"));
     minIou = std::min(minIou, iou);
   }
+  // Theme axis: all 11 built-in themes are pinned at pixel level (mirrors the
+  // flowchart golden-pixel coverage), so a dropped/renamed theme fails loudly.
+  require(coveredThemes ==
+              QSet<QString>{QStringLiteral("default"), QStringLiteral("base"),
+                            QStringLiteral("dark"), QStringLiteral("forest"),
+                            QStringLiteral("neutral"), QStringLiteral("neo"),
+                            QStringLiteral("neo-dark"), QStringLiteral("redux"),
+                            QStringLiteral("redux-dark"), QStringLiteral("redux-color"),
+                            QStringLiteral("redux-dark-color")},
+          QStringLiteral("Quadrant pixel theme coverage regressed"));
   qDebug() << "MermaidQuadrantPixelTest: passed; minimum alpha IoU" << minIou;
   return 0;
 }

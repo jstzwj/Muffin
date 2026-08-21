@@ -16,6 +16,17 @@
       "sha256": "d2e1d0587496c2d2dbe5dddf0ebdc3057ee05d14dd6cf13d5e82f08d39b118e3"
     },
     {
+      "id": "base",
+      "dpr": 1,
+      "theme": "base",
+      "renderId": "pie-pixel-base",
+      "source": "%%{init: {\"theme\":\"base\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "base.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "cbf2cd8430de9f65afb496ebe11c17e113b088cc22d1c5f8731d13b5008e0c21"
+    },
+    {
       "id": "dark",
       "dpr": 1,
       "theme": "dark",
@@ -25,7 +36,95 @@
       "width": 553,
       "height": 450,
       "sha256": "69993d7d8d32ed1bb71820213450bc4c6d51b3c35247221d12f08d72519424c3"
+    },
+    {
+      "id": "forest",
+      "dpr": 1,
+      "theme": "forest",
+      "renderId": "pie-pixel-forest",
+      "source": "%%{init: {\"theme\":\"forest\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "forest.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "9738545ad523fc202536ddbc9275e1cb84a1cbd29ebf94a1696e22eb97f22c13"
+    },
+    {
+      "id": "neutral",
+      "dpr": 1,
+      "theme": "neutral",
+      "renderId": "pie-pixel-neutral",
+      "source": "%%{init: {\"theme\":\"neutral\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "neutral.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "13709c421bee968e0b7cece60857284dbec4699854d88d8a01554960e9c5f0ef"
+    },
+    {
+      "id": "neo",
+      "dpr": 1,
+      "theme": "neo",
+      "renderId": "pie-pixel-neo",
+      "source": "%%{init: {\"theme\":\"neo\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "neo.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "46e9e254f355566f602a1db3d65d30cd07baae0b5ce5baef815291b62ed129a2"
+    },
+    {
+      "id": "neo-dark",
+      "dpr": 1,
+      "theme": "neo-dark",
+      "renderId": "pie-pixel-neo-dark",
+      "source": "%%{init: {\"theme\":\"neo-dark\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "neo-dark.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "69e62926c33bd8cb0bf04dc2da9ba58c2a83a95e6b7b0becc2d3c1ee9cf2feda"
+    },
+    {
+      "id": "redux",
+      "dpr": 1,
+      "theme": "redux",
+      "renderId": "pie-pixel-redux",
+      "source": "%%{init: {\"theme\":\"redux\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "redux.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "e2ea098e27bb71f0c2c7670052bf0f2877012b93d7753e61f15609fcaa61ae26"
+    },
+    {
+      "id": "redux-dark",
+      "dpr": 1,
+      "theme": "redux-dark",
+      "renderId": "pie-pixel-redux-dark",
+      "source": "%%{init: {\"theme\":\"redux-dark\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "redux-dark.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "69e62926c33bd8cb0bf04dc2da9ba58c2a83a95e6b7b0becc2d3c1ee9cf2feda"
+    },
+    {
+      "id": "redux-color",
+      "dpr": 1,
+      "theme": "redux-color",
+      "renderId": "pie-pixel-redux-color",
+      "source": "%%{init: {\"theme\":\"redux-color\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "redux-color.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "e2ea098e27bb71f0c2c7670052bf0f2877012b93d7753e61f15609fcaa61ae26"
+    },
+    {
+      "id": "redux-dark-color",
+      "dpr": 1,
+      "theme": "redux-dark-color",
+      "renderId": "pie-pixel-redux-dark-color",
+      "source": "%%{init: {\"theme\":\"redux-dark-color\"}}%%\npie title Pets\n\"Dogs\" : 38\n\"Cats\" : 26\n\"Fish\" : 36",
+      "file": "redux-dark-color.png",
+      "width": 553,
+      "height": 450,
+      "sha256": "69e62926c33bd8cb0bf04dc2da9ba58c2a83a95e6b7b0becc2d3c1ee9cf2feda"
     }
   ],
-  "fixtureSha256": "bb526c82a8e570c21632620a9fe418b3b7bacafb34f8ef24beba683ce94f08ca"
+  "fixtureSha256": "84b2150cc9fcc9304f61ed08985645922d5acbc8ced2445503308392be603883"
 }

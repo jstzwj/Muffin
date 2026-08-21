@@ -15,6 +15,7 @@
 #include <QImage>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 
 #include <algorithm>
 #include <cmath>
@@ -87,13 +88,15 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("bb526c82a8e570c21632620a9fe418b3b7bacafb34f8ef24beba683ce94f08ca"),
+              QLatin1String("84b2150cc9fcc9304f61ed08985645922d5acbc8ced2445503308392be603883"),
           QStringLiteral("Pie pixel fixture changed; audit and update its digest"));
   const QDir fixtureDir = QFileInfo(manifestPath).dir();
   qreal minimumIou = 1.0;
+  QSet<QString> coveredThemes;
   for (const QJsonValue& cv : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = cv.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
+    coveredThemes.insert(fixture.value(QStringLiteral("theme")).toString());
     const QString source = fixture.value(QStringLiteral("source")).toString();
     const QString pngPath = fixtureDir.filePath(fixture.value(QStringLiteral("file")).toString());
     require(sha256(pngPath) == fixture.value(QStringLiteral("sha256")).toString().toLatin1(),
@@ -129,6 +132,16 @@ int main(int argc, char** argv) {
     require(rgba >= 0.85, id + QStringLiteral(": foreground RGBA regressed"));
     minimumIou = std::min(minimumIou, iou);
   }
+  // Theme axis: all 11 built-in themes are pinned at pixel level (mirrors the
+  // flowchart golden-pixel coverage), so a dropped/renamed theme fails loudly.
+  require(coveredThemes ==
+              QSet<QString>{QStringLiteral("default"), QStringLiteral("base"),
+                            QStringLiteral("dark"), QStringLiteral("forest"),
+                            QStringLiteral("neutral"), QStringLiteral("neo"),
+                            QStringLiteral("neo-dark"), QStringLiteral("redux"),
+                            QStringLiteral("redux-dark"), QStringLiteral("redux-color"),
+                            QStringLiteral("redux-dark-color")},
+          QStringLiteral("Pie pixel theme coverage regressed"));
   qDebug() << "MermaidPiePixelTest: passed; minimum alpha IoU" << minimumIou;
   return 0;
 }

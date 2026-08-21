@@ -186,9 +186,13 @@ try {
   // pipeline (which renders from `source`) produces the same theme as the golden.
   const manifest = { upstream: { version: "11.16.0" }, fontMode: "bundled-noto-2.13b171", cases: [] };
   const pixelCases = [
-    { id: "default", theme: "default", src: pixelSrc },
-    { id: "dark", theme: "dark", src: '%%{init: {"theme":"dark"}}%%\n' + pixelSrc },
-  ];
+    "default", "base", "dark", "forest", "neutral",
+    "neo", "neo-dark", "redux", "redux-dark", "redux-color", "redux-dark-color",
+  ].map((theme) => ({
+    id: theme,
+    theme,
+    src: theme === "default" ? pixelSrc : `%%{init: {"theme":"${theme}"}}%%\n` + pixelSrc,
+  }));
   for (const pc of pixelCases) {
     const buf = await page.evaluate(async (src, id, mod) => {
       const { default: mermaid } = await import(mod);

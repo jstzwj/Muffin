@@ -82,29 +82,9 @@ const QStringList criticalFields() {
 }
 
 // Pie + Quadrant themeVariables are derived per-theme in updateColors for all
-// 11 themes: Family-A (base/neo/neo-dark/redux/redux-dark/redux-color/
-// redux-dark-color — populatePieFamilyA), Default (populatePieDefault), Forest
-// (populatePieForest), and Dark/Neutral (populatePieFromCScale — pie mirrors
-// cScale). Quadrant is uniform across all themes (populateQuadrant).
-bool pieQuadrantImplemented(FlowThemeId id) {
-  switch (id) {
-    case FlowThemeId::Base:
-    case FlowThemeId::Neo:
-    case FlowThemeId::NeoDark:
-    case FlowThemeId::Redux:
-    case FlowThemeId::ReduxDark:
-    case FlowThemeId::ReduxColor:
-    case FlowThemeId::ReduxDarkColor:
-    case FlowThemeId::Default:
-    case FlowThemeId::Forest:
-    case FlowThemeId::Neutral:
-    case FlowThemeId::Dark:
-      return true;
-    default:
-      return false;
-  }
-}
-
+// 11 themes (Family-A populatePieFamilyA, Default populatePieDefault, Forest
+// populatePieForest, Dark/Neutral populatePieFromCScale; quadrant uniform via
+// populateQuadrant), so the fields below apply to every theme unconditionally.
 // The 20 pie/quadrant fields that populatePie*/populateQuadrant derive: the
 // 12 section fills + 4 quadrant fills + 4 quadrant text fills.
 QStringList pieQuadrantFields() {
@@ -343,10 +323,8 @@ QStringList fieldsForTheme(FlowThemeId id) {
     f.append(QStringLiteral("venn%1").arg(i));
   f.append(QStringLiteral("vennTitleTextColor"));
   f.append(QStringLiteral("vennSetTextColor"));
-  if (pieQuadrantImplemented(id)) {
-    f.append(pieQuadrantFields());
-    f.append(pieQuadrantScalarFields());
-  }
+  f.append(pieQuadrantFields());
+  f.append(pieQuadrantScalarFields());
   return f;
 }
 
@@ -1043,11 +1021,11 @@ void checkScalarDependencyOverrides() {
   }
 }
 
-// Gate D + P2 closure: walk EVERY resolved themeVariables key from the
-// 285-key inventory (theme-variables-inventory.json — union of all 11 built-in
-// themes' golden values plus upstream dist consumer classification) through
-// FlowThemeVariables::get(). The former `remaining` exception list is now
-// EMPTY: every key is derived natively with upstream's per-theme formulas.
+// Permanent regression oracle: walk EVERY resolved themeVariables key from
+// the 285-key inventory (theme-variables-inventory.json — union of all 11
+// built-in themes' golden values plus upstream dist consumer classification)
+// through FlowThemeVariables::get(). Every key is derived natively with
+// upstream's per-theme formulas (the historical Gate D scaffolding closed).
 // Keys with no 11.16 renderer consumer (surface*/surfacePeer* loops, pie0,
 // rowOdd/rowEven, attributeBackgroundColor*, darkTextColor, filterColor,
 // rootLabelColor, wardleyEvolutionColor, er/stateEdgeLabelBackground,
@@ -1055,17 +1033,11 @@ void checkScalarDependencyOverrides() {
 // golden-locked — documented upstream-dead, see FlowTheme.h. Live keys
 // (sequence/state/class/c4 palettes, radius, scaleLabelColor,
 // branchLabelColor, noteFontWeight) additionally feed their family consumers.
-const QStringList& themeVariablesRemainingKeys() {
-  static const QStringList remaining = {};
-  return remaining;
-}
-
 void checkThemeVariablesInventory(const QJsonObject& fixture) {
   require(fixture.value(QStringLiteral("upstream")).toObject()
                   .value(QStringLiteral("version")).toString() ==
               QLatin1String("11.16.0"),
           QStringLiteral("Theme inventory version drifted"));
-  const QStringList remaining = themeVariablesRemainingKeys();
   const QJsonObject values = fixture.value(QStringLiteral("values")).toObject();
   require(values.size() == 11,
           QStringLiteral("Theme inventory must cover 11 themes"));
@@ -1080,7 +1052,6 @@ void checkThemeVariablesInventory(const QJsonObject& fixture) {
     const QJsonObject vars = themeIt.value().toObject();
     for (auto varIt = vars.constBegin(); varIt != vars.constEnd(); ++varIt) {
       const QString key = varIt.key();
-      if (remaining.contains(key)) continue;
       const QString native = theme.get(key);
       const QString golden = goldenToString(varIt.value());
       if (native != golden && !mismatches.contains(key)) {
@@ -1096,10 +1067,6 @@ void checkThemeVariablesInventory(const QJsonObject& fixture) {
                         "%1 -- %2")
              .arg(mismatches.join(QLatin1String(", ")),
                   details.join(QLatin1String(", "))));
-  // Every remaining key must still exist in the inventory (no stale entries).
-  for (const QString& key : remaining)
-    require(fixture.value(QStringLiteral("keys")).toObject().contains(key),
-            QStringLiteral("Stale remaining key: %1").arg(key));
 }
 }  // namespace
 

@@ -1,4 +1,5 @@
-// Gate D: exhaustive themeVariables key inventory.
+// Exhaustive themeVariables key inventory (historical Gate D — closed; this
+// generator now maintains the inventory as a permanent regression oracle).
 //
 // Union of every resolved themeVariables key across the 11 built-in themes
 // (values re-used verbatim from the flowchart-theme golden, which captures
