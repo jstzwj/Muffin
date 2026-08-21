@@ -27,6 +27,7 @@ public:
   void setStatusBarVisible(bool visible);
   void setZoomPercent(int percent);
   void setFontSizePx(int px);
+  void setContentWidthPx(int px);
 
 signals:
   void themeRequested(QString name);
@@ -36,6 +37,7 @@ signals:
   void statusBarVisibleRequested(bool visible);
   void zoomPercentRequested(int percent);
   void fontSizePxRequested(int px);
+  void contentWidthPxRequested(int px);
 
 private:
   void addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) const;
@@ -50,6 +52,8 @@ private:
   QPushButton* resetZoomButton_ = nullptr;
   QLabel* fontSizeLabel_ = nullptr;
   QComboBox* fontSizeCombo_ = nullptr;
+  QLabel* contentWidthLabel_ = nullptr;
+  QComboBox* contentWidthCombo_ = nullptr;
   QLabel* statusBarLabel_ = nullptr;
   QCheckBox* showStatusBarCheck_ = nullptr;
 };

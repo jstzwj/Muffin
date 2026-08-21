@@ -69,6 +69,7 @@ public:
   void setWordWrapEnabled(bool enabled);
   void setZoomPercent(int percent);
   void setFontSizePx(int px);
+  void setContentWidthPx(int px);
   void setTheme(const RenderTheme& theme);
   void setDocumentPath(const QString& path);
   void setReadOnly(bool readOnly);
@@ -91,6 +92,7 @@ private:
   VirtualSourceEdit* editor_ = nullptr;
   int zoomPercent_ = 100;
   int fontSizePx_ = 16;
+  int contentWidthPx_ = 0;
 };
 
 }  // namespace muffin

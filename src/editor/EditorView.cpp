@@ -364,12 +364,19 @@ void EditorView::setFontSizePx(int px) {
   rebuildLayout();
 }
 
+void EditorView::setContentWidthPx(int px) {
+  theme_.setContentWidthPx(px);
+  rebuildLayout();
+}
+
 void EditorView::setTheme(RenderTheme theme) {
   const int zoom = theme_.zoomPercent();
   const int fontSize = theme_.fontSizePx();
+  const int contentWidth = theme_.contentWidthPx();
   theme_ = std::move(theme);
   theme_.setZoomPercent(zoom);
   theme_.setFontSizePx(fontSize);
+  theme_.setContentWidthPx(contentWidth);
   if (keyframeAnimator_) { keyframeAnimator_->setTheme(theme_); }
   applyScrollBarStyle();
   viewport()->setPalette(QPalette(theme_.backgroundColor()));

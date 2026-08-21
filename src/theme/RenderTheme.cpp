@@ -12,6 +12,7 @@
 #include <QtGlobal>
 
 #include <initializer_list>
+#include <limits>
 
 namespace muffin {
 namespace {
@@ -331,8 +332,28 @@ void RenderTheme::setFontSizePx(int px) {
   fontSizePx_ = qBound(12, px, 24);
 }
 
+int RenderTheme::contentWidthPx() const {
+  return contentWidthPx_;
+}
+
+void RenderTheme::setContentWidthPx(int px) {
+  if (px == -1) {
+    contentWidthPx_ = -1;
+  } else if (px > 0) {
+    contentWidthPx_ = qBound(640, px, 2400);
+  } else {
+    contentWidthPx_ = 0;
+  }
+}
+
 qreal RenderTheme::pageWidth() const {
-  return scaled(pageMaxWidth_ > 0.0 ? pageMaxWidth_ : 860.0);
+  if (contentWidthPx_ == -1) {
+    return std::numeric_limits<qreal>::max() / 4.0;
+  }
+  const qreal width = contentWidthPx_ > 0
+      ? static_cast<qreal>(contentWidthPx_)
+      : (pageMaxWidth_ > 0.0 ? pageMaxWidth_ : 860.0);
+  return scaled(width);
 }
 
 qreal RenderTheme::topMargin() const {

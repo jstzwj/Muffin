@@ -889,6 +889,36 @@ void testNarrowViewportFillsForCardTheme(const MarkdownDocument& document) {
           QStringLiteral("400px viewport should fill to ~370, not squeeze (got %1)").arg(layout.pageWidth()));
 }
 
+void testContentWidthOverrideControlsPageColumn(const MarkdownDocument& document) {
+  ThemeDefinition def;
+  def.id = QStringLiteral("content-width");
+  def.page.pageMaxWidth = 860.0;
+  def.page.pagePadding = QMarginsF(30, 30, 30, 30);
+  def.page.pageMargin = QMarginsF();
+  def.page.pageMarginExplicit = true;
+  RenderTheme theme = RenderTheme::fromDefinition(def);
+
+  DocumentLayout layout;
+  layout.rebuild(document, theme, 1280.0);
+  require(qAbs(layout.pageWidth() - 800.0) < 0.01,
+          QStringLiteral("theme width should retain the 860px page box minus padding"));
+
+  theme.setContentWidthPx(1200);
+  layout.rebuild(document, theme, 1280.0);
+  require(qAbs(layout.pageWidth() - 1140.0) < 0.01,
+          QStringLiteral("1200px content-width setting should widen the page box"));
+
+  theme.setContentWidthPx(-1);
+  layout.rebuild(document, theme, 1280.0);
+  require(qAbs(layout.pageWidth() - 1220.0) < 0.01,
+          QStringLiteral("full-width setting should fill the viewport minus page padding"));
+
+  theme.setContentWidthPx(0);
+  layout.rebuild(document, theme, 1280.0);
+  require(qAbs(layout.pageWidth() - 800.0) < 0.01,
+          QStringLiteral("theme-default setting should restore the authored width"));
+}
+
 // Paint a theme carrying decorations (h2 element bg gradient, h1::after underline,
 // #write::before texture) end-to-end to an image. Guards the decoration paint
 // hooks + GradientPainter + DecorationPainter against crashes when decorations
@@ -1017,6 +1047,7 @@ int main(int argc, char** argv) {
   runTest("testLayoutForTheme/pixyll", [&] { testLayoutForTheme(document, RenderTheme::pixyll(), QStringLiteral("pixyll")); });
   runTest("testLayoutForTheme/whitey", [&] { testLayoutForTheme(document, RenderTheme::whitey(), QStringLiteral("whitey")); });
   runTest("testNarrowViewportFillsForCardTheme", [&] { testNarrowViewportFillsForCardTheme(document); });
+  runTest("testContentWidthOverrideControlsPageColumn", [&] { testContentWidthOverrideControlsPageColumn(document); });
   runTest("testDecoratedThemePaints", [&] { testDecoratedThemePaints(document); });
 #undef RUN_TEST
   return 0;

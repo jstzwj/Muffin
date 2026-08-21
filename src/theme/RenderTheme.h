@@ -39,6 +39,12 @@ public:
   void setZoomPercent(int percent);
   int fontSizePx() const;
   void setFontSizePx(int px);
+  // User-level page-column override. 0 keeps the active theme's #write
+  // max-width, -1 fills the viewport, and a positive value is a CSS-pixel
+  // maximum. This is deliberately independent from text size so users can
+  // reduce wrapping without shrinking the type.
+  int contentWidthPx() const;
+  void setContentWidthPx(int px);
 
   qreal pageWidth() const;
   qreal topMargin() const;
@@ -260,6 +266,7 @@ private:
   QMarginsF pageMargin_;
   bool pageMarginExplicit_ = false;  // theme declared a #write margin (or padding→default 0)
   qreal pageMaxWidth_ = 0.0;
+  int contentWidthPx_ = 0;
   QColor pageShadowColor_;
   qreal pageShadowOffsetX_ = 0.0;
   qreal pageShadowBlur_ = 0.0;

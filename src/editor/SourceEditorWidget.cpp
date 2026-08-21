@@ -12,7 +12,7 @@
 
 namespace {
 
-constexpr int kContentWidth = 860;
+constexpr int kDefaultContentWidth = 860;
 constexpr int kHorizontalInset = 64;
 
 }  // namespace
@@ -113,6 +113,17 @@ void muffin::SourceEditorWidget::setFontSizePx(int px) {
   applyFontSize();
 }
 
+void muffin::SourceEditorWidget::setContentWidthPx(int px) {
+  if (px == -1) {
+    contentWidthPx_ = -1;
+  } else if (px > 0) {
+    contentWidthPx_ = qBound(640, px, 2400);
+  } else {
+    contentWidthPx_ = 0;
+  }
+  updateEditorWidth();
+}
+
 void muffin::SourceEditorWidget::setTheme(const RenderTheme& theme) {
   const SourceEditorColors colors = SourceEditorColors::fromTheme(theme);
   editor_->setColors(colors);
@@ -153,6 +164,10 @@ void muffin::SourceEditorWidget::applyFontSize() {
 void muffin::SourceEditorWidget::updateEditorWidth() {
   if (!editor_) return;
   const int availableWidth = qMax(0, width() - kHorizontalInset * 2);
-  const int targetWidth = qMin(kContentWidth, availableWidth > 0 ? availableWidth : kContentWidth);
+  const int preferredWidth = contentWidthPx_ == -1
+      ? availableWidth
+      : (contentWidthPx_ > 0 ? contentWidthPx_ : kDefaultContentWidth);
+  const int targetWidth = qMin(preferredWidth,
+                               availableWidth > 0 ? availableWidth : preferredWidth);
   editor_->setFixedWidth(targetWidth);
 }

@@ -73,7 +73,26 @@ muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesP
   fontSizeLayout->addWidget(fontSizeCombo_);
   cardColumn->addWidget(fontSizeCard);
 
-  // --- Card 4: Status Bar ---
+  // --- Card 4: Content Width ---
+  auto* contentWidthCard = makeCard(this);
+  auto* contentWidthLayout = new QHBoxLayout(contentWidthCard);
+  contentWidthLayout->setContentsMargins(kRowHorizontalMargin, kRowVerticalMargin,
+                                         kRowHorizontalMargin, kRowVerticalMargin);
+  contentWidthLayout->setSpacing(18);
+  contentWidthLabel_ = makeSectionLabel(contentWidthCard);
+  contentWidthCombo_ = new QComboBox(contentWidthCard);
+  contentWidthCombo_->addItem(QString(), 0);
+  contentWidthCombo_->addItem(QString(), 1024);
+  contentWidthCombo_->addItem(QString(), 1200);
+  contentWidthCombo_->addItem(QString(), -1);
+  contentWidthCombo_->setMinimumWidth(180);
+  polishComboBox(contentWidthCombo_);
+  contentWidthLayout->addWidget(contentWidthLabel_);
+  contentWidthLayout->addStretch(1);
+  contentWidthLayout->addWidget(contentWidthCombo_);
+  cardColumn->addWidget(contentWidthCard);
+
+  // --- Card 5: Status Bar ---
   auto* statusCard = makeCard(this);
   statusCard->setProperty("lastSettingsRow", true);
   auto* statusLayout = makeCardLayout(statusCard);
@@ -110,6 +129,11 @@ muffin::PrefsAppearancePage::PrefsAppearancePage(QWidget* parent) : PreferencesP
       emit fontSizePxRequested(fontSizeCombo_->itemData(index).toInt());
     }
   });
+  connect(contentWidthCombo_, &QComboBox::currentIndexChanged, this, [this](int index) {
+    if (index >= 0) {
+      emit contentWidthPxRequested(contentWidthCombo_->itemData(index).toInt());
+    }
+  });
   connect(showStatusBarCheck_, &QCheckBox::toggled, this, &PrefsAppearancePage::statusBarVisibleRequested);
 }
 
@@ -118,6 +142,11 @@ void muffin::PrefsAppearancePage::retranslateUi() {
   zoomLabel_->setText(tr("Zoom"));
   resetZoomButton_->setText(tr("Reset"));
   fontSizeLabel_->setText(tr("Text Size"));
+  contentWidthLabel_->setText(tr("Content Width"));
+  contentWidthCombo_->setItemText(0, tr("Theme Default"));
+  contentWidthCombo_->setItemText(1, tr("Comfortable (1024 px)"));
+  contentWidthCombo_->setItemText(2, tr("Wide (1200 px)"));
+  contentWidthCombo_->setItemText(3, tr("Full Width"));
   statusBarLabel_->setText(tr("Status Bar"));
   showStatusBarCheck_->setText(tr("Show status bar"));
   if (importThemeButton_) {
@@ -167,6 +196,10 @@ void muffin::PrefsAppearancePage::setZoomPercent(int percent) {
 
 void muffin::PrefsAppearancePage::setFontSizePx(int px) {
   setNumberComboValue(fontSizeCombo_, px);
+}
+
+void muffin::PrefsAppearancePage::setContentWidthPx(int px) {
+  setNumberComboValue(contentWidthCombo_, px);
 }
 
 void muffin::PrefsAppearancePage::addNumberItems(QComboBox* combo, const QVector<int>& values, const QString& suffix) const {

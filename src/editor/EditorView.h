@@ -47,6 +47,7 @@ public:
   bool refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document);
   void setZoomPercent(int percent);
   void setFontSizePx(int px);
+  void setContentWidthPx(int px);
   void setTheme(RenderTheme theme);
   void setCursorHit(HitTestResult hit);
   void setCursorPosition(CursorPosition position);

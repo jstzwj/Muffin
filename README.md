@@ -107,7 +107,7 @@ Muffin is the only fully native, fully open-source WYSIWYG editor in this group 
 
 - **5 built-in themes** — GitHub, Newsprint, Night, Pixyll (now with a serif body font), and Whitey.
 - **Custom themes** — The built-in themes are authored as plain CSS, and you can author your own the same way: drop a `.css` (or `.json`) file into the themes folder and it shows up in the live Theme menu instantly. Import themes directly from the menu or the Appearance preferences page.
-- **Appearance preferences** — Font size, zoom level, focus mode, typewriter mode, and status bar visibility — all persisted across sessions.
+- **Appearance preferences** — Font size, zoom level, content width (theme default, comfortable, wide, or full width), focus mode, typewriter mode, and status bar visibility — all persisted across sessions.
 - **Always-on-top** — Keep the window above all others (Ctrl+Shift+F).
 - **15 UI languages** — English, 简体中文, 繁體中文, 日本語, 한국어, Tiếng Việt, Français, Español, Deutsch, Português (Brasil), Русский, Italiano, Türkçe, Polski, and Nederlands.
 

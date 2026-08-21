@@ -155,6 +155,8 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
           this, &PreferencesDialog::zoomPercentRequested);
   connect(appearancePage_, &PrefsAppearancePage::fontSizePxRequested,
           this, &PreferencesDialog::fontSizePxRequested);
+  connect(appearancePage_, &PrefsAppearancePage::contentWidthPxRequested,
+          this, &PreferencesDialog::contentWidthPxRequested);
 
   retranslateUi();
 }
@@ -191,6 +193,12 @@ void muffin::PreferencesDialog::setZoomPercent(int percent) {
 void muffin::PreferencesDialog::setFontSizePx(int px) {
   if (appearancePage_) {
     appearancePage_->setFontSizePx(px);
+  }
+}
+
+void muffin::PreferencesDialog::setContentWidthPx(int px) {
+  if (appearancePage_) {
+    appearancePage_->setContentWidthPx(px);
   }
 }
 

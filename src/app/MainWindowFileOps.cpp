@@ -372,6 +372,7 @@ void muffin::MainWindow::showPreferences() {
   dialog.setStatusBarVisible(statusBar()->isVisible());
   dialog.setZoomPercent(zoomPercent());
   dialog.setFontSizePx(fontSizePx());
+  dialog.setContentWidthPx(contentWidthPx());
 
   connect(&dialog, &PreferencesDialog::themeRequested, this, [this, &dialog](const QString& name) {
     if (themeManager_.setTheme(name)) {
@@ -399,6 +400,10 @@ void muffin::MainWindow::showPreferences() {
   connect(&dialog, &PreferencesDialog::fontSizePxRequested, this, [this](int px) {
     setFontSizePx(px);
     saveAppearanceFontSizePx(fontSizePx_);
+  });
+  connect(&dialog, &PreferencesDialog::contentWidthPxRequested, this, [this](int px) {
+    setContentWidthPx(px);
+    saveAppearanceContentWidthPx(contentWidthPx_);
   });
   connect(&dialog, &PreferencesDialog::clearRecentFilesRequested, this, [this] {
     setRecentFiles({});

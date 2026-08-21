@@ -175,12 +175,15 @@ private:
   void setZoomPercent(int percent);
   int fontSizePx() const;
   void setFontSizePx(int px);
+  int contentWidthPx() const;
+  void setContentWidthPx(int px);
   void setStatusBarVisible(bool visible);
   void loadAppearanceSettings();
   void saveAppearanceTheme(const QString& name) const;
   void saveAppearanceStatusBarVisible(bool visible) const;
   void saveAppearanceZoomPercent(int percent) const;
   void saveAppearanceFontSizePx(int px) const;
+  void saveAppearanceContentWidthPx(int px) const;
   void setFocusMode(bool enabled);
   void setTypewriterMode(bool enabled);
   void saveAppearanceFocusMode(bool enabled) const;
@@ -352,6 +355,7 @@ private:
   QString sidebarFolderRoot_;
   int zoomPercent_ = 100;
   int fontSizePx_ = 16;
+  int contentWidthPx_ = 0;
   bool renderViewDirty_ = false;
   bool wordCountDirty_ = true;
   bool outlineDirty_ = true;

@@ -134,6 +134,67 @@ void testEditorViewWrappedInlineLayout() {
   require(rects.size() == lines.size(), QStringLiteral("wrapped inline selection rect count should match line count"));
 }
 
+void testEditorViewFontSizeChangeReflowsWrappedText() {
+  DocumentSession session;
+  EditorView view;
+  session.setMarkdownText(
+      QStringLiteral("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau"),
+      false);
+  view.resize(420, 500);
+  view.setFontSizePx(24);
+  view.setDocument(session.document());
+  const NodeId blockId = blockAt(session, 0)->id();
+
+  const int largeLineCount = cursorLineRanges(
+      *requireViewInlineLayout(view, blockId, QStringLiteral("24px wrapped inline"))).size();
+
+  view.setFontSizePx(12);
+  const int smallLineCount = cursorLineRanges(
+      *requireViewInlineLayout(view, blockId, QStringLiteral("12px wrapped inline"))).size();
+
+  require(smallLineCount < largeLineCount,
+          QStringLiteral("changing text size must reflow wrapping (24px=%1 lines, 12px=%2 lines)")
+              .arg(largeLineCount)
+              .arg(smallLineCount));
+}
+
+void testEditorViewContentWidthChangeReflowsWrappedText() {
+  DocumentSession session;
+  EditorView view;
+  QString text;
+  for (int i = 0; i < 8; ++i) {
+    text += QStringLiteral("AssetBundle LoadFromFile audit scope includes Unity assets and gameplay modules. ");
+  }
+  session.setMarkdownText(text, false);
+  view.resize(1280, 700);
+  view.show();
+  QApplication::processEvents();
+  view.setDocument(session.document());
+  const NodeId blockId = blockAt(session, 0)->id();
+
+  const qreal themeWidth = view.nodeRect(blockId).width();
+  const int themeLines = cursorLineRanges(
+      *requireViewInlineLayout(view, blockId, QStringLiteral("theme-width inline"))).size();
+
+  view.setContentWidthPx(-1);
+  const qreal fullWidth = view.nodeRect(blockId).width();
+  const int fullLines = cursorLineRanges(
+      *requireViewInlineLayout(view, blockId, QStringLiteral("full-width inline"))).size();
+
+  require(fullWidth > themeWidth + 250.0,
+          QStringLiteral("full-width setting must widen the document column (theme=%1 full=%2)")
+              .arg(themeWidth)
+              .arg(fullWidth));
+  require(fullLines < themeLines,
+          QStringLiteral("wider document column must reduce wrapping (theme=%1 lines full=%2 lines)")
+              .arg(themeLines)
+              .arg(fullLines));
+
+  view.setTheme(RenderTheme::night());
+  require(view.nodeRect(blockId).width() > themeWidth + 250.0,
+          QStringLiteral("theme changes must preserve the user's content-width override"));
+}
+
 void testEditorViewTableCellInlineLayout() {
   DocumentSession session;
   EditorView view;
@@ -448,6 +509,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testEditorViewStyledInlineLayout);
   RUN_TEST(testEditorViewListInlineMathHitEditing);
   RUN_TEST(testEditorViewWrappedInlineLayout);
+  RUN_TEST(testEditorViewFontSizeChangeReflowsWrappedText);
+  RUN_TEST(testEditorViewContentWidthChangeReflowsWrappedText);
   RUN_TEST(testEditorViewTableCellInlineLayout);
   RUN_TEST(testEditorViewTableCellInlineCodeEndHit);
   RUN_TEST(testTableCellRichInlineSelectionDeleteAndCopyUseSourceOffsets);

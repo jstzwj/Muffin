@@ -619,6 +619,22 @@ void muffin::MainWindow::setFontSizePx(int px) {
   updateStatus();
 }
 
+int muffin::MainWindow::contentWidthPx() const {
+  return contentWidthPx_;
+}
+
+void muffin::MainWindow::setContentWidthPx(int px) {
+  if (px == -1) {
+    contentWidthPx_ = -1;
+  } else if (px > 0) {
+    contentWidthPx_ = qBound(640, px, 2400);
+  } else {
+    contentWidthPx_ = 0;
+  }
+  editor_->setContentWidthPx(contentWidthPx_);
+  renderView_->setContentWidthPx(contentWidthPx_);
+}
+
 void muffin::MainWindow::setStatusBarVisible(bool visible) {
   if (QAction* action = commands_.action(QStringLiteral("view.status_bar"))) {
     action->setChecked(visible);
@@ -682,6 +698,7 @@ void muffin::MainWindow::loadAppearanceSettings() {
   constexpr int kDefaultFontSizePx = 16;
 #endif
   setFontSizePx(settings.value(QStringLiteral("appearance/fontSizePx"), kDefaultFontSizePx).toInt());
+  setContentWidthPx(settings.value(QStringLiteral("appearance/contentWidthPx"), 0).toInt());
 
   restorePersistentActionStates();
 
@@ -723,6 +740,11 @@ void muffin::MainWindow::saveAppearanceZoomPercent(int percent) const {
 void muffin::MainWindow::saveAppearanceFontSizePx(int px) const {
   QSettings settings;
   settings.setValue(QStringLiteral("appearance/fontSizePx"), qBound(12, px, 24));
+}
+
+void muffin::MainWindow::saveAppearanceContentWidthPx(int px) const {
+  QSettings settings;
+  settings.setValue(QStringLiteral("appearance/contentWidthPx"), px);
 }
 
 void muffin::MainWindow::saveAppearanceFocusMode(bool enabled) const {
