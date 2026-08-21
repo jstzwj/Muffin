@@ -80,8 +80,15 @@ QStringList mergeTokens(const QStringList& existing, const QString& text) {
   return result;
 }
 
+// Gantt dates are wall-clock values. The UTC spec makes the stored instant
+// timezone-independent: day arithmetic and every painted label go through the
+// QDate wall clock (unchanged either way), while QDateTime::toUTC()/epoch
+// consumers — the grammar oracle, and JS `new Date("YYYY-MM-DD")` which parses
+// date-only ISO strings as UTC — now agree on any host. The previous
+// LocalTime spec silently baked the runner's timezone into the instant and
+// failed the oracle everywhere except the fixture-generating UTC+8 host.
 QDateTime localDateTime(const QDate& date, const QTime& time = QTime(0, 0)) {
-  return QDateTime(date, time, QTimeZone::LocalTime);
+  return QDateTime(date, time, Qt::UTC);
 }
 
 QDateTime parseStrictDate(const QString& text, const QString& format) {
@@ -126,6 +133,10 @@ QDateTime parseJsDateFallback(const QString& text) {
                      QTime(0, 0), QTimeZone::UTC);
   QDateTime parsed = QDateTime::fromString(value, Qt::ISODateWithMs);
   if (!parsed.isValid()) parsed = QDateTime::fromString(value, Qt::ISODate);
+  // fromString produces a LocalTime spec; reinterpret the parsed wall clock as
+  // UTC (no instant shift) so every gantt value shares one spec — mixing specs
+  // skews daysTo/secsTo arithmetic by the local offset.
+  if (parsed.isValid()) parsed.setTimeSpec(Qt::UTC);
   return parsed;
 }
 
@@ -259,8 +270,10 @@ struct Compiler {
     if ((data.dateFormat.trimmed() == QLatin1String("x") ||
          data.dateFormat.trimmed() == QLatin1String("X")) &&
         QRegularExpression(QStringLiteral(R"(^\d+$)")).match(value).hasMatch())
-      return QDateTime::fromMSecsSinceEpoch(value.toLongLong(),
-                                            QTimeZone::LocalTime);
+      // Upstream feeds BOTH x (ms) and X (s) values into `new Date(Number)`
+      // as milliseconds — the seconds format therefore lands in 1970. That is
+      // the recorded upstream behavior this parser mirrors.
+      return QDateTime::fromMSecsSinceEpoch(value.toLongLong(), Qt::UTC);
     static const QRegularExpression after(
         QStringLiteral(R"(^after\s+([\d\w\- ]+))"));
     const auto afterMatch = after.match(value);

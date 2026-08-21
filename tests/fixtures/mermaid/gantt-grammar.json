@@ -56,8 +56,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-02T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704211200000
           }
@@ -136,8 +136,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -402,7 +402,7 @@
             "type": "Alpha",
             "processed": true,
             "manualEndTime": false,
-            "renderEndTime": "2024-01-02T16:00:00.000",
+            "renderEndTime": "2024-01-03T00:00:00.000",
             "raw": {
               "data": ":done, crit, a, 2024-01-01, 2d",
               "startTime": {
@@ -423,8 +423,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-03T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704297600000
           }
@@ -475,7 +475,7 @@
             "type": "A",
             "processed": true,
             "manualEndTime": false,
-            "renderEndTime": "2024-01-03T16:00:00.000",
+            "renderEndTime": "2024-01-04T00:00:00.000",
             "raw": {
               "data": ":2024-01-01, 2d",
               "startTime": {
@@ -496,8 +496,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-03T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704297600000
           }
@@ -555,8 +555,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           },
@@ -586,8 +586,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2024-01-01T16:00:00.000",
-            "endTime": "2024-01-02T16:00:00.000",
+            "startTime": "2024-01-02T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
             "startEpoch": 1704124800000,
             "endEpoch": 1704211200000
           }
@@ -642,8 +642,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-02T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704211200000
           },
@@ -673,8 +673,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2024-01-02T16:00:00.000",
-            "endTime": "2024-01-05T16:00:00.000",
+            "startTime": "2024-01-03T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
             "startEpoch": 1704211200000,
             "endEpoch": 1704470400000
           },
@@ -704,8 +704,8 @@
             "milestone": false,
             "vert": false,
             "order": 2,
-            "startTime": "2024-01-05T16:00:00.000",
-            "endTime": "2024-01-12T16:00:00.000",
+            "startTime": "2024-01-06T00:00:00.000",
+            "endTime": "2024-01-13T00:00:00.000",
             "startEpoch": 1704470400000,
             "endEpoch": 1705075200000
           }
@@ -760,8 +760,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-02T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704211200000
           },
@@ -791,8 +791,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2024-01-02T16:00:00.000",
-            "endTime": "2024-01-04T16:00:00.000",
+            "startTime": "2024-01-03T00:00:00.000",
+            "endTime": "2024-01-05T00:00:00.000",
             "startEpoch": 1704211200000,
             "endEpoch": 1704384000000
           },
@@ -822,8 +822,8 @@
             "milestone": false,
             "vert": false,
             "order": 2,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2024-01-05T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704470400000
           }
@@ -878,8 +878,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           },
@@ -909,8 +909,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2024-01-01T16:00:00.000",
-            "endTime": "2024-01-02T16:00:00.000",
+            "startTime": "2024-01-02T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
             "startEpoch": 1704124800000,
             "endEpoch": 1704211200000
           },
@@ -940,8 +940,8 @@
             "milestone": false,
             "vert": false,
             "order": 2,
-            "startTime": "2024-01-02T16:00:00.000",
-            "endTime": "2024-01-03T16:00:00.000",
+            "startTime": "2024-01-03T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
             "startEpoch": 1704211200000,
             "endEpoch": 1704297600000
           },
@@ -971,8 +971,8 @@
             "milestone": true,
             "vert": false,
             "order": 3,
-            "startTime": "2024-01-03T16:00:00.000",
-            "endTime": "2024-01-03T16:00:00.000",
+            "startTime": "2024-01-04T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
             "startEpoch": 1704297600000,
             "endEpoch": 1704297600000
           },
@@ -1002,8 +1002,8 @@
             "milestone": false,
             "vert": true,
             "order": -1,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2024-01-05T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704470400000
           },
@@ -1033,8 +1033,8 @@
             "milestone": false,
             "vert": false,
             "order": 4,
-            "startTime": "2024-01-05T16:00:00.000",
-            "endTime": "2024-01-06T16:00:00.000",
+            "startTime": "2024-01-06T00:00:00.000",
+            "endTime": "2024-01-07T00:00:00.000",
             "startEpoch": 1704470400000,
             "endEpoch": 1704556800000
           }
@@ -1098,8 +1098,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-03T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-04T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704297600000
           },
@@ -1129,8 +1129,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2024-01-03T16:00:00.000",
-            "endTime": "2024-01-05T16:00:00.000",
+            "startTime": "2024-01-04T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
             "startEpoch": 1704297600000,
             "endEpoch": 1704470400000
           },
@@ -1160,8 +1160,8 @@
             "milestone": false,
             "vert": false,
             "order": 2,
-            "startTime": "2024-01-05T16:00:00.000",
-            "endTime": "2024-01-06T16:00:00.000",
+            "startTime": "2024-01-06T00:00:00.000",
+            "endTime": "2024-01-07T00:00:00.000",
             "startEpoch": 1704470400000,
             "endEpoch": 1704556800000
           }
@@ -1216,8 +1216,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2024-01-05T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-06T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704470400000
           },
@@ -1247,8 +1247,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2024-01-02T16:00:00.000",
-            "endTime": "2024-01-04T16:00:00.000",
+            "startTime": "2024-01-03T00:00:00.000",
+            "endTime": "2024-01-05T00:00:00.000",
             "startEpoch": 1704211200000,
             "endEpoch": 1704384000000
           }
@@ -1303,8 +1303,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-04T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-05T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704384000000
           },
@@ -1334,8 +1334,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2024-01-06T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-07T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704556800000
           }
@@ -1390,8 +1390,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-02T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704211200000
           },
@@ -1421,8 +1421,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2024-01-06T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-07T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704556800000
           },
@@ -1452,8 +1452,8 @@
             "milestone": false,
             "vert": false,
             "order": 2,
-            "startTime": "2024-01-06T16:00:00.000",
-            "endTime": "2024-01-07T16:00:00.000",
+            "startTime": "2024-01-07T00:00:00.000",
+            "endTime": "2024-01-08T00:00:00.000",
             "startEpoch": 1704556800000,
             "endEpoch": 1704643200000
           }
@@ -1508,8 +1508,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2023-12-31T16:00:00.005",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T00:00:00.005",
             "startEpoch": 1704038400000,
             "endEpoch": 1704038400005
           },
@@ -1539,8 +1539,8 @@
             "milestone": false,
             "vert": false,
             "order": 1,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2023-12-31T16:00:05.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T00:00:05.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704038405000
           },
@@ -1570,8 +1570,8 @@
             "milestone": false,
             "vert": false,
             "order": 2,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2023-12-31T16:05:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T00:05:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704038700000
           },
@@ -1601,8 +1601,8 @@
             "milestone": false,
             "vert": false,
             "order": 3,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2023-12-31T21:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T05:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704056400000
           },
@@ -1632,8 +1632,8 @@
             "milestone": false,
             "vert": false,
             "order": 4,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-02T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704211200000
           },
@@ -1663,8 +1663,8 @@
             "milestone": false,
             "vert": false,
             "order": 5,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-14T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-15T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1705248000000
           },
@@ -1694,8 +1694,8 @@
             "milestone": false,
             "vert": false,
             "order": 6,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-31T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-02-01T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1706716800000
           },
@@ -1725,8 +1725,8 @@
             "milestone": false,
             "vert": false,
             "order": 7,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-12-31T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2025-01-01T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1735660800000
           }
@@ -1781,8 +1781,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-02T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-03T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704211200000
           }
@@ -1818,7 +1818,7 @@
             "type": "",
             "processed": true,
             "manualEndTime": false,
-            "renderEndTime": "2024-01-09T16:00:00.000",
+            "renderEndTime": "2024-01-10T00:00:00.000",
             "raw": {
               "data": ":a, 2024-01-05, 3d",
               "startTime": {
@@ -1839,8 +1839,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2024-01-09T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-10T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704816000000
           }
@@ -1880,7 +1880,7 @@
             "type": "",
             "processed": true,
             "manualEndTime": false,
-            "renderEndTime": "2024-01-08T16:00:00.000",
+            "renderEndTime": "2024-01-09T00:00:00.000",
             "raw": {
               "data": ":a, 2024-01-05, 3d",
               "startTime": {
@@ -1901,8 +1901,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2024-01-08T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-09T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704729600000
           }
@@ -1959,8 +1959,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2024-01-07T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-08T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704643200000
           }
@@ -2015,8 +2015,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2024-01-30T16:00:00.000",
-            "endTime": "2024-02-01T16:00:00.000",
+            "startTime": "2024-01-31T00:00:00.000",
+            "endTime": "2024-02-02T00:00:00.000",
             "startEpoch": 1706630400000,
             "endEpoch": 1706803200000
           }
@@ -2190,8 +2190,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2253,8 +2253,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2311,8 +2311,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2367,8 +2367,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2423,8 +2423,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2479,8 +2479,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2535,8 +2535,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2608,8 +2608,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2718,8 +2718,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2024-01-01T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-02T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704124800000
           }
@@ -2774,8 +2774,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2024-01-04T16:00:00.000",
-            "endTime": "2023-12-31T16:00:00.000",
+            "startTime": "2024-01-05T00:00:00.000",
+            "endTime": "2024-01-01T00:00:00.000",
             "startEpoch": 1704384000000,
             "endEpoch": 1704038400000
           }
@@ -2830,8 +2830,8 @@
             "milestone": false,
             "vert": false,
             "order": 0,
-            "startTime": "2023-12-31T16:00:00.000",
-            "endTime": "2023-12-31T16:00:00.000",
+            "startTime": "2024-01-01T00:00:00.000",
+            "endTime": "2024-01-01T00:00:00.000",
             "startEpoch": 1704038400000,
             "endEpoch": 1704038400000
           }
@@ -3051,5 +3051,5 @@
       }
     }
   ],
-  "fixtureSha256": "f448954c123453fbfa9b4d5863b375c76366e27d28669ccb5d5eba404d9b9093"
+  "fixtureSha256": "496d7c9c140c6c507b338dac628454efd838588f95f296593f5f2890e6ca0dce"
 }

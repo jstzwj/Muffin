@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
   // Windows; provenance must describe content, not checkout line endings.
   bytes.replace("\r\n", "\n");
   require(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() ==
-              QByteArrayLiteral("e9c1798387a091efa3dfe1f0ea3658eeeefd03db1021bb00ec8feb032d99862d"),
+              QByteArrayLiteral("fdd57cefa652464eef1ce7de01505aff596205bde044663dcab4aeb8a79ec90a"),
           QStringLiteral("Gantt grammar fixture bytes changed"));
   QJsonParseError jsonError;
   const QJsonObject root = QJsonDocument::fromJson(bytes, &jsonError).object();
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
                   .value(QStringLiteral("version")).toString() == QLatin1String("11.16.0"),
           QStringLiteral("Gantt Mermaid version drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("f448954c123453fbfa9b4d5863b375c76366e27d28669ccb5d5eba404d9b9093"),
+              QLatin1String("496d7c9c140c6c507b338dac628454efd838588f95f296593f5f2890e6ca0dce"),
           QStringLiteral("Gantt fixture semantic digest drifted"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();

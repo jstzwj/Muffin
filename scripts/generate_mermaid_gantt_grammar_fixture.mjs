@@ -285,21 +285,31 @@ for (const [id, source, captureConfig = false] of cases) {
           ? { column: error.hash.loc.first_column + 1 }
           : {}),
       });
-      // Serialize the UTC instant: the golden must be timezone-independent so
-      // the native comparison (QDateTime::toUTC) holds on any runner — the
-      // previous local-time rendering embedded the generating host's UTC+8.
-      const localDate = (value) => {
+      // Timezone-independent serialization, split by upstream's parse mode:
+      //  - a declared dateFormat routes through dayjs WITH the format tokens,
+      //    which parses in the browser's LOCAL zone — record the local wall
+      //    clock re-expressed as UTC (date-only walls are midnight on every
+      //    host, so this is stable; the true instant is host-dependent and
+      //    deliberately not recorded);
+      //  - no dateFormat falls back to JS ISO parsing, where date-only
+      //    strings are UTC midnight — record the UTC instant directly.
+      // The native side constructs both as Qt::UTC wall clocks, so
+      // QDateTime::toUTC() comparisons hold on runners in any timezone.
+      const localDate = (value, isoSemantics) => {
         if (!(value instanceof Date) || Number.isNaN(value.valueOf())) return null;
+        const source = isoSemantics
+          ? value
+          : new Date(value.getTime() - value.getTimezoneOffset() * 60000);
         const p = (number, width = 2) => String(number).padStart(width, "0");
-        return `${p(value.getUTCFullYear(), 4)}-${p(value.getUTCMonth() + 1)}-${p(value.getUTCDate())}` +
-          `T${p(value.getUTCHours())}:${p(value.getUTCMinutes())}:${p(value.getUTCSeconds())}.${p(value.getUTCMilliseconds(), 3)}`;
+        return `${p(source.getUTCFullYear(), 4)}-${p(source.getUTCMonth() + 1)}-${p(source.getUTCDate())}` +
+          `T${p(source.getUTCHours())}:${p(source.getUTCMinutes())}:${p(source.getUTCSeconds())}.${p(source.getUTCMilliseconds(), 3)}`;
       };
       const serializeTask = (task) => ({
         section: task.section,
         type: task.type,
         processed: task.processed,
         manualEndTime: task.manualEndTime,
-        renderEndTime: localDate(task.renderEndTime),
+        renderEndTime: localDate(task.renderEndTime, isoSemantics),
         raw: task.raw,
         task: task.task,
         classes: [...task.classes],
@@ -311,8 +321,8 @@ for (const [id, source, captureConfig = false] of cases) {
         milestone: Boolean(task.milestone),
         vert: Boolean(task.vert),
         order: task.order,
-        startTime: localDate(task.startTime),
-        endTime: localDate(task.endTime),
+        startTime: localDate(task.startTime, isoSemantics),
+        endTime: localDate(task.endTime, isoSemantics),
         startEpoch: task.startTime instanceof Date ? task.startTime.valueOf() : null,
         endEpoch: task.endTime instanceof Date ? task.endTime.valueOf() : null,
       });
@@ -325,6 +335,10 @@ for (const [id, source, captureConfig = false] of cases) {
       }
 
       let db;
+      // Epoch formats (x = ms, X = s) parse absolute instants — their truth is
+      // the UTC instant, not the wall clock.
+      const dateFormat = diagram.db.getDateFormat();
+      const isoSemantics = !dateFormat || dateFormat === "x" || dateFormat === "X";
       try {
         const gantt = diagram.db;
         db = {
@@ -343,7 +357,7 @@ for (const [id, source, captureConfig = false] of cases) {
           weekday: gantt.getWeekday(),
           displayMode: gantt.getDisplayMode(),
           links: [...gantt.getLinks()].map(([key, value]) => [key, value]),
-          tasks: gantt.getTasks().map(serializeTask),
+          tasks: gantt.getTasks().map((task) => serializeTask(task)),
         };
       } catch (error) {
         return { id, source, accept: false, reject: reject(error) };

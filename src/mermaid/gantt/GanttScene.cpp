@@ -52,18 +52,21 @@ QString formatTick(const QDateTime& date, const QString& format) {
   return result;
 }
 
+// dayjs startOf() floors the LOCAL wall clock. Gantt values are stored as
+// UTC-spec wall clocks, so floor those walls directly — setTimeZone would
+// convert the instant across zones and skew the floor by the local offset.
 QDateTime floorLocal(QDateTime value, const QString& unit, int weekday) {
-  value.setTimeZone(QTimeZone::LocalTime);
+  value.setTimeSpec(Qt::UTC);
   if (unit == QLatin1String("millisecond")) return value;
   if (unit == QLatin1String("second"))
     return QDateTime(value.date(), QTime(value.time().hour(), value.time().minute(),
-                                         value.time().second()), QTimeZone::LocalTime);
+                                         value.time().second()), Qt::UTC);
   if (unit == QLatin1String("minute"))
     return QDateTime(value.date(), QTime(value.time().hour(), value.time().minute()),
-                     QTimeZone::LocalTime);
+                     Qt::UTC);
   if (unit == QLatin1String("hour"))
-    return QDateTime(value.date(), QTime(value.time().hour(), 0), QTimeZone::LocalTime);
-  QDateTime result(value.date(), QTime(0, 0), QTimeZone::LocalTime);
+    return QDateTime(value.date(), QTime(value.time().hour(), 0), Qt::UTC);
+  QDateTime result(value.date(), QTime(0, 0), Qt::UTC);
   if (unit == QLatin1String("week")) {
     int delta = result.date().dayOfWeek() - weekday;
     if (delta < 0) delta += 7;
@@ -504,10 +507,12 @@ GanttScene buildGanttScene(const GanttData& data, GanttConfig config,
   };
 
   for (qsizetype run = 0; run < layout.excludeRuns.size(); ++run) {
-    const QDateTime start(layout.excludeRuns.at(run).first, QTime(0, 0),
-                          QTimeZone::LocalTime);
+    // Qt::UTC wall clocks, matching the task times' spec: the x mapping goes
+    // through toMSecsSinceEpoch, so a LocalTime-spec exclude run would skew by
+    // the local offset against the UTC-spec task axis.
+    const QDateTime start(layout.excludeRuns.at(run).first, QTime(0, 0), Qt::UTC);
     const QDateTime end(layout.excludeRuns.at(run).second, QTime(23, 59, 59, 999),
-                        QTimeZone::LocalTime);
+                        Qt::UTC);
     GanttRectGeometry rect;
     rect.id = QStringLiteral("exclude-") +
               layout.excludeRuns.at(run).first.toString(Qt::ISODate);
