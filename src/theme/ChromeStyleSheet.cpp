@@ -145,8 +145,16 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
       "QComboBox:hover { border-color:%7; }"
       "QComboBox:focus, QComboBox:on { border-color:%7; }"
       "QComboBox::drop-down { subcontrol-origin:padding; subcontrol-position:center right; width:28px; border:0; }"
+      // Popup container (named by DwmPopupBorderFilter on show). The Windows 11
+      // style leaves the container surface unpainted around the item view, which
+      // renders as a black ring inside the popup window; fill it with the same
+      // surface colour as the dropdown so the band blends into the list.
+      "QWidget#comboPopupContainer { background:%3; border:none; }"
+      // padding stays 0: with the Windows 11 style's transparent-popup handling
+      // the view's padding strip is not painted and shows as a black band inside
+      // the popup window (item insets come from the ::item rule's own padding).
       "QComboBox QAbstractItemView { border:1px solid %4; border-radius:6px; background:%3; color:%2;"
-      "  selection-background-color:%8; selection-color:%2; outline:0; padding:4px; }"
+      "  selection-background-color:%8; selection-color:%2; outline:0; padding:0; }"
       "QComboBox QAbstractItemView::item { min-height:28px; padding:4px 10px; background:%3; color:%2; }"
       "QComboBox QAbstractItemView::item:hover { background:%6; color:%2; }"
       "QComboBox QAbstractItemView::item:selected { background:%8; color:%2; }"
@@ -157,12 +165,14 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
       "QLineEdit:focus { border-color:%7; }"
       "QLineEdit:disabled { background:%6; color:%9; }"
 
-      // QComboBox dropdown scrollbar (more specific than the page scrollbar below)
-      "QComboBox QAbstractItemView QScrollBar:vertical { width:8px; background:transparent; margin:2px; border:0; }"
+      // QComboBox dropdown scrollbar (more specific than the page scrollbar below).
+      // Trough is opaque surface (not transparent): inside the Win11 transparent
+      // popup an unpainted trough renders black.
+      "QComboBox QAbstractItemView QScrollBar:vertical { width:8px; background:%3; margin:0; border:0; }"
       "QComboBox QAbstractItemView QScrollBar::handle:vertical { background:%5; min-height:28px; border-radius:4px; }"
       "QComboBox QAbstractItemView QScrollBar::handle:vertical:hover { background:%5; }"
       "QComboBox QAbstractItemView QScrollBar::add-line:vertical, QComboBox QAbstractItemView QScrollBar::sub-line:vertical { height:0; }"
-      "QComboBox QAbstractItemView QScrollBar::add-page:vertical, QComboBox QAbstractItemView QScrollBar::sub-page:vertical { background:transparent; }"
+      "QComboBox QAbstractItemView QScrollBar::add-page:vertical, QComboBox QAbstractItemView QScrollBar::sub-page:vertical { background:%3; }"
 
       // Sidebar QListWidget (category nav)
       "QListWidget { border:0; outline:0; background:transparent; }"

@@ -1,5 +1,6 @@
 #include "app/MainWindow.h"
 
+#include "app/DwmPopupBorderFilter.h"
 #include "app/LanguageManager.h"
 #include "app/WindowsIntegration.h"
 #include "theme/FontRendering.h"
@@ -87,6 +88,11 @@ int main(int argc, char *argv[]) {
   QFont uiFont = QApplication::font();
   muffin::font_rendering::configureForScreen(uiFont);
   QApplication::setFont(uiFont);
+
+  // Windows 11 strokes a dark DWM border around Qt::Popup top-levels (menus,
+  // combo dropdowns) on top of the theme's own QSS hairline; clear it so
+  // popups show only the themed border. No-op on other platforms.
+  muffin::DwmPopupBorderFilter::install(app);
 
   muffin::LanguageManager::instance().initialize();
 

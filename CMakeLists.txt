@@ -977,6 +977,8 @@ add_executable(Muffin
   src/app/PrefsFilesPage.h
   src/app/WindowsIntegration.cpp
   src/app/WindowsIntegration.h
+  src/app/DwmPopupBorderFilter.cpp
+  src/app/DwmPopupBorderFilter.h
   src/app/PrefsEditorPage.cpp
   src/app/PrefsEditorPage.h
   src/app/PrefsImagePage.cpp
