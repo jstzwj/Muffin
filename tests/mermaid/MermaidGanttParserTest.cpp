@@ -25,8 +25,11 @@ void require(bool condition, const QString& message) {
 }
 
 QString localDate(const QDateTime& value) {
+  // Compare the UTC instant: the golden fixture serializes UTC, so the check
+  // holds on runners in any timezone (local-time rendering embedded the
+  // fixture host's UTC+8 and failed everywhere else).
   return value.isValid()
-             ? value.toLocalTime().toString(QStringLiteral("yyyy-MM-dd'T'HH:mm:ss.zzz"))
+             ? value.toUTC().toString(QStringLiteral("yyyy-MM-dd'T'HH:mm:ss.zzz"))
              : QString();
 }
 
@@ -145,7 +148,7 @@ int main(int argc, char** argv) {
   // Windows; provenance must describe content, not checkout line endings.
   bytes.replace("\r\n", "\n");
   require(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex() ==
-              QByteArrayLiteral("78f3c822ea3da724dbcae3d57c5278bb6f30ca13e3e65761cfe1ec39165502be"),
+              QByteArrayLiteral("e9c1798387a091efa3dfe1f0ea3658eeeefd03db1021bb00ec8feb032d99862d"),
           QStringLiteral("Gantt grammar fixture bytes changed"));
   QJsonParseError jsonError;
   const QJsonObject root = QJsonDocument::fromJson(bytes, &jsonError).object();
@@ -155,7 +158,7 @@ int main(int argc, char** argv) {
                   .value(QStringLiteral("version")).toString() == QLatin1String("11.16.0"),
           QStringLiteral("Gantt Mermaid version drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("e729be9f115d34acc27167102e4b48f85eddb83589efb104bbb229b202bdac0a"),
+              QLatin1String("f448954c123453fbfa9b4d5863b375c76366e27d28669ccb5d5eba404d9b9093"),
           QStringLiteral("Gantt fixture semantic digest drifted"));
 
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();

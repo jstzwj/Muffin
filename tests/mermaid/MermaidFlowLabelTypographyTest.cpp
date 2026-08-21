@@ -252,8 +252,8 @@ int main(int argc, char** argv) {
   //    Proven by contrast: a bold range on a normal base is not italic, but on
   //    an italic base it becomes bold+italic (and symmetric for italic range).
   {
-    auto runStyle = [](const flowchart::FlowLabelDocument& doc,
-                       const QString& family) -> std::pair<int, bool> {
+    auto runStyle = [&](const flowchart::FlowLabelDocument& doc,
+                        const QString& family) -> std::pair<int, bool> {
       const flowchart::FlowLabelLayoutMetrics layout =
           flowchart::layoutFlowLabel(doc, family, size, lineHeight);
       for (const auto& line : layout.lines)

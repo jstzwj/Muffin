@@ -338,9 +338,9 @@ int main(int argc,char** argv) {
       QVector<Run> runs; int current=0;
       for(int a:alphas) {
         if(a>=threshold) ++current;
-        else if(current>0) { runs.append({current}); current=0; }
+        else if(current>0) { runs.append(Run{current}); current=0; }
       }
-      if(current>0) runs.append({current});
+      if(current>0) runs.append(Run{current});
       return runs;
     };
     const auto maxRun=[&](const char* what,const QVector<Run>& runs) {

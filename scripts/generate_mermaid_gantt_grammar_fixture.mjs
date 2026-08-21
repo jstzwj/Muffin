@@ -285,11 +285,14 @@ for (const [id, source, captureConfig = false] of cases) {
           ? { column: error.hash.loc.first_column + 1 }
           : {}),
       });
+      // Serialize the UTC instant: the golden must be timezone-independent so
+      // the native comparison (QDateTime::toUTC) holds on any runner — the
+      // previous local-time rendering embedded the generating host's UTC+8.
       const localDate = (value) => {
         if (!(value instanceof Date) || Number.isNaN(value.valueOf())) return null;
         const p = (number, width = 2) => String(number).padStart(width, "0");
-        return `${p(value.getFullYear(), 4)}-${p(value.getMonth() + 1)}-${p(value.getDate())}` +
-          `T${p(value.getHours())}:${p(value.getMinutes())}:${p(value.getSeconds())}.${p(value.getMilliseconds(), 3)}`;
+        return `${p(value.getUTCFullYear(), 4)}-${p(value.getUTCMonth() + 1)}-${p(value.getUTCDate())}` +
+          `T${p(value.getUTCHours())}:${p(value.getUTCMinutes())}:${p(value.getUTCSeconds())}.${p(value.getUTCMilliseconds(), 3)}`;
       };
       const serializeTask = (task) => ({
         section: task.section,
