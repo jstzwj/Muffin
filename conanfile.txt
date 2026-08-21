@@ -1,5 +1,10 @@
 [requires]
 qt/6.11.1
+# Direct require so CMakeDeps emits harfbuzzConfig.cmake: Qt6Config's
+# find_dependency(harfbuzz) needs it, and a conancenter recipe-revision drift
+# (harfbuzz 12.3.0#a5fef06, ~2026-08) stopped generating configs for it as a
+# transitive-only dependency — fresh CI installs failed at find_package(Qt6).
+harfbuzz/12.3.0
 icu/74.2
 libwebp/1.6.0
 dav1d/1.5.3
