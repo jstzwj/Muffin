@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
   return 0;
 #endif
 #if defined(Q_OS_WINDOWS)
-  if (QSysInfo::productType().contains(QLatin1String("Server"))) {
+  if (QSysInfo::prettyProductName().contains(QLatin1String("Server"))) {
     qWarning("skipped on Windows Server: raster goldens embed desktop fonts/rasterization");
     return 0;
   }

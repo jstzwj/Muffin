@@ -6,6 +6,12 @@ project(Muffin
   LANGUAGES C CXX
 )
 
+# STATIC by default. The CI AddressSanitizer job overrides this to SHARED:
+# ~320 ASan-instrumented test executables each embedding a full static copy of
+# the instrumented MuffinCore/MuffinUi exhausts the runner's disk, while a
+# single instrumented .so per library keeps the whole suite within budget.
+set(MUFFIN_LIB_TYPE STATIC CACHE STRING "Link type of the MuffinCore/MuffinUi libraries")
+
 set(MUFFIN_VERSION_OVERRIDE "" CACHE STRING "Override Muffin application version")
 set(MUFFIN_EFFECTIVE_VERSION "${PROJECT_VERSION}")
 if(MUFFIN_VERSION_OVERRIDE)
@@ -845,7 +851,7 @@ set(MUFFIN_CORE_SOURCES
   src/app/DraftRecovery.h
 )
 
-add_library(MuffinCore STATIC
+add_library(MuffinCore ${MUFFIN_LIB_TYPE}
   ${MUFFIN_CORE_SOURCES}
 )
 
@@ -1208,7 +1214,7 @@ set(MUFFIN_UI_SOURCES
   src/theme/CssContent.h
 )
 
-add_library(MuffinUi STATIC
+add_library(MuffinUi ${MUFFIN_LIB_TYPE}
   ${MUFFIN_UI_SOURCES}
 )
 

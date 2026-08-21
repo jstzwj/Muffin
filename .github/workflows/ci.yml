@@ -271,8 +271,9 @@ jobs:
       - name: Configure (AddressSanitizer + debug info)
         run: |
           cmake --preset conan-release \
-            -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" \
-            -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g" \
+            -DMUFFIN_LIB_TYPE=SHARED \
+            -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g1" \
+            -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer -g1" \
             -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address" \
             -DCMAKE_SHARED_LINKER_FLAGS="-fsanitize=address" \
             -DCMAKE_MODULE_LINKER_FLAGS="-fsanitize=address"

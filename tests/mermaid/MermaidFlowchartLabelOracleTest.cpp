@@ -112,7 +112,7 @@ QVector<TextRun> normalizedTextRuns(
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
 #if defined(Q_OS_WINDOWS)
-  if (QSysInfo::productType().contains(QLatin1String("Server"))) {
+  if (QSysInfo::prettyProductName().contains(QLatin1String("Server"))) {
     qWarning("skipped on Windows Server: font-fallback goldens embed desktop faces");
     return 0;
   }

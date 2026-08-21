@@ -127,7 +127,7 @@ MermaidSvgRenderResult renderSvg(const QString& source,
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
 #if defined(Q_OS_WINDOWS)
-  if (QSysInfo::productType().contains(QLatin1String("Server"))) {
+  if (QSysInfo::prettyProductName().contains(QLatin1String("Server"))) {
     qWarning("skipped on Windows Server: viewBox goldens embed desktop font metrics");
     return 0;
   }
