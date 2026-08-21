@@ -1241,6 +1241,13 @@ target_link_libraries(MuffinUi
     Qt6::Svg
     lexbor::lexbor_static
     yoga::yoga
+    # InlineProjection (a Ui source) calls cmark directly. Under the default
+    # STATIC build it resolves those symbols from MuffinCore's archives at the
+    # final-exe link; when MUFFIN_LIB_TYPE=SHARED (the CI ASan job) the Ui .so
+    # must resolve them at its own link, so list the archives here too. The
+    # linker deduplicates them for STATIC consumers.
+    libcmark-gfm-extensions_static
+    libcmark-gfm_static
     Nuspell::nuspell
     JPEG::JPEG
     PNG::PNG
