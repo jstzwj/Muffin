@@ -82,6 +82,34 @@ QColor withOpacity(QColor color, qreal opacity) {
 
 }  // namespace
 
+void paintErrorIcon(const ErrorScene& scene, QPainter& painter, int index) {
+  // Per-path resolved CSS: the six icons are sibling DOM elements, and
+  // structural selectors (:nth-of-type / adjacent sibling) can style them
+  // individually — each path carries its own fill/stroke/opacity/visibility.
+  const ErrorIconCss iconDefault;
+  const ErrorIconCss& css = index < scene.css.icons.size()
+                                ? scene.css.icons.at(index) : iconDefault;
+  if (!css.visible) return;
+  const auto fill = color::resolveSvgPaint(
+      css.fill.isEmpty() ? scene.style.errorBkgColor : css.fill,
+      color::SvgPaintKind::Fill, Qt::black);
+  const auto stroke = color::resolveSvgPaint(
+      css.stroke, color::SvgPaintKind::Stroke, Qt::black);
+  if (fill.none && stroke.none) return;
+  // SVG paints BOTH channels: fill plus a stroked outline (initial
+  // stroke:none upstream — a themeCSS `path { stroke: … }` activates it).
+  if (stroke.none || css.strokeWidthPx <= 0.0) {
+    painter.setPen(Qt::NoPen);
+  } else {
+    painter.setPen(QPen(withOpacity(stroke.color, css.opacity),
+                        css.strokeWidthPx));
+  }
+  painter.setBrush(fill.none
+                       ? Qt::NoBrush
+                       : QBrush(withOpacity(fill.color, css.opacity)));
+  painter.drawPath(scene.iconPaths.at(index));
+}
+
 void paintErrorScene(const ErrorScene& scene, QPainter& painter) {
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
@@ -91,32 +119,8 @@ void paintErrorScene(const ErrorScene& scene, QPainter& painter) {
   painter.save();
   painter.scale(scale, scale);
 
-  // Per-path resolved CSS: the six icons are sibling DOM elements, and
-  // structural selectors (:nth-of-type / adjacent sibling) can style them
-  // individually — each path carries its own fill/stroke/opacity/visibility.
-  const ErrorIconCss iconDefault;
   for (int index = 0; index < scene.iconPaths.size(); ++index) {
-    const ErrorIconCss& css = index < scene.css.icons.size()
-                                  ? scene.css.icons.at(index) : iconDefault;
-    if (!css.visible) continue;
-    const auto fill = color::resolveSvgPaint(
-        css.fill.isEmpty() ? scene.style.errorBkgColor : css.fill,
-        color::SvgPaintKind::Fill, Qt::black);
-    const auto stroke = color::resolveSvgPaint(
-        css.stroke, color::SvgPaintKind::Stroke, Qt::black);
-    if (fill.none && stroke.none) continue;
-    // SVG paints BOTH channels: fill plus a stroked outline (initial
-    // stroke:none upstream — a themeCSS `path { stroke: … }` activates it).
-    if (stroke.none || css.strokeWidthPx <= 0.0) {
-      painter.setPen(Qt::NoPen);
-    } else {
-      painter.setPen(QPen(withOpacity(stroke.color, css.opacity),
-                          css.strokeWidthPx));
-    }
-    painter.setBrush(fill.none
-                         ? Qt::NoBrush
-                         : QBrush(withOpacity(fill.color, css.opacity)));
-    painter.drawPath(scene.iconPaths.at(index));
+    paintErrorIcon(scene, painter, index);
   }
 
   const auto drawText = [&](const ErrorTextGeometry& geometry,

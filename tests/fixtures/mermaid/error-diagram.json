@@ -497,7 +497,87 @@
     "file": "error-diagram/default.png",
     "sha256": "1923a9bfe3ff5c2042cfcfb708dddd74f0e7c438815b755e900fcd70e04d9844",
     "width": 512,
-    "height": 109
+    "height": 109,
+    "icons": [
+      {
+        "index": 0,
+        "file": "error-diagram/icon-0.png",
+        "sha256": "59cc7dc33a1b13d1b0a3fa8a344884040599f947ec11ab5d2cfc60b9dcd54363",
+        "width": 92,
+        "height": 93,
+        "clip": {
+          "x": -1.97320556640625,
+          "y": 18.376083374023438,
+          "width": 92.29600524902344,
+          "height": 92.29579162597656
+        }
+      },
+      {
+        "index": 1,
+        "file": "error-diagram/icon-1.png",
+        "sha256": "194a9ba031bd23b886f30a3dcab12428ea455d96089e36049c2b77928da830e0",
+        "width": 14,
+        "height": 14,
+        "clip": {
+          "x": 89.65660095214844,
+          "y": 28.62604522705078,
+          "width": 14.188201904296875,
+          "height": 14.188095092773438
+        }
+      },
+      {
+        "index": 2,
+        "file": "error-diagram/icon-2.png",
+        "sha256": "2f6d05313249bb4bcdd3bb895644352f21ca42d9e56d3c9dadb64fe3d5974216",
+        "width": 14,
+        "height": 14,
+        "clip": {
+          "x": 65.88484191894531,
+          "y": 4.854076385498047,
+          "width": 14.18798828125,
+          "height": 14.188095092773438
+        }
+      },
+      {
+        "index": 3,
+        "file": "error-diagram/icon-3.png",
+        "sha256": "a8fc7b50d1d005f3eae77d6cb02b627598fa4f9af8a0fa64be14685281d0960e",
+        "width": 10,
+        "height": 18,
+        "clip": {
+          "x": 79.53070068359375,
+          "y": -2,
+          "width": 10.7919921875,
+          "height": 17.583984375
+        }
+      },
+      {
+        "index": 4,
+        "file": "error-diagram/icon-4.png",
+        "sha256": "a7529518e317bf3054abc59321e3ef44f143c40aaff030b33883674d3897dc86",
+        "width": 18,
+        "height": 10,
+        "clip": {
+          "x": 93.11468505859375,
+          "y": 18.500354766845703,
+          "width": 17.583984375,
+          "height": 10.7919921875
+        }
+      },
+      {
+        "index": 5,
+        "file": "error-diagram/icon-5.png",
+        "sha256": "057c0189cfe05dfee7da83667458d76324cb0a1f34de2c2b4fb03eb3d580d5bb",
+        "width": 17,
+        "height": 18,
+        "clip": {
+          "x": 89.78079223632812,
+          "y": 1.4580802917480469,
+          "width": 17.58417510986328,
+          "height": 17.584091186523438
+        }
+      }
+    ]
   },
-  "fixtureSha256": "6a7f55da2884c7328b6f76d4db84eb9848797583abf06e60181ebbd86e2bdc3b"
+  "fixtureSha256": "2db8818c9b310ee4832d44320000ae1243ab9d3c8c1bbd9887baec65494febaf"
 }

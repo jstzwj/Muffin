@@ -8,6 +8,7 @@
 #include "mermaid/MermaidFontRegistry.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "mermaid/error/ErrorScene.h"
+#include "mermaid/error/ErrorScenePainter.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
@@ -19,6 +20,7 @@
 #include <QImage>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPainter>
 
 #include <cmath>
 #include <cstdio>
@@ -95,6 +97,38 @@ qreal rgbaScore(const QImage& actual, const QImage& expected) {
       ++count;
     }
   return count ? 1.0 - difference / (count * 1020.0) : 1.0;
+}
+
+// Best alpha-mask IoU over small whole-pixel offsets (ported from
+// MermaidSequencePixelTest): sub-pixel clip rounding between the browser crop
+// and the native window can shift ink by a pixel, so search ±2 before scoring.
+struct MaskAlignment { qreal iou = 0.0; QPoint offset; };
+MaskAlignment bestRawAlphaAlignment(const QImage& native, const QImage& browser,
+                                     int radius = 2) {
+  MaskAlignment best;
+  for (int dy = -radius; dy <= radius; ++dy)
+    for (int dx = -radius; dx <= radius; ++dx) {
+      const int left = std::min(0, dx), top = std::min(0, dy);
+      const int right = std::max(native.width(), dx + browser.width());
+      const int bottom = std::max(native.height(), dy + browser.height());
+      qint64 intersection = 0, united = 0;
+      for (int y = top; y < bottom; ++y)
+        for (int x = left; x < right; ++x) {
+          const bool nativeInk = x >= 0 && y >= 0 && x < native.width() &&
+                                 y < native.height() &&
+                                 native.pixelColor(x, y).alpha() >= 32;
+          const int browserX = x - dx, browserY = y - dy;
+          const bool browserInk = browserX >= 0 && browserY >= 0 &&
+                                  browserX < browser.width() &&
+                                  browserY < browser.height() &&
+                                  browser.pixelColor(browserX, browserY).alpha() >= 32;
+          intersection += nativeInk && browserInk;
+          united += nativeInk || browserInk;
+        }
+      const qreal iou = united ? qreal(intersection) / united : 0.0;
+      if (iou > best.iou) best = {iou, QPoint(dx, dy)};
+    }
+  return best;
 }
 
 const error::ErrorScene* errorScene(const MermaidRenderEntry& entry,
@@ -397,6 +431,76 @@ int main(int argc, char** argv) {
         nativePng(QStringLiteral("flowchart TB\nsubgraph S[Group]\nA --> B"));
     require(!fallback.isNull() && fallback.size() == expected.size(),
             QStringLiteral("png/fallback"));
+
+    // ---- per-path pixel oracle: each icon rasterized in isolation ----
+    // The browser golden hides every other SVG descendant and screenshots one
+    // path.error-icon with a 2px guard clip (clip recorded in client-box
+    // space). The native side renders the same window through
+    // error::paintErrorIcon so each icon is scored independently of siblings —
+    // this is what catches a single path's fill/opacity regression that the
+    // whole-canvas average absorbs.
+    require(root.value(QStringLiteral("fixtureSha256")).toString() ==
+                QLatin1String("2db8818c9b310ee4832d44320000ae1243ab9d3c8c1bbd9887baec65494febaf"),
+            QStringLiteral("fixture self-digest drifted; audit and update"));
+    const QJsonArray icons = png.value(QStringLiteral("icons")).toArray();
+    require(icons.size() == 6, QStringLiteral("png/icons-count"));
+    // Keep the entry alive: the scene pointer is owned by the render entry,
+    // so a temporary here would dangle for the loop below.
+    const MermaidRenderEntry pixelEntry = render(QStringLiteral("error"));
+    const error::ErrorScene* scene =
+        errorScene(pixelEntry, QStringLiteral("pixel"));
+    const qreal clientScale =
+        scene->bounds.width() / scene->viewBoxBounds.width();
+    for (const QJsonValue& iconValue : icons) {
+      const QJsonObject icon = iconValue.toObject();
+      const int index = icon.value(QStringLiteral("index")).toInt();
+      const QString iconRefPath =
+          directory.filePath(icon.value(QStringLiteral("file")).toString());
+      require(sha256(iconRefPath) ==
+                  icon.value(QStringLiteral("sha256")).toString().toLatin1(),
+              QStringLiteral("png/icon-%1-sha").arg(index));
+      const QImage iconExpected(iconRefPath);
+      require(!iconExpected.isNull() &&
+                  iconExpected.width() == icon.value(QStringLiteral("width")).toInt() &&
+                  iconExpected.height() == icon.value(QStringLiteral("height")).toInt(),
+              QStringLiteral("png/icon-%1-size").arg(index));
+      const QJsonObject clip = icon.value(QStringLiteral("clip")).toObject();
+      const qreal clipX = clip.value(QStringLiteral("x")).toDouble();
+      const qreal clipY = clip.value(QStringLiteral("y")).toDouble();
+      const qreal clipW = clip.value(QStringLiteral("width")).toDouble();
+      const qreal clipH = clip.value(QStringLiteral("height")).toDouble();
+      QImage iconActual(qRound(clipW), qRound(clipH), QImage::Format_RGBA8888);
+      iconActual.fill(Qt::transparent);
+      {
+        QPainter painter(&iconActual);
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.scale(clientScale, clientScale);
+        painter.translate(-clipX / clientScale, -clipY / clientScale);
+        error::paintErrorIcon(*scene, painter, index);
+      }
+      const MaskAlignment alignment = bestRawAlphaAlignment(iconActual, iconExpected);
+      if (qEnvironmentVariableIsSet("MUFFIN_ERROR_ICON_DUMP"))
+        iconActual.save(QDir::temp().filePath(QStringLiteral("muffin-error-icon-%1.png").arg(index)));
+      QImage aligned(iconExpected.size(), QImage::Format_RGBA8888);
+      aligned.fill(Qt::transparent);
+      QPainter alignPainter(&aligned);
+      alignPainter.drawImage(alignment.offset, iconActual);
+      alignPainter.end();
+      const qreal iconRgba = rgbaScore(aligned, iconExpected);
+      std::fprintf(stderr, "error-icon-%d IoU %.5f (dx=%d dy=%d) RGBA %.5f\n",
+                   index, alignment.iou, alignment.offset.x(),
+                   alignment.offset.y(), iconRgba);
+      // Thresholds: icons 3/4 (the ~7x14 client-px rays) floor at ~0.863 IoU —
+      // a single AA edge pixel is ~7% of a dimension at that size, so
+      // whole-pixel alignment cannot absorb the sub-pixel rasterization
+      // difference; 0.84 keeps >2pp headroom while a wrong/flipped path drops
+      // far below it (icon-0 with a corrupted capture scored 0.61). RGBA has
+      // >4pp margin even on the smallest sprite.
+      require(alignment.iou >= 0.84,
+              QStringLiteral("png/icon-%1-alpha-IoU").arg(index));
+      require(iconRgba >= 0.93,
+              QStringLiteral("png/icon-%1-RGBA").arg(index));
+    }
   }
 
   // ---- SVG export: client-box viewBox, max-width 512, no class suffix ----

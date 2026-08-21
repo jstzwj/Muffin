@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import { PNG } from "pngjs";
 
 // Error-diagram oracle (11.16.0). The "error" diagram type is registered
 // FIRST by addDiagrams(): mermaid.core's render() routes Diagram.fromText()
@@ -263,6 +264,10 @@ const out = await page.evaluate(async ({ moduleUrl, fontUrl, common }) => {
     const div = document.createElement("div");
     div.id = "shot";
     div.style.width = "512px";
+    // Keep the SVG away from the page origin: the per-path crop clips subtract
+    // a 2px guard from the path rect, and a negative clip coordinate makes
+    // Puppeteer capture from the page origin instead of the requested window.
+    div.style.margin = "8px";
     document.body.appendChild(div);
     const mermaid = (await import(moduleUrl)).default;
     mermaid.initialize({ startOnLoad: false, logLevel: "fatal" });
@@ -281,6 +286,69 @@ const out = await page.evaluate(async ({ moduleUrl, fontUrl, common }) => {
     width: Math.round(bounds.width),
     height: Math.round(bounds.height),
   };
+
+  // Per-path isolated crops for the per-icon pixel oracle: same visibility-
+  // isolation capture as the golden-pixel harness (hide every SVG descendant,
+  // re-show the target + ancestors), so each browser PNG contains exactly one
+  // icon — the native test renders the matching single path through
+  // error::paintErrorIcon into the same window. getBoundingClientRect excludes
+  // stroke, which is fine for the default theme (icons are fill-only,
+  // stroke:none). Clips are recorded relative to the SVG client origin so the
+  // native side can reproduce the window in the 512-wide client-box space.
+  const svgOrigin = await page.evaluate(() => {
+    const rect = document.querySelector("svg").getBoundingClientRect();
+    return { x: rect.left, y: rect.top };
+  });
+  const icons = [];
+  for (let nth = 1; nth <= 6; nth++) {
+    const selector = `path.error-icon:nth-of-type(${nth})`;
+    const clip = await page.$eval(selector, (node) => {
+      const rect = node.getBoundingClientRect();
+      const guard = 2;
+      return {
+        x: rect.left - guard,
+        y: rect.top - guard,
+        width: Math.max(1, rect.width + 2 * guard),
+        height: Math.max(1, rect.height + 2 * guard),
+      };
+    });
+    await page.evaluate((selector) => {
+      const root = document.querySelector("svg");
+      for (const node of root.querySelectorAll("*"))
+        node.style.visibility = "hidden";
+      const selected = root.querySelector(selector);
+      for (let node = selected; node && node !== root; node = node.parentElement)
+        node.style.visibility = "visible";
+      for (const child of selected.querySelectorAll("*"))
+        child.style.visibility = "visible";
+    }, selector);
+    const shot = await page.screenshot({ omitBackground: true, clip });
+    const png = PNG.sync.write(PNG.sync.read(shot), {
+      colorType: 6,
+      inputColorType: 6,
+      bitDepth: 8,
+    });
+    const file = `icon-${nth - 1}.png`;
+    fs.writeFileSync(path.join(pngDir, file), png);
+    icons.push({
+      index: nth - 1,
+      file: `error-diagram/${file}`,
+      sha256: createHash("sha256").update(png).digest("hex"),
+      width: PNG.sync.read(png).width,
+      height: PNG.sync.read(png).height,
+      clip: {
+        x: clip.x - svgOrigin.x,
+        y: clip.y - svgOrigin.y,
+        width: clip.width,
+        height: clip.height,
+      },
+    });
+  }
+  await page.evaluate(() => {
+    for (const node of document.querySelector("svg").querySelectorAll("*"))
+      node.style.visibility = "";
+  });
+  out.png.icons = icons;
 }
 await browser.close();
 
