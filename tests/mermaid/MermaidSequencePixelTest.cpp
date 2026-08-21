@@ -414,12 +414,12 @@ int main(int argc,char** argv) {
               QLatin1String("bundled-noto-stix-two-math-2.13b171"),
           QStringLiteral("Sequence pixel font oracle drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("8ec403ca2a0a7b97f27a88386703ffd5ccc1d061ef6a0f1068cf9b5df25b7aaa"),
+              QLatin1String("0f50786a1b9a62f5a99a6aae07c5659e2f8509d203d70a30e377321768301ee2"),
           QStringLiteral("Sequence pixel fixture changed; audit and update digest"));
   const QDir dir=QFileInfo(file).absoluteDir();
   editor::MermaidRenderCache cache;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==121,QStringLiteral("Sequence pixel matrix regressed"));
+  require(cases.size()==123,QStringLiteral("Sequence pixel matrix regressed"));
   QSet<QString> ids;
   QSet<QString> verticalDelimiters;
   int scenePixelCases=0;
@@ -1308,6 +1308,9 @@ int main(int argc,char** argv) {
           QStringLiteral("Sequence vertical delimiter pixel axis regressed"));
   require(scenePixelCases>=24&&labelPixelCases>=55,
           QStringLiteral("Sequence curated scene/label pixel matrix regressed"));
+  for(const QString& id:{QStringLiteral("redux-color-actors-activations"),
+                         QStringLiteral("redux-dark-color-actors-activations")})
+    require(ids.contains(id),QStringLiteral("Sequence redux-color rotation pixel axis is uncovered: %1").arg(id));
   for(const QString& id:{QStringLiteral("label-participant-html-cjk"),
                          QStringLiteral("label-message-wrap-bidi"),
                          QStringLiteral("label-note-markdown-math"),

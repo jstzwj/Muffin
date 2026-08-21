@@ -24,6 +24,20 @@ const mathFace = `@font-face{font-family:"STIX Two Math";src:url("${pathToFileUR
 const cases = [
   { id: "basic", source: "sequenceDiagram\nparticipant A as Alice\nactor B as Bob\nA->>B:Hello\nB-->>A:Return" },
   { id: "activation-note", source: "sequenceDiagram\nA->>+B:Call\nNote over A,B:Working 中文\nB-->>-A:Done" },
+  // redux-color / redux-dark-color: every actor shape and activation rect
+  // rotates through borderColorArray/bkgColorArray by visible-actor index
+  // (upstream COLOR_THEMES). Three participants + nested activations give the
+  // rotation three distinct slots to prove; the mirror footer doubles each
+  // actor slot. Self-declares the theme like the dark cases so the native
+  // production pipeline renders the same theme from source.
+  { id: "redux-color-actors-activations", theme: "redux-color",
+    source: ['%%{init: {"theme":"redux-color"}}%%', "sequenceDiagram",
+      "participant A as Alice", "participant B as Bob", "participant C as Cara",
+      "A->>+B:Call", "B->>+C:Forward", "C-->>-B:Reply", "B-->>-A:Done"].join("\n") },
+  { id: "redux-dark-color-actors-activations", theme: "redux-dark-color",
+    source: ['%%{init: {"theme":"redux-dark-color"}}%%', "sequenceDiagram",
+      "participant A as Alice", "participant B as Bob", "participant C as Cara",
+      "A->>+B:Call", "B->>+C:Forward", "C-->>-B:Reply", "B-->>-A:Done"].join("\n") },
   { id: "nested-fragment", source: "sequenceDiagram\nalt Success\nloop Retry\nA->>B:Request\nend\nelse Failure\nA-xB:Error\nend" },
   { id: "participant-types", source: ["sequenceDiagram", "participant P as Plain", "actor A as Actor",
       'participant B@{ "type": "boundary" } as Boundary', 'participant C@{ "type": "control" } as Control',
@@ -363,6 +377,23 @@ try {
             width:Number(rect.width.toFixed(3)),height:Number(rect.height.toFixed(3))}; }),
         styles:{actor:styleOf(".actor"),message:styleOf(".messageLine0,.messageLine1"),
           messageText:styleOf(".messageText"),note:styleOf(".note"),loopText:styleOf(".loopText")},
+        // redux-color themes: per-element computed fill/stroke proving the
+        // rotation for every actor box (top + mirror footer) and activation
+        // rect individually — the first-actor styles sample above cannot show
+        // that different actors get different colors.
+        reduxRotations:(fixture.theme && fixture.theme.endsWith("-color")) ? {
+          // DOM order is NOT visual order (upstream prepends actor groups, so
+          // querySelectorAll walks right-to-left); record x so consumers pair
+          // elements by position.
+          actors:[...root.querySelectorAll("rect.actor")].map((node)=>{
+            const s=getComputedStyle(node);
+            return {x:Math.round(node.getBoundingClientRect().x),fill:s.fill,stroke:s.stroke};
+          }),
+          activations:[...root.querySelectorAll('rect[class*="activation"]')].map((node)=>{
+            const s=getComputedStyle(node);
+            return {x:Math.round(node.getBoundingClientRect().x),fill:s.fill,stroke:s.stroke};
+          }),
+        } : undefined,
         domOrder:[...root.querySelectorAll("text,foreignObject,rect,line,path,math")].slice(0,160)
           .map((node)=>`${node.tagName}:${node.getAttribute("class") ?? ""}`),
       };

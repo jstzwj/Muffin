@@ -53,6 +53,12 @@ sequence::SequenceSceneStyle sequenceStyleFromConfig(const QJsonObject& config) 
   style.noteTextColor = themeVars.noteTextColor;
   style.activationFill = themeVars.activationBkgColor;
   style.activationStroke = themeVars.activationBorderColor;
+  // redux-color / redux-dark-color actor + activation rotation palettes
+  // (only those two theme constructors populate the arrays, which is exactly
+  // upstream's COLOR_THEMES gate).
+  style.reduxActorBorderColorArray = themeVars.borderColorArray;
+  style.reduxActorBkgColorArray = themeVars.bkgColorArray;
+  style.reduxActivationBkgFallback = themeVars.mainBkg;
   // `.loopLine` (the fragment/loop border lines) takes labelBoxBorderColor
   // from the resolved theme — probed: default renders #9370DB dashed 2,2.
   style.fragmentStroke = themeVars.labelBoxBorderColor;

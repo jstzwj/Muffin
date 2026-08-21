@@ -124,6 +124,10 @@ struct SequenceLayoutParticipant {
   QString id;
   QString type;
   QString label;
+  // Insertion-order position among VISIBLE actors (upstream redux-color
+  // actorIndexMap semantics: built after hideUnusedParticipants filtering).
+  // -1 when unknown; the painter's color rotation gates on it.
+  int actorIndex = -1;
   QRectF logicalRect;
   qreal margin = 0.0;
   qreal anchorX = 0.0;
@@ -183,6 +187,9 @@ struct SequenceLayoutActivation {
   QString actor;
   int depth = 0;
   QRectF rect;
+  // Visible-actor insertion order (see SequenceLayoutParticipant::actorIndex)
+  // driving the redux-color activation rotation.
+  int actorIndex = -1;
 };
 
 struct SequenceLayoutNote {

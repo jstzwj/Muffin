@@ -1,6 +1,7 @@
 export const sequenceScenePixelCaseIds = new Set([
   "basic", "activation-note", "nested-fragment", "participant-types",
   "create-destroy-markers", "central-autonumber", "self-autonumber",
+  "redux-color-actors-activations", "redux-dark-color-actors-activations",
   "label-participant-html-cjk", "label-message-wrap-bidi",
   "label-note-markdown-math", "label-fragment-html-rtl",
   "label-box-markdown-math", "label-dpr-125-html-cjk",

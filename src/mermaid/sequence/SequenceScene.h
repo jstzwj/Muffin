@@ -42,6 +42,17 @@ struct SequenceSceneStyle {
   qreal messageFontSize = 16.0;
   qreal noteFontSize = 16.0;
   qreal actorStrokeWidth = 2.0;
+  // redux-color / redux-dark-color rotation (upstream COLOR_THEMES): every
+  // actor shape and activation rect is overdrawn with
+  // borderColorArray[actorIndex % borderColorArray.size()] and
+  // bkgColorArray[actorIndex % size]. The fill fallbacks differ by element:
+  // activations use mainBkg (bkgColorArray is empty under redux-dark-color),
+  // actor shapes fall back to the .actor CSS fill (actorFill) because d3
+  // .style("fill", undefined) removes the inline override. Empty border array
+  // (every other theme) disables the rotation entirely.
+  QStringList reduxActorBorderColorArray;
+  QStringList reduxActorBkgColorArray;
+  QString reduxActivationBkgFallback;
   // Upstream sequence.messageAlign / sequence.noteAlign (start/middle/end).
   // Defaults are Center, matching mermaid, so default rendering is unchanged.
   // Only notes and messages read these; participants, boxes and fragments stay

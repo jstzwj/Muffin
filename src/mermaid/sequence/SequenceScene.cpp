@@ -144,6 +144,8 @@ QJsonObject SequenceScene::toJsonObject() const {
   for (const SequenceLayoutParticipant& participant : participants) {
     QJsonObject p;
     p[QStringLiteral("id")] = participant.id;
+    if (participant.actorIndex >= 0)
+      p[QStringLiteral("actorIndex")] = participant.actorIndex;
     if (!participant.type.isEmpty())
       p[QStringLiteral("type")] = participant.type;
     p[QStringLiteral("label")] = participant.label;
@@ -191,6 +193,8 @@ QJsonObject SequenceScene::toJsonObject() const {
     a[QStringLiteral("actor")] = activation.actor;
     a[QStringLiteral("depth")] = activation.depth;
     a[QStringLiteral("rect")] = rectJson(activation.rect);
+    if (activation.actorIndex >= 0)
+      a[QStringLiteral("actorIndex")] = activation.actorIndex;
     activationsArray.append(a);
   }
   o[QStringLiteral("activations")] = activationsArray;

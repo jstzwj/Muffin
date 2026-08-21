@@ -116,8 +116,20 @@ flowchart::FlowLabelAlign effectiveAlign(const SequenceLabelDocument& label,
 void participantShape(QPainter& painter, const SequenceLayoutParticipant& actor,
                       const SequenceLabelDocument& label, bool footer,
                       const SequenceSceneStyle& style) {
-  painter.setPen(QPen(color(style.actorStroke), style.actorStrokeWidth));
-  painter.setBrush(color(style.actorFill));
+  QColor strokeColor = color(style.actorStroke);
+  QColor fillColor = color(style.actorFill);
+  // redux-color / redux-dark-color: every actor shape rotates through
+  // borderColorArray/bkgColorArray by visible-actor index. An empty bkg
+  // array (redux-dark-color) keeps the .actor CSS fill (d3 removes the
+  // inline override), i.e. actorFill.
+  if (!style.reduxActorBorderColorArray.isEmpty() && actor.actorIndex >= 0) {
+    const int slot = actor.actorIndex % style.reduxActorBorderColorArray.size();
+    strokeColor = color(style.reduxActorBorderColorArray.at(slot));
+    if (!style.reduxActorBkgColorArray.isEmpty())
+      fillColor = color(style.reduxActorBkgColorArray.at(slot));
+  }
+  painter.setPen(QPen(strokeColor, style.actorStrokeWidth));
+  painter.setBrush(fillColor);
   const auto& paths = footer ? actor.bottomShapePaths : actor.topShapePaths;
   const QRectF labelRect = footer ? actor.bottomLabelRect : actor.topLabelRect;
   if (actor.type == QLatin1String("actor") || actor.type == QLatin1String("boundary") ||
@@ -205,8 +217,21 @@ void paintSequenceScene(const SequenceScene& scene, QPainter& painter,
   }
   for (const auto& activation : scene.activations) {
     if (!mermaidPrimitiveIsVisible(activation.rect, options)) continue;
-    painter.setPen(QPen(color(scene.style.activationStroke), 1.0));
-    painter.setBrush(color(scene.style.activationFill));
+    QColor strokeColor = color(scene.style.activationStroke);
+    QColor fillColor = color(scene.style.activationFill);
+    // redux-color / redux-dark-color activation rotation; the fill falls back
+    // to mainBkg when bkgColorArray is empty (redux-dark-color) — upstream's
+    // `?? mainBkg` exists only on the activation site.
+    if (!scene.style.reduxActorBorderColorArray.isEmpty() && activation.actorIndex >= 0) {
+      const int slot =
+          activation.actorIndex % scene.style.reduxActorBorderColorArray.size();
+      strokeColor = color(scene.style.reduxActorBorderColorArray.at(slot));
+      fillColor = scene.style.reduxActorBkgColorArray.isEmpty()
+                      ? color(scene.style.reduxActivationBkgFallback)
+                      : color(scene.style.reduxActorBkgColorArray.at(slot));
+    }
+    painter.setPen(QPen(strokeColor, 1.0));
+    painter.setBrush(fillColor);
     painter.drawRect(activation.rect);
   }
   for (qsizetype index = 0; index < scene.fragments.size(); ++index) {

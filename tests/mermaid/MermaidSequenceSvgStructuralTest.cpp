@@ -13,13 +13,18 @@
 #include <QRegularExpression>
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <numeric>
 
 using namespace muffin::mermaid;
 
 namespace {
-[[noreturn]] void fail(const QString& message) { qCritical().noquote() << message; std::exit(1); }
+[[noreturn]] void fail(const QString& message) {
+  std::fprintf(stderr, "FAIL: %s\n", qPrintable(message));
+  std::fflush(stderr);
+  std::exit(1);
+}
 void require(bool condition, const QString& message) { if (!condition) fail(message); }
 
 int nativeMathCount(const sequence::SequenceScene& scene) {
@@ -43,13 +48,13 @@ int main(int argc,char** argv) {
               root.value(QStringLiteral("fontMode")).toString()==
                   QLatin1String("bundled-noto-stix-two-math-2.13b171")&&
               root.value(QStringLiteral("fixtureSha256")).toString()==
-              QLatin1String("8ec403ca2a0a7b97f27a88386703ffd5ccc1d061ef6a0f1068cf9b5df25b7aaa"),
+              QLatin1String("0f50786a1b9a62f5a99a6aae07c5659e2f8509d203d70a30e377321768301ee2"),
           QStringLiteral("Sequence SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;
   int mathCases=0,foreignObjectCases=0,ariaCases=0,labelCases=0,domEntries=0,markerEntries=0;
   const QJsonArray cases=root.value(QStringLiteral("cases")).toArray();
-  require(cases.size()==121,QStringLiteral("Sequence SVG structural matrix regressed"));
+  require(cases.size()==123,QStringLiteral("Sequence SVG structural matrix regressed"));
   for(const QJsonValue& value:cases) {
     const QJsonObject fixture=value.toObject();
     const QString id=fixture.value(QStringLiteral("id")).toString();
@@ -174,6 +179,101 @@ int main(int argc,char** argv) {
             QStringLiteral("%1 native label/container ordering drifted").arg(id));
     require((nativeMathCount(scene)>0)==(mathCount>0),
             QStringLiteral("%1 native/MathML structural classification mismatch").arg(id));
+
+    // redux-color / redux-dark-color rotation: the browser fixture captured
+    // computed fill/stroke for EVERY actor rect (top boxes, then mirror
+    // footers) and activation rect; the native scene must resolve the same
+    // colors from its style arrays per visible-actor slot, and adjacent slots
+    // must differ (the rotation actually rotates).
+    const QJsonObject reduxRotations=structure.value(QStringLiteral("reduxRotations")).toObject();
+    if(!reduxRotations.isEmpty()) {
+      const auto cssColor=[](const QString& value)->QColor {
+        static const QRegularExpression re(
+            QStringLiteral("rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)"));
+        const auto m=re.match(value);
+        if(!m.hasMatch()) return QColor();
+        return QColor(m.captured(1).toInt(),m.captured(2).toInt(),m.captured(3).toInt());
+      };
+      const QStringList& borders=scene.style.reduxActorBorderColorArray;
+      const QStringList& bkgs=scene.style.reduxActorBkgColorArray;
+      require(borders.size()==12,
+              QStringLiteral("%1 redux border palette not wired").arg(id));
+      // The browser DOM order is NOT the visual order (upstream prepends actor
+      // groups, so querySelectorAll walks right-to-left); the fixture records
+      // each rect's x, so pair by ascending position. Each participant has a
+      // top box and a mirror footer sharing the slot colors.
+      const auto byAscendingX=[](const QJsonArray& array) {
+        QVector<QPair<qreal,QJsonObject>> items;
+        for(const QJsonValue& v:array) {
+          const QJsonObject o=v.toObject();
+          items.append({o.value(QStringLiteral("x")).toDouble(),o});
+        }
+        // stable: top box and mirror footer share x; keep DOM order within
+        // the tie so entry i and entry N+i are the same participant.
+        std::stable_sort(items.begin(),items.end(),
+                  [](const auto& a,const auto& b){return a.first<b.first;});
+        return items;
+      };
+      const QJsonArray actorColors=reduxRotations.value(QStringLiteral("actors")).toArray();
+      require(actorColors.size()==scene.participants.size()*2,
+              QStringLiteral("%1 redux actor rect count mismatch").arg(id));
+      const auto sortedActors=byAscendingX(actorColors);
+      for(qsizetype pi=0;pi<scene.participants.size();++pi) {
+        const int slot=qMax(0,scene.participants.at(pi).actorIndex)%borders.size();
+        // Participants are laid out left-to-right and each contributes two
+        // same-x rects (top box + mirror footer), so after the stable sort
+        // participant pi owns the consecutive pair {2*pi, 2*pi+1}.
+        for(const int entry:{static_cast<int>(2*pi),static_cast<int>(2*pi+1)}) {
+          const QJsonObject observed=sortedActors.at(entry).second;
+          const QColor expectedStroke=cssColor(observed
+              .value(QStringLiteral("stroke")).toString());
+          const QColor expectedFill=cssColor(observed
+              .value(QStringLiteral("fill")).toString());
+          require(expectedStroke==QColor(borders.at(slot))&&expectedFill.isValid(),
+                  QStringLiteral("%1 redux actor %2 stroke slot mismatch (entry %3)")
+                      .arg(id).arg(pi).arg(entry));
+          const QColor nativeFill=bkgs.isEmpty()
+              ? QColor(scene.style.reduxActivationBkgFallback) : QColor(bkgs.at(slot));
+          require(expectedFill==nativeFill,
+                  QStringLiteral("%1 redux actor %2 fill slot mismatch (entry %3)")
+                      .arg(id).arg(pi).arg(entry));
+        }
+      }
+      const QJsonArray activationColors=reduxRotations.value(QStringLiteral("activations")).toArray();
+      require(activationColors.size()==scene.activations.size(),
+              QStringLiteral("%1 redux activation rect count mismatch").arg(id));
+      const auto sortedActivations=byAscendingX(activationColors);
+      QVector<QPair<qreal,int>> nativeActivations;
+      for(qsizetype ai=0;ai<scene.activations.size();++ai)
+        nativeActivations.append({scene.activations.at(ai).rect.x(),
+                                  qMax(0,scene.activations.at(ai).actorIndex)});
+      std::stable_sort(nativeActivations.begin(),nativeActivations.end(),
+                [](const auto& a,const auto& b){return a.first<b.first;});
+      for(qsizetype ai=0;ai<nativeActivations.size();++ai) {
+        const int slot=nativeActivations.at(ai).second%borders.size();
+        const QJsonObject observed=sortedActivations.at(ai).second;
+        const QColor expectedStroke=cssColor(observed
+            .value(QStringLiteral("stroke")).toString());
+        const QColor expectedFill=cssColor(observed
+            .value(QStringLiteral("fill")).toString());
+        require(expectedStroke==QColor(borders.at(slot)),
+                QStringLiteral("%1 redux activation %2 stroke slot mismatch").arg(id).arg(ai));
+        const QColor nativeFill=bkgs.isEmpty()
+            ? QColor(scene.style.reduxActivationBkgFallback) : QColor(bkgs.at(slot));
+        require(expectedFill==nativeFill,
+                QStringLiteral("%1 redux activation %2 fill slot mismatch").arg(id).arg(ai));
+      }
+      if(scene.participants.size()>=2) {
+        // Adjacent participants (entries 0 and 2 after the stable sort) must
+        // sit on different slots, or the rotation is not rotating.
+        const QColor first=cssColor(sortedActors.at(0).second
+            .value(QStringLiteral("stroke")).toString());
+        const QColor second=cssColor(sortedActors.at(2).second
+            .value(QStringLiteral("stroke")).toString());
+        require(first!=second,
+                QStringLiteral("%1 redux rotation does not rotate").arg(id));
+      }
+    }
 
     const QString labelledBy=structure.value(QStringLiteral("ariaLabelledBy")).toString();
     if(!labelledBy.isEmpty()) {

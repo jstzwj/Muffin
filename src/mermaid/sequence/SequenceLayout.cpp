@@ -382,6 +382,13 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
                        2.0 * options.wrapPadding);
   }
 
+  // Visible-actor insertion position (upstream redux-color actorIndexMap is
+  // built over the post-hideUnusedParticipants actor list) for the painter's
+  // per-actor color rotation.
+  QHash<int, int> visiblePosition;
+  for (qsizetype position = 0; position < visibleActors.size(); ++position)
+    visiblePosition.insert(visibleActors.at(position), static_cast<int>(position));
+
   QMap<QString, qreal> maximumMessageWidth;
   for (qsizetype messageIndex = 0; messageIndex < data.messages.size(); ++messageIndex) {
     const SequenceMessage& message = data.messages[messageIndex];
@@ -462,6 +469,7 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
     const qreal x = previousWidth + previousMargin;
     SequenceLayoutParticipant participant;
     participant.id = actor.id;
+    participant.actorIndex = visiblePosition.value(index, -1);
     participant.type = actor.type;
     participant.label = measurements.participantDisplayById.value(actor.id, actor.description);
     participant.logicalRect = QRectF(x, topBaseY, actorWidths[index], participantHeight);
@@ -546,7 +554,8 @@ SequenceLayoutResult layoutSequence(const SequenceData& data,
       result.activations.append({activation.messageIndex, activation.actor, activation.depth,
                                  QRectF(activation.startX, activation.startY,
                                         activation.stopX - activation.startX,
-                                        bounds.vertical - activation.startY)});
+                                        bounds.vertical - activation.startY),
+                                 visiblePosition.value(actorIndex.value(activation.actor, -1), -1)});
       bounds.insert(activation.startX, bounds.vertical - 10.0,
                     activation.stopX, bounds.vertical);
       continue;

@@ -70,7 +70,7 @@ int main(int argc,char** argv) {
   const QStringList diskPngList=QDir(dir+QStringLiteral("/sequence-pixel"))
       .entryList({QStringLiteral("*.png")},QDir::Files,QDir::Name);
   const QSet<QString> diskPngs(diskPngList.cbegin(),diskPngList.cend());
-  require(referencedPngs==diskPngs&&referencedPngs.size()==309,
+  require(referencedPngs==diskPngs&&referencedPngs.size()==311,
           QStringLiteral("Sequence PNG fixture references/orphans regressed: manifest=%1 disk=%2")
               .arg(referencedPngs.size()).arg(diskPngs.size()));
 
@@ -227,7 +227,11 @@ int main(int argc,char** argv) {
     markerCases+=structure.value(QStringLiteral("markers")).toArray().size()>=8;
     ariaCases+=!structure.value(QStringLiteral("ariaLabelledBy")).toString().isEmpty();
   }
-  require(themes==QSet<QString>{QStringLiteral("default"),QStringLiteral("dark")}&&dprs.size()>=4&&
+  // redux-color / redux-dark-color joined the theme axis with the actor +
+  // activation rotation cases.
+  require(themes==QSet<QString>{QStringLiteral("default"),QStringLiteral("dark"),
+                                QStringLiteral("redux-color"),
+                                QStringLiteral("redux-dark-color")}&&dprs.size()>=4&&
               mathCases>=3&&bidiCases>=4&&cjkCases>=5&&scenePixelCases>=24&&
               cropCases>=68&&
               markerCases==pixelCases.size()&&ariaCases>=1,
