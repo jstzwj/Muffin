@@ -99,6 +99,9 @@ int main(int argc, char** argv) {
     const QImage native = decode(editor::MermaidRenderCache::renderMermaidSourceToPng(
                                      fixture.value(QStringLiteral("source")).toString(), 1.0)
                                      .dataUrl);
+    if (qEnvironmentVariableIsSet("MUFFIN_SAVE_NATIVE")) {
+      native.save(dir.filePath(id + QStringLiteral("-native.png")));
+    }
     require(!reference.isNull() && !native.isNull(), id + QStringLiteral("/decode"));
     require(native.size() == reference.size(),
             QStringLiteral("%1: native %2x%3 != browser %4x%5")
@@ -108,8 +111,10 @@ int main(int argc, char** argv) {
     const qreal rgba = rgbaSimilarity(native, reference);
     std::fprintf(stderr, "%s alphaIoU=%.6f rgba=%.6f\n", qPrintable(id), iou,
                  rgba);
-    require(iou >= 0.72, id + QStringLiteral("/alpha IoU"));
-    require(rgba >= 0.78, id + QStringLiteral("/foreground RGBA"));
+    const qreal minimumIou = id == QLatin1String("dark") ? 0.87 : 0.92;
+    const qreal minimumRgba = id == QLatin1String("dark") ? 0.88 : 0.95;
+    require(iou >= minimumIou, id + QStringLiteral("/alpha IoU"));
+    require(rgba >= minimumRgba, id + QStringLiteral("/foreground RGBA"));
   }
   return 0;
 }

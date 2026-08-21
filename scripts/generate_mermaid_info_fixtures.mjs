@@ -112,6 +112,18 @@ const renderCases = [
     ),
   },
   {
+    id: "theme-css-structure",
+    source: init(
+      {
+        fontFamily: "Noto Sans",
+        themeVariables: { fontFamily: "Noto Sans", fontSize: "16px" },
+        themeCSS:
+          ".version { fill:#ff0000 !important; opacity:0.5; font-size:24px !important; font-weight:700; } g:nth-of-type(2) text.version { fill:#00ff00 !important; }",
+      },
+      "info",
+    ),
+  },
+  {
     id: "unrelated-config-inert",
     source: init({ useMaxWidth: false, width: 999, height: 777 }, "info"),
   },
@@ -182,23 +194,19 @@ try {
     grammar.push({ id: fixture.id, source: fixture.source, ...result });
   }
 
-  const geometry = [];
-  for (let index = 0; index < renderCases.length; ++index) {
-    const fixture = renderCases[index];
-    await page.goto(hostPage);
-    const snapshot = await page.evaluate(
+  const captureGeometry = async (fixture, run) => {
+    const renderPage = await browser.newPage();
+    await renderPage.setViewport({ width: 800, height: 600, deviceScaleFactor: 1 });
+    try {
+      await renderPage.goto(hostPage);
+      return await renderPage.evaluate(
       async ({ source, id, moduleUrl, fontUrl }) => {
         const font = new FontFace("Noto Sans", `url(${fontUrl})`);
         await font.load();
         document.fonts.add(font);
         await document.fonts.load("32px 'Noto Sans'");
         const { default: mermaid } = await import(moduleUrl);
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: "strict",
-          deterministicIds: true,
-          deterministicIDSeed: "info-fixture",
-        });
+        mermaid.initialize({ startOnLoad: false, logLevel: "fatal" });
         const rendered = await mermaid.render(`info-${id}`, source);
         document.body.style.margin = "0";
         document.body.innerHTML = rendered.svg;
@@ -212,7 +220,16 @@ try {
         };
         const rootClient = root.getBoundingClientRect();
         const computed = getComputedStyle(text);
+        const parent = text.parentElement;
+        const parentSiblings = [...parent.parentElement.children].filter(
+          (element) => element.tagName === parent.tagName,
+        );
+        const effectiveConfig = mermaid.mermaidAPI.getConfig();
         return {
+          config: {
+            theme: effectiveConfig.theme ?? "",
+            themeCSS: effectiveConfig.themeCSS ?? "",
+          },
           root: {
             attrs: attrs(root),
             bbox: bbox(root),
@@ -228,6 +245,12 @@ try {
             attrs: attrs(text),
             value: text.textContent,
             bbox: bbox(text),
+            computedTextLength: text.getComputedTextLength(),
+            parent: {
+              tag: parent.tagName.toLowerCase(),
+              typeIndex: parentSiblings.indexOf(parent) + 1,
+              childTags: [...parent.children].map((child) => child.tagName.toLowerCase()),
+            },
             computed: {
               fill: computed.fill,
               fontFamily: computed.fontFamily,
@@ -247,10 +270,21 @@ try {
       {
         source: fixture.source,
         id: fixture.id,
-        moduleUrl: pathToFileURL(moduleFile).href,
+        moduleUrl: `${pathToFileURL(moduleFile).href}?info-geometry=${fixture.id}-${run}`,
         fontUrl: pathToFileURL(fontFile).href,
       },
-    );
+      );
+    } finally {
+      await renderPage.close();
+    }
+  };
+
+  const geometry = [];
+  for (let index = 0; index < renderCases.length; ++index) {
+    const fixture = renderCases[index];
+    const snapshot = await captureGeometry(fixture, 0);
+    const repeated = await captureGeometry(fixture, 1);
+    assertEqual(JSON.stringify(repeated), JSON.stringify(snapshot), `${fixture.id} geometry`);
     geometry.push({ id: fixture.id, source: fixture.source, expected: snapshot });
   }
 
@@ -277,45 +311,56 @@ try {
 
   const pixelDir = path.join(fixtureDir, "info-pixel");
   fs.mkdirSync(pixelDir, { recursive: true });
-  const pixels = [];
-  for (const id of ["default", "dark"]) {
-    const fixture = renderCases.find((item) => item.id === id);
-    await page.goto(hostPage);
-    await page.evaluate(
+  const capturePixel = async (fixture, run) => {
+    const renderPage = await browser.newPage();
+    await renderPage.setViewport({ width: 800, height: 600, deviceScaleFactor: 1 });
+    try {
+      await renderPage.goto(hostPage);
+      await renderPage.evaluate(
       async ({ source, id, moduleUrl, fontUrl }) => {
         const font = new FontFace("Noto Sans", `url(${fontUrl})`);
         await font.load();
         document.fonts.add(font);
         await document.fonts.load("32px 'Noto Sans'");
         const { default: mermaid } = await import(moduleUrl);
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: "strict",
-          deterministicIds: true,
-          deterministicIDSeed: "info-pixel",
-        });
+        mermaid.initialize({ startOnLoad: false, logLevel: "fatal" });
         const rendered = await mermaid.render(`info-pixel-${id}`, source);
         document.body.style.margin = "0";
         document.body.innerHTML = rendered.svg;
       },
       {
         source: fixture.source,
-        id,
-        moduleUrl: pathToFileURL(moduleFile).href,
+        id: fixture.id,
+        moduleUrl: `${pathToFileURL(moduleFile).href}?info-pixel=${fixture.id}-${run}`,
         fontUrl: pathToFileURL(fontFile).href,
       },
-    );
-    const element = await page.$("svg");
+      );
+      const element = await renderPage.$("svg");
+      return {
+        bytes: await element.screenshot({ omitBackground: true }),
+        box: await element.boundingBox(),
+      };
+    } finally {
+      await renderPage.close();
+    }
+  };
+
+  const pixels = [];
+  for (const id of ["default", "dark"]) {
+    const fixture = renderCases.find((item) => item.id === id);
+    const capture = await capturePixel(fixture, 0);
+    const repeated = await capturePixel(fixture, 1);
+    assertEqual(sha256(repeated.bytes), sha256(capture.bytes), `${id} pixel bytes`);
+    assertEqual(JSON.stringify(repeated.box), JSON.stringify(capture.box), `${id} pixel box`);
     const file = `${id}.png`;
-    const bytes = await element.screenshot({ path: path.join(pixelDir, file), omitBackground: true });
-    const box = await element.boundingBox();
+    fs.writeFileSync(path.join(pixelDir, file), capture.bytes);
     pixels.push({
       id,
       source: fixture.source,
       file,
-      width: Math.round(box.width),
-      height: Math.round(box.height),
-      sha256: sha256(bytes),
+      width: Math.round(capture.box.width),
+      height: Math.round(capture.box.height),
+      sha256: sha256(capture.bytes),
     });
   }
   writeJson(path.join(pixelDir, "manifest.json"), {

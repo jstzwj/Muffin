@@ -1001,6 +1001,31 @@ height="14"><path ...>`；布局仍为非空 icon 保留 18px，显式 `icon()`
   含构建新鲜度测试）；fixture 跨进程复跑的 manifest 与 label-mask SHA-256
   均不变，dist 已刷新并与 Release 可执行文件逐字节一致。
 
+**Info dark 文本像素 / DOM 收口（08-21 第二十轮）**：原 Info 像素测试仅在
+400×150 的大面积透明画布上比较唯一一行文字，并以 alpha IoU 0.72 / RGBA 0.78
+放行；实测 default/dark 只有 0.802/0.776。分层探针证明 dark 的 `#ccc` 颜色本身
+正确，低分来自同一文字轮廓在浅色透明截图中放大的 coverage 差，而非主题变量错配。
+
+- **文字根因**：native 仍走 `QPainter::drawText` 的平台字形位图，浏览器 SVG 则走
+  Skia 轮廓填充。Info 现改用同一 Noto face 的 `QPainterPath::addText`，并按 SVG
+  raster 的半像素 baseline 相位绘制；水平锚点与场景 `textBounds` 统一复用
+  `measureOpenTypeDesignAdvance` / `measureChromiumSvgTextBounds`。浏览器
+  `getComputedTextLength()` 的 124.9375 与 bbox `(36.53125,6,125.9375,43)` 已由
+  geometry test 逐分量精确锁定。
+- **真实 DOM**：浏览器根子树是 `<style> + scaffold <g> + content <g>`，version
+  text 位于第二个 `g`。adapter 原先只投影一个虚拟 `g`，使 `g:nth-of-type(2)`
+  结构规则失配；现已补齐三兄弟节点。新增 themeCSS 差异案同时锁 green fill、24px、
+  bold、0.5 opacity 与第二个 `g` 的 parent/typeIndex。源指令 sanitizer 会把含直接子
+  组合器 `>` 的 themeCSS 整项剥离，因此 oracle 使用上游真实可达的 descendant
+  组合器，而不是绕过 source-entry。
+- **oracle 防盲区**：每个 geometry/pixel 案均在新页面中 cache-bust import，并独立
+  双捕获比较；这关闭了复用 Mermaid ESM 单例时的样式缓存假金值。像素门槛收紧为
+  default 0.92/0.95、dark 0.87/0.88；新实现实测 default 0.934/0.961、dark
+  **0.881/0.888**，旧位图路径两案都会失败。
+- **门禁**：Info 定向 4/4、完整 Release **293/293 全绿**（327.07s，含构建新鲜度
+  测试）；geometry/pixel fixture 跨进程复跑字节一致；dist 已刷新，Release/dist
+  `Muffin.exe` 大小、时间戳和 SHA-256 完全一致。
+
 ---
 
 ## 8. Oracle 深度跨图（2026-07-30 起）

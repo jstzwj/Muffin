@@ -1,13 +1,11 @@
 #include "mermaid/info/InfoScene.h"
 
-#include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/info/InfoScenePainter.h"
 
-#include <QFont>
-#include <QFontMetricsF>
 #include <QJsonObject>
 
-#include <algorithm>
 #include <utility>
 
 namespace muffin::mermaid::info {
@@ -31,6 +29,7 @@ QJsonObject InfoScene::toJsonObject() const {
   return {{QStringLiteral("bounds"), rectJson(bounds)},
           {QStringLiteral("text"), text},
           {QStringLiteral("textBounds"), rectJson(textBounds)},
+          {QStringLiteral("textAdvance"), textAdvance},
           {QStringLiteral("x"), anchor.x()},
           {QStringLiteral("y"), anchor.y()},
           {QStringLiteral("fontSize"), style.fontSize},
@@ -45,20 +44,29 @@ QJsonObject InfoScene::toJsonObject() const {
 InfoScene buildInfoScene(InfoSceneStyle style) {
   InfoScene scene;
   scene.style = std::move(style);
-  QFont font;
-  MermaidFontRegistry::configureFont(font, scene.style.fontFamily);
-  font.setPixelSize(std::max(1, qRound(scene.style.fontSize)));
-  font.setWeight(scene.style.fontWeight);
-  font.setHintingPreference(QFont::PreferNoHinting);
+  editor::CssPixelFont cssFont = editor::makeUnhintedCssPixelFont(
+      editor::firstFontFamily(scene.style.fontFamily), scene.style.fontSize);
+  cssFont.font.setWeight(scene.style.fontWeight);
   if (!scene.style.textVisible || scene.style.fontSize <= 0.0) {
     scene.textBounds = {};
     return scene;
   }
-  const QFontMetricsF metrics(font);
-  const qreal advance = metrics.horizontalAdvance(scene.text);
-  const QRectF ink = metrics.boundingRect(scene.text);
-  scene.textBounds = ink.translated(
-      scene.anchor.x() - advance / 2.0, scene.anchor.y());
+  flowchart::FlowLabelDocument document;
+  document.text = scene.text;
+  document.baseWeight = scene.style.fontWeight;
+  scene.textAdvance = flowchart::measureOpenTypeDesignAdvance(
+                          document,
+                          editor::firstFontFamily(scene.style.fontFamily),
+                          scene.style.fontSize)
+                          .value_or(cssFont.horizontalAdvance(scene.text));
+  const QRectF ink = flowchart::measureChromiumSvgTextBounds(
+      document, editor::firstFontFamily(scene.style.fontFamily),
+      scene.style.fontSize, scene.style.fontWeight);
+  // The shared SVG helper models createFormattedText() with its first baseline
+  // at 1em. Info emits a raw <text y="40">, so move that model's baseline to
+  // the literal anchor while preserving text-anchor:middle's design advance.
+  scene.textBounds = ink.translated(scene.anchor.x() - scene.textAdvance / 2.0,
+                                   scene.anchor.y() - scene.style.fontSize);
   return scene;
 }
 

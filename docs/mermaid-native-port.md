@@ -759,7 +759,11 @@ marker geometry, 11-theme paint model, safe task links, accessibility metadata,
 and fixed/max-width export behavior.
 Info freezes its Langium grammar and diagnostic locations, fixed version label,
 400x150 replaced-element viewport, theme/font behavior, renderer-inert
-`showInfo`, discarded metadata AST, and intentionally absent SVG viewBox.
+`showInfo`, discarded metadata AST, and intentionally absent SVG viewBox. Its
+raw SVG text uses OpenType design advance plus Chromium SVG bbox metrics and a
+half-pixel-aligned outline paint path; the CSS projection mirrors the real root
+`style + g + g` sibling order so structural `:nth-of-type` rules target the
+content group exactly as in Mermaid 11.16.0.
 
 Flowchart ELK is complete through the exact fallback bundled by the locked
 Mermaid runtime: no external ELK loader is registered, so Mermaid emits its

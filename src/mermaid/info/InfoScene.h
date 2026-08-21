@@ -24,6 +24,7 @@ struct InfoScene final : MermaidScene {
   QRectF bounds{0.0, 0.0, 400.0, 150.0};
   QPointF anchor{100.0, 40.0};
   QRectF textBounds;
+  qreal textAdvance = 0.0;
   QString text = QStringLiteral("v11.16.0");
   InfoSceneStyle style;
 

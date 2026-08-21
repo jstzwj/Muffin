@@ -15,6 +15,10 @@
       "id": "default",
       "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo",
       "expected": {
+        "config": {
+          "theme": "default",
+          "themeCSS": ""
+        },
         "root": {
           "attrs": {
             "id": "info-default",
@@ -57,6 +61,14 @@
             "width": 125.9375,
             "height": 43
           },
+          "computedTextLength": 124.9375,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
           "computed": {
             "fill": "rgb(51, 51, 51)",
             "fontFamily": "\"Noto Sans\"",
@@ -77,6 +89,10 @@
       "id": "show-info",
       "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo showInfo",
       "expected": {
+        "config": {
+          "theme": "default",
+          "themeCSS": ""
+        },
         "root": {
           "attrs": {
             "id": "info-show-info",
@@ -119,6 +135,14 @@
             "width": 125.9375,
             "height": 43
           },
+          "computedTextLength": 124.9375,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
           "computed": {
             "fill": "rgb(51, 51, 51)",
             "fontFamily": "\"Noto Sans\"",
@@ -139,6 +163,10 @@
       "id": "metadata-inert",
       "source": "%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo\ntitle Inline title\naccTitle: Accessible\naccDescr: Description",
       "expected": {
+        "config": {
+          "theme": "default",
+          "themeCSS": ""
+        },
         "root": {
           "attrs": {
             "id": "info-metadata-inert",
@@ -181,6 +209,14 @@
             "width": 125.9375,
             "height": 43
           },
+          "computedTextLength": 124.9375,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
           "computed": {
             "fill": "rgb(51, 51, 51)",
             "fontFamily": "\"Noto Sans\"",
@@ -201,6 +237,10 @@
       "id": "frontmatter-inert",
       "source": "---\ntitle: Front title\n---\n%%{init: {\"fontFamily\":\"Noto Sans\"}}%%\ninfo",
       "expected": {
+        "config": {
+          "theme": "default",
+          "themeCSS": ""
+        },
         "root": {
           "attrs": {
             "id": "info-frontmatter-inert",
@@ -243,6 +283,14 @@
             "width": 125.9375,
             "height": 43
           },
+          "computedTextLength": 124.9375,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
           "computed": {
             "fill": "rgb(51, 51, 51)",
             "fontFamily": "\"Noto Sans\"",
@@ -263,6 +311,10 @@
       "id": "dark",
       "source": "%%{init: {\"theme\":\"dark\",\"fontFamily\":\"Noto Sans\"}}%%\ninfo",
       "expected": {
+        "config": {
+          "theme": "dark",
+          "themeCSS": ""
+        },
         "root": {
           "attrs": {
             "id": "info-dark",
@@ -305,6 +357,14 @@
             "width": 125.9375,
             "height": 43
           },
+          "computedTextLength": 124.9375,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
           "computed": {
             "fill": "rgb(204, 204, 204)",
             "fontFamily": "\"Noto Sans\"",
@@ -325,6 +385,10 @@
       "id": "text-color",
       "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"textColor\":\"#ff0000\"}}}%%\ninfo",
       "expected": {
+        "config": {
+          "theme": "default",
+          "themeCSS": ""
+        },
         "root": {
           "attrs": {
             "id": "info-text-color",
@@ -367,6 +431,14 @@
             "width": 125.9375,
             "height": 43
           },
+          "computedTextLength": 124.9375,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
           "computed": {
             "fill": "rgb(255, 0, 0)",
             "fontFamily": "\"Noto Sans\"",
@@ -387,6 +459,10 @@
       "id": "font-family",
       "source": "%%{init: {\"fontFamily\":\"monospace\",\"themeVariables\":{\"fontFamily\":\"monospace\"}}}%%\ninfo",
       "expected": {
+        "config": {
+          "theme": "default",
+          "themeCSS": ""
+        },
         "root": {
           "attrs": {
             "id": "info-font-family",
@@ -429,6 +505,14 @@
             "width": 140.75,
             "height": 37
           },
+          "computedTextLength": 140.75,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
           "computed": {
             "fill": "rgb(51, 51, 51)",
             "fontFamily": "monospace",
@@ -446,9 +530,87 @@
       }
     },
     {
+      "id": "theme-css-structure",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"themeVariables\":{\"fontFamily\":\"Noto Sans\",\"fontSize\":\"16px\"},\"themeCSS\":\".version { fill:#ff0000 !important; opacity:0.5; font-size:24px !important; font-weight:700; } g:nth-of-type(2) text.version { fill:#00ff00 !important; }\"}}%%\ninfo",
+      "expected": {
+        "config": {
+          "theme": "default",
+          "themeCSS": ".version { fill:#ff0000 !important; opacity:0.5; font-size:24px !important; font-weight:700; } g:nth-of-type(2) text.version { fill:#00ff00 !important; }"
+        },
+        "root": {
+          "attrs": {
+            "id": "info-theme-css-structure",
+            "width": "100%",
+            "xmlns": "http://www.w3.org/2000/svg",
+            "style": "max-width: 400px;",
+            "role": "graphics-document document",
+            "aria-roledescription": "info"
+          },
+          "bbox": {
+            "x": 51.1484375,
+            "y": 14,
+            "width": 95.96795654296875,
+            "height": 33
+          },
+          "client": {
+            "x": 0,
+            "y": 0,
+            "width": 400,
+            "height": 150
+          }
+        },
+        "childTags": [
+          "style",
+          "g",
+          "g"
+        ],
+        "text": {
+          "attrs": {
+            "x": "100",
+            "y": "40",
+            "class": "version",
+            "font-size": "32",
+            "style": "text-anchor: middle;"
+          },
+          "value": "v11.16.0",
+          "bbox": {
+            "x": 51.1484375,
+            "y": 14,
+            "width": 95.96795654296875,
+            "height": 33
+          },
+          "computedTextLength": 93.703125,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
+          "computed": {
+            "fill": "rgb(0, 255, 0)",
+            "fontFamily": "\"Noto Sans\"",
+            "fontSize": "24px",
+            "fontWeight": "700",
+            "textAnchor": "middle"
+          }
+        },
+        "metadata": {
+          "title": "",
+          "desc": "",
+          "ariaLabelledby": "",
+          "role": "graphics-document document"
+        }
+      }
+    },
+    {
       "id": "unrelated-config-inert",
       "source": "%%{init: {\"useMaxWidth\":false,\"width\":999,\"height\":777}}%%\ninfo",
       "expected": {
+        "config": {
+          "theme": "default",
+          "themeCSS": ""
+        },
         "root": {
           "attrs": {
             "id": "info-unrelated-config-inert",
@@ -491,6 +653,14 @@
             "width": 124.296875,
             "height": 37
           },
+          "computedTextLength": 123.078125,
+          "parent": {
+            "tag": "g",
+            "typeIndex": 2,
+            "childTags": [
+              "text"
+            ]
+          },
           "computed": {
             "fill": "rgb(51, 51, 51)",
             "fontFamily": "\"trebuchet ms\", verdana, arial, sans-serif",
@@ -508,5 +678,5 @@
       }
     }
   ],
-  "fixtureSha256": "44ad70af6ce5f0b481967196724792f787932a2a431c8a0ca629a41fd7d61938"
+  "fixtureSha256": "439e82ef230023d6a6dd774cb1e2c71df93506370b72344c9c00ca776d6c6334"
 }
