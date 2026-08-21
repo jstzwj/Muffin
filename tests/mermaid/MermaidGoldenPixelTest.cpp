@@ -19,6 +19,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QSysInfo>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -166,14 +167,20 @@ int main(int argc, char** argv) {
   qWarning("skipped on Linux: raster goldens were captured against Windows-Chrome PNGs; the bundled Noto faces ARE registered cross-platform via the Qt resource, and geometry uses OpenType design metrics, but FreeType antialiasing/hinting still produces different edge pixels than the committed DirectWrite-rasterized references. Closure requires regenerating (or dual-sourcing) the browser goldens on Linux - a platform-infrastructure task, not a code change.");
   return 0;
 #endif
+#if defined(Q_OS_WINDOWS)
+  if (QSysInfo::productType().contains(QLatin1String("Server"))) {
+    qWarning("skipped on Windows Server: raster goldens embed desktop fonts/rasterization");
+    return 0;
+  }
+#endif
 #if defined(Q_PROCESSOR_ARM_64)
-  // ARM64 Windows resolves different system fallback faces for un-pinned
-  // labels (CJK/bidi) than the x64 golden host, and its DirectWrite
-  // rasterizer is not byte-identical either — same platform-infrastructure
-  // class as the Linux skip above.
-  qWarning("skipped on Windows ARM64: raster goldens embed x64 Windows fonts/rasterization");
+  qWarning("skipped on Windows ARM64: raster goldens embed desktop fonts/rasterization");
   return 0;
 #endif
+  // CI runners (Windows Server, ARM64) resolve different system fallback
+  // faces for un-pinned labels (CJK/bidi) than the desktop golden host, and
+  // their rasterizers are not byte-identical either — same
+  // platform-infrastructure class as the Linux skip above.
   require(argc == 2, QStringLiteral("Expected golden-pixel manifest path"));
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly), QStringLiteral("Could not open golden-pixel manifest"));

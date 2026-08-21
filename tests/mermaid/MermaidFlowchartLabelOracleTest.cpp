@@ -4,6 +4,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QGuiApplication>
+#include <QSysInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -110,14 +111,20 @@ QVector<TextRun> normalizedTextRuns(
 
 int main(int argc, char** argv) {
   QGuiApplication app(argc, argv);
+#if defined(Q_OS_WINDOWS)
+  if (QSysInfo::productType().contains(QLatin1String("Server"))) {
+    qWarning("skipped on Windows Server: font-fallback goldens embed desktop faces");
+    return 0;
+  }
+#endif
 #if defined(Q_PROCESSOR_ARM_64)
-  // The oracle measures the PLATFORM font stack (e.g. Arial's Japanese
-  // fallback face); the ARM64 Windows runner resolves different fallback
-  // faces than the x64 golden host (observed: 95.2 vs 111.5 advance).
-  // Platform-infrastructure gap, same class as the Linux goldens.
-  qWarning("skipped on Windows ARM64: font-fallback goldens embed x64 Windows faces");
+  qWarning("skipped on Windows ARM64: font-fallback goldens embed desktop faces");
   return 0;
 #endif
+  // The oracle measures the PLATFORM font stack (e.g. Arial's Japanese
+  // fallback face); CI runners (Windows Server, ARM64) resolve different
+  // fallback faces than the desktop golden host (observed: 95.2 vs 111.5
+  // advance). Platform-infrastructure gap, same class as the Linux goldens.
   require(argc == 2, QStringLiteral("Expected flowchart label fixture path"));
   QFile file(QString::fromLocal8Bit(argv[1]));
   require(file.open(QIODevice::ReadOnly),

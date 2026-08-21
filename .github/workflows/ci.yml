@@ -176,6 +176,18 @@ jobs:
       # see the fault as a failure; print_stacktrace=1 + symbolize=1 produce the actionable report.
       ASAN_OPTIONS: detect_leaks=0:abort_on_error=1:print_stacktrace=1:symbolize=1
     steps:
+      - name: Free runner disk
+        # The sanitizer build's object files exhaust the default ~14GB free
+        # space at link time ("final link failed: No space left on device"
+        # landed at ~87%). Drop the largest preinstalled toolchains this job
+        # never uses.
+        run: |
+          df -h /
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL \
+            /usr/local/share/boost /usr/share/swift
+          df -h /
+
       - name: Check out source
         uses: actions/checkout@v4
 
