@@ -75,7 +75,33 @@
       "width": 1300,
       "height": 565,
       "sha256": "485d69c6cc84e12e88d339b56ea815561d1adec71e74bc7690f88f150c3a93cb"
+    },
+    {
+      "id": "dash-width-4",
+      "theme": "default",
+      "dpr": 1,
+      "viewport": {
+        "width": 1600,
+        "height": 1200
+      },
+      "renderId": "journey-pixel-dash-width-4",
+      "source": "%%{init: {\"themeCSS\":\".task-line{stroke:#00ff00!important;stroke-width:4px!important;}\",\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"},\"journey\":{\"taskFontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"titleFontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\njourney\nsection Focus\n  One task: 5",
+      "file": "dash-width-4.png",
+      "width": 500,
+      "height": 495,
+      "sha256": "fe14342afed1ced4a73d90482a80bd5f60cc0852a07acf845a7107ad6e117f90",
+      "dashStyles": [
+        {
+          "stroke": "rgb(0, 255, 0)",
+          "strokeWidth": "4px",
+          "strokeDasharray": "4px, 2px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter"
+        }
+      ],
+      "dashMaskFile": "dash-width-4-dash-mask.png",
+      "dashMaskSha256": "32e33030a196190b44adb00351340e00768ff4264e93ff6f783dddb2cb4c5d97"
     }
   ],
-  "fixtureSha256": "bb40febebe8efdc84ed1b06c91237af38412f57c0bf62b223544cc163f7ee1b0"
+  "fixtureSha256": "f9a34e09325a377ab104bb33420742679a755eca18496cd525eb65d06a73c05a"
 }

@@ -25,9 +25,11 @@ const faces = fonts.map(([family, file]) =>
   `@font-face{font-family:"${family}";src:url("${pathToFileURL(path.join(notoDir, file)).href}")}`
 ).join("\n");
 const stack = '"Noto Sans", "Noto Sans CJK SC", "Noto Sans Arabic", "Noto Sans Hebrew", sans-serif';
-const init = (theme = "default", htmlLabels = true) =>
-  `%%{init: {"theme":"${theme}","htmlLabels":${htmlLabels},` +
-  `"themeVariables":{"fontFamily":${JSON.stringify(stack)}}}}%%\n`;
+const init = (theme = "default", htmlLabels = true, strokeWidth, handDrawnSeed) =>
+  `%%{init: {"theme":"${theme}","htmlLabels":${htmlLabels}` +
+  `${handDrawnSeed === undefined ? "" : `,"handDrawnSeed":${handDrawnSeed}`},` +
+  `"themeVariables":{"fontFamily":${JSON.stringify(stack)}` +
+  `${strokeWidth === undefined ? "" : `,"strokeWidth":${strokeWidth}`}}}}%%\n`;
 const cases = [
   { id: "label-node-html-math", cropOnly: true, cropTarget: "node",
     cropKind: "node-html-math", cropSelector: "g.node .label", source: init() + [
@@ -65,10 +67,16 @@ const cases = [
     "class Service {", "  <<interface>>", "  +String name",
     "  +run(input) Result*", "}", "class Empty", "Service <|-- Empty : extends",
   ].join("\n") },
-  { id: "marker-matrix", dpr: 1, source: init() + [
+  { id: "marker-matrix", dpr: 1, handDrawnSeed: 42,
+    source: init("default", true, undefined, 42) + [
     "classDiagram", "direction LR", "A <|-- B : extension", "C *-- D : composition",
     "E o-- F : aggregation", "G <.. H : dependency", "I ()-- J",
   ].join("\n") },
+  ...[1, 2, 4].map((width) => ({
+    id: `dash-width-${width}`, dpr: 1, edgeMask: true, strokeWidth: width,
+    handDrawnSeed: 42, source: init("default", true, width, 42) +
+      ["classDiagram", "direction LR", "A ..> B"].join("\n"),
+  })),
   { id: "note", dpr: 1, source: init() + [
     "classDiagram", "class Service", "note for Service \"A folded note\"",
     "class Client", "Client --> Service : uses",
@@ -151,7 +159,7 @@ try {
     await page.goto(pathToFileURL(path.join(path.dirname(mermaidRoot), "..", "index.html")).href);
     const mermaidModule = pathToFileURL(path.join(mermaidRoot, "dist", "mermaid.esm.mjs")).href;
     await page.evaluate(async ({ mermaidModule, faces, stack, source, id, theme,
-                                 htmlLabels }) => {
+                                 htmlLabels, strokeWidth, handDrawnSeed }) => {
       const { default: mermaid } = await import(mermaidModule);
       const style = document.createElement("style");
       style.textContent = faces;
@@ -164,7 +172,9 @@ try {
       ]);
       await document.fonts.ready;
       mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme,
-        fontFamily: stack, themeVariables: { fontFamily: stack },
+        fontFamily: stack, themeVariables: { fontFamily: stack,
+          ...(strokeWidth === undefined ? {} : { strokeWidth }) },
+        ...(handDrawnSeed === undefined ? {} : { handDrawnSeed }),
         htmlLabels, class: { padding: 12, hierarchicalNamespaces: true } });
       // The directive remains in the fixture source so the native cache sees the
       // same theme. Mermaid generates browser theme CSS during initialize(), so
@@ -177,7 +187,8 @@ try {
       await document.fonts.ready;
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }, { mermaidModule, faces, stack, source: fixture.source, id: fixture.id,
-         theme: fixture.theme ?? "default", htmlLabels: fixture.htmlLabels ?? true });
+         theme: fixture.theme ?? "default", htmlLabels: fixture.htmlLabels ?? true,
+         strokeWidth: fixture.strokeWidth, handDrawnSeed: fixture.handDrawnSeed });
     const dimensions = await page.$eval("svg", (svg) => {
       const rect = svg.getBoundingClientRect();
       const viewBox = svg.viewBox.baseVal;
@@ -208,9 +219,14 @@ try {
         id: element.id, text: element.textContent ?? "", bbox: box(element),
         style: computed(element.querySelector("rect") ?? element),
       }));
-      const edgePaths = [...svg.querySelectorAll("g.edgePaths path")].map((element) => ({
-        id: element.id, style: computed(element), class: element.getAttribute("class") ?? "",
-      }));
+      const edgePaths = [...svg.querySelectorAll("g.edgePaths path")].map((element) => {
+        const style = getComputedStyle(element);
+        return { id: element.id,
+          style: { ...computed(element), strokeDasharray: style.strokeDasharray,
+            strokeLinecap: style.strokeLinecap, strokeLinejoin: style.strokeLinejoin },
+          class: element.getAttribute("class") ?? "",
+          path: element.getAttribute("d") ?? "" };
+      });
       const edgeLabels = [...svg.querySelectorAll("g.edgeLabels g.edgeLabel")].map((element) => {
         const label = element.querySelector(".label, .edgeLabel");
         return { id: element.id, text: element.textContent ?? "", bbox: box(element),
@@ -377,8 +393,32 @@ try {
       textMaskSha256 = writeStablePng(
         textMask, path.join(outDir, textMaskFile));
     }
+    let edgeMaskFile;
+    let edgeMaskSha256;
+    if (fixture.edgeMask) {
+      await page.$eval("svg", (svg) => {
+        const transparent = "rgba(0, 0, 0, 0)";
+        for (const element of svg.querySelectorAll("*")) {
+          element.style.setProperty("fill", transparent, "important");
+          element.style.setProperty("stroke", transparent, "important");
+          element.style.setProperty("color", transparent, "important");
+          element.style.setProperty("background", transparent, "important");
+        }
+        for (const element of svg.querySelectorAll("g.edgePaths path")) {
+          element.style.setProperty("fill", transparent, "important");
+          element.style.setProperty("stroke", "#00ff00", "important");
+          element.style.setProperty("marker-start", "none", "important");
+          element.style.setProperty("marker-end", "none", "important");
+        }
+      });
+      edgeMaskFile = `${fixture.id}-edge-mask.png`;
+      const edgeMask = await page.screenshot({ omitBackground: true, clip });
+      edgeMaskSha256 = writeStablePng(
+        edgeMask, path.join(outDir, edgeMaskFile));
+    }
     manifestCases.push({ ...fixture, file, sha256,
       ...(maskFile ? { maskFile, maskSha256, textMaskFile, textMaskSha256 } : {}),
+      ...(edgeMaskFile ? { edgeMaskFile, edgeMaskSha256 } : {}),
       ...dimensions });
     await page.close();
   }
@@ -389,7 +429,8 @@ try {
   fs.writeFileSync(path.join(outDir, "manifest.json"),
     `${JSON.stringify(payload, null, 2)}\n`);
   const references = new Set(manifestCases.flatMap((fixture) =>
-    [fixture.file, fixture.maskFile, fixture.textMaskFile, fixture.cropFile].filter(Boolean)));
+    [fixture.file, fixture.maskFile, fixture.textMaskFile, fixture.cropFile,
+      fixture.edgeMaskFile].filter(Boolean)));
   for (const name of fs.readdirSync(outDir).filter((name) => name.endsWith(".png")))
     if (!references.has(name)) fs.rmSync(path.join(outDir, name));
   console.log(`Wrote ${manifestCases.length} class pixel cases to ${outDir}`);

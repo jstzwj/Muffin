@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   require(root.value(QStringLiteral("mermaidVersion")).toString() ==
               QLatin1String("11.16.0") &&
               root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("39272a26cf151587343b5a5e4840b3d710a4a52a43964c14f000840e8924b182"),
+              QLatin1String("b5a2e8750ee0c7fdb296b52e534e35055e4071057c2296fbe69be93f3fef0c2b"),
           QStringLiteral("Class SVG structural fixture drifted"));
 
   editor::MermaidRenderCache cache;
@@ -81,8 +81,8 @@ int main(int argc, char** argv) {
   int tspanEntries = 0;
   int markerEntries = 0;
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 17,
-          QStringLiteral("Class SVG structural matrix must retain 17 cases"));
+  require(cases.size() == 20,
+          QStringLiteral("Class SVG structural matrix must retain 20 cases"));
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
     const QString id = fixture.value(QStringLiteral("id")).toString();
@@ -123,6 +123,32 @@ int main(int argc, char** argv) {
                 counts.value(QStringLiteral("edgePaths")).toInt() == scene.edges.size() &&
                 counts.value(QStringLiteral("defs")).toInt() >= 1,
             QStringLiteral("%1 browser/native structural counts differ").arg(id));
+    const QJsonArray browserEdges =
+        fixture.value(QStringLiteral("structure")).toObject()
+            .value(QStringLiteral("edgePaths")).toArray();
+    require(browserEdges.size() == scene.edges.size(),
+            QStringLiteral("%1 browser/native edge-style count differs").arg(id));
+    for (qsizetype index = 0; index < scene.edges.size(); ++index) {
+      const auto& nativeEdge = scene.edges.at(index);
+      const QJsonObject browserStyle = browserEdges.at(index).toObject()
+          .value(QStringLiteral("style")).toObject();
+      const QString browserDash =
+          browserStyle.value(QStringLiteral("strokeDasharray")).toString();
+      QString expectedDash = nativeEdge.strokeDasharray;
+      if (expectedDash.isEmpty()) {
+        if (nativeEdge.pattern == QLatin1String("dashed"))
+          expectedDash = QStringLiteral("3px");
+        else if (nativeEdge.pattern == QLatin1String("dotted"))
+          expectedDash = QStringLiteral("2px");
+        else
+          expectedDash = QStringLiteral("0px");
+      }
+      require(browserDash == expectedDash &&
+                  browserStyle.value(QStringLiteral("strokeLinecap")).toString() ==
+                      QLatin1String("butt"),
+              QStringLiteral("%1/edge/%2 browser dash contract drifted: %3 vs %4")
+                  .arg(id).arg(index).arg(browserDash, expectedDash));
+    }
     const QJsonArray labels = structure.value(QStringLiteral("labelContainers")).toArray();
     int htmlLabels = 0;
     int svgLabels = 0;
@@ -198,9 +224,9 @@ int main(int argc, char** argv) {
               QStringLiteral("%1 lost accessibility references").arg(id));
     }
   }
-  require(ariaCases == 1 && mathCases == 2 && labelContainers == 65 &&
+  require(ariaCases == 1 && mathCases == 2 && labelContainers == 74 &&
               svgTextContainers == 6 && tspanEntries == 19 &&
-              markerEntries == 323 && orderedEntries >= 900,
+              markerEntries == 380 && orderedEntries >= 1073,
           QStringLiteral("Class SVG structural coverage matrix regressed"));
   qDebug() << "MermaidClassSvgStructuralTest:" << cases.size()
            << "cases," << orderedEntries << "ordered DOM entries passed";

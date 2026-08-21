@@ -238,6 +238,16 @@ const pixelCases = [
   ["dark", canonical, { theme: "dark" }],
   ["deployment", grammarCases.find((c) => c.id === "boundaries").source, {}],
 ].map(([id, body, config]) => ({ id, source: init(mergeFixtureConfig(config), body) }));
+pixelCases.push({
+  id: "dash-width-4",
+  dashMask: true,
+  source: init(mergeFixtureConfig({
+    themeCSS: "rect{stroke:#00ff00!important;stroke-width:4px!important;}",
+  }), `C4Context
+Boundary(scope, "Scope") {
+  Person(user, "User")
+}`),
+});
 
 const { default: puppeteer } = await import(pathToFileURL(
   path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "esm", "puppeteer", "puppeteer.js"),
@@ -399,18 +409,64 @@ try {
   const pixelDir = path.join(fixtureDir, "c4-pixel");
   fs.mkdirSync(pixelDir, { recursive: true });
   const pixels = [];
-  for (const test of pixelCases) {
+  const capturePixel = async (test) => {
     const page = await newPage();
     try {
       await snapshot(page, test.source, test.id, true);
       const svg = await page.$("svg");
-      const file = `${test.id}.png`;
-      await svg.screenshot({ path: path.join(pixelDir, file), omitBackground: true });
-      const bytes = fs.readFileSync(path.join(pixelDir, file));
       const size = await page.$eval("svg", (el) => ({ width: el.clientWidth, height: el.clientHeight }));
-      pixels.push({ ...test, file, ...size, sha256: sha256(bytes) });
+      const dashStyles = test.dashMask
+        ? await page.$$eval("rect[stroke-dasharray]", (elements) =>
+            elements.map((element) => {
+              const style = getComputedStyle(element);
+              return { stroke: style.stroke, strokeWidth: style.strokeWidth,
+                strokeDasharray: style.strokeDasharray,
+                strokeLinecap: style.strokeLinecap, strokeLinejoin: style.strokeLinejoin };
+            }))
+        : [];
+      const bytes = await svg.screenshot({ omitBackground: true });
+      let dashMask = null;
+      if (test.dashMask) {
+        await page.$eval("svg", (root) => {
+          const transparent = "rgba(0, 0, 0, 0)";
+          for (const element of root.querySelectorAll("*")) {
+            element.style.setProperty("fill", transparent, "important");
+            element.style.setProperty("stroke", transparent, "important");
+            element.style.setProperty("color", transparent, "important");
+            element.style.setProperty("background", transparent, "important");
+          }
+          // SVG image pixels do not consume fill/stroke/color, so hide them
+          // explicitly before revealing only dashed boundary rects.
+          for (const element of root.querySelectorAll("image"))
+            element.style.setProperty("display", "none", "important");
+          for (const element of root.querySelectorAll("rect[stroke-dasharray]"))
+            element.style.setProperty("stroke", "#00ff00", "important");
+        });
+        dashMask = await svg.screenshot({ omitBackground: true });
+      }
+      return { bytes, size, dashMask, dashStyles };
     } finally { await page.close(); }
+  };
+  for (const test of pixelCases) {
+    const first = await capturePixel(test);
+    const second = await capturePixel(test);
+    if (!first.bytes.equals(second.bytes) ||
+        JSON.stringify(first.dashStyles) !== JSON.stringify(second.dashStyles) ||
+        Boolean(first.dashMask) !== Boolean(second.dashMask) ||
+        (first.dashMask && !first.dashMask.equals(second.dashMask)))
+      throw new Error(`${test.id}: pixel rendering is not byte deterministic`);
+    const file = `${test.id}.png`;
+    fs.writeFileSync(path.join(pixelDir, file), first.bytes);
+    const dashMaskFile = first.dashMask ? `${test.id}-dash-mask.png` : null;
+    if (dashMaskFile) fs.writeFileSync(path.join(pixelDir, dashMaskFile), first.dashMask);
+    pixels.push({ ...test, file, ...first.size, sha256: sha256(first.bytes),
+      ...(dashMaskFile ? { dashStyles: first.dashStyles, dashMaskFile,
+        dashMaskSha256: sha256(first.dashMask) } : {}) });
   }
+  const referencedPngs = new Set(pixels.flatMap((fixture) =>
+    [fixture.file, fixture.dashMaskFile].filter(Boolean)));
+  for (const name of fs.readdirSync(pixelDir).filter((name) => name.endsWith(".png")))
+    if (!referencedPngs.has(name)) fs.rmSync(path.join(pixelDir, name));
   writeJson(path.join(pixelDir, "manifest.json"), { provenance, cases: pixels });
 
   const accepted = grammar.filter((entry) => entry.accepted).length;

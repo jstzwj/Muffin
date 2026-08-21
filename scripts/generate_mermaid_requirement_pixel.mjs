@@ -34,6 +34,12 @@ const cases = [
     "functionalRequirement SubFunc {\n  id: \"REQ-002\"\n  text: sub function\n  risk: medium\n  verifyMethod: analysis\n}\n" +
     "element HardwareModule {\n  type: Hardware\n  docref: \"DOC-1\"\n}\n" +
     "TheSystem -contains-> SubFunc\nSubFunc -copies-> HardwareModule" },
+  { id: "dash-width-4", dpr: 1, theme: "default", source:
+    "%%{init: {\"themeCSS\":\".relationshipLine{stroke:#008000;stroke-width:4px;}\"}}%%\n" +
+    "requirementDiagram\n" +
+    "requirement Source {\n  id: SRC\n  text: source\n  risk: low\n  verifyMethod: test\n}\n" +
+    "requirement Target {\n  id: DST\n  text: target\n  risk: low\n  verifyMethod: test\n}\n" +
+    "Source -copies-> Target" },
 ];
 
 const notoDir = path.resolve("third_party", "noto", "fonts");
@@ -83,11 +89,19 @@ try {
       await document.fonts.ready;
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }, { mermaidModule, faces, fontFamily, fixture });
+    const edgeStyles = await page.$$eval("path.relationshipLine", (elements) =>
+      elements.map((element) => {
+        const style = getComputedStyle(element);
+        return { stroke: style.stroke, strokeWidth: style.strokeWidth,
+          strokeDasharray: style.strokeDasharray,
+          strokeLinecap: style.strokeLinecap, strokeLinejoin: style.strokeLinejoin,
+          path: element.getAttribute("d") ?? "" };
+      }));
     const element = await page.$("svg");
     const png = canonicalPng(await element.screenshot({ omitBackground: true }));
     const file = `${fixture.id}.png`;
     fs.writeFileSync(path.join(outDir, file), png);
-    manifestCases.push({ ...fixture, file,
+    manifestCases.push({ ...fixture, file, edgeStyles,
       width: PNG.sync.read(png).width, height: PNG.sync.read(png).height,
       sha256: createHash("sha256").update(png).digest("hex") });
     await page.close();

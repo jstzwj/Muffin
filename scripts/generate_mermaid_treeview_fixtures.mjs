@@ -536,7 +536,10 @@ try {
   fs.mkdirSync(pixelDir, { recursive: true });
   const pixelCases = [
     geometryCases.find((item) => item.id === "canonical"),
-    geometryCases.find((item) => item.id === "built-in-icons"),
+    {
+      ...geometryCases.find((item) => item.id === "built-in-icons"),
+      iconOracle: true,
+    },
     {
       id: "styled",
       source: init(
@@ -560,7 +563,7 @@ try {
     },
   ];
   const pixels = [];
-  for (const fixture of pixelCases) {
+  const capturePixel = async (fixture) => {
     await page.goto(hostPage);
     await page.evaluate(
       async ({ source, id, moduleUrl, fontUrl }) => {
@@ -588,21 +591,101 @@ try {
       },
     );
     const element = await page.$("svg");
-    const file = `${fixture.id}.png`;
-    const bytes = await element.screenshot({
-      path: path.join(pixelDir, file),
-      omitBackground: true,
-    });
+    const iconContract = fixture.iconOracle
+      ? await page.$eval("svg", (root) => {
+          const attrs = (element) =>
+            element
+              ? Object.fromEntries(
+                  [...element.attributes].map((attr) => [attr.name, attr.value]),
+                )
+              : null;
+          return {
+            uses: [...root.querySelectorAll("use.treeView-node-icon")].map((use) => ({
+              attrs: attrs(use),
+              bbox: (() => {
+                const box = use.getBBox();
+                return { x: box.x, y: box.y, width: box.width, height: box.height };
+              })(),
+            })),
+            labels: [...root.querySelectorAll("text.treeView-node-label")].map(
+              (label) => ({
+                value: label.textContent,
+                x: label.getAttribute("x"),
+                y: label.getAttribute("y"),
+                hasIconUse: Boolean(
+                  label.parentElement?.querySelector("use.treeView-node-icon"),
+                ),
+              }),
+            ),
+            defs: [...root.querySelectorAll(":scope > defs > g")].map((group) => {
+              const svg = group.querySelector("svg");
+              const iconPath = svg?.querySelector("path");
+              return {
+                id: group.getAttribute("id"),
+                svg: attrs(svg),
+                path: attrs(iconPath),
+              };
+            }),
+          };
+        })
+      : null;
+    const bytes = await element.screenshot({ omitBackground: true });
     const box = await element.boundingBox();
+    let labelMask = null;
+    if (fixture.iconOracle) {
+      await page.$eval("svg", (root) => {
+        const transparent = "rgba(0, 0, 0, 0)";
+        for (const child of root.querySelectorAll("*")) {
+          child.style.setProperty("fill", transparent, "important");
+          child.style.setProperty("stroke", transparent, "important");
+          child.style.setProperty("color", transparent, "important");
+          child.style.setProperty("background", transparent, "important");
+        }
+        for (const label of root.querySelectorAll("text.treeView-node-label"))
+          label.style.setProperty("fill", "#000000", "important");
+      });
+      labelMask = await element.screenshot({ omitBackground: true });
+    }
+    return { bytes, width: Math.round(box.width), height: Math.round(box.height),
+      iconContract, labelMask };
+  };
+  for (const fixture of pixelCases) {
+    const first = await capturePixel(fixture);
+    const second = await capturePixel(fixture);
+    if (!first.bytes.equals(second.bytes) || first.width !== second.width ||
+        first.height !== second.height ||
+        JSON.stringify(first.iconContract) !== JSON.stringify(second.iconContract) ||
+        Boolean(first.labelMask) !== Boolean(second.labelMask) ||
+        (first.labelMask && !first.labelMask.equals(second.labelMask)))
+      throw new Error(`${fixture.id}: pixel/icon oracle is not byte deterministic`);
+    const file = `${fixture.id}.png`;
+    fs.writeFileSync(path.join(pixelDir, file), first.bytes);
+    const labelMaskFile = first.labelMask ? `${fixture.id}-label-mask.png` : null;
+    if (labelMaskFile)
+      fs.writeFileSync(path.join(pixelDir, labelMaskFile), first.labelMask);
     pixels.push({
       id: fixture.id,
       source: fixture.source,
       file,
-      width: Math.round(box.width),
-      height: Math.round(box.height),
-      sha256: sha256(bytes),
+      width: first.width,
+      height: first.height,
+      sha256: sha256(first.bytes),
+      ...(labelMaskFile
+        ? {
+            iconContract: first.iconContract,
+            labelMaskFile,
+            labelMaskSha256: sha256(first.labelMask),
+          }
+        : {}),
     });
   }
+  const referencedPngs = new Set(
+    pixels.flatMap((fixture) =>
+      [fixture.file, fixture.labelMaskFile].filter(Boolean),
+    ),
+  );
+  for (const name of fs.readdirSync(pixelDir).filter((name) => name.endsWith(".png")))
+    if (!referencedPngs.has(name)) fs.rmSync(path.join(pixelDir, name));
   writeJson(path.join(pixelDir, "manifest.json"), {
     upstream: provenance,
     oracle: "transparent TreeView element screenshots at DPR 1",

@@ -42,7 +42,40 @@
       "width": 471,
       "height": 356,
       "sha256": "7faefe9fd9127da60fd35e655bdda45b61659c49918ae53df180d1abb663822f"
+    },
+    {
+      "id": "dash-width-4",
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"gitGraph\":{\"showCommitLabel\":false},\"themeCSS\":\".branch{stroke:#00ff00!important;stroke-width:4px!important;}.branchLabelBkg,.branch-label0,.branch-label1{display:none!important;}\"}}%%\ngitGraph LR:\n  commit id: \"root\"\n  branch feature\n  commit id: \"feature\"",
+      "file": "dash-width-4.png",
+      "width": 116,
+      "height": 126,
+      "sha256": "fa8f8f767c5dcc1b6236caa80cb8f7e54f853cd55cf336581d8446de13c358cf",
+      "dashStyles": [
+        {
+          "stroke": "rgb(0, 255, 0)",
+          "strokeWidth": "4px",
+          "strokeDasharray": "2px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter"
+        },
+        {
+          "stroke": "rgb(0, 255, 0)",
+          "strokeWidth": "4px",
+          "strokeDasharray": "2px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter"
+        }
+      ],
+      "dashMaskFile": "dash-width-4-dash-mask.png",
+      "dashMaskSha256": "1dc5f2e75205890ee827910654e1dd10076ec0b1bc91aa1b9ae44325ba7be63c",
+      "rootGeometry": {
+        "clientX": 0,
+        "clientY": 0,
+        "clientWidth": 116,
+        "clientHeight": 126,
+        "viewBox": "-8 -20 116 126"
+      }
     }
   ],
-  "fixtureSha256": "4904052b84dc14de0d6c3d617b5125581df538a866b22a24ed64128beab6d453"
+  "fixtureSha256": "7e83f9e1ae14644c3bad81fad309117abde2602b84b37077c0a27df99646440d"
 }

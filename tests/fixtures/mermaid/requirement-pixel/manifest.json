@@ -10,6 +10,24 @@
       "theme": "default",
       "source": "requirementDiagram\nrequirement TheSystem {\n  id: \"REQ-001\"\n  text: shall do the thing\n  risk: high\n  verifyMethod: test\n}\nfunctionalRequirement SubFunc {\n  id: \"REQ-002\"\n  text: sub function\n  risk: medium\n  verifyMethod: analysis\n}\nelement HardwareModule {\n  type: Hardware\n  docref: \"DOC-1\"\n}\nTheSystem -contains-> SubFunc\nSubFunc -copies-> HardwareModule",
       "file": "default.png",
+      "edgeStyles": [
+        {
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "strokeDasharray": "0px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter",
+          "path": "M126.453,192L126.453,198.167C126.453,204.333,126.453,216.667,126.453,229C126.453,241.333,126.453,253.667,126.453,259.833L126.453,266"
+        },
+        {
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "strokeDasharray": "10px, 7px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter",
+          "path": "M126.453,450L126.453,456.167C126.453,462.333,126.453,474.667,126.453,487C126.453,499.333,126.453,511.667,126.453,517.833L126.453,524"
+        }
+      ],
       "width": 253,
       "height": 668,
       "sha256": "ff0ce8afb651d1e51018683db45aa63212fc4d1797e8bcf06667cc20b8f0a35d"
@@ -20,10 +38,48 @@
       "theme": "default",
       "source": "%%{init: {\"htmlLabels\": false}}%%\nrequirementDiagram\nrequirement TheSystem {\n  id: \"REQ-001\"\n  text: shall do the thing\n  risk: high\n  verifyMethod: test\n}\nfunctionalRequirement SubFunc {\n  id: \"REQ-002\"\n  text: sub function\n  risk: medium\n  verifyMethod: analysis\n}\nelement HardwareModule {\n  type: Hardware\n  docref: \"DOC-1\"\n}\nTheSystem -contains-> SubFunc\nSubFunc -copies-> HardwareModule",
       "file": "html-labels-false.png",
+      "edgeStyles": [
+        {
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "strokeDasharray": "0px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter",
+          "path": "M126.453,210L126.453,216.333C126.453,222.667,126.453,235.333,126.453,248C126.453,260.667,126.453,273.333,126.453,279.667L126.453,286"
+        },
+        {
+          "stroke": "rgb(51, 51, 51)",
+          "strokeWidth": "1px",
+          "strokeDasharray": "10px, 7px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter",
+          "path": "M126.453,488L126.453,494.333C126.453,500.667,126.453,513.333,126.453,526C126.453,538.667,126.453,551.333,126.453,557.667L126.453,564"
+        }
+      ],
       "width": 253,
       "height": 718,
       "sha256": "9eea3036e57af2fb6b56fff1fac27ed00e8bf1c299bb391b9a9693b08db7a0f0"
+    },
+    {
+      "id": "dash-width-4",
+      "dpr": 1,
+      "theme": "default",
+      "source": "%%{init: {\"themeCSS\":\".relationshipLine{stroke:#008000;stroke-width:4px;}\"}}%%\nrequirementDiagram\nrequirement Source {\n  id: SRC\n  text: source\n  risk: low\n  verifyMethod: test\n}\nrequirement Target {\n  id: DST\n  text: target\n  risk: low\n  verifyMethod: test\n}\nSource -copies-> Target",
+      "file": "dash-width-4.png",
+      "edgeStyles": [
+        {
+          "stroke": "rgb(0, 128, 0)",
+          "strokeWidth": "4px",
+          "strokeDasharray": "10px, 7px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter",
+          "path": "M85.203,192L85.203,198.167C85.203,204.333,85.203,216.667,85.203,229C85.203,241.333,85.203,253.667,85.203,259.833L85.203,266"
+        }
+      ],
+      "width": 170,
+      "height": 458,
+      "sha256": "40f022a09ac998c780f38565275e0cabbcb67246085821ac900781fa1f693c6a"
     }
   ],
-  "fixtureSha256": "cd5f59617ce7891c48a83b34527c56b734be9e7fe734f82a4b14ebe34e34102f"
+  "fixtureSha256": "87240739abe714f8870db1ac08b9fff8ad9c56109df46848e95939bd7cd0e447"
 }

@@ -206,9 +206,9 @@ viewBox 高度改 **108.671875**（LayoutUnit floor64 金值，新
 `svgClientViewBox()` 通道），PNG 光栅仍 109；④ state 边标签背景
 `opacity:0.5` 与 fill 自带 alpha **相乘**（rgba 0.2→0.1）；⑤ error fallback
 scene 的产品声明收窄为 PNG/SVG 导出（编辑器画布保留源码+诊断面板的产品
-路径，RenderMermaidBlockTest 锁定）。后续审计项：class/journey/requirement/
-gitGraph/c4 的 linkStyle dash 仍有未按笔宽归一化的写法（各有金图锁定，
-未在本轮范围内盲改）。
+路径，RenderMermaidBlockTest 锁定）。当时登记的后续审计项是 class/
+journey/requirement/gitGraph/c4 的 dash 笔宽归一化；五族均已在第十七、
+十八轮按各自浏览器金值关闭。
 
 **Codex 审核修复（08-15 第三轮，292/292）**：error 图标的 themeCSS
 逐路径闭环——此前 adapter 虽为六条灯泡 path 各建了 `icon0..icon5`
@@ -924,6 +924,82 @@ viewBox 分量全部根因关闭，登记表与可选严格模式删除，70 案
   新鲜度测试）；dist 已刷新，Release/dist `Muffin.exe` 大小、时间戳和
   SHA-256 一致；三套 fixture 串行双跑字节一致，`git diff --check` 无
   空白错误。
+
+**Class / Requirement 虚线收口（08-21 第十七轮）**：浏览器 oracle 直接
+捕获 Mermaid 11.16.0 的 computed style 与隔离边墨迹。Class 的 dashed
+关系在 `stroke-width: 1/2/4px` 下始终是 `stroke-dasharray: 3px`，Requirement
+的 4px 关系仍是 `10px 7px`；两族的 cap/join 均为 SVG 默认的 butt/miter。
+
+- **根因实现**：Qt 的 custom dash 数值是笔宽倍数，默认 SquareCap 还会在
+  两端各伸半个笔宽。共享 `SvgStroke.h` 现在把 SVG/CSS 像素 dash 除以实际
+  pen width、复制奇数长度 pattern，并让两个 painter 使用 FlatCap/MiterJoin。
+  因此线宽变化只改变墨迹厚度，不会把 3px 或 10/7px 周期一并放大。
+- **oracle 设计**：Class 上游语法不接受 `linkStyle`，三档线宽通过真实的
+  `themeVariables.strokeWidth` 入口生成；native 的 class `linkStyle` 仍是兼容
+  扩展，不冒充 11.16.0 语法 parity。浏览器另外输出只保留 edge path 的
+  透明 mask，避免节点和 marker 覆盖虚线端段。修复后 2px/4px 隔离墨迹
+  IoU 为 1.0，1px 为 0.885（coverage 1.0，差异仅为 Chromium/Qt 对个别
+  3px dash 的单像素 AA 量化）；Requirement 4px 的隔离 IoU 从 0.338 升至
+  0.873。
+- **稳定性与边界**：Class rough marker 案补 `handDrawnSeed:42` 后 fixture
+  双跑字节一致；结构测试同时锁 computed dash/cap 与 native scene pattern。
+  Journey、GitGraph、C4 已在下一轮按各自浏览器 oracle 单独关闭。
+- **门禁**：Release 完整构建通过；class/requirement 15/15 与全量
+  **293/293 全绿**（289.69s，含构建新鲜度测试）；dist 已刷新，Release/
+  dist `Muffin.exe` 大小、时间戳和 SHA-256 一致；两套 fixture 双跑字节
+  一致，`git diff --check` 无空白错误。
+
+**Journey / GitGraph / C4 虚线收口（08-21 第十八轮）**：三族新增
+Mermaid 11.16.0 浏览器 computed-style 与隔离墨迹 oracle。Journey task line
+在 4px 笔宽下保持 `4px 2px`，GitGraph classic branch 的奇数列表 `2px`
+按 SVG 规则等价重复为 2/2，C4 Boundary 在 4px 下保持 `7px 7px`；三者
+均使用 SVG 默认 butt cap/miter join。
+
+- **根因实现**：三个 painter 均改用共享 `SvgStroke.h`，先复制奇数长度
+  SVG pattern，再按实际笔宽把 CSS/user-space 像素转换为 Qt 的笔宽倍数。
+  GitGraph 另外从错误的 RoundCap 改为 FlatCap/MiterJoin；Journey 与 C4
+  显式锁定相同 cap/join。旧实现的隔离墨迹 IoU 分别只有 0.497、0.582、
+  0.233；归一化后分别为 **0.982、1.000、0.999**。
+- **oracle 防盲区**：每个生成器都双次捕获完整图、computed style 和只保留
+  目标虚线的透明 mask，并对字节与样式稳定性硬失败。GitGraph 的 branch
+  label 字宽会让 Chromium/native 画布跨过取整边界，因此 dash 案通过真实
+  `gitGraph.showCommitLabel:false` 配置并隐藏 branch label，得到字体无关的
+  精确 `viewBox="-8 -20 116 126"` 与 116×126 画布；C4 mask 显式隐藏
+  person `<image>`，Journey mask 同时关闭独立绘制的轴标记，避免非 dash
+  墨迹污染分数。
+- **状态**：最初登记的 Class、Requirement、Journey、GitGraph、C4 五族
+  dash 笔宽归一化现已全部关闭；结构测试同时锁浏览器 computed pattern、
+  cap/join、native scene 原始 SVG pattern 与 CSS stroke width。
+- **门禁**：三族定向 12/12 与完整 Release **293/293 全绿**（328.59s，
+  含构建新鲜度测试）；三套生成器跨进程复跑的 manifest SHA-256 不变，
+  dist 已刷新并与 Release 可执行文件逐字节一致。
+
+**TreeView built-in icon / 文本基线收口（08-21 第十九轮）**：原
+`built-in-icons` pixel 案 alpha IoU 只有 0.465，并以专用 0.45 阈值放行。
+浏览器逐元素探针证明该名称具有误导性：在 Muffin 对齐的 strict
+source-entry 路径中，sanitizer 删除全部 `use.treeView-node-icon`，但保留
+folder/file 的两个 `<defs><g><svg viewBox="0 0 24 24" width="14"
+height="14"><path ...>`；布局仍为非空 icon 保留 18px，显式 `icon()`
+（DB 值 `none`）不保留。native 原先“不画 use、只保留空间与 defs 名”的
+产品语义因此正确，不能通过臆造图标 ink 来抬 IoU。
+
+- **真实像素根因**：TreeView 标签使用 SVG `dominant-baseline:middle`，其
+  alphabetic baseline 是中心线加 `xHeight/2`；native painter 与场景 ink
+  bounds 却使用 `(ascent-descent)/2` 居中整个字胞，使 Noto Sans 16px 的
+  四组文本墨迹整体低约 2px。像素行探针显示连线 y 未漂移，仅文本漂移；
+  将旧 native 整体文字上移 2px 时二值 IoU 从 0.465 升到约 0.744，排除了
+  icon 路径/缩放假说。两处公式统一改为 `metrics.xHeight()/2`。
+- **oracle 防盲区**：生成器双次捕获并锁定 0 个可见 use、两个 defs 的完整
+  folder/file path、14×14/24×24 尺寸、五个标签的 x/y 与 icon reservation，
+  另输出只保留 label 的透明 mask。结构断言同时锁 native defs 顺序和
+  `[true,true,true,false,true]` reservation；若未来误画 strict 下被剥离的
+  icon，隔离 mask 会立即失败。
+- **结果**：canonical IoU 0.880→0.969，built-in-icons **0.465→0.854**，
+  styled 0.887→0.971；built-in 隔离 labels IoU 0.832。门槛收紧为普通案
+  0.95、built-in 0.82、RGBA 统一 0.96，旧 baseline 公式不再可能假绿。
+- **门禁**：TreeView 定向 4/4 与完整 Release **293/293 全绿**（350.53s，
+  含构建新鲜度测试）；fixture 跨进程复跑的 manifest 与 label-mask SHA-256
+  均不变，dist 已刷新并与 Release 可执行文件逐字节一致。
 
 ---
 

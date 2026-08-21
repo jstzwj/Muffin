@@ -183,6 +183,20 @@ const pixelCases = [
   ["default", {}], ["dark", { theme: "dark" }],
   ["redux-color", { theme: "redux-color" }], ["neo", { look: "neo", theme: "neo" }],
 ].map(([id, config]) => ({ id, source: init({ fontFamily: "Noto Sans", ...config }, canonical) }));
+pixelCases.push({
+  id: "dash-width-4",
+  dashMask: true,
+  source: init({
+    fontFamily: "Noto Sans",
+    gitGraph: { showCommitLabel: false },
+    themeCSS:
+      ".branch{stroke:#00ff00!important;stroke-width:4px!important;}" +
+      ".branchLabelBkg,.branch-label0,.branch-label1{display:none!important;}",
+  }, `gitGraph LR:
+  commit id: "root"
+  branch feature
+  commit id: "feature"`),
+});
 
 const { default: puppeteer } = await import(pathToFileURL(
   path.join(path.dirname(mermaidRoot), "puppeteer", "lib", "esm", "puppeteer", "puppeteer.js"),
@@ -319,12 +333,65 @@ try {
   for (const test of configCases) { await prepare(); config.push({ ...test, expected: await render(test.source, `config-${test.id}`) }); }
   const pixelDir = path.join(fixtureDir, "gitgraph-pixel"); fs.mkdirSync(pixelDir, { recursive: true });
   const pixels = [];
-  for (const test of pixelCases) {
+  const capturePixel = async (test) => {
     await prepare(); await render(test.source, `pixel-${test.id}`);
-    const svg = await page.$("svg"); const file = path.join(pixelDir, `${test.id}.png`);
-    await svg.screenshot({ path: file, omitBackground: true }); const bounds = await svg.boundingBox();
-    pixels.push({ id: test.id, source: test.source, file: `${test.id}.png`, width: Math.round(bounds.width), height: Math.round(bounds.height), sha256: sha256(fs.readFileSync(file)) });
+    const dashStyles = test.dashMask
+      ? await page.$$eval("line.branch", (elements) => elements.map((element) => {
+          const style = getComputedStyle(element);
+          return { stroke: style.stroke, strokeWidth: style.strokeWidth,
+            strokeDasharray: style.strokeDasharray,
+            strokeLinecap: style.strokeLinecap, strokeLinejoin: style.strokeLinejoin };
+        }))
+      : [];
+    const svg = await page.$("svg");
+    const rootGeometry = await page.$eval("svg", (element) => {
+      const rect = element.getBoundingClientRect();
+      return { clientX: rect.x, clientY: rect.y, clientWidth: rect.width,
+        clientHeight: rect.height, viewBox: element.getAttribute("viewBox") };
+    });
+    const bytes = await svg.screenshot({ omitBackground: true });
+    const bounds = await svg.boundingBox();
+    let dashMask = null;
+    if (test.dashMask) {
+      await page.$eval("svg", (root) => {
+        const transparent = "rgba(0, 0, 0, 0)";
+        for (const element of root.querySelectorAll("*")) {
+          element.style.setProperty("fill", transparent, "important");
+          element.style.setProperty("stroke", transparent, "important");
+          element.style.setProperty("color", transparent, "important");
+          element.style.setProperty("background", transparent, "important");
+        }
+        for (const element of root.querySelectorAll("line.branch"))
+          element.style.setProperty("stroke", "#00ff00", "important");
+      });
+      dashMask = await svg.screenshot({ omitBackground: true });
+    }
+    return { bytes, bounds, dashMask, dashStyles, rootGeometry };
+  };
+  for (const test of pixelCases) {
+    const first = await capturePixel(test);
+    const second = await capturePixel(test);
+    if (!first.bytes.equals(second.bytes) ||
+        JSON.stringify(first.dashStyles) !== JSON.stringify(second.dashStyles) ||
+        JSON.stringify(first.rootGeometry) !== JSON.stringify(second.rootGeometry) ||
+        Boolean(first.dashMask) !== Boolean(second.dashMask) ||
+        (first.dashMask && !first.dashMask.equals(second.dashMask)))
+      throw new Error(`${test.id}: pixel rendering is not byte deterministic`);
+    const file = `${test.id}.png`;
+    fs.writeFileSync(path.join(pixelDir, file), first.bytes);
+    const dashMaskFile = first.dashMask ? `${test.id}-dash-mask.png` : null;
+    if (dashMaskFile) fs.writeFileSync(path.join(pixelDir, dashMaskFile), first.dashMask);
+    pixels.push({ id: test.id, source: test.source, file,
+      width: Math.round(first.bounds.width), height: Math.round(first.bounds.height),
+      sha256: sha256(first.bytes),
+      ...(dashMaskFile ? { dashStyles: first.dashStyles, dashMaskFile,
+        dashMaskSha256: sha256(first.dashMask),
+        rootGeometry: first.rootGeometry } : {}) });
   }
+  const referencedPngs = new Set(pixels.flatMap((fixture) =>
+    [fixture.file, fixture.dashMaskFile].filter(Boolean)));
+  for (const name of fs.readdirSync(pixelDir).filter((name) => name.endsWith(".png")))
+    if (!referencedPngs.has(name)) fs.rmSync(path.join(pixelDir, name));
   fs.mkdirSync(fixtureDir, { recursive: true });
   writeJson(path.join(fixtureDir, "gitgraph-grammar.json"), { upstream: provenance, cases: grammar });
   writeJson(path.join(fixtureDir, "gitgraph-geometry.json"), { upstream: provenance, cases: geometry });

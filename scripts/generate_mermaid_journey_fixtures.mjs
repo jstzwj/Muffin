@@ -415,13 +415,30 @@ const pixelCases = [
     id: "default",
     theme: "default",
     renderId: "journey-pixel-default",
+    expectedSize: { width: 1300, height: 565 },
     source: stableSource(CANONICAL_BODY),
   },
   {
     id: "dark",
     theme: "dark",
     renderId: "journey-pixel-dark",
+    expectedSize: { width: 1300, height: 565 },
     source: stableSource(CANONICAL_BODY, {}, { theme: "dark" }),
+  },
+  {
+    id: "dash-width-4",
+    theme: "default",
+    renderId: "journey-pixel-dash-width-4",
+    dashMask: true,
+    expectedSize: { width: 500, height: 495 },
+    source: stableSource(
+      "journey\nsection Focus\n  One task: 5",
+      {},
+      {
+        themeCSS:
+          ".task-line{stroke:#00ff00!important;stroke-width:4px!important;}",
+      },
+    ),
   },
 ];
 
@@ -1135,31 +1152,66 @@ try {
       },
       { fixture, fontFamily: FONT_STACK, mermaidModule },
     );
+    const dashStyles = fixture.dashMask
+      ? await page.$$eval("line.task-line", (elements) =>
+          elements.map((element) => {
+            const style = getComputedStyle(element);
+            return {
+              stroke: style.stroke,
+              strokeWidth: style.strokeWidth,
+              strokeDasharray: style.strokeDasharray,
+              strokeLinecap: style.strokeLinecap,
+              strokeLinejoin: style.strokeLinejoin,
+            };
+          }),
+        )
+      : [];
     const element = await page.$("svg");
-    const bytes = canonicalPng(
-      await element.screenshot({ omitBackground: true }),
-    );
+    const bytes = canonicalPng(await element.screenshot({ omitBackground: true }));
+    let dashMask = null;
+    if (fixture.dashMask) {
+      await page.$eval("svg", (svg) => {
+        const transparent = "rgba(0, 0, 0, 0)";
+        for (const element of svg.querySelectorAll("*")) {
+          element.style.setProperty("fill", transparent, "important");
+          element.style.setProperty("stroke", transparent, "important");
+          element.style.setProperty("color", transparent, "important");
+          element.style.setProperty("background", transparent, "important");
+        }
+        for (const element of svg.querySelectorAll("line.task-line")) {
+          element.style.setProperty("stroke", "#00ff00", "important");
+        }
+      });
+      dashMask = canonicalPng(await element.screenshot({ omitBackground: true }));
+    }
     await page.close();
-    return bytes;
+    return { bytes, dashMask, dashStyles };
   }
 
   const manifestCases = [];
   for (const fixture of pixelCases) {
     const first = await capturePixel(fixture);
     const second = await capturePixel(fixture);
-    const firstHash = sha256(first);
-    const secondHash = sha256(second);
-    if (firstHash !== secondHash || !first.equals(second)) {
+    const firstHash = sha256(first.bytes);
+    const secondHash = sha256(second.bytes);
+    if (firstHash !== secondHash || !first.bytes.equals(second.bytes) ||
+        JSON.stringify(first.dashStyles) !== JSON.stringify(second.dashStyles) ||
+        Boolean(first.dashMask) !== Boolean(second.dashMask) ||
+        (first.dashMask && !first.dashMask.equals(second.dashMask))) {
       throw new Error(`${fixture.id}: pixel rendering is not byte deterministic`);
     }
-    const image = PNG.sync.read(first);
-    if (image.width !== 1300 || image.height !== 565) {
+    const image = PNG.sync.read(first.bytes);
+    if (image.width !== fixture.expectedSize.width ||
+        image.height !== fixture.expectedSize.height) {
       throw new Error(
-        `${fixture.id}: expected 1300x565, got ${image.width}x${image.height}`,
+        `${fixture.id}: expected ${fixture.expectedSize.width}x${fixture.expectedSize.height}, ` +
+          `got ${image.width}x${image.height}`,
       );
     }
     const file = `${fixture.id}.png`;
-    fs.writeFileSync(path.join(pixelDir, file), first);
+    fs.writeFileSync(path.join(pixelDir, file), first.bytes);
+    const dashMaskFile = first.dashMask ? `${fixture.id}-dash-mask.png` : null;
+    if (dashMaskFile) fs.writeFileSync(path.join(pixelDir, dashMaskFile), first.dashMask);
     manifestCases.push({
       id: fixture.id,
       theme: fixture.theme,
@@ -1171,8 +1223,22 @@ try {
       width: image.width,
       height: image.height,
       sha256: firstHash,
+      ...(dashMaskFile
+        ? {
+            dashStyles: first.dashStyles,
+            dashMaskFile,
+            dashMaskSha256: sha256(first.dashMask),
+          }
+        : {}),
     });
   }
+  const referencedPngs = new Set(
+    manifestCases.flatMap((fixture) =>
+      [fixture.file, fixture.dashMaskFile].filter(Boolean),
+    ),
+  );
+  for (const name of fs.readdirSync(pixelDir).filter((name) => name.endsWith(".png")))
+    if (!referencedPngs.has(name)) fs.rmSync(path.join(pixelDir, name));
   writeJson(path.join(pixelDir, "manifest.json"), {
     upstream,
     oracle: "Headless Chrome element screenshots with transparent background",

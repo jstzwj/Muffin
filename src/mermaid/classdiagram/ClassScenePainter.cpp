@@ -3,6 +3,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/rough/RoughPaint.h"
 #include "mermaid/scene/SvgPathParse.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
@@ -143,19 +144,18 @@ void paintClassScene(const ClassScene& scene, QPainter& painter,
       if (ok && resolved >= 0.0) edgeWidth = resolved;
     }
     QPen pen(edgeColor, edgeWidth);
+    pen.setCapStyle(Qt::FlatCap);
+    pen.setJoinStyle(Qt::MiterJoin);
+    QVector<qreal> dash;
     if (!edge.strokeDasharray.isEmpty()) {
-      QVector<qreal> dash;
-      for (const QString& token : edge.strokeDasharray.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
-        bool ok = false;
-        const qreal d = token.trimmed().toDouble(&ok);
-        if (ok && d > 0.0) dash.append(d);
-      }
-      if (!dash.isEmpty()) pen.setDashPattern(dash);
+      dash = scene::parseAndNormalizeSvgDashPattern(
+          edge.strokeDasharray, edgeWidth);
     } else if (edge.pattern == QLatin1String("dashed")) {
-      pen.setDashPattern({3.0, 3.0});
+      dash = scene::normalizedSvgDashPattern({3.0}, edgeWidth);
     } else if (edge.pattern == QLatin1String("dotted")) {
-      pen.setDashPattern({2.0, 2.0});
+      dash = scene::normalizedSvgDashPattern({2.0}, edgeWidth);
     }
+    if (!dash.isEmpty()) pen.setDashPattern(dash);
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
     if (mode == ClassPaintMode::Color && scene.handDrawn) {

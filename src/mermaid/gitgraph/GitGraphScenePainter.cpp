@@ -1,6 +1,7 @@
 #include "mermaid/gitgraph/GitGraphScene.h"
 
 #include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QLinearGradient>
@@ -57,8 +58,11 @@ void GitGraphScene::paint(QPainter& painter, const MermaidPaintOptions&) const {
         ? QPen(Qt::NoPen)
         : QPen(strokePaint.color, strokeWidth);
     if (pen.style() != Qt::NoPen) {
-      pen.setCapStyle(Qt::RoundCap);
-      if (!value.dash.isEmpty()) pen.setDashPattern(value.dash);
+      pen.setCapStyle(Qt::FlatCap);
+      pen.setJoinStyle(Qt::MiterJoin);
+      if (!value.dash.isEmpty())
+        pen.setDashPattern(scene::normalizedSvgDashPattern(
+            value.dash, strokeWidth));
     }
     painter.setPen(pen);
     if (value.gradientStroke && value.css.stroke.isEmpty()) {
@@ -67,6 +71,8 @@ void GitGraphScene::paint(QPainter& painter, const MermaidPaintOptions&) const {
       gradient.setColorAt(0.0, paintColor(style.gradientStart));
       gradient.setColorAt(1.0, paintColor(style.gradientStop));
       QPen gradientPen(QBrush(gradient), strokeWidth);
+      gradientPen.setCapStyle(Qt::FlatCap);
+      gradientPen.setJoinStyle(Qt::MiterJoin);
       painter.setPen(gradientPen);
     }
     const QBrush brush =

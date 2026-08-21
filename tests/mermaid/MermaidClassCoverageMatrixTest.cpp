@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
   const QStringList diskPngList = QDir(pixelDir).entryList(
       {QStringLiteral("*.png")}, QDir::Files, QDir::Name);
   const QSet<QString> diskPngs(diskPngList.cbegin(), diskPngList.cend());
-  require(referencedPngs == diskPngs && diskPngs.size() == 19,
+  require(referencedPngs == diskPngs && diskPngs.size() == 25,
           QStringLiteral("Class PNG fixture references/orphans regressed"));
   require(pixelCases.size() >= 17 && cropCases >= 8 && sceneCases >= 9 &&
               themes == QSet<QString>{QStringLiteral("default"), QStringLiteral("dark")} &&
@@ -214,6 +214,8 @@ int main(int argc, char** argv) {
               .arg(mathCases).arg(bidiCases).arg(cjkCases).arg(markerDefinitions)
               .arg(labelContainers).arg(domEntries).arg(ariaCases));
   for (const QString& id : {QStringLiteral("compartments"), QStringLiteral("marker-matrix"),
+                            QStringLiteral("dash-width-1"), QStringLiteral("dash-width-2"),
+                            QStringLiteral("dash-width-4"),
                             QStringLiteral("note"), QStringLiteral("nested-namespaces"),
                             QStringLiteral("styled-members"), QStringLiteral("cjk-rtl"),
                             QStringLiteral("dark-compound"), QStringLiteral("dark-note-markers")})

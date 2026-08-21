@@ -27,7 +27,74 @@
       "file": "built-in-icons.png",
       "width": 111,
       "height": 160,
-      "sha256": "c204a0eb4d95fafcc9c5a850ae6776c3074edcf0971a3031f21b1dadebfc084a"
+      "sha256": "c204a0eb4d95fafcc9c5a850ae6776c3074edcf0971a3031f21b1dadebfc084a",
+      "iconContract": {
+        "uses": [],
+        "labels": [
+          {
+            "value": "/",
+            "x": "23",
+            "y": "16",
+            "hasIconUse": false
+          },
+          {
+            "value": "root",
+            "x": "38",
+            "y": "48",
+            "hasIconUse": false
+          },
+          {
+            "value": "file.txt",
+            "x": "53",
+            "y": "80",
+            "hasIconUse": false
+          },
+          {
+            "value": "hidden",
+            "x": "35",
+            "y": "112",
+            "hasIconUse": false
+          },
+          {
+            "value": "explicit",
+            "x": "53",
+            "y": "144",
+            "hasIconUse": false
+          }
+        ],
+        "defs": [
+          {
+            "id": "tv-icon-treeview-pixel-built-in-icons-mermaid-treeview-folder",
+            "svg": {
+              "xmlns": "http://www.w3.org/2000/svg",
+              "width": "14",
+              "height": "14",
+              "viewBox": "0 0 24 24"
+            },
+            "path": {
+              "fill": "currentColor",
+              "d": "M10.59 4.59A2 2 0 0 0 9.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.17z"
+            }
+          },
+          {
+            "id": "tv-icon-treeview-pixel-built-in-icons-mermaid-treeview-file",
+            "svg": {
+              "xmlns": "http://www.w3.org/2000/svg",
+              "width": "14",
+              "height": "14",
+              "viewBox": "0 0 24 24"
+            },
+            "path": {
+              "fill": "currentColor",
+              "fill-rule": "evenodd",
+              "d": "M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.83a2 2 0 0 0-.59-1.42l-4.82-4.82A2 2 0 0 0 13.17 2H6Zm7.5 1.9l4.6 4.6h-3.6a1 1 0 0 1-1-1V3.9Z",
+              "clip-rule": "evenodd"
+            }
+          }
+        ]
+      },
+      "labelMaskFile": "built-in-icons-label-mask.png",
+      "labelMaskSha256": "54c3d743c30f8dd3b3714e6bf612b0cea2c02bb9a4db2d86e666b14c09da0ce6"
     },
     {
       "id": "styled",
@@ -38,5 +105,5 @@
       "sha256": "30cc47e7189249cd9275a9c47867214cfbf8c29558581670bd62b00d7f957856"
     }
   ],
-  "fixtureSha256": "f1ad85d187c5871854bdc933fbf6a28261985488f30c67c5e921af9dd223d2ea"
+  "fixtureSha256": "87c03fe0de09c4b4d7b420def1a458b28454e4e492de13109073ddae59778cae"
 }

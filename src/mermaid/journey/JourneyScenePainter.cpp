@@ -3,6 +3,7 @@
 #include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/journey/JourneyScene.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFontMetricsF>
@@ -402,11 +403,14 @@ void paintJourneyScene(const JourneyScene& scene, QPainter& painter,
           effectiveCss(task.line.stroke, scene.style.textColor),
           QColor(QStringLiteral("#666666")));
       if (!taskStroke.none) {
-        QPen linePen(taskStroke.color, strokeWidthFor(
+        const qreal lineWidth = strokeWidthFor(
             task.line.strokeWidth, QStringLiteral("1px"), lengthCtx,
-            diagonal));
+            diagonal);
+        QPen linePen(taskStroke.color, lineWidth);
         linePen.setCapStyle(Qt::FlatCap);
-        linePen.setDashPattern({4.0, 2.0});
+        linePen.setJoinStyle(Qt::MiterJoin);
+        linePen.setDashPattern(scene::normalizedSvgDashPattern(
+            {4.0, 2.0}, lineWidth));
         painter.setPen(linePen);
       } else {
         painter.setPen(Qt::NoPen);

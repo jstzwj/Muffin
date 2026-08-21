@@ -59,10 +59,8 @@ void paintText(QPainter& painter, const TreeViewScene& scene,
   painter.setFont(font);
   painter.setPen(fill.color);
   painter.setBrush(Qt::NoBrush);
-  painter.drawText(QPointF(
-                       text.position.x(),
-                       text.position.y() +
-                           (metrics.ascent() - metrics.descent()) / 2.0),
+  painter.drawText(QPointF(text.position.x(),
+                           text.position.y() + metrics.xHeight() / 2.0),
                    text.text);
   painter.restore();
 }

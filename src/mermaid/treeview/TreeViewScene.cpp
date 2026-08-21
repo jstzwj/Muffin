@@ -181,8 +181,10 @@ QRectF textInkBounds(const QString& text, const QPointF& position,
           ? resolvedStyle
           : (italic ? QFont::StyleItalic : QFont::StyleNormal));
   const QFontMetricsF metrics(font);
-  const qreal baseline =
-      position.y() + (metrics.ascent() - metrics.descent()) / 2.0;
+  // SVG dominant-baseline: middle positions the alphabetic baseline half an
+  // x-height below the requested center line.  Centering the full font cell
+  // (ascent - descent) puts Noto Sans text about 2 px too low at 16 px.
+  const qreal baseline = position.y() + metrics.xHeight() / 2.0;
   return metrics.boundingRect(text).translated(position.x(), baseline);
 }
 

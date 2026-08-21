@@ -239,11 +239,11 @@ int main(int argc, char** argv) {
               QLatin1String("bundled-noto-2.13b171"),
           QStringLiteral("Class pixel font contract drifted"));
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("39272a26cf151587343b5a5e4840b3d710a4a52a43964c14f000840e8924b182"),
+              QLatin1String("b5a2e8750ee0c7fdb296b52e534e35055e4071057c2296fbe69be93f3fef0c2b"),
           QStringLiteral("Class pixel fixture changed; audit the browser oracle and update its digest"));
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 17,
-          QStringLiteral("Class pixel matrix must retain 9 scene and 8 label cases"));
+  require(cases.size() == 20,
+          QStringLiteral("Class pixel matrix must retain 12 scene and 8 label cases"));
   const QString directory = QFileInfo(manifest).absolutePath();
   editor::MermaidRenderCache cache;
   for (const QJsonValue& value : cases) {
@@ -384,6 +384,63 @@ int main(int argc, char** argv) {
     require(classScene->edges.size() ==
                 structure.value(QStringLiteral("edgePaths")).toArray().size(),
             id + QStringLiteral(": painted edge count differs"));
+    if (id.startsWith(QLatin1String("dash-width-"))) {
+      const QJsonArray browserEdges =
+          structure.value(QStringLiteral("edgePaths")).toArray();
+      require(browserEdges.size() == 1 && classScene->edges.size() == 1,
+              id + QStringLiteral(": expected one browser/native edge"));
+      const QJsonObject browserStyle = browserEdges.first().toObject()
+          .value(QStringLiteral("style")).toObject();
+      const QString expectedWidth = id.mid(QStringLiteral("dash-width-").size()) +
+                                    QStringLiteral("px");
+      require(browserStyle.value(QStringLiteral("strokeDasharray")).toString() ==
+                  QLatin1String("3px"),
+              id + QStringLiteral(": browser dasharray drifted"));
+      require(browserStyle.value(QStringLiteral("strokeLinecap")).toString() ==
+                  QLatin1String("butt"),
+              id + QStringLiteral(": browser linecap drifted"));
+      require(browserStyle.value(QStringLiteral("strokeWidth")).toString() ==
+                  expectedWidth,
+              id + QStringLiteral(": browser width drifted"));
+      require(classScene->edges.first().pattern == QLatin1String("dashed"),
+              id + QStringLiteral(": native pattern drifted"));
+      const QString edgeMaskPath = QDir(directory).filePath(
+          fixture.value(QStringLiteral("edgeMaskFile")).toString());
+      require(sha256(edgeMaskPath) ==
+                  fixture.value(QStringLiteral("edgeMaskSha256")).toString().toLatin1(),
+              id + QStringLiteral(": browser edge mask hash drifted"));
+      const QImage browserEdgeMask(edgeMaskPath);
+      classdiagram::ClassScene edgeOnlyScene = *classScene;
+      edgeOnlyScene.nodes.clear();
+      edgeOnlyScene.clusters.clear();
+      for (auto& edge : edgeOnlyScene.edges) {
+        edge.markerStart.clear();
+        edge.markerEnd.clear();
+        edge.label.clear();
+        edge.labelPosition.reset();
+        edge.startLabelRight.reset();
+        edge.endLabelLeft.reset();
+      }
+      const QImage nativeEdgeMask = classdiagram::renderClassSceneToImage(
+          edgeOnlyScene, dpr, 8.0, classdiagram::ClassPaintMode::SemanticMask);
+      if (qEnvironmentVariableIsSet("MUFFIN_SAVE_NATIVE"))
+        nativeEdgeMask.save(QStringLiteral("build/native-%1-edge-mask.png").arg(id));
+      require(!browserEdgeMask.isNull() && nativeEdgeMask.size() == browserEdgeMask.size(),
+              id + QStringLiteral(": isolated edge viewport differs"));
+      const qreal edgeIou = categoryIou(
+          nativeEdgeMask, browserEdgeMask, classdiagram::kClassMaskEdge);
+      const qreal edgeCoverage = tolerantCategoryCoverage(
+          nativeEdgeMask, browserEdgeMask, classdiagram::kClassMaskEdge);
+      qDebug().noquote() << id << "isolated edge IoU" << edgeIou
+               << "1px coverage" << edgeCoverage;
+      // At 1px Chromium quantizes some 3px dashes to four covered device
+      // pixels while Qt keeps three; the 1px bidirectional coverage is the
+      // geometry/phase gate, and these floors still reject the old
+      // pen-width-multiplied 6/12px patterns at widths 2/4.
+      require(edgeIou >= 0.80 && edgeCoverage >= 0.96,
+              QStringLiteral("%1: isolated edge dash drifted: IoU %2, coverage %3")
+                  .arg(id).arg(edgeIou).arg(edgeCoverage));
+    }
     if (id == QLatin1String("marker-matrix")) {
       const QString maskPath = QDir(directory).filePath(
           fixture.value(QStringLiteral("maskFile")).toString());
@@ -445,7 +502,8 @@ int main(int argc, char** argv) {
               QStringLiteral("%1/text: isolated mask drifted: IoU %2, coverage %3")
                   .arg(id).arg(textIou).arg(textCoverage));
     }
-    const qreal minimumIou = id == QLatin1String("marker-matrix") ? 0.965 : 0.985;
+    const qreal minimumIou = id == QLatin1String("marker-matrix") ? 0.965
+        : id.startsWith(QLatin1String("dash-width-")) ? 0.93 : 0.985;
     const qreal maximumMae = id == QLatin1String("marker-matrix") ? 0.075 : 0.06;
     const qreal maximumAspectError =
         fixture.value(QStringLiteral("htmlLabels")).toBool(true) ? 0.002 : 0.01;

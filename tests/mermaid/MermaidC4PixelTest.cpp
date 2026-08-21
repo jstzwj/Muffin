@@ -1,4 +1,6 @@
 #include "mermaid/MermaidFontRegistry.h"
+#include "mermaid/MermaidPaintOptions.h"
+#include "mermaid/c4/C4Scene.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 
 #include <QCryptographicHash>
@@ -9,10 +11,13 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPainter>
 
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
+#include <utility>
 
 using namespace muffin::mermaid;
 
@@ -88,6 +93,25 @@ qreal foregroundRgba(const QImage& native, const QImage& reference) {
              : 1.0;
 }
 
+QImage isolatedDashImage(c4::C4Scene scene) {
+  QVector<c4::C4Primitive> dashed;
+  for (c4::C4Primitive primitive : scene.primitives) {
+    if (primitive.dash.isEmpty()) continue;
+    primitive.css.stroke = QStringLiteral("#00ff00");
+    dashed.append(std::move(primitive));
+  }
+  scene.primitives = std::move(dashed);
+  const QRectF bounds = scene.sceneBounds();
+  QImage image(qCeil(bounds.width()), qCeil(bounds.height()),
+               QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::transparent);
+  QPainter painter(&image);
+  painter.translate(-bounds.left(), -bounds.top());
+  scene.paint(painter, MermaidPaintOptions{});
+  painter.end();
+  return image;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -103,12 +127,12 @@ int main(int argc, char** argv) {
   require(QCryptographicHash::hash(manifestBytes, QCryptographicHash::Sha256)
                   .toHex() ==
               QByteArrayLiteral(
-                  "02ecbcd66252c1f7240b29c8ed147257d675b9c4fea01da27c4a15305cec2fbc"),
+                  "3cf003544858e4753adc724408e26b757795dd5290e5a6bff94574c79d8926f4"),
           QStringLiteral("C4 pixel manifest bytes drifted"));
   const QJsonObject manifest = QJsonDocument::fromJson(manifestBytes).object();
   require(manifest.value(QStringLiteral("fixtureSha256")).toString() ==
               QLatin1String(
-                  "c9f489d3eb29503844373276cfdfb584abb91d11c8b24a871043f65fd4b7b358"),
+                  "dd16b4f9861e31546a97dea10fa089034cb36f0137d9f6c67fc32b0e526cd536"),
           QStringLiteral("C4 pixel fixture provenance drifted"));
   require(manifest.value(QStringLiteral("provenance")).toObject()
                   .value(QStringLiteral("version")).toString() ==
@@ -116,7 +140,7 @@ int main(int argc, char** argv) {
           QStringLiteral("C4 pixel Mermaid version drifted"));
 
   const QJsonArray cases = manifest.value(QStringLiteral("cases")).toArray();
-  require(cases.size() == 3, QStringLiteral("C4 pixel case count"));
+  require(cases.size() == 4, QStringLiteral("C4 pixel case count"));
   const QString directory = manifestInfo.absolutePath();
   for (const QJsonValue& value : cases) {
     const QJsonObject fixture = value.toObject();
@@ -151,8 +175,53 @@ int main(int argc, char** argv) {
     require(iou >= 0.80, id + QStringLiteral(": alpha IoU regressed"));
     require(rgba >= 0.80,
             id + QStringLiteral(": foreground RGBA regressed"));
+    if (id == QLatin1String("dash-width-4")) {
+      const QJsonArray styles = fixture.value(QStringLiteral("dashStyles")).toArray();
+      require(styles.size() == 1, id + QStringLiteral(": one dashed boundary expected"));
+      const QJsonObject style = styles.first().toObject();
+      require(style.value(QStringLiteral("stroke")).toString() ==
+                  QLatin1String("rgb(0, 255, 0)") &&
+                  style.value(QStringLiteral("strokeWidth")).toString() ==
+                  QLatin1String("4px") &&
+                  style.value(QStringLiteral("strokeDasharray")).toString() ==
+                  QLatin1String("7px, 7px") &&
+                  style.value(QStringLiteral("strokeLinecap")).toString() ==
+                  QLatin1String("butt") &&
+                  style.value(QStringLiteral("strokeLinejoin")).toString() ==
+                  QLatin1String("miter"),
+              id + QStringLiteral(": browser computed dash contract drifted"));
+      editor::MermaidRenderCache cache;
+      const QString source = fixture.value(QStringLiteral("source")).toString();
+      const auto entry = cache.getSync(editor::MermaidRenderCache::makeKey(source), source);
+      const auto scene = std::dynamic_pointer_cast<const c4::C4Scene>(entry.scene);
+      require(bool(scene), id + QStringLiteral(": native C4 scene missing"));
+      int dashedCount = 0;
+      for (const c4::C4Primitive& primitive : scene->primitives) {
+        if (primitive.dash.isEmpty()) continue;
+        ++dashedCount;
+        require(primitive.dash == QVector<qreal>{7.0, 7.0} &&
+                    primitive.css.strokeWidth == QLatin1String("4px"),
+                id + QStringLiteral(": native boundary dash model drifted"));
+      }
+      require(dashedCount == 1,
+              id + QStringLiteral(": native dashed boundary count drifted"));
+      const QString maskPath = directory + QLatin1Char('/') +
+          fixture.value(QStringLiteral("dashMaskFile")).toString();
+      require(sha256(maskPath) ==
+                  fixture.value(QStringLiteral("dashMaskSha256")).toString().toLatin1(),
+              id + QStringLiteral(": browser dash mask hash drifted"));
+      const QImage browserMask(maskPath);
+      const QImage nativeMask = isolatedDashImage(*scene);
+      if (qEnvironmentVariableIsSet("MUFFIN_SAVE_NATIVE"))
+        nativeMask.save(QStringLiteral("build/native-c4-dash-width-4-mask.png"));
+      const qreal dashIou = alphaIou(nativeMask, browserMask);
+      std::fprintf(stderr, "%s isolated dash IoU %.6f\n", qPrintable(id), dashIou);
+      require(dashIou >= 0.95,
+              QStringLiteral("%1: isolated boundary dash drifted: %2")
+                  .arg(id).arg(dashIou));
+    }
   }
 
-  std::puts("MermaidC4PixelTest: 3 cases passed");
+  std::puts("MermaidC4PixelTest: 4 cases passed");
   return 0;
 }

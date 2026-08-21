@@ -35,7 +35,27 @@
       "width": 1182,
       "height": 1390,
       "sha256": "22a0f98e32be722fed832b05cc64b5cb38d839ed99e13e8ebf956dabac4713f0"
+    },
+    {
+      "id": "dash-width-4",
+      "dashMask": true,
+      "source": "%%{init: {\"fontFamily\":\"Noto Sans\",\"c4\":{\"personFontFamily\":\"Noto Sans\",\"external_personFontFamily\":\"Noto Sans\",\"systemFontFamily\":\"Noto Sans\",\"external_systemFontFamily\":\"Noto Sans\",\"system_dbFontFamily\":\"Noto Sans\",\"external_system_dbFontFamily\":\"Noto Sans\",\"system_queueFontFamily\":\"Noto Sans\",\"external_system_queueFontFamily\":\"Noto Sans\",\"boundaryFontFamily\":\"Noto Sans\",\"messageFontFamily\":\"Noto Sans\",\"containerFontFamily\":\"Noto Sans\",\"external_containerFontFamily\":\"Noto Sans\",\"container_dbFontFamily\":\"Noto Sans\",\"external_container_dbFontFamily\":\"Noto Sans\",\"container_queueFontFamily\":\"Noto Sans\",\"external_container_queueFontFamily\":\"Noto Sans\",\"componentFontFamily\":\"Noto Sans\",\"external_componentFontFamily\":\"Noto Sans\",\"component_dbFontFamily\":\"Noto Sans\",\"external_component_dbFontFamily\":\"Noto Sans\",\"component_queueFontFamily\":\"Noto Sans\",\"external_component_queueFontFamily\":\"Noto Sans\"},\"themeCSS\":\"rect{stroke:#00ff00!important;stroke-width:4px!important;}\"}}%%\nC4Context\nBoundary(scope, \"Scope\") {\n  Person(user, \"User\")\n}",
+      "file": "dash-width-4.png",
+      "width": 616,
+      "height": 506,
+      "sha256": "7ac59ae168b16caac43d62eea33c5ee41c65de2b6787db8af894693a59f965af",
+      "dashStyles": [
+        {
+          "stroke": "rgb(0, 255, 0)",
+          "strokeWidth": "4px",
+          "strokeDasharray": "7px, 7px",
+          "strokeLinecap": "butt",
+          "strokeLinejoin": "miter"
+        }
+      ],
+      "dashMaskFile": "dash-width-4-dash-mask.png",
+      "dashMaskSha256": "7c68d5dd7e1ea6f8d2178408297a2402e34cb50aa0ba3654d573d6f16620efa1"
     }
   ],
-  "fixtureSha256": "c9f489d3eb29503844373276cfdfb584abb91d11c8b24a871043f65fd4b7b358"
+  "fixtureSha256": "dd16b4f9861e31546a97dea10fa089034cb36f0137d9f6c67fc32b0e526cd536"
 }

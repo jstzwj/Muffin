@@ -2080,9 +2080,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M51.117,92L51.117,98.167C51.117,104.333,51.117,116.667,51.117,128C51.117,139.333,51.117,149.667,51.117,154.833L51.117,160"
           }
         ],
         "edgeLabels": [
@@ -4158,9 +4162,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M112.578,193.25L112.578,196.542C112.578,199.833,112.578,206.417,112.578,215.875C112.578,225.333,112.578,237.667,112.578,243.833L112.578,250"
           }
         ],
         "edgeLabels": [
@@ -4675,9 +4683,10 @@
     {
       "id": "marker-matrix",
       "dpr": 1,
-      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nA <|-- B : extension\nC *-- D : composition\nE o-- F : aggregation\nG <.. H : dependency\nI ()-- J",
+      "handDrawnSeed": 42,
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\ndirection LR\nA <|-- B : extension\nC *-- D : composition\nE o-- F : aggregation\nG <.. H : dependency\nI ()-- J",
       "file": "marker-matrix.png",
-      "sha256": "959c5087daddbe21883978bcea87fb648a47f9eadfa037845ac7f5652323a608",
+      "sha256": "2164bd7fb17127c117c520b571cf0000f1e8ed7fdaeb89fbb8a46c83a7ca4802",
       "maskFile": "marker-matrix-mask.png",
       "maskSha256": "906d44d8fd8f87ccd674a6c15d4eb1087c20e786824c865297be1c5204b1fcc2",
       "textMaskFile": "marker-matrix-text-mask.png",
@@ -5022,9 +5031,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M60.195,50L69.365,50C78.534,50,96.872,50,118.089,50C139.305,50,163.398,50,175.445,50L187.492,50"
           },
           {
             "id": "class-pixel-marker-matrix-id_C_D_2",
@@ -5033,9 +5046,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M60.141,184L69.319,184C78.497,184,96.854,184,117.973,184C139.091,184,162.971,184,174.911,184L186.852,184"
           },
           {
             "id": "class-pixel-marker-matrix-id_E_F_3",
@@ -5044,9 +5061,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M59.531,318L68.811,318C78.091,318,96.651,318,118.152,318C139.654,318,164.096,318,176.318,318L188.539,318"
           },
           {
             "id": "class-pixel-marker-matrix-id_G_H_4",
@@ -5055,9 +5076,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "3px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-dashed relation"
+            "class": "edge-thickness-normal edge-pattern-dashed relation",
+            "path": "M49.656,452L60.582,452C71.508,452,93.359,452,116.211,452C139.063,452,162.914,452,174.84,452L186.766,452"
           },
           {
             "id": "class-pixel-marker-matrix-id_interface0_J_5",
@@ -5066,9 +5091,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M42.047,586L54.241,586C66.435,586,90.823,586,115.566,586C140.31,586,165.409,586,177.958,586L190.508,586"
           }
         ],
         "edgeLabels": [
@@ -5794,6 +5823,1704 @@
       }
     },
     {
+      "id": "dash-width-1",
+      "dpr": 1,
+      "edgeMask": true,
+      "strokeWidth": 1,
+      "handDrawnSeed": 42,
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":1}}}%%\nclassDiagram\ndirection LR\nA ..> B",
+      "file": "dash-width-1.png",
+      "sha256": "23a4a22b5d71177b8c9e3483092d7fddb914ecb6607d1b7056ebbab8780ab852",
+      "edgeMaskFile": "dash-width-1-edge-mask.png",
+      "edgeMaskSha256": "0e6bf83807bc94bb84f4b094c015778f6cb642c937452c0e63a9e87214be1fb3",
+      "cssWidth": 134.640625,
+      "cssHeight": 100,
+      "viewBox": {
+        "x": 0,
+        "y": 0,
+        "width": 134.640625,
+        "height": 100
+      },
+      "structure": {
+        "nodes": [
+          {
+            "id": "class-pixel-dash-width-1-classId-A-0",
+            "text": "A",
+            "bbox": {
+              "x": -17.117,
+              "y": -42,
+              "width": 34.234,
+              "height": 84
+            },
+            "outer": {
+              "x": -17.117,
+              "y": -42,
+              "width": 34.234,
+              "height": 84
+            },
+            "style": {
+              "fill": "rgb(236, 236, 255)",
+              "stroke": "rgb(147, 112, 219)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          },
+          {
+            "id": "class-pixel-dash-width-1-classId-B-1",
+            "text": "B",
+            "bbox": {
+              "x": -17.203,
+              "y": -42,
+              "width": 34.406,
+              "height": 84
+            },
+            "outer": {
+              "x": -17.203,
+              "y": -42,
+              "width": 34.406,
+              "height": 84
+            },
+            "style": {
+              "fill": "rgb(236, 236, 255)",
+              "stroke": "rgb(147, 112, 219)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          }
+        ],
+        "clusters": [],
+        "edgePaths": [
+          {
+            "id": "class-pixel-dash-width-1-id_A_B_1",
+            "style": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1",
+              "strokeDasharray": "3px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
+            },
+            "class": "edge-thickness-normal edge-pattern-dashed relation",
+            "path": "M42.234,50L46.401,50C50.568,50,58.901,50,66.234,50C73.568,50,79.901,50,83.068,50L86.234,50"
+          }
+        ],
+        "edgeLabels": [
+          {
+            "id": "",
+            "text": "",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "style": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            }
+          }
+        ]
+      },
+      "svgStructure": {
+        "root": {
+          "id": "class-pixel-dash-width-1",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "classDiagram",
+          "style": "max-width: 134.640625px;",
+          "viewBox": "0 0 134.640625 100",
+          "role": "graphics-document document",
+          "aria-roledescription": "class"
+        },
+        "markers": [
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-aggregationStart",
+              "class": "marker aggregation class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-aggregationEnd",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-aggregationStart-margin",
+              "class": "marker aggregation class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-aggregationEnd-margin",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-extensionStart",
+              "class": "marker extension class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,7 L18,13 V 1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-extensionEnd",
+              "class": "marker extension class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,1 V 13 L18,7 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-extensionEnd-margin",
+              "class": "marker extension class",
+              "refX": "9",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse",
+              "viewBox": "0 0 20 14"
+            },
+            "childTag": "polygon",
+            "childAttributes": {
+              "points": "10,1 10,13 18,7",
+              "style": "stroke-width: 2; stroke-dasharray: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-compositionStart",
+              "class": "marker composition class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-compositionEnd",
+              "class": "marker composition class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-compositionStart-margin",
+              "class": "marker composition class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "viewBox": "0 0 15 15",
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-compositionEnd-margin",
+              "class": "marker composition class",
+              "refX": "3.5",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-dependencyStart",
+              "class": "marker dependency class",
+              "refX": "6",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-dependencyEnd",
+              "class": "marker dependency class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-dependencyStart-margin",
+              "class": "marker dependency class",
+              "refX": "4",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-dependencyEnd-margin",
+              "class": "marker dependency class",
+              "refX": "16",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-lollipopStart",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-lollipopEnd",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-lollipopStart-margin",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-1_class-lollipopEnd-margin",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          }
+        ],
+        "labelContainers": [
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "",
+            "attributes": {
+              "class": "label",
+              "data-id": "id_A_B_1",
+              "transform": "translate(0, 0)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "A",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-12)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "B",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-12)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          }
+        ],
+        "domOrder": [
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "g:clusters",
+          "g:edgePaths",
+          "g:edgeLabels",
+          "g:edgeLabel",
+          "foreignObject:",
+          "g:nodes",
+          "g:node default",
+          "foreignObject:",
+          "g:node default",
+          "foreignObject:",
+          "defs:",
+          "defs:"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "counts": {
+          "defs": 21,
+          "markers": 19,
+          "nodes": 2,
+          "clusters": 0,
+          "edgePaths": 1,
+          "edgeLabels": 1,
+          "foreignObject": 3,
+          "math": 0
+        }
+      }
+    },
+    {
+      "id": "dash-width-2",
+      "dpr": 1,
+      "edgeMask": true,
+      "strokeWidth": 2,
+      "handDrawnSeed": 42,
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":2}}}%%\nclassDiagram\ndirection LR\nA ..> B",
+      "file": "dash-width-2.png",
+      "sha256": "731426a4dc46a48d401d71a8f50d2793108b58cf648d85652f23b6c18834ddf8",
+      "edgeMaskFile": "dash-width-2-edge-mask.png",
+      "edgeMaskSha256": "0c734a11332244da14f48a0d385ce2fab6eee8f0a8464cb232c389e23448919f",
+      "cssWidth": 134.640625,
+      "cssHeight": 100,
+      "viewBox": {
+        "x": 0,
+        "y": 0,
+        "width": 134.640625,
+        "height": 100
+      },
+      "structure": {
+        "nodes": [
+          {
+            "id": "class-pixel-dash-width-2-classId-A-0",
+            "text": "A",
+            "bbox": {
+              "x": -17.117,
+              "y": -42,
+              "width": 34.234,
+              "height": 84
+            },
+            "outer": {
+              "x": -17.117,
+              "y": -42,
+              "width": 34.234,
+              "height": 84
+            },
+            "style": {
+              "fill": "rgb(236, 236, 255)",
+              "stroke": "rgb(147, 112, 219)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "2px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          },
+          {
+            "id": "class-pixel-dash-width-2-classId-B-1",
+            "text": "B",
+            "bbox": {
+              "x": -17.203,
+              "y": -42,
+              "width": 34.406,
+              "height": 84
+            },
+            "outer": {
+              "x": -17.203,
+              "y": -42,
+              "width": 34.406,
+              "height": 84
+            },
+            "style": {
+              "fill": "rgb(236, 236, 255)",
+              "stroke": "rgb(147, 112, 219)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "2px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          }
+        ],
+        "clusters": [],
+        "edgePaths": [
+          {
+            "id": "class-pixel-dash-width-2-id_A_B_1",
+            "style": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "2px",
+              "opacity": "1",
+              "strokeDasharray": "3px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
+            },
+            "class": "edge-thickness-normal edge-pattern-dashed relation",
+            "path": "M42.234,50L46.401,50C50.568,50,58.901,50,66.234,50C73.568,50,79.901,50,83.068,50L86.234,50"
+          }
+        ],
+        "edgeLabels": [
+          {
+            "id": "",
+            "text": "",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "style": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            }
+          }
+        ]
+      },
+      "svgStructure": {
+        "root": {
+          "id": "class-pixel-dash-width-2",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "classDiagram",
+          "style": "max-width: 134.640625px;",
+          "viewBox": "0 0 134.640625 100",
+          "role": "graphics-document document",
+          "aria-roledescription": "class"
+        },
+        "markers": [
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-aggregationStart",
+              "class": "marker aggregation class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-aggregationEnd",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-aggregationStart-margin",
+              "class": "marker aggregation class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-aggregationEnd-margin",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-extensionStart",
+              "class": "marker extension class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,7 L18,13 V 1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-extensionEnd",
+              "class": "marker extension class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,1 V 13 L18,7 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-extensionEnd-margin",
+              "class": "marker extension class",
+              "refX": "9",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse",
+              "viewBox": "0 0 20 14"
+            },
+            "childTag": "polygon",
+            "childAttributes": {
+              "points": "10,1 10,13 18,7",
+              "style": "stroke-width: 2; stroke-dasharray: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-compositionStart",
+              "class": "marker composition class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-compositionEnd",
+              "class": "marker composition class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-compositionStart-margin",
+              "class": "marker composition class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "viewBox": "0 0 15 15",
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-compositionEnd-margin",
+              "class": "marker composition class",
+              "refX": "3.5",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-dependencyStart",
+              "class": "marker dependency class",
+              "refX": "6",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-dependencyEnd",
+              "class": "marker dependency class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-dependencyStart-margin",
+              "class": "marker dependency class",
+              "refX": "4",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-dependencyEnd-margin",
+              "class": "marker dependency class",
+              "refX": "16",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-lollipopStart",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-lollipopEnd",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-lollipopStart-margin",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-2_class-lollipopEnd-margin",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          }
+        ],
+        "labelContainers": [
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "",
+            "attributes": {
+              "class": "label",
+              "data-id": "id_A_B_1",
+              "transform": "translate(0, 0)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "A",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-12)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "B",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-12)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          }
+        ],
+        "domOrder": [
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "g:clusters",
+          "g:edgePaths",
+          "g:edgeLabels",
+          "g:edgeLabel",
+          "foreignObject:",
+          "g:nodes",
+          "g:node default",
+          "foreignObject:",
+          "g:node default",
+          "foreignObject:",
+          "defs:",
+          "defs:"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "counts": {
+          "defs": 21,
+          "markers": 19,
+          "nodes": 2,
+          "clusters": 0,
+          "edgePaths": 1,
+          "edgeLabels": 1,
+          "foreignObject": 3,
+          "math": 0
+        }
+      }
+    },
+    {
+      "id": "dash-width-4",
+      "dpr": 1,
+      "edgeMask": true,
+      "strokeWidth": 4,
+      "handDrawnSeed": 42,
+      "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"handDrawnSeed\":42,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\",\"strokeWidth\":4}}}%%\nclassDiagram\ndirection LR\nA ..> B",
+      "file": "dash-width-4.png",
+      "sha256": "f3464d651ebd0a7ec4a25f1e737fb23b9cdbfea982ff8439d9304c263519e07d",
+      "edgeMaskFile": "dash-width-4-edge-mask.png",
+      "edgeMaskSha256": "5250e6245af93eb5ae408ca72c25271375676beb96c5f6a65323b991cc94f49c",
+      "cssWidth": 134.640625,
+      "cssHeight": 100,
+      "viewBox": {
+        "x": 0,
+        "y": 0,
+        "width": 134.640625,
+        "height": 100
+      },
+      "structure": {
+        "nodes": [
+          {
+            "id": "class-pixel-dash-width-4-classId-A-0",
+            "text": "A",
+            "bbox": {
+              "x": -17.117,
+              "y": -42,
+              "width": 34.234,
+              "height": 84
+            },
+            "outer": {
+              "x": -17.117,
+              "y": -42,
+              "width": 34.234,
+              "height": 84
+            },
+            "style": {
+              "fill": "rgb(236, 236, 255)",
+              "stroke": "rgb(147, 112, 219)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "4px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          },
+          {
+            "id": "class-pixel-dash-width-4-classId-B-1",
+            "text": "B",
+            "bbox": {
+              "x": -17.203,
+              "y": -42,
+              "width": 34.406,
+              "height": 84
+            },
+            "outer": {
+              "x": -17.203,
+              "y": -42,
+              "width": 34.406,
+              "height": 84
+            },
+            "style": {
+              "fill": "rgb(236, 236, 255)",
+              "stroke": "rgb(147, 112, 219)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "4px",
+              "opacity": "1"
+            },
+            "labelStyle": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            },
+            "outerTag": "g",
+            "outerClass": "basic label-container outer-path"
+          }
+        ],
+        "clusters": [],
+        "edgePaths": [
+          {
+            "id": "class-pixel-dash-width-4-id_A_B_1",
+            "style": {
+              "fill": "none",
+              "stroke": "rgb(51, 51, 51)",
+              "color": "rgb(0, 0, 0)",
+              "strokeWidth": "4px",
+              "opacity": "1",
+              "strokeDasharray": "3px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
+            },
+            "class": "edge-thickness-normal edge-pattern-dashed relation",
+            "path": "M42.234,50L46.401,50C50.568,50,58.901,50,66.234,50C73.568,50,79.901,50,83.068,50L86.234,50"
+          }
+        ],
+        "edgeLabels": [
+          {
+            "id": "",
+            "text": "",
+            "bbox": {
+              "x": 0,
+              "y": 0,
+              "width": 0,
+              "height": 0
+            },
+            "style": {
+              "fill": "rgb(51, 51, 51)",
+              "stroke": "none",
+              "color": "rgb(19, 19, 0)",
+              "strokeWidth": "1px",
+              "opacity": "1"
+            }
+          }
+        ]
+      },
+      "svgStructure": {
+        "root": {
+          "id": "class-pixel-dash-width-4",
+          "width": "100%",
+          "xmlns": "http://www.w3.org/2000/svg",
+          "class": "classDiagram",
+          "style": "max-width: 134.640625px;",
+          "viewBox": "0 0 134.640625 100",
+          "role": "graphics-document document",
+          "aria-roledescription": "class"
+        },
+        "markers": [
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-aggregationStart",
+              "class": "marker aggregation class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-aggregationEnd",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-aggregationStart-margin",
+              "class": "marker aggregation class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-aggregationEnd-margin",
+              "class": "marker aggregation class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 2;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-extensionStart",
+              "class": "marker extension class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,7 L18,13 V 1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-extensionEnd",
+              "class": "marker extension class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 1,1 V 13 L18,7 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-extensionEnd-margin",
+              "class": "marker extension class",
+              "refX": "9",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse",
+              "viewBox": "0 0 20 14"
+            },
+            "childTag": "polygon",
+            "childAttributes": {
+              "points": "10,1 10,13 18,7",
+              "style": "stroke-width: 2; stroke-dasharray: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-compositionStart",
+              "class": "marker composition class",
+              "refX": "18",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-compositionEnd",
+              "class": "marker composition class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-compositionStart-margin",
+              "class": "marker composition class",
+              "refX": "15",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "viewBox": "0 0 15 15",
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-compositionEnd-margin",
+              "class": "marker composition class",
+              "refX": "3.5",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-dependencyStart",
+              "class": "marker dependency class",
+              "refX": "6",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-dependencyEnd",
+              "class": "marker dependency class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-dependencyStart-margin",
+              "class": "marker dependency class",
+              "refX": "4",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 5,7 L9,13 L1,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-dependencyEnd-margin",
+              "class": "marker dependency class",
+              "refX": "16",
+              "refY": "7",
+              "markerWidth": "20",
+              "markerHeight": "28",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "path",
+            "childAttributes": {
+              "d": "M 18,7 L9,13 L14,7 L9,1 Z",
+              "style": "stroke-width: 0;"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-lollipopStart",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-lollipopEnd",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-lollipopStart-margin",
+              "class": "marker lollipop class",
+              "refX": "13",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          },
+          {
+            "attributes": {
+              "id": "class-pixel-dash-width-4_class-lollipopEnd-margin",
+              "class": "marker lollipop class",
+              "refX": "1",
+              "refY": "7",
+              "markerWidth": "190",
+              "markerHeight": "240",
+              "orient": "auto",
+              "markerUnits": "userSpaceOnUse"
+            },
+            "childTag": "circle",
+            "childAttributes": {
+              "fill": "transparent",
+              "cx": "7",
+              "cy": "7",
+              "r": "6",
+              "stroke-width": "2"
+            }
+          }
+        ],
+        "labelContainers": [
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "",
+            "attributes": {
+              "class": "label",
+              "data-id": "id_A_B_1",
+              "transform": "translate(0, 0)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "A",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-12)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          },
+          {
+            "tag": "g",
+            "class": "label",
+            "text": "B",
+            "attributes": {
+              "class": "label",
+              "style": "font-weight: bolder",
+              "transform": "translate(0,-12)"
+            },
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "tspanCount": 0,
+            "mathCount": 0
+          }
+        ],
+        "domOrder": [
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker aggregation class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker extension class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker composition class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker dependency class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "defs:",
+          "marker:marker lollipop class",
+          "g:clusters",
+          "g:edgePaths",
+          "g:edgeLabels",
+          "g:edgeLabel",
+          "foreignObject:",
+          "g:nodes",
+          "g:node default",
+          "foreignObject:",
+          "g:node default",
+          "foreignObject:",
+          "defs:",
+          "defs:"
+        ],
+        "ariaTitle": "",
+        "ariaDescription": "",
+        "counts": {
+          "defs": 21,
+          "markers": 19,
+          "nodes": 2,
+          "clusters": 0,
+          "edgePaths": 1,
+          "edgeLabels": 1,
+          "foreignObject": 3,
+          "math": 0
+        }
+      }
+    },
+    {
       "id": "note",
       "dpr": 1,
       "source": "%%{init: {\"theme\":\"default\",\"htmlLabels\":true,\"themeVariables\":{\"fontFamily\":\"\\\"Noto Sans\\\", \\\"Noto Sans CJK SC\\\", \\\"Noto Sans Arabic\\\", \\\"Noto Sans Hebrew\\\", sans-serif\"}}}%%\nclassDiagram\nclass Service\nnote for Service \"A folded note\"\nclass Client\nClient --> Service : uses",
@@ -5915,9 +7642,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "2px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-dotted relation"
+            "class": "edge-thickness-normal edge-pattern-dotted relation",
+            "path": "M70.469,74L70.469,83.167C70.469,92.333,70.469,110.667,76.186,126.021C81.904,141.375,93.339,153.75,99.056,159.937L104.773,166.124"
           },
           {
             "id": "class-pixel-note-id_Client_Service_1",
@@ -5926,9 +7657,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M216.469,92L216.469,98.167C216.469,104.333,216.469,116.667,211.43,128.286C206.391,139.906,196.314,150.812,191.275,156.265L186.236,161.718"
           }
         ],
         "edgeLabels": [
@@ -6567,9 +8302,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M82.516,142L82.516,152.333C82.516,162.667,82.516,183.333,82.516,203C82.516,222.667,82.516,241.333,82.516,250.667L82.516,260"
           }
         ],
         "edgeLabels": [
@@ -7670,9 +9409,13 @@
               "stroke": "rgb(51, 51, 51)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M83.688,152L83.688,158.167C83.688,164.333,83.688,176.667,83.688,188C83.688,199.333,83.688,209.667,83.688,214.833L83.688,220"
           }
         ],
         "edgeLabels": [
@@ -8276,9 +10019,13 @@
               "stroke": "rgb(211, 211, 211)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "0px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-solid relation"
+            "class": "edge-thickness-normal edge-pattern-solid relation",
+            "path": "M203.469,106L210.135,106C216.802,106,230.135,106,246.344,106C262.552,106,281.635,106,291.177,106L300.719,106"
           }
         ],
         "edgeLabels": [
@@ -8900,9 +10647,13 @@
               "stroke": "rgb(211, 211, 211)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "2px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-dotted relation"
+            "class": "edge-thickness-normal edge-pattern-dotted relation",
+            "path": "M117.844,50L122.01,50C126.177,50,134.51,50,142.844,50C151.177,50,159.51,50,163.677,50L167.844,50"
           },
           {
             "id": "class-pixel-dark-note-markers-id_Client_Service_1",
@@ -8911,9 +10662,13 @@
               "stroke": "rgb(211, 211, 211)",
               "color": "rgb(0, 0, 0)",
               "strokeWidth": "1px",
-              "opacity": "1"
+              "opacity": "1",
+              "strokeDasharray": "3px",
+              "strokeLinecap": "butt",
+              "strokeLinejoin": "miter"
             },
-            "class": "edge-thickness-normal edge-pattern-dashed relation"
+            "class": "edge-thickness-normal edge-pattern-dashed relation",
+            "path": "M234.906,50L241.788,50C248.669,50,262.432,50,275.195,50C287.958,50,299.721,50,305.603,50L311.484,50"
           }
         ],
         "edgeLabels": [
@@ -9947,5 +11702,5 @@
       }
     }
   ],
-  "fixtureSha256": "39272a26cf151587343b5a5e4840b3d710a4a52a43964c14f000840e8924b182"
+  "fixtureSha256": "b5a2e8750ee0c7fdb296b52e534e35055e4071057c2296fbe69be93f3fef0c2b"
 }

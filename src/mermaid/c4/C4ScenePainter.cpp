@@ -2,6 +2,7 @@
 
 #include "mermaid/c4/C4Scene.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QByteArray>
@@ -197,7 +198,9 @@ void paintC4Scene(const C4Scene& scene, QPainter& painter,
                    : QPen(strokePaint.color, strokeWidth);
     pen.setCapStyle(Qt::FlatCap);
     pen.setJoinStyle(Qt::MiterJoin);
-    if (!primitive.dash.isEmpty()) pen.setDashPattern(primitive.dash);
+    if (!primitive.dash.isEmpty())
+      pen.setDashPattern(scene::normalizedSvgDashPattern(
+          primitive.dash, strokeWidth));
     painter.setPen(pen);
     const color::SvgPaint fillPaint = color::resolveSvgPaint(
         fillValue, color::SvgPaintKind::Fill, rootFill);

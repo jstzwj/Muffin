@@ -9,6 +9,7 @@
 #include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/requirement/RequirementScene.h"
 #include "mermaid/scene/SvgPathParse.h"
+#include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QColor>
@@ -141,10 +142,13 @@ void paintRequirementScene(const RequirementScene& scene, QPainter& painter,
     const QRectF pathCull = edge.pathBounds.isValid() ? edge.pathBounds : scene.bounds;
     if (edge.visible && mermaidPrimitiveIsVisible(pathCull, options)) {
       QPen pen(resolveColor(edge.stroke), edge.strokeWidth);
+      pen.setCapStyle(Qt::FlatCap);
+      pen.setJoinStyle(Qt::MiterJoin);
       if (!edge.isContains) {
         // Dashed: stroke-dasharray: 10,7.
         pen.setStyle(Qt::CustomDashLine);
-        pen.setDashPattern({10.0, 7.0});
+        pen.setDashPattern(scene::normalizedSvgDashPattern(
+            {10.0, 7.0}, edge.strokeWidth));
       }
       painter.save();
       painter.setOpacity(painter.opacity() * edge.opacity * edge.strokeOpacity);

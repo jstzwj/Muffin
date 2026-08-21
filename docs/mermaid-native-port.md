@@ -5,7 +5,7 @@ The flowchart execution contract and milestone history are maintained in
 The complete 38-ID expansion and acceptance contract is maintained in
 [`mermaid-11.16-complete-parity-plan.md`](mermaid-11.16-complete-parity-plan.md).
 
-## Current status (2026-08-12)
+## Current status (2026-08-21)
 
 Muffin renders thirty-one Mermaid families through a native C++20/Qt pipeline:
 
@@ -61,7 +61,7 @@ Muffin renders thirty-one Mermaid families through a native C++20/Qt pipeline:
 
 Each supported family has parser/database, layout, immutable scene, structural,
 pixel, and editor-cache coverage. All 38 Mermaid 11.16 detector IDs now resolve
-through a native adapter. The Windows Conan Release gate is currently 292/292
+through a native adapter. The Windows Conan Release gate is currently 293/293
 tests, including the end-to-end
 `MuffinRenderMermaidBlockTest` and the error-diagram parity test.
 
@@ -563,6 +563,24 @@ The remaining boundaries are explicit rather than hidden parity claims:
   `borderColorArray`/`bkgColorArray` values are ignored, matching Mermaid
   11.16.0's source-entry behavior.
 
+Class, Requirement, Journey, GitGraph, and C4 dashes now keep SVG/CSS lengths
+in user pixels at every stroke width. Browser fixtures lock Class's `3px`
+dashed and `2px` dotted patterns, Requirement's `10px 7px`, Journey's `4px
+2px`, GitGraph classic's odd `2px` list (SVG repeats it to 2/2), and C4
+Boundary's `7px 7px`, together with the SVG-default butt cap/miter join. Qt
+custom dashes use pen-width units, so the shared `SvgStroke.h` conversion
+divides every CSS length by the active width and duplicates odd-length SVG
+patterns; all five painters use FlatCap/MiterJoin. The Class width matrix
+enters upstream through `themeVariables.strokeWidth`: Mermaid 11.16.0 rejects
+Class `linkStyle`, so Muffin's accepted Class `linkStyle` remains a
+compatibility extension rather than an upstream parity claim. Isolated
+edge-mask oracles prevent nodes, markers, Journey's separately painted axis
+marker, and C4's person image from hiding dash-period regressions. GitGraph's
+dash case disables commit/branch labels through real upstream configuration
+and themeCSS, making its exact 116×126 canvas and `-8 -20 116 126` viewBox
+independent of cross-engine font advances. The five-family dash audit is now
+closed.
+
 Arbitrary `themeCSS` is no longer a boundary: all 34 native family interfaces
 resolve user CSS through the shared `MermaidCssCascade` against real 11.16.0
 DOM oracles (`mermaid-theme-css.json`, 117 cases). Wardley is the one
@@ -706,6 +724,12 @@ the `flowchart`/`swimlane` configuration split against Mermaid 11.16.0.
 TreeView freezes its Langium grammar, synthetic-root database, recursive fixed
 layout, annotation/style cascade, icon reservation and stripped-`use` quirk,
 source diagnostics, SVG accessibility, and fixed/max-width export behavior.
+The strict source-entry icon oracle records that Mermaid retains the 14×14
+folder/file defs and their exact 24×24 paths while stripping every visible
+`use`; native therefore reserves the same 18px but intentionally paints no
+icon. TreeView's `dominant-baseline: middle` text uses the SVG alphabetic
+baseline at center + xHeight/2 (not full-cell `(ascent-descent)/2` centering),
+with a labels-only browser mask locking the vertical ink placement.
 Event Modeling freezes its Langium grammar and frame/data database, swimlane and
 relation formulas, literal Trebuchet SVG measurement, namespace and reset quirks,
 14-key theme model, ignored metadata, and fixed/max-width export behavior.
