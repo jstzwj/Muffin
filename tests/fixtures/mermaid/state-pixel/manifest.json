@@ -138,7 +138,49 @@
       "width": 77,
       "height": 298,
       "sha256": "28388c79e3a50844e3c038526aa2fa19736b74a368f9147393c77ac9539d6e8e"
+    },
+    {
+      "id": "handdrawn-basic",
+      "dpr": 1,
+      "theme": "default",
+      "look": "handDrawn",
+      "source": "%%{init: {\"look\":\"handDrawn\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\n[*] --> Idle\nIdle --> Active : go\nnote right of Idle : Ink note\nActive --> [*]",
+      "file": "handdrawn-basic.png",
+      "cssWidth": 280.359375,
+      "cssHeight": 370.796875,
+      "viewBox": "0 -0.25221872329711914 280.3594055175781 370.79736328125",
+      "width": 280,
+      "height": 371,
+      "sha256": "08c453e1302d35a59f6a9e882c3c07d91dc454e058a0aef62849b17b6b0dad67"
+    },
+    {
+      "id": "handdrawn-compound",
+      "dpr": 1,
+      "theme": "default",
+      "look": "handDrawn",
+      "source": "%%{init: {\"look\":\"handDrawn\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\nstate Running {\n  A --> B\n}",
+      "file": "handdrawn-compound.png",
+      "cssWidth": 119.546875,
+      "cssHeight": 257.109375,
+      "viewBox": "-2.8769102096557617 -2.9472217559814453 119.54951477050781 257.1263427734375",
+      "width": 120,
+      "height": 257,
+      "sha256": "423b81c4e30eae2f5d811aca9108589b94ff6a195a2a0e0e263ea66b42005895"
+    },
+    {
+      "id": "handdrawn-descriptions",
+      "dpr": 1,
+      "theme": "default",
+      "look": "handDrawn",
+      "source": "%%{init: {\"look\":\"handDrawn\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\nDetailed : first row\nDetailed : second row",
+      "file": "handdrawn-descriptions.png",
+      "cssWidth": 112.78125,
+      "cssHeight": 84.125,
+      "viewBox": "-0.21985244750976562 0.14686965942382812 112.79341888427734 84.14906311035156",
+      "width": 113,
+      "height": 84,
+      "sha256": "eedc73f9b904d74024752c3a6d569215fd7f81d7b103631259e0421ad3cf3901"
     }
   ],
-  "fixtureSha256": "02a803180b4aae64851813603454d624ef2ce0353b37cfb95ee8aa32c35e21ae"
+  "fixtureSha256": "f2d9bb765bf7a8b485b4609d4b35ec80f654c2de11de74dd4129007d1856bde6"
 }

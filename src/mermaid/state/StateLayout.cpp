@@ -6,7 +6,6 @@
 #include <QMap>
 
 #include <algorithm>
-#include <limits>
 
 namespace muffin::mermaid::state {
 namespace {
@@ -488,6 +487,8 @@ StatePlacementResult layoutStateDiagramDagre(
   options.diagramPadding = 8.0;
   options.preserveDagreCoordinates = true;
   options.measuredEdgeLabels = measurements.edgeLabels;
+  for (const StateLayoutNodeInput& node : input.nodes)
+    options.nodeInsertionOrder.append(node.id);
   // Composite width mirrors roundedWithTitle's render-time max
   // (`node.width <= bbox.width + node.padding ? bbox.width + padding : ...`)
   // — the cluster title (css font included) can outgrow the dagre box.
@@ -529,63 +530,6 @@ StatePlacementResult layoutStateDiagramDagre(
                             QSizeF(cluster.width, cluster.height),
                             QSizeF(cluster.logicalWidth, cluster.logicalHeight)});
 
-  // Note position is a semantic ordering constraint in Mermaid's state
-  // renderer. The generic graph receives it before ordering; FlowchartData has
-  // no equivalent field, so restore the same rank orientation after Dagre.
-  if (input.direction == QLatin1String("TB") || input.direction == QLatin1String("BT")) {
-    for (const StateLayoutNodeInput& noteGroup : input.nodes) {
-      if (!noteGroup.isGroup || noteGroup.shape != QLatin1String("noteGroup") ||
-          noteGroup.position.isEmpty()) continue;
-      const QString suffix = QStringLiteral("----parent");
-      if (!noteGroup.id.endsWith(suffix)) continue;
-      const QString stateId = noteGroup.id.left(noteGroup.id.size() - suffix.size());
-      const auto state = std::find_if(result.nodes.cbegin(), result.nodes.cend(),
-          [&](const StatePlacementNode& node) { return node.id == stateId; });
-      const auto group = std::find_if(result.clusters.cbegin(), result.clusters.cend(),
-          [&](const StatePlacementCluster& cluster) { return cluster.id == noteGroup.id; });
-      if (state == result.nodes.cend() || group == result.clusters.cend()) continue;
-      const bool shouldBeRight = noteGroup.position == QLatin1String("right of");
-      if ((shouldBeRight && group->center.x() >= state->center.x()) ||
-          (!shouldBeRight && group->center.x() <= state->center.x())) continue;
-      const qreal axis = state->center.x();
-      const auto reflect = [axis](QPointF& point) { point.setX(2.0 * axis - point.x()); };
-      for (StatePlacementNode& node : result.nodes) reflect(node.center);
-      for (StatePlacementCluster& cluster : result.clusters) reflect(cluster.center);
-      for (StatePlacementEdge& edge : result.edges) {
-        for (QPointF& point : edge.points) reflect(point);
-        for (QVector<QPointF>& segment : edge.segments)
-          for (QPointF& point : segment) reflect(point);
-        if (edge.labelPosition) reflect(*edge.labelPosition);
-        edge.path.clear();
-      }
-      // Mirroring across the axis moves the ABSOLUTE origin (the un-reflected
-      // dagre output had translateGraph place its bbox at marginx). Re-anchor
-      // the reflected content so the leftmost node/cluster edge sits at the
-      // wrapper's hardcoded margin again — the browser's dagre produces the
-      // note side natively, so its origin never moves.
-      qreal reflectedMin = std::numeric_limits<qreal>::max();
-      for (const StatePlacementNode& node : result.nodes)
-        reflectedMin = std::min(reflectedMin, node.center.x() - node.size.width() / 2.0);
-      for (const StatePlacementCluster& cluster : result.clusters)
-        reflectedMin = std::min(reflectedMin, cluster.center.x() - cluster.size.width() / 2.0);
-      if (reflectedMin != std::numeric_limits<qreal>::max()) {
-        const qreal shift = 8.0 - reflectedMin;
-        if (!qFuzzyIsNull(shift)) {
-          for (StatePlacementNode& node : result.nodes) node.center.setX(node.center.x() + shift);
-          for (StatePlacementCluster& cluster : result.clusters)
-            cluster.center.setX(cluster.center.x() + shift);
-          for (StatePlacementEdge& edge : result.edges) {
-            for (QPointF& point : edge.points) point.setX(point.x() + shift);
-            for (QVector<QPointF>& segment : edge.segments)
-              for (QPointF& point : segment) point.setX(point.x() + shift);
-            if (edge.labelPosition) edge.labelPosition->setX(edge.labelPosition->x() + shift);
-            edge.path.clear();
-          }
-        }
-      }
-      break;
-    }
-  }
   return result;
 }
 

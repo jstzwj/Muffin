@@ -29,6 +29,13 @@ const cases = [
   { id: "arc-closed-hachure", kind: "arc", args: [4, 8, 110, 64, -0.4, 3.7, true], options: { seed: 57, fill: "#abc" } },
   { id: "svg-path", kind: "path", args: ["M0 0 L80 0 C90 10 90 50 80 60 L0 60 Z"], options: { seed: 59, fill: "#eee", fillStyle: "solid" } },
   { id: "svg-path-hachure", kind: "path", args: ["M0 0 L80 0 C90 10 90 50 80 60 L0 60 Z"], options: { seed: 61, fill: "#eee" } },
+  { id: "svg-rounded-path-hachure", kind: "path", args: [
+    "M -43.4375 -32.5 H 43.4375 A 5 5 0 0 1 48.4375 -27.5 " +
+      "V 27.5 A 5 5 0 0 1 43.4375 32.5 H -43.4375 " +
+      "A 5 5 0 0 1 -48.4375 27.5 V -27.5 " +
+      "A 5 5 0 0 1 -43.4375 -32.5 Z",
+  ], options: { seed: 42, roughness: 0.7, fill: "#000", fillWeight: 4,
+    hachureGap: 5.2, stroke: "#000", strokeWidth: 1.3 } },
 ];
 
 for (const item of cases) {

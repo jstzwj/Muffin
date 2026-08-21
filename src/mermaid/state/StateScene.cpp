@@ -125,6 +125,7 @@ StateScene buildStateScene(const StateLayoutInput& input,
     const StateLayoutNodeInput* source = inputNode(input, placed.id);
     if (!source) continue;
     const bool divider = source->shape == QLatin1String("divider");
+    const bool noteGroup = source->shape == QLatin1String("noteGroup");
     StateSceneNode node;
     node.id = source->id;
     node.shape = source->shape;
@@ -172,7 +173,7 @@ StateScene buildStateScene(const StateLayoutInput& input,
                            QStringLiteral("statediagram-cluster-alt"))
           ? scene.style.compositeAltFill : scene.style.compositeFill;
     }
-    if (handDrawn) {
+    if (handDrawn && !noteGroup) {
       node.roughDrawables = divider
           ? stateRoughDividerDrawables(node.bounds, handDrawnSeed, node.stroke,
                                        node.strokeWidth)

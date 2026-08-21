@@ -35,6 +35,48 @@ cases.push({
   expectedEdgeIds: ["edge0", "Active-Active----note-1"],
 });
 cases.push({
+  // The left-note edge direction, not a post-layout mirror, determines the
+  // side. This guards the right-only fixture after removing native reflection.
+  id: "renderable-left-note",
+  source: "stateDiagram-v2\nActive --> Done\nnote left of Active : Left note",
+  expectedNodeIds: ["Active", "Done", "Active----parent", "Active----note-1"],
+  expectedGroupFlags: [false, false, true, false],
+  expectedEdgeIds: ["edge0", "Active----note-1-Active"],
+});
+cases.push({
+  // The note group participates in the same rank ordering as the fork/join
+  // chain. Mermaid's insertion order places B diagonally, producing the
+  // characteristic zig-zag rather than a straight vertical spine.
+  id: "fork-join-note-zigzag",
+  source: "stateDiagram-v2\nstate fork_state <<fork>>\n" +
+    "state join_state <<join>>\nA --> fork_state\nfork_state --> B\n" +
+    "B --> join_state\nnote right of B : Branch note",
+  expectedNodeIds: ["fork_state", "join_state", "A", "B",
+    "B----parent", "B----note-3"],
+  expectedGroupFlags: [false, false, false, false, true, false],
+  expectedEdgeIds: ["edge0", "edge1", "edge2", "B-B----note-3"],
+});
+cases.push({
+  // Under handDrawn, State's rectWithTitle dispatch has historically differed
+  // from the classic DOM. Capture the real node tree and rough ink extents.
+  id: "handdrawn-rect-with-title",
+  source: `%%{init: ${JSON.stringify({ look: "handDrawn", handDrawnSeed: 42 })}}%%\n` +
+    "stateDiagram-v2\nDetailed : first row\nDetailed : second row",
+  expectedNodeIds: ["Detailed"],
+  expectedGroupFlags: [false],
+  expectedEdgeIds: [],
+});
+cases.push({
+  id: "handdrawn-basic-ink",
+  source: `%%{init: ${JSON.stringify({ look: "handDrawn", handDrawnSeed: 42 })}}%%\n` +
+    "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : go\n" +
+    "note right of Idle : Ink note\nActive --> [*]",
+  expectedNodeIds: ["root_start", "Idle", "Active", "Idle----parent",
+    "Idle----note-2", "root_end"],
+  expectedGroupFlags: [false, false, false, true, false, false],
+  expectedEdgeIds: ["edge0", "edge1", "Idle-Idle----note-2", "edge3"],
+});
+cases.push({
   // Title band contract: upstream insertTitle puts the text baseline
   // titleTopMargin above the content bbox and setupViewPortForSVG pads the
   // union — viewBox y = -(25 + font ascent + 8), height +52 (Noto 18px).
@@ -86,6 +128,17 @@ try {
       return { x: round(value.x), y: round(value.y),
         width: round(value.width), height: round(value.height) };
     };
+    const svgTree = (element) => ({
+      tag: element.tagName.toLowerCase(),
+      classes: element.getAttribute("class") ?? "",
+      style: element.getAttribute("style") ?? "",
+      fill: element.getAttribute("fill") ?? "",
+      stroke: element.getAttribute("stroke") ?? "",
+      strokeWidth: element.getAttribute("stroke-width") ?? "",
+      children: [...element.children]
+        .filter((child) => child.namespaceURI === "http://www.w3.org/2000/svg")
+        .map(svgTree),
+    });
     const result = [];
     for (const fixture of cases) {
       mermaid.initialize({ startOnLoad: false, securityLevel: "strict",
@@ -105,7 +158,8 @@ try {
         fixture.expectedGroupFlags[index]);
       // click-wrapped nodes sit inside an <a>: g.nodes > a > g.node.
       const nodeElements = [...document.querySelectorAll(
-        "g.nodes > g.node, g.nodes > a > g.node")];
+        "g.nodes > g.node, g.nodes > a > g.node, " +
+        "g.nodes > g.rough-node, g.nodes > a > g.rough-node")];
       const clusterElements = [...document.querySelectorAll("g.clusters > g[id]")];
       if (regularData.length !== regularIds.length || nodeElements.length !== regularIds.length ||
           groupData.length !== groupIds.length || clusterElements.length !== groupIds.length)
@@ -116,7 +170,10 @@ try {
       const origin = nodeCenters[0] ?? { x: 0, y: 0 };
       const nodes = nodeElements.map((element, index) => ({
         id: regularIds[index], center: relative(nodeCenters[index], origin),
-        bbox: bbox(element), shape: regularData[index].shape ?? "",
+        // updateNodeBounds consumes the first shape child, while the full
+        // node getBBox may additionally include a rough divider or label ink.
+        bbox: bbox(element.firstElementChild ?? element),
+        inkBBox: bbox(element), shape: regularData[index].shape ?? "",
       }));
       const clusters = clusterElements.map((element, index) => {
         const box = element.getBBox();
@@ -174,6 +231,16 @@ try {
           childTags: [...element.children].map((child) => child.tagName.toLowerCase()),
           foreignObjectCount: element.querySelectorAll("foreignObject").length,
           textCount: element.querySelectorAll("text").length,
+          rectCount: element.querySelectorAll("rect").length,
+          lineCount: element.querySelectorAll("line").length,
+          tree: svgTree(element),
+          paths: [...element.querySelectorAll("path")].map((path) => ({
+            classes: path.getAttribute("class") ?? "",
+            bbox: bbox(path),
+            strokeLinecap: getComputedStyle(path).strokeLinecap,
+            strokeLinejoin: getComputedStyle(path).strokeLinejoin,
+            strokeMiterlimit: getComputedStyle(path).strokeMiterlimit,
+          })),
         })),
         clusters: clusterElements.map((element, index) => ({
           id: groupIds[index], classes: element.getAttribute("class") ?? "",
@@ -282,6 +349,23 @@ try {
         themeCSS: "defs [id$=\"-barbEnd\"] { opacity: 0.5; } " +
           ".rough-node path:nth-of-type(2) { stroke: none; } " +
           "path.transition { stroke-width: 2px; }" },
+      // rectWithTitle is handDrawn's DOM exception: it remains `.node`,
+      // with a classless rough pair in child g #1 and the rough divider in
+      // child g #2. Lock all three path channels independently; a folded
+      // rect/line model or `.rough-node` class cannot satisfy this case.
+      { id: "state-theme-handdrawn-titled", look: "handDrawn",
+        source: "stateDiagram-v2\nDetailed : first row\nDetailed : second row",
+        themeCSS: ".rough-node path { display: none; } " +
+          ".node g:first-child path:first-child { " +
+          "stroke: rgb(0,128,0) !important; stroke-width: 3px !important; } " +
+          ".node g:first-child path + path { " +
+          "stroke: rgb(255,0,255) !important; stroke-width: 2px !important; } " +
+          ".node g:first-child + g path { " +
+          "stroke: rgb(0,0,255) !important; stroke-width: 5px !important; }" },
+      { id: "state-theme-handdrawn-titled-style", look: "handDrawn",
+        source: "stateDiagram-v2\nDetailed : first row\nDetailed : second row\n" +
+          "style Detailed fill:#ff0000,stroke:#0000ff,stroke-width:3px",
+        themeCSS: "" },
       // The label <p> carries the TEXT: its own font-size/color restyle the
       // glyphs AND feed the label-box measurement (the fo renders at the p's
       // computed font), so the edge-label chip, the node boxes, and the
@@ -353,6 +437,8 @@ try {
             const roughPaths = g.querySelectorAll("path");
             const strokeShape = roughPaths.length > 1 ? roughPaths[1] : null;
             const ss = strokeShape ? getComputedStyle(strokeShape) : null;
+            const dividerShape = g.children[1]?.querySelector(":scope > path") ?? null;
+            const ds = dividerShape ? getComputedStyle(dividerShape) : null;
             // rectWithTitle descriptions: the second foreignObject inside
             // g.label (visibility/display gate the description rows).
             // querySelector lowercases tags inside inline SVG in HTML.
@@ -394,7 +480,13 @@ try {
                                   display: ss.display,
                                   visibility: ss.visibility, opacity: ss.opacity,
                                   fillOpacity: ss.fillOpacity,
-                                  strokeOpacity: ss.strokeOpacity } : null };
+                                  strokeOpacity: ss.strokeOpacity } : null,
+              dividerShape: ds ? { stroke: ds.stroke,
+                                   strokeWidth: ds.strokeWidth,
+                                   display: ds.display,
+                                   visibility: ds.visibility,
+                                   opacity: ds.opacity,
+                                   strokeOpacity: ds.strokeOpacity } : null };
           }),
         clusters: [...svgElement.querySelectorAll("g.clusters > g")].map((g) => ({
           classes: g.getAttribute("class") ?? "",

@@ -50,6 +50,19 @@ const cases = [
     `%%{init: ${JSON.stringify({ look: "neo", handDrawnSeed: 42,
       themeCSS: ".node rect { visibility: hidden; }" })}}%%\n` +
     "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : start\nActive --> [*]" },
+  // handDrawn ink bounds are part of the SVG getBBox and therefore the root
+  // client size. These cases separate node/edge/note, cluster, and titled
+  // state shape dispatch so a geometry fix cannot hide behind one composite.
+  { id: "handdrawn-basic", dpr: 1, theme: "default", look: "handDrawn", source:
+    `%%{init: ${JSON.stringify({ look: "handDrawn", handDrawnSeed: 42 })}}%%\n` +
+    "stateDiagram-v2\n[*] --> Idle\nIdle --> Active : go\n" +
+    "note right of Idle : Ink note\nActive --> [*]" },
+  { id: "handdrawn-compound", dpr: 1, theme: "default", look: "handDrawn", source:
+    `%%{init: ${JSON.stringify({ look: "handDrawn", handDrawnSeed: 42 })}}%%\n` +
+    "stateDiagram-v2\nstate Running {\n  A --> B\n}" },
+  { id: "handdrawn-descriptions", dpr: 1, theme: "default", look: "handDrawn", source:
+    `%%{init: ${JSON.stringify({ look: "handDrawn", handDrawnSeed: 42 })}}%%\n` +
+    "stateDiagram-v2\nDetailed : first row\nDetailed : second row" },
 ];
 
 const notoDir = path.resolve("third_party", "noto", "fonts");

@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   if (root.value(QStringLiteral("fixtureSha256")).toString() !=
-      QLatin1String("78a66011d7c9d143eaecb609b6fc3ee374126b5914d052ef7a78e191ee983461"))
+      QLatin1String("3fac5a6ee8b817fffd5c0baec4df20f9aa44e74f23a286d98ee2b421fc4ca316"))
     fail(QStringLiteral("State layout fixture drifted"));
   for (const QJsonValue& value : root.value(QStringLiteral("cases")).toArray()) {
     const QJsonObject fixture = value.toObject();
@@ -71,10 +71,17 @@ int main(int argc, char** argv) {
         muffin::mermaid::preprocessDiagram(
             fixture.value(QStringLiteral("source")).toString());
     const StateDiagram diagram = StateDiagram::parse(pre.code);
-    const StateLayoutInput input = buildStateLayoutInput(diagram.data());
+    const QString look = pre.config.value(QStringLiteral("look"))
+                             .toString(QStringLiteral("classic"));
+    const bool handDrawn = look == QLatin1String("handDrawn");
+    const quint32 handDrawnSeed = static_cast<quint32>(
+        pre.config.value(QStringLiteral("handDrawnSeed")).toInt());
+    const StateLayoutInput input = buildStateLayoutInput(diagram.data(), look);
     const StateLayoutMeasurements measurements = measureStateLayoutInput(
-        input, muffin::mermaid::MermaidFontRegistry::cssFamilyStack(), 16.0);
-    const StatePlacementResult placed = layoutStateDiagramDagre(input, measurements);
+        input, muffin::mermaid::MermaidFontRegistry::cssFamilyStack(), 16.0,
+        handDrawn, handDrawnSeed);
+    const StatePlacementResult placed = layoutStateDiagramDagre(
+        input, measurements, 50.0, 50.0, handDrawn, handDrawnSeed);
     const QJsonObject geometry = fixture.value(QStringLiteral("geometry")).toObject();
     const QJsonArray expectedNodes = geometry.value(QStringLiteral("nodes")).toArray();
     QPointF origin;
@@ -93,8 +100,12 @@ int main(int argc, char** argv) {
       const QPointF expectedCenter = point(expected.value(QStringLiteral("center")).toObject());
       const QSizeF expectedSize = size(expected.value(QStringLiteral("bbox")).toObject());
       requireNear(actual->center - origin, expectedCenter, 0.02, id + QLatin1Char('/') + nodeId);
-      requireNear(actual->paintedSize, expectedSize, 0.02,
-                  id + QLatin1Char('/') + nodeId + QStringLiteral(" painted bbox"));
+      // In handDrawn mode updateNodeBounds consumes the rough SVG group's
+      // asymmetric ink getBBox, so Dagre sees the rough size. paintedSize is
+      // deliberately the underlying logical box used to regenerate paths.
+      requireNear(handDrawn ? actual->size : actual->paintedSize,
+                  expectedSize, 0.02,
+                  id + QLatin1Char('/') + nodeId + QStringLiteral(" rendered bbox"));
     }
     for (const QJsonValue& clusterValue : geometry.value(QStringLiteral("clusters")).toArray()) {
       const QJsonObject expected = clusterValue.toObject();

@@ -361,16 +361,18 @@ StateCssModel resolveStateCss(const state::StateLayoutInput& input,
     const QString base = QStringLiteral("node!") + node.id + QLatin1Char('!');
     const QString shape = node.shape.isEmpty()
         ? QStringLiteral("rect") : node.shape;
-    // Under handDrawn the node class token is REPLACED by "rough-node"
-    // (browser-verified: class="rough-node  statediagram-state" — `.node`
-    // selectors stop matching), and plain rects become the rough pair
-    // g.basic.label-container > [hachure fill path (stroke = fill color at
-    // fillWeight 4), stroke path at 1.3px].
+    // Under handDrawn the node class token is normally replaced by
+    // "rough-node", and plain rects become a hachure + outline path pair.
     const bool roughLook = look == QLatin1String("handDrawn");
+    // rectWithTitle is the handDrawn exception: it keeps the `node` class
+    // while its rect and divider become classless rough path groups.
+    const bool roughTitled = roughLook &&
+        shape == QLatin1String("rectWithTitle");
     QStringList classes = node.cssClasses.split(
         QLatin1Char(' '), Qt::SkipEmptyParts);
-    classes.prepend(roughLook ? QStringLiteral("rough-node")
-                              : QStringLiteral("node"));
+    classes.prepend(roughLook && !roughTitled
+                        ? QStringLiteral("rough-node")
+                        : QStringLiteral("node"));
     if (shape == QLatin1String("stateStart") ||
         shape == QLatin1String("stateEnd"))
       classes = {roughLook ? QStringLiteral("rough-node")
@@ -406,6 +408,18 @@ StateCssModel resolveStateCss(const state::StateLayoutInput& input,
     // The classDef/inline `style` cascade rides the shape element as an
     // inline author style (upstream writes nodeStyles straight onto it).
     const QString inlineStyle = node.styles.join(QLatin1Char(';'));
+    const auto nodeStyleValue = [&](QLatin1StringView key,
+                                    const QString& fallback) {
+      QString value = fallback;
+      for (const QString& declaration : node.styles) {
+        const int colon = declaration.indexOf(QLatin1Char(':'));
+        if (colon < 0 || declaration.left(colon).trimmed() != key) continue;
+        value = declaration.mid(colon + 1).trimmed();
+        value.remove(QStringLiteral("!important"), Qt::CaseInsensitive);
+        value = value.trimmed();
+      }
+      return value;
+    };
     // Rough-drawn shapes (note/choice/fork/stateEnd) are rough.js output at
     // roughness 0: a FILL path (fill attr, stroke none) plus a separate
     // STROKE path (stroke attr at userNodeOverrides' 1.3px default, fill
@@ -510,6 +524,62 @@ StateCssModel resolveStateCss(const state::StateLayoutInput& input,
                   {QStringLiteral("label"), QStringLiteral("noteLabel")},
                   rootFallback,
                   {QStringLiteral("markdown-node-label")});
+    } else if (roughTitled) {
+      // Browser DOM (11.16): g.node > [classless g with hachure+outline,
+      // classless g with divider path, empty classless g, g.label with two
+      // foreignObjects]. There is no rect/line and no rough-node class.
+      ElementStyle titledFillFallback = shapeFallback;
+      titledFillFallback.fill = nodeStyleValue(QLatin1String("fill"),
+                                               shapeFallback.fill);
+      ElementStyle titledStrokeFallback = shapeFallback;
+      titledStrokeFallback.stroke = nodeStyleValue(QLatin1String("stroke"),
+                                                    shapeFallback.stroke);
+      const QString titledStrokeWidth = nodeStyleValue(
+          QLatin1String("stroke-width"), QStringLiteral("1.3px"));
+      const qreal titledStrokePx = cssStrokeWidthPx(titledStrokeWidth, {}, 1.3);
+      appendRoughShape(QString(), QString(),
+                       QStringLiteral("fill:none;stroke:%1;stroke-width:%2")
+                           .arg(titledStrokeFallback.stroke,
+                                titledStrokeWidth),
+                       titledStrokePx, titledFillFallback,
+                       titledStrokeFallback);
+      elements.append({base + QStringLiteral("divider-g"),
+                       base + QStringLiteral("g"), QStringLiteral("g"), {},
+                       {}, {}, rootFallback, {}});
+      ElementStyle dividerFallback = titledStrokeFallback;
+      dividerFallback.fill = QStringLiteral("none");
+      dividerFallback.strokeWidth = titledStrokeWidth;
+      elements.append({base + QStringLiteral("divider-line"),
+                       base + QStringLiteral("divider-g"),
+                       QStringLiteral("path"), {}, {}, {}, dividerFallback,
+                       {}, QStringLiteral("fill:none;stroke:%1;stroke-width:%2")
+                               .arg(titledStrokeFallback.stroke,
+                                    titledStrokeWidth)});
+      elements.append({base + QStringLiteral("label-placeholder"),
+                       base + QStringLiteral("g"), QStringLiteral("g"), {},
+                       {}, {}, rootFallback, {}});
+      ElementStyle labelFallback = rootFallback;
+      labelFallback.color = labelColor;
+      appendLabel(base + QStringLiteral("g"), base + QStringLiteral("label"),
+                  QStringLiteral("nodeLabel"),
+                  {QStringLiteral("label")}, labelFallback, {}, false,
+                  /*backgroundRect=*/false);
+      if (node.description.isArray() && !node.description.toArray().isEmpty()) {
+        elements.append({base + QStringLiteral("desc"),
+                         base + QStringLiteral("label-lg"),
+                         QStringLiteral("foreignObject"), {}, {}, {},
+                         labelFallback, {}});
+        elements.append({base + QStringLiteral("desc-div"),
+                         base + QStringLiteral("desc"), QStringLiteral("div"),
+                         {}, {}, {}, labelFallback, {}});
+        elements.append({base + QStringLiteral("desc-span"),
+                         base + QStringLiteral("desc-div"),
+                         QStringLiteral("span"), {},
+                         {QStringLiteral("nodeLabel")}, {}, labelFallback, {}});
+        elements.append({base + QStringLiteral("desc-p"),
+                         base + QStringLiteral("desc-span"),
+                         QStringLiteral("p"), {}, {}, {}, labelFallback, {}});
+      }
     } else if (roughLook && shape == QLatin1String("rect")) {
       // handDrawn plain rect: the rough pair replaces the rect element —
       // the hachure fill path carries fill:none;stroke:<fill>;width 4 and

@@ -21,6 +21,12 @@
               "width": 14,
               "height": 14
             },
+            "inkBBox": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
             "shape": "stateStart"
           },
           {
@@ -30,6 +36,12 @@
               "y": 77
             },
             "bbox": {
+              "x": -22.211,
+              "y": -20,
+              "width": 44.422,
+              "height": 40
+            },
+            "inkBBox": {
               "x": -22.211,
               "y": -20,
               "width": 44.422,
@@ -49,6 +61,12 @@
               "width": 60.969,
               "height": 40
             },
+            "inkBBox": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -58,6 +76,12 @@
               "y": 268
             },
             "bbox": {
+              "x": -7,
+              "y": -7,
+              "width": 14.013,
+              "height": 14
+            },
+            "inkBBox": {
               "x": -7,
               "y": -7,
               "width": 14.013,
@@ -140,7 +164,29 @@
               "circle"
             ],
             "foreignObjectCount": 0,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node default",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "circle",
+                  "classes": "state-start",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Idle",
@@ -150,7 +196,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Active",
@@ -160,7 +256,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "root_end",
@@ -169,7 +315,125 @@
               "g"
             ],
             "foreignObjectCount": 0,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node default",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "outer-path",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#ECECFF",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#333333",
+                      "strokeWidth": "2",
+                      "children": []
+                    },
+                    {
+                      "tag": "g",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": [
+                        {
+                          "tag": "path",
+                          "classes": "",
+                          "style": "",
+                          "fill": "#9370DB",
+                          "stroke": "none",
+                          "strokeWidth": "0",
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "classes": "",
+                          "style": "",
+                          "fill": "none",
+                          "stroke": "#9370DB",
+                          "strokeWidth": "2",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -7,
+                  "y": -7,
+                  "width": 14.013,
+                  "height": 14
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -7,
+                  "y": -7,
+                  "width": 14.013,
+                  "height": 14
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -2.5,
+                  "y": -2.5,
+                  "width": 5.005,
+                  "height": 5
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -2.5,
+                  "y": -2.5,
+                  "width": 5.005,
+                  "height": 5
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
           }
         ],
         "clusters": [],
@@ -227,6 +491,12 @@
               "width": 150.203,
               "height": 89
             },
+            "inkBBox": {
+              "x": -75.102,
+              "y": -44.5,
+              "width": 150.203,
+              "height": 89
+            },
             "shape": "rectWithTitle"
           }
         ],
@@ -262,7 +532,76 @@
               "g"
             ],
             "foreignObjectCount": 2,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 1,
+            "lineCount": 1,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "outer title-state",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "line",
+                      "classes": "divider",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           }
         ],
         "clusters": [],
@@ -286,6 +625,12 @@
               "width": 14,
               "height": 14
             },
+            "inkBBox": {
+              "x": -7,
+              "y": -7,
+              "width": 14,
+              "height": 14
+            },
             "shape": "stateStart"
           },
           {
@@ -295,6 +640,12 @@
               "y": 0
             },
             "bbox": {
+              "x": -40.422,
+              "y": -20,
+              "width": 80.844,
+              "height": 40
+            },
+            "inkBBox": {
               "x": -40.422,
               "y": -20,
               "width": 80.844,
@@ -314,6 +665,12 @@
               "width": 61.953,
               "height": 40
             },
+            "inkBBox": {
+              "x": -30.977,
+              "y": -20,
+              "width": 61.953,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -328,6 +685,12 @@
               "width": 73.297,
               "height": 40
             },
+            "inkBBox": {
+              "x": -36.648,
+              "y": -20,
+              "width": 73.297,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -337,6 +700,12 @@
               "y": 70
             },
             "bbox": {
+              "x": -28.141,
+              "y": -20,
+              "width": 56.281,
+              "height": 40
+            },
+            "inkBBox": {
               "x": -28.141,
               "y": -20,
               "width": 56.281,
@@ -459,7 +828,29 @@
               "circle"
             ],
             "foreignObjectCount": 0,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node default",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "circle",
+                  "classes": "state-start",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Warmup",
@@ -469,7 +860,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Ready",
@@ -479,7 +920,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Waiting",
@@ -489,7 +980,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Done",
@@ -499,7 +1040,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           }
         ],
         "clusters": [
@@ -627,6 +1218,12 @@
               "width": 70,
               "height": 10
             },
+            "inkBBox": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
             "shape": "fork"
           },
           {
@@ -636,6 +1233,12 @@
               "y": 154
             },
             "bbox": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "inkBBox": {
               "x": -35,
               "y": -5,
               "width": 70,
@@ -655,6 +1258,12 @@
               "width": 28,
               "height": 28
             },
+            "inkBBox": {
+              "x": -14,
+              "y": -14,
+              "width": 28,
+              "height": 28
+            },
             "shape": "choice"
           },
           {
@@ -669,6 +1278,12 @@
               "width": 26.234,
               "height": 40
             },
+            "inkBBox": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -678,6 +1293,12 @@
               "y": 77
             },
             "bbox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "inkBBox": {
               "x": -13.203,
               "y": -20,
               "width": 26.406,
@@ -770,7 +1391,73 @@
               "g"
             ],
             "foreignObjectCount": 0,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#333333",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#333333",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -35,
+                  "y": -5,
+                  "width": 70,
+                  "height": 10
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -35,
+                  "y": -5,
+                  "width": 70,
+                  "height": 10
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
           },
           {
             "id": "join_state",
@@ -779,7 +1466,73 @@
               "g"
             ],
             "foreignObjectCount": 0,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#333333",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#333333",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -35,
+                  "y": -5,
+                  "width": 70,
+                  "height": 10
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -35,
+                  "y": -5,
+                  "width": 70,
+                  "height": 10
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
           },
           {
             "id": "choice_state",
@@ -788,7 +1541,73 @@
               "g"
             ],
             "foreignObjectCount": 0,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#ECECFF",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#9370DB",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -14,
+                  "y": -14,
+                  "width": 28,
+                  "height": 28
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -14,
+                  "y": -14,
+                  "width": 28,
+                  "height": 28
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
           },
           {
             "id": "A",
@@ -798,7 +1617,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "B",
@@ -808,7 +1677,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           }
         ],
         "clusters": [],
@@ -877,6 +1796,12 @@
               "width": 26.234,
               "height": 40
             },
+            "inkBBox": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -891,6 +1816,12 @@
               "width": 26.406,
               "height": 40
             },
+            "inkBBox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -900,6 +1831,12 @@
               "y": 205
             },
             "bbox": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "inkBBox": {
               "x": -13.062,
               "y": -20,
               "width": 26.125,
@@ -982,7 +1919,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "B",
@@ -992,7 +1979,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "C",
@@ -1002,7 +2039,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           }
         ],
         "clusters": [
@@ -1081,6 +2168,12 @@
               "width": 26.234,
               "height": 40
             },
+            "inkBBox": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -1095,6 +2188,12 @@
               "width": 26.406,
               "height": 40
             },
+            "inkBBox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -1104,6 +2203,12 @@
               "y": 205
             },
             "bbox": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
+            "inkBBox": {
               "x": -13.062,
               "y": -20,
               "width": 26.125,
@@ -1186,7 +2291,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "B",
@@ -1196,7 +2351,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "C",
@@ -1206,7 +2411,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           }
         ],
         "clusters": [
@@ -1285,6 +2540,12 @@
               "width": 26.406,
               "height": 40
             },
+            "inkBBox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -1299,6 +2560,12 @@
               "width": 26.125,
               "height": 40
             },
+            "inkBBox": {
+              "x": -13.062,
+              "y": -20,
+              "width": 26.125,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -1308,6 +2575,12 @@
               "y": 121.992
             },
             "bbox": {
+              "x": -61.016,
+              "y": -27,
+              "width": 122.031,
+              "height": 54
+            },
+            "inkBBox": {
               "x": -61.016,
               "y": -27,
               "width": 122.031,
@@ -1404,7 +2677,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "C",
@@ -1414,7 +2737,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "B----note-1",
@@ -1424,7 +2797,101 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 1,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node statediagram-note",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "basic label-container outer-path",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#fff5ad",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#aaaa33",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "label noteLabel",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -61.016,
+                  "y": -27,
+                  "width": 122.031,
+                  "height": 54
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -61.016,
+                  "y": -27,
+                  "width": 122.031,
+                  "height": 54
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
           }
         ],
         "clusters": [
@@ -1522,6 +2989,12 @@
               "width": 56.984,
               "height": 40
             },
+            "inkBBox": {
+              "x": -28.492,
+              "y": -20,
+              "width": 56.984,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -1531,6 +3004,12 @@
               "y": 90
             },
             "bbox": {
+              "x": -26.359,
+              "y": -20,
+              "width": 52.719,
+              "height": 40
+            },
+            "inkBBox": {
               "x": -26.359,
               "y": -20,
               "width": 52.719,
@@ -1591,7 +3070,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Docs",
@@ -1601,7 +3130,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           }
         ],
         "clusters": [],
@@ -1637,6 +3216,12 @@
               "width": 60.969,
               "height": 40
             },
+            "inkBBox": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -1651,6 +3236,12 @@
               "width": 56.281,
               "height": 40
             },
+            "inkBBox": {
+              "x": -28.141,
+              "y": -20,
+              "width": 56.281,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -1660,6 +3251,12 @@
               "y": 122
             },
             "bbox": {
+              "x": -55.508,
+              "y": -27,
+              "width": 111.016,
+              "height": 54
+            },
+            "inkBBox": {
               "x": -55.508,
               "y": -27,
               "width": 111.016,
@@ -1742,7 +3339,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Done",
@@ -1752,7 +3399,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "Active----note-1",
@@ -1762,7 +3459,101 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 1,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node statediagram-note",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "basic label-container outer-path",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#fff5ad",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#aaaa33",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "label noteLabel",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -55.508,
+                  "y": -27,
+                  "width": 111.016,
+                  "height": 54
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -55.508,
+                  "y": -27,
+                  "width": 111.016,
+                  "height": 54
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
           }
         ],
         "clusters": [
@@ -1813,6 +3604,2038 @@
       }
     },
     {
+      "id": "renderable-left-note",
+      "source": "stateDiagram-v2\nActive --> Done\nnote left of Active : Left note",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "Active",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
+            "inkBBox": {
+              "x": -30.484,
+              "y": -20,
+              "width": 60.969,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Done",
+            "center": {
+              "x": 0,
+              "y": 90
+            },
+            "bbox": {
+              "x": -28.141,
+              "y": -20,
+              "width": 56.281,
+              "height": 40
+            },
+            "inkBBox": {
+              "x": -28.141,
+              "y": -20,
+              "width": 56.281,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Active----note-1",
+            "center": {
+              "x": 0,
+              "y": -122
+            },
+            "bbox": {
+              "x": -48.609,
+              "y": -27,
+              "width": 97.219,
+              "height": 54
+            },
+            "inkBBox": {
+              "x": -48.609,
+              "y": -27,
+              "width": 97.219,
+              "height": 54
+            },
+            "shape": "note"
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Active----parent",
+            "center": {
+              "x": 0,
+              "y": -122
+            },
+            "bbox": {
+              "x": 8,
+              "y": 8,
+              "width": 167.219,
+              "height": 104
+            },
+            "shape": "noteGroup"
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M91.609,202L91.609,206.167C91.609,210.333,91.609,218.667,91.609,227C91.609,235.333,91.609,243.667,91.609,247.833L91.609,252",
+            "start": {
+              "x": 0,
+              "y": 20
+            },
+            "end": {
+              "x": 0,
+              "y": 70
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "Active----note-1-Active",
+            "path": "M91.609,87L91.609,91.167C91.609,95.333,91.609,103.667,91.609,112C91.609,120.333,91.609,128.667,91.609,137C91.609,145.333,91.609,153.667,91.609,157.833L91.609,162",
+            "start": {
+              "x": 0,
+              "y": -95
+            },
+            "end": {
+              "x": 0,
+              "y": -20
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "0 0 183.21875 300"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "0 0 183.21875 300"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
+          }
+        ],
+        "anchors": [],
+        "nodes": [
+          {
+            "id": "Active",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
+          },
+          {
+            "id": "Done",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
+          },
+          {
+            "id": "Active----note-1",
+            "classes": "node statediagram-note",
+            "childTags": [
+              "g",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 1,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node statediagram-note",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "basic label-container outer-path",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#fff5ad",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#aaaa33",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "label noteLabel",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -48.609,
+                  "y": -27,
+                  "width": 97.219,
+                  "height": 54
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -48.609,
+                  "y": -27,
+                  "width": 97.219,
+                  "height": 54
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Active----parent",
+            "classes": "note-cluster",
+            "childTags": [
+              "rect"
+            ],
+            "rects": [
+              {
+                "class": "",
+                "computed": {
+                  "fill": "none",
+                  "stroke": "none",
+                  "strokeWidth": "1px",
+                  "dasharray": "none",
+                  "rx": "auto"
+                }
+              }
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
+          },
+          {
+            "id": "Active----note-1-Active",
+            "classes": "edge-thickness-normal edge-pattern-solid transition note-edge",
+            "markerEnd": "",
+            "pathCommands": "MLCCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "5px"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "fork-join-note-zigzag",
+      "source": "stateDiagram-v2\nstate fork_state <<fork>>\nstate join_state <<join>>\nA --> fork_state\nfork_state --> B\nB --> join_state\nnote right of B : Branch note",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "fork_state",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "inkBBox": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "shape": "fork"
+          },
+          {
+            "id": "join_state",
+            "center": {
+              "x": -83.914,
+              "y": 199
+            },
+            "bbox": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "inkBBox": {
+              "x": -35,
+              "y": -5,
+              "width": 70,
+              "height": 10
+            },
+            "shape": "join"
+          },
+          {
+            "id": "A",
+            "center": {
+              "x": 0,
+              "y": -77
+            },
+            "bbox": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "inkBBox": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "B",
+            "center": {
+              "x": 0,
+              "y": 77
+            },
+            "bbox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "inkBBox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "B----note-3",
+            "center": {
+              "x": 83.914,
+              "y": 199
+            },
+            "bbox": {
+              "x": -60.828,
+              "y": -27,
+              "width": 121.656,
+              "height": 54
+            },
+            "inkBBox": {
+              "x": -60.828,
+              "y": -27,
+              "width": 121.656,
+              "height": 54
+            },
+            "shape": "note"
+          }
+        ],
+        "clusters": [
+          {
+            "id": "B----parent",
+            "center": {
+              "x": 83.914,
+              "y": 199
+            },
+            "bbox": {
+              "x": 117,
+              "y": 252,
+              "width": 191.656,
+              "height": 104
+            },
+            "shape": "noteGroup"
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M128.914,48L128.914,52.167C128.914,56.333,128.914,64.667,128.914,73C128.914,81.333,128.914,89.667,128.914,93.833L128.914,98",
+            "start": {
+              "x": 0,
+              "y": -57
+            },
+            "end": {
+              "x": 0,
+              "y": -7
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge1",
+            "path": "M128.914,112L128.914,116.167C128.914,120.333,128.914,128.667,128.914,137C128.914,145.333,128.914,153.667,128.914,157.833L128.914,162",
+            "start": {
+              "x": 0,
+              "y": 7
+            },
+            "end": {
+              "x": 0,
+              "y": 57
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge2",
+            "path": "M115.711,189.08L103.926,195.4C92.141,201.72,68.57,214.36,56.785,224.847C45,235.333,45,243.667,45,255.333C45,267,45,282,45,289.5L45,297",
+            "start": {
+              "x": -13.203,
+              "y": 84.08
+            },
+            "end": {
+              "x": -83.914,
+              "y": 192
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "B-B----note-3",
+            "path": "M142.117,189.08L153.902,195.4C165.688,201.72,189.258,214.36,201.043,224.847C212.828,235.333,212.828,243.667,212.828,252C212.828,260.333,212.828,268.667,212.828,272.833L212.828,277",
+            "start": {
+              "x": 13.203,
+              "y": 84.08
+            },
+            "end": {
+              "x": 83.914,
+              "y": 172
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "2 0 314.65625 364"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "2 0 314.65625 364"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
+          }
+        ],
+        "anchors": [],
+        "nodes": [
+          {
+            "id": "fork_state",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "g"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#333333",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#333333",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -35,
+                  "y": -5,
+                  "width": 70,
+                  "height": 10
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -35,
+                  "y": -5,
+                  "width": 70,
+                  "height": 10
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          },
+          {
+            "id": "join_state",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "g"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#333333",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#333333",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -35,
+                  "y": -5,
+                  "width": 70,
+                  "height": 10
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -35,
+                  "y": -5,
+                  "width": 70,
+                  "height": 10
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          },
+          {
+            "id": "A",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
+          },
+          {
+            "id": "B",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "rect",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
+          },
+          {
+            "id": "B----note-3",
+            "classes": "node statediagram-note",
+            "childTags": [
+              "g",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 1,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node statediagram-note",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "basic label-container outer-path",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "#fff5ad",
+                      "stroke": "none",
+                      "strokeWidth": "0",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#aaaa33",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "label noteLabel",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -60.828,
+                  "y": -27,
+                  "width": 121.656,
+                  "height": 54
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -60.828,
+                  "y": -27,
+                  "width": 121.656,
+                  "height": 54
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          }
+        ],
+        "clusters": [
+          {
+            "id": "B----parent",
+            "classes": "note-cluster",
+            "childTags": [
+              "rect"
+            ],
+            "rects": [
+              {
+                "class": "",
+                "computed": {
+                  "fill": "none",
+                  "stroke": "none",
+                  "strokeWidth": "1px",
+                  "dasharray": "none",
+                  "rx": "auto"
+                }
+              }
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
+          },
+          {
+            "id": "edge1",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
+          },
+          {
+            "id": "edge2",
+            "classes": "edge-thickness-normal edge-pattern-solid transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MLCCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
+          },
+          {
+            "id": "B-B----note-3",
+            "classes": "edge-thickness-normal edge-pattern-solid transition note-edge",
+            "markerEnd": "",
+            "pathCommands": "MLCCCL",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "5px"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "handdrawn-rect-with-title",
+      "source": "%%{init: {\"look\":\"handDrawn\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\nDetailed : first row\nDetailed : second row",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "Detailed",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -48.214,
+              "y": -33.928,
+              "width": 96.525,
+              "height": 68.149
+            },
+            "inkBBox": {
+              "x": -48.482,
+              "y": -33.928,
+              "width": 96.793,
+              "height": 68.149
+            },
+            "shape": "rectWithTitle"
+          }
+        ],
+        "clusters": [],
+        "edges": [],
+        "viewBox": "-0.21985244750976562 0.14686965942382812 112.79341888427734 84.14906311035156"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "-0.21985244750976562 0.14686965942382812 112.79341888427734 84.14906311035156"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
+          }
+        ],
+        "anchors": [],
+        "nodes": [
+          {
+            "id": "Detailed",
+            "classes": "node  statediagram-state",
+            "childTags": [
+              "g",
+              "g",
+              "g",
+              "g"
+            ],
+            "foreignObjectCount": 2,
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#ECECFF",
+                      "strokeWidth": "4",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#9370DB",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#9370DB",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -47.659,
+                  "y": -33.527,
+                  "width": 95.774,
+                  "height": 67.748
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -48.214,
+                  "y": -33.928,
+                  "width": 96.525,
+                  "height": 67.776
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -48.482,
+                  "y": -5.565,
+                  "width": 96.037,
+                  "height": 1.498
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          }
+        ],
+        "clusters": [],
+        "edges": []
+      }
+    },
+    {
+      "id": "handdrawn-basic-ink",
+      "source": "%%{init: {\"look\":\"handDrawn\",\"handDrawnSeed\":42}}%%\nstateDiagram-v2\n[*] --> Idle\nIdle --> Active : go\nnote right of Idle : Ink note\nActive --> [*]",
+      "geometry": {
+        "nodes": [
+          {
+            "id": "root_start",
+            "center": {
+              "x": 0,
+              "y": 0
+            },
+            "bbox": {
+              "x": -6.415,
+              "y": -7.955,
+              "width": 12.755,
+              "height": 15.405
+            },
+            "inkBBox": {
+              "x": -6.415,
+              "y": -7.955,
+              "width": 12.755,
+              "height": 15.405
+            },
+            "shape": "stateStart"
+          },
+          {
+            "id": "Idle",
+            "center": {
+              "x": 0,
+              "y": 79.093
+            },
+            "bbox": {
+              "x": -23.339,
+              "y": -21.431,
+              "width": 46.775,
+              "height": 42.78
+            },
+            "inkBBox": {
+              "x": -23.339,
+              "y": -21.431,
+              "width": 46.775,
+              "height": 42.78
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Active",
+            "center": {
+              "x": 74.792,
+              "y": 227.825
+            },
+            "bbox": {
+              "x": -31.612,
+              "y": -21.431,
+              "width": 63.605,
+              "height": 42.78
+            },
+            "inkBBox": {
+              "x": -31.612,
+              "y": -21.431,
+              "width": 63.605,
+              "height": 42.78
+            },
+            "shape": "rect"
+          },
+          {
+            "id": "Idle----note-2",
+            "center": {
+              "x": -74.792,
+              "y": 227.825
+            },
+            "bbox": {
+              "x": -47.592,
+              "y": -28.291,
+              "width": 95.565,
+              "height": 56.684
+            },
+            "inkBBox": {
+              "x": -47.592,
+              "y": -28.291,
+              "width": 95.565,
+              "height": 56.684
+            },
+            "shape": "note"
+          },
+          {
+            "id": "root_end",
+            "center": {
+              "x": 74.792,
+              "y": 338.883
+            },
+            "bbox": {
+              "x": -6.368,
+              "y": -7.474,
+              "width": 13.529,
+              "height": 15.433
+            },
+            "inkBBox": {
+              "x": -6.368,
+              "y": -7.474,
+              "width": 13.529,
+              "height": 15.433
+            },
+            "shape": "stateEnd"
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Idle----parent",
+            "center": {
+              "x": -74.792,
+              "y": 227.825
+            },
+            "bbox": {
+              "x": 8,
+              "y": 190.185,
+              "width": 165.565,
+              "height": 106.684
+            },
+            "shape": "noteGroup"
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "path": "M165.44369336540632 21.980161528448534 C165.61441858025452 22.882945675865933, 165.4764905345454 23.924599769038334, 165.61903518775156 26.36782795633979 M165.558942970458 22.08744697852101 C165.53151988667696 23.32799158161979, 165.6086261039552 24.635114079883063, 165.61609010740014 26.50869431295719 M165.575 26.468 C165.92320000566542 30.417473475560545, 165.73213878311216 39.6761996074766, 165.7855811897665 47.94861121998727 M166.0762525025755 26.82755182276666 C166.08804698659105 30.66608973758295, 165.72772286666557 39.75549681382254, 165.94994228495284 48.323036958981305 M165.575 48.184 C165.07421329654753 57.26403764592111, 165.66720625795423 65.16027770911157, 165.27647828496993 68.89729378329218 M165.6282965246588 48.060541804894804 C165.95372894896192 56.12409534196928, 165.93225219918415 65.5129068180807, 165.28688368869945 69.21653721134737 M165.52070725985277 69.30474035327505 C165.6809503860068 70.76344121955503, 165.54647172287105 72.44916297523167, 165.69538768035758 73.31867854088259 M165.60223865123604 69.28633381554121 C165.54660863357608 70.48984846305983, 165.60349754637602 71.79728803972046, 165.51808242882046 73.37226159373337",
+            "start": {
+              "x": -0.131,
+              "y": 6.278
+            },
+            "end": {
+              "x": -0.057,
+              "y": 57.67
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge1",
+            "path": "M188.63777271121995 112.80671473890789 C190.77386165563192 114.21845598956628, 192.1472516772064 115.96160460655615, 197.6390687059925 119.49388852968491 M188.92322909124155 113.07244507432155 C191.40518990468996 114.92673251425583, 194.13868031755084 116.92361676324671, 197.63177417361115 119.842793848786 M197.53 119.742 C206.44520000566544 125.99347347556055, 223.38913878311217 139.85419960747657, 232.01058118976653 152.42761121998728 M198.0312525025755 120.10155182276667 C206.61004698659107 126.24208973758294, 223.38472286666558 139.93349681382253, 232.17494228495286 152.80203695898132 M231.8 152.663 C239.86621329654753 166.04403764592112, 240.45920625795424 177.94027770911157, 240.06847828496993 189.00229378329217 M231.85329652465882 152.5395418048948 C240.74572894896193 164.90409534196928, 240.72425219918415 178.2929068180807, 240.07888368869945 189.32153721134736 M240.367 189.344 C240.0864286290556 200.57535314379635, 240.68260419239104 212.01697090779246, 240.93483962883053 216.5987232795805 M239.79269004930555 189.2283700286001 C239.89042929435894 200.8914680003412, 240.6628444703929 211.9554303362854, 239.9364981385581 217.4766463389881 M240.28406664772842 216.8711524994993 C240.35790378835168 218.49610585353292, 240.29540770206717 220.61563525975544, 240.22242636555944 222.26159192045264 M240.43403727575506 216.87233797344078 C240.37408101403554 218.17872096911051, 240.39516315778184 219.36043898174609, 240.3408342059564 222.0714557228859",
+            "start": {
+              "x": 23.063,
+              "y": 97.104
+            },
+            "end": {
+              "x": 74.766,
+              "y": 206.369
+            },
+            "labelCenter": {
+              "x": 74.792,
+              "y": 137.482
+            }
+          },
+          {
+            "id": "Idle-Idle----note-2",
+            "path": "M141.86177271121997 112.80671473890789 C140.56782650520643 114.19334971822678, 138.5111813763554 115.93649833521665, 133.72906870599252 119.49388852968491 M142.14722909124157 113.07244507432155 C139.54417067704108 114.88211875585625, 137.19264186225305 116.87900300484714, 133.72177417361115 119.842793848786 M133.62 119.742 C125.40020000566543 125.99347347556055, 108.07513878311218 139.85419960747657, 99.56058118976652 152.42761121998728 M134.12125250257552 120.10155182276667 C125.56504698659107 126.24208973758294, 108.07072286666558 139.93349681382253, 99.72494228495285 152.80203695898132 M99.35 152.663 C90.28221329654754 166.04403764592112, 90.87520625795425 177.94027770911157, 90.48447828496992 187.84329378329218 M99.4032965246588 152.5395418048948 C91.16172894896195 164.90409534196928, 91.14025219918415 178.2929068180807, 90.49488368869946 188.16253721134737 M90.783 188.185 C90.50242862905561 198.25835314379634, 91.09860419239104 207.38197090779246, 91.35083962883056 210.8057232795805 M90.20869004930556 188.0693700286001 C90.30642929435894 198.5744680003412, 91.07884447039291 207.3204303362854, 90.35249813855812 211.6836463389881 M90.7181173059975 211.06527780524206 C90.7758836023048 212.33655586588134, 90.72698995057499 213.99476422387625, 90.66989319040765 215.28247416724992 M90.83544643958604 211.0662052577191 C90.78853981304641 212.0882506210919, 90.80503337376888 213.0127646568928, 90.76252925859427 215.13372160404558",
+            "start": {
+              "x": -23.713,
+              "y": 97.104
+            },
+            "end": {
+              "x": -74.812,
+              "y": 199.431
+            },
+            "labelCenter": null
+          },
+          {
+            "id": "edge3",
+            "path": "M240.2076246272001 264.79581957623446 C240.41484488569634 265.8915872082183, 240.24743267707126 267.15591029396035, 240.42044836143228 270.1214146981462 M240.34751054253857 264.9260388804929 C240.31422536837772 266.43176826884843, 240.40781418178335 268.0183075636867, 240.4168737265299 270.2923933251618 M240.367 270.243 C240.71520000566542 275.1304734755605, 240.52413878311216 286.2651996074766, 240.5775811897665 295.4756112199873 M240.8682525025755 270.60255182276666 C240.88004698659105 275.37908973758294, 240.51972286666557 286.34449681382256, 240.74194228495284 295.8500369589813 M240.367 295.711 C239.86621329654753 305.72803764592106, 240.45920625795424 313.6242777091116, 240.06847828496993 321.6862937832922 M240.4202965246588 295.58754180489484 C240.74572894896193 304.5880953419693, 240.72425219918415 313.9769068180807, 240.07888368869945 322.0055372113474 M240.367 322.028 C240.0864286290556 330.2593531437963, 240.68260419239104 339.70097090779245, 240.93483962883053 343.28272327958047 M239.79269004930555 321.9123700286001 C239.89042929435894 330.5754680003412, 240.6628444703929 339.6394303362854, 239.9364981385581 344.1606463389881 M240.29962541184472 343.54405515733964 C240.35961028890316 344.8641581074898, 240.30883882049625 346.58605185609423, 240.24954919387983 347.92321777424945 M240.42146070514863 343.54501822969104 C240.37275257590943 344.6063164154689, 240.3898795907163 345.5663374713678, 240.3457430563319 347.76875219853605",
+            "start": {
+              "x": 74.633,
+              "y": 249.093
+            },
+            "end": {
+              "x": 74.771,
+              "y": 332.066
+            },
+            "labelCenter": null
+          }
+        ],
+        "viewBox": "0 -0.25221872329711914 280.3594055175781 370.79736328125"
+      },
+      "structure": {
+        "root": {
+          "role": "graphics-document document",
+          "ariaRoledescription": "stateDiagram",
+          "viewBox": "0 -0.25221872329711914 280.3594055175781 370.79736328125"
+        },
+        "markers": [
+          {
+            "markerWidth": "20",
+            "markerHeight": "14",
+            "orient": "auto",
+            "refX": "19",
+            "refY": "7",
+            "viewBox": "",
+            "childTag": "path",
+            "childPathD": "M 19,7 L9,13 L14,7 L9,1 Z"
+          }
+        ],
+        "anchors": [],
+        "nodes": [
+          {
+            "id": "root_start",
+            "classes": "node default",
+            "childTags": [
+              "g"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node default",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "state-start",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#333333",
+                      "strokeWidth": "2",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#333333",
+                      "strokeWidth": "1",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -6.415,
+                  "y": -7.955,
+                  "width": 12.247,
+                  "height": 14.541
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -6.368,
+                  "y": -7.474,
+                  "width": 12.707,
+                  "height": 14.925
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          },
+          {
+            "id": "Idle",
+            "classes": "rough-node  statediagram-state",
+            "childTags": [
+              "g",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 1,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "rough-node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#ECECFF",
+                      "strokeWidth": "4",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#9370DB",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -22.559,
+                  "y": -21.281,
+                  "width": 45.717,
+                  "height": 42.025
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -23.339,
+                  "y": -21.431,
+                  "width": 46.775,
+                  "height": 42.78
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          },
+          {
+            "id": "Active",
+            "classes": "rough-node  statediagram-state",
+            "childTags": [
+              "g",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 1,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "rough-node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#ECECFF",
+                      "strokeWidth": "4",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#9370DB",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -30.949,
+                  "y": -20.849,
+                  "width": 62.941,
+                  "height": 41.27
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -31.612,
+                  "y": -21.431,
+                  "width": 63.322,
+                  "height": 42.78
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          },
+          {
+            "id": "Idle----note-2",
+            "classes": "rough-node statediagram-note",
+            "childTags": [
+              "g",
+              "g"
+            ],
+            "foreignObjectCount": 1,
+            "textCount": 0,
+            "rectCount": 1,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "rough-node statediagram-note",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "basic label-container outer-path",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#fff5ad",
+                      "strokeWidth": "4",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#aaaa33",
+                      "strokeWidth": "1.3",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "tag": "g",
+                  "classes": "label noteLabel",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -47.465,
+                  "y": -28.291,
+                  "width": 95.438,
+                  "height": 56.684
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -47.592,
+                  "y": -28.065,
+                  "width": 94.255,
+                  "height": 56.106
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          },
+          {
+            "id": "root_end",
+            "classes": "node default",
+            "childTags": [
+              "g"
+            ],
+            "foreignObjectCount": 0,
+            "textCount": 0,
+            "rectCount": 0,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node default",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "g",
+                  "classes": "",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#ECECFF",
+                      "strokeWidth": "4",
+                      "children": []
+                    },
+                    {
+                      "tag": "path",
+                      "classes": "",
+                      "style": "",
+                      "fill": "none",
+                      "stroke": "#333333",
+                      "strokeWidth": "2",
+                      "children": []
+                    },
+                    {
+                      "tag": "g",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": [
+                        {
+                          "tag": "path",
+                          "classes": "",
+                          "style": "",
+                          "fill": "#9370DB",
+                          "stroke": "none",
+                          "strokeWidth": "0",
+                          "children": []
+                        },
+                        {
+                          "tag": "path",
+                          "classes": "",
+                          "style": "",
+                          "fill": "none",
+                          "stroke": "#9370DB",
+                          "strokeWidth": "2",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": [
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -5.759,
+                  "y": -6.281,
+                  "width": 12.92,
+                  "height": 14.24
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -6.368,
+                  "y": -7.474,
+                  "width": 12.707,
+                  "height": 14.925
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -2.59,
+                  "y": -3.497,
+                  "width": 5.492,
+                  "height": 6.658
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              },
+              {
+                "classes": "",
+                "bbox": {
+                  "x": -2.287,
+                  "y": -3.009,
+                  "width": 4.465,
+                  "height": 5.966
+                },
+                "strokeLinecap": "butt",
+                "strokeLinejoin": "miter",
+                "strokeMiterlimit": "4"
+              }
+            ]
+          }
+        ],
+        "clusters": [
+          {
+            "id": "Idle----parent",
+            "classes": "note-cluster",
+            "childTags": [
+              "rect"
+            ],
+            "rects": [
+              {
+                "class": "",
+                "computed": {
+                  "fill": "none",
+                  "stroke": "none",
+                  "strokeWidth": "1px",
+                  "dasharray": "none",
+                  "rx": "auto"
+                }
+              }
+            ]
+          }
+        ],
+        "edges": [
+          {
+            "id": "edge0",
+            "classes": "edge-thickness-normal edge-pattern-solid transition transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MCMCMCMCMCMCMCMC",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
+          },
+          {
+            "id": "edge1",
+            "classes": "edge-thickness-normal edge-pattern-solid transition transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MCMCMCMCMCMCMCMCMCMC",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
+          },
+          {
+            "id": "Idle-Idle----note-2",
+            "classes": "edge-thickness-normal edge-pattern-solid transition transition note-edge",
+            "markerEnd": "",
+            "pathCommands": "MCMCMCMCMCMCMCMCMCMC",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "5px"
+            }
+          },
+          {
+            "id": "edge3",
+            "classes": "edge-thickness-normal edge-pattern-solid transition transition",
+            "markerEnd": "barbEnd",
+            "pathCommands": "MCMCMCMCMCMCMCMCMCMC",
+            "computed": {
+              "stroke": "rgb(51, 51, 51)",
+              "strokeWidth": "1px",
+              "dasharray": "0px"
+            }
+          }
+        ]
+      }
+    },
+    {
       "id": "titled",
       "source": "---\ntitle: Some Title\n---\nstateDiagram-v2\nA --> B",
       "geometry": {
@@ -1829,6 +5652,12 @@
               "width": 26.234,
               "height": 40
             },
+            "inkBBox": {
+              "x": -13.117,
+              "y": -20,
+              "width": 26.234,
+              "height": 40
+            },
             "shape": "rect"
           },
           {
@@ -1838,6 +5667,12 @@
               "y": 90
             },
             "bbox": {
+              "x": -13.203,
+              "y": -20,
+              "width": 26.406,
+              "height": 40
+            },
+            "inkBBox": {
               "x": -13.203,
               "y": -20,
               "width": 26.406,
@@ -1892,7 +5727,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           },
           {
             "id": "B",
@@ -1902,7 +5787,57 @@
               "g"
             ],
             "foreignObjectCount": 1,
-            "textCount": 0
+            "textCount": 0,
+            "rectCount": 2,
+            "lineCount": 0,
+            "tree": {
+              "tag": "g",
+              "classes": "node  statediagram-state",
+              "style": "",
+              "fill": "",
+              "stroke": "",
+              "strokeWidth": "",
+              "children": [
+                {
+                  "tag": "rect",
+                  "classes": "basic label-container",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": []
+                },
+                {
+                  "tag": "g",
+                  "classes": "label",
+                  "style": "",
+                  "fill": "",
+                  "stroke": "",
+                  "strokeWidth": "",
+                  "children": [
+                    {
+                      "tag": "rect",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    },
+                    {
+                      "tag": "foreignobject",
+                      "classes": "",
+                      "style": "",
+                      "fill": "",
+                      "stroke": "",
+                      "strokeWidth": "",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            "paths": []
           }
         ],
         "clusters": [],
@@ -1967,7 +5902,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -2002,7 +5938,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "C",
@@ -2037,7 +5974,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -2148,7 +6086,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -2183,7 +6122,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "note text",
@@ -2226,7 +6166,8 @@
             "opacity": "1",
             "fillOpacity": "1",
             "strokeOpacity": "1"
-          }
+          },
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -2314,7 +6255,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -2349,7 +6291,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [],
@@ -2431,7 +6374,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -2466,7 +6410,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -2560,7 +6505,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -2595,7 +6541,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "note text",
@@ -2638,7 +6585,8 @@
             "opacity": "1",
             "fillOpacity": "1",
             "strokeOpacity": "1"
-          }
+          },
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -2736,7 +6684,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -2771,7 +6720,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [],
@@ -2843,7 +6793,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -2878,7 +6829,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -2991,7 +6943,8 @@
             "display": "block",
             "visibility": "hidden"
           },
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "C",
@@ -3026,7 +6979,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -3128,7 +7082,8 @@
             "opacity": "1",
             "fillOpacity": "1",
             "strokeOpacity": "1"
-          }
+          },
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -3171,7 +7126,8 @@
             "opacity": "1",
             "fillOpacity": "1",
             "strokeOpacity": "1"
-          }
+          },
+          "dividerShape": null
         },
         {
           "label": "n",
@@ -3214,7 +7170,8 @@
             "opacity": "1",
             "fillOpacity": "1",
             "strokeOpacity": "1"
-          }
+          },
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -3269,6 +7226,184 @@
       ]
     },
     {
+      "id": "state-theme-handdrawn-titled",
+      "source": "stateDiagram-v2\nDetailed : first row\nDetailed : second row",
+      "themeCSS": ".rough-node path { display: none; } .node g:first-child path:first-child { stroke: rgb(0,128,0) !important; stroke-width: 3px !important; } .node g:first-child path + path { stroke: rgb(255,0,255) !important; stroke-width: 2px !important; } .node g:first-child + g path { stroke: rgb(0,0,255) !important; stroke-width: 5px !important; }",
+      "look": "handDrawn",
+      "client": {
+        "width": 112.78125,
+        "height": 84.125
+      },
+      "viewBox": "-0.21985244750976562 0.14686965942382812 112.79341888427734 84.14906311035156",
+      "nodes": [
+        {
+          "label": "first rowsecond row",
+          "bbox": {
+            "width": 96.79341888427734,
+            "height": 68.14906311035156
+          },
+          "shapeTag": "path",
+          "shape": {
+            "fill": "none",
+            "stroke": "rgb(0, 128, 0)",
+            "strokeWidth": "3px",
+            "dasharray": "0px, 0px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": {
+            "visibility": "visible",
+            "display": "block"
+          },
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "strokeShape": {
+            "stroke": "rgb(255, 0, 255)",
+            "strokeWidth": "2px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "dividerShape": {
+            "stroke": "rgb(0, 0, 255)",
+            "strokeWidth": "5px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "strokeOpacity": "1"
+          }
+        }
+      ],
+      "clusters": [],
+      "edges": [],
+      "edgeLabelP": [],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
+      "id": "state-theme-handdrawn-titled-style",
+      "source": "stateDiagram-v2\nDetailed : first row\nDetailed : second row\nstyle Detailed fill:#ff0000,stroke:#0000ff,stroke-width:3px",
+      "themeCSS": "",
+      "look": "handDrawn",
+      "client": {
+        "width": 112.78125,
+        "height": 84.125
+      },
+      "viewBox": "-0.21985244750976562 0.14686965942382812 112.79341888427734 84.14906311035156",
+      "nodes": [
+        {
+          "label": "first rowsecond row",
+          "bbox": {
+            "width": 96.79341888427734,
+            "height": 68.14906311035156
+          },
+          "shapeTag": "path",
+          "shape": {
+            "fill": "none",
+            "stroke": "rgb(255, 0, 0)",
+            "strokeWidth": "4px",
+            "dasharray": "0px, 0px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "span": {
+            "color": "rgb(19, 19, 0)",
+            "fontSize": "16px",
+            "visibility": "visible"
+          },
+          "desc": {
+            "visibility": "visible",
+            "display": "block"
+          },
+          "p": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible",
+            "opacity": "1"
+          },
+          "descP": {
+            "fontSize": "16px",
+            "fontFamily": "\"Noto Sans\", \"Noto Sans CJK SC\", \"Noto Sans Arabic\", \"Noto Sans Hebrew\", sans-serif",
+            "color": "rgb(19, 19, 0)",
+            "display": "block",
+            "visibility": "visible"
+          },
+          "strokeShape": {
+            "stroke": "rgb(0, 0, 255)",
+            "strokeWidth": "3px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "fillOpacity": "1",
+            "strokeOpacity": "1"
+          },
+          "dividerShape": {
+            "stroke": "rgb(0, 0, 255)",
+            "strokeWidth": "3px",
+            "display": "inline",
+            "visibility": "visible",
+            "opacity": "1",
+            "strokeOpacity": "1"
+          }
+        }
+      ],
+      "clusters": [],
+      "edges": [],
+      "edgeLabelP": [],
+      "markers": [
+        {
+          "fill": "rgb(51, 51, 51)",
+          "stroke": "rgb(51, 51, 51)",
+          "opacity": "1",
+          "strokeWidth": "1px",
+          "fillOpacity": "1",
+          "strokeOpacity": "1",
+          "display": "inline",
+          "visibility": "visible",
+          "markerOpacity": "1"
+        }
+      ]
+    },
+    {
       "id": "state-theme-label-p",
       "source": "stateDiagram-v2\nA --> B : label",
       "themeCSS": ".edgeLabel p { font-size: 31px; color: rgb(255,0,0); }",
@@ -3312,7 +7447,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -3347,7 +7483,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [],
@@ -3429,7 +7566,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -3464,7 +7602,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -3568,7 +7707,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -3603,7 +7743,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [],
@@ -3685,7 +7826,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "B",
@@ -3720,7 +7862,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [],
@@ -3811,7 +7954,8 @@
             "display": "block",
             "visibility": "visible"
           },
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "C",
@@ -3846,7 +7990,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -3949,7 +8094,8 @@
             "display": "none",
             "visibility": "visible"
           },
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         },
         {
           "label": "C",
@@ -3984,7 +8130,8 @@
             "opacity": "1"
           },
           "descP": null,
-          "strokeShape": null
+          "strokeShape": null,
+          "dividerShape": null
         }
       ],
       "clusters": [
@@ -4035,5 +8182,5 @@
       ]
     }
   ],
-  "fixtureSha256": "78a66011d7c9d143eaecb609b6fc3ee374126b5914d052ef7a78e191ee983461"
+  "fixtureSha256": "3fac5a6ee8b817fffd5c0baec4df20f9aa44e74f23a286d98ee2b421fc4ca316"
 }

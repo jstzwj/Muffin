@@ -99,6 +99,9 @@ struct FlowLayoutOptions {
   QMap<QString, QSizeF> measuredEdgeLabels;
   QMap<QString, FlowEdgeLabelLayout> preparedEdgeLabels;
   QMap<QString, QSizeF> measuredClusterLabels;
+  // Optional mixed group/vertex order. Dagre uses insertion order to break
+  // mirror-equivalent ties; State note groups expose that behavior.
+  QStringList nodeInsertionOrder;
   // Generic renderer cluster handlers may replace a compound node's width and
   // height with the generated SVG/RoughJS getBBox before that cluster becomes
   // an atom in its parent Dagre graph. Diagram families supply their handler

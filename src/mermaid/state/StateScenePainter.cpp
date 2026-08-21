@@ -691,13 +691,13 @@ void paintStateScene(const StateScene& scene, QPainter& painter,
         shape == QLatin1String("join") || shape == QLatin1String("stateEnd");
     // Rough shapes carry TWO elements (fill path + stroke path); rect /
     // circle shapes are single elements whose stroke resolves on the same
-    // element as the fill. Under the handDrawn look the plain rect ALSO
-    // becomes the rough pair (g.rough-node > g.basic.label-container >
-    // [hachure fill path, stroke path]).
+    // element as the fill. Under handDrawn, plain rect and rectWithTitle
+    // also become path pairs; the titled exception keeps class `node`.
     const bool roughShape = shape == QLatin1String("note") ||
         shape == QLatin1String("choice") || shape == QLatin1String("fork") ||
         shape == QLatin1String("join") || shape == QLatin1String("stateEnd") ||
-        (scene.handDrawn && shape == QLatin1String("rect"));
+        (scene.handDrawn && (shape == QLatin1String("rect") ||
+                             shape == QLatin1String("rectWithTitle")));
     const StateElementCss& strokeElement = roughShape ? node.shapeStrokeCss
                                                       : node.shapeCss;
     RoughPaint nodePaint;

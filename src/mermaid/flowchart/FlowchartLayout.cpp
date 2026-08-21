@@ -732,18 +732,57 @@ static FlowLayoutResult layoutFlowchartNodesDagreScope(
       }
     }
   };
-  if (!retainedRoot.isEmpty()) {
-    const auto root = std::find_if(data.subgraphs.cbegin(), data.subgraphs.cend(),
-                                   [&](const FlowSubgraph& subgraph) {
-                                     return subgraph.id == retainedRoot;
-                                   });
-    if (root != data.subgraphs.cend()) addSubgraphNode(*root);
+  if (options.nodeInsertionOrder.isEmpty()) {
+    if (!retainedRoot.isEmpty()) {
+      const auto root = std::find_if(data.subgraphs.cbegin(), data.subgraphs.cend(),
+                                     [&](const FlowSubgraph& subgraph) {
+                                       return subgraph.id == retainedRoot;
+                                     });
+      if (root != data.subgraphs.cend()) addSubgraphNode(*root);
+    }
+    for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it) {
+      if (!retainedRoot.isEmpty() && it->id == retainedRoot) continue;
+      addSubgraphNode(*it);
+    }
+    for (const FlowVertex& vertex : data.vertices) addVertexNode(vertex);
+  } else {
+    QSet<QString> insertedNodes;
+    const auto addSubgraphOnce = [&](const FlowSubgraph& subgraph) {
+      if (insertedNodes.contains(subgraph.id)) return;
+      addSubgraphNode(subgraph);
+      insertedNodes.insert(subgraph.id);
+    };
+    const auto addVertexOnce = [&](const FlowVertex& vertex) {
+      if (insertedNodes.contains(vertex.id)) return;
+      addVertexNode(vertex);
+      insertedNodes.insert(vertex.id);
+    };
+    for (const QString& id : options.nodeInsertionOrder) {
+      const auto subgraph = std::find_if(
+          data.subgraphs.cbegin(), data.subgraphs.cend(),
+          [&](const FlowSubgraph& candidate) { return candidate.id == id; });
+      if (subgraph != data.subgraphs.cend()) {
+        addSubgraphOnce(*subgraph);
+        continue;
+      }
+      const auto vertex = std::find_if(
+          data.vertices.cbegin(), data.vertices.cend(),
+          [&](const FlowVertex& candidate) { return candidate.id == id; });
+      if (vertex != data.vertices.cend()) addVertexOnce(*vertex);
+    }
+    if (!retainedRoot.isEmpty()) {
+      const auto root = std::find_if(data.subgraphs.cbegin(), data.subgraphs.cend(),
+                                     [&](const FlowSubgraph& subgraph) {
+                                       return subgraph.id == retainedRoot;
+                                     });
+      if (root != data.subgraphs.cend()) addSubgraphOnce(*root);
+    }
+    for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it) {
+      if (!retainedRoot.isEmpty() && it->id == retainedRoot) continue;
+      addSubgraphOnce(*it);
+    }
+    for (const FlowVertex& vertex : data.vertices) addVertexOnce(vertex);
   }
-  for (auto it = data.subgraphs.rbegin(); it != data.subgraphs.rend(); ++it) {
-    if (!retainedRoot.isEmpty() && it->id == retainedRoot) continue;
-    addSubgraphNode(*it);
-  }
-  for (const FlowVertex& vertex : data.vertices) addVertexNode(vertex);
   // The parser lists a node in every subgraph scope that references it (including
   // edge endpoints), so a node can appear in several subgraph node lists. dagre
   // wants each node parented to its DIRECT (innermost) subgraph. Reconstruct that

@@ -657,20 +657,25 @@ the client box, and the exported SVG root carries the exact fractional
 client viewBox and max-width — ORIGIN included (upstream writes
 svgBBox(content ∪ title) ± padding with no translate; the scene keeps
 the wrapper's dagre marginx/marginy of 8 absolute coordinates, fork/join
-dagre boxes are 74×14 around the painted 70×10 bar, and the note-side
-reflection re-anchors to the margin) — while the production raster snaps
+dagre boxes are 74×14 around the painted 70×10 bar, and State feeds mixed
+group/vertex insertion order to Dagre exactly as `data.nodes` does) — while the production raster snaps
 to the nearest device pixel. Under `look: handDrawn` the node class
-token becomes `rough-node` (`.node` selectors stop matching), plain
+token normally becomes `rough-node` (`.node` selectors stop matching), plain
 rects render as the rough pair whose fill path carries the hachure via
 its stroke, and the rough renderer consumes the same CSS gates as the
-smooth path. External edges into a composite and note groups beside a
+smooth path. The upstream exception is `rectWithTitle`: it remains a
+`.node`, uses a 10px rounded rough outer pair plus a separate rough divider,
+and keeps two foreignObjects in one `g.label`; there is no rect or line.
+Rough paths use SVG's butt cap, miter join, and miter limit 4, and invisible
+`noteGroup` layout boxes never generate rough ink. External edges into a composite and note groups beside a
 composite now follow upstream's non-extracted compound path: inherited
 `dir` is not mistaken for the omitted `explicitDir`, and later root-level
-references preserve an existing `parentId` like `Object.assign`. Remaining
-layout divergences are tracked in `mermaid-architecture.md` (the fork+note
-zig-zag, handDrawn rough ink extents, and the handDrawn rectWithTitle
-single-foreignObject quirk); until they close, state is described as
-oracle-locked rather than strictly 1:1.
+references preserve an existing `parentId` like `Object.assign`. The former
+fork/join + note zig-zag, handDrawn ink-extents, and handDrawn
+`rectWithTitle` DOM gaps are all browser-oracle locked. Chromium and Qt still
+use different raster anti-aliasing backends, so PNG parity is thresholded;
+semantic geometry, SVG path operations, DOM/CSS channels, client extents,
+and raster dimensions are exact in the locked cases.
 
 ### Family expansion status
 

@@ -863,8 +863,8 @@ viewBox 分量全部根因关闭，登记表与可选严格模式删除，70 案
   的 74px Dagre box。布局、形状和 SVG 导出均有回归锁。
 - **边界说明**：这一结论只覆盖 Windows 规范环境的 70 案 flowchart
   viewBox oracle；非 Windows 字体 shaping 仍属平台工作流。State 的
-  compound/note rank 已在第十五轮关闭；fork+note、handDrawn ink 等布局
-  差异仍保持开放。
+  compound/note rank 已在第十五轮关闭；fork+note、handDrawn ink 与
+  rectWithTitle DOM 已在第十六轮关闭。
 - 门禁：Release 完整构建通过；**293/293 两轮全绿**（282.77s / 242.43s，
   均含构建新鲜度测试）；dist 已刷新，Release/dist `Muffin.exe` 大小、
   时间戳与 SHA-256 一致；`git diff --check` 无空白错误。
@@ -895,6 +895,35 @@ viewBox 分量全部根因关闭，登记表与可选严格模式删除，70 案
 - **门禁**：Release 完整构建通过；**293/293 全绿**（237.80s，含构建
   新鲜度测试）；dist 已刷新，Release/dist `Muffin.exe` 的大小、时间戳与
   SHA-256 一致；fixture 双跑字节一致，`git diff --check` 无空白错误。
+
+**State 第十六轮 zig-zag / handDrawn ink / titled DOM 收口（08-21）**：关闭
+第十五轮登记的最后三项 State 差异。
+
+- **Dagre 混合插入顺序**：上游按 `data.nodes` 原始顺序把普通节点和
+  noteGroup 一起写入 Dagre；该顺序会裁决镜像等价 rank。共享布局新增可选
+  `nodeInsertionOrder`，仅 State 启用，其他图族保持原先 subgraph→vertex
+  路径。删除 native 的全图 note 反射/重锚补丁；`fork-join-note-zigzag`
+  锁定 B、join、note 的对角落点，`renderable-left-note` 同时锁定上游
+  left-of 通过反向 note-edge 进入上方 rank 的真实语义。
+- **handDrawn ink**：浏览器逐 path oracle 证明 RoughJS ops、圆角 arc
+  归一和 RNG 与 native 一致；QPainter pen 改为 SVG 默认的 FlatCap、
+  MiterJoin、miter-limit 4。noteGroup 是不可见 Dagre 布局盒，不生成 rough
+  drawable；去掉该幻影墨迹后三个 handDrawn 金图尺寸逐像素一致，IoU 为
+  0.982 / 0.997 / 0.996。
+- **rectWithTitle 勘误**：此前“单 foreignObject plain shape”来自错误探针。
+  Mermaid 11.16.0 的真实 handDrawn DOM 仍是 `.node`，四个 SVG 子组依次为
+  外框双 path、divider 单 path、空占位组、含两个 foreignObject 的
+  `g.label`；外框圆角为 10px。Adapter 按真实树重建，三条 path 的
+  themeCSS 通过不同颜色/线宽差异案独立锁定，结构测试同时锁 class、子树、
+  path 数、bbox、cap/join/miter-limit。
+- **覆盖**：state layout 为 14 案、themeCSS 为 17 案、state pixel 为
+  13 案；新增 rough rounded-path ops fixture。当前已知 State
+  语义/布局/DOM 开放项清零；PNG 仍受 Chromium/Qt 抗锯齿后端差异约束，
+  不宣称字节级图像相等。
+- **门禁**：Release 完整构建通过；**293/293 全绿**（242.38s，含构建
+  新鲜度测试）；dist 已刷新，Release/dist `Muffin.exe` 大小、时间戳和
+  SHA-256 一致；三套 fixture 串行双跑字节一致，`git diff --check` 无
+  空白错误。
 
 ---
 

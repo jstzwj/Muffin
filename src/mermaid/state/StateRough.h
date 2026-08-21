@@ -56,7 +56,9 @@ inline QVector<rough::Drawable> stateRoughNodeDrawables(
         bounds, seed, qMax<qreal>(1.3, strokeWidth)));
     return result;
   }
-  const qreal radius = shape == QLatin1String("note") ? 0.0 : 5.0;
+  const qreal radius = shape == QLatin1String("note")
+      ? 0.0
+      : (shape == QLatin1String("rectWithTitle") ? 10.0 : 5.0);
   if (radius > 0.0)
     result.append(rough::path(
         rough::roundedRectPath(bounds, radius),

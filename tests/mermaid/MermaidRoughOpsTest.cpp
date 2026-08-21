@@ -1,4 +1,5 @@
 #include "mermaid/rough/RoughOps.h"
+#include "mermaid/scene/SvgPathParse.h"
 
 #include <QFile>
 #include <QDebug>
@@ -71,12 +72,8 @@ rough::Drawable generate(const QJsonObject& fixture) {
     return rough::arc(args[0].toDouble(), args[1].toDouble(), args[2].toDouble(), args[3].toDouble(),
                       args[4].toDouble(), args[5].toDouble(), args[6].toBool(), options);
   if (kind == QLatin1String("path")) {
-    QPainterPath path(QPointF(0, 0));
-    path.lineTo(80, 0);
-    path.cubicTo(90, 10, 90, 50, 80, 60);
-    path.lineTo(0, 60);
-    path.closeSubpath();
-    return rough::path(path, options);
+    const QString data = args[0].toString();
+    return rough::path(scene::parseSvgPath(data), options, true);
   }
   fail(QStringLiteral("Unknown RoughJS fixture kind: %1").arg(kind));
 }
@@ -137,7 +134,7 @@ int main(int argc, char** argv) {
               QLatin1String("4.6.6"),
           QStringLiteral("RoughJS fixture version drifted"));
   require(root.value(QStringLiteral("operationDigest")).toString() ==
-              QLatin1String("9ebea1ab20ba9f281012cc32fd2077bb8e808c7b5cc77c3116d440e9b772661f"),
+              QLatin1String("4294b10c52075e40c3119a384c3455514b6360f14823adc989f67c41a9f3eec5"),
           QStringLiteral("RoughJS operation fixture changed; audit and update its digest"));
   const QJsonArray cases = root.value(QStringLiteral("cases")).toArray();
   QSet<QString> ids, kinds, opTypes, setTypes;
@@ -162,7 +159,7 @@ int main(int argc, char** argv) {
       for (const rough::Op& op : set.ops) opTypes.insert(rough::opTypeName(op.type));
     }
   }
-  require(cases.size() == 16 && kinds.size() == 6 && setTypes.size() == 3 && opTypes.size() == 3,
+  require(cases.size() == 17 && kinds.size() == 6 && setTypes.size() == 3 && opTypes.size() == 3,
           QStringLiteral("RoughJS primitive/operation coverage matrix regressed"));
   qDebug() << "MermaidRoughOpsTest:" << cases.size() << "RoughJS operation cases passed";
   return 0;

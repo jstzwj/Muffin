@@ -48,7 +48,14 @@ QStringList strings(const QJsonArray& values) {
   for (const QJsonValue& value : values) result.append(value.toString());
   return result;
 }
-QStringList expectedNodeTags(const QString& shape) {
+QRectF jsonRect(const QJsonObject& value) {
+  return {value.value(QStringLiteral("x")).toDouble(),
+          value.value(QStringLiteral("y")).toDouble(),
+          value.value(QStringLiteral("width")).toDouble(),
+          value.value(QStringLiteral("height")).toDouble()};
+}
+QStringList expectedNodeTags(const QString& shape, bool handDrawn) {
+  if (handDrawn) return {QStringLiteral("g")};
   if (shape == QLatin1String("stateStart")) return {QStringLiteral("circle")};
   if (shape == QLatin1String("stateEnd") || shape == QLatin1String("fork") ||
       shape == QLatin1String("join") || shape == QLatin1String("choice") ||
@@ -67,7 +74,7 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("78a66011d7c9d143eaecb609b6fc3ee374126b5914d052ef7a78e191ee983461"),
+              QLatin1String("3fac5a6ee8b817fffd5c0baec4df20f9aa44e74f23a286d98ee2b421fc4ca316"),
           QStringLiteral("State structural fixture drifted"));
   require(root.value(QStringLiteral("fontMode")).toString() ==
               QLatin1String("bundled-noto-2.13b171"),
@@ -214,7 +221,8 @@ int main(int argc, char** argv) {
       const state::StateSceneNode* actual = findById(scene.nodes, nodeId);
       require(actual, id + QStringLiteral(": missing native node ") + nodeId);
       const QStringList browserTags = strings(expected.value(QStringLiteral("childTags")).toArray());
-      const QStringList requiredTags = expectedNodeTags(actual->shape);
+      const QStringList requiredTags = expectedNodeTags(actual->shape,
+                                                        scene.handDrawn);
       for (const QString& tag : requiredTags)
         require(browserTags.contains(tag),
                 id + QLatin1Char('/') + nodeId + QStringLiteral(": missing browser shape tag ") + tag);
@@ -230,6 +238,68 @@ int main(int argc, char** argv) {
                   (!labelBearingShape || !actual->labelDocument.text.isEmpty()),
               id + QLatin1Char('/') + nodeId + QStringLiteral(": label container mismatch"));
       foreignObjects += browserForeignObjects;
+      if (scene.handDrawn) {
+        QVector<QRectF> nativePaths;
+        for (const rough::Drawable& drawable : actual->roughDrawables)
+          for (const rough::OpSet& set : drawable.sets)
+            if (!set.ops.isEmpty())
+              nativePaths.append(
+                  rough::tightBounds(set).translated(-actual->bounds.center()));
+        const QJsonArray browserPaths = expected.value(QStringLiteral("paths")).toArray();
+        require(nativePaths.size() == browserPaths.size(),
+                id + QLatin1Char('/') + nodeId +
+                    QStringLiteral(": rough path count %1 vs browser %2")
+                        .arg(nativePaths.size()).arg(browserPaths.size()));
+        for (qsizetype pathIndex = 0; pathIndex < nativePaths.size(); ++pathIndex) {
+          const QJsonObject browserPath = browserPaths.at(pathIndex).toObject();
+          const QRectF expectedBounds = jsonRect(
+              browserPath.value(QStringLiteral("bbox")).toObject());
+          const QRectF nativeBounds = nativePaths.at(pathIndex);
+          const auto near = [](qreal left, qreal right) {
+            return std::abs(left - right) < 0.002;
+          };
+          require(near(nativeBounds.x(), expectedBounds.x()) &&
+                      near(nativeBounds.y(), expectedBounds.y()) &&
+                      near(nativeBounds.width(), expectedBounds.width()) &&
+                      near(nativeBounds.height(), expectedBounds.height()),
+                  id + QLatin1Char('/') + nodeId +
+                      QStringLiteral("/path%1 native %2,%3 %4x%5 vs browser %6,%7 %8x%9")
+                          .arg(pathIndex).arg(nativeBounds.x()).arg(nativeBounds.y())
+                          .arg(nativeBounds.width()).arg(nativeBounds.height())
+                          .arg(expectedBounds.x()).arg(expectedBounds.y())
+                          .arg(expectedBounds.width()).arg(expectedBounds.height()));
+          require(browserPath.value(QStringLiteral("strokeLinecap")).toString() ==
+                          QLatin1String("butt") &&
+                      browserPath.value(QStringLiteral("strokeLinejoin")).toString() ==
+                          QLatin1String("miter") &&
+                      browserPath.value(QStringLiteral("strokeMiterlimit")).toString() ==
+                          QLatin1String("4"),
+                  id + QLatin1Char('/') + nodeId +
+                      QStringLiteral(": rough SVG cap/join drifted"));
+        }
+        if (actual->shape == QLatin1String("rectWithTitle")) {
+          const QJsonObject tree = expected.value(QStringLiteral("tree")).toObject();
+          const QJsonArray children = tree.value(QStringLiteral("children")).toArray();
+          const auto childCount = [&](int index) {
+            return children.at(index).toObject()
+                .value(QStringLiteral("children")).toArray().size();
+          };
+          require(browserForeignObjects == 2 &&
+                      expected.value(QStringLiteral("rectCount")).toInt() == 0 &&
+                      expected.value(QStringLiteral("lineCount")).toInt() == 0 &&
+                      browserPaths.size() == 3 &&
+                      expected.value(QStringLiteral("classes")).toString()
+                          .split(QLatin1Char(' '), Qt::SkipEmptyParts)
+                          .contains(QStringLiteral("node")) &&
+                      children.size() == 4 && childCount(0) == 2 &&
+                      childCount(1) == 1 && childCount(2) == 0 &&
+                      children.at(3).toObject()
+                              .value(QStringLiteral("classes")).toString() ==
+                          QLatin1String("label") && childCount(3) == 2,
+                  id + QLatin1Char('/') + nodeId +
+                      QStringLiteral(": handDrawn rectWithTitle DOM drifted"));
+        }
+      }
       ++nodes;
     }
 
@@ -478,6 +548,28 @@ int main(int argc, char** argv) {
                       (strokeShape.value(QStringLiteral("visibility")).toString() ==
                        QLatin1String("visible")),
                   id + QStringLiteral("/node%1/stroke-shape-painted").arg(index));
+      }
+      // handDrawn rectWithTitle's divider is the sole path in the second
+      // classless child g, so it has a separate cascade and paint slot.
+      const QJsonObject dividerShape =
+          expected.value(QStringLiteral("dividerShape")).toObject();
+      if (!dividerShape.isEmpty()) {
+        require(colorEquals(node.dividerCss.stroke,
+                            dividerShape.value(QStringLiteral("stroke")).toString()) &&
+                    std::abs(node.dividerCss.strokeWidthPx -
+                             dividerShape.value(QStringLiteral("strokeWidth"))
+                                 .toString().chopped(2).toDouble()) < 0.01 &&
+                    node.dividerCss.displayed ==
+                        (dividerShape.value(QStringLiteral("display")).toString() !=
+                         QLatin1String("none")) &&
+                    node.dividerCss.painted ==
+                        (dividerShape.value(QStringLiteral("visibility")).toString() ==
+                         QLatin1String("visible")),
+                id + QStringLiteral("/node%1/divider-path: %2 %3px vs %4 %5")
+                    .arg(index).arg(node.dividerCss.stroke)
+                    .arg(node.dividerCss.strokeWidthPx)
+                    .arg(dividerShape.value(QStringLiteral("stroke")).toString(),
+                         dividerShape.value(QStringLiteral("strokeWidth")).toString()));
       }
       // The label's <p> is the TEXT wrapper: its computed font/color drive
       // measurement and paint (folding the span chain), and display:none
@@ -744,7 +836,7 @@ int main(int argc, char** argv) {
     }
     ++themeCssCasesChecked;
   }
-  require(themeCssCasesChecked == 15,
+  require(themeCssCasesChecked == 17,
           QStringLiteral("State themeCSS differential coverage regressed"));
   qDebug() << "MermaidStateSvgStructuralTest:" << nodes << "nodes," << clusters
            << "clusters," << edges << "edges passed;" << themeCssCasesChecked

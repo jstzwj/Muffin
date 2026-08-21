@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   if (!file.open(QIODevice::ReadOnly)) fail(file.errorString());
   const QJsonObject root = QJsonDocument::fromJson(file.readAll()).object();
   require(root.value(QStringLiteral("fixtureSha256")).toString() ==
-              QLatin1String("02a803180b4aae64851813603454d624ef2ce0353b37cfb95ee8aa32c35e21ae"),
+              QLatin1String("f2d9bb765bf7a8b485b4609d4b35ec80f654c2de11de74dd4129007d1856bde6"),
           QStringLiteral("State pixel fixture changed; audit and update its digest"));
   const QDir fixtureDir = QFileInfo(manifestPath).dir();
   editor::MermaidRenderCache cache;

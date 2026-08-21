@@ -360,12 +360,12 @@ int main(int argc, char** argv) {
       for (const QJsonValue& operation : set.toObject().value(QStringLiteral("ops")).toArray())
         roughOperations.insert(operation.toObject().value(QStringLiteral("op")).toString());
   }
-  require(roughCases.size() >= 16 && roughKinds.size() >= 6 &&
+  require(roughCases.size() >= 17 && roughKinds.size() >= 6 &&
               roughOperations.contains(QStringLiteral("move")) &&
               roughOperations.contains(QStringLiteral("lineTo")) &&
               roughOperations.contains(QStringLiteral("bcurveTo")) &&
               rough.value(QStringLiteral("operationDigest")).toString() ==
-                  QLatin1String("9ebea1ab20ba9f281012cc32fd2077bb8e808c7b5cc77c3116d440e9b772661f"),
+                  QLatin1String("4294b10c52075e40c3119a384c3455514b6360f14823adc989f67c41a9f3eec5"),
           QStringLiteral("Flowchart RoughJS operation coverage/digest regressed"));
 
   qDebug() << "MermaidFlowchartCoverageMatrixTest:" << productions.size() << "productions,"

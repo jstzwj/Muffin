@@ -121,6 +121,17 @@ inline Drawable translatedDrawable(Drawable drawable, const QPointF& delta) {
 inline void drawRoughDrawable(QPainter& painter, const Drawable& drawable,
                               const QBrush& fillBrush, const QPen& strokePen,
                               const QPen& fillSketchPen) {
+  const auto svgPen = [](QPen pen) {
+    if (pen.style() != Qt::NoPen) {
+      // SVG/Canvas defaults used by RoughJS. QPen defaults to SquareCap and
+      // BevelJoin, which extends every independently moved rough segment and
+      // creates visible teeth around boxes.
+      pen.setCapStyle(Qt::FlatCap);
+      pen.setJoinStyle(Qt::MiterJoin);
+      pen.setMiterLimit(4.0);
+    }
+    return pen;
+  };
   for (const OpSet& set : drawable.sets) {
     switch (set.type) {
       case OpSetType::FillPath:
@@ -128,11 +139,11 @@ inline void drawRoughDrawable(QPainter& painter, const Drawable& drawable,
         painter.setBrush(fillBrush);
         break;
       case OpSetType::FillSketch:
-        painter.setPen(fillSketchPen);
+        painter.setPen(svgPen(fillSketchPen));
         painter.setBrush(Qt::NoBrush);
         break;
       case OpSetType::Path:
-        painter.setPen(strokePen);
+        painter.setPen(svgPen(strokePen));
         painter.setBrush(Qt::NoBrush);
         break;
     }
