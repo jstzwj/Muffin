@@ -185,7 +185,14 @@ jobs:
           #    WIX0144 "could not be found". --global installs into
           #    ~/.wix/extensions where the build resolves it.
           wix extension add WixToolset.UI.wixext/4.0.5 --global
-          wix extension list
+          # 'wix extension list' exits 2 with no output on the runners (works
+          # locally); it poisoned this step's exit code in the second v0.6.0
+          # attempt even though the add had succeeded. Verify the cache
+          # directly instead.
+          if (-not (Test-Path "$HOME/.wix/extensions/WixToolset.UI.wixext/4.0.5")) {
+            Write-Error "WiX UI extension did not install into ~/.wix/extensions"
+            exit 1
+          }
 
       - name: Locate macdeployqt
         if: runner.os == 'macOS'
