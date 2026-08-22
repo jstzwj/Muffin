@@ -60,6 +60,36 @@ else()
     endif()
   endforeach()
 
+  if(UNIX AND NOT APPLE)
+    # TARGET_RUNTIME_DLLS is empty on ELF platforms, so the loop above never
+    # runs there. Resolve the executable's ELF dependency graph NOW and derive
+    # the Qt plugin directories from the actual libQt6*.so locations instead
+    # of trusting only the configure-time QT_PLUGIN_DIRS bookkeeping. A silent
+    # miss here ships a dist bundle without platform plugins, which only fails
+    # at the consumer's first QGuiApplication (v0.6.0 Linux release).
+    file(GET_RUNTIME_DEPENDENCIES
+      EXECUTABLES "${DIST_DIR}/${APP_FILE_NAME}"
+      RESOLVED_DEPENDENCIES_VAR exe_resolved_dependencies
+      UNRESOLVED_DEPENDENCIES_VAR exe_unresolved_dependencies
+      POST_EXCLUDE_REGEXES "^/lib/" "^/lib64/" "^/usr/lib/" "^/usr/lib64/"
+    )
+    if(exe_unresolved_dependencies)
+      message(FATAL_ERROR "Unresolved Linux runtime dependencies: ${exe_unresolved_dependencies}")
+    endif()
+    foreach(dependency IN LISTS exe_resolved_dependencies)
+      get_filename_component(dependency_name "${dependency}" NAME)
+      if(dependency_name MATCHES "^libQt6.*\\.so")
+        get_filename_component(qt_lib_dir "${dependency}" DIRECTORY)
+        get_filename_component(qt_root_dir "${qt_lib_dir}" DIRECTORY)
+        foreach(plugin_subdir platforms styles imageformats tls networkinformation)
+          if(EXISTS "${qt_root_dir}/plugins/${plugin_subdir}")
+            list(APPEND plugin_dirs "${qt_root_dir}/plugins/${plugin_subdir}")
+          endif()
+        endforeach()
+      endif()
+    endforeach()
+  endif()
+
   if(plugin_dirs)
     list(REMOVE_DUPLICATES plugin_dirs)
   endif()
@@ -125,6 +155,21 @@ else()
     foreach(dependency IN LISTS bundled_dependencies)
       muffin_set_bundle_rpath("${dependency}" "$ORIGIN")
     endforeach()
+  endif()
+
+  # The platform plugins are load-or-die for any Qt GUI app (the qt.conf below
+  # points Plugins at this directory). Fail the dist build right here, with
+  # the derived plugin dirs in the message, instead of shipping a bundle that
+  # aborts on the consumer's machine.
+  file(GLOB platform_plugins "${DIST_DIR}/platforms/*.dll" "${DIST_DIR}/platforms/*.so")
+  if(NOT platform_plugins)
+    file(GLOB dist_entries RELATIVE "${DIST_DIR}" "${DIST_DIR}/*")
+    message(FATAL_ERROR
+      "No Qt platform plugins were bundled into ${DIST_DIR}/platforms. "
+      "Derived plugin dirs: ${plugin_dirs}. "
+      "Configure-time QT_PLUGIN_DIRS: '${QT_PLUGIN_DIRS}'. "
+      "Dist entries: ${dist_entries}. "
+      "The Qt package layout or the plugin-dir derivation has changed.")
   endif()
 
   file(WRITE "${DIST_DIR}/qt.conf" "[Paths]\nPlugins = .\n")
