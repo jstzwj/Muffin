@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-22
+
+### Added
+- **Native Mermaid diagram engine - all 38 diagram families** - Mermaid code blocks now render through a hand-written C++/Qt engine with pixel-level parity to mermaid 11.16.0 in Chromium, with no embedded browser, JavaScript runtime, or network access. Every diagram family is covered: flowchart (including ELK layouts and the neo and hand-drawn looks), sequence, class, state, ER, pie, quadrant, requirement, gantt, mindmap, kanban, packet, timeline, XY chart, radar, journey, treeView, info, event modeling, ishikawa, venn, sankey, treemap, cynefin, wardley, architecture, block, swimlane, gitGraph, C4, railroad, and the parse-error diagram. The engine honors `%%{init}%%` directives, `themeCSS`, all 11 built-in themes, `classDef`/`:::` node styles, `linkStyle`, MathML math labels, and gantt/kanban calendar semantics
+- **Interactive Mermaid blocks with SVG export** - Diagram blocks support hover and click interactions with screen-reader labels, a block context menu, and an export-to-SVG action that reproduces the upstream SVG structure
+- **Windows shell integration** - "Open with Muffin" Explorer context-menu verbs for Markdown files (.md, .markdown, .mdx, .mkd, .mdown) and for folders and folder backgrounds, plus file-association registration so Muffin appears in "Open with"; setting the default app redirects to the system Default Apps page (Windows guards UserChoice with a hash)
+- **Adjustable content width** - A new preference controls the rendered document width, with responsive reflow when the window resizes
+
+### Changed
+- **Lower large-document overhead** - Definition-list parsing is linearized, AST node memory is reduced, and a large-document round-trip benchmark guards the gains
+- **Leaner Mermaid scenes** - Off-screen diagram primitives are culled before painting, keeping wide or tall diagrams cheap to scroll
+
+### Fixed
+- **Dropdown popup black border on Windows 11** - The thick dark ring drawn around combo-box dropdown popups (and the translucent scrollbar trough) is gone; popups now match the theme chrome
+- **Timezone-independent gantt rendering** - Gantt bar and axis positions no longer shift with the machine's timezone; date parsing mirrors the upstream dayjs wall-clock vs UTC semantics
+- **Cross-platform release builds restored** - The Linux, macOS, and Windows ARM64 build-and-test pipeline was repaired (dependency closure, latent compile errors, timezone- and font-host-dependent goldens), so all four platforms can ship packages again
+
 ## [0.5.5] - 2026-07-12
 
 ### Added
@@ -514,6 +531,7 @@ An internal-architecture release. No user-visible behavior changes — every edi
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[0.6.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.6.0
 [0.5.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.5
 [0.5.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.4
 [0.5.3]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.3
