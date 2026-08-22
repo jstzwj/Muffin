@@ -1,0 +1,61 @@
+name: Diagnostics
+
+# Manually-triggered probes for release-pipeline problems. These jobs build
+# nothing -- they exist so an environment-specific failure (tool install,
+# package download, runner image drift) can be interrogated in minutes
+# instead of through full release reruns.
+
+on:
+  workflow_dispatch:
+    inputs:
+      probe:
+        description: 'Which probe to run'
+        required: true
+        default: 'wix-extension'
+        type: choice
+        options:
+          - wix-extension
+
+jobs:
+  wix-extension:
+    name: WiX UI extension install probe
+    if: inputs.probe == 'wix-extension'
+    runs-on: windows-latest
+    steps:
+      - name: Probe the WiX UI extension install
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Continue'
+          Write-Host "=== dotnet environment ==="
+          dotnet --list-sdks
+          dotnet --list-runtimes
+
+          Write-Host "=== install wix 4.0.5 ==="
+          dotnet tool install --global wix --version 4.0.5
+
+          Write-Host "=== wix extension add --global (all streams captured) ==="
+          $addOut = & wix extension add WixToolset.UI.wixext/4.0.5 --global 2>&1 | Out-String
+          Write-Host "add exit: $LASTEXITCODE"
+          Write-Host "add output: [$addOut]"
+
+          Write-Host "=== wix extension list ==="
+          $listOut = & wix extension list 2>&1 | Out-String
+          Write-Host "list exit: $LASTEXITCODE"
+          Write-Host "list output: [$listOut]"
+
+          Write-Host "=== ~/.wix tree ==="
+          if (Test-Path "$HOME/.wix") {
+            Get-ChildItem -Recurse "$HOME/.wix" | Select-Object -ExpandProperty FullName
+          } else {
+            Write-Host "(no ~/.wix was created)"
+          }
+
+          Write-Host "=== direct nupkg download probe (fallback channel) ==="
+          try {
+            Invoke-WebRequest `
+              -Uri "https://www.nuget.org/api/v2/package/WixToolset.UI.wixext/4.0.5" `
+              -OutFile "$env:TEMP/uiext.nupkg" -UseBasicParsing
+            Write-Host ("nupkg download OK, {0} bytes" -f (Get-Item "$env:TEMP/uiext.nupkg").Length)
+          } catch {
+            Write-Host "nupkg download FAILED: $($_.Exception.Message)"
+          }

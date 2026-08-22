@@ -67,14 +67,49 @@ else()
     # of trusting only the configure-time QT_PLUGIN_DIRS bookkeeping. A silent
     # miss here ships a dist bundle without platform plugins, which only fails
     # at the consumer's first QGuiApplication (v0.6.0 Linux release).
+    #
+    # GET_RUNTIME_DEPENDENCIES' implicit search (rpath/ldconfig/env) proved
+    # unreliable on CI runners -- the v0.6.0 rerun left the direct Qt6
+    # dependencies "unresolved" with the Conan cache present. Feed it the
+    # loader's own search list explicitly: the executable's DT_RPATH/DT_RUNPATH
+    # entries plus the lib dirs implied by any configure-time plugin dir.
+    find_program(PATCHELF_EXECUTABLE NAMES patchelf REQUIRED)
+    set(exe_search_dirs "")
+    execute_process(
+      COMMAND "${PATCHELF_EXECUTABLE}" --print-rpath "${DIST_DIR}/${APP_FILE_NAME}"
+      OUTPUT_VARIABLE exe_rpath_raw
+      RESULT_VARIABLE exe_rpath_result
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(exe_rpath_result EQUAL 0 AND NOT exe_rpath_raw STREQUAL "")
+      string(REPLACE ":" ";" exe_rpath_dirs "${exe_rpath_raw}")
+      foreach(rpath_dir IN LISTS exe_rpath_dirs)
+        if(IS_ABSOLUTE "${rpath_dir}" AND IS_DIRECTORY "${rpath_dir}")
+          list(APPEND exe_search_dirs "${rpath_dir}")
+        endif()
+      endforeach()
+    endif()
+    foreach(plugin_dir IN LISTS plugin_dirs)
+      get_filename_component(qt_plugins_root "${plugin_dir}" DIRECTORY)
+      get_filename_component(qt_root_dir "${qt_plugins_root}" DIRECTORY)
+      foreach(qt_lib_subdir lib bin)
+        if(IS_DIRECTORY "${qt_root_dir}/${qt_lib_subdir}")
+          list(APPEND exe_search_dirs "${qt_root_dir}/${qt_lib_subdir}")
+        endif()
+      endforeach()
+    endforeach()
+    if(exe_search_dirs)
+      list(REMOVE_DUPLICATES exe_search_dirs)
+    endif()
     file(GET_RUNTIME_DEPENDENCIES
       EXECUTABLES "${DIST_DIR}/${APP_FILE_NAME}"
+      DIRECTORIES ${exe_search_dirs}
       RESOLVED_DEPENDENCIES_VAR exe_resolved_dependencies
       UNRESOLVED_DEPENDENCIES_VAR exe_unresolved_dependencies
       POST_EXCLUDE_REGEXES "^/lib/" "^/lib64/" "^/usr/lib/" "^/usr/lib64/"
     )
     if(exe_unresolved_dependencies)
-      message(FATAL_ERROR "Unresolved Linux runtime dependencies: ${exe_unresolved_dependencies}")
+      message(FATAL_ERROR "Unresolved Linux runtime dependencies: ${exe_unresolved_dependencies} (searched: ${exe_search_dirs}; rpath: '${exe_rpath_raw}')")
     endif()
     foreach(dependency IN LISTS exe_resolved_dependencies)
       get_filename_component(dependency_name "${dependency}" NAME)
