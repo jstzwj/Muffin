@@ -175,10 +175,17 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           dotnet tool install --global wix --version 4.0.5
-          # Pin the UI extension to the matching 4.0.5 (a bare 'wix extension
-          # add WixToolset.UI.wixext' grabs the latest, e.g. 7.x, which is
-          # incompatible with the wix 4.0.5 tool and fails the MSI build).
-          wix extension add WixToolset.UI.wixext/4.0.5
+          # Two traps here, both paid for by the v0.6.0 release:
+          # 1. A bare 'wix extension add WixToolset.UI.wixext' grabs the
+          #    latest (7.x), incompatible with the wix 4.0.5 tool -- so pin
+          #    the version.
+          # 2. Without --global the add targets a wixproj in the CWD and,
+          #    finding none, SILENTLY NO-OPS (exit 0, no download, no cache).
+          #    The later 'wix build -ext WixToolset.UI.wixext' then dies with
+          #    WIX0144 "could not be found". --global installs into
+          #    ~/.wix/extensions where the build resolves it.
+          wix extension add WixToolset.UI.wixext/4.0.5 --global
+          wix extension list
 
       - name: Locate macdeployqt
         if: runner.os == 'macOS'
@@ -230,6 +237,10 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
+          # Show the bundle layout in the log: if the smoke run ever fails on
+          # plugin/dependency resolution again, the tree is the first thing
+          # needed and the failed job would otherwise never upload it.
+          find build/Release/dist -maxdepth 2 | sort | head -80
           # Linux dist is a bare exe that locates Qt via the Conan Qt's
           # compiled-in plugin path (no display → drive it headless with the
           # offscreen plugin). macOS dist is a macdeployqt bundle whose
