@@ -136,6 +136,12 @@ int main(int argc, char** argv) {
   qWarning("skipped on Windows ARM64: viewBox goldens embed desktop font metrics");
   return 0;
 #endif
+#if defined(Q_OS_LINUX)
+  // Same class as the Server/ARM64 skips above: Linux CI resolves Liberation
+  // fallback faces whose metrics diverge from the Windows golden host.
+  qWarning("skipped on Linux: goldens embed the Windows golden-host font stack");
+  return 0;
+#endif
   // The viewBox oracle is font-coupled (label widths drive the box), and the
   // goldens were captured against a desktop x64 Windows font stack; CI
   // runners (Windows Server, ARM64) resolve different CJK/Japanese fallback
