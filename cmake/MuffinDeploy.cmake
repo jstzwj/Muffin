@@ -160,6 +160,7 @@ else()
     file(GET_RUNTIME_DEPENDENCIES
       EXECUTABLES "${DIST_DIR}/${APP_FILE_NAME}"
       LIBRARIES ${bundled_plugins}
+      DIRECTORIES ${exe_search_dirs}
       RESOLVED_DEPENDENCIES_VAR resolved_dependencies
       UNRESOLVED_DEPENDENCIES_VAR unresolved_dependencies
       CONFLICTING_DEPENDENCIES_PREFIX conflicting_dependencies
