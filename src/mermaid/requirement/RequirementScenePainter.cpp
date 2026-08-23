@@ -8,6 +8,7 @@
 
 #include "mermaid/MermaidPaintOptions.h"
 #include "mermaid/requirement/RequirementScene.h"
+#include "mermaid/scene/EdgeMarkerPaint.h"
 #include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
@@ -27,7 +28,6 @@ namespace scene = muffin::mermaid::scene;
 
 namespace {
 
-constexpr qreal kReqPi = 3.14159265358979323846;
 
 QColor resolveColor(const QString& value) {
   return muffin::mermaid::color::toQColor(value);
@@ -63,12 +63,9 @@ void paintRow(QPainter& painter, const muffin::mermaid::requirement::Requirement
 // edge, rotated to the edge tangent. chunk-52WLFC77.mjs ~1034-1039.
 void drawContainsMarker(QPainter& painter, const QPointF& endpoint,
                         const QPointF& tangent, const QColor& stroke) {
-  const qreal angleDeg = std::atan2(tangent.y(), tangent.x()) * 180.0 / kReqPi;
   painter.save();
-  painter.translate(endpoint);
-  painter.rotate(angleDeg);
   // refX=0, refY=10 → anchor at local (0, 10). The marker viewBox is 20×20.
-  painter.translate(0.0, -10.0);
+  scene::applyMarkerTransform(painter, endpoint, scene::tangentAngleDeg(tangent), 0.0, 10.0);
   QPen pen(stroke, 1.0);
   painter.setPen(pen);
   painter.setBrush(Qt::NoBrush);
@@ -85,12 +82,9 @@ void drawContainsMarker(QPainter& painter, const QPointF& endpoint,
 // the edge tangent. chunk-52WLFC77.mjs ~1013-1021.
 void drawArrowMarker(QPainter& painter, const QPointF& endpoint,
                      const QPointF& tangent, const QColor& stroke) {
-  const qreal angleDeg = std::atan2(tangent.y(), tangent.x()) * 180.0 / kReqPi;
   painter.save();
-  painter.translate(endpoint);
-  painter.rotate(angleDeg);
   // refX=20, refY=10 → anchor at local (20, 10).
-  painter.translate(-20.0, -10.0);
+  scene::applyMarkerTransform(painter, endpoint, scene::tangentAngleDeg(tangent), 20.0, 10.0);
   QPen pen(stroke, 1.0);
   painter.setPen(pen);
   painter.setBrush(Qt::NoBrush);
@@ -100,31 +94,13 @@ void drawArrowMarker(QPainter& painter, const QPointF& endpoint,
   painter.restore();
 }
 
-// Continuous polyline for marker tangent estimation. Prefers `points`;
-// otherwise stitches segments (dropping the shared joint vertex).
+// Continuous polyline for marker tangent estimation (shared stitching).
 QVector<QPointF> edgePolyline(const muffin::mermaid::requirement::RequirementSceneEdge& edge) {
-  if (!edge.points.isEmpty()) return edge.points;
-  QVector<QPointF> flat;
-  for (const QVector<QPointF>& seg : edge.segments) {
-    if (seg.isEmpty()) continue;
-    if (flat.isEmpty()) {
-      flat = seg;
-    } else {
-      const qsizetype offset = (!flat.isEmpty() && flat.last() == seg.first()) ? 1 : 0;
-      for (qsizetype i = offset; i < seg.size(); ++i) flat.append(seg.at(i));
-    }
-  }
-  return flat;
+  return scene::stitchEdgePolyline(edge.points, edge.segments);
 }
 
 QPainterPath edgePath(const muffin::mermaid::requirement::RequirementSceneEdge& edge) {
-  if (!edge.path.isEmpty()) return scene::parseSvgPath(edge.path);
-  QPainterPath path;
-  const QVector<QPointF> points = edgePolyline(edge);
-  if (points.isEmpty()) return path;
-  path.moveTo(points.first());
-  for (qsizetype i = 1; i < points.size(); ++i) path.lineTo(points.at(i));
-  return path;
+  return scene::edgePolylinePath(edge.path, edge.points, edge.segments);
 }
 
 }  // namespace

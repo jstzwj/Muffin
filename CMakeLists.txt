@@ -586,6 +586,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/security/MermaidSecurityPolicy.h
   src/blocks/html/HtmlSanitizer.cpp
   src/blocks/html/HtmlSanitizer.h
+  src/mermaid/scene/EdgeMarkerPaint.cpp
+  src/mermaid/scene/EdgeMarkerPaint.h
   src/mermaid/scene/FlowMarkers.cpp
   src/mermaid/scene/FlowMarkers.h
   src/mermaid/scene/FlowScene.cpp

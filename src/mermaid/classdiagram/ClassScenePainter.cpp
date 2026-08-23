@@ -2,6 +2,7 @@
 
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/rough/RoughPaint.h"
+#include "mermaid/scene/EdgeMarkerPaint.h"
 #include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
@@ -54,11 +55,9 @@ void drawMarker(QPainter& painter, const ClassScene& scene, const QString& type,
   const QPointF endpoint = start ? points.first() : points.last();
   const QPointF neighbor = start ? points.at(1) : points.at(points.size() - 2);
   const QPointF tangent = start ? neighbor - endpoint : endpoint - neighbor;
-  const qreal angle = std::atan2(tangent.y(), tangent.x()) * 180.0 / 3.14159265358979323846;
   painter.save();
-  painter.translate(endpoint);
-  painter.rotate(angle);
-  painter.translate(-definition->refX, -definition->refY);
+  scene::applyMarkerTransform(painter, endpoint, scene::tangentAngleDeg(tangent),
+                              definition->refX, definition->refY);
   const QColor markerColor = mode == ClassPaintMode::SemanticMask
       ? QColor::fromRgba(kClassMaskMarker) : color(scene.style.lineColor);
   QPen pen(markerColor, 1.0);

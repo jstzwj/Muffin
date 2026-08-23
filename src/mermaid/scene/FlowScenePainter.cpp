@@ -4,6 +4,7 @@
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/rough/RoughOps.h"
 #include "mermaid/rough/RoughPaint.h"
+#include "mermaid/scene/EdgeMarkerPaint.h"
 #include "mermaid/scene/FlowMarkers.h"
 #include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
@@ -154,11 +155,8 @@ void drawMarker(QPainter& painter, const QString& type, const QPointF& at,
   if (type.isEmpty() || tangent.isNull()) return;
   const MarkerGeometry g = markerGeometry(type);
   if (g.tag.isEmpty()) return;
-  const qreal angle = std::atan2(tangent.y(), tangent.x()) * 180.0 / M_PI;
   painter.save();
-  painter.translate(at);
-  painter.rotate(angle);
-  painter.translate(-g.refX, -g.refY);
+  scene::applyMarkerTransform(painter, at, scene::tangentAngleDeg(tangent), g.refX, g.refY);
   QPen pen(color); pen.setWidthF(1.0); pen.setCapStyle(Qt::RoundCap);
   painter.setPen(pen);
   if (g.tag == QLatin1String("path") && type.contains(QLatin1String("point"))) {

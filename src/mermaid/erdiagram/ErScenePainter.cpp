@@ -12,6 +12,7 @@
 #include "mermaid/erdiagram/ErDiagram.h"
 #include "mermaid/erdiagram/ErScene.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/scene/EdgeMarkerPaint.h"
 #include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/scene/SvgStroke.h"
 #include "mermaid/theme/MermaidColor.h"
@@ -35,7 +36,6 @@ namespace scene = muffin::mermaid::scene;
 
 namespace {
 
-constexpr qreal kErPi = 3.14159265358979323846;
 
 QColor resolveColor(const QString& value) {
   return muffin::mermaid::color::toQColor(value);
@@ -102,11 +102,9 @@ void drawErMarker(QPainter& painter, er::ErCardinality card, bool start,
                   const QColor& stroke, qreal strokeWidth) {
   const ErMarkerDef def = erMarkerDef(card, start);
   if (def.path.isEmpty() && !def.hasCircle) return;
-  const qreal angleDeg = std::atan2(segDir.y(), segDir.x()) * 180.0 / kErPi;
   painter.save();
-  painter.translate(endpoint);
-  painter.rotate(angleDeg);
-  painter.translate(-def.refX, -def.refY);
+  scene::applyMarkerTransform(painter, endpoint, scene::tangentAngleDeg(segDir),
+                              def.refX, def.refY);
   painter.setPen(QPen(stroke, strokeWidth));
   if (def.hasCircle) {
     painter.setBrush(QColor(Qt::white));
@@ -118,35 +116,24 @@ void drawErMarker(QPainter& painter, er::ErCardinality card, bool start,
   painter.restore();
 }
 
+// NOTE: unlike requirement's edgePath, this deliberately draws only the FIRST segment when
+// `points` is empty (historical er behavior); the shared stitchEdgePolyline (used for marker
+// tangents) would span all segments.
 QPainterPath edgePath(const er::ErSceneRelationship& rel) {
   if (!rel.path.isEmpty()) return scene::parseSvgPath(rel.path);
-  QPainterPath path;
   const QVector<QPointF> points = !rel.points.isEmpty()
       ? rel.points
       : (rel.segments.isEmpty() ? QVector<QPointF>{} : rel.segments.first());
+  QPainterPath path;
   if (points.isEmpty()) return path;
   path.moveTo(points.first());
   for (qsizetype i = 1; i < points.size(); ++i) path.lineTo(points.at(i));
   return path;
 }
 
-// Continuous polyline for marker tangent estimation. Prefers `points`; otherwise
-// stitches `segments` (dropping the shared joint vertex between consecutive
-// segment polylines) so first()/last() still bound the full edge.
+// Continuous polyline for marker tangent estimation (shared stitching).
 QVector<QPointF> edgePolyline(const er::ErSceneRelationship& rel) {
-  if (!rel.points.isEmpty()) return rel.points;
-  QVector<QPointF> flat;
-  for (const QVector<QPointF>& seg : rel.segments) {
-    if (seg.isEmpty()) continue;
-    if (flat.isEmpty()) {
-      flat = seg;
-    } else {
-      const qsizetype offset = (!flat.isEmpty() && flat.last() == seg.first())
-          ? 1 : 0;
-      for (qsizetype i = offset; i < seg.size(); ++i) flat.append(seg.at(i));
-    }
-  }
-  return flat;
+  return scene::stitchEdgePolyline(rel.points, rel.segments);
 }
 
 void paintLabel(QPainter& painter, const flowchart::FlowLabelDocument& document,
