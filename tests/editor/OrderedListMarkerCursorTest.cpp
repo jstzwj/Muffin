@@ -192,6 +192,91 @@ void testEnterEnterCaretLandsOnSplitBlankLine() {
   }
 }
 
+// Shared harness: the user-facing split flow (caret at end of a middle item, Enter, Enter) over
+// "1. First\n2. Second\n3. Third" -> the authored split "1. First\n2. Second\n\n\n1. Third"
+// with the caret resting on the split VEP.
+struct SplitHarness {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+
+  SplitHarness() {
+    controller.attach(&session, &view);
+    view.resize(720, 460);
+    session.setMarkdownText(QStringLiteral("1. First\n2. Second\n3. Third"), false);
+    view.setDocument(session.document());
+    MarkdownNode* list = blockAt(session, 0);
+    setCursor(controller.selection(), list->children().at(1).get(), QStringLiteral("Second").size());
+    controller.inputController().insertParagraphBreak();
+    view.setDocument(session.document());
+    controller.inputController().insertParagraphBreak();
+    view.setDocument(session.document());
+    require(session.markdownText().toString() == QStringLiteral("1. First\n2. Second\n\n\n1. Third"),
+            "harness should produce the authored split text");
+  }
+
+  MarkdownNode* findVep() {
+    MarkdownNode* list = blockAt(session, 0);
+    require(list && list->type() == BlockType::List, "root should hold a list");
+    for (const auto& child : list->children()) {
+      const SourceRange r = child->sourceRange();
+      if (child->type() == BlockType::Paragraph && r.byteEnd == r.byteStart) { return child.get(); }
+    }
+    require(false, "split VEP should exist");
+    return nullptr;
+  }
+
+  // List children after the split: item, item, VEP, item.
+  MarkdownNode* postSplitItem() { return blockAt(session, 0)->children().at(3).get(); }
+};
+
+// Tab on the item AFTER the authored split must still nest it under the real previous item —
+// the split VEP sits between them as a list child and must not make Tab a silent no-op.
+void testTabOnPostSplitItemNestsUnderPreviousItem() {
+  SplitHarness h;
+  setCursor(h.controller.selection(), h.postSplitItem(), 0);
+  require(h.controller.inputController().indentListItem(), "Tab on the post-split item should indent it");
+  h.view.setDocument(h.session.document());
+  const QString text = h.session.markdownText().toString();
+  require(text == QStringLiteral("1. First\n2. Second\n\n\n   1. Third"),
+          QStringLiteral("Tab should nest the post-split item under the previous item (got '%1')").arg(text));
+  const CursorPosition caret = h.controller.selection().cursorPosition();
+  require(caret.isValid(), "caret must stay valid after the indent");
+  MarkdownNode* caretNode = h.session.document().node(caret.blockId);
+  require(caretNode != nullptr && caretNode->type() == BlockType::ListItem,
+          "caret should follow the indented item");
+}
+
+// Backspace on the split VEP collapses the authored split back into one list (deletes the blank
+// separator run), leaving the caret at the end of the item before the split.
+void testBackspaceOnSplitVepCollapsesSplit() {
+  SplitHarness h;
+  setCursor(h.controller.selection(), h.findVep(), 0);
+  require(h.controller.inputController().deleteBackward(), "backspace on the VEP should act");
+  h.view.setDocument(h.session.document());
+  const QString text = h.session.markdownText().toString();
+  require(text == QStringLiteral("1. First\n2. Second\n1. Third"),
+          QStringLiteral("backspace should collapse the split into one list (got '%1')").arg(text));
+  const CursorPosition caret = h.controller.selection().cursorPosition();
+  require(caret.isValid(), "caret must stay valid after the collapse");
+  MarkdownNode* caretNode = h.session.document().node(caret.blockId);
+  require(caretNode != nullptr && caretNode->type() == BlockType::ListItem,
+          "caret should land on the item before the split");
+}
+
+// Typing one char on the VEP and backspacing it away must restore the authored split text
+// exactly (round-trip; the split must not degrade by a newline).
+void testTypeAndBackspaceOnSplitVepRoundTrips() {
+  SplitHarness h;
+  setCursor(h.controller.selection(), h.findVep(), 0);
+  require(h.controller.inputController().insertText(QStringLiteral("x")), "typing on the VEP should work");
+  h.view.setDocument(h.session.document());
+  require(h.controller.inputController().deleteBackward(), "backspacing the typed char should work");
+  h.view.setDocument(h.session.document());
+  require(h.session.markdownText().toString() == QStringLiteral("1. First\n2. Second\n\n\n1. Third"),
+          "type + backspace must restore the authored split text exactly");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -202,6 +287,9 @@ int main(int argc, char** argv) {
   testSiblingContentIsColumnAligned();
   testTypingOnSplitBlankLineSplitsList();
   testEnterEnterCaretLandsOnSplitBlankLine();
+  testTabOnPostSplitItemNestsUnderPreviousItem();
+  testBackspaceOnSplitVepCollapsesSplit();
+  testTypeAndBackspaceOnSplitVepRoundTrips();
   QApplication::clipboard()->clear();
   return 0;
 }

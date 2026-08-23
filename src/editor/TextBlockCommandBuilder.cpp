@@ -196,6 +196,21 @@ QString renumberOrderedSiblings(QString text, qsizetype markerColumn, int nextNu
   return text;
 }
 
+// The previous ITEM sibling. Authored-split VEPs (zero-width paragraphs synthesized between
+// list items) are list children too — Tab on the item after a split must still nest under the
+// real previous item, not silently no-op because the immediate sibling is a VEP.
+const MarkdownNode* previousItemSibling(const MarkdownNode* node) {
+  for (const MarkdownNode* sibling = node ? node->previousSibling() : nullptr; sibling;
+       sibling = sibling->previousSibling()) {
+    const SourceRange range = sibling->sourceRange();
+    if (sibling->type() == BlockType::Paragraph && range.byteEnd == range.byteStart) {
+      continue;  // authored-split VEP between items
+    }
+    return sibling;
+  }
+  return nullptr;
+}
+
 }  // namespace
 
 TextBlockCommandBuilder::TextBlockCommandBuilder(DocumentSession* session, const BlockEditContextResolver* resolver)
@@ -1304,7 +1319,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildIndentListItem(co
     return command;
   }
 
-  const MarkdownNode* previous = context.node->previousSibling();
+  const MarkdownNode* previous = previousItemSibling(context.node);
   if (!previous || previous->type() != BlockType::ListItem) {
     return command;  // first item has nothing to nest under
   }
