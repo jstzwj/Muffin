@@ -5,6 +5,7 @@
 #include "mermaid/railroad/RailroadScenePainter.h"
 #include "mermaid/scene/SvgPathParse.h"
 #include "mermaid/text/ChromiumTextMetrics.h"
+#include "mermaid/text/LabelText.h"
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -82,18 +83,6 @@ struct LayoutResult {
   QVector<RailroadPrimitive> primitives;
 };
 
-QString visibleSvgText(QString text) {
-  static const QRegularExpression whitespace(QStringLiteral("[\\t\\n\\f\\r ]+"));
-  text.replace(whitespace, QStringLiteral(" "));
-  while (!text.isEmpty() &&
-         QStringView(u" \t\n\f\r").contains(text.front()))
-    text.remove(0, 1);
-  while (!text.isEmpty() &&
-         QStringView(u" \t\n\f\r").contains(text.back()))
-    text.chop(1);
-  return text;
-}
-
 void translate(QVector<RailroadPrimitive>& primitives, const QPointF& offset) {
   for (RailroadPrimitive& primitive : primitives)
     primitive.translation += offset;
@@ -119,7 +108,7 @@ public:
   }
 
   TextDimensions measure(const QString& text) const {
-    const QString visible = visibleSvgText(text);
+    const QString visible = text::collapsedSvgText(text);
     const QString family = measureFontFamily();
     const qreal size = measureFontSize();
     qreal advance = 0.0;

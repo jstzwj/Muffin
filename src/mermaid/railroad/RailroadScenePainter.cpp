@@ -2,6 +2,7 @@
 
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/railroad/RailroadScene.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFontMetricsF>
@@ -12,26 +13,6 @@
 
 namespace muffin::mermaid::railroad {
 namespace {
-
-QString visibleSvgText(QString text) {
-  static const QRegularExpression whitespace(QStringLiteral("[\\t\\n\\f\\r ]+"));
-  text.replace(whitespace, QStringLiteral(" "));
-  return text.trimmed();
-}
-
-QStringList cssFamilies(const QString& expression) {
-  QStringList result;
-  for (QString family : expression.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
-    family = family.trimmed();
-    if (family.size() >= 2 &&
-        ((family.front() == QLatin1Char('"') && family.back() == QLatin1Char('"')) ||
-         (family.front() == QLatin1Char('\'') && family.back() == QLatin1Char('\''))))
-      family = family.mid(1, family.size() - 2);
-    if (!family.isEmpty()) result.append(family);
-  }
-  if (result.isEmpty()) result.append(QStringLiteral("monospace"));
-  return result;
-}
 
 // themeCSS helpers: css channel or primitive base fallback.
 bool cssVisible(const RailroadElementCss& css) { return css.visible; }
@@ -65,8 +46,9 @@ qreal cssStrokeWidthPx(const RailroadElementCss& css, qreal base,
 
 editor::CssPixelFont textFont(const RailroadScene& scene,
                               const RailroadPrimitive& primitive) {
-  const QStringList families =
-      cssFamilies(cssFamily(primitive.css, scene.config.fontFamily));
+  QStringList families =
+      text::cssFontFamilies(cssFamily(primitive.css, scene.config.fontFamily));
+  if (families.isEmpty()) families.append(QStringLiteral("monospace"));
   editor::CssPixelFont font = editor::makeUnhintedCssPixelFont(
       families.first(), cssSize(primitive.css, scene.config.fontSize));
   if (families.size() > 1) font.font.setFamilies(families);
@@ -97,7 +79,7 @@ void drawText(const RailroadScene& scene, QPainter& painter,
   const editor::CssPixelFont font = textFont(scene, primitive);
   if (!(font.scale > 0.0)) return;
   const QFontMetricsF metrics(font.font);
-  const QString visible = visibleSvgText(primitive.text);
+  const QString visible = text::collapsedSvgText(primitive.text);
   qreal x = primitive.position.x();
   if (primitive.middleAnchor)
     x -= metrics.horizontalAdvance(visible) * font.scale / 2.0;

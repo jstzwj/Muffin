@@ -11,4 +11,13 @@ namespace muffin {
 // a tuning change is one edit.
 constexpr qreal kLineHeightFactor = 1.16;
 
+// CSS `line-height: N` multiplies the font's CSS PIXEL size (pt → px at 96/72), not the platform
+// metrics line box. The pt fallback (12) matches a default-constructed QFont. Single-sourced so
+// the estimate path (BlockLayoutBuilder) and the painted path (InlineLayout) resolve the same
+// number — a drift here desyncs reserved height from painted text.
+inline qreal cssLineHeightPx(qreal pointSizeF, qreal multiplier) {
+  const qreal pointSize = pointSizeF > 0.0 ? pointSizeF : 12.0;
+  return pointSize * (96.0 / 72.0) * multiplier;
+}
+
 }  // namespace muffin

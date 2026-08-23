@@ -573,6 +573,8 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/theme/MermaidCssCascade.h
   src/mermaid/text/ChromiumTextMetrics.cpp
   src/mermaid/text/ChromiumTextMetrics.h
+  src/mermaid/text/LabelText.cpp
+  src/mermaid/text/LabelText.h
   src/theme/CssCalc.cpp
   src/theme/CssCalc.h
   src/theme/CssComputedStyleEngine.cpp

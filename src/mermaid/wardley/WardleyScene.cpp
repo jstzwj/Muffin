@@ -3,6 +3,7 @@
 #include "mermaid/wardley/WardleyScenePainter.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/text/LabelText.h"
 
 #include <QFontMetricsF>
 #include <QHash>
@@ -35,19 +36,11 @@ QStringList cssFontFamilies(const QString &expression) {
   return result;
 }
 
-QString visibleSvgText(QString value) {
-  value.replace(QRegularExpression(QStringLiteral(R"([\t\n\r\f ]+)")),
-                QStringLiteral(" "));
-  while (value.startsWith(QLatin1Char(' '))) value.remove(0, 1);
-  while (value.endsWith(QLatin1Char(' '))) value.chop(1);
-  return value;
-}
-
 QRectF textBounds(const WardleySceneStyle &style, const QString &source,
                   const QPointF &position, qreal size, const QString &anchor,
                   WardleyTextBaseline baseline, bool bold, qreal rotation) {
   if (source.isEmpty() || !(size > 0.0)) return {};
-  const QString text = visibleSvgText(source);
+  const QString text = text::collapsedSvgText(source);
   const QStringList stack = cssFontFamilies(style.fontFamily);
   auto cssFont = editor::makeUnhintedCssPixelFont(stack.first(), size);
   if (stack.size() > 1) cssFont.font.setFamilies(stack);
@@ -77,7 +70,7 @@ QRectF textBounds(const WardleySceneStyle &style, const QString &source,
 
 qreal textAdvance(const WardleySceneStyle& style, const QString& source,
                   qreal size, bool bold = false) {
-  const QString text = visibleSvgText(source);
+  const QString text = text::collapsedSvgText(source);
   if (text.isEmpty() || !(size > 0.0)) return 0.0;
   flowchart::FlowLabelDocument document;
   document.text = text;

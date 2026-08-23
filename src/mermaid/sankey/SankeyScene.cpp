@@ -3,6 +3,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/sankey/SankeyScenePainter.h"
 #include "mermaid/text/ChromiumTextMetrics.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/flowchart/FlowLabel.h"
 
 #include <QFontMetricsF>
@@ -79,13 +80,6 @@ double d3Sum(const QVector<int> &indexes, const QVector<WorkLink> &links) {
   return result;
 }
 
-QString collapsedSvgText(QString value) {
-  value.replace(
-      QRegularExpression(QStringLiteral(R"([\x{0009}-\x{000D}\x{0020}]+)")),
-      QStringLiteral(" "));
-  return value.trimmed();
-}
-
 QString svgNumber(double value) { return QString::number(value, 'g', 17); }
 
 QRectF labelBounds(const SankeyLabelGeometry &label,
@@ -96,7 +90,7 @@ QRectF labelBounds(const SankeyLabelGeometry &label,
   QFont weighted = font.font;
   weighted.setWeight(label.fontWeight);
   const QFontMetricsF metrics(weighted);
-  const QString visible = collapsedSvgText(label.text);
+  const QString visible = text::collapsedSvgText(label.text);
   const double qtWidth = metrics.horizontalAdvance(visible) * font.scale;
   const double shaped =
       textmetrics::harfBuzzAdvance(visible, family, label.fontSize,

@@ -3,6 +3,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/sankey/SankeyScene.h"
 #include "mermaid/text/ChromiumTextMetrics.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFontMetricsF>
@@ -16,13 +17,6 @@
 
 namespace muffin::mermaid::sankey {
 namespace {
-
-QString visibleText(QString value) {
-  value.replace(
-      QRegularExpression(QStringLiteral(R"([\x{0009}-\x{000D}\x{0020}]+)")),
-      QStringLiteral(" "));
-  return value.trimmed();
-}
 
 QColor paintColor(const QString &value, const QColor &fallback = Qt::black) {
   const QColor result = color::toQColor(value);
@@ -44,7 +38,7 @@ void drawLabel(const SankeyScene &scene, const SankeyLabelGeometry &label,
   font.font.setWeight(label.fontWeight);
   if (!(font.scale > 0.0))
     return;
-  const QString text = visibleText(label.text);
+  const QString text = text::collapsedSvgText(label.text);
   const QFontMetricsF metrics(font.font);
   const qreal qtAdvance = metrics.horizontalAdvance(text) * font.scale;
   const qreal advance =

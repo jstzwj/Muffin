@@ -2,6 +2,7 @@
 
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/packet/PacketScene.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFontMetricsF>
@@ -12,22 +13,6 @@
 
 namespace muffin::mermaid::packet {
 namespace {
-
-QString visibleSvgText(QString text) {
-  static const QRegularExpression whitespace(QStringLiteral(R"([\t\n\r\f ]+)"));
-  text.replace(whitespace, QStringLiteral(" "));
-  // SVG white-space:normal trims only CSS-collapsible ASCII whitespace.
-  // NBSP and the other Unicode Zs separators remain visible glyph advances.
-  while (!text.isEmpty() &&
-         ((text.front().unicode() >= 0x0009 && text.front().unicode() <= 0x000d) ||
-          text.front() == QLatin1Char(' ')))
-    text.remove(0, 1);
-  while (!text.isEmpty() &&
-         ((text.back().unicode() >= 0x0009 && text.back().unicode() <= 0x000d) ||
-          text.back() == QLatin1Char(' ')))
-    text.chop(1);
-  return text;
-}
 
 QStringList cssFontFamilies(const QString& expression) {
   QStringList families;
@@ -88,7 +73,9 @@ QColor inheritedColor(const PacketScene& scene) {
 
 void drawPacketText(const PacketScene& scene, QPainter& painter,
                     const PacketTextGeometry& text) {
-  const QString visible = visibleSvgText(text.text);
+  // SVG white-space:normal trims only CSS-collapsible ASCII whitespace.
+  // NBSP and the other Unicode Zs separators remain visible glyph advances.
+  const QString visible = text::collapsedSvgText(text.text);
   if (visible.isEmpty() || !(text.fontSize > 0.0) ||
       !std::isfinite(text.position.x()) || !std::isfinite(text.position.y()))
     return;

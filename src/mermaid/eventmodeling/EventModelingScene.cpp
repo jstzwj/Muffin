@@ -3,6 +3,7 @@
 #include "blocks/html/HtmlSanitizer.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/eventmodeling/EventModelingScenePainter.h"
+#include "mermaid/text/LabelText.h"
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -66,12 +67,7 @@ QFont literalFont() {
 }
 
 qreal literalWidth(const QString& text) {
-  QString visible = text;
-  static const QRegularExpression collapsibleWhitespace(
-      QStringLiteral(R"([\x09\x0a\x0d\x20]+)"));
-  visible.replace(collapsibleWhitespace, QStringLiteral(" "));
-  while (visible.startsWith(QLatin1Char(' '))) visible.removeFirst();
-  while (visible.endsWith(QLatin1Char(' '))) visible.chop(1);
+  const QString visible = text::collapsedSvgText(text);
   flowchart::FlowLabelDocument document;
   document.text = visible;
   document.baseWeight = QFont::Bold;

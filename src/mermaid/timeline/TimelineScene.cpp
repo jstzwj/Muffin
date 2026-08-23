@@ -2,6 +2,7 @@
 
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/timeline/TimelineScenePainter.h"
 #include "theme/CssCalc.h"
 
@@ -141,21 +142,6 @@ qreal svgTextAdvance(const QString& text, const TextFont& font) {
       font.size);
 }
 
-QString visibleSvgText(QString value) {
-  static const QRegularExpression whitespace(QStringLiteral(
-      R"([\x{0009}-\x{000d}\x{0020}]+)"));
-  value.replace(whitespace, QStringLiteral(" "));
-  return value;
-}
-
-QString visibleSvgTitle(QString value) {
-  value = visibleSvgText(std::move(value));
-  static const QRegularExpression edges(QStringLiteral(
-      R"(^[\x{0009}-\x{000d}\x{0020}]+|[\x{0009}-\x{000d}\x{0020}]+$)"));
-  value.remove(edges);
-  return value;
-}
-
 QStringList splitWithDelimiters(const QString& text) {
   static const QRegularExpression separator(QStringLiteral(
       R"(([\x{0009}-\x{000d}\x{0020}\x{00a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}]+|<br>))"));
@@ -229,7 +215,7 @@ TextLayout layoutText(const QString& text, qreal wrapWidth,
     active.append(word);
     const QString candidate = active.join(QLatin1Char(' ')).trimmed();
     tspanTexts.last() = candidate;
-    if (svgTextAdvance(visibleSvgText(candidate), font) > wrapWidth ||
+    if (svgTextAdvance(text::collapsedSvgText(candidate, false), font) > wrapWidth ||
         word == QStringLiteral("<br>")) {
       active.removeLast();
       tspanTexts.last() = active.join(QLatin1Char(' ')).trimmed();
@@ -245,7 +231,7 @@ TextLayout layoutText(const QString& text, qreal wrapWidth,
     if (i > 0) y += font.size * 1.1;
     TimelineTextLine line;
     line.sourceText = tspanTexts.at(i);
-    line.visibleText = visibleSvgText(line.sourceText);
+    line.visibleText = text::collapsedSvgText(line.sourceText, false);
     const qreal advance = svgTextAdvance(line.visibleText, font);
     line.baseline = QPointF(0.0, y + xHeight / 2.0);
     if (!line.visibleText.isEmpty()) {
@@ -764,7 +750,7 @@ TimelineScene buildTimelineScene(const TimelineData& data, TimelineConfig config
                                      scene.config.leftMarginRaw))
                                               : box.width() / 2.0 - left;
       scene.titleGeometry.visible = true;
-      scene.titleGeometry.text = visibleSvgTitle(scene.title);
+      scene.titleGeometry.text = text::collapsedSvgText(scene.title);
       scene.titleGeometry.baseline = QPointF(titleX, 20.0);
       scene.titleGeometry.fontSize = titleSize;
       scene.titleGeometry.fill = scene.style.textColor;
@@ -914,7 +900,7 @@ TimelineScene buildTimelineScene(const TimelineData& data, TimelineConfig config
               titleWeight);
       const qreal titleX = box.width() / 2.0 - left;
       scene.titleGeometry.visible = true;
-      scene.titleGeometry.text = visibleSvgTitle(scene.title);
+      scene.titleGeometry.text = text::collapsedSvgText(scene.title);
       scene.titleGeometry.baseline = QPointF(titleX, 20.0);
       scene.titleGeometry.fontSize = titleSize;
       scene.titleGeometry.fill = scene.style.textColor;

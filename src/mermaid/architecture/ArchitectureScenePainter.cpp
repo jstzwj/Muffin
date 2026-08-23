@@ -3,6 +3,7 @@
 #include "mermaid/architecture/ArchitectureScene.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFontMetricsF>
@@ -13,12 +14,6 @@
 
 namespace muffin::mermaid::architecture {
 namespace {
-
-QString visibleText(QString text) {
-  text.replace(QRegularExpression(QStringLiteral(R"([\t\n\r\f ]+)")),
-               QStringLiteral(" "));
-  return text.trimmed();
-}
 
 QStringList fontFamilies(const QString& expression) {
   QStringList result;
@@ -52,7 +47,7 @@ void drawText(QPainter& painter, const ArchitectureScene& scene,
               qreal rotation = 0.0, const QColor& color = Qt::black,
               const QString& family = QString(),
               bool bold = false) {
-  const QString text = visibleText(source);
+  const QString text = text::collapsedSvgText(source);
   if (text.isEmpty() || !(size > 0.0)) return;
   const QString familyExpression = family.isEmpty() ? scene.style.fontFamily
                                                      : family;

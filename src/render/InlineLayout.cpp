@@ -1393,9 +1393,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
       // CSS `line-height: N` is N * font-size, not N * the platform font
       // metrics line box. Multiplying QTextLine::height() made CSS themes too
       // tall compared with other renderers, especially for serif fallback fonts.
-      const qreal pointSize = baseFont.pointSizeF() > 0.0 ? baseFont.pointSizeF() : 12.0;
-      const qreal cssFontPx = pointSize * (96.0 / 72.0);
-      lineHeight = std::ceil(qMax(minLineHeight, cssFontPx * lineHeightMultiplier_));
+      lineHeight = std::ceil(qMax(minLineHeight, cssLineHeightPx(baseFont.pointSizeF(), lineHeightMultiplier_)));
     }
     line.setPosition(QPointF(0.0, height + (lineHeight - minLineHeight) * 0.5));
     height += lineHeight;

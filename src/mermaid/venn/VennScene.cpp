@@ -1,6 +1,7 @@
 #include "mermaid/venn/VennScene.h"
 
 #include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 #include "mermaid/venn/VennScenePainter.h"
 
@@ -126,24 +127,9 @@ QMap<QString, QMap<QString, QString>> stylesByKey(
   return result;
 }
 
-QStringList cssFamilies(const QString& expression) {
-  QStringList result;
-  for (QString family : expression.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
-    family = family.trimmed();
-    if (family.size() >= 2 &&
-        ((family.front() == QLatin1Char('"') &&
-          family.back() == QLatin1Char('"')) ||
-         (family.front() == QLatin1Char('\'') &&
-          family.back() == QLatin1Char('\''))))
-      family = family.mid(1, family.size() - 2);
-    if (!family.isEmpty()) result.append(family);
-  }
-  if (result.isEmpty()) result.append(QStringLiteral("Noto Sans"));
-  return result;
-}
-
 editor::CssPixelFont fontFor(const VennSceneStyle& style, qreal size) {
-  const QStringList families = cssFamilies(style.fontFamily);
+  QStringList families = text::cssFontFamilies(style.fontFamily);
+  if (families.isEmpty()) families.append(QStringLiteral("Noto Sans"));
   editor::CssPixelFont font =
       editor::makeUnhintedCssPixelFont(families.first(), size);
   if (families.size() > 1) font.font.setFamilies(families);

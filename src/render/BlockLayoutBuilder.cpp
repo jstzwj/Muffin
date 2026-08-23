@@ -1662,8 +1662,7 @@ qreal estimateLineHeightForElement(const RenderTheme& theme, const QString& elem
   const QFont font = type == BlockType::Heading ? theme.headingFont(headingLevel) : theme.textFontForElement(elementKey, node);
   const qreal multiplier = theme.lineHeightMultiplierForElement(elementKey, type, headingLevel, node);
   if (multiplier > 0.0) {
-    const qreal pointSize = font.pointSizeF() > 0.0 ? font.pointSizeF() : 12.0;
-    return std::ceil(pointSize * (96.0 / 72.0) * multiplier);
+    return std::ceil(cssLineHeightPx(font.pointSizeF(), multiplier));
   }
   return std::ceil(QFontMetricsF(font).height() * kLineHeightFactor);
 }
@@ -1710,12 +1709,12 @@ qreal BlockLayoutBuilder::avgCharWidthForFont(const QFont& font) const {
   if (it != fontMetricsCache_.constEnd()) {
     return it.value().second;  // narrowAdvance
   }
-  const QFontMetricsF metrics(font);
-  const qreal wideAdvance = metrics.horizontalAdvance(QChar(0x5B57));    // '字' (CJK ideograph)
-  const qreal narrowAdvance = metrics.horizontalAdvance(QStringLiteral("abcdefghijklmnopqrstuvwxyz0123456789 ")) /
-                              static_cast<qreal>(37);
-  fontMetricsCache_.insert(key, {wideAdvance, narrowAdvance});
-  return narrowAdvance;
+  // Fill the shared per-font cache via the classification variant (empty text takes its
+  // cache-miss branch) instead of repeating the wide/narrow measurement here.
+  avgCharWidthForText(QStringView(), font);
+  const auto cached = fontMetricsCache_.constFind(key);
+  return cached != fontMetricsCache_.constEnd() ? cached.value().second
+                                                : QFontMetricsF(font).horizontalAdvance(QLatin1Char('n'));
 }
 
 qreal BlockLayoutBuilder::cachedEstimateLineHeight(const RenderTheme& theme, const QString& elementKey, BlockType type, int headingLevel) const {

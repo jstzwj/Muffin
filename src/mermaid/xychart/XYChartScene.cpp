@@ -1,6 +1,7 @@
 #include "mermaid/xychart/XYChartScene.h"
 
 #include "mermaid/editor/MermaidRenderSupport.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/xychart/XYChartScenePainter.h"
 
 #include <QFontMetricsF>
@@ -19,14 +20,6 @@ namespace {
 constexpr qreal kBarWidthToTickWidthRatio = 0.7;
 constexpr qreal kMaxOuterPaddingPercent = 0.2;
 
-QString visibleSvgText(QString text) {
-  static const QRegularExpression whitespace(QStringLiteral(R"([\t\n\r\f ]+)"));
-  text.replace(whitespace, QStringLiteral(" "));
-  while (text.startsWith(QLatin1Char(' '))) text.remove(0, 1);
-  while (text.endsWith(QLatin1Char(' '))) text.chop(1);
-  return text;
-}
-
 struct Dimension { qreal width = 0.0; qreal height = 0.0; };
 
 Dimension textDimension(const QStringList& texts, qreal size,
@@ -39,7 +32,7 @@ Dimension textDimension(const QStringList& texts, qreal size,
   const QFontMetricsF metrics(font.font);
   Dimension result;
   for (const QString& raw : texts) {
-    const QString text = visibleSvgText(raw);
+    const QString text = text::collapsedSvgText(raw);
     result.width = std::max(result.width,
                             metrics.horizontalAdvance(text) * font.scale);
     result.height = std::max(result.height, metrics.height() * font.scale);

@@ -4,6 +4,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/text/ChromiumTextMetrics.h"
+#include "mermaid/text/LabelText.h"
 
 #include <QFontMetricsF>
 #include <QHash>
@@ -85,14 +86,6 @@ bool svgNumber(const QJsonValue &value, double fallback, double &result) {
   return false;
 }
 
-QString visibleSvgText(QString value) {
-  value.replace(QRegularExpression(QStringLiteral(R"([\t\n\r\f ]+)")),
-                QStringLiteral(" "));
-  while (value.startsWith(QLatin1Char(' '))) value.remove(0, 1);
-  while (value.endsWith(QLatin1Char(' '))) value.chop(1);
-  return value;
-}
-
 QString cssValue(const QJsonValue &value) {
   return primitiveString(value, QString());
 }
@@ -142,7 +135,7 @@ editor::CssPixelFont textFont(const CynefinSceneStyle &style, qreal size,
 qreal textAdvance(const CynefinSceneStyle &style, const QString &source,
                   qreal size, bool bold = false, bool italic = false) {
   if (!(size > 0.0)) return 0.0;
-  const QString text = visibleSvgText(source);
+  const QString text = text::collapsedSvgText(source);
   const auto font = textFont(style, size, bold, italic);
   const qreal qt = QFontMetricsF(font.font).horizontalAdvance(text) * font.scale;
   qreal shaped = textmetrics::harfBuzzAdvance(text, style.fontFamily, size)
@@ -157,7 +150,7 @@ QRectF textBounds(const CynefinSceneStyle &style, const QString &source,
                   CynefinTextBaseline baseline, bool bold = false,
                   bool italic = false) {
   if (source.isEmpty() || !(size > 0.0)) return {};
-  const QString text = visibleSvgText(source);
+  const QString text = text::collapsedSvgText(source);
   flowchart::FlowLabelDocument document;
   document.text = text;
   if (bold || italic) {
@@ -532,7 +525,7 @@ CynefinScene buildCynefinScene(const CynefinData &data, CynefinConfig config,
     const double startY = layout.cy + (confusion ? (descriptions ? 22.0 : 14.0)
                                                    : (descriptions ? 25.0 : 15.0));
     const auto addItem = [&](const QString &label, int index, bool overflow) {
-      const QString visible = visibleSvgText(label);
+      const QString visible = text::collapsedSvgText(label);
       double measured = label.size() * 7.0;
       const CynefinElementCss *textCss = nullptr;
       const CynefinElementCss *rectCss = nullptr;

@@ -41,28 +41,10 @@ QSizeF HtmlTextMeasurer::measure(const QString& text, const QFont& font, qreal a
     QFontMetricsF fm(font);
     return QSizeF(0, fm.height());
   }
-
-  QTextLayout layout(text, font);
-  QTextOption option;
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
-  layout.setTextOption(option);
-  layout.beginLayout();
-
-  qreal height = 0;
-  qreal maxWidth = 0;
-  while (true) {
-    QTextLine line = layout.createLine();
-    if (!line.isValid()) {
-      break;
-    }
-    line.setLineWidth(qMax<qreal>(1.0, availableWidth));
-    line.setPosition(QPointF(0, height));
-    maxWidth = qMax(maxWidth, line.naturalTextWidth());
-    height += line.height();
-  }
-  layout.endLayout();
-
-  return QSizeF(maxWidth, height);
+  // Same QTextLayout line loop as buildLayout (default alignment); delegate so the two can
+  // never drift — they used to be byte-identical copies.
+  const std::unique_ptr<HtmlTextLayout> laidOut = buildLayout(text, font, availableWidth, Qt::Alignment());
+  return QSizeF(laidOut->width, laidOut->height);
 }
 
 std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildLayout(

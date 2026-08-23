@@ -2,6 +2,7 @@
 
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/gantt/GanttScenePainter.h"
+#include "mermaid/text/LabelText.h"
 
 #include <QFontMetricsF>
 #include <QJsonArray>
@@ -24,12 +25,6 @@ qreal roundedScale(const QDateTime& value, const QDateTime& start,
   if (lo == hi) return std::round(width / 2.0);
   return std::round(double(value.toMSecsSinceEpoch() - lo) /
                     double(hi - lo) * width);
-}
-
-QString cssVisibleText(QString text) {
-  text.replace(QRegularExpression(QStringLiteral("[\\x09-\\x0d ]+")),
-               QStringLiteral(" "));
-  return text.trimmed();
 }
 
 QString formatTick(const QDateTime& date, const QString& format) {
@@ -443,7 +438,7 @@ GanttTaskTextPlacement ganttTaskTextPlacement(const GanttTask& task,
       editor::makeUnhintedCssPixelFont(measureFamily, measureSize);
   QFontMetricsF metrics(font.font);
   out.textWidth =
-      metrics.horizontalAdvance(cssVisibleText(task.task)) * font.scale;
+      metrics.horizontalAdvance(text::collapsedSvgText(task.task)) * font.scale;
 
   qreal startX = scale(task.startTime);
   qreal endX = scale(task.renderEndTime.isValid() ? task.renderEndTime

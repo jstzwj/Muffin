@@ -3,6 +3,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/ishikawa/IshikawaScenePainter.h"
+#include "mermaid/text/LabelText.h"
 
 #include <QFontMetricsF>
 #include <QJsonArray>
@@ -100,15 +101,6 @@ QString metricFamily(const QString& familyExpression, qreal size,
              : cssFontFamilies(familyExpression).first();
 }
 
-QString visibleSvgText(QString value) {
-  static const QRegularExpression whitespace(
-      QStringLiteral(R"([\x{0009}-\x{000d}\x{0020}]+)"));
-  value.replace(whitespace, QStringLiteral(" "));
-  while (value.startsWith(QLatin1Char(' '))) value.removeFirst();
-  while (value.endsWith(QLatin1Char(' '))) value.chop(1);
-  return value;
-}
-
 QStringList splitLines(const QString& text) {
   static const QRegularExpression breaks(
       QStringLiteral(R"(<br\s*\/?>|\n)"),
@@ -171,7 +163,7 @@ QRectF textBounds(const IshikawaTextGeometry& text,
           text.weight);
   Extents extents;
   for (int index = 0; index < text.lines.size(); ++index) {
-    const QString visible = visibleSvgText(text.lines.at(index));
+    const QString visible = text::collapsedSvgText(text.lines.at(index));
     if (visible.isEmpty()) continue;
     const qreal anchorY = text.firstY + index * text.lineStep;
     flowchart::FlowLabelDocument document;

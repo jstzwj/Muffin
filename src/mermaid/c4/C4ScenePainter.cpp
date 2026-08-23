@@ -3,6 +3,7 @@
 #include "mermaid/c4/C4Scene.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/scene/SvgStroke.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QByteArray>
@@ -21,20 +22,6 @@ QColor paintColor(const QString& value, const QColor& fallback = Qt::black) {
   const color::SvgPaint paint = color::resolveSvgPaint(
       value, color::SvgPaintKind::Fill, fallback);
   return paint.none || !paint.color.isValid() ? fallback : paint.color;
-}
-
-QStringList cssFamilies(const QString& expression) {
-  QStringList result;
-  for (QString family : expression.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
-    family = family.trimmed();
-    if (family.size() >= 2 &&
-        ((family.front() == QLatin1Char('"') && family.back() == QLatin1Char('"')) ||
-         (family.front() == QLatin1Char('\'') && family.back() == QLatin1Char('\''))))
-      family = family.mid(1, family.size() - 2);
-    if (!family.isEmpty()) result.append(family);
-  }
-  if (result.isEmpty()) result.append(QStringLiteral("Noto Sans"));
-  return result;
 }
 
 QFont::Weight weight(const QString& value) {
@@ -62,7 +49,8 @@ editor::CssPixelFont primitiveFont(const C4Primitive& primitive) {
   if (!primitive.css.fontStyle.trimmed().isEmpty())
     italic = primitive.css.fontStyle.compare(QLatin1String("italic"),
                                              Qt::CaseInsensitive) == 0;
-  const QStringList families = cssFamilies(family);
+  QStringList families = text::cssFontFamilies(family);
+  if (families.isEmpty()) families.append(QStringLiteral("Noto Sans"));
   editor::CssPixelFont result = editor::makeUnhintedCssPixelFont(
       families.first(), fontSize);
   if (families.size() > 1) result.font.setFamilies(families);

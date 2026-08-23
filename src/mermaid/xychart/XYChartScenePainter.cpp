@@ -2,6 +2,7 @@
 
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/scene/SvgPathParse.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 #include "mermaid/xychart/XYChartScene.h"
 
@@ -15,14 +16,6 @@
 
 namespace muffin::mermaid::xychart {
 namespace {
-
-QString visibleSvgText(QString text) {
-  static const QRegularExpression whitespace(QStringLiteral(R"([\t\n\r\f ]+)"));
-  text.replace(whitespace, QStringLiteral(" "));
-  while (text.startsWith(QLatin1Char(' '))) text.remove(0, 1);
-  while (text.endsWith(QLatin1Char(' '))) text.chop(1);
-  return text;
-}
 
 QColor withOpacity(QColor value, qreal opacity) {
   if (!std::isfinite(opacity)) opacity = 1.0;
@@ -55,7 +48,7 @@ QBrush fillBrush(const QString& value, qreal opacity = 1.0) {
 
 void drawText(QPainter& painter, const XYChartSceneStyle& style,
               const XYChartTextGeometry& text) {
-  const QString visible = visibleSvgText(text.text);
+  const QString visible = text::collapsedSvgText(text.text);
   if (!text.visible || !(text.opacity > 0.0)) return;
   const qreal usedSize = text.fontSize < 0.0 || !std::isfinite(text.fontSize)
                              ? style.rootFontSize

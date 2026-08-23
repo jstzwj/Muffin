@@ -3,6 +3,7 @@
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
 #include "mermaid/text/ChromiumTextMetrics.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/treemap/TreemapScenePainter.h"
 
 #include <QFontMetricsF>
@@ -61,16 +62,6 @@ QString jsString(const QJsonValue &value, const QString &fallback) {
 
 double jsRound(double value) { return std::floor(value + 0.5); }
 
-QString visibleSvgText(QString text) {
-  text.replace(QRegularExpression(QStringLiteral(R"([\t\n\r\f ]+)")),
-               QStringLiteral(" "));
-  while (text.startsWith(QLatin1Char(' ')))
-    text.remove(0, 1);
-  while (text.endsWith(QLatin1Char(' ')))
-    text.chop(1);
-  return text;
-}
-
 editor::CssPixelFont textFont(const TreemapSceneStyle &style, qreal size,
                               bool bold, bool italic) {
   auto font = editor::makeUnhintedCssPixelFont(
@@ -82,7 +73,7 @@ editor::CssPixelFont textFont(const TreemapSceneStyle &style, qreal size,
 
 double advance(const TreemapSceneStyle &style, const QString &text,
                qreal size, bool bold = false, bool italic = false) {
-  const QString visible = visibleSvgText(text);
+  const QString visible = text::collapsedSvgText(text);
   const auto font = textFont(style, size, bold, italic);
   const double qt = QFontMetricsF(font.font).horizontalAdvance(visible) * font.scale;
   const double shaped =
@@ -105,7 +96,7 @@ QRectF textBounds(const TreemapSceneStyle &style, const QString &text,
     return {};
   const auto font = textFont(style, size, bold, italic);
   const QFontMetricsF metrics(font.font);
-  const QString visible = visibleSvgText(text);
+  const QString visible = text::collapsedSvgText(text);
   const double shapedAdvance = advance(style, visible, size, bold, italic);
   QRectF ink = metrics.boundingRect(visible);
   ink = QRectF(ink.x() * font.scale, ink.y() * font.scale,

@@ -3,6 +3,7 @@
 #include "mermaid/wardley/WardleyScene.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFontMetricsF>
@@ -13,26 +14,6 @@
 
 namespace muffin::mermaid::wardley {
 namespace {
-
-QString visibleSvgText(QString value) {
-  value.replace(QRegularExpression(QStringLiteral(R"([\t\n\r\f ]+)")),
-                QStringLiteral(" "));
-  return value.trimmed();
-}
-
-QStringList families(const QString &expression) {
-  QStringList result;
-  for (QString family : expression.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
-    family = family.trimmed();
-    if (family.size() >= 2 &&
-        ((family.front() == QLatin1Char('"') && family.back() == QLatin1Char('"')) ||
-         (family.front() == QLatin1Char('\'') && family.back() == QLatin1Char('\''))))
-      family = family.mid(1, family.size() - 2);
-    if (!family.isEmpty()) result.append(family);
-  }
-  if (result.isEmpty()) result.append(QStringLiteral("Noto Sans"));
-  return result;
-}
 
 color::SvgPaint fillPaint(const QString &value) {
   return color::resolveSvgPaint(value, color::SvgPaintKind::Fill, Qt::black);
@@ -79,11 +60,12 @@ void paintText(QPainter &painter, const WardleyScene &scene,
   const auto fill = color::resolveSvgPaint(
       primitive.fill, color::SvgPaintKind::Text, Qt::black);
   if (fill.none) return;
-  const QStringList stack = families(scene.style.fontFamily);
+  QStringList stack = text::cssFontFamilies(scene.style.fontFamily);
+  if (stack.isEmpty()) stack.append(QStringLiteral("Noto Sans"));
   auto font = editor::makeUnhintedCssPixelFont(stack.first(), primitive.fontSize);
   if (stack.size() > 1) font.font.setFamilies(stack);
   font.font.setWeight(primitive.bold ? QFont::Bold : QFont::Normal);
-  const QString text = visibleSvgText(primitive.text);
+  const QString text = text::collapsedSvgText(primitive.text);
   const qreal advance = QFontMetricsF(font.font).horizontalAdvance(text) * font.scale;
   qreal x = 0.0;
   if (primitive.anchor == QLatin1String("middle")) x -= advance / 2.0;

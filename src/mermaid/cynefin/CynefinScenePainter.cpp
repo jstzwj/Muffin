@@ -3,6 +3,7 @@
 #include "mermaid/cynefin/CynefinScene.h"
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/flowchart/FlowLabel.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFontMetricsF>
@@ -135,14 +136,6 @@ void paintRect(QPainter &painter, const CynefinRectGeometry &rect,
     painter.drawRect(rect.rect);
 }
 
-QString visibleSvgText(QString value) {
-  value.replace(QRegularExpression(QStringLiteral(R"([\t\n\r\f ]+)")),
-                QStringLiteral(" "));
-  while (value.startsWith(QLatin1Char(' '))) value.remove(0, 1);
-  while (value.endsWith(QLatin1Char(' '))) value.chop(1);
-  return value;
-}
-
 QStringList cssFontFamilies(const QString &expression) {
   QStringList result;
   for (QString family : expression.split(QLatin1Char(','), Qt::SkipEmptyParts)) {
@@ -186,7 +179,7 @@ void paintText(QPainter &painter, const CynefinScene &scene,
   if (families.size() > 1) font.font.setFamilies(families);
   font.font.setWeight(bold ? QFont::Bold : QFont::Normal);
   font.font.setItalic(italic);
-  const QString visible = visibleSvgText(text.text);
+  const QString visible = text::collapsedSvgText(text.text);
   qreal width = QFontMetricsF(font.font).horizontalAdvance(visible) * font.scale;
   qreal x = std::isfinite(text.position.x()) ? text.position.x() : 0.0;
   if (text.anchor == QLatin1String("middle")) x -= width / 2.0;

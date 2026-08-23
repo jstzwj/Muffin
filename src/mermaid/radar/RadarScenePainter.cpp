@@ -2,6 +2,7 @@
 
 #include "mermaid/editor/MermaidRenderSupport.h"
 #include "mermaid/radar/RadarScene.h"
+#include "mermaid/text/LabelText.h"
 #include "mermaid/theme/MermaidColor.h"
 
 #include <QFontMetricsF>
@@ -123,12 +124,7 @@ void drawAnchoredText(QPainter& painter, const QString& family, qreal pixelSize,
                       RadarTextAnchor horizontal, RadarBaseline vertical,
                       const QColor& value,
                       QFont::Weight weight = QFont::Normal) {
-  static const QRegularExpression collapsibleWhitespace(
-      QStringLiteral(R"([\t\n\r\f ]+)"));
-  QString visibleText = text;
-  visibleText.replace(collapsibleWhitespace, QStringLiteral(" "));
-  while (visibleText.startsWith(QLatin1Char(' '))) visibleText.remove(0, 1);
-  while (visibleText.endsWith(QLatin1Char(' '))) visibleText.chop(1);
+  const QString visibleText = text::collapsedSvgText(text);
   if (visibleText.isEmpty() || !(pixelSize > 0.0) || !std::isfinite(pixelSize) ||
       !finitePoint(anchor))
     return;
