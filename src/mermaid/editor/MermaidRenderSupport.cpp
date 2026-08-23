@@ -670,6 +670,14 @@ MermaidRenderMetadata renderMetadata(
   // fields but are not observed by the 11.16 render path.
   metadata.svgArrowMarkerAbsolute =
       pre.config.value(QStringLiteral("arrowMarkerAbsolute")).toBool(false);
+  // Per-family renderer capability (upstream 11.16): only flowchart*/swimlane/sequence emit
+  // absolute marker URLs, sequence with CSS escaping. The family-agnostic exporter reads the
+  // computed bits instead of switching on diagramType.
+  metadata.svgMarkerAbsoluteEligible =
+      diagramType.startsWith(QLatin1String("flowchart")) ||
+      diagramType == QLatin1String("swimlane") ||
+      diagramType == QLatin1String("sequence");
+  metadata.svgMarkerUrlCssEscape = diagramType == QLatin1String("sequence");
   metadata.svgDeterministicIds =
       pre.config.value(QStringLiteral("deterministicIds")).toBool(false);
   metadata.svgDeterministicIdSeed =

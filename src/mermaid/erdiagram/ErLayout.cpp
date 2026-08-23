@@ -86,6 +86,9 @@ muffin::mermaid::er::buildErLayoutInput(const ErDiagramData& data) {
     out.attributes = entity.attributes;
     out.cssClasses = entity.cssClasses;
     out.styles = entity.styles;
+    out.link = entity.link;
+    out.linkTarget = entity.linkTarget;
+    out.tooltip = entity.tooltip;
     for (const ErAttribute& attr : entity.attributes) {
       out.attributeLines.append(formatErAttributeLine(attr));
       // Placeholder — upstream populates compiled CSS per row; deferred (spec §9).

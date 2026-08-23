@@ -32,6 +32,9 @@ struct ErLayoutEntityInput {
   QVector<ErAttribute> attributes;
   QString cssClasses;     // classDef names applied via class/cssClass
   QStringList styles;     // inline `style` declarations (key:value)
+  QString link;           // click/href interaction directive target (spec §514 gap)
+  QString linkTarget;     // link open target (unused by current seams, kept for parity)
+  QString tooltip;        // click tooltip directive
 };
 
 struct ErLayoutRelationshipInput {

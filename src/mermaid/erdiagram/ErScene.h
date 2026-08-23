@@ -55,6 +55,9 @@ struct ErSceneEntity {
   // empty when no classDef/style applies — the painter falls back to scene.style.
   QString fill;
   QString stroke;
+  // Interaction directives (click/href/tooltip), feeding interactionRegions().
+  QString link;
+  QString tooltip;
 };
 
 // `pathBounds` is the bounding rect of the raw edge geometry (for culling);
@@ -83,10 +86,14 @@ struct ErScene : MermaidScene {
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
   SvgMarkerProjection svgMarkerProjection() const override;
+  const QVector<InteractionRegion>& interactionRegions() const override {
+    return interactions;
+  }
 
   QRectF bounds;
   QVector<ErSceneEntity> entities;
   QVector<ErSceneRelationship> relationships;
+  QVector<InteractionRegion> interactions;
   ErSceneStyle style;
   QString role = QStringLiteral("graphics-document document");
   QString ariaRoleDescription = QStringLiteral("erDiagram");

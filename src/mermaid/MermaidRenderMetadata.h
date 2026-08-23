@@ -38,6 +38,11 @@ struct MermaidRenderMetadata {
   bool svgUseMaxWidth = true;
   bool svgEmitViewBox = true;
   bool svgArrowMarkerAbsolute = false;
+  // Computed per family (NOT user config): only the flowchart*/swimlane/sequence renderers
+  // honor arrowMarkerAbsolute with a document URL base, and sequence additionally CSS-escapes
+  // it. Precomputed here so the family-agnostic SVG exporter never switches on diagramType.
+  bool svgMarkerAbsoluteEligible = false;
+  bool svgMarkerUrlCssEscape = false;
   bool svgDeterministicIds = false;
   // Most families always expose an SVG <title>, falling back to "Mermaid
   // diagram". Families whose upstream renderer discards metadata set this

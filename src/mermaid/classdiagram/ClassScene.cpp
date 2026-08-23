@@ -356,6 +356,7 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     rendered.id = node.id; rendered.shape = node.shape;
     rendered.cssClasses = node.cssClasses; rendered.cssStyles = node.cssStyles;
     rendered.styles = node.styles; rendered.center = {placed.x, placed.y};
+    rendered.link = node.link; rendered.tooltip = node.tooltip;
     applyNodeStyles(rendered, scene.style);
     rendered.size = {placed.width, placed.height};
     if (node.shape == QLatin1String("classBox") && boxesById.contains(node.id)) {
@@ -532,6 +533,21 @@ ClassScene buildClassScene(const ClassLayoutInput& input,
     for (const QVector<QPointF>& segment : edge.renderedSegments)
       for (const QPointF& point : segment) unite(QRectF(point, QSizeF(0, 0)));
   }
+
+  // Interaction regions for click/href directives (mirror FlowScene: the node box is the
+  // link region; the tooltip doubles as the SVG <title>/aria-label).
+  for (const ClassSceneNode& node : scene.nodes) {
+    if (node.link.isEmpty()) continue;
+    InteractionRegion region;
+    region.bounds = QRectF(node.center.x() - node.size.width() / 2.0,
+                           node.center.y() - node.size.height() / 2.0,
+                           node.size.width(), node.size.height());
+    region.href = node.link;
+    region.toolTip = node.tooltip;
+    region.accessibleLabel = node.tooltip;
+    scene.interactions.append(region);
+  }
+
   return scene;
 }
 

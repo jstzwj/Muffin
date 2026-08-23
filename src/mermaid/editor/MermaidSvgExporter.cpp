@@ -169,18 +169,15 @@ QString cssEscapeUrl(QString value) {
 
 QString absoluteMarkerBase(const MermaidRenderEntry& entry,
                            const MermaidSvgExportOptions& options) {
-  if (!entry.metadata.svgArrowMarkerAbsolute || options.documentUrl.isEmpty())
-    return {};
-  const QString family = entry.metadata.diagramType;
-  if (!(family.startsWith(QLatin1String("flowchart")) ||
-        family == QLatin1String("swimlane") ||
-        family == QLatin1String("sequence")))
+  // Family capability is precomputed in the metadata (svgMarkerAbsoluteEligible /
+  // svgMarkerUrlCssEscape) — this serializer stays family-agnostic.
+  if (!entry.metadata.svgArrowMarkerAbsolute || !entry.metadata.svgMarkerAbsoluteEligible ||
+      options.documentUrl.isEmpty())
     return {};
   QUrl url = options.documentUrl;
   url.setFragment({});
   const QString serialized = url.toString(QUrl::FullyEncoded);
-  return family == QLatin1String("sequence")
-      ? cssEscapeUrl(serialized) : serialized;
+  return entry.metadata.svgMarkerUrlCssEscape ? cssEscapeUrl(serialized) : serialized;
 }
 
 QString markerId(const QString& rootId, const SvgMarkerDefinition& definition) {

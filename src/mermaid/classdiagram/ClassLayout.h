@@ -30,6 +30,8 @@ struct ClassLayoutNodeInput {
   std::optional<qreal> padding;
   bool isGroup = false;
   QString look = QStringLiteral("classic");
+  QString link;      // click/href interaction directive target
+  QString tooltip;   // click tooltip directive
 };
 
 struct ClassLayoutEdgeInput {

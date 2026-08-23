@@ -399,6 +399,10 @@ KanbanScene buildKanbanScene(const KanbanData& data, KanbanConfig config,
         InteractionRegion region;
         region.bounds = item.ticket.bounds;
         region.href = item.href;
+        // The ticket id is the link text upstream; it also serves the SVG
+        // <title>/aria-label the exporter writes for href regions.
+        region.toolTip = node.ticket;
+        region.accessibleLabel = node.ticket;
         scene.interactions.append(region);
       }
       includeRect(content, hasContent, item.bounds);

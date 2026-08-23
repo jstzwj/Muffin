@@ -171,6 +171,8 @@ ClassLayoutInput buildClassLayoutInput(const ClassDiagramData& data,
     node.cssClasses = value.cssClasses;
     node.styles = value.styles;
     node.annotations = value.annotations;
+    node.link = value.link;
+    node.tooltip = value.tooltip;
     node.look = options.look;
     for (const ClassMember& member : value.members) node.members.append(memberInput(member));
     for (const ClassMember& method : value.methods) node.methods.append(memberInput(method));

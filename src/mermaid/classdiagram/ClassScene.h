@@ -56,6 +56,9 @@ struct ClassSceneNode {
   QString stroke;
   QString textColor;
   qreal strokeWidth = 1.0;
+  // Interaction directives (click/href/tooltip), feeding interactionRegions().
+  QString link;
+  QString tooltip;
   QVector<rough::Drawable> roughDrawables;
   QRectF paintedBounds;
 };
@@ -137,11 +140,15 @@ struct ClassScene : MermaidScene {
   void paint(QPainter& painter, const MermaidPaintOptions& options) const override;
   QJsonObject toJsonObject() const override;
   SvgMarkerProjection svgMarkerProjection() const override;
+  const QVector<InteractionRegion>& interactionRegions() const override {
+    return interactions;
+  }
 
   QRectF bounds;
   QVector<ClassSceneCluster> clusters;
   QVector<ClassSceneEdge> edges;
   QVector<ClassSceneNode> nodes;
+  QVector<InteractionRegion> interactions;
   QVector<ClassMarkerDefinition> markers;
   ClassSceneStyle style;
   // handDrawn (rough) look — gated in the painter, only set when the diagram

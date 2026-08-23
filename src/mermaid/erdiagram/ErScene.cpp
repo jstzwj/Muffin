@@ -165,6 +165,8 @@ er::ErScene er::buildErScene(const er::ErLayoutInput& input,
           classes, source->styles, classDefs, themeDefaults);
       entity.fill = resolved.fill;
       entity.stroke = resolved.stroke;
+      entity.link = source->link;
+      entity.tooltip = source->tooltip;
     }
     entity.bounds =
         QRectF(placed.center - QPointF(placed.size.width() / 2.0,
@@ -197,6 +199,16 @@ er::ErScene er::buildErScene(const er::ErLayoutInput& input,
     }
     entity.nameDocument =
         flowchart::parseFlowLabel(entity.name, QStringLiteral("text"));
+    if (!entity.link.isEmpty()) {
+      // Mirror FlowScene: the whole entity box is the link region; the tooltip
+      // doubles as the SVG <title>/aria-label.
+      InteractionRegion region;
+      region.bounds = entity.bounds;
+      region.href = entity.link;
+      region.toolTip = entity.tooltip;
+      region.accessibleLabel = entity.tooltip;
+      scene.interactions.append(region);
+    }
     scene.entities.append(std::move(entity));
   }
 
