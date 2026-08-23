@@ -65,4 +65,16 @@ inline int specificityOf(const QString& selector) {
   return a * 10000 + b * 100 + c;
 }
 
+// Shared cascade-winner comparison: importance beats specificity beats source order, last wins
+// on full ties (mirroring CSS). Used by BOTH the computed-style engine and the decoration
+// extractor — previously two structurally identical `beats()` copies that could drift apart
+// (e.g. a future origin/layer rule added to one and not the other). Candidate types need
+// `.important`, `.specificity` and `.order` members.
+template <typename Candidate>
+bool cascadeBeats(const Candidate& a, const Candidate& b) {
+  if (a.important != b.important) { return a.important; }
+  if (a.specificity != b.specificity) { return a.specificity > b.specificity; }
+  return a.order > b.order;
+}
+
 }  // namespace muffin

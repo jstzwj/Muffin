@@ -503,11 +503,6 @@ bool selectorMatches(const ParsedSelector& selector, const CssElement& element, 
   return selectorMatchesAt(selector, selector.parts.size() - 1, &element, state);
 }
 
-bool beats(const Candidate& a, const Candidate& b) {
-  if (a.important != b.important) { return a.important; }
-  if (a.specificity != b.specificity) { return a.specificity > b.specificity; }
-  return a.order > b.order;
-}
 
 // applyStyleForElement / parentStyleFor are now CssComputedStyleEngine members
 // (they read the cached parse + sheet_). Their definitions sit below, next to
@@ -590,7 +585,7 @@ void CssComputedStyleEngine::applyStyleForElement(const CssElement& element, con
       if (matched) {
         Candidate c{decl.value, matchedSelector, decl.important, spec, order};
         const auto it = winners.constFind(decl.property);
-        if (it == winners.constEnd() || beats(c, it.value())) { winners.insert(decl.property, c); }
+        if (it == winners.constEnd() || cascadeBeats(c, it.value())) { winners.insert(decl.property, c); }
       }
       ++order;
     }

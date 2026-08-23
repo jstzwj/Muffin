@@ -33,11 +33,6 @@ RootFill rootFill(const RadarScene& scene) {
   return paint.none ? RootFill{.none = true} : RootFill{.color = paint.color};
 }
 
-QColor cssColor(const QString& value) {
-  return color::isParsableColor(value) ? color::toQColor(value)
-                                        : QColor(Qt::black);
-}
-
 QColor withOpacity(QColor value, qreal opacity) {
   if (!std::isfinite(opacity)) opacity = 1.0;
   value.setAlphaF(std::clamp(value.alphaF() * opacity, 0.0, 1.0));
@@ -60,7 +55,7 @@ QPen strokePen(const QString& value, qreal width, const QColor& inherited) {
 QBrush inheritedFillBrush(const RootFill& root, const QString& elementColor,
                           qreal opacity) {
   if (root.none) return QBrush(Qt::NoBrush);
-  const QColor value = root.currentColor ? cssColor(elementColor) : root.color;
+  const QColor value = root.currentColor ? color::cssColor(elementColor) : root.color;
   return QBrush(withOpacity(value, opacity));
 }
 
@@ -76,7 +71,7 @@ QBrush fillBrush(const QString& raw, qreal opacity, const RootFill& root,
   if (value.compare(QLatin1String("none"), Qt::CaseInsensitive) == 0)
     return QBrush(Qt::NoBrush);
   if (value.compare(QLatin1String("currentColor"), Qt::CaseInsensitive) == 0)
-    return QBrush(withOpacity(cssColor(elementColor), opacity));
+    return QBrush(withOpacity(color::cssColor(elementColor), opacity));
   if (value.compare(QLatin1String("initial"), Qt::CaseInsensitive) == 0)
     return QBrush(withOpacity(QColor(Qt::black), opacity));
   if (!color::isParsableColor(value))

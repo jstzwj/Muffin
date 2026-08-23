@@ -35,10 +35,6 @@ PaintState lineStroke(const QString& value, const QColor& presentation) {
   return journeyLineStroke(value, presentation);
 }
 
-QColor cssColor(const QString& value, const QColor& fallback = Qt::black) {
-  return color::isParsableColor(value) ? color::toQColor(value) : fallback;
-}
-
 QColor htmlColor(const QString& value) {
   // Journey foreignObject labels use CSS `color`, not SVG `fill`. Invalid
   // color values (including `none`) are dropped by CSS and inherit the HTML
@@ -327,7 +323,7 @@ void paintJourneyScene(const JourneyScene& scene, QPainter& painter,
     if (actor.circle.visible) {
       painter.save();
       painter.setOpacity(effectiveOpacity(actor.circle));
-      const PaintState presentation{false, cssColor(actor.color)};
+      const PaintState presentation{false, color::cssColor(actor.color)};
       setBrush(painter, elementSvgFill(
                             effectiveCss(actor.circle.fill, actor.color),
                             rootFill, presentation));
@@ -371,7 +367,7 @@ void paintJourneyScene(const JourneyScene& scene, QPainter& painter,
     painter.save();
     painter.setOpacity(effectiveOpacity(section.box));
     const PaintState presentation{
-        false, cssColor(section.presentationFill,
+        false, color::cssColor(section.presentationFill,
                         QColor(QStringLiteral("#cccccc")))};
     const PaintState stroke = lineStroke(
         effectiveCss(section.box.stroke, QStringLiteral("#666666")),
@@ -424,7 +420,7 @@ void paintJourneyScene(const JourneyScene& scene, QPainter& painter,
       painter.save();
       painter.setOpacity(effectiveOpacity(task.face));
       const PaintState facePresentation{
-          false, cssColor(scene.style.faceColor,
+          false, color::cssColor(scene.style.faceColor,
                           QColor(QStringLiteral("#FFF8DC")))};
       setBrush(painter, elementSvgFill(
                             effectiveCss(task.face.fill, scene.style.faceColor),
@@ -468,7 +464,7 @@ void paintJourneyScene(const JourneyScene& scene, QPainter& painter,
           setBrush(painter, rootFill);
           painter.drawPath(mouthPath(task.score > 3.0));
         } else {
-          QPen mouthPen(cssColor(
+          QPen mouthPen(color::cssColor(
                             effectiveCss(task.mouth.stroke,
                                          QStringLiteral("#666666")),
                             QColor(QStringLiteral("#666666"))),
@@ -498,7 +494,7 @@ void paintJourneyScene(const JourneyScene& scene, QPainter& painter,
         painter.setPen(Qt::NoPen);
       }
       const PaintState presentation{
-          false, cssColor(task.presentationFill,
+          false, color::cssColor(task.presentationFill,
                           QColor(QStringLiteral("#cccccc")))};
       setBrush(painter, task.cssFillActive
                             ? elementSvgFill(task.fill, rootFill, presentation)
@@ -517,7 +513,7 @@ void paintJourneyScene(const JourneyScene& scene, QPainter& painter,
       painter.save();
       painter.setOpacity(effectiveOpacity(circleCss));
       const qreal actorX = task.actorCenters.value(i, task.rect.x() + 14.0);
-      const PaintState presentation{false, cssColor(actor->color)};
+      const PaintState presentation{false, color::cssColor(actor->color)};
       setBrush(painter, elementSvgFill(
                             effectiveCss(circleCss.fill, actor->color),
                             rootFill, presentation));

@@ -1,5 +1,7 @@
 #include "theme/CssDecorationExtractor.h"
 
+#include "theme/CssSelectorUtils.h"
+
 #include "theme/CssContent.h"
 #include "theme/CssFlatDecl.h"
 #include "theme/CssSelectorAnalysis.h"
@@ -30,14 +32,9 @@ namespace {
 struct Candidate {
   QString rawValue;
   bool important = false;
-  int spec = 0;
+  int specificity = 0;  // from FlatDecl.spec (CssSelectorAnalysis)
   int order = 0;
 };
-bool beats(const Candidate& a, const Candidate& b) {
-  if (a.important != b.important) { return a.important; }
-  if (a.spec != b.spec) { return a.spec > b.spec; }
-  return a.order > b.order;
-}
 
 // --- data: URI decoding (for url(data:image/svg+xml,…) pseudo-element icons) ---
 
@@ -118,7 +115,7 @@ QString bestValue(const std::vector<FlatDecl>& flat, const std::vector<QString>&
     if (!target(fd.info)) { continue; }
     if (std::find(properties.begin(), properties.end(), fd.property) == properties.end()) { continue; }
     Candidate c{fd.value, fd.important, fd.spec, fd.order};
-    if (!have || beats(c, best)) { best = c; have = true; }
+    if (!have || cascadeBeats(c, best)) { best = c; have = true; }
   }
   return have ? best.rawValue : QString();
 }

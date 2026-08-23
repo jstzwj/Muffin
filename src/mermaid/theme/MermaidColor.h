@@ -120,4 +120,10 @@ enum class SvgPaintKind { Fill, Stroke, Text };
 struct SvgPaint { bool none = false; QColor color; };
 SvgPaint resolveSvgPaint(const QString& value, SvgPaintKind kind, const QColor& inherited);
 
+// CSS `color`-style resolution with a fallback (invalid values — including `none` — are dropped
+// by CSS and fall back). The journey/radar painters each carried a private copy of this.
+inline QColor cssColor(const QString& value, const QColor& fallback = QColor(Qt::black)) {
+  return isParsableColor(value) ? toQColor(value) : fallback;
+}
+
 }  // namespace muffin::mermaid::color
