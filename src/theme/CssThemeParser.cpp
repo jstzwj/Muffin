@@ -531,22 +531,37 @@ QStringList CssThemeParser::splitTopLevelCommas(const QString& text) {
   return out;
 }
 
-CssThemeSheet CssThemeParser::parse(const QString& text, const QString& baseDir) {
+namespace {
+
+CssThemeSheet parseSheetWithImports(const QString& text, const QString& baseDir, QSet<QString>& visited) {
   CssThemeSheet sheet;
   // Imports first: their rules/variables merge under this file's so the
   // importing file wins on ties (CSS cascade for top-of-file @import).
   for (const QString& target : collectImports(text)) {
     const QString resolved = resolveImportPath(target, baseDir);
     if (resolved.isEmpty()) { continue; }
+    // Cycle guard: two themes that @import each other (directly or through a
+    // chain) must not recurse forever. A repeated non-cyclic import is skipped
+    // too — its rules were already merged on the first visit.
+    const QString canon = QDir::cleanPath(resolved);
+    if (visited.contains(canon)) { continue; }
+    visited.insert(canon);
     QFile f(resolved);
     if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) { continue; }
     const QString subText = QString::fromUtf8(f.readAll());
     f.close();
-    CssThemeSheet sub = parse(subText, QFileInfo(resolved).absolutePath());
+    CssThemeSheet sub = parseSheetWithImports(subText, QFileInfo(resolved).absolutePath(), visited);
     sheet.mergeIn(sub);
   }
   parseRules(text, sheet, false, baseDir);
   return sheet;
+}
+
+}  // namespace
+
+CssThemeSheet CssThemeParser::parse(const QString& text, const QString& baseDir) {
+  QSet<QString> visited;
+  return parseSheetWithImports(text, baseDir, visited);
 }
 
 std::vector<CssDeclaration> CssThemeParser::parseDeclarations(

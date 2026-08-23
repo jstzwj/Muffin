@@ -146,7 +146,14 @@ bool encodeWindows1252(QStringView text, QByteArray* bytes) {
       {0x017d, 0x8e}, {0x2018, 0x91}, {0x2019, 0x92}, {0x201c, 0x93},
       {0x201d, 0x94}, {0x2022, 0x95}, {0x2013, 0x96}, {0x2014, 0x97},
       {0x02dc, 0x98}, {0x2122, 0x99}, {0x0161, 0x9a}, {0x203a, 0x9b},
-      {0x0153, 0x9c}, {0x017e, 0x9e}, {0x0178, 0x9f}};
+      {0x0153, 0x9c}, {0x017e, 0x9e}, {0x0178, 0x9f},
+      // The five bytes undefined in Windows-1252 (0x81/0x8D/0x8F/0x90/0x9D) map to the
+      // matching C1 controls in the official best-fit table, and decodeWindows1252
+      // rejects them so detection falls through to ICU — which decodes them exactly
+      // this way. Without these entries such a file opened fine but could never be
+      // saved back ("cannot be encoded" deadlock).
+      {0x0081, 0x81}, {0x008d, 0x8d}, {0x008f, 0x8f},
+      {0x0090, 0x90}, {0x009d, 0x9d}};
 
   QByteArray encoded;
   encoded.reserve(text.size());
@@ -167,7 +174,14 @@ bool encodeWindows1252(QStringView text, QByteArray* bytes) {
 bool decodeLegacyText(
     const QByteArray& bytes, const QString& encodingName, QString* text) {
   if (encodingName.compare(QStringLiteral("windows-1252"), Qt::CaseInsensitive) == 0) {
-    return decodeWindows1252(bytes, text);
+    if (decodeWindows1252(bytes, text)) {
+      return true;
+    }
+    // The strict table rejects the five bytes undefined in Windows-1252 (kept lossless
+    // for charset detection). An EXPLICIT reopen must still succeed: fall back to ICU's
+    // windows-1252, which maps them to the matching C1 controls per the official
+    // best-fit table — the same characters encodeWindows1252 writes back on save.
+    return decodeWithIcu(bytes, QStringLiteral("windows-1252"), text);
   }
   return decodeWithIcu(bytes, encodingName, text);
 }

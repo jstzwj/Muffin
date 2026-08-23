@@ -22,6 +22,14 @@ public:
   void push(EditTransaction transaction);
   EditTransaction takeUndo();
   EditTransaction takeRedo();
+  // Puts back a transaction whose application failed after takeUndo/takeRedo already
+  // moved it to the opposite stack: drop it from there and push it back onto its
+  // original stack, so a failed undo/redo leaves the history exactly as it was
+  // instead of silently consuming the step. Call immediately after the failed take
+  // (synchronously, before anything else can push) — the opposite stack's tail is
+  // assumed to be this transaction.
+  void restoreUndo(const EditTransaction& transaction);
+  void restoreRedo(const EditTransaction& transaction);
   void clear();
 
 signals:

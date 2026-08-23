@@ -474,9 +474,13 @@ void EditorController::applySnapshot(const DocumentSnapshot& snapshot) {
   }
 }
 
-void EditorController::applyTransaction(const EditTransaction& transaction, bool undo) {
+// Applies one popped undo/redo transaction. Returns true when the state change landed
+// (directly or via the full-reparse fallback); false when nothing was applied — callers
+// must then put the transaction back on its original stack (UndoStack::restoreUndo/
+// restoreRedo), because takeUndo/takeRedo already moved it to the opposite stack.
+bool EditorController::applyTransaction(const EditTransaction& transaction, bool undo) {
   if (!session_ || !transaction.isValid()) {
-    return;
+    return false;
   }
 
   UndoPerfTimer perf(undo ? "undo.applyTransaction" : "redo.applyTransaction");
@@ -485,7 +489,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
 
   if (transaction.isSnapshot()) {
     applySnapshot(undo ? transaction.before() : transaction.after());
-    return;
+    return true;
   }
 
   if (transaction.isTableCommand()) {
@@ -493,11 +497,12 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     const MarkdownNode* table = undo ? command.beforeTable.get() : command.afterTable.get();
     if (!table) {
       warnUndoApplyFailed(undo, "table command", "missing stored table snapshot");
-      return;
+      return false;
     }
     const bool applied = session_->applyTableSnapshot(command.tableId, command.tableIndex, *table, true);
     if (!applied) {
       warnUndoApplyFailed(undo, "table command", "table snapshot could not be applied");
+      return false;
     }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = tableCursorForLocation(
@@ -510,10 +515,8 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    if (applied) {
-      requestRefreshForNodes(brushQueue_, *session_, QVector<NodeId>{command.tableId}, cursor);
-    }
-    return;
+    requestRefreshForNodes(brushQueue_, *session_, QVector<NodeId>{command.tableId}, cursor);
+    return true;
   }
 
   if (transaction.isInsertNodeCommand()) {
@@ -525,6 +528,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
         session_->applyInsertedNode(command.nodeId, command.nodeType, replaceStart, command.nodeSourceStart, replaceEnd - replaceStart, replacement, true);
     if (!appliedLocally) {
       warnUndoApplyFallback(undo, "insert node command", "inserted node delta could not be applied locally");
+      return false;
     }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = undo ? CursorPosition() : insertedNodeCursor(*session_, command, storedCursor);
@@ -539,16 +543,12 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    if (appliedLocally) {
-      QVector<NodeId> affectedNodes = command.affectedNodes;
-      if (!undo && command.nodeId.isValid() && !affectedNodes.contains(command.nodeId)) {
-        affectedNodes.push_back(command.nodeId);
-      }
-      requestRefreshForNodes(brushQueue_, *session_, affectedNodes, cursor);
-    } else {
-      brushQueue_.requestFullRefresh();
+    QVector<NodeId> affectedNodes = command.affectedNodes;
+    if (!undo && command.nodeId.isValid() && !affectedNodes.contains(command.nodeId)) {
+      affectedNodes.push_back(command.nodeId);
     }
-    return;
+    requestRefreshForNodes(brushQueue_, *session_, affectedNodes, cursor);
+    return true;
   }
 
   if (transaction.isReplaceNodeCommand()) {
@@ -556,11 +556,12 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     const MarkdownNode* node = undo ? command.beforeNode.get() : command.afterNode.get();
     if (!node) {
       warnUndoApplyFailed(undo, "replace node command", "missing stored node snapshot");
-      return;
+      return false;
     }
     const bool appliedLocally = session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *node, true);
     if (!appliedLocally) {
       warnUndoApplyFallback(undo, "replace node command", "node snapshot could not be applied locally");
+      return false;
     }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = replacedNodeCursor(*session_, command, storedCursor);
@@ -572,12 +573,8 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    if (appliedLocally) {
-      requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
-    } else {
-      brushQueue_.requestFullRefresh();
-    }
-    return;
+    requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
+    return true;
   }
 
   if (transaction.isRemoveNodeCommand()) {
@@ -593,6 +590,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
           command.delta.start,
           replaceLength,
           session_->markdownText().size());
+      return false;
     }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = remapSnapshotCursor(storedCursor);
@@ -601,10 +599,8 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    if (applied) {
-      requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
-    }
-    return;
+    requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
+    return true;
   }
 
   if (transaction.isSetNodeAttrCommand()) {
@@ -612,16 +608,17 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     MarkdownNode* currentNode = nodeByIdOrIndex(*session_, command.nodeId, command.nodeType, command.nodeIndex);
     if (!currentNode) {
       warnUndoApplyFailed(undo, "set node attribute command", "target node could not be found");
-      return;
+      return false;
     }
     auto nextNode = currentNode->clone(CloneMode::PreserveIds);
     if (!applyNodeAttribute(*nextNode, command.attribute, undo ? command.beforeValue : command.afterValue)) {
       warnUndoApplyFailed(undo, "set node attribute command", "attribute value could not be applied");
-      return;
+      return false;
     }
     const bool appliedLocally = session_->applyNodeSnapshot(command.nodeId, command.nodeType, command.nodeIndex, *nextNode, true);
     if (!appliedLocally) {
       warnUndoApplyFallback(undo, "set node attribute command", "node snapshot could not be applied locally");
+      return false;
     }
     const CursorPosition storedCursor = undo ? command.beforeCursor : command.afterCursor;
     CursorPosition cursor = remapSnapshotCursor(storedCursor);
@@ -630,17 +627,13 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
     } else {
       selection_.clear();
     }
-    if (appliedLocally) {
-      requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
-    } else {
-      brushQueue_.requestFullRefresh();
-    }
-    return;
+    requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
+    return true;
   }
 
   if (!transaction.isTextDeltaCommand()) {
     warnUndoApplyFailed(undo, "transaction", "unsupported transaction storage");
-    return;
+    return false;
   }
 
   const TextDeltaCommand& command = transaction.textDeltaCommand();
@@ -678,7 +671,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
           replaceStart,
           replaceEnd >= replaceStart ? replaceEnd - replaceStart : qsizetype(-1),
           text.size());
-      return;
+      return false;
     }
     text.replace(replaceStart, replaceEnd - replaceStart, replacement);
     {
@@ -689,6 +682,7 @@ void EditorController::applyTransaction(const EditTransaction& transaction, bool
   } else {
     requestRefreshForNodes(brushQueue_, *session_, command.affectedNodes, cursor);
   }
+  return true;
 }
 
 CursorPosition EditorController::remapSnapshotCursor(const CursorPosition& snapshotCursor) const {

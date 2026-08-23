@@ -134,8 +134,16 @@ bool LiteralBlockController::deleteBackward() {
                               if (offset <= 0) {
                                 return true;
                               }
-                              value.remove(offset - 1, 1);
-                              --offset;
+                              // Delete a full code point, not one UTF-16 unit — removing
+                              // only the low surrogate of an emoji left an unpaired high
+                              // surrogate behind (invalid text on save).
+                              qsizetype count = 1;
+                              if (value.at(offset - 1).isLowSurrogate() && offset - 1 > 0 &&
+                                  value.at(offset - 2).isHighSurrogate()) {
+                                count = 2;
+                              }
+                              value.remove(offset - count, count);
+                              offset -= count;
                               node.setLiteral(value);
                               return true;
                             });
@@ -152,7 +160,13 @@ bool LiteralBlockController::deleteForward() {
                               if (offset >= value.size()) {
                                 return true;
                               }
-                              value.remove(offset, 1);
+                              // Delete a full code point (see deleteBackward).
+                              qsizetype count = 1;
+                              if (value.at(offset).isHighSurrogate() && offset + 1 < value.size() &&
+                                  value.at(offset + 1).isLowSurrogate()) {
+                                count = 2;
+                              }
+                              value.remove(offset, count);
                               node.setLiteral(value);
                               return true;
                             });

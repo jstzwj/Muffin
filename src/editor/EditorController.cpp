@@ -450,14 +450,24 @@ void EditorController::undo() {
   if (!canUndo()) {
     return;
   }
-  applyTransaction(undoStack_.takeUndo(), true);
+  const EditTransaction transaction = undoStack_.takeUndo();
+  if (!applyTransaction(transaction, true)) {
+    // Nothing was applied — put the step back so the history stays aligned instead of
+    // silently consuming it (the "Ctrl+Z did nothing" misalignment bug).
+    undoStack_.restoreUndo(transaction);
+    brushQueue_.requestFullRefresh();
+  }
 }
 
 void EditorController::redo() {
   if (!canRedo()) {
     return;
   }
-  applyTransaction(undoStack_.takeRedo(), false);
+  const EditTransaction transaction = undoStack_.takeRedo();
+  if (!applyTransaction(transaction, false)) {
+    undoStack_.restoreRedo(transaction);
+    brushQueue_.requestFullRefresh();
+  }
 }
 
 ParagraphController& EditorController::paragraphController() {

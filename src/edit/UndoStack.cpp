@@ -62,6 +62,22 @@ EditTransaction UndoStack::takeRedo() {
   return transaction;
 }
 
+void UndoStack::restoreUndo(const EditTransaction& transaction) {
+  if (!redo_.isEmpty()) {
+    redo_.takeLast();
+  }
+  undo_.push_back(transaction);
+  emit stateChanged();
+}
+
+void UndoStack::restoreRedo(const EditTransaction& transaction) {
+  if (!undo_.isEmpty()) {
+    undo_.takeLast();
+  }
+  redo_.push_back(transaction);
+  emit stateChanged();
+}
+
 void UndoStack::clear() {
   if (undo_.isEmpty() && redo_.isEmpty()) {
     return;

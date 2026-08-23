@@ -96,7 +96,10 @@ private:
   bool enterLiteralEditMode(HitTestResult::Zone zone);
   LiteralBlockController* literalForZone(HitTestResult::Zone zone);
   void applySnapshot(const DocumentSnapshot& snapshot);
-  void applyTransaction(const EditTransaction& transaction, bool undo);
+  // Returns true when the transaction's state change landed (directly or via the
+  // full-reparse fallback); false when nothing was applied and the caller must
+  // restore the transaction to its original undo/redo stack.
+  bool applyTransaction(const EditTransaction& transaction, bool undo);
   CursorPosition remapSnapshotCursor(const CursorPosition& snapshotCursor) const;
   bool selectWordAtCursor(const BlockEditContext& context);
   bool swapTopLevelBlocks(MarkdownNode& upper, MarkdownNode& lower);

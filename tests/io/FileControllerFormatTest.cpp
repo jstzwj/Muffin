@@ -105,6 +105,33 @@ void testWindows1252PunctuationRoundTrips(const QString& path) {
   require(readBytes(path) == raw, QStringLiteral("Windows-1252 punctuation did not round-trip"));
 }
 
+// The five bytes undefined in Windows-1252 (0x81/0x8D/0x8F/0x90/0x9D) must not break the
+// open/save cycle: explicit reopen decodes them to their C1 best-fit characters (ICU),
+// and saving writes the original bytes back. Regression: encodeWindows1252 lacked the C1
+// entries, so such a file could be opened but never saved ("cannot be encoded" deadlock).
+void testWindows1252UndefinedBytesRoundTrip(const QString& path) {
+  QByteArray raw("x", 1);
+  raw.append(QByteArray::fromHex("818d8f909d"));
+  raw.append("y", 1);
+  writeBytes(path, raw);
+
+  DocumentSession session;
+  FileController controller;
+  require(controller.open(session, nullptr, path),
+          QStringLiteral("Could not open file with undefined Windows-1252 bytes"));
+  waitForParse(session);
+  require(controller.reopenWithEncoding(session, nullptr, QStringLiteral("windows-1252")),
+          QStringLiteral("Explicit Windows-1252 reopen must accept the undefined bytes"));
+  waitForParse(session);
+  require(session.markdownText().toString() == QStringLiteral("x\u0081\u008d\u008f\u0090\u009dy"),
+          QStringLiteral("Undefined Windows-1252 bytes must decode to their C1 best-fit characters"));
+  session.setMarkdownText(session.markdownText().toString(), true);
+  require(controller.save(session, nullptr) == SaveOutcome::Saved,
+          QStringLiteral("Undefined Windows-1252 bytes must save back instead of deadlocking"));
+  require(readBytes(path) == raw,
+          QStringLiteral("Undefined Windows-1252 bytes did not round-trip"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -120,5 +147,6 @@ int main(int argc, char** argv) {
   testExistingLfFileIgnoresNewFileDefault(dir.filePath(QStringLiteral("lf.md")));
   testLegacyEncodingRoundTrips(dir.filePath(QStringLiteral("legacy.md")));
   testWindows1252PunctuationRoundTrips(dir.filePath(QStringLiteral("windows1252.md")));
+  testWindows1252UndefinedBytesRoundTrip(dir.filePath(QStringLiteral("windows1252-c1.md")));
   return 0;
 }
