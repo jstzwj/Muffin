@@ -1013,6 +1013,25 @@ void EditorView::refreshInlineProjectionForSelectionChange(SelectionRange previo
   }
   const bool scrolled = refreshed && restoreViewportAnchor(anchor);
 
+  // The selection overlay (paintSelection) spans every block between anchor and focus,
+  // but refreshBlocks only rebuilds — and dirties — the anchor/focus endpoint blocks.
+  // Without this, a programmatic multi-block change (Ctrl+A, click-to-deselect) left
+  // the covered blocks showing stale pixels until an unrelated repaint (hover) ran.
+  // Invalidate the overlay region of BOTH the old and the new selection; Qt unions
+  // this with whatever update refreshBlocks already scheduled, so it is a no-op when
+  // a full repaint is pending.
+  const QRectF overlayDirty = selectionOverlayDocumentRect(previousSelection)
+                                  .united(selectionOverlayDocumentRect(selection_));
+  if (!overlayDirty.isEmpty()) {
+    const QRect viewportRect = overlayDirty.translated(0.0, -scrollY())
+                                   .adjusted(-3.0, -3.0, 3.0, 3.0)
+                                   .toAlignedRect()
+                               & viewport()->rect();
+    if (!viewportRect.isEmpty()) {
+      viewport()->update(viewportRect);
+    }
+  }
+
   if (!refreshed) {
     updateCursorHitFromPosition();
     cursorVisible_ = selection_.isCollapsed() && cursorHit_.isValid();
@@ -1040,6 +1059,24 @@ void EditorView::addSelectionBlocks(QVector<NodeId>& blockIds, const SelectionRa
   };
   add(selection.anchor.blockId);
   add(selection.focus.blockId);
+}
+
+QRectF EditorView::selectionOverlayDocumentRect(const SelectionRange& selection) const {
+  if (!layout_ || selection.isCollapsed()) {
+    return {};
+  }
+  // paintSelection draws its bands inside the flow rects of the blocks between anchor
+  // and focus (scrollable code fences clip their shifted rects to the block's text
+  // window), so uniting those rects is a safe superset of what it actually paints.
+  QRectF bounds;
+  const QVector<const BlockLayout*> covered =
+      blocksBetween(*layout_, selection.anchor.blockId, selection.focus.blockId);
+  for (const BlockLayout* block : covered) {
+    if (block) {
+      bounds = bounds.united(block->rect());
+    }
+  }
+  return bounds;
 }
 
 QRectF EditorView::headingBadgeViewportRectForBlock(NodeId blockId) const {

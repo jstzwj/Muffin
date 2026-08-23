@@ -188,6 +188,11 @@ private:
   void updateCursorHitFromPosition();
   void refreshInlineProjectionForSelectionChange(SelectionRange previousSelection);
   void addSelectionBlocks(QVector<NodeId>& blockIds, const SelectionRange& selection) const;
+  // Bounding document rect of everything paintSelection would draw for `selection`
+  // (empty when collapsed or when no covered block is promoted). refreshBlocks only
+  // dirties the anchor/focus endpoint blocks, but the overlay spans every block in
+  // between, so selection changes must additionally invalidate this region.
+  QRectF selectionOverlayDocumentRect(const SelectionRange& selection) const;
   void paintCurrentTableCell(QPainter& painter) const;
   void paintSelection(QPainter& painter) const;
   // Map a code fence's document-space selection rects into viewport space. Scrollable fences
