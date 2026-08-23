@@ -210,6 +210,108 @@ void testListGuideLineHonorsCssLeftOffset() {
           QStringLiteral("guide must not be pinned to the marker column (the pre-fix behaviour)"));
 }
 
+// Display markers follow the AUTHORED source numbers, not positional index. A blank-line split
+// between same-marker items parses as ONE loose list (cmark), so positional numbering rendered a
+// source-authored "1." after the split as "3.". Authored delimiters ("1)") are preserved too.
+void testAuthoredNumbersInSplitLooseList() {
+  DocumentSession session;
+  session.setMarkdownText(
+      QStringLiteral("1. First step\n2. Second step\n\n\n1. Third step\n   1. Nested one\n   2. Nested two"), false);
+  RenderTheme theme = RenderTheme::github();
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  QVector<const MarkdownNode*> items;
+  collectListItems(session.document().root(), items);
+  require(items.size() == 5, QStringLiteral("split loose list should parse five items (got %1)").arg(items.size()));
+  const auto markerAt = [&layout, &items](int index) {
+    return layout.block(items.at(index)->id())->listMarker();
+  };
+  require(markerAt(0) == QStringLiteral("1."), QStringLiteral("first marker '1.' (got '%1')").arg(markerAt(0)));
+  require(markerAt(1) == QStringLiteral("2."), QStringLiteral("second marker '2.' (got '%1')").arg(markerAt(1)));
+  require(markerAt(2) == QStringLiteral("1."),
+          QStringLiteral("authored restart after the blank-line split must display '1.', not positional '3.' (got '%1')").arg(markerAt(2)));
+  require(markerAt(3) == QStringLiteral("1."), QStringLiteral("nested first marker '1.' (got '%1')").arg(markerAt(3)));
+  require(markerAt(4) == QStringLiteral("2."), QStringLiteral("nested second marker '2.' (got '%1')").arg(markerAt(4)));
+
+  DocumentSession parenSession;
+  parenSession.setMarkdownText(QStringLiteral("1) a\n2) b"), false);
+  DocumentLayout parenLayout;
+  parenLayout.rebuild(parenSession.document(), theme, 800.0);
+  QVector<const MarkdownNode*> parenItems;
+  collectListItems(parenSession.document().root(), parenItems);
+  require(parenItems.size() == 2, QStringLiteral("paren list should parse two items"));
+  require(parenLayout.block(parenItems.at(0)->id())->listMarker() == QStringLiteral("1)"),
+          QStringLiteral("authored paren delimiter must be preserved (got '%1')").arg(parenLayout.block(parenItems.at(0)->id())->listMarker()));
+  require(parenLayout.block(parenItems.at(1)->id())->listMarker() == QStringLiteral("2)"),
+          QStringLiteral("second paren marker '2)' (got '%1')").arg(parenLayout.block(parenItems.at(1)->id())->listMarker()));
+}
+
+// The authored split (two blank lines — what the editor's Enter-Enter writes) renders a
+// top-level-VEP-sized gap between the items so the display reads as TWO lists; cmark still
+// parses one loose list. One blank line (loose list) keeps normal inter-item spacing.
+void testAuthoredListSplitGap() {
+  const RenderTheme theme = RenderTheme::github();
+  const qreal splitGap = QFontMetricsF(theme.paragraphFont()).height() + theme.blockSpacing();
+
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("1. First\n2. Second\n\n\n1. Third"), false);
+  DocumentLayout layout;
+  layout.rebuild(session.document(), theme, 800.0);
+  QVector<const MarkdownNode*> items;
+  collectListItems(session.document().root(), items);
+  require(items.size() == 3, QStringLiteral("split fixture should parse three items"));
+  const auto topOf = [&layout, &items](int index) { return layout.block(items.at(index)->id())->rect().top(); };
+  const qreal inListGap = topOf(1) - topOf(0);
+  const qreal splitListGap = topOf(2) - topOf(1);
+  require(splitListGap - inListGap >= splitGap - 1.0,
+          QStringLiteral("two blank lines must render a list-break gap (+%1, got +%2)")
+              .arg(splitGap, 0, 'f', 1)
+              .arg(splitListGap - inListGap, 0, 'f', 1));
+
+  // The split blank line is a REAL block: a zero-width virtual empty paragraph synthesized
+  // between the items (so the caret can land on it at normal size and typing works — text at
+  // column 0 interrupts the list in cmark). It renders as its own paragraph-height block.
+  const MarkdownNode* list = items.first()->parent();
+  const MarkdownNode* splitVep = nullptr;
+  for (const auto& child : list->children()) {
+    const SourceRange range = child->sourceRange();
+    if (child->type() == BlockType::Paragraph && range.byteEnd == range.byteStart) {
+      require(splitVep == nullptr, QStringLiteral("only one split VEP should be synthesized"));
+      splitVep = child.get();
+    }
+  }
+  require(splitVep != nullptr, QStringLiteral("two blank lines must synthesize a VEP between the items"));
+  require(splitVep->sourceRange().byteStart > items.at(1)->children().front()->sourceRange().byteEnd &&
+              splitVep->sourceRange().byteStart <= items.at(2)->sourceRange().byteStart,
+          QStringLiteral("split VEP must sit in the blank gap between item 2 and item 3"));
+  const BlockLayout* vepBlock = layout.block(splitVep->id());
+  require(vepBlock != nullptr, QStringLiteral("split VEP must have a rendered block"));
+  require(qAbs(vepBlock->rect().height() - layout.block(items.at(0)->id())->rect().height()) < 2.0,
+          QStringLiteral("split VEP block must be one line tall (got %1)")
+              .arg(vepBlock->rect().height(), 0, 'f', 1));
+
+  // One blank line = loose list: inter-item spacing only, no split gap.
+  DocumentSession looseSession;
+  looseSession.setMarkdownText(QStringLiteral("1. First\n2. Second\n\n1. Third"), false);
+  DocumentLayout looseLayout;
+  looseLayout.rebuild(looseSession.document(), theme, 800.0);
+  QVector<const MarkdownNode*> looseItems;
+  collectListItems(looseSession.document().root(), looseItems);
+  require(looseItems.size() == 3, QStringLiteral("loose fixture should parse three items"));
+  const auto looseTop = [&looseLayout, &looseItems](int index) {
+    return looseLayout.block(looseItems.at(index)->id())->rect().top();
+  };
+  const qreal looseGap = looseTop(2) - looseTop(1);
+  require(looseGap < looseTop(1) - looseTop(0) + splitGap * 0.5,
+          QStringLiteral("one blank line must NOT render a list-break gap"));
+  int looseVepCount = 0;
+  for (const auto& child : looseItems.first()->parent()->children()) {
+    const SourceRange range = child->sourceRange();
+    if (child->type() == BlockType::Paragraph && range.byteEnd == range.byteStart) { ++looseVepCount; }
+  }
+  require(looseVepCount == 0, QStringLiteral("one blank line must not synthesize a VEP"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -223,6 +325,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testListStyleTypeFormatsMarker);
   RUN_TEST(testCounterInMarkerContent);
   RUN_TEST(testListGuideLineHonorsCssLeftOffset);
+  RUN_TEST(testAuthoredNumbersInSplitLooseList);
+  RUN_TEST(testAuthoredListSplitGap);
 #undef RUN_TEST
   return 0;
 }

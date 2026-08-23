@@ -106,6 +106,92 @@ void testSiblingContentIsColumnAligned() {
   }
 }
 
+// End-to-end for the authored list split (Enter-Enter): the blank line between the halves is a
+// real VEP block. The caret lands on it at normal line height — NOT a degenerate caret spanning
+// the whole list — and typing there inserts at column 0, which interrupts the list in cmark and
+// re-parses into TWO real lists around the new paragraph.
+void testTypingOnSplitBlankLineSplitsList() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(720, 460);
+  session.setMarkdownText(QStringLiteral("1. First\n2. Second\n\n\n1. Third"), false);
+  view.setDocument(session.document());
+
+  MarkdownNode* list = blockAt(session, 0);
+  require(list != nullptr && list->type() == BlockType::List, "root should hold a list");
+  MarkdownNode* vep = nullptr;
+  for (const auto& child : list->children()) {
+    const SourceRange range = child->sourceRange();
+    if (child->type() == BlockType::Paragraph && range.byteEnd == range.byteStart) { vep = child.get(); }
+  }
+  require(vep != nullptr, "split blank line should be a VEP between the items");
+
+  setCursor(controller.selection(), vep, 0);
+  view.setCursorPosition(controller.selection().cursorPosition());
+  const HitTestResult hit = view.cursorHit();
+  const qreal lineHeight = QFontMetricsF(view.theme().paragraphFont()).height();
+  require(hit.cursorRect.height() > 0.0 && hit.cursorRect.height() < lineHeight * 1.6,
+          "caret on the split blank line must be a normal line-height caret");
+
+  controller.inputController().insertText(QStringLiteral("hello"));
+  view.setDocument(session.document());
+  const auto& top = session.document().root().children();
+  require(top.size() == 3, "typed text should split the loose list into two lists + a paragraph");
+  require(top.at(0)->type() == BlockType::List, "first top-level block should stay a list");
+  require(top.at(1)->type() == BlockType::Paragraph, "typed text should become a paragraph");
+  require(top.at(2)->type() == BlockType::List, "tail should re-parse as a new list");
+}
+
+// The user-facing split flow: caret at the end of a middle item, Enter creates an empty item,
+// Enter again exits it and splits the list in two. The post-edit caret must resolve ON ITS OWN
+// to the blank line between the lists (the split VEP) — not vanish until the next mouse click.
+void testEnterEnterCaretLandsOnSplitBlankLine() {
+  for (const QString marker : {QStringLiteral("1. "), QStringLiteral("- ")}) {
+    DocumentSession session;
+    EditorController controller;
+    EditorView view;
+    controller.attach(&session, &view);
+    view.resize(720, 460);
+    const QString head = marker == QLatin1String("1. ")
+                             ? QStringLiteral("1. First\n2. Second\n3. Third")
+                             : QStringLiteral("- First\n- Second\n- Third");
+    session.setMarkdownText(head, false);
+    view.setDocument(session.document());
+
+    // Caret at the end of the SECOND item's content.
+    MarkdownNode* list = blockAt(session, 0);
+    setCursor(controller.selection(), list->children().at(1).get(), QStringLiteral("Second").size());
+    require(controller.inputController().insertParagraphBreak(), "first Enter should create the empty item");
+    view.setDocument(session.document());
+    require(controller.inputController().insertParagraphBreak(), "second Enter should exit and split the list");
+    view.setDocument(session.document());
+
+    // The split text: two blank lines, tail renumbered for ordered.
+    const QString expected = marker == QLatin1String("1. ")
+                                 ? QStringLiteral("1. First\n2. Second\n\n\n1. Third")
+                                 : QStringLiteral("- First\n- Second\n\n\n- Third");
+    const QString actual = session.markdownText().toString();
+    require(actual == expected,
+            QStringLiteral("split text mismatch: expected '%1', actual '%2'").arg(expected, actual));
+
+    // Caret must be valid and resolve to the VEP on the split blank line.
+    const CursorPosition caret = controller.selection().cursorPosition();
+    require(caret.isValid(), "caret must remain valid after the split");
+    MarkdownNode* caretNode = session.document().node(caret.blockId);
+    require(caretNode != nullptr, "caret block must resolve to a node");
+    const SourceRange caretRange = caretNode->sourceRange();
+    require(caretNode->type() == BlockType::Paragraph && caretRange.byteEnd == caretRange.byteStart,
+            "caret must land on the split blank line's VEP, not on a list item");
+    view.setCursorPosition(caret);
+    const HitTestResult hit = view.cursorHit();
+    const qreal lineHeight = QFontMetricsF(view.theme().paragraphFont()).height();
+    require(hit.cursorRect.height() > 0.0 && hit.cursorRect.height() < lineHeight * 1.6,
+            "caret after the split must render at normal line height");
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -114,6 +200,8 @@ int main(int argc, char** argv) {
   testCaretLandsAfterMarker();
   testConversionProducesList();
   testSiblingContentIsColumnAligned();
+  testTypingOnSplitBlankLineSplitsList();
+  testEnterEnterCaretLandsOnSplitBlankLine();
   QApplication::clipboard()->clear();
   return 0;
 }

@@ -834,6 +834,43 @@ void testMergeListItemPreservesLazyContinuation() {
           "backward merge must preserve the lazy continuation line 'beta'");
 }
 
+// Enter on an empty MIDDLE ordered item exits the item and splits the list in two; the following
+// same-column run becomes a new list and must restart at 1 (it used to keep its literal numbers,
+// rendering a second list starting at 4 right after a 2-item first list). The first Enter splits
+// the item as usual (sibling, renumbered).
+void testEnterEmptyMiddleOrderedItemSplitsListRestartsNumbering() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(
+      QStringLiteral("1. First step\n2. Second step\n3. Third step\n   1. Nested ordered step\n   2. Another nested ordered step"), false);
+  setCursor(selection, listItemAt(session, 0, 1), QStringLiteral("Second step").size());
+  require(input.insertParagraphBreak(), "first enter should split item 2 into a new empty item");
+  require(session.markdownText().toString() ==
+              QStringLiteral("1. First step\n2. Second step\n3. \n4. Third step\n   1. Nested ordered step\n   2. Another nested ordered step"),
+          "first enter should insert an empty sibling and renumber the following run");
+  require(input.insertParagraphBreak(), "second enter on the empty middle item should exit it");
+  const QString split = session.markdownText().toString();
+  require(split == QStringLiteral("1. First step\n2. Second step\n\n\n1. Third step\n   1. Nested ordered step\n   2. Another nested ordered step"),
+          "exiting a middle empty ordered item must split into two lists with the second restarting at 1");
+  // NOTE: cmark-gfm parses blank-line-separated same-marker ordered items as ONE loose list, so
+  // the AST may hold a single List node here — the "two lists" contract is at the SOURCE level
+  // (authored markers restart at 1), which the text assertion above locks. The nested sublist
+  // under the renumbered item keeps its own 1-based numbering (also locked above).
+  require(selection.cursorPosition().isValid(), "cursor should stay valid after exiting the item");
+
+  // A following run already separated by a blank line keeps its authored numbers.
+  session.setMarkdownText(QStringLiteral("1. a\n2. \n\n7. z"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.insertParagraphBreak(), "enter on empty item before a blank-separated run should exit");
+  require(session.markdownText().toString() == QStringLiteral("1. a\n\n\n\n7. z"),
+          "an already-separated following list must keep its authored number 7");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -853,6 +890,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testUnorderedListIndentOutdentRoundTrip);
   RUN_TEST(testEnterAtListItemContentStartFollowsContent);
   RUN_TEST(testEnterOnEmptyNestedOrderedItemOutdentsAligned);
+  RUN_TEST(testEnterEmptyMiddleOrderedItemSplitsListRestartsNumbering);
   RUN_TEST(testMergeListItemPreservesPreviousSublist);
   RUN_TEST(testMergeListItemPreservesLazyContinuation);
   RUN_TEST(testBackspaceOnEmptySiblingRetreatsToDeepestSubItem);

@@ -1616,6 +1616,10 @@ ParseResult CmarkGfmParser::parseDocumentImpl(
     insertVirtualEmptyParagraphsInBlockQuotes(markdownToParse, *result.root, lineOffsets);
   }
   {
+    ParsePerfTimer t("parse.insertVEPInLists", metrics);
+    insertVirtualEmptyParagraphsInLists(markdownToParse, *result.root, lineOffsets);
+  }
+  {
     ParsePerfTimer t("parse.insertMissingDefinitions", metrics);
     insertMissingDefinitions(*result.root, definitions, lineOffsets);
   }
@@ -1885,6 +1889,61 @@ void CmarkGfmParser::insertVirtualEmptyParagraphsInBlockQuotes(QStringView markd
     }
   };
 
+  visit(visit, root);
+}
+
+// Same authored-split contract as the top level, but INSIDE lists: two blank lines between
+// consecutive items (what the editor's Enter-Enter list-split writes) mean "two lists" to the
+// author, while cmark still parses one loose list. Synthesize a virtual empty paragraph between
+// the items so the blank line is a REAL block — it renders like a top-level blank line (the
+// display reads as two lists) AND the caret can land on it and type: text typed at column 0
+// interrupts the list in cmark, turning the authored split into an actual two-list parse.
+// One blank line (loose list) gets no VEP, matching the top-level every-other-blank-line rule.
+void CmarkGfmParser::insertVirtualEmptyParagraphsInLists(QStringView markdown, MarkdownNode& root, const LineStartOffsetCache& lineOffsets) const {
+  const int totalLines = lineOffsets.lineCount();
+  const auto visit = [&](const auto& self, MarkdownNode& node) -> void {
+    for (const auto& child : node.children()) {
+      self(self, *child);
+    }
+    if (node.type() != BlockType::List || node.children().empty()) {
+      return;
+    }
+    qsizetype childIndex = 0;
+    int previousEndLine = 0;
+    while (childIndex < static_cast<qsizetype>(node.children().size())) {
+      MarkdownNode* child = node.children().at(static_cast<size_t>(childIndex)).get();
+      const SourceRange range = child->sourceRange();
+      const int startLine = range.lineStart;
+      // List items absorb trailing blank lines into their lineEnd (same as containers at top
+      // level), so count the authored gap from the item's last non-blank line.
+      const int contentEndLine = lastNonBlankLine(lineOffsets, markdown, range, totalLines);
+      int blankLines = 0;
+      if (startLine > 0 && previousEndLine > 0) {
+        for (int line = previousEndLine + 1; line < startLine; ++line) {
+          if (line >= 1 && line <= totalLines && isBlankLine(lineOffsets.lineText(markdown, line))) {
+            ++blankLines;
+          }
+        }
+      }
+      const int emptyCount = qMax(0, blankLines / 2);
+      const int firstEmptyLine = previousEndLine + 2;
+      for (int i = 0; i < emptyCount; ++i) {
+        const int emptyLine = firstEmptyLine + i * 2;
+        if (emptyLine >= 1 && emptyLine <= totalLines && isBlankLine(lineOffsets.lineText(markdown, emptyLine))) {
+          // Explicit byte offset (like the blockquote pass): this runs after annotateSourceOffsets,
+          // and the line/col alone would leave the VEP unresolved. Zero-width, so the caret maps
+          // to the line start — typing there begins at column 0 and splits the list.
+          const qsizetype lineOffset = lineOffsets.lineStartOffset(emptyLine);
+          if (lineOffset >= 0) {
+            node.insertChild(childIndex, createVirtualEmptyParagraph(emptyLine, 1, lineOffset));
+            ++childIndex;
+          }
+        }
+      }
+      previousEndLine = qMax(previousEndLine, contentEndLine);
+      ++childIndex;
+    }
+  };
   visit(visit, root);
 }
 

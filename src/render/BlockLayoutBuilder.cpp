@@ -804,6 +804,11 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   qsizetype itemIndex = 0;
   if (listParent) {
     for (const auto& sibling : listParent->children()) {
+      // VEPs synthesized between split items (insertVirtualEmptyParagraphsInLists) are list
+      // children but not items — they must not inflate positional numbering / counter(list-item).
+      if (isVirtualEmptyParagraphNode(*sibling)) {
+        continue;
+      }
       if (sibling.get() == &node) {
         break;
       }
@@ -830,9 +835,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
       widestMarker = cached.value();
     } else {
       const qsizetype itemCount = static_cast<qsizetype>(listParent->children().size());
+      qsizetype itemNumber = 0;
       for (qsizetype index = 0; index < itemCount; ++index) {
+        const MarkdownNode& sibling = *listParent->children().at(index);
+        // Skip split-VEPs (not items); itemNumber keeps the marker index aligned with the
+        // positional numbering in buildListItem above.
+        if (isVirtualEmptyParagraphNode(sibling)) { continue; }
         // Size the gutter to the widest CSS-styled marker too (e.g. roman "viii").
-        widestMarker = qMax(widestMarker, metrics.horizontalAdvance(resolveListMarker(*listParent->children().at(index), theme, index).text));
+        widestMarker = qMax(widestMarker, metrics.horizontalAdvance(resolveListMarker(sibling, theme, itemNumber).text));
+        ++itemNumber;
       }
       widestOrderedMarkerCache_.insert(listParent->id(), widestMarker);
     }
@@ -1371,11 +1382,33 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildDefinition(
   return layout;
 }
 
-QString BlockLayoutBuilder::textForListMarker(const MarkdownNode& listNode, qsizetype index) const {
+QString BlockLayoutBuilder::textForListMarker(const MarkdownNode& itemNode, const MarkdownNode& listNode, qsizetype index) const {
   if (listNode.listKind() == ListKind::Ordered) {
+    const ListLineInfo info = authoredMarkerInfo(itemNode);
+    if (info.valid && info.ordered) {
+      return QStringLiteral("%1%2").arg(info.orderedNumber).arg(info.orderedDelimiter);
+    }
     return QStringLiteral("%1.").arg(listNode.listStart() + static_cast<int>(index));
   }
   return QStringLiteral("•");
+}
+
+// The item's own marker line, parsed from the live source. Markdown source is the display's
+// source of truth (WYSIWYG): a list split mid-way by blank lines still parses as ONE loose list,
+// so positional numbering (listStart + index) would display a source-authored "1." as "3." after
+// the split. Returns an invalid info when the marker can't be parsed (e.g. a synthesized node),
+// letting callers fall back to positional.
+ListLineInfo BlockLayoutBuilder::authoredMarkerInfo(const MarkdownNode& itemNode) const {
+  const SourceRange range = itemNode.sourceRange();
+  if (range.byteStart < 0 || range.byteStart > md().size()) {
+    return ListLineInfo{};
+  }
+  const qsizetype lineStart = lineStartOffset(md(), range.byteStart);
+  qsizetype lineEnd = md().indexOf(QLatin1Char('\n'), lineStart);
+  if (lineEnd < 0) {
+    lineEnd = md().size();
+  }
+  return listLineInfoFor(md().mid(lineStart, lineEnd - lineStart));
 }
 
 BlockLayout::ListMarkerKind BlockLayoutBuilder::markerKindForListItem(const MarkdownNode& itemNode) const {
@@ -1410,14 +1443,18 @@ BlockLayoutBuilder::ResolvedMarker BlockLayoutBuilder::resolveListMarker(
   // resolved against the implicit list-item counter (this item's position).
   const auto& contentTokens = theme.decorations().listMarkerContent;
   if (!contentTokens.empty()) {
-    const auto value = [&itemNode, listNode, itemIndex](const QString& name) -> int {
+    const auto value = [this, &itemNode, listNode, itemIndex](const QString& name) -> int {
       if (name == QStringLiteral("list-item")) {
+        const ListLineInfo authored = authoredMarkerInfo(itemNode);
+        if (listNode && listNode->listKind() == ListKind::Ordered && authored.valid && authored.ordered) {
+          return authored.orderedNumber;  // authored number, not positional (see authoredMarkerInfo)
+        }
         const int start = (listNode && listNode->listKind() == ListKind::Ordered) ? listNode->listStart() : 1;
         return start + int(itemIndex);
       }
       return 0;  // named counters are not tracked in the marker path
     };
-    const auto chain = [&itemNode](const QString& name) -> QVector<int> {
+    const auto chain = [this, &itemNode](const QString& name) -> QVector<int> {
       QVector<int> levels;  // outermost first
       if (name != QStringLiteral("list-item")) { return levels; }
       for (const MarkdownNode* item = &itemNode; item && item->type() == BlockType::ListItem; ) {
@@ -1425,8 +1462,13 @@ BlockLayoutBuilder::ResolvedMarker BlockLayoutBuilder::resolveListMarker(
         if (!list) { break; }
         int idx = 0;
         for (const auto& s : list->children()) { if (s.get() == item) { break; } ++idx; }
-        const int start = (list->listKind() == ListKind::Ordered) ? list->listStart() : 1;
-        levels.prepend(start + idx);
+        const ListLineInfo authored = authoredMarkerInfo(*item);
+        if (list->listKind() == ListKind::Ordered && authored.valid && authored.ordered) {
+          levels.prepend(authored.orderedNumber);
+        } else {
+          const int start = (list->listKind() == ListKind::Ordered) ? list->listStart() : 1;
+          levels.prepend(start + idx);
+        }
         item = list->parent();  // next outer list level (a ListItem, or null at top)
       }
       return levels;
@@ -1441,7 +1483,7 @@ BlockLayoutBuilder::ResolvedMarker BlockLayoutBuilder::resolveListMarker(
   }
   if (styleType.isEmpty()) {
     // No CSS list-style-type → legacy depth/kind-based marker.
-    if (listNode) { return {markerKindForListItem(itemNode), textForListMarker(*listNode, itemIndex)}; }
+    if (listNode) { return {markerKindForListItem(itemNode), textForListMarker(itemNode, *listNode, itemIndex)}; }
     return {BlockLayout::ListMarkerKind::BulletDisc, QStringLiteral("•")};
   }
   if (styleType == QStringLiteral("none")) { return {BlockLayout::ListMarkerKind::None, QString()}; }
@@ -1449,10 +1491,15 @@ BlockLayoutBuilder::ResolvedMarker BlockLayoutBuilder::resolveListMarker(
   if (styleType == QStringLiteral("circle")) { return {BlockLayout::ListMarkerKind::BulletCircle, QStringLiteral("•")}; }
   if (styleType == QStringLiteral("square")) { return {BlockLayout::ListMarkerKind::BulletSquare, QStringLiteral("•")}; }
   if (isOrderedListStyle(styleType)) {
-    const int start = (listNode && listNode->listKind() == ListKind::Ordered) ? listNode->listStart() : 1;
-    return {BlockLayout::ListMarkerKind::OrderedText, formatCounterValue(start + int(itemIndex), styleType) + QStringLiteral(".")};
+    const ListLineInfo authored = authoredMarkerInfo(itemNode);
+    int number = int(itemIndex) + 1;
+    if (listNode && listNode->listKind() == ListKind::Ordered) {
+      number = (authored.valid && authored.ordered) ? authored.orderedNumber
+                                                    : listNode->listStart() + int(itemIndex);
+    }
+    return {BlockLayout::ListMarkerKind::OrderedText, formatCounterValue(number, styleType) + QStringLiteral(".")};
   }
-  if (listNode) { return {markerKindForListItem(itemNode), textForListMarker(*listNode, itemIndex)}; }
+  if (listNode) { return {markerKindForListItem(itemNode), textForListMarker(itemNode, *listNode, itemIndex)}; }
   return {BlockLayout::ListMarkerKind::BulletDisc, QStringLiteral("•")};
 }
 

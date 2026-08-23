@@ -944,9 +944,35 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildExitListItem(cons
   command.sourceStart = lineStart;
   command.removedLength = lineEnd - lineStart;
   command.insertedText = QLatin1Char('\n');
+  // Split exits (following content stays) leave TWO blank lines — the removed marker line's
+  // newline plus the inserted one — and the caret must land on the blank line BETWEEN the two
+  // lists: the SECOND blank line, where the parser synthesizes the caret VEP (the every-other-
+  // blank-line rule). lineStart itself points at the FIRST blank line, an offset that resolves
+  // to no block, so the caret would vanish until the user clicks somewhere. +1 lands exactly on
+  // the VEP.
+  const bool splitsList = context.node->nextSibling() != nullptr;
+  if (info.ordered) {
+    // Exiting a MIDDLE empty ordered item splits the list in two (the inserted blank line
+    // separates the blocks). The following same-column run becomes a NEW list and must restart
+    // its numbering at 1 — leaving the literal numbers rendered a second list that started at 4
+    // right after a 2-item first list. Nested children (deeper marker column) keep their own
+    // numbering; a run already separated by a blank line is left as authored.
+    const qsizetype runStart = lineEnd < markdown.size() ? lineEnd + 1 : lineEnd;
+    const qsizetype runEnd = orderedSiblingRunEnd(markdown, runStart, info.markerStart);
+    if (runEnd > runStart) {
+      const QString tail = markdown.mid(lineEnd, runEnd - lineEnd);
+      command.removedLength = runEnd - lineStart;
+      command.insertedText = QLatin1Char('\n') + renumberOrderedSiblings(tail, info.markerStart, 1);
+    }
+  }
+  if (splitsList) {
+    command.fallbackSourceOffset = lineStart + 1;
+  }
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Exit List Item");
-  command.fallbackSourceOffset = lineStart;
+  if (!splitsList) {
+    command.fallbackSourceOffset = lineStart;
+  }
   command.structureEdit = true;
   command.valid = true;
   command.handled = true;

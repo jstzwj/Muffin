@@ -4,6 +4,7 @@
 #include "document/MarkdownNode.h"
 #include "document/OutlineBuilder.h"
 #include "document/PieceTable.h"
+#include "document/SourceRangeUtil.h"
 #include "html/HtmlRenderer.h"
 #include "math/MathRenderer.h"
 #include "render/BlockLayout.h"
@@ -145,12 +146,13 @@ private:
       qreal width,
       int depth);
 
-  QString textForListMarker(const MarkdownNode& listNode, qsizetype index) const;
+  QString textForListMarker(const MarkdownNode& itemNode, const MarkdownNode& listNode, qsizetype index) const;
   BlockLayout::ListMarkerKind markerKindForListItem(const MarkdownNode& itemNode) const;
   // CSS `list-style-type`-aware marker: kind + text from the node's resolved li
   // style, falling back to the legacy depth/kind-based marker when unset.
   struct ResolvedMarker { BlockLayout::ListMarkerKind kind = BlockLayout::ListMarkerKind::None; QString text; };
   ResolvedMarker resolveListMarker(const MarkdownNode& itemNode, const RenderTheme& theme, qsizetype itemIndex) const;
+  ListLineInfo authoredMarkerInfo(const MarkdownNode& itemNode) const;
   QVector<InlineNode> primaryInlinesForListItem(const MarkdownNode& node) const;
   QString sourceTextForEditableNode(const MarkdownNode& node) const;
   qsizetype sourceContentStartForEditableNode(const MarkdownNode& node) const;
