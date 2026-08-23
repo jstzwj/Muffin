@@ -61,6 +61,27 @@ void collectChildrenWithTag(const html::HtmlBox& box, html::HtmlTag tag, QVector
   }
 }
 
+void collectChildrenWithDisplay(const html::HtmlBox& box, html::HtmlDisplay display, QVector<const html::HtmlBox*>& out) {
+  for (const auto& child : box.children()) {
+    if (child->style().display == display) {
+      out.push_back(child.get());
+    }
+    collectChildrenWithDisplay(*child, display, out);
+  }
+}
+
+const html::HtmlBox* firstCellWithRowSpan(const html::HtmlBox& box, int rowSpan) {
+  if (box.style().display == html::HtmlDisplay::TableCell && box.rowSpan() == rowSpan) {
+    return &box;
+  }
+  for (const auto& child : box.children()) {
+    if (const html::HtmlBox* found = firstCellWithRowSpan(*child, rowSpan)) {
+      return found;
+    }
+  }
+  return nullptr;
+}
+
 QRectF absoluteHtmlBoxRect(const html::HtmlBox& box) {
   QPointF origin;
   const html::HtmlBox* current = &box;
@@ -486,6 +507,61 @@ void testHtmlBlockFallsBackToSourceWhenInvisible() {
           QStringLiteral("rendered html block should not compute source highlight spans"));
 }
 
+void testHtmlTableRowspanCellSpansTallRows() {
+  // CSS table semantics: a rowspan cell's height is the total height of the rows it crosses.
+  // The layout used to freeze the cell at its STARTING row's height, so a taller later spanned
+  // row left the cell's background/border ending early — a hole under the spanning cell.
+  html::HtmlRenderer renderer;
+  const html::HtmlLayoutResult result = renderer.render(
+      QStringLiteral("<table>"
+                     "<tr><td rowspan=\"2\">span</td><td>x</td></tr>"
+                     "<tr><td>a<br>b<br>c<br>d</td></tr>"
+                     "</table>"),
+      16.0, 320.0);
+  require(result.valid(), QStringLiteral("rowspan fixture should render"));
+
+  const html::HtmlBox* spanCell = firstCellWithRowSpan(*result.root(), 2);
+  QVector<const html::HtmlBox*> rows;
+  collectChildrenWithDisplay(*result.root(), html::HtmlDisplay::TableRow, rows);
+  require(spanCell != nullptr, QStringLiteral("rowspan fixture should keep the rowspan cell"));
+  require(rows.size() == 2, QStringLiteral("rowspan fixture should have two table rows"));
+  const qreal firstRowHeight = rows.at(0)->geometry().height;
+  const qreal secondRowHeight = rows.at(1)->geometry().height;
+  require(secondRowHeight > firstRowHeight * 1.5,
+          QStringLiteral("fixture's second row must be meaningfully taller than the first"));
+  require(qAbs(spanCell->geometry().height - (firstRowHeight + secondRowHeight)) < 1.0,
+          QStringLiteral("rowspan cell height must equal the sum of the spanned rows' heights"));
+}
+
+void testHtmlCollapsedDetailsGeometryAndHitTest() {
+  // A collapsed <details> hides its non-summary children from layout and painting. The Yoga
+  // read-back used a different child filter than the build, so with a hidden child BEFORE the
+  // summary the hidden box borrowed the summary's Yoga rect while the summary itself kept a
+  // zero rect (painted at the wrong place). Hit testing must agree with painting too — hidden
+  // content never intercepts clicks.
+  html::HtmlRenderer renderer;
+  const html::HtmlLayoutResult result = renderer.render(
+      QStringLiteral("<details><p><a href=\"https://hidden.example\">hidden</a></p><summary>Title</summary></details>"),
+      16.0, 320.0);
+  require(result.valid(), QStringLiteral("collapsed details fixture should render"));
+
+  const html::HtmlBox* summary = firstChildWithTag(*result.root(), html::HtmlTag::Summary);
+  const html::HtmlBox* hidden = firstChildWithTag(*result.root(), html::HtmlTag::Paragraph);
+  require(summary != nullptr, QStringLiteral("collapsed details fixture should have a summary"));
+  require(hidden != nullptr, QStringLiteral("collapsed details fixture should have hidden content"));
+  require(summary->geometry().width > 0 && summary->geometry().height > 0,
+          QStringLiteral("summary must own a real rect even when hidden siblings precede it"));
+  require(hidden->geometry().width == 0 && hidden->geometry().height == 0,
+          QStringLiteral("collapsed non-summary content must not borrow a visible rect"));
+
+  const QPointF summaryCenter = absoluteHtmlBoxRect(*summary).center();
+  for (int dx = -20; dx <= 20; dx += 10) {
+    const html::HtmlLayoutResult::HitResult hit = result.hitTest(summaryCenter + QPointF(dx, 0));
+    require(hit.linkHref != QStringLiteral("https://hidden.example"),
+            QStringLiteral("hidden collapsed-details link must not be clickable"));
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -508,6 +584,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testHtmlInlineStyleAndTagSemanticsContract);
   RUN_TEST(testHtmlVisibilityDetection);
   RUN_TEST(testHtmlBlockFallsBackToSourceWhenInvisible);
+  RUN_TEST(testHtmlTableRowspanCellSpansTallRows);
+  RUN_TEST(testHtmlCollapsedDetailsGeometryAndHitTest);
 #undef RUN_TEST
   return 0;
 }

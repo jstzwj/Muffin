@@ -161,7 +161,7 @@ bool HtmlLayoutResult::boxHasVisibleContent(const HtmlBox& box) const {
 }
 
 HtmlLayoutResult::HitResult HtmlLayoutResult::hitTestBox(const HtmlBox& box, QPointF localPos, QPointF origin) const {
-  if (!box.style().visible) {
+  if (!box.style().visible || box.style().display == HtmlDisplay::None) {
     return {};
   }
 
@@ -184,7 +184,15 @@ HtmlLayoutResult::HitResult HtmlLayoutResult::hitTestBox(const HtmlBox& box, QPo
     }
   }
 
+  // Hit testing must agree with painting (paintBox draws only the summary of a collapsed
+  // <details>): hidden children keep whatever stale/borrowed geometry earlier layouts left on
+  // them, and walking into them lets an invisible link intercept clicks meant for visible
+  // content on top of it.
+  const bool collapsedDetails = box.tag() == HtmlTag::Details && !box.detailsOpen();
   for (const auto& child : box.children()) {
+    if (collapsedDetails && child->tag() != HtmlTag::Summary) {
+      continue;
+    }
     HitResult childHit = hitTestBox(*child, localPos, boxOrigin);
     if (!childHit.linkHref.isEmpty() || !childHit.imageSrc.isEmpty()) {
       return childHit;

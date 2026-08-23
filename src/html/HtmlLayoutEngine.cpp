@@ -552,6 +552,24 @@ void HtmlLayoutEngine::layoutTableBox(
     y += rowHeight;
   }
 
+  // A rowspan cell spans the TOTAL height of the rows it crosses (CSS table semantics). Above,
+  // its height was frozen at its starting row's height — if a later spanned row grew taller,
+  // the cell's background/border ended early and left a hole under it. All row heights are
+  // final now; re-derive each spanning cell's height from them.
+  for (int rowIdx = 0; rowIdx < rows.size(); ++rowIdx) {
+    for (auto& entry : grid[rowIdx]) {
+      if (entry.rowSpan <= 1) {
+        continue;
+      }
+      const int lastRow = qMin(rowIdx + entry.rowSpan, static_cast<int>(rows.size()));
+      qreal spanHeight = 0;
+      for (int r = rowIdx; r < lastRow; ++r) {
+        spanHeight += rowHeights[r];
+      }
+      entry.box->geometry().height = spanHeight;
+    }
+  }
+
   for (auto& child : table.children()) {
     if (!child->style().visible || child->style().display == HtmlDisplay::None || child->tag() == HtmlTag::Caption) {
       continue;
@@ -677,11 +695,15 @@ void HtmlLayoutEngine::readLayoutBack(HtmlBox& box, YGNode* node) {
   geo.width = YGNodeLayoutGetWidth(node);
   geo.height = YGNodeLayoutGetHeight(node);
 
-  // Read children layouts
+  // Read children layouts. Walk the SAME child filter createYogaNode used when building the
+  // Yoga tree (isRenderableChildFor) — a child skipped there has no Yoga node, and counting
+  // it here desynchronizes yogaIndex: the next sibling's geometry would land in the skipped
+  // box (e.g. a collapsed <details>' hidden child borrowing the summary's rect) while the
+  // real owner keeps a stale/zero rect.
   uint32_t childCount = YGNodeGetChildCount(node);
   uint32_t yogaIndex = 0;
   for (auto& child : box.children()) {
-    if (!child->style().visible || child->style().display == HtmlDisplay::None) {
+    if (!isRenderableChildFor(box, *child)) {
       continue;
     }
     if (yogaIndex < childCount) {

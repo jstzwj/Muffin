@@ -75,6 +75,20 @@ int main(int argc, char** argv) {
   require(ruleRange.byteEnd <= afterBlock->sourceRange().byteStart,
           "thematic break byteEnd must not reach into the trailing blank gap");
 
+  // Leading blank gap: topLevelBlockAtOffset must resolve offsets in the blank region BEFORE all
+  // content to the first child, not the historical last-block fallback (a source caret in the
+  // leading blanks used to scroll/render the document END). Leading VEPs are zero-width
+  // (byteStart == byteEnd), so the offsets BETWEEN them exercise the fallback path.
+  muffin::DocumentSession leading;
+  leading.setMarkdownText(QStringLiteral("\n\n\n\nFirst\n\nSecond\n"), false);
+  const auto& leadingChildren = leading.document().root().children();
+  require(leadingChildren.size() >= 4, "leading fixture should have VEPs plus two blocks");
+  for (const qsizetype offset : {qsizetype(1), qsizetype(3)}) {
+    muffin::MarkdownNode* resolved = leading.document().topLevelBlockAtOffset(offset);
+    require(resolved == leadingChildren.front().get(),
+            "offset in the leading blank region must resolve to the first child, not the last block");
+  }
+
   std::fprintf(stdout,
                "PASS: rule bytes [%lld..%lld] (clamped); %d stable VEP%s after it (blankLines/2).\n",
                static_cast<long long>(ruleRange.byteStart), static_cast<long long>(ruleRange.byteEnd),

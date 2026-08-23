@@ -317,6 +317,18 @@ MarkdownNode* MarkdownDocument::topLevelBlockAtOffset(qsizetype offset) const {
   if (it != children.end() && (*it)->sourceRange().byteStart <= offset) {
     return it->get();
   }
+  // Leading blank region: the offset precedes all real content. The VEPs synthesized there are
+  // zero-width (byteStart == byteEnd), so offsets between them fall through the containment
+  // check — resolve to the first child instead of the historical last-block fallback, which
+  // made a source caret in the leading blanks scroll/render the document END.
+  const auto firstContent = std::find_if(
+      children.begin(), children.end(),
+      [](const std::unique_ptr<MarkdownNode>& child) {
+        return child->sourceRange().byteEnd > child->sourceRange().byteStart;
+      });
+  if (firstContent != children.end() && offset < (*firstContent)->sourceRange().byteStart) {
+    return children.front().get();
+  }
   // No block contains offset (gap, or offset past the last block's content) — preserve the
   // historical fallback to the last top-level block (load-bearing for caret resolution
   // after non-text blocks like ThematicBreak).
