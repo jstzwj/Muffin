@@ -206,7 +206,11 @@ qsizetype normalizedTableCellInsertOffset(const MarkdownNode& cell, const QStrin
     }
   }
 
-  InlineProjection projection(cell.inlines(), content, InlineProjectionState{}, cell.sourceRange().byteStart);
+  // Cell inlines are stored relative to the owning TABLE's byteStart (block-relative storage);
+  // the projection base must be the content start in THAT frame — the cell's absolute byteStart
+  // minus the frame delta. Passing the absolute start was correct only for a table at offset 0.
+  InlineProjection projection(cell.inlines(), content, InlineProjectionState{},
+                               cell.sourceRange().byteStart - cell.inlineAbsoluteDelta());
   for (const InlineProjectionSpan& span : projection.spans()) {
     if (!span.editable || span.contentSourceEnd < span.contentSourceStart) {
       continue;
@@ -286,7 +290,8 @@ qsizetype tableCellSourceOffsetForVisibleOffset(const QString& content, qsizetyp
 
 qsizetype tableCellVisibleOffsetForEditCursor(const MarkdownNode& cell, const QString& content, qsizetype sourceOffset) {
   const qsizetype rawVis = visibleOffsetForTableCellSourceOffset(content, sourceOffset);
-  const qsizetype hiddenChars = countHiddenMarkerChars(cell.inlines(), cell.sourceRange().byteStart, sourceOffset);
+  const qsizetype hiddenChars = countHiddenMarkerChars(
+      cell.inlines(), cell.sourceRange().byteStart - cell.inlineAbsoluteDelta(), sourceOffset);
   return rawVis - hiddenChars;
 }
 

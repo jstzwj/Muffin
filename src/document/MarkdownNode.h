@@ -102,6 +102,14 @@ public:
   void setTableRowIsHeader(bool header);
 
   SourceRange sourceRange() const;
+  // Byte delta converting an offset stored on inline nodes of THIS subtree between their storage
+  // frame and ABSOLUTE document coordinates. All inlines under a top-level block (including its
+  // own) share one frame: ABSOLUTE before the block is relativized (parser/demote windows),
+  // relative to the owning top-level block's resolved byteStart after — the SAME conditional
+  // semantics as sourceRange(). Single-sourced so inline consumers stop hand-rolling
+  // `topLevelBlock()->sourceRange().byteStart`, which is wrong in the pre-relativize window
+  // (it adds a base to offsets that are already absolute).
+  qsizetype inlineAbsoluteDelta() const;
   void setSourceRange(SourceRange range);
   // Shift this node's OWN stored sourceRange in place by (byteDelta, lineDelta). Used by the
   // per-keystroke suffix shift on top-level blocks (whose stored range is absolute): mutates

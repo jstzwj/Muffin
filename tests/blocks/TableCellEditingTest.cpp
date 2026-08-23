@@ -50,7 +50,12 @@ MarkdownNode* setTableCellCursor(
     int column,
     qsizetype localSourceOffset,
     qsizetype textOffset = 0) {
-  MarkdownNode& table = *session.document().root().children().front();
+  MarkdownNode* tableNode = nullptr;
+  for (const auto& child : session.document().root().children()) {
+    if (child->type() == BlockType::Table) { tableNode = child.get(); break; }
+  }
+  require(tableNode != nullptr, "table block missing");
+  MarkdownNode& table = *tableNode;
   MarkdownNode* cell = TableModelOps::cellAt(table, row, column);
   require(cell != nullptr, "table cell cursor target missing");
 
@@ -169,7 +174,12 @@ void testTableControllerFormatSource() {
   tableController.setContext({&session, &selection, &undoStack, &brushQueue});
 
   session.setMarkdownText(QStringLiteral("| A|B |\n|---|:---:|\n| 1| 2 |"), false);
-  MarkdownNode& table = *session.document().root().children().front();
+  MarkdownNode* tableNode = nullptr;
+  for (const auto& child : session.document().root().children()) {
+    if (child->type() == BlockType::Table) { tableNode = child.get(); break; }
+  }
+  require(tableNode != nullptr, "table block missing");
+  MarkdownNode& table = *tableNode;
   MarkdownNode* cell = TableModelOps::cellAt(table, 1, 1);
   require(cell != nullptr, "format source target cell missing");
 
@@ -207,8 +217,49 @@ void testTableControllerInsertInsideBr() {
           "insert inside <br> should land in place (making <br >), not snap past the tag");
 }
 
+// Regression: the cell inline frame is relative to the owning TABLE's byteStart
+// (block-relative storage), but TableCellSourceEdit passed the CELL's absolute
+// byteStart as the base — correct only when the table sits at document offset 0.
+// A table preceded by any content shifted every hidden-marker/visible-offset
+// computation by -tableStart, misplacing the caret for cells with hidden markers.
+void testTableCellHiddenMarkerOffsetsWithTableAfterParagraph() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  TableController tableController;
+  tableController.setContext({&session, &selection, &undoStack, &brushQueue});
+
+  const QString boldContent = QStringLiteral("a \\| b<br> **bold**");
+  session.setMarkdownText(
+      QStringLiteral("Intro paragraph.\n\n| A |\n| --- |\n| %1 |").arg(boldContent), false);
+  MarkdownNode* boldCell = setTableCellCursor(
+      session,
+      selection,
+      1,
+      0,
+      boldContent.indexOf(QStringLiteral("**bold")) + 2,
+      QStringLiteral("a | b\n ").size());
+  require(boldCell != nullptr, "offset bold cell missing");
+  require(tableCellVisibleOffsetForEditCursor(*boldCell, boldContent,
+              boldContent.indexOf(QStringLiteral("**bold")) + 2) ==
+              QStringLiteral("a | b\n ").size(),
+          "hidden-marker visible offset must be frame-correct for a table NOT at offset 0");
+  const qsizetype boldCellSourceStart = boldCell->sourceRange().byteStart;
+  require(tableController.insertText(QStringLiteral("X")), "offset bold insert should work");
+  require(session.markdownText().toString().contains(
+              QStringLiteral("| a \\| b<br> **Xbold** |")),
+          "offset bold insert markdown mismatch");
+  require(selection.cursorPosition().text.sourceOffset ==
+              boldCellSourceStart + boldContent.indexOf(QStringLiteral("**bold")) + 3,
+          "offset bold insert source cursor mismatch");
+  require(selection.cursorPosition().text.textOffset == QStringLiteral("a | b\n X").size(),
+          "offset bold insert text cursor mismatch");
+}
+
 int main() {
   testTableCellSourceEditMixedTableTokensAndInlineMarkers();
+  testTableCellHiddenMarkerOffsetsWithTableAfterParagraph();
   testTableControllerInsertInsideBr();
   testTableControllerInsertTable();
   testTableControllerFormatSource();

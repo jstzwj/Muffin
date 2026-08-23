@@ -1228,7 +1228,7 @@ bool EditorController::imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& 
         // Inlines are stored relative to the owning top-level block; convert to content-local for
         // the span comparison (base = content offset within block), then back to ABSOLUTE for the
         // returned range (what the caller splices into the full markdown).
-        const qsizetype topLevelByteStart = context.editableNode->topLevelBlock()->sourceRange().byteStart;
+        const qsizetype topLevelByteStart = context.editableNode->inlineAbsoluteDelta();
         const qsizetype base = context.contentRange.byteStart - topLevelByteStart;
         for (const auto& inlineNode : context.editableNode->inlines()) {
           const bool isImageNode = inlineNode.type() == InlineType::Image;

@@ -427,6 +427,13 @@ void MarkdownNode::setSourceRange(SourceRange range) {
   metadata_.sourceRange = std::move(range);
 }
 
+qsizetype MarkdownNode::inlineAbsoluteDelta() const {
+  const MarkdownNode* top = topLevelBlock();
+  // Same guard as sourceRange(): descendants' (and the top block's own) inline positions are
+  // block-relative only after relativizeDescendants() ran on the owning top-level block.
+  return top->metadata_.flags.offsetsRelative ? top->sourceRange().byteStart : 0;
+}
+
 void MarkdownNode::shiftOwnSourceRange(qsizetype byteDelta, int lineDelta) {
   SourceRange& range = metadata_.sourceRange;
   if (range.byteStart >= 0 && range.byteEnd >= range.byteStart) {
