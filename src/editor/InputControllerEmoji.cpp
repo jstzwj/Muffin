@@ -110,6 +110,25 @@ void InputController::insertEmoji(const QString& glyph) {
   if (caret < emojiColonStart_) {
     return;
   }
+  // Defensive re-validation (same trigger rules as maybeUpdateEmojiPopup): the popup can
+  // outlive its trigger when the caret moves through a path that neither refreshes nor
+  // hides it — replacing [colon, caret) then deleted arbitrary text in between. Bail
+  // unless the span is still exactly ':' followed by shortcode characters.
+  const PieceTable& markdown = ctx_.session->markdownText();
+  if (emojiColonStart_ >= markdown.size() || caret > markdown.size() ||
+      markdown.at(emojiColonStart_) != QLatin1Char(':')) {
+    hideEmojiPopup();
+    return;
+  }
+  for (qsizetype i = emojiColonStart_ + 1; i < caret; ++i) {
+    const ushort u = markdown.at(i).unicode();
+    const bool ok = (u >= 'a' && u <= 'z') || (u >= 'A' && u <= 'Z') || (u >= '0' && u <= '9') ||
+                    u == '_' || u == '+' || u == '-';
+    if (!ok) {
+      hideEmojiPopup();
+      return;
+    }
+  }
   const qsizetype removedLength = caret - emojiColonStart_;
   applyLocalEdit(
       EditTransaction::Kind::InsertText,

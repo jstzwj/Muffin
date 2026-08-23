@@ -42,6 +42,11 @@ QPainterPath svgPath(const QString& d) {
       QPointF p(values.at(i + offset).toDouble(), values.at(i + offset + 1).toDouble());
       return relative ? current + p : p;
     };
+    // Truncated path: not enough number tokens left for the pending command — drop the
+    // incomplete tail instead of reading past values.end().
+    const int argc = (command == 'C' || command == 'c') ? 6
+                   : (command == 'Q' || command == 'q') ? 4 : 2;
+    if (i + argc > values.size()) break;
     if (command == 'M' || command == 'm') {
       current = point(0); start = current; path.moveTo(current); i += 2;
       command = command == 'M' ? 'L' : 'l';
@@ -557,9 +562,10 @@ FlowScene buildFlowScene(const flowchart::FlowchartData& data,
       }
       if (textOptions.css) {
         const auto group = textOptions.css->clusterGroups.constFind(c.id);
-        if (group != textOptions.css->clusterGroups.constEnd())
+        if (group != textOptions.css->clusterGroups.constEnd()) {
           sc.visible = group->displayed();
           sc.boundsVisible = group->hasBox();
+        }
         const auto box = textOptions.css->clusters.constFind(c.id);
         if (box != textOptions.css->clusters.constEnd()) {
           sc.fill = box->fill;

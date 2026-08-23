@@ -102,6 +102,17 @@ ParsedPath parsePath(const QString& d) {
       return rel ? QPointF(cur.x() + x, cur.y() + y) : QPointF(x, y);
     };
     int j = i;
+    // Argument count the pending command consumes; 0 = it takes none (Z) or is no command
+    // yet (a leading number). Without an explicit skip the trailing `i = j - 1` left the
+    // scan pointer unchanged and an unhandled command looped forever.
+    const int argc = (cmd == 'C' || cmd == 'c') ? 6
+                   : (cmd == 'Q' || cmd == 'q') ? 4
+                   : (cmd == 'A' || cmd == 'a') ? 7
+                   : (cmd == 'M' || cmd == 'm' || cmd == 'L' || cmd == 'l') ? 2 : 0;
+    if (argc == 0) {
+      continue;
+    }
+    if (i + argc > tokens.size()) break;  // truncated path: drop the incomplete tail
     if (cmd == 'M' || cmd == 'm') {
       const QPointF pt = point(j, cmd);
       if (!p.hasStart) { p.startPoint = pt; p.hasStart = true; start = pt; }

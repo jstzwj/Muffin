@@ -803,6 +803,37 @@ void testBackspaceOnEmptySiblingRetreatsToDeepestSubItem() {
           "caret must retreat to item 1's deepest last sub-item, not its marker line");
 }
 
+// Merging adjacent list items must keep the current item's lazy continuation lines. Regression:
+// the no-sublist delete range [curLineEnd, nextContentRealStart) spanned the continuation lines,
+// so Delete at the end of "1. alpha /    beta" (merging with "2. gamma") permanently ate "beta".
+void testMergeListItemPreservesLazyContinuation() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  wireInput(input, session, selection, undoStack, brushQueue);
+
+  session.setMarkdownText(QStringLiteral("1. alpha\n   beta\n2. gamma"), false);
+
+  // Delete at the end of item 1's last line merges item 2's text into the continuation line.
+  // The item's lazy continuation makes visible != source offsets, so pin the source caret
+  // (end of the "beta" line) the way a real click-to-position caret carries it.
+  setSourceCursor(selection, listItemAt(session, 0, 0),
+                  QStringLiteral("alpha beta").size(),
+                  QStringLiteral("1. alpha\n   beta").size());
+  require(input.deleteForward(), "delete at item 1 end should merge item 2 into it");
+  require(session.markdownText().toString() == QStringLiteral("1. alpha\n   beta gamma"),
+          "forward merge must preserve the lazy continuation line 'beta'");
+
+  // Backspace at item 2's start is the symmetric path (buildMergeWithPreviousListItem).
+  session.setMarkdownText(QStringLiteral("1. alpha\n   beta\n2. gamma"), false);
+  setCursor(selection, listItemAt(session, 0, 1), 0);
+  require(input.deleteBackward(), "backspace at item 2 start should merge it into item 1");
+  require(session.markdownText().toString() == QStringLiteral("1. alpha\n   beta gamma"),
+          "backward merge must preserve the lazy continuation line 'beta'");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -823,6 +854,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEnterAtListItemContentStartFollowsContent);
   RUN_TEST(testEnterOnEmptyNestedOrderedItemOutdentsAligned);
   RUN_TEST(testMergeListItemPreservesPreviousSublist);
+  RUN_TEST(testMergeListItemPreservesLazyContinuation);
   RUN_TEST(testBackspaceOnEmptySiblingRetreatsToDeepestSubItem);
 #undef RUN_TEST
   QApplication::clipboard()->clear();

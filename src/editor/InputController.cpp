@@ -156,6 +156,14 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
       }
       return handleKeyPress(static_cast<QKeyEvent*>(event));
     }
+    if (event->type() == QEvent::MouseButtonPress) {
+      // A click that moves the caret invalidates the active ":shortcode" trigger:
+      // maybeUpdateEmojiPopup only runs on typing paths, so without this the popup
+      // stayed up with a stale emojiColonStart_ and accepting an entry replaced the
+      // whole span between the shortcode's colon and the new caret position.
+      hideEmojiPopup();
+      return false;  // let the click place the caret normally
+    }
   }
   return QObject::eventFilter(watched, event);
 }

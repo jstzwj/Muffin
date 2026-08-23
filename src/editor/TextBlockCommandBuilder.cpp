@@ -1060,6 +1060,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
   for (const auto& c : previous->children()) {
     if (c->type() == BlockType::List) { prevHasSublist = true; break; }
   }
+  qsizetype deleteStart = prevLineEnd;
   if (prevHasSublist) {
     const QString prevSublist = markdown.mid(prevLineEnd, curLineStart - prevLineEnd);
     command.removedLength = qMin(curLineEnd + 1, markdown.size()) - prevLineEnd;
@@ -1076,9 +1077,20 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
     }
     command.fallbackSourceOffset = command.sourceStart + deepestTail;
   } else {
-    command.removedLength = curContentRealStart - prevLineEnd;
+    // The previous item's lazy continuation lines (text between its marker line and this
+    // item's line, when it owns no child sublist) must survive the merge: the naive range
+    // [prevLineEnd, curContentRealStart) spans them and ate them (regression: "1. alpha /
+    //    beta / 2. gamma" backspace at "2." start lost "beta"). When they exist, delete only
+    // this item's marker plus the newline that ends the last continuation line, so the
+    // merged text appends to that line instead.
+    const QString between = markdown.mid(prevLineEnd, curLineStart - prevLineEnd);
+    if (!between.trimmed().isEmpty()) {
+      deleteStart = curLineStart - 1;  // the '\n' ending the previous item's last continuation line
+    }
+    command.sourceStart = deleteStart;
+    command.removedLength = curContentRealStart - deleteStart;
     command.insertedText = separator;
-    command.fallbackSourceOffset = prevLineEnd + separator.size();
+    command.fallbackSourceOffset = deleteStart + separator.size();
   }
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge List Items");
@@ -1133,7 +1145,7 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextList
   const QString separator =
       (!context.contentText.trimmed().isEmpty() && !nextText.trimmed().isEmpty()) ? QStringLiteral(" ") : QString();
 
-  command.sourceStart = curLineEnd;
+  qsizetype deleteStart = curLineEnd;
   // Symmetric to buildMergeWithPreviousListItem: only rebuild when the current item owns a child
   // sublist (otherwise the historical single-segment delete is byte-exact).
   bool curHasSublist = false;
@@ -1145,12 +1157,23 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithNextList
     command.removedLength = qMin(nextLineEnd + 1, markdown.size()) - curLineEnd;
     command.insertedText = separator + nextText + curSublist;
   } else {
-    command.removedLength = nextContentRealStart - curLineEnd;
+    // The current item's lazy continuation lines (text between its marker line and the next
+    // item's line, when it owns no child sublist) must survive the merge: the naive range
+    // [curLineEnd, nextContentRealStart) spans them and ate them (regression: "1. alpha /
+    //    beta / 2. gamma" Delete at the item-1 end lost "beta"). When they exist, delete only
+    // the next item's marker plus the newline that ends the last continuation line, so the
+    // merged text appends to that line instead.
+    const QString between = markdown.mid(curLineEnd, nextLineStart - curLineEnd);
+    if (!between.trimmed().isEmpty()) {
+      deleteStart = nextLineStart - 1;  // the '\n' ending the current item's last continuation line
+    }
+    command.removedLength = nextContentRealStart - deleteStart;
     command.insertedText = separator;
   }
+  command.sourceStart = deleteStart;
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge List Items");
-  command.fallbackSourceOffset = curLineEnd + separator.size();
+  command.fallbackSourceOffset = deleteStart + separator.size();
   command.structureEdit = true;
   command.valid = true;
   command.handled = true;

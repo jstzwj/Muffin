@@ -284,6 +284,10 @@ OpSet patternFill(QVector<QVector<QPointF>> polygons, State& state) {
   qreal gap = state.options.hachureGap;
   if (gap < 0) gap = state.options.strokeWidth * 4.0;
   gap = std::round(std::max(gap, 0.1));
+  // JS tolerates sub-1 gaps (`iteration % gap` yields NaN, comparisons go false); C++ does
+  // not — `% static_cast<int>(gap)` with a 0 gap is SIGFPE, and a 0 step stalls `y += step`
+  // so the scan loop never drains. Clamp to one line row minimum.
+  if (gap < 1.0) gap = 1.0;
   int step = 1;
   if (state.options.roughness >= 1 && state.random() > 0.7) step = static_cast<int>(gap);
   const auto lines = hachureLines(std::move(polygons), gap,

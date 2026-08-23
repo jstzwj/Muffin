@@ -558,9 +558,9 @@ void muffin::MainWindow::printDocument() {
   paintDocumentToPrinter(dialog.printer());
 }
 
-void muffin::MainWindow::paintDocumentToPrinter(QPrinter* printer) {
+bool muffin::MainWindow::paintDocumentToPrinter(QPrinter* printer) {
   if (!printer) {
-    return;
+    return false;
   }
 
   const RenderTheme theme = themeManager_.currentTheme(zoomPercent_, fontSizePx_);
@@ -577,24 +577,43 @@ void muffin::MainWindow::paintDocumentToPrinter(QPrinter* printer) {
 
   QPainter painter(printer);
   if (!painter.isActive()) {
-    return;
+    return false;
   }
   painter.setRenderHint(QPainter::Antialiasing, true);
   painter.setRenderHint(QPainter::TextAntialiasing, true);
   painter.translate(page.topLeft());
 
   const qreal pageHeight = page.height();
+  const qreal pageWidth = page.width();
   qreal pageTop = 0;
 
   for (const BlockLayout* block : layout.promotedBlocks()) {
-    if (block->rect().bottom() > pageTop + pageHeight && block->rect().top() > pageTop) {
+    const QRectF r = block->rect();
+    // A block that starts below the current page's bottom edge begins a fresh page
+    // (anchored at its top) instead of painting entirely above the page origin.
+    if (r.top() >= pageTop + pageHeight) {
       printer->newPage();
-      pageTop = block->rect().top();
+      pageTop = r.top();
     }
-    block->paint(painter, theme, pageTop);
+    // Paint the block clipped to the current page window; a block that straddles the
+    // page boundary — or is taller than one page (a large diagram or long code fence) —
+    // repeats on subsequent pages with the window sliding down, so its lower part is
+    // reprinted instead of being clipped away by the printer and lost.
+    for (;;) {
+      painter.save();
+      painter.setClipRect(QRectF(0.0, 0.0, pageWidth, pageHeight));
+      block->paint(painter, theme, pageTop);
+      painter.restore();
+      if (r.bottom() <= pageTop + pageHeight) {
+        break;
+      }
+      printer->newPage();
+      pageTop += pageHeight;
+    }
   }
 
   painter.end();
+  return true;
 }
 
 int muffin::MainWindow::zoomPercent() const {

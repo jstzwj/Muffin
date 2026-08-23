@@ -241,7 +241,9 @@ private:
   void exportAs(ExportFormat format);
   // Paints the laid-out document onto a printer (shared by Print and PDF
   // export). Extracted from printDocument so PDF export can reuse it.
-  void paintDocumentToPrinter(QPrinter* printer);
+  // Returns false when painting could not start (null printer or inactive
+  // QPainter) — callers must not report a successful export then.
+  bool paintDocumentToPrinter(QPrinter* printer);
   void revealCurrentFile();
   bool maybeSaveChanges();
   void reopenWithEncoding(const QString& encodingName);

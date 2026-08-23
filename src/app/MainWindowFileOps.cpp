@@ -800,8 +800,10 @@ void muffin::MainWindow::exportAs(ExportFormat format) {
       QPrinter printer;
       printer.setOutputFormat(QPrinter::PdfFormat);
       printer.setOutputFileName(target);
-      paintDocumentToPrinter(&printer);
-      ok = true;
+      ok = paintDocumentToPrinter(&printer);
+      if (!ok) {
+        error = tr("PDF export failed: the printer device could not be opened.");
+      }
       break;
     }
     case ExportFormat::Html:
