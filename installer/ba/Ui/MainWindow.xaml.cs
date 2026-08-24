@@ -14,20 +14,8 @@ namespace Muffin.Setup
         public MainWindow(SetupModel model)
         {
             _model = model;
-            // Surface any UI-thread exception in a file we can read back;
-            // otherwise a dead render thread leaves an invisible 0x0 window.
-            System.Windows.Threading.Dispatcher.CurrentDispatcher.UnhandledException += (s, e) =>
-            {
-                try
-                {
-                    System.IO.File.AppendAllText(
-                        System.IO.Path.Combine(System.IO.Path.GetTempPath(), "muffin-ba-ui.log"),
-                        e.Exception.ToString() + "\n");
-                }
-                catch
-                {
-                }
-            };
+            // UI-thread exceptions crash the process, which MuffinBa's
+            // AppDomain.UnhandledException hook reports to the engine log.
             InitializeComponent();
 
             var dark = Win32Interop.SystemPrefersDarkTheme();

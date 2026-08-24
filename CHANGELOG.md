@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Single ARP entry for bundle installs** - Installing through the setup bundle no longer leaves two "Muffin" entries in Add/Remove Programs (one from the bundle, one from the wrapped MSI); the MSI's own entry is hidden when installed via the bundle, while the standalone MSI still shows its entry for silent enterprise deployments
+
 ## [0.6.2] - 2026-08-24
 
 ### Added

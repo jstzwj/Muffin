@@ -48,12 +48,22 @@
       <!-- EnableFeatureSelection lets the BA answer PlanMsiFeature for each
            MSI feature from its checkboxes (see MuffinBa.OnPlanMsiFeature).
            Burn owns the ADDLOCAL/REMOVE plumbing itself. -->
+      <!-- ARPSYSTEMCOMPONENT=1 hides the MSI's own Add/Remove-Programs entry
+           so only the bundle registers there — otherwise users see "Muffin"
+           twice and uninstalling one leaves the other behind. Passed here as
+           a bundle-only property: the bare MSI published as a release asset
+           still installs without it and keeps its own ARP entry for
+           enterprise silent deployments. ARPSYSTEMCOMPONENT is a public
+           property, not one of Burn's controlled action properties, so this
+           is legal where ADDLOCAL/REMOVE would be rejected (WIX0365). -->
       <MsiPackage Id="MuffinMsi"
                   Name="Muffin.msi"
                   SourceFile="$(var.MsiPath)"
                   EnableFeatureSelection="yes"
                   ForcePerMachine="yes"
-                  Vital="yes" />
+                  Vital="yes">
+        <MsiProperty Name="ARPSYSTEMCOMPONENT" Value="1" />
+      </MsiPackage>
     </Chain>
 
   </Bundle>
