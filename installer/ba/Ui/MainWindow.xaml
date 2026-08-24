@@ -1,0 +1,305 @@
+<Window x:Class="Muffin.Setup.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding WindowTitle, Mode=OneWay}"
+        Width="600" Height="460"
+        WindowStyle="None" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource WindowBrush}"
+        UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display"
+        SnapsToDevicePixels="True">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="44"
+                      GlassFrameThickness="0"
+                      CornerRadius="8"
+                      UseAeroCaptionButtons="False"
+                      ResizeBorderThickness="0" />
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Theme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+            <local:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"
+                xmlns:local="clr-namespace:Muffin.Setup.Ui" />
+
+            <!-- ===== Detecting ===== -->
+            <DataTemplate x:Key="DetectingTpl">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <ProgressBar Style="{StaticResource MfuProgressBar}" IsIndeterminate="True"
+                                 Width="180" />
+                    <TextBlock Style="{StaticResource CaptionText}" Text="{Binding Heading}"
+                               HorizontalAlignment="Center" Margin="0,16,0,0" />
+                </StackPanel>
+            </DataTemplate>
+
+            <!-- ===== Welcome / Update ===== -->
+            <DataTemplate x:Key="WelcomeTpl">
+                <Grid Margin="40,12,40,32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <Image Source="/MuffinBootstrapperUI;component/Assets/muffin-128.png"
+                               Width="72" Height="72" HorizontalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,14,0,0">
+                            <TextBlock Style="{StaticResource HeroText}" Text="Muffin" />
+                            <TextBlock Style="{StaticResource HeroText}" Text="{Binding VersionText, StringFormat=' {0}'}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" FontWeight="Normal" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodyText}" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="{Binding WelcomeTagline}" />
+
+                        <Border Style="{StaticResource OptionsCard}" Margin="0,24,0,0">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CaptionText}" Text="{Binding OptionsLabel}" Margin="2,0,0,8" />
+                                <CheckBox Style="{StaticResource MfuCheckBox}" Margin="2,4,0,4"
+                                          IsChecked="{Binding AddContextMenu}"
+                                          Content="{Binding AddContextMenuLabel}" />
+                                <CheckBox Style="{StaticResource MfuCheckBox}" Margin="2,4,0,2"
+                                          IsChecked="{Binding AssociateFiles}"
+                                          Content="{Binding AssociateFilesLabel}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <Button Grid.Row="1" Style="{StaticResource PrimaryButton}"
+                            Command="{Binding InstallCommand}" Content="{Binding PrimaryLabel}"
+                            HorizontalAlignment="Right" />
+                </Grid>
+            </DataTemplate>
+
+            <!-- ===== Maintenance (already installed) ===== -->
+            <DataTemplate x:Key="MaintenanceTpl">
+                <Grid Margin="40,12,40,32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <Image Source="/MuffinBootstrapperUI;component/Assets/muffin-128.png"
+                               Width="72" Height="72" HorizontalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality" />
+                        <TextBlock Style="{StaticResource HeadingText}" HorizontalAlignment="Center"
+                                   Margin="0,16,0,0" Text="{Binding InstalledTitle}" />
+                        <TextBlock Style="{StaticResource BodyText}" HorizontalAlignment="Center" Margin="0,6,0,0"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="{Binding InstalledSub}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource SecondaryButton}" Content="{Binding RepairLabel}"
+                                Command="{Binding RepairCommand}" Margin="0,0,12,0" />
+                        <Button Style="{StaticResource DangerButton}" Content="{Binding UninstallLabel}"
+                                Command="{Binding AskUninstallCommand}" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+
+            <!-- ===== Uninstall confirm ===== -->
+            <DataTemplate x:Key="UninstallConfirmTpl">
+                <Grid Margin="40,12,40,32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource GlyphText}" Text="&#xE74D;"
+                                   Foreground="{DynamicResource DangerBrush}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Style="{StaticResource HeadingText}" HorizontalAlignment="Center"
+                                   Margin="0,10,0,0" Text="{Binding UninstallTitle}" />
+                        <TextBlock Style="{StaticResource BodyText}" HorizontalAlignment="Center" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="{Binding UninstallBody}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource SecondaryButton}" Content="{Binding KeepLabel}"
+                                Command="{Binding CancelUninstallCommand}" Margin="0,0,12,0" />
+                        <Button Style="{StaticResource DangerButton}" Content="{Binding UninstallLabel}"
+                                Command="{Binding ConfirmUninstallCommand}" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+
+            <!-- ===== Progress ===== -->
+            <DataTemplate x:Key="ProgressTpl">
+                <Grid Margin="40,12,40,32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource HeadingText}" Text="{Binding Heading}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Style="{StaticResource HeroText}" Margin="0,20,0,0"
+                                   HorizontalAlignment="Center">
+                            <Run Text="{Binding ProgressPercent, Mode=OneWay}" /><Run Text="%" />
+                        </TextBlock>
+                        <ProgressBar Style="{StaticResource MfuProgressBar}" Margin="0,24,0,0"
+                                     Minimum="0" Maximum="100"
+                                     Value="{Binding ProgressPercent, Mode=OneWay}" />
+                        <TextBlock Style="{StaticResource CaptionText}" Margin="0,10,0,0"
+                                   HorizontalAlignment="Center" Text="{Binding ProgressDetail}" />
+                    </StackPanel>
+
+                    <Button Grid.Row="1" Style="{StaticResource SecondaryButton}" Content="{Binding CancelLabel}"
+                            Command="{Binding CancelCommand}" HorizontalAlignment="Right" />
+                </Grid>
+            </DataTemplate>
+
+            <!-- ===== Success ===== -->
+            <DataTemplate x:Key="SuccessTpl">
+                <Grid Margin="40,12,40,32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource GlyphText}" Text="&#xE73E;"
+                                   Foreground="{DynamicResource SuccessBrush}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Style="{StaticResource HeadingText}" HorizontalAlignment="Center"
+                                   Margin="0,10,0,0" Text="{Binding SuccessInstalledTitle}"
+                                   Visibility="{Binding Uninstalled, Converter={StaticResource InvBoolToVis}}" />
+                        <TextBlock Style="{StaticResource HeadingText}" HorizontalAlignment="Center"
+                                   Margin="0,10,0,0" Text="{Binding SuccessRemovedTitle}"
+                                   Visibility="{Binding Uninstalled, Converter={StaticResource BoolToVis}}" />
+                        <TextBlock Style="{StaticResource CaptionText}"
+                                   HorizontalAlignment="Center" Margin="0,8,0,0"
+                                   Text="{Binding RestartNoteText}"
+                                   Visibility="{Binding RestartRecommended, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource PrimaryButton}" Content="{Binding LaunchLabel}"
+                                Command="{Binding LaunchCommand}" Margin="0,0,12,0"
+                                Visibility="{Binding ShowLaunch, Converter={StaticResource BoolToVis}}" />
+                        <Button Style="{StaticResource SecondaryButton}" Content="{Binding CloseLabel}"
+                                Command="{Binding CloseCommand}" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+
+            <!-- ===== Failed ===== -->
+            <DataTemplate x:Key="FailedTpl">
+                <Grid Margin="40,12,40,32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource GlyphText}" Text="&#xE711;"
+                                   Foreground="{DynamicResource DangerBrush}"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Style="{StaticResource HeadingText}" HorizontalAlignment="Center"
+                                   Margin="0,10,0,0" Text="{Binding FailedTitle}" />
+                        <TextBlock Style="{StaticResource BodyText}" HorizontalAlignment="Center"
+                                   Margin="0,8,0,0" Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Text="{Binding ErrorMessage}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Style="{StaticResource LinkTextButton}" Content="{Binding OpenLogLabel}"
+                                Command="{Binding OpenLogCommand}" Margin="0,0,16,0"
+                                VerticalAlignment="Center" />
+                        <Button Style="{StaticResource SecondaryButton}" Content="{Binding CloseLabel}"
+                                Command="{Binding CloseCommand}" />
+                    </StackPanel>
+                </Grid>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="44" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title bar -->
+        <Grid Grid.Row="0" Background="Transparent">
+            <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
+                <Image Source="/MuffinBootstrapperUI;component/Assets/muffin-128.png"
+                       Width="18" Height="18" RenderOptions.BitmapScalingMode="HighQuality"
+                       VerticalAlignment="Center" />
+                <TextBlock Text="{Binding WindowTitle}" Margin="10,0,0,0" VerticalAlignment="Center"
+                           FontFamily="Segoe UI Variable Display, Segoe UI" FontSize="12"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+            </StackPanel>
+
+            <ComboBox Style="{StaticResource MfuLangCombo}"
+                      ItemsSource="{Binding LanguageChoices}"
+                      SelectedIndex="{Binding LanguageIndex}"
+                      Width="112" Height="30"
+                      VerticalAlignment="Center" HorizontalAlignment="Right"
+                      Margin="0,0,50,0"
+                      WindowChrome.IsHitTestVisibleInChrome="True" />
+
+            <Button x:Name="CloseButton" Width="46" Height="44" HorizontalAlignment="Right"
+                    VerticalAlignment="Stretch" Click="OnCloseClick"
+                    WindowChrome.IsHitTestVisibleInChrome="True"
+                    Background="Transparent" BorderThickness="0"
+                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10"
+                    Foreground="{DynamicResource TextPrimaryBrush}" Content="&#xE8BB;">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Hover" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Hover" Property="Background"
+                                        Value="{DynamicResource TitleBarButtonHoverBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+
+        <!-- Page content -->
+        <ContentControl Grid.Row="1" Content="{Binding}" Focusable="False">
+            <ContentControl.Style>
+                <Style TargetType="ContentControl">
+                    <Setter Property="ContentTemplate" Value="{StaticResource DetectingTpl}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Page}" Value="Welcome">
+                            <Setter Property="ContentTemplate" Value="{StaticResource WelcomeTpl}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Page}" Value="Maintenance">
+                            <Setter Property="ContentTemplate" Value="{StaticResource MaintenanceTpl}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Page}" Value="UninstallConfirm">
+                            <Setter Property="ContentTemplate" Value="{StaticResource UninstallConfirmTpl}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Page}" Value="Progress">
+                            <Setter Property="ContentTemplate" Value="{StaticResource ProgressTpl}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Page}" Value="Success">
+                            <Setter Property="ContentTemplate" Value="{StaticResource SuccessTpl}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Page}" Value="Failed">
+                            <Setter Property="ContentTemplate" Value="{StaticResource FailedTpl}" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ContentControl.Style>
+        </ContentControl>
+    </Grid>
+</Window>

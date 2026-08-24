@@ -10,6 +10,12 @@
 
     <MajorUpgrade DowngradeErrorMessage="A newer version of Muffin is already installed." />
 
+    <!-- Publishes the install folder to ARP so the setup UI (and anything
+         else) can locate Muffin.exe without a Burn→MSI property round-trip.
+         A plain Property would write the literal "[INSTALLFOLDER]"; SetProperty
+         schedules the type-51 action that expands it at install time. -->
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" After="CostFinalize" Sequence="both" />
+
     <MediaTemplate EmbedCab="yes" />
 
     <!-- Interactive install wizard with a feature tree so users can opt out of

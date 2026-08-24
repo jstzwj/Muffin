@@ -1392,6 +1392,24 @@ if(WIN32)
       COMMENT "Build Muffin MSI installer"
       VERBATIM
     )
+
+    # Setup bundle: Burn exe wrapping the MSI behind the custom WPF
+    # bootstrapper application (installer/ba). Requires dotnet for the BA.
+    find_program(DOTNET_COMMAND dotnet)
+    if(DOTNET_COMMAND)
+      add_custom_target(bundle
+        COMMAND ${CMAKE_COMMAND}
+          "-DWIX_COMMAND=${WIX_COMMAND}"
+          "-DDOTNET_COMMAND=${DOTNET_COMMAND}"
+          "-DMUFFIN_VERSION=${MUFFIN_EFFECTIVE_VERSION}"
+          "-DMSI_ARCH=${MUFFIN_MSI_ARCH}"
+          "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/BuildBundle.cmake"
+        DEPENDS msi
+        COMMENT "Build Muffin setup bundle"
+        VERBATIM
+      )
+    endif()
   endif()
 endif()
 

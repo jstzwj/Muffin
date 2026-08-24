@@ -1,0 +1,61 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+  <!-- Burn bundle wrapping the Muffin MSI behind a custom WPF bootstrapper
+       application (installer/ba). The BA carries the modern install/update/
+       uninstall UI; the MSI stays the actual payload so enterprise silent
+       deployment keeps working:
+
+         Muffin-Setup-x.y.z-windows-x64.exe /install /quiet /norestart
+
+       The MSI itself is still published alongside the bundle as a release
+       asset.
+
+       Variables:
+         MuffinVersion - four-part version (same padding as the MSI)
+         MsiPath       - path to the built Muffin MSI (payload)
+         BaDir         - BA build output directory containing
+                         MuffinBootstrapperUI.dll, WixToolset.Mba.Core.dll,
+                         and WixToolset.Mba.Host.config
+         BaHostSuffix  - host arch suffix (_X64 / _X86 / _A64)
+
+       Requires the WixToolset.Bal.wixext extension (same 4.0.5 line). -->
+
+  <Bundle Name="Muffin"
+          Version="$(var.MuffinVersion)"
+          Manufacturer="Muffin"
+          UpgradeCode="A7F94030-6C1E-4D2F-9B58-8F4A2D5C7E91"
+          IconSourceFile="$(var.SourceDir)/resources/app-icons/muffin.ico"
+          Compressed="yes">
+
+    <!-- The Bal extension ships the managed-BA native host (mbahost.dll +
+         WixToolset.Mba.Host.dll) as WixManagedBootstrapperApplicationHost,
+         per architecture (_X64 / _X86 / _A64). It spins up the CLR 4.8 host
+         described by our WixToolset.Mba.Host.config payload, which loads
+         MuffinBootstrapperUI.dll via its BootstrapperApplicationFactory
+         attribute. Everything must ship from the same WiX 4.0.5 line. -->
+    <BootstrapperApplicationRef Id="WixManagedBootstrapperApplicationHost$(var.BaHostSuffix)">
+      <Payload SourceFile="$(var.BaDir)/MuffinBootstrapperUI.dll" />
+      <Payload SourceFile="$(var.BaDir)/WixToolset.Mba.Core.dll" />
+      <Payload SourceFile="$(var.BaDir)/WixToolset.Mba.Host.config" />
+      <!-- mbanative.dll from the WixToolset.Mba.Core package is NOT the BA
+           host (mbahost.dll above is) — it is the Bal*/Ver* P/Invoke helper
+           the managed API calls (InitializeFromCreateArgs etc.). Without it
+           the BA dies with 0x80131524 (DllNotFoundException). -->
+      <Payload SourceFile="$(var.BaDir)/mbanative.dll" />
+    </BootstrapperApplicationRef>
+
+    <Chain>
+      <!-- EnableFeatureSelection lets the BA answer PlanMsiFeature for each
+           MSI feature from its checkboxes (see MuffinBa.OnPlanMsiFeature).
+           Burn owns the ADDLOCAL/REMOVE plumbing itself. -->
+      <MsiPackage Id="MuffinMsi"
+                  Name="Muffin.msi"
+                  SourceFile="$(var.MsiPath)"
+                  EnableFeatureSelection="yes"
+                  ForcePerMachine="yes"
+                  Vital="yes" />
+    </Chain>
+
+  </Bundle>
+
+</Wix>

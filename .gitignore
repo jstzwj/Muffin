@@ -107,3 +107,9 @@ TAGS
 editor_output/
 # Scratch / LLM output dumps
 /output.txt
+
+# ======================== Installer build ========================
+installer/ba/bin/
+installer/ba/obj/
+installer/*.wixpdb
+installer/*.exe

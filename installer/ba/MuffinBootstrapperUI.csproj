@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Muffin's custom Burn bootstrapper application (BA).
+
+       The BA is a .NET Framework 4.8 WPF class library hosted in-proc by the
+       bundle engine via the native mbanative.dll bridge. net48 is chosen over
+       .NET 6+ because it is preinstalled on every Windows 10/11 machine, so the
+       installer UI never has to bootstrap a runtime before it can show itself.
+
+       WixToolset.Mba.Core is pinned to 4.0.5 to match the wix 4.0.5 CLI used
+       by BuildMSI.cmake and the release workflow; mbanative.dll and the host
+       config below must come from the same WiX line as the burn engine that
+       embeds them.
+
+       MuffinBaArch (win-x64 / win-arm64) selects the architecture-specific
+       mbanative.dll; it is set by the bundle project to match the burn stub. -->
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Muffin.Setup</RootNamespace>
+    <AssemblyName>MuffinBootstrapperUI</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <MuffinBaArch Condition="'$(MuffinBaArch)' == ''">win-x64</MuffinBaArch>
+    <!-- Work around the RID being purely a native-asset selector for net48;
+         we copy mbanative.dll by explicit path below instead. -->
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <LangVersion>9.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Mba.Core" Version="4.0.5" PrivateAssets="All" GeneratePathProperty="true" />
+    <!-- Reference assemblies so the BA builds on any machine (CI runners and
+         dev boxes without the .NET Framework 4.8 targeting pack). -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RelayCommand.cs" />
+    <Compile Include="UiStrings.cs" />
+    <Compile Include="SetupModel.cs" />
+    <Compile Include="MuffinBaFactory.cs" />
+    <Compile Include="MuffinBa.cs" />
+    <Compile Include="Ui\MainWindow.xaml.cs" />
+    <Compile Include="Ui\Win32Interop.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="Ui\MainWindow.xaml" />
+    <Page Include="Ui\Theme.xaml" />
+    <Page Include="Ui\Palette.Light.xaml" />
+    <Page Include="Ui\Palette.Dark.xaml" />
+    <Resource Include="Assets\muffin-128.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Burn managed-BA host: the config names the assembly to load and
+         the CLR version to spin up; mbanative.dll is the native entry Burn
+         calls first. Both must ship as payloads next to the BA dll. -->
+    <None Include="WixToolset.Mba.Host.config" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(PkgWixToolset_Mba_Core)\runtimes\$(MuffinBaArch)\native\mbanative.dll"
+          CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
+</Project>

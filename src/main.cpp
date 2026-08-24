@@ -16,6 +16,7 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QLoggingCategory>
+#include <QMessageBox>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QStandardPaths>
@@ -139,11 +140,22 @@ int main(int argc, char *argv[]) {
 
 #ifdef Q_OS_WIN
   // If the installer registered Muffin and the user opted into "set as
-  // default", redirect them once to the system Default Apps page (Windows 8+
-  // forbids a silent default change). Clear the flag so it never repeats.
+  // default", ask once whether to open the system Default Apps page —
+  // jumping there unasked feels like the OS hijacking the session, so the
+  // redirect only happens on consent (Windows 8+ forbids a silent default
+  // change either way). Clear the flag regardless so it never repeats.
   if (muffin::WindowsIntegration::shouldPromptForDefault()) {
     muffin::WindowsIntegration::clearPromptForDefault();
-    muffin::WindowsIntegration::openDefaultAppsSettings();
+    const auto answer = QMessageBox::question(
+        &window, QCoreApplication::translate("main", "Default Markdown editor"),
+        QCoreApplication::translate(
+            "main",
+            "Muffin is registered as an editor for Markdown files.\n"
+            "Make it your default editor now?"),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    if (answer == QMessageBox::Yes) {
+      muffin::WindowsIntegration::openDefaultAppsSettings();
+    }
   }
 #endif
 

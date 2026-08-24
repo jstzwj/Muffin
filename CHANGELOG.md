@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Modern setup bundle for Windows** - The release now also ships `Muffin-Setup-x.y.z-windows-x64.exe`, a Burn bundle wrapping the MSI behind a custom WPF bootstrapper application: a single modern window for install/update/repair/uninstall with Win11-style dark/light theming that follows the system, per-feature checkboxes (Explorer context menu, Markdown file associations), live progress with cancel, an open-log button on failure, and a launch-after-install button. The UI is localized into the same 15 languages as the app (auto-selected from the OS, switchable at runtime from the title bar), and quiet deployment still works: `Muffin-Setup.exe -install|-uninstall -quiet -norestart`. The bare MSI remains a release asset
+- **Default-editor consent dialog** - After an install with file associations on, the first Muffin launch now asks "Make it your default editor now?" and only opens the Windows Default Apps page on consent, instead of jumping there unasked
+
+### Changed
+- The MSI now publishes `ARPINSTALLLOCATION` so the installed location is visible in Add/Remove Programs
+
 ## [0.6.1] - 2026-08-24
 
 ### Fixed

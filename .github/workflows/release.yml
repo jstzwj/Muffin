@@ -185,12 +185,19 @@ jobs:
           #    WIX0144 "could not be found". --global installs into
           #    ~/.wix/extensions where the build resolves it.
           wix extension add WixToolset.UI.wixext/4.0.5 --global
+          # Bal extension hosts the custom managed bootstrapper application
+          # (WixManagedBootstrapperApplicationHost) for the setup bundle.
+          wix extension add WixToolset.Bal.wixext/4.0.5 --global
           # 'wix extension list' exits 2 with no output on the runners (works
           # locally); it poisoned this step's exit code in the second v0.6.0
           # attempt even though the add had succeeded. Verify the cache
           # directly instead.
           if (-not (Test-Path "$HOME/.wix/extensions/WixToolset.UI.wixext/4.0.5")) {
             Write-Error "WiX UI extension did not install into ~/.wix/extensions"
+            exit 1
+          }
+          if (-not (Test-Path "$HOME/.wix/extensions/WixToolset.Bal.wixext/4.0.5")) {
+            Write-Error "WiX Bal extension did not install into ~/.wix/extensions"
             exit 1
           }
 
@@ -286,12 +293,27 @@ jobs:
           export PATH="$PATH:$HOME/.dotnet/tools"
           cmake --build --preset conan-release --target msi
 
+      - name: Build setup bundle
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          cmake --build --preset conan-release --target bundle
+
       - name: Upload MSI artifact
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}-msi
           path: build/Muffin-*-${{ matrix.artifact-suffix }}.msi
+          if-no-files-found: error
+
+      - name: Upload setup bundle artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}-setup
+          path: build/Muffin-Setup-*-${{ matrix.artifact-suffix }}.exe
           if-no-files-found: error
 
       - name: Upload DMG artifact
@@ -323,4 +345,5 @@ jobs:
             release-artifacts/**/*.zip
             release-artifacts/**/*.tar.gz
             release-artifacts/**/*.msi
+            release-artifacts/**/*.exe
             release-artifacts/**/*.dmg
