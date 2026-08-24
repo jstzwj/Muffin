@@ -152,7 +152,11 @@
                         <ProgressBar Style="{StaticResource MfuProgressBar}" Margin="0,24,0,0"
                                      Minimum="0" Maximum="100"
                                      Value="{Binding ProgressPercent, Mode=OneWay}" />
-                        <TextBlock Style="{StaticResource CaptionText}" Margin="0,10,0,0"
+                        <TextBlock Margin="0,12,0,0" HorizontalAlignment="Center"
+                                   FontFamily="Segoe UI" FontSize="13"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   Text="{Binding ProgressStage}" />
+                        <TextBlock Style="{StaticResource CaptionText}" Margin="0,3,0,0"
                                    HorizontalAlignment="Center" Text="{Binding ProgressDetail}" />
                     </StackPanel>
 

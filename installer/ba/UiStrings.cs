@@ -60,6 +60,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Open setup log",
             ["NewerInstalled"] = "A newer version of Muffin is already installed. Uninstall it first if you want to install this version.",
             ["ErrorFmt"] = "Setup could not finish (error 0x{0:X8}). The log has the details.",
+            ["StageCache"] = "Preparing installation files",
+            ["StageRegister"] = "Finishing up",
+            ["StageUnregister"] = "Removing registration",
+            ["StageRemovePrevious"] = "Removing the previous version",
+            ["StageRollback"] = "Rolling back changes",
             ["PlanErrorFmt"] = "Setup could not be prepared (error 0x{0:X8}).",
         };
 
@@ -96,6 +101,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "打开安装日志",
             ["NewerInstalled"] = "已安装更高版本的 Muffin。如需安装此版本，请先卸载新版。",
             ["ErrorFmt"] = "安装未能完成（错误 0x{0:X8}）。详细信息请查看日志。",
+            ["StageCache"] = "正在准备安装文件",
+            ["StageRegister"] = "正在完成收尾",
+            ["StageUnregister"] = "正在移除注册信息",
+            ["StageRemovePrevious"] = "正在移除旧版本",
+            ["StageRollback"] = "正在回滚更改",
             ["PlanErrorFmt"] = "无法准备安装（错误 0x{0:X8}）。",
         };
 
@@ -132,6 +142,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "開啟安裝記錄",
             ["NewerInstalled"] = "已安裝較新版本的 Muffin。如要安裝此版本，請先解除安裝新版。",
             ["ErrorFmt"] = "安裝無法完成（錯誤 0x{0:X8}）。詳細資訊請查看記錄。",
+            ["StageCache"] = "正在準備安裝檔案",
+            ["StageRegister"] = "正在完成收尾",
+            ["StageUnregister"] = "正在移除註冊資訊",
+            ["StageRemovePrevious"] = "正在移除舊版本",
+            ["StageRollback"] = "正在回復變更",
             ["PlanErrorFmt"] = "無法準備安裝（錯誤 0x{0:X8}）。",
         };
 
@@ -168,6 +183,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "セットアップログを開く",
             ["NewerInstalled"] = "より新しいバージョンの Muffin が既にインストールされています。このバージョンをインストールするには先にアンインストールしてください。",
             ["ErrorFmt"] = "セットアップを完了できませんでした（エラー 0x{0:X8}）。詳細はログをご覧ください。",
+            ["StageCache"] = "インストールファイルを準備しています",
+            ["StageRegister"] = "最終処理をしています",
+            ["StageUnregister"] = "登録情報を削除しています",
+            ["StageRemovePrevious"] = "以前のバージョンを削除しています",
+            ["StageRollback"] = "変更をロールバックしています",
             ["PlanErrorFmt"] = "セットアップを準備できませんでした（エラー 0x{0:X8}）。",
         };
 
@@ -204,6 +224,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "설치 로그 열기",
             ["NewerInstalled"] = "더 최신 버전의 Muffin이 이미 설치되어 있습니다. 이 버전을 설치하려면 먼저 제거하세요.",
             ["ErrorFmt"] = "설치를 완료할 수 없습니다(오류 0x{0:X8}). 자세한 내용은 로그를 참고하세요.",
+            ["StageCache"] = "설치 파일을 준비하는 중",
+            ["StageRegister"] = "마무리하는 중",
+            ["StageUnregister"] = "등록 정보를 제거하는 중",
+            ["StageRemovePrevious"] = "이전 버전을 제거하는 중",
+            ["StageRollback"] = "변경 내용을 되돌리는 중",
             ["PlanErrorFmt"] = "설치를 준비할 수 없습니다(오류 0x{0:X8}).",
         };
 
@@ -240,6 +265,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Setup-Protokoll öffnen",
             ["NewerInstalled"] = "Es ist bereits eine neuere Version von Muffin installiert. Deinstalliere diese zuerst, um diese Version zu installieren.",
             ["ErrorFmt"] = "Setup konnte nicht abgeschlossen werden (Fehler 0x{0:X8}). Details im Protokoll.",
+            ["StageCache"] = "Installationsdateien werden vorbereitet",
+            ["StageRegister"] = "Abschluss läuft",
+            ["StageUnregister"] = "Registrierung wird entfernt",
+            ["StageRemovePrevious"] = "Die vorherige Version wird entfernt",
+            ["StageRollback"] = "Änderungen werden zurückgenommen",
             ["PlanErrorFmt"] = "Setup konnte nicht vorbereitet werden (Fehler 0x{0:X8}).",
         };
 
@@ -276,6 +306,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Ouvrir le journal d'installation",
             ["NewerInstalled"] = "Une version plus récente de Muffin est déjà installée. Désinstallez-la d'abord pour installer cette version.",
             ["ErrorFmt"] = "L'installation n'a pas pu aboutir (erreur 0x{0:X8}). Les détails sont dans le journal.",
+            ["StageCache"] = "Préparation des fichiers d'installation",
+            ["StageRegister"] = "Finalisation",
+            ["StageUnregister"] = "Suppression de l'inscription",
+            ["StageRemovePrevious"] = "Suppression de la version précédente",
+            ["StageRollback"] = "Annulation des modifications",
             ["PlanErrorFmt"] = "Impossible de préparer l'installation (erreur 0x{0:X8}).",
         };
 
@@ -312,6 +347,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Abrir registro de instalación",
             ["NewerInstalled"] = "Ya hay instalada una versión más reciente de Muffin. Desinstálala primero si quieres instalar esta versión.",
             ["ErrorFmt"] = "La instalación no pudo completarse (error 0x{0:X8}). Los detalles están en el registro.",
+            ["StageCache"] = "Preparando los archivos de instalación",
+            ["StageRegister"] = "Finalizando",
+            ["StageUnregister"] = "Quitando el registro",
+            ["StageRemovePrevious"] = "Quitando la versión anterior",
+            ["StageRollback"] = "Deshaciendo los cambios",
             ["PlanErrorFmt"] = "No se pudo preparar la instalación (error 0x{0:X8}).",
         };
 
@@ -348,6 +388,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Apri il registro dell'installazione",
             ["NewerInstalled"] = "È già installata una versione più recente di Muffin. Disinstallala prima per installare questa versione.",
             ["ErrorFmt"] = "L'installazione non è stata completata (errore 0x{0:X8}). I dettagli sono nel registro.",
+            ["StageCache"] = "Preparazione dei file di installazione",
+            ["StageRegister"] = "Finalizzazione",
+            ["StageUnregister"] = "Rimozione della registrazione",
+            ["StageRemovePrevious"] = "Rimozione della versione precedente",
+            ["StageRollback"] = "Ripristino delle modifiche",
             ["PlanErrorFmt"] = "Impossibile preparare l'installazione (errore 0x{0:X8}).",
         };
 
@@ -384,6 +429,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Installatielogboek openen",
             ["NewerInstalled"] = "Er is al een nieuwere versie van Muffin geïnstalleerd. Verwijder deze eerst om deze versie te installeren.",
             ["ErrorFmt"] = "De installatie is niet voltooid (fout 0x{0:X8}). Zie het logboek voor details.",
+            ["StageCache"] = "Installatiebestanden worden voorbereid",
+            ["StageRegister"] = "Afhandeling",
+            ["StageUnregister"] = "Registratie wordt verwijderd",
+            ["StageRemovePrevious"] = "De vorige versie wordt verwijderd",
+            ["StageRollback"] = "Wijzigingen worden teruggedraaid",
             ["PlanErrorFmt"] = "De installatie kon niet worden voorbereid (fout 0x{0:X8}).",
         };
 
@@ -420,6 +470,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Otwórz dziennik instalacji",
             ["NewerInstalled"] = "Nowsza wersja Muffin jest już zainstalowana. Odinstaluj ją najpierw, aby zainstalować tę wersję.",
             ["ErrorFmt"] = "Instalacja nie została ukończona (błąd 0x{0:X8}). Szczegóły w dzienniku.",
+            ["StageCache"] = "Przygotowywanie plików instalacji",
+            ["StageRegister"] = "Kończenie",
+            ["StageUnregister"] = "Usuwanie rejestracji",
+            ["StageRemovePrevious"] = "Usuwanie poprzedniej wersji",
+            ["StageRollback"] = "Cofanie zmian",
             ["PlanErrorFmt"] = "Nie można przygotować instalacji (błąd 0x{0:X8}).",
         };
 
@@ -456,6 +511,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Abrir log de instalação",
             ["NewerInstalled"] = "Uma versão mais recente do Muffin já está instalada. Desinstale-a primeiro para instalar esta versão.",
             ["ErrorFmt"] = "A instalação não pôde ser concluída (erro 0x{0:X8}). Detalhes no log.",
+            ["StageCache"] = "Preparando os arquivos de instalação",
+            ["StageRegister"] = "Finalizando",
+            ["StageUnregister"] = "Removendo o registro",
+            ["StageRemovePrevious"] = "Removendo a versão anterior",
+            ["StageRollback"] = "Revertendo as alterações",
             ["PlanErrorFmt"] = "Não foi possível preparar a instalação (erro 0x{0:X8}).",
         };
 
@@ -492,6 +552,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Открыть журнал установки",
             ["NewerInstalled"] = "Более новая версия Muffin уже установлена. Сначала удалите её, чтобы установить эту версию.",
             ["ErrorFmt"] = "Не удалось завершить установку (ошибка 0x{0:X8}). Подробности — в журнале.",
+            ["StageCache"] = "Подготовка файлов установки",
+            ["StageRegister"] = "Завершение",
+            ["StageUnregister"] = "Удаление регистрации",
+            ["StageRemovePrevious"] = "Удаление предыдущей версии",
+            ["StageRollback"] = "Откат изменений",
             ["PlanErrorFmt"] = "Не удалось подготовить установку (ошибка 0x{0:X8}).",
         };
 
@@ -528,6 +593,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Kurulum günlüğünü aç",
             ["NewerInstalled"] = "Daha yeni bir Muffin sürümü zaten yüklü. Bu sürümü yüklemek için önce onu kaldırın.",
             ["ErrorFmt"] = "Kurulum tamamlanamadı (hata 0x{0:X8}). Ayrıntılar günlükte.",
+            ["StageCache"] = "Kurulum dosyaları hazırlanıyor",
+            ["StageRegister"] = "Sonlandırılıyor",
+            ["StageUnregister"] = "Kayıt kaldırılıyor",
+            ["StageRemovePrevious"] = "Önceki sürüm kaldırılıyor",
+            ["StageRollback"] = "Değişiklikler geri alınıyor",
             ["PlanErrorFmt"] = "Kurulum hazırlanamadı (hata 0x{0:X8}).",
         };
 
@@ -564,6 +634,11 @@ namespace Muffin.Setup
             ["OpenLog"] = "Mở nhật ký cài đặt",
             ["NewerInstalled"] = "Đã cài đặt phiên bản Muffin mới hơn. Hãy gỡ nó trước nếu muốn cài phiên bản này.",
             ["ErrorFmt"] = "Không thể hoàn tất cài đặt (lỗi 0x{0:X8}). Chi tiết trong nhật ký.",
+            ["StageCache"] = "Đang chuẩn bị tệp cài đặt",
+            ["StageRegister"] = "Đang hoàn tất",
+            ["StageUnregister"] = "Đang xóa đăng ký",
+            ["StageRemovePrevious"] = "Đang xóa phiên bản trước",
+            ["StageRollback"] = "Đang hoàn tác thay đổi",
             ["PlanErrorFmt"] = "Không thể chuẩn bị cài đặt (lỗi 0x{0:X8}).",
         };
 

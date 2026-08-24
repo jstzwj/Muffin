@@ -222,6 +222,7 @@ namespace Muffin.Setup
             {
                 e.Cancel = true;
             }
+            OnUi(() => _model.OnStage("StageCache"));
         }
 
         protected override void OnExecuteBegin(ExecuteBeginEventArgs e)
@@ -238,7 +239,25 @@ namespace Muffin.Setup
             {
                 e.Cancel = true;
             }
-            OnUi(() => _model.OnExecutePackageBegin(e.ShouldExecute ? e.PackageId : ""));
+            if (e.ShouldExecute)
+            {
+                OnUi(() => _model.OnExecutePackageBegin(e.PackageId));
+            }
+        }
+
+        protected override void OnExecuteMsiMessage(ExecuteMsiMessageEventArgs e)
+        {
+            OnUi(() => _model.OnMsiMessage(e.Message));
+        }
+
+        protected override void OnRegisterBegin(RegisterBeginEventArgs e)
+        {
+            OnUi(() => _model.OnStage("StageRegister"));
+        }
+
+        protected override void OnUnregisterBegin(UnregisterBeginEventArgs e)
+        {
+            OnUi(() => _model.OnStage("StageUnregister"));
         }
 
         protected override void OnApplyComplete(ApplyCompleteEventArgs e)

@@ -92,6 +92,13 @@ namespace Muffin.Setup
             private set => SetProperty(ref _progressPercent, value);
         }
 
+        private string _progressStage = "";
+        public string ProgressStage
+        {
+            get => _progressStage;
+            private set => SetProperty(ref _progressStage, value);
+        }
+
         private string _progressDetail = "";
         public string ProgressDetail
         {
@@ -308,6 +315,7 @@ namespace Muffin.Setup
         {
             Page = SetupPage.Progress;
             ProgressPercent = 0;
+            ProgressStage = "";
             ProgressDetail = "";
         }
 
@@ -320,9 +328,34 @@ namespace Muffin.Setup
             ProgressPercent = overallPercent;
         }
 
-        public void OnExecutePackageBegin(string packageName)
+        /// <summary>Coarse phase under the heading: cache / execute / register.</summary>
+        public void OnStage(string stageKey)
         {
-            ProgressDetail = packageName;
+            ProgressStage = UiStrings.Get(stageKey);
+        }
+
+        /// <summary>
+        /// Per-package execute step. Related-bundle packages (upgrade
+        /// clean-up) get their own stage line; our MSI keeps the intent
+        /// heading and shows the localized MSI message stream as detail.
+        /// </summary>
+        public void OnExecutePackageBegin(string packageId)
+        {
+            if (packageId != "MuffinMsi")
+            {
+                // Related-bundle clean-up during an upgrade.
+                ProgressStage = UiStrings.Get("StageRemovePrevious");
+            }
+            ProgressDetail = "Muffin";
+        }
+
+        /// <summary>Live MSI progress messages, localized by msiexec itself.</summary>
+        public void OnMsiMessage(string message)
+        {
+            if (!string.IsNullOrEmpty(message) && message.Length <= 200)
+            {
+                ProgressDetail = message;
+            }
         }
 
         public void OnApplyComplete(int status)
