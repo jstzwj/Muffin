@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-08-24
+
+### Fixed
+- **List splitting with Enter+Enter** - Pressing Enter twice on a middle list item now behaves as a split into two lists across every layer: the following ordered items renumber from 1, the display shows the authored source numbers (a literal `1.` no longer renders as `3.`), the blank line between the halves renders as a real editable line where the caret lands at normal height, and typing there splits the parse into two real lists. Tab on the item after a split nests it under the previous item again instead of silently doing nothing
+- **Table cell caret with hidden markers** - Cells containing bold/code/link syntax in a table that does NOT start at the top of the document no longer misplace the caret; the inline-offset frame was only numerically correct for a table at offset 0
+- **List merge data loss** - Merging adjacent list items (Delete and Backspace) keeps lazy continuation lines; the merge range no longer silently swallows them
+- **Undo/redo history alignment** - A failed replay now restores the transaction to its original stack instead of silently swallowing it
+- **Windows-1252 save round trip** - The five undefined bytes (0x81/0x8D/0x8F/0x90/0x9D) save back byte-identically via their C1 best-fit characters, matching the ICU decoder
+- **Surrogate-pair deletion** - Backspace/Delete in code blocks removes a full code point, not half of a surrogate pair
+- **Theme CSS @import cycles** - Mutual or chained imports no longer recurse forever
+- **Leading-blank caret resolution** - Caret offsets in the leading blank region of a document resolve to the first block instead of jumping to the document end
+- **HTML rowspan cell height** - A rowspan cell now spans the sum of its spanned rows' heights instead of keeping its starting row's height
+- **Collapsed details hit-testing** - Hidden children of a collapsed `<details>` no longer intercept clicks
+- **Stale selection overlay** - Programmatic multi-block selection changes (Ctrl+A, click-to-deselect, Shift+click) no longer leave stale highlight pixels
+- **Mermaid SVG path robustness** - Unknown path commands are skipped instead of parsing garbage; a cluster CSS lookup no longer dereferences a missing entry
+
+### Changed
+- **Interaction regions for class and ER diagrams** - `click`/`href`/`tooltip` directives on class-diagram nodes and ER entities are honored: the linked boxes are clickable in the editor and export as SVG anchors, matching the other interactive families
+- **Kanban ticket links** carry their screen-reader label into SVG export
+- Internal consolidations with no behavior change: a shared seam for the per-family SVG arrow-marker replay and edge-polynomial stitching, a single CSS line-height formula for painted vs estimated heights, one implementation of the SVG whitespace-collapse and font-family-list helpers used by ~20 diagram families, a shared cascade-winner comparison, and a unified inline-offset frame accessor on the document core
+
 ## [0.6.0] - 2026-08-22
 
 ### Added
