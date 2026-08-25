@@ -354,15 +354,19 @@ QPointF EditorView::mapDocumentToViewport(const QPointF& documentPos) const {
 
 void EditorView::applyScrollBarStyle() {
   const QString background = theme_.backgroundColor().name(QColor::HexRgb);
+  // The scrollbar's QSS width is the hit area (and the gutter it reserves); the
+  // handle's side margins inset the visible thumb. 14px hit with 3px insets keeps
+  // the slim ~8px look while making the thumb easy to grab — the old 8px width
+  // with 2px insets left a ~4px thumb, under 3 physical pixels at 150% DPI.
   setStyleSheet(QStringLiteral(
       "EditorView { background:%1; border:0; }"
-      "QScrollBar:vertical { background:%1; width:8px; margin:0; }"
-      "QScrollBar::handle:vertical { background:#b7b7b7; min-height:54px; border-radius:3px; margin:1px 2px; }"
+      "QScrollBar:vertical { background:%1; width:14px; margin:0; }"
+      "QScrollBar::handle:vertical { background:#b7b7b7; min-height:54px; border-radius:4px; margin:2px 3px; }"
       "QScrollBar::handle:vertical:hover { background:#999999; }"
       "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; border:0; background:transparent; }"
       "QScrollBar:add-page:vertical, QScrollBar::sub-page:vertical { background:transparent; }"
-      "QScrollBar:horizontal { background:%1; height:8px; margin:0; }"
-      "QScrollBar::handle:horizontal { background:#b7b7b7; min-width:54px; border-radius:3px; margin:2px 1px; }"
+      "QScrollBar:horizontal { background:%1; height:14px; margin:0; }"
+      "QScrollBar::handle:horizontal { background:#b7b7b7; min-width:54px; border-radius:4px; margin:3px 2px; }"
       "QScrollBar::handle:horizontal:hover { background:#999999; }"
       "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width:0; border:0; background:transparent; }"
       "QScrollBar:add-page:horizontal, QScrollBar::sub-page:horizontal { background:transparent; }")

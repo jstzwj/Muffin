@@ -73,13 +73,14 @@ QString sidebarStyleSheet(const ThemeDefinition& d, bool outlineFoldable) {
       "#FileTree, #OutlineTree { background: %1; color: %5; border: 0; padding: 4px 0; outline: 0; }"
       "#FileTree::item, #OutlineTree::item { min-height: 22px; padding: 1px 4px; border: 0; }"
       "#FileTree::item:hover, #OutlineTree::item:hover { background: %4; color: %5; }"
-      "#FileTree::item:selected, #OutlineTree::item:selected { background: %6; color: %5; }")
+      "#FileTree::item:selected, #OutlineTree::item:selected { background: %6; color: %7; }")
       .arg(hexRgb(c.surface),
            hexRgb(c.border),
            hexRgb(c.chromeMuted),
            hexRgb(c.hover),
            hexRgb(c.chromeText),
-           hexRgb(c.selected));
+           hexRgb(c.chromeSelection),
+           hexRgb(c.chromeSelectionText));
   if (!outlineFoldable) {
     sheet += QStringLiteral("#OutlineTree::branch { image:none; width:0; }");
   }
@@ -96,8 +97,10 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
   //   %5 chromeMuted active muted text (sidebar nav, captions), scroll handle:hover
   //   %6 hover       hover + pressed + disabled fills
   //   %7 accent      focus rings, checked indicators, selected-item accent bar
-  //   %8 selected    list / combo selected-row fill
+  //   %8 chromeSelection list / combo selected-row fill (opaque, flattened from the
+  //                   possibly-translucent editor `selected` onto surface)
   //   %9 chromeDisabled disabled/ghosted text + controls (clearly faded)
+  //   %10 chromeSelectionText text paired with %8 (white on dark fills)
   return QStringLiteral(
       // Dialog base + sidebar card
       "QDialog { background:%1; color:%2; }"
@@ -154,10 +157,10 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
       // the view's padding strip is not painted and shows as a black band inside
       // the popup window (item insets come from the ::item rule's own padding).
       "QComboBox QAbstractItemView { border:1px solid %4; border-radius:6px; background:%3; color:%2;"
-      "  selection-background-color:%8; selection-color:%2; outline:0; padding:0; }"
+      "  selection-background-color:%8; selection-color:%10; outline:0; padding:0; }"
       "QComboBox QAbstractItemView::item { min-height:28px; padding:4px 10px; background:%3; color:%2; }"
       "QComboBox QAbstractItemView::item:hover { background:%6; color:%2; }"
-      "QComboBox QAbstractItemView::item:selected { background:%8; color:%2; }"
+      "QComboBox QAbstractItemView::item:selected { background:%8; color:%10; }"
 
       // QLineEdit
       "QLineEdit { border:1px solid %4; border-radius:6px; background:%3; padding:4px 10px; min-height:24px; color:%2; }"
@@ -178,7 +181,7 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
       "QListWidget { border:0; outline:0; background:transparent; }"
       "QListWidget::item { min-height:34px; padding-left:14px; margin:2px 6px; color:%5; border-radius:6px; border-left:3px solid transparent; }"
       "QListWidget::item:hover { background:%6; color:%2; }"
-      "QListWidget::item:selected { background:%8; color:%2; border-left:3px solid %7; font-weight:500; }"
+      "QListWidget::item:selected { background:%8; color:%10; border-left:3px solid %7; font-weight:500; }"
 
       // Page QScrollArea
       "QScrollArea { border:0; background:transparent; }"
@@ -209,8 +212,9 @@ QString dialogStyleSheet(const ThemeDefinition& d) {
            hexRgb(c.chromeMuted),
            hexRgb(c.hover),
            hexRgb(c.accent),
-           hexRgb(c.selected),
-           hexRgb(c.chromeDisabled));
+           hexRgb(c.chromeSelection),
+           hexRgb(c.chromeDisabled),
+           hexRgb(c.chromeSelectionText));
 }
 
 }  // namespace muffin

@@ -391,6 +391,37 @@ void ThemeDefinition::deriveChromeDefaults(ThemeColors& k) {
   if (!k.hover.isValid()) k.hover = k.codeBackground;
   if (!k.selected.isValid()) k.selected = k.codeBackground;
   if (!k.accent.isValid()) k.accent = k.link;
+  // Chrome selection pair. `selected` is authored for the editor's text selection
+  // and may carry alpha (newsprint: rgba(32,43,51,.63) over cream). As a chrome fill
+  // that alpha composites against whatever is underneath — inside the Win11 combo
+  // popup the unpainted band is BLACK, so a dark translucent selection renders as a
+  // black row with near-black chromeText on it. Flatten the tint onto `surface`
+  // (what the selected row actually sits on) so the fill is opaque and stable, then
+  // pair it with white or chromeText by luminance — dark fills get light text, the
+  // pairing the theme author already chose for prose selection (newsprint ships
+  // --active-file-text-color: white for exactly this tint).
+  {
+    const QColor fillBase = k.selected.isValid() ? k.selected : QColor(0x33, 0x33, 0x33);
+    const QColor base = k.surface.isValid() ? k.surface : QColor(0xff, 0xff, 0xff);
+    const qreal alpha = fillBase.alphaF();
+    const QColor flattened(int(fillBase.red() * alpha + base.red() * (1.0 - alpha)),
+                           int(fillBase.green() * alpha + base.green() * (1.0 - alpha)),
+                           int(fillBase.blue() * alpha + base.blue() * (1.0 - alpha)));
+    k.chromeSelection = flattened;
+    // Pair the fill with the best-contrasting text: the theme's own ink when it
+    // already separates (keeps authored hues), else white or near-black. A plain
+    // "dark fill → white, light fill → chromeText" rule breaks on dark themes,
+    // whose chromeText is itself LIGHT — a light selected fill there needs dark ink.
+    const qreal fillL = flattened.lightnessF();
+    const QColor ink = k.chromeText.isValid() ? k.chromeText : QColor(0x1a, 0x1a, 0x1a);
+    const qreal inkDistance = qAbs(ink.lightnessF() - fillL) * 1.05;  // prefer theme ink on ties
+    const qreal whiteDistance = qAbs(1.0 - fillL);
+    const qreal blackDistance = fillL;
+    k.chromeSelectionText = inkDistance >= whiteDistance && inkDistance >= blackDistance
+                                ? ink
+                                : (whiteDistance >= blackDistance ? QColor(0xff, 0xff, 0xff)
+                                                                  : QColor(0x1a, 0x1a, 0x1a));
+  }
   // Highlight (==mark==) background — most themes declare no `mark`, leaving it
   // invalid (the `==text==` fill, and BlockLayoutBuilder's HTML palette, both
   // paint an unset brush as solid black). Default to a soft amber (dark amber on

@@ -57,6 +57,16 @@ struct ThemeColors {
   QColor hover;             // hover background (menu items, list rows, buttons)
   QColor selected;          // selected item background (list rows, checked tabs)
   QColor accent;            // focus / links / checked-indicator
+  // Selected-row fill + its PAIRED text for chrome surfaces (combo popups, dialog
+  // sidebars, file trees). Derived in normalizeColors: `selected` is authored for
+  // the EDITOR's text selection, so it may be translucent (newsprint:
+  // rgba(32,43,51,.63)) — as a chrome fill that alpha composites against whatever
+  // sits underneath (unpainted black inside the Win11 combo popup). chromeSelection
+  // is the same colour flattened onto `surface` (always opaque); chromeSelectionText
+  // picks white or chromeText by luminance so the pair is always readable, the way
+  // the theme author already paired the tint (newsprint ships white active-file text).
+  QColor chromeSelection;
+  QColor chromeSelectionText;
 
   // Typography: when true, paragraph + heading text renders in a serif family
   // (code/math stay monospace). Models themes whose identity is typography

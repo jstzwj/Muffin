@@ -7,6 +7,8 @@
 
 #include <QColor>
 #include <QCoreApplication>
+#include <QList>
+#include <QPair>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -674,6 +676,53 @@ void testPageWidthPercentDoesNotCollapse() {
       QStringLiteral("fill"), QString());
   require(fill.page.pageMaxWidth > 10000.0,
           QStringLiteral("width:90% should be viewport-fill sentinel, not em-relative tiny pixels"));
+}
+
+// The chrome selection pair (combo popup selected row, dialog sidebar active tab, file-tree
+// selected row) must be readable on EVERY theme. The editor `selected` token is authored for
+// prose text selection and may be translucent (newsprint: rgba(32,43,51,.63)) — as a chrome
+// fill that alpha composites against whatever is underneath (unpainted BLACK inside the Win11
+// combo popup), and pairing the fill with chromeText can be black-on-black. The derived
+// chromeSelection is the tint flattened onto surface (always opaque) and chromeSelectionText
+// is the best-contrasting ink — for newsprint exactly the white the theme author ships as
+// --active-file-text-color for this tint.
+void testChromeSelectionPairIsReadable() {
+  const QList<QPair<QString, QColor>> cases = {
+      {QStringLiteral("github"), QColor()},       // light theme, light selected fill
+      {QStringLiteral("newsprint"), QColor(0xff, 0xff, 0xff)},
+      {QStringLiteral("night"), QColor()},        // dark theme, chromeText is LIGHT
+      {QStringLiteral("pixyll"), QColor()},
+      {QStringLiteral("whitey"), QColor()},
+  };
+  for (const auto& [id, expectedText] : cases) {
+    const ThemeDefinition d = ThemeDefinition::fromCss(QStringLiteral(":/themes/%1.css").arg(id), id);
+    const ThemeColors& k = d.colors;
+    require(k.chromeSelection.isValid(),
+            QStringLiteral("%1: chromeSelection should be derived").arg(id));
+    require(k.chromeSelection.alpha() == 255,
+            QStringLiteral("%1: chromeSelection must be opaque (a translucent fill composites "
+                           "against black in the Win11 combo popup)").arg(id));
+    require(k.chromeSelectionText.isValid(),
+            QStringLiteral("%1: chromeSelectionText should be derived").arg(id));
+    const qreal contrast = qAbs(k.chromeSelectionText.lightnessF() - k.chromeSelection.lightnessF());
+    require(contrast >= 0.3,
+            QStringLiteral("%1: selection text/fill must contrast (fill %2 text %3, distance %4)")
+                .arg(id, k.chromeSelection.name(), k.chromeSelectionText.name())
+                .arg(contrast));
+    if (expectedText.isValid()) {
+      require(k.chromeSelectionText == expectedText,
+              QStringLiteral("%1: chromeSelectionText should be %2, got %3")
+                  .arg(id, expectedText.name(), k.chromeSelectionText.name()));
+    }
+  }
+
+  // Newsprint pins the flattening: rgba(32,43,51,.63) over surface #f3f2ee == #6d7477.
+  const ThemeDefinition newsprint =
+      ThemeDefinition::fromCss(QStringLiteral(":/themes/newsprint.css"), QStringLiteral("newsprint"));
+  require(newsprint.colors.chromeSelection == QColor(0x6d, 0x74, 0x77),
+          QStringLiteral("newsprint chromeSelection should flatten the 63% slate tint onto the "
+                         "cream surface, got %1")
+              .arg(newsprint.colors.chromeSelection.name()));
 }
 
 // The built-in themes are now CSS resources at :/themes/<id>.css. This guards
@@ -1675,6 +1724,7 @@ int main(int argc, char** argv) {
   const QString fixture = QString::fromLocal8Bit(argv[1]);
 
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testChromeSelectionPairIsReadable);
   RUN_TEST(testResolveVars);
   RUN_TEST(testSplitCommas);
   RUN_TEST(testCssColorHexAlphaOrder);

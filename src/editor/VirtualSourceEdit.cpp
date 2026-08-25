@@ -737,14 +737,16 @@ void VirtualSourceEdit::updateScrollBars() {
 
 void VirtualSourceEdit::applyScrollBarStyle() {
   const QString background = colors_.background.name(QColor::HexRgb);
+  // Same hit-area/visible-thumb split as EditorView: 14px hit, 3px insets → ~8px
+  // visible thumb. The old 8px/4px combo was under 3 physical pixels at 150% DPI.
   setStyleSheet(QStringLiteral(
-      "QScrollBar:vertical { background:%1; width:8px; margin:0; }"
-      "QScrollBar::handle:vertical { background:#b7b7b7; min-height:54px; border-radius:3px; margin:1px 2px; }"
+      "QScrollBar:vertical { background:%1; width:14px; margin:0; }"
+      "QScrollBar::handle:vertical { background:#b7b7b7; min-height:54px; border-radius:4px; margin:2px 3px; }"
       "QScrollBar::handle:vertical:hover { background:#999999; }"
       "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; border:0; background:transparent; }"
       "QScrollBar:add-page:vertical, QScrollBar::sub-page:vertical { background:transparent; }"
-      "QScrollBar:horizontal { background:%1; height:8px; margin:0; }"
-      "QScrollBar::handle:horizontal { background:#b7b7b7; min-width:54px; border-radius:3px; margin:2px 1px; }"
+      "QScrollBar:horizontal { background:%1; height:14px; margin:0; }"
+      "QScrollBar::handle:horizontal { background:#b7b7b7; min-width:54px; border-radius:4px; margin:3px 2px; }"
       "QScrollBar::handle:horizontal:hover { background:#999999; }"
       "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width:0; border:0; background:transparent; }"
       "QScrollBar:add-page:horizontal, QScrollBar::sub-page:horizontal { background:transparent; }")
