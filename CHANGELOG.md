@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Undeletable marker-only ordered list item** - A line like `3423.` (marker at end-of-line, no trailing space) parses as an empty list item once a blank line follows, but the editor's own marker parser rejected it — so backspace below or inside such an item reported success forever while deleting nothing. Marker-only lines are now recognized as list lines (an empty item's fill/outdent/merge/renumber all work), and merging an empty paragraph into an empty item leaves the caret at the marker line's end instead of stranding it at the start where further backspaces would no-op
 - **Single ARP entry for bundle installs** - Installing through the setup bundle no longer leaves two "Muffin" entries in Add/Remove Programs (one from the bundle, one from the wrapped MSI); the MSI's own entry is hidden when installed via the bundle, while the standalone MSI still shows its entry for silent enterprise deployments
 
 ## [0.6.2] - 2026-08-24

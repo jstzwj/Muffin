@@ -553,9 +553,17 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildMergeWithPrevious
   command.kind = EditTransaction::Kind::DeleteText;
   command.label = QStringLiteral("Merge Paragraphs");
   if (previous.contentText.isEmpty() && context.contentText.isEmpty()) {
-    command.preferredCursor = cursorFor(context.node->id(), 0);
+    // Both sides empty. When the previous block is an empty list item the merged line keeps
+    // the marker text ("3423." — cmark re-parses it as a paragraph), so the caret belongs at
+    // the CONTENT END: no preferredCursor, forcing resolution through fallbackSourceOffset
+    // (= previous content end). A (node, 0) preference would strand it at the re-parsed
+    // paragraph's START where the next backspace has nothing behind it to delete. Two empty
+    // paragraphs keep the original (node, 0) preference — offset 0 IS their end.
+    if (previous.node->type() != BlockType::ListItem) {
+      command.preferredCursor = cursorFor(context.node->id(), 0);
+      command.preferLaterEmptyAtOffset = true;
+    }
     command.nodeHints.push_back(LocalEditNodeHint{context.node->id(), command.fallbackSourceOffset, context.node->type()});
-    command.preferLaterEmptyAtOffset = true;
   }
   command.valid = true;
   command.handled = true;

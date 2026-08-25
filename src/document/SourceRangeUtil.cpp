@@ -54,9 +54,22 @@ ListLineInfo listLineInfoFor(const QString& line) {
   }
 
   const qsizetype markerStart = index;
-  if (index + 2 <= line.size() && (line.at(index) == QLatin1Char('-') || line.at(index) == QLatin1Char('*') ||
-                                   line.at(index) == QLatin1Char('+')) &&
-      line.at(index + 1).isSpace()) {
+  // A marker immediately followed by end-of-line ("3423.", "-") still opens a list item with
+  // EMPTY content — cmark parses it that way, and the editor must agree or every edit path
+  // that looks the marker line up (fill/outdent/merge/renumber) silently no-ops on such items
+  // (they parse as list items but fail listLineInfoFor, so e.g. backspace below one eats
+  // nothing forever). The delimiter-only line end is treated as the content start.
+  if (index + 1 == line.size() && (line.at(index) == QLatin1Char('-') || line.at(index) == QLatin1Char('*') ||
+                                   line.at(index) == QLatin1Char('+'))) {
+    info.valid = true;
+    info.ordered = false;
+    info.markerStart = markerStart;
+    info.markerEnd = index + 1;
+    info.contentStart = info.markerEnd;
+    info.marker = line.mid(info.markerStart, info.markerEnd - info.markerStart);
+  } else if (index + 2 <= line.size() && (line.at(index) == QLatin1Char('-') || line.at(index) == QLatin1Char('*') ||
+                                          line.at(index) == QLatin1Char('+')) &&
+             line.at(index + 1).isSpace()) {
     info.valid = true;
     info.ordered = false;
     info.markerStart = markerStart;
@@ -68,9 +81,20 @@ ListLineInfo listLineInfoFor(const QString& line) {
     while (index < line.size() && line.at(index).isDigit()) {
       ++index;
     }
-    if (index > numberStart && index + 2 <= line.size() &&
-        (line.at(index) == QLatin1Char('.') || line.at(index) == QLatin1Char(')')) &&
-        line.at(index + 1).isSpace()) {
+    if (index > numberStart && index + 1 == line.size() &&
+        (line.at(index) == QLatin1Char('.') || line.at(index) == QLatin1Char(')'))) {
+      // Ordered marker at end-of-line: "3423." — same empty-item rule as the bullet above.
+      info.valid = true;
+      info.ordered = true;
+      info.markerStart = numberStart;
+      info.markerEnd = index + 1;
+      info.contentStart = info.markerEnd;
+      info.marker = line.mid(info.markerStart, info.markerEnd - info.markerStart);
+      info.orderedDelimiter = line.at(index);
+      info.orderedNumber = line.mid(numberStart, index - numberStart).toInt();
+    } else if (index > numberStart && index + 2 <= line.size() &&
+               (line.at(index) == QLatin1Char('.') || line.at(index) == QLatin1Char(')')) &&
+               line.at(index + 1).isSpace()) {
       info.valid = true;
       info.ordered = true;
       info.markerStart = numberStart;
