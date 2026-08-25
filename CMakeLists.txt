@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.24)
 
 project(Muffin
-  VERSION 0.6.2
+  VERSION 0.6.3
   DESCRIPTION "A fast native Markdown WYSIWYG editor built with C++ and Qt 6 Widgets"
   LANGUAGES C CXX
 )
@@ -1372,8 +1372,10 @@ add_custom_target(dist
       "-DDIST_DIR=${MUFFIN_DIST_DIR}"
       "-DRUNTIME_DLLS=$<JOIN:$<TARGET_RUNTIME_DLLS:Muffin>,|>"
       "-DQT_PLUGIN_DIRS=${MUFFIN_QT_PLUGIN_DIRS_ARG}"
+      "-DMMDC_FILE=$<TARGET_FILE:muffin-mmdc>"
+      "-DMMDC_RUNTIME_DLLS=$<JOIN:$<TARGET_RUNTIME_DLLS:muffin-mmdc>,|>"
       -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinDeploy.cmake"
-  DEPENDS Muffin
+  DEPENDS Muffin muffin-mmdc
   COMMENT "Create Muffin distribution directory"
   VERBATIM
 )

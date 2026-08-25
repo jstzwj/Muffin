@@ -26,6 +26,31 @@ if(APPLE)
   file(COPY "${APP_BUNDLE_DIR}" DESTINATION "${DIST_DIR}")
   message(STATUS "Muffin macOS dist written to ${DIST_DIR}/Muffin.app")
 
+  # The headless CLI rides as a sibling of the bundle (the DMG ships the .app
+  # alone; the tar.gz picked up from this directory carries the CLI too). Its
+  # dynamic libraries live inside the .app's Contents/Frameworks and
+  # Contents/MacOS via @rpath, so give it an rpath pointing into the bundle.
+  if(DEFINED MMDC_FILE AND NOT MMDC_FILE STREQUAL "")
+    file(COPY "${MMDC_FILE}" DESTINATION "${DIST_DIR}")
+    find_program(INSTALL_NAME_TOOL NAMES install_name_tool)
+    if(INSTALL_NAME_TOOL)
+      # macdeployqt parks the Qt dylibs in Contents/Frameworks (with some
+      # plugins' deps in Contents/MacOS); point the sibling CLI at both.
+      execute_process(
+        COMMAND "${INSTALL_NAME_TOOL}" -add_rpath "@executable_path/Muffin.app/Contents/Frameworks"
+                "${DIST_DIR}/muffin-mmdc"
+        RESULT_VARIABLE rpath_frameworks_result
+        ERROR_QUIET
+      )
+      execute_process(
+        COMMAND "${INSTALL_NAME_TOOL}" -add_rpath "@executable_path/Muffin.app/Contents/MacOS"
+                "${DIST_DIR}/muffin-mmdc"
+        RESULT_VARIABLE rpath_macos_result
+        ERROR_QUIET
+      )
+    endif()
+  endif()
+
 else()
   # --- Windows (and Linux): flat directory layout ---
   file(COPY "${APP_FILE}" DESTINATION "${DIST_DIR}")
@@ -34,6 +59,18 @@ else()
   set(runtime_dlls "")
   if(DEFINED RUNTIME_DLLS AND NOT RUNTIME_DLLS STREQUAL "")
     string(REPLACE "|" ";" runtime_dlls "${RUNTIME_DLLS}")
+  endif()
+
+  # The headless mermaid CLI lives beside the editor exe. Its runtime DLL set
+  # is essentially a subset of the app's (Qt Core/Gui/Svg), but union them so
+  # an exotic mmdc-only dependency can never silently go missing from the
+  # bundle.
+  if(DEFINED MMDC_FILE AND NOT MMDC_FILE STREQUAL "")
+    file(COPY "${MMDC_FILE}" DESTINATION "${DIST_DIR}")
+    if(DEFINED MMDC_RUNTIME_DLLS AND NOT MMDC_RUNTIME_DLLS STREQUAL "")
+      string(REPLACE "|" ";" mmdc_dlls "${MMDC_RUNTIME_DLLS}")
+      list(APPEND runtime_dlls ${mmdc_dlls})
+    endif()
   endif()
 
   foreach(dll IN LISTS runtime_dlls)
@@ -157,8 +194,12 @@ else()
     # plugin dependency graph directly, copy only non-system libraries, then
     # make every binary find the flat bundle without Conan's cache paths.
     file(GLOB_RECURSE bundled_plugins "${DIST_DIR}/*.so")
+    set(dist_executables "${DIST_DIR}/${APP_FILE_NAME}")
+    if(EXISTS "${DIST_DIR}/muffin-mmdc")
+      list(APPEND dist_executables "${DIST_DIR}/muffin-mmdc")
+    endif()
     file(GET_RUNTIME_DEPENDENCIES
-      EXECUTABLES "${DIST_DIR}/${APP_FILE_NAME}"
+      EXECUTABLES ${dist_executables}
       LIBRARIES ${bundled_plugins}
       DIRECTORIES ${exe_search_dirs}
       RESOLVED_DEPENDENCIES_VAR resolved_dependencies
@@ -195,6 +236,9 @@ else()
     endfunction()
 
     muffin_set_bundle_rpath("${DIST_DIR}/${APP_FILE_NAME}" "$ORIGIN")
+    if(EXISTS "${DIST_DIR}/muffin-mmdc")
+      muffin_set_bundle_rpath("${DIST_DIR}/muffin-mmdc" "$ORIGIN")
+    endif()
     foreach(plugin IN LISTS bundled_plugins)
       muffin_set_bundle_rpath("${plugin}" "$ORIGIN/..")
     endforeach()

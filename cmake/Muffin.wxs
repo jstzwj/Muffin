@@ -88,6 +88,11 @@
       <Component Id="MuffinExe" Guid="d2e3f4a5-b6c7-4d8e-9f0a-1b2c3d4e5f6a">
         <File Id="MuffinExeFile" Source="$(var.DistDir)/Muffin.exe" KeyPath="yes" />
       </Component>
+      <!-- Headless mermaid CLI (mmdc-compatible flag subset). Sits beside
+           Muffin.exe so the bundled Qt DLLs and qt.conf resolve for it too. -->
+      <Component Id="MuffinMmdc" Guid="a3b4c5d6-e7f8-4a9b-8c0d-2e3f4a5b6c7d">
+        <File Id="MuffinMmdcFile" Source="$(var.DistDir)/muffin-mmdc.exe" KeyPath="yes" />
+      </Component>
       <Component Id="Qt6Core" Guid="*">
         <File Id="Qt6CoreDll" Source="$(var.DistDir)/Qt6Core.dll" />
       </Component>

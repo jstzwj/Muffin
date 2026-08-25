@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-08-26
+
 ### Added
 - **Mermaid PNG export** - The rendered-diagram context menu gains "Export Mermaid as PNG..." beside the SVG action, rasterizing at 2x with the same filename/confirmation flow
-- **`muffin-mmdc` headless CLI** - A new console binary renders Mermaid sources to SVG/PNG through the native engine with an mmdc-compatible flag subset (`-i/-o/-t/-s/-C/-b`, stdin/stdout via `-`), extension-driven format, init-directive injection for theme/config precedence, and the lightbulb error diagram plus a structured stderr diagnostic and non-zero exit on invalid sources
+- **`muffin-mmdc` headless CLI** - A new console binary renders Mermaid sources to SVG/PNG through the native engine with an mmdc-compatible flag subset (`-i/-o/-t/-s/-C/-b`, stdin/stdout via `-`), extension-driven format, init-directive injection for theme/config precedence, and the lightbulb error diagram plus a structured stderr diagnostic and non-zero exit on invalid sources. Ships beside Muffin.exe in the Windows installer and inside the Linux archive; the macOS archive carries it next to Muffin.app
 
 ### Fixed
 - **Double-clicked Markdown file opened blank on macOS** - Finder/LaunchServices deliver the file as an AppleEvent (Qt's QFileOpenEvent), which never appears in argv; Muffin only read positional arguments, so a double-clicked .md launched the app with an empty document. An application event filter now routes the event through the same open path as the command line, and also covers a second file opened while Muffin is already running (LaunchServices hands the event to the existing instance)
