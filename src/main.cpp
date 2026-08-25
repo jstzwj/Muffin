@@ -10,8 +10,10 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QEvent>
 #include <QFile>
 #include <QFileInfo>
+#include <QFileOpenEvent>
 #include <QFont>
 #include <QGuiApplication>
 #include <QIcon>
@@ -21,6 +23,68 @@
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QTextStream>
+
+namespace {
+
+// macOS delivers files opened via Finder/LaunchServices (double-click, "Open
+// With", drag-onto-icon) as AppleEvents, which Qt translates into QFileOpenEvent
+// — they never appear in argv. Without this filter a double-clicked .md launches
+// Muffin with a blank document: the positional-argument path below is the
+// Windows/Linux mechanism only. The same event also covers a second file opened
+// while Muffin is already running (LaunchServices routes the odoc to the
+// existing instance instead of spawning a new process).
+class FileOpenEventForwarder : public QObject {
+public:
+  explicit FileOpenEventForwarder(QObject* parent) : QObject(parent) {}
+
+  // The window is constructed after QApplication (and after this filter is
+  // installed); an event that beat it here is replayed from `pending_`.
+  void setWindow(muffin::MainWindow* window) {
+    window_ = window;
+    if (window_ && !pending_.isEmpty()) {
+      const QString path = pending_;
+      pending_.clear();
+      open(path);
+    }
+  }
+
+protected:
+  bool eventFilter(QObject* watched, QEvent* event) override {
+    if (event->type() == QEvent::FileOpen) {
+      const auto* openEvent = static_cast<QFileOpenEvent*>(event);
+      // A custom URL scheme (e.g. muffin://) would land here too; only local
+      // files/folders are meaningful to open today.
+      QString path = openEvent->file();
+      if (path.isEmpty()) {
+        path = openEvent->url().toLocalFile();
+      }
+      if (!path.isEmpty()) {
+        if (window_) {
+          open(path);
+        } else {
+          pending_ = path;  // arrived before the window existed — replay later
+        }
+      }
+      return true;
+    }
+    return QObject::eventFilter(watched, event);
+  }
+
+private:
+  void open(const QString& path) {
+    const QFileInfo info(path);
+    if (info.isDir()) {
+      window_->openFolderAtPath(info.absoluteFilePath());
+    } else {
+      window_->openFile(info.absoluteFilePath());
+    }
+  }
+
+  muffin::MainWindow* window_ = nullptr;
+  QString pending_;
+};
+
+}  // namespace
 
 namespace {
 
@@ -97,6 +161,11 @@ int main(int argc, char *argv[]) {
 
   muffin::LanguageManager::instance().initialize();
 
+  // Must be installed before the window exists: the odoc event for a
+  // double-clicked file can arrive as early as the first event-loop iteration.
+  FileOpenEventForwarder fileOpenForwarder(&app);
+  app.installEventFilter(&fileOpenForwarder);
+
   QCommandLineParser parser;
   parser.setApplicationDescription(QCoreApplication::translate(
       "main",
@@ -116,6 +185,7 @@ int main(int argc, char *argv[]) {
   parser.process(app);
 
   muffin::MainWindow window;
+  fileOpenForwarder.setWindow(&window);
   const QStringList positionalArguments = parser.positionalArguments();
   const QString folderArg = parser.value(folderOption);
   bool openedSomething = false;
