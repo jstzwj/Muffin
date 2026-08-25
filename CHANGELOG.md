@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Mermaid PNG export** - The rendered-diagram context menu gains "Export Mermaid as PNG..." beside the SVG action, rasterizing at 2x with the same filename/confirmation flow
+- **`muffin-mmdc` headless CLI** - A new console binary renders Mermaid sources to SVG/PNG through the native engine with an mmdc-compatible flag subset (`-i/-o/-t/-s/-C/-b`, stdin/stdout via `-`), extension-driven format, init-directive injection for theme/config precedence, and the lightbulb error diagram plus a structured stderr diagnostic and non-zero exit on invalid sources
+
 ### Fixed
 - **ER optional types and backtick attribute words** - `erDiagram` now accepts mermaid 11.16's optional-type marker (`string? nickname` — the `?` stays part of the type text, exactly as upstream concatenates it) and backtick-delimited attribute words (`` `string list` `favorite tags` `` — any characters except a backtick, usable for both the type and the name position)
 - **Wider, easier-to-grab editor scrollbars on Windows** - The editor and source-mode scrollbars were 8px wide with a ~4px visible thumb — under 3 physical pixels at 150% display scaling. The hit area is now 14px (the gutter blends into the page background) with an ~8px visible rounded thumb, matching the slim-look-wide-target convention (VS Code default)

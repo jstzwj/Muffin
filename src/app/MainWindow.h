@@ -161,6 +161,10 @@ private:
   // on the right target. Mirrors the tableMoreActionsRequested pattern.
   void buildEditorContextMenu(const HitTestResult& hit, QPoint globalPos);
   void exportMermaidDiagram(NodeId blockId);
+  // PNG twin of exportMermaidDiagram: same fence lookup, file dialog, and
+  // status-bar confirmation; rasterizes at 2x for crispness (the same DPR the
+  // HTML export embeds).
+  void exportMermaidDiagramPng(NodeId blockId);
   // editor/showBlockSource: render-mode status-bar preview of the raw markdown of the block under
   // the caret. No-op (clears the label) when the setting is off, in source mode, or without a hit.
   void updateBlockSourceLabel(const HitTestResult& hit);

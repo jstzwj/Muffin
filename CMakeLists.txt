@@ -1288,6 +1288,32 @@ target_compile_definitions(Muffin
     MUFFIN_VERSION="${MUFFIN_EFFECTIVE_VERSION}"
 )
 
+# --- muffin-mmdc: headless mermaid CLI (mmdc-compatible flag subset) ---------
+# Renders through the same native engine as the editor; no browser or JS
+# runtime. Console app on every platform (offscreen QPA is forced in main
+# unless the caller overrides QT_QPA_PLATFORM).
+add_executable(muffin-mmdc
+  src/tools/mmdc_main.cpp
+)
+
+target_link_libraries(muffin-mmdc
+  PRIVATE
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Svg
+    MuffinCore
+)
+
+target_include_directories(muffin-mmdc
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+target_compile_definitions(muffin-mmdc
+  PRIVATE
+    MUFFIN_VERSION="${MUFFIN_EFFECTIVE_VERSION}"
+)
+
 set(MUFFIN_APP_ICONS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/app-icons")
 
 if(WIN32)

@@ -94,6 +94,9 @@ void muffin::MainWindow::buildEditorContextMenu(const HitTestResult& hit, QPoint
     QAction* exportSvg = menu.addAction(tr("Export Mermaid as SVG..."));
     connect(exportSvg, &QAction::triggered, this,
             [this, blockId = hit.blockId] { exportMermaidDiagram(blockId); });
+    QAction* exportPng = menu.addAction(tr("Export Mermaid as PNG..."));
+    connect(exportPng, &QAction::triggered, this,
+            [this, blockId = hit.blockId] { exportMermaidDiagramPng(blockId); });
     menu.addSeparator();
   }
   if (!hit.linkHref.isEmpty()) {
@@ -228,6 +231,50 @@ void muffin::MainWindow::exportMermaidDiagram(NodeId blockId) {
   QSaveFile file(path);
   const bool opened = file.open(QIODevice::WriteOnly);
   const bool written = opened && file.write(rendered.svg) == rendered.svg.size();
+  const bool committed = written && file.commit();
+  if (!committed) {
+    QMessageBox::warning(this, tr("Export Failed"), file.errorString());
+    return;
+  }
+  statusBar()->showMessage(
+      tr("Exported to %1").arg(QDir::toNativeSeparators(path)),
+      5000);
+}
+
+void muffin::MainWindow::exportMermaidDiagramPng(NodeId blockId) {
+  const MarkdownNode* node = session_.document().node(blockId);
+  if (!node || node->type() != BlockType::CodeFence ||
+      node->codeLanguage() != QLatin1String("mermaid")) {
+    return;
+  }
+
+  const QFileInfo documentInfo(session_.filePath());
+  const QString baseName = documentInfo.completeBaseName().isEmpty()
+      ? QStringLiteral("diagram")
+      : documentInfo.completeBaseName() + QStringLiteral("-diagram");
+  const QString directory = session_.filePath().isEmpty()
+      ? defaultSaveDirectory()
+      : documentInfo.absolutePath();
+  const QString initialPath = directory.isEmpty()
+      ? baseName + QStringLiteral(".png")
+      : QDir(directory).filePath(baseName + QStringLiteral(".png"));
+  QString path = QFileDialog::getSaveFileName(
+      this, tr("Export As"), initialPath, QStringLiteral("PNG (*.png)"));
+  if (path.isEmpty()) return;
+  if (QFileInfo(path).suffix().isEmpty()) path += QStringLiteral(".png");
+
+  // 2x rasterization matches the HTML export's embedded images; invalid
+  // sources export the lightbulb error diagram, exactly like the SVG path.
+  const auto rendered =
+      mermaid::editor::MermaidRenderCache::renderMermaidSourceToPng(node->literal(), 2.0);
+  static const QLatin1String kPngDataUrlPrefix("data:image/png;base64,");
+  if (!rendered.dataUrl.startsWith(kPngDataUrlPrefix)) return;
+  const QByteArray png = QByteArray::fromBase64(
+      rendered.dataUrl.mid(kPngDataUrlPrefix.size()).toLatin1());
+
+  QSaveFile file(path);
+  const bool opened = file.open(QIODevice::WriteOnly);
+  const bool written = opened && file.write(png) == png.size();
   const bool committed = written && file.commit();
   if (!committed) {
     QMessageBox::warning(this, tr("Export Failed"), file.errorString());

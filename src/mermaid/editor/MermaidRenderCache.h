@@ -64,12 +64,20 @@ struct MermaidRenderEntry {
 struct MermaidPngRenderResult {
   QString dataUrl;
   MermaidRenderMetadata metadata;
+  // True when the source failed to parse/render: the image is then the
+  // upstream lightbulb error diagram (still exported, exactly like a browser
+  // page), and errorDiagnostic carries the structured details. The CLI uses
+  // this to warn and exit non-zero while still writing the fallback image.
+  bool error = false;
+  QJsonObject errorDiagnostic;
 };
 
 struct MermaidSvgRenderResult {
   QByteArray svg;
   QString dataUrl;
   MermaidRenderMetadata metadata;
+  bool error = false;
+  QJsonObject errorDiagnostic;
 };
 
 class MermaidRenderCache : public QObject {

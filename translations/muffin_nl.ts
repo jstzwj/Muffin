@@ -1044,13 +1044,13 @@ Nu je standaardeditor maken?</translation>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="68"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1170"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1172"/>
         <source>(no spelling suggestions)</source>
         <translation>(geen spellingssuggesties)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="82"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1182"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1184"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>&quot;%1&quot; negeren</translation>
     </message>
@@ -1370,7 +1370,7 @@ Nu je standaardeditor maken?</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="149"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="267"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="314"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="354"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1333"/>
         <source>Properties</source>
@@ -1480,7 +1480,7 @@ Nu je standaardeditor maken?</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1794"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="186"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="189"/>
         <source>Select</source>
         <translation>Selecteren</translation>
     </message>
@@ -1510,7 +1510,7 @@ Nu je standaardeditor maken?</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="431"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="265"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Delete</source>
         <translation>Verwijderen</translation>
     </message>
@@ -1585,7 +1585,7 @@ Nu je standaardeditor maken?</translation>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="581"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="1861"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="166"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="169"/>
         <source>Paragraph</source>
         <translation>Alinea</translation>
     </message>
@@ -1606,7 +1606,7 @@ Nu je standaardeditor maken?</translation>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1894"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="1958"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="122"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="125"/>
         <source>Table</source>
         <translation>Tabel</translation>
     </message>
@@ -1762,7 +1762,7 @@ Nu je standaardeditor maken?</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2009"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="105"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="108"/>
         <source>Image</source>
         <translation>Afbeelding</translation>
     </message>
@@ -2827,7 +2827,8 @@ Parsetijd: %6 ms</translation>
         <translation>Niets om te exporteren</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="219"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="222"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="262"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="785"/>
         <source>Export As</source>
         <translation>Exporteren als</translation>
@@ -2848,13 +2849,15 @@ Parsetijd: %6 ms</translation>
         <translation>Pandoc is mislukt:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="233"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="236"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="280"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="851"/>
         <source>Export Failed</source>
         <translation>Exporteren mislukt</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="237"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="240"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="284"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="855"/>
         <source>Exported to %1</source>
         <translation>Geëxporteerd naar %1</translation>
@@ -3134,66 +3137,71 @@ Wilt u de downloadpagina openen?</translation>
         <translation>Mermaid exporteren als SVG...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="109"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="97"/>
+        <source>Export Mermaid as PNG...</source>
+        <translation>Mermaid exporteren als PNG...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="112"/>
         <source>Resize</source>
         <translation>Formaat wijzigen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="113"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="116"/>
         <source>Convert</source>
         <translation>Converteren</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="148"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="151"/>
         <source>Copy as</source>
         <translation>Kopiëren als</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="304"/>
         <source>Open</source>
         <translation type="unfinished">Openen</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="258"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="273"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="305"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="320"/>
         <source>Open in New Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="307"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="322"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1121"/>
         <source>New File</source>
         <translation type="unfinished">Nieuw bestand</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="261"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="276"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="308"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="323"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1134"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1140"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="310"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="311"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1256"/>
         <source>Duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="316"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="325"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="270"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="279"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="326"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1349"/>
         <source>Reveal in File Manager</source>
         <translation type="unfinished"></translation>
@@ -4357,32 +4365,32 @@ Wilt u de downloadpagina openen?</translation>
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1191"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1193"/>
         <source>Undo</source>
         <translation>Ongedaan maken</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1192"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1194"/>
         <source>Redo</source>
         <translation>Opnieuw</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1196"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1198"/>
         <source>Cut</source>
         <translation>Knippen</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1202"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1204"/>
         <source>Copy</source>
         <translation>Kopiëren</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1205"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1207"/>
         <source>Paste</source>
         <translation>Plakken</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1217"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1219"/>
         <source>Select All</source>
         <translation>Alles selecteren</translation>
     </message>

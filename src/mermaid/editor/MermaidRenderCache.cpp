@@ -486,6 +486,8 @@ MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(
   MermaidPngRenderResult result;
   const QString theme = makeKey(source).theme;
   const MermaidRenderEntry entry = renderSource(source, theme);
+  result.error = entry.status == MermaidRenderStatus::Error;
+  result.errorDiagnostic = entry.errorDiagnostic;
   // Any entry carrying a scene rasterizes — including Error entries with the
   // upstream error-diagram fallback attached (invalid sources export the
   // lightbulb exactly like a browser page or mmdc would).
@@ -584,6 +586,8 @@ MermaidSvgRenderResult MermaidRenderCache::renderMermaidSourceToSvg(
   MermaidSvgRenderResult result;
   const MermaidRenderKey key = makeKey(source);
   const MermaidRenderEntry entry = renderSource(source, key.theme);
+  result.error = entry.status == MermaidRenderStatus::Error;
+  result.errorDiagnostic = entry.errorDiagnostic;
   MermaidSvgExportOptions options;
   options.instanceIndex = instanceIndex;
   options.documentUrl = documentUrl;

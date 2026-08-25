@@ -16,6 +16,10 @@ muffin_add_test(NAME MuffinThematicBreakRangeProbe SOURCE tests/perf/ThematicBre
 
 # --- parser / document (pure logic; link MuffinCore, no Qt GUI lock) ---
 muffin_add_test(NAME MuffinMermaidCompatibilityTest SOURCE tests/mermaid/MermaidCompatibilityTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/preprocess-and-detect.json)
+# Integration test driving the real muffin-mmdc binary (path baked in below).
+muffin_add_test(NAME MuffinMmdcCliTest SOURCE tests/mermaid/MmdcCliTest.cpp LINK Qt6::Core)
+set_target_properties(MuffinMmdcCliTest PROPERTIES COMPILE_DEFINITIONS "MUFFIN_MMDC_PATH=\"$<TARGET_FILE:muffin-mmdc>\"")
+add_dependencies(MuffinMmdcCliTest muffin-mmdc)
 muffin_add_test(NAME MuffinMermaidFlowchartParserTest SOURCE tests/mermaid/MermaidFlowchartParserTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-db.json)
 muffin_add_test(NAME MuffinMermaidFlowchartDifferentialFuzzTest SOURCE tests/mermaid/MermaidFlowchartDifferentialFuzzTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-differential-fuzz.json)
 muffin_add_test(NAME MuffinMermaidParserErrorTest SOURCE tests/mermaid/MermaidParserErrorTest.cpp LINK MuffinCore FIXTURE tests/fixtures/mermaid/flowchart-errors.json)

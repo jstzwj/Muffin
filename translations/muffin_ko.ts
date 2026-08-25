@@ -1044,13 +1044,13 @@ Make it your default editor now?</source>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="68"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1170"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1172"/>
         <source>(no spelling suggestions)</source>
         <translation>(맞춤법 제안 없음)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="82"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1182"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1184"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>&quot;%1&quot; 무시</translation>
     </message>
@@ -1370,7 +1370,7 @@ Make it your default editor now?</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="149"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="267"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="314"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="354"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1333"/>
         <source>Properties</source>
@@ -1480,7 +1480,7 @@ Make it your default editor now?</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1794"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="186"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="189"/>
         <source>Select</source>
         <translation>선택</translation>
     </message>
@@ -1510,7 +1510,7 @@ Make it your default editor now?</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="431"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="265"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="312"/>
         <source>Delete</source>
         <translation>삭제</translation>
     </message>
@@ -1585,7 +1585,7 @@ Make it your default editor now?</source>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="581"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="1861"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="166"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="169"/>
         <source>Paragraph</source>
         <translation>단락</translation>
     </message>
@@ -1606,7 +1606,7 @@ Make it your default editor now?</source>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1894"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="1958"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="122"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="125"/>
         <source>Table</source>
         <translation>표</translation>
     </message>
@@ -1762,7 +1762,7 @@ Make it your default editor now?</source>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="2009"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="105"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="108"/>
         <source>Image</source>
         <translation>이미지</translation>
     </message>
@@ -2829,7 +2829,8 @@ Parse time: %6 ms</source>
         <translation>내보낼 항목이 없습니다</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="219"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="222"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="262"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="785"/>
         <source>Export As</source>
         <translation>형식을 지정하여 내보내기</translation>
@@ -2850,13 +2851,15 @@ Parse time: %6 ms</source>
         <translation>Pandoc 실패:</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="233"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="236"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="280"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="851"/>
         <source>Export Failed</source>
         <translation>내보내기 실패</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="237"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="240"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="284"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="855"/>
         <source>Exported to %1</source>
         <translation>%1(으)로 내보냈습니다</translation>
@@ -3136,66 +3139,71 @@ Would you like to open the download page?</source>
         <translation>Mermaid를 SVG로 내보내기...</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="109"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="97"/>
+        <source>Export Mermaid as PNG...</source>
+        <translation>Mermaid를 PNG로 내보내기...</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="112"/>
         <source>Resize</source>
         <translation>크기 조정</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="113"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="116"/>
         <source>Convert</source>
         <translation>변환</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="148"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="151"/>
         <source>Copy as</source>
         <translation>다른 형식으로 복사</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="257"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="304"/>
         <source>Open</source>
         <translation type="unfinished">열기</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="258"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="273"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="305"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="320"/>
         <source>Open in New Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="260"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="275"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="307"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="322"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1121"/>
         <source>New File</source>
         <translation type="unfinished">새 파일</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="261"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="276"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="308"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="323"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1134"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1140"/>
         <source>New Folder</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="263"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="310"/>
         <source>Rename</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="264"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="311"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1256"/>
         <source>Duplicate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="269"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="278"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="316"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="325"/>
         <source>Copy Path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="270"/>
-        <location filename="../src/app/MainWindowContextMenu.cpp" line="279"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
+        <location filename="../src/app/MainWindowContextMenu.cpp" line="326"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1349"/>
         <source>Reveal in File Manager</source>
         <translation type="unfinished"></translation>
@@ -4359,32 +4367,32 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1191"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1193"/>
         <source>Undo</source>
         <translation>실행 취소</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1192"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1194"/>
         <source>Redo</source>
         <translation>다시 실행</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1196"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1198"/>
         <source>Cut</source>
         <translation>잘라내기</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1202"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1204"/>
         <source>Copy</source>
         <translation>복사</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1205"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1207"/>
         <source>Paste</source>
         <translation>붙여넣기</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1217"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1219"/>
         <source>Select All</source>
         <translation>모두 선택</translation>
     </message>
