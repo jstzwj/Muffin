@@ -182,6 +182,20 @@ muffin::mermaid::er::ErToken muffin::mermaid::er::ErTokenizer::next() {
     return make(ErTokenKind::QuotedText, end - offset_ + 1, /*stripDelimiters=*/true);
   }
 
+  // 4b. Backtick word (mermaid 11.16): `...` emits an Identifier whose text is
+  //     the delimited body — any characters except a backtick, so attribute
+  //     types and names can carry spaces/commes/etc. Upstream's lexer does this
+  //     with a block_bq condition returning ATTRIBUTE_WORD; emitting Identifier
+  //     here lets both attribute positions consume it without parser changes.
+  //     Missing closing backtick → Invalid spanning the rest (QuotedText rule).
+  if (current == QLatin1Char('`')) {
+    qsizetype end = offset_ + 1;
+    while (end < source_.size() && source_[end] != QLatin1Char('`'))
+      ++end;
+    if (end >= source_.size()) return makeInvalid(source_.size() - offset_);
+    return make(ErTokenKind::Identifier, end - offset_ + 1, /*stripDelimiters=*/true);
+  }
+
   // 5. Header keyword `erDiagram` — only as the first non-space token of a line
   //    and with a word boundary. The "header not yet emitted" guard from the
   //    spec cannot be enforced without extra member state (the frozen header
@@ -210,9 +224,18 @@ muffin::mermaid::er::ErToken muffin::mermaid::er::ErTokenizer::next() {
   }
 
   // 7. Identifier: [A-Za-z][A-Za-z0-9_-]*. PK/FK/UK match here as Identifier.
+  //    A single trailing '?' folds into the word (mermaid 11.16's optional-type
+  //    marker: `string?` — upstream grammar concatenates ATTRIBUTE_WORD '?' into
+  //    the stored type, rendering literally). Only one '?' and only at the very
+  //    end, so `a?b` still tokenizes as Identifier("a?") followed by whatever
+  //    follows (and `??` alone never starts an Identifier).
   if (isErIdentifierStart(current)) {
     qsizetype end = offset_ + 1;
     while (end < source_.size() && isErIdentifierBody(source_[end])) ++end;
+    if (end < source_.size() && source_[end] == QLatin1Char('?') &&
+        (end + 1 >= source_.size() || !isErIdentifierBody(source_[end + 1]))) {
+      ++end;
+    }
     return make(ErTokenKind::Identifier, end - offset_);
   }
 

@@ -97,6 +97,36 @@
         { "entityA": "A", "entityB": "B", "cardA": "ZeroOrMore", "cardB": "ZeroOrMore", "identifying": true, "roleA": "roleA", "roleB": "roleB", "label": "has" },
         { "entityA": "CUSTOMER", "entityB": "DELIVERY-ADDRESS", "cardA": "OneOrMore", "cardB": "OneOrMore", "identifying": false, "label": "uses" }
       ]
+    },
+    {
+      "id": "optional-type-question-mark",
+      "source": "erDiagram\nCUSTOMER {\n  string? nickname\n  int age\n}",
+      "entities": [
+        {
+          "id": "CUSTOMER",
+          "attributes": 2,
+          "attributeDetails": [
+            { "type": "string?", "name": "nickname", "keyType": "None", "comment": "" },
+            { "type": "int", "name": "age", "keyType": "None", "comment": "" }
+          ]
+        }
+      ],
+      "relationships": []
+    },
+    {
+      "id": "backtick-attribute-words",
+      "source": "erDiagram\nCUSTOMER {\n  `string list` `favorite tags`\n  `int count` `open, orders`\n}",
+      "entities": [
+        {
+          "id": "CUSTOMER",
+          "attributes": 2,
+          "attributeDetails": [
+            { "type": "string list", "name": "favorite tags", "keyType": "None", "comment": "" },
+            { "type": "int count", "name": "open, orders", "keyType": "None", "comment": "" }
+          ]
+        }
+      ],
+      "relationships": []
     }
   ]
 }
