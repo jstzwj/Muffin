@@ -11,6 +11,7 @@
 #include <QPoint>
 #include <QRect>
 #include <QString>
+#include <QTextLayout>
 #include <QVector>
 
 #include <memory>
@@ -120,6 +121,9 @@ public:
   void setDocumentPath(QString path);
   void setReadOnly(bool readOnly);
   bool isReadOnly() const;
+  // Full IME context for the source editor (cursor rect/position, selection, surrounding text).
+  // Public like the rendered editor's so tests query it directly.
+  QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
 
 signals:
   void cursorPositionChanged(int line, int column);
@@ -136,7 +140,6 @@ protected:
   void focusInEvent(QFocusEvent* event) override;
   void focusOutEvent(QFocusEvent* event) override;
   void inputMethodEvent(QInputMethodEvent* event) override;
-  QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
   void contextMenuEvent(QContextMenuEvent* event) override;
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dropEvent(QDropEvent* event) override;
@@ -193,6 +196,8 @@ private:
   QString placeholder_;
   QString documentPath_;
   QString preedit_;
+  QVector<QTextLayout::FormatRange> preeditFormats_;
+  int preeditCursor_ = -1;
   qsizetype cursor_ = 0;
   qsizetype anchor_ = 0;
   int preferredColumn_ = -1;

@@ -810,14 +810,58 @@ void VirtualSourceEdit::paintEvent(QPaintEvent* event) {
   }
   updateScrollBars();
 
-  if (hasFocus() && cursorVisible_) {
+  if (hasFocus() && !preedit_.isEmpty()) {
+    // Composition rendering: the preedit replaces the plain caret (never blink-gated — a
+    // composition must not flicker out mid-cycle). Following text on the caret row is erased and
+    // redrawn after the preedit so nothing overlaps; it clips at the viewport edge (composition
+    // is transient and does not extend the horizontal scroll range).
+    const QRect cursorRect = cursorRectForOffset(cursor_);
+    const qreal rowHeight = qMax<qreal>(cursorRect.height(), QFontMetricsF(sourceFont_).height());
+    painter.fillRect(
+        QRectF(qreal(cursorRect.left()), qreal(cursorRect.top()),
+               qMax<qreal>(1.0, qreal(viewport()->width()) - cursorRect.left()), rowHeight),
+        colors_.background);
+
+    QTextLayout preeditLayout(preedit_, sourceFont_);
+    preeditLayout.setFormats(preeditFormats_);
+    const qreal preeditWidth = qMax<qreal>(1.0, qreal(viewport()->width()) - cursorRect.left() - 4.0);
+    preeditLayout.beginLayout();
+    {
+      QTextLine line = preeditLayout.createLine();
+      if (line.isValid()) {
+        line.setLineWidth(preeditWidth);
+        line.setPosition(QPointF(0, 0));
+      }
+    }
+    preeditLayout.endLayout();
+    const QPointF preeditOrigin(cursorRect.left(), cursorRect.top());
+    painter.setPen(colors_.text);
+    preeditLayout.draw(&painter, preeditOrigin);
+    if (preeditCursor_ >= 0 && preeditCursor_ <= preedit_.length()) {
+      preeditLayout.drawCursor(&painter, preeditOrigin, preeditCursor_);
+    }
+
+    // The rest of the caret row, shifted right by the preedit's advance.
+    const int line = lineForOffset(cursor_);
+    const qsizetype lineStartOffset = lineStart(line);
+    const QString rest = lineText(line).mid(qBound<qsizetype>(0, cursor_ - lineStartOffset, source().size()));
+    if (!rest.isEmpty()) {
+      const qreal preeditAdvance = preeditLayout.lineAt(0).naturalTextWidth();
+      QTextLayout restLayout(rest, sourceFont_);
+      restLayout.beginLayout();
+      {
+        QTextLine restLine = restLayout.createLine();
+        if (restLine.isValid()) {
+          restLine.setLineWidth(qMax<qreal>(1.0, preeditWidth - preeditAdvance));
+          restLine.setPosition(QPointF(0, 0));
+        }
+      }
+      restLayout.endLayout();
+      restLayout.draw(&painter, QPointF(cursorRect.left() + preeditAdvance, cursorRect.top()));
+    }
+  } else if (hasFocus() && cursorVisible_) {
     const QRect cursorRect = cursorRectForOffset(cursor_);
     painter.fillRect(QRect(cursorRect.left(), cursorRect.top(), 2, cursorRect.height()), colors_.text);
-    if (!preedit_.isEmpty()) {
-      painter.setFont(sourceFont_);
-      painter.setPen(colors_.text);
-      painter.drawText(cursorRect.bottomLeft(), preedit_);
-    }
   }
 }
 
@@ -1112,6 +1156,22 @@ void VirtualSourceEdit::inputMethodEvent(QInputMethodEvent* event) {
   }
   if (!event->commitString().isEmpty()) insertText(event->commitString());
   preedit_ = event->preeditString();
+  preeditFormats_.clear();
+  preeditCursor_ = -1;
+  if (!preedit_.isEmpty()) {
+    // Default whole-string underline (composed text must be visible even without attributes),
+    // overridden by the IME's TextFormat/Cursor attributes — same policy as the rendered mode.
+    QTextCharFormat underline;
+    underline.setFontUnderline(true);
+    preeditFormats_.append({0, static_cast<int>(preedit_.length()), underline});
+    for (const QInputMethodEvent::Attribute& attr : event->attributes()) {
+      if (attr.type == QInputMethodEvent::TextFormat && attr.length > 0) {
+        preeditFormats_.append({attr.start, attr.length, attr.value.value<QTextFormat>().toCharFormat()});
+      } else if (attr.type == QInputMethodEvent::Cursor) {
+        preeditCursor_ = attr.start;
+      }
+    }
+  }
   viewport()->update();
   event->accept();
 }
