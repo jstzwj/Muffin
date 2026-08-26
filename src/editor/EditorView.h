@@ -343,6 +343,8 @@ private:
   bool loading_ = false;  // set by setLoading; paintEvent shows a loading hint while true
   QTimer* loadingTimer_ = nullptr;  // idle-gated: runs only while loading_, advancing loadingPhase_
   QTimer* cursorTimer_ = nullptr;   // caret blink; runs only while focused with a caret, no preedit
+  QTimer* dragScrollTimer_ = nullptr;  // selection drag auto-scroll; active while dragging past the edge
+  QPointF lastDragViewportPos_;         // last drag mouse position (viewport coords)
   bool caretBlinkOn_ = true;        // blink phase; stays true unfocused/offscreen (steady caret)
   qreal loadingPhase_ = 0.0;  // 0..1 head position of the bright wave around the dot ring
 };

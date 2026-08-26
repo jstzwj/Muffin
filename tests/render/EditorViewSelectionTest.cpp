@@ -1615,6 +1615,58 @@ void testTripleClickSelectsBlock() {
           "a fourth click must start a fresh count (plain caret placement)");
 }
 
+// Dragging past the bottom edge auto-scrolls the viewport and keeps extending the selection at
+// the edge coordinate (asserts end state, not tick counts — the suite's one timing-tolerant test).
+void testDragAutoScrollsPastViewportEdge() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(700, 300);
+  view.show();
+
+  QString text;
+  for (int i = 0; i < 60; ++i) {
+    text += QStringLiteral("paragraph number %1\n\n").arg(i);
+  }
+  session.setMarkdownText(text, false);
+  view.setDocument(session.document());
+
+  MarkdownNode* first = blockAt(session, 0);
+  const QPointF pressPoint = view.nodeRect(first->id()).translated(0, -view.verticalScrollBar()->value()).center();
+
+  QMouseEvent press(QEvent::MouseButtonPress, pressPoint, pressPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  // Move a real distance first (past the threshold), then park the mouse below the viewport.
+  const QPointF below(QPointF(pressPoint).x(), static_cast<qreal>(view.viewport()->height()) + 60.0);
+  QMouseEvent move(QEvent::MouseMove, below, below, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &move);
+
+  const int scrollBefore = view.verticalScrollBar()->value();
+  const qsizetype blocksBefore = session.document().root().children().size();
+  QElapsedTimer deadline;
+  deadline.start();
+  while (deadline.elapsed() < 2500) {
+    QApplication::processEvents(QEventLoop::AllEvents, 50);
+    if (view.verticalScrollBar()->value() > scrollBefore + 100) {
+      break;
+    }
+  }
+  require(view.verticalScrollBar()->value() > scrollBefore + 100,
+          "dragging past the bottom edge must auto-scroll the viewport");
+
+  // The selection must have extended down with the scroll: it now spans multiple blocks.
+  const SelectionRange selection = controller.selection().selection();
+  require(!selection.anchor.blockId.isValid() || !selection.isCollapsed(),
+          "the selection should have extended during auto-scroll");
+  require(selection.focus.blockId != first->id(),
+          "the selection focus must have moved beyond the first block");
+  Q_UNUSED(blocksBefore);
+
+  QMouseEvent release(QEvent::MouseButtonRelease, below, below, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &release);
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1650,6 +1702,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testMultiBlockSelectionFillsContinuously);
   RUN_TEST(testDragThresholdAndWordDragExtend);
   RUN_TEST(testTripleClickSelectsBlock);
+  RUN_TEST(testDragAutoScrollsPastViewportEdge);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

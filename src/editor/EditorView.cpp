@@ -151,6 +151,35 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
       viewport()->update(dirty);
     }
   });
+  // Selection drag auto-scroll: while the mouse is held beyond the viewport's edge, scroll by a
+  // speed proportional to the overshoot and extend the selection at the clamped edge coordinate.
+  dragScrollTimer_ = new QTimer(this);
+  dragScrollTimer_->setInterval(50);
+  QObject::connect(dragScrollTimer_, &QTimer::timeout, this, [this] {
+    if (dragState_ != DragState::Dragging) {
+      dragScrollTimer_->stop();
+      return;
+    }
+    constexpr qreal kEdgeMargin = 16.0;
+    const qreal height = static_cast<qreal>(viewport()->height());
+    const qreal overshoot =
+        lastDragViewportPos_.y() < height / 2.0
+            ? qMax(0.0, kEdgeMargin - lastDragViewportPos_.y())
+            : qMax(0.0, lastDragViewportPos_.y() - (height - kEdgeMargin));
+    if (overshoot <= 0.0) {
+      dragScrollTimer_->stop();
+      return;
+    }
+    const qreal direction = lastDragViewportPos_.y() < height / 2.0 ? -1.0 : 1.0;
+    const qreal step = qBound<qreal>(6.0, overshoot * 0.25, 28.0);
+    verticalScrollBar()->setValue(static_cast<int>(qRound(verticalScrollBar()->value() + direction * step)));
+    // Hit-test at the clamped edge: hitTest interprets viewport coordinates, so the selection
+    // extends to whatever now sits at the edge.
+    const QPointF clamped(
+        qBound<qreal>(0.0, lastDragViewportPos_.x(), static_cast<qreal>(viewport()->width())),
+        qBound<qreal>(0.0, lastDragViewportPos_.y(), height));
+    updateDragSelection(clamped);
+  });
 
   codeLanguageEditor_ = new CodeLanguageEditor(viewport(), this);
   codeLanguageEditor_->setSuggestions({
@@ -742,6 +771,18 @@ void EditorView::mouseMoveEvent(QMouseEvent* event) {
       dragState_ = DragState::Dragging;
     }
     if (dragState_ == DragState::Dragging) {
+      lastDragViewportPos_ = event->position();
+      // Auto-scroll when the drag leaves the viewport's vertical edges: a 50ms timer keeps
+      // scrolling (and extending the selection at the clamped edge coordinate) until the mouse
+      // comes back inside or the button is released.
+      constexpr qreal kEdgeMargin = 16.0;
+      const bool beyondEdge = event->position().y() < kEdgeMargin ||
+                              event->position().y() > static_cast<qreal>(viewport()->height()) - kEdgeMargin;
+      if (beyondEdge && !dragScrollTimer_->isActive()) {
+        dragScrollTimer_->start();
+      } else if (!beyondEdge && dragScrollTimer_->isActive()) {
+        dragScrollTimer_->stop();
+      }
       updateDragSelection(event->position());
       event->accept();
       return;
@@ -760,6 +801,7 @@ void EditorView::mouseReleaseEvent(QMouseEvent* event) {
     return;
   }
   if (event->button() == Qt::LeftButton && dragState_ != DragState::Idle) {
+    dragScrollTimer_->stop();
     const bool wasDragging = (dragState_ == DragState::Dragging);
     if (wasDragging) {
       updateDragSelection(event->position());
