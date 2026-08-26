@@ -182,6 +182,10 @@ private:
   };
   QRectF documentViewportRect() const;
   qreal scrollY() const;
+  // Shared core of refreshBlocks/refreshVisibleBlocks. forceRebuild bypasses the BuiltStamp
+  // coalescing check for callers whose visible output depends on state outside the stamp's
+  // {selection, revision} key (spell toggle, smart-punct rendering, mermaid async arrival).
+  bool refreshBlocksInternal(const QVector<NodeId>& blockIds, const MarkdownDocument& document, bool forceRebuild);
   void applyScrollBarStyle();
   void updateCodeLanguageEditor();
   void updateTableToolbar();

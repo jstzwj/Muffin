@@ -281,6 +281,16 @@ bool EditorView::refreshBlock(NodeId blockId, const MarkdownDocument& document) 
 }
 
 bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDocument& document) {
+  return refreshBlocksInternal(blockIds, document, /*forceRebuild=*/false);
+}
+
+// forceRebuild skips the BuiltStamp coalescing check. Keystroke refreshes (force=false) rely on the
+// stamp to avoid re-running the O(block) rebuild for the same {selection, revision}. But
+// refreshVisibleBlocks exists precisely for callers whose visible output depends on state OUTSIDE
+// the stamp's key — spell-check enablement, markdown/convertOnRendering, codeBlockWrap, an async
+// mermaid render arriving — so its blocks must rebuild even when the stamp says "current".
+bool EditorView::refreshBlocksInternal(
+    const QVector<NodeId>& blockIds, const MarkdownDocument& document, bool forceRebuild) {
   PerfTimer perf("view.refreshBlocks");
   if (!layout_ || document_ != &document) {
     return false;
@@ -294,8 +304,8 @@ bool EditorView::refreshBlocks(const QVector<NodeId>& blockIds, const MarkdownDo
     const quint64 revision = document.revision();
     for (NodeId blockId : blockIds) {
       const auto it = blockBuiltAt_.constFind(blockId);
-      if (it != blockBuiltAt_.constEnd() && sameSelectionRange(it.value().selection, selection_)
-          && it.value().revision == revision) {
+      if (!forceRebuild && it != blockBuiltAt_.constEnd() &&
+          sameSelectionRange(it.value().selection, selection_) && it.value().revision == revision) {
         continue;  // already built with the current selection + revision — skip the O(block) rebuild
       }
       const DocumentLayout::BlockRebuildResult result = layout_->rebuildBlock(blockId, document, theme_, selection_);
@@ -991,7 +1001,7 @@ bool EditorView::refreshVisibleBlocks(const MarkdownDocument& document) {
   if (!layout_) {
     return false;
   }
-  return refreshBlocks(layout_->promotedTopLevelIds(), document);
+  return refreshBlocksInternal(layout_->promotedTopLevelIds(), document, /*forceRebuild=*/true);
 }
 
 void EditorView::updateCodeLanguageEditor() {

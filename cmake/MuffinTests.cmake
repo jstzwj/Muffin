@@ -239,6 +239,7 @@ muffin_add_test(NAME MuffinDocumentSessionFileWatchTest SOURCE tests/document/Do
 # --- render (link MuffinUi, take the render_smoke fixture, lock the GUI) ---
 muffin_add_test(NAME MuffinRenderThemeTest            SOURCE tests/render/RenderThemeTest.cpp            LINK MuffinUi EXTRA_SOURCES src/themes.qrc FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
 muffin_add_test(NAME MuffinRenderIncrementalTest      SOURCE tests/render/RenderIncrementalTest.cpp      LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
+muffin_add_test(NAME MuffinEditorViewRefreshTest      SOURCE tests/render/EditorViewRefreshTest.cpp      LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderListMarkerTest       SOURCE tests/render/RenderListMarkerTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderInlineProjectionTest SOURCE tests/render/RenderInlineProjectionTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_EMOJI_QRC} FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderInlineGeometryTest   SOURCE tests/render/RenderInlineGeometryTest.cpp   LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
