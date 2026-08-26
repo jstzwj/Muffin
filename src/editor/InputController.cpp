@@ -149,7 +149,10 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
         keyEvent->accept();
         return true;
       }
-      if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) {
+      if ((keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) &&
+          !keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
+        // Ctrl+Tab stays unaccepted so the default focus traversal can move focus out of the
+        // editor (keyboard escape hatch); the plain keys are editor content.
         keyEvent->accept();
       }
       return false;

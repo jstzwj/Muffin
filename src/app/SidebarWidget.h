@@ -46,6 +46,9 @@ public:
 
   void setPanel(Panel panel);
   Panel panel() const;
+  // The tree of the active panel (files or outline), or null before setup — the focus target
+  // for F6 pane cycling.
+  QWidget* activeTreeWidget() const;
   void setCurrentDocument(QString displayName, QString filePath, bool modified);
   void setFolderRoot(QString path);
   QString folderRoot() const;

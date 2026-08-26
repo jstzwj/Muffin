@@ -25,6 +25,7 @@
 #include <QEvent>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QShortcut>
 #include <QLabel>
 #include <QLoggingCategory>
 #include <QMenu>
@@ -150,6 +151,45 @@ void muffin::MainWindow::quitApplication() {
   QApplication::closeAllWindows();
 }
 
+void muffin::MainWindow::cycleFocus(bool forward) {
+  if (!viewStack_ || !sidebar_) {
+    return;
+  }
+  QWidget* targets[3] = {viewStack_->currentWidget(), sidebar_->activeTreeWidget(),
+                         findBar_ && findBar_->isVisible() ? findBar_ : nullptr};
+  if (!targets[0]) {
+    return;
+  }
+
+  // Which region currently owns focus (default: the editor).
+  int current = 0;
+  if (QWidget* focus = QApplication::focusWidget()) {
+    if (sidebar_->isAncestorOf(focus)) {
+      current = 1;
+    } else if (findBar_ && findBar_->isVisible() && findBar_->isAncestorOf(focus)) {
+      current = 2;
+    }
+  }
+
+  for (int step = 0; step < 3; ++step) {
+    const int next = (current + (forward ? 1 : 3 - 1) + 3) % 3;
+    if (next == 0) {
+      targets[0]->setFocus();
+      return;
+    }
+    if (next == 1 && targets[1]) {
+      targets[1]->setFocus();
+      return;
+    }
+    if (next == 2 && targets[2]) {
+      findBar_->activateFind();
+      return;
+    }
+    current = next;
+  }
+  targets[0]->setFocus();
+}
+
 void muffin::MainWindow::changeEvent(QEvent* event) {
   QMainWindow::changeEvent(event);
   // Retranslation on a language change is handled by the LanguageManager::
@@ -212,6 +252,15 @@ void muffin::MainWindow::setupUi() {
   centralSplitter_->setStretchFactor(1, 1);
   sidebar_->setVisible(false);
   setCentralWidget(centralSplitter_);
+
+  // F6 pane cycling between the main regions (editor / sidebar / find bar). The editor canvas
+  // consumes Tab for content, so this is the keyboard escape hatch that does not depend on it.
+  {
+    auto* nextPane = new QShortcut(QKeySequence(Qt::Key_F6), this);
+    connect(nextPane, &QShortcut::activated, this, [this] { cycleFocus(true); });
+    auto* previousPane = new QShortcut(QKeySequence(Qt::ShiftModifier | Qt::Key_F6), this);
+    connect(previousPane, &QShortcut::activated, this, [this] { cycleFocus(false); });
+  }
 
   // Sidebar show/hide width transition. min+max move in lockstep so the splitter tracks the value
   // exactly (a lone maximumWidth wouldn't pull the widget wider than its sizeHint). On finish we

@@ -90,6 +90,10 @@ protected:
 
 private:
   bool startNewDocument();
+  // F6 / Shift+F6 pane cycling: editor → sidebar → find bar (when visible), wrapping. Gives
+  // keyboard-only users a way between the main regions that does not depend on Tab (which the
+  // editor canvas consumes for content).
+  void cycleFocus(bool forward);
   // Create and register one QAction for a declared command, pulling its label,
   // shortcut, checkable state and action-group from the declaration table. The
   // menu walker (buildMenus) calls this for every Action item in mainMenuSpec().

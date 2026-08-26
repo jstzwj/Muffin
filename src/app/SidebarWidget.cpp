@@ -356,6 +356,11 @@ muffin::SidebarWidget::Panel muffin::SidebarWidget::panel() const {
   return panel_;
 }
 
+QWidget* muffin::SidebarWidget::activeTreeWidget() const {
+  QWidget* active = panel_ == Panel::Files ? fileTree_ : outlineTree_;
+  return active ? active : (fileTree_ ? fileTree_ : outlineTree_);
+}
+
 void muffin::SidebarWidget::setCurrentDocument(QString displayName, QString filePath, bool modified) {
   Q_UNUSED(displayName);
   Q_UNUSED(modified);

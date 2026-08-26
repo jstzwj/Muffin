@@ -504,7 +504,17 @@ bool EditorView::event(QEvent* event) {
       }
       return QAbstractScrollArea::event(event);
     }
+    if ((keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) &&
+        keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
+      // Ctrl+Tab / Ctrl+Shift+Tab: the keyboard escape hatch — leave the editor for the
+      // next/previous widget in the focus chain instead of editing content.
+      if (event->type() == QEvent::ShortcutOverride) {
+        return false;
+      }
+      return focusNextPrevChild(keyEvent->key() == Qt::Key_Tab);
+    }
     if (keyEvent->key() == Qt::Key_Tab || keyEvent->key() == Qt::Key_Backtab) {
+      // Plain Tab/Backtab is editor content (indent, cell navigation).
       event->accept();
       if (event->type() == QEvent::ShortcutOverride) {
         return true;
