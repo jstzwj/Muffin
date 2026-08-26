@@ -5,9 +5,12 @@
 
 #include <QApplication>
 #include <QFontMetricsF>
+#include <QClipboard>
 #include <QImage>
 #include <QInputMethodEvent>
 #include <QPainter>
+
+#include <vector>
 
 using namespace muffin;
 
@@ -1081,6 +1084,65 @@ void testListItemOwnSelectionRectsDoNotLeakToNested() {
   require(reachedNestedRow, "recursive selection must reach the nested item's row (the leak the self-only fix removes)");
 }
 
+// Cross-cell table selections: two cells share the table's blockId but hold different text
+// nodes. Historically isCollapsed() compared only offsets, so cross-cell selections masqueraded
+// as collapsed — the caret stayed painted, copy/format paths ran with garbage mixed-cell ranges.
+void testCrossCellSelectionIsNotCollapsed() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  const QString source = QStringLiteral("| alpha | beta |\n| --- | --- |\n| gamma | delta |");
+  session.setMarkdownText(source, false);
+  view.setDocument(session.document());
+
+  MarkdownNode* table = blockAt(session, 0);
+  std::vector<MarkdownNode*> cells;  // row-major: [alpha, beta, gamma, delta]
+  for (const auto& row : table->children()) {
+    if (row->type() == BlockType::TableRow) {
+      for (const auto& cell : row->children()) {
+        cells.push_back(cell.get());
+      }
+    }
+  }
+  require(cells.size() == 4, "2x2 table should expose four cells");
+
+  SelectionRange range;
+  range.anchor.blockId = table->id();
+  range.anchor.text.nodeId = cells.at(0)->id();
+  range.anchor.text.textOffset = 0;
+  range.focus.blockId = table->id();
+  range.focus.text.nodeId = cells.at(3)->id();
+  range.focus.text.textOffset = 5;  // end of "delta"
+  controller.selection().setSelection(range);
+  require(!controller.selection().selection().isCollapsed(),
+          "cross-cell selection with different offsets must not be collapsed");
+
+  // The historical bug: EQUAL offsets in different cells were treated as one caret.
+  range.focus.text.textOffset = 0;
+  controller.selection().setSelection(range);
+  require(!controller.selection().selection().isCollapsed(),
+          "equal offsets in DIFFERENT cells are not one caret position");
+
+  // Copy must still produce text (the serializer's per-context resolution is node-aware) and
+  // never a min/max of the two cells' offsets.
+  range.focus.text.textOffset = 5;
+  controller.selection().setSelection(range);
+  require(controller.clipboardController().copy(), "cross-cell copy should succeed");
+  const QString copied = QApplication::clipboard()->text();
+  require(copied.contains(QStringLiteral("alpha")) || copied.contains(QStringLiteral("delta")) ||
+          copied.contains(QLatin1Char('|')),
+          "cross-cell copy should produce table text");
+
+  // Inline formatting over a cross-cell selection must be a safe no-op (no corruption of either
+  // cell through mixed-cell offsets).
+  require(!controller.stylizeController().toggleBold(),
+          "bold over a cross-cell selection should not apply");
+  require(session.markdownText().toString() == source, "cross-cell bold must not corrupt the table");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1108,6 +1170,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEditorViewDragFromTrailingParagraphSelectsBack);
   RUN_TEST(testEditorViewBackwardNestedSelectionCoversBothBlocks);
   RUN_TEST(testListItemOwnSelectionRectsDoNotLeakToNested);
+  RUN_TEST(testCrossCellSelectionIsNotCollapsed);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

@@ -284,7 +284,10 @@ bool BlockEditContextResolver::selectionContext(BlockEditContext& context, qsize
   }
 
   const SelectionRange range = selection_->selection();
-  if (!range.isSingleBlock() || range.isCollapsed()) {
+  // Single TEXT node, not just single block: table cells share the table's blockId but hold
+  // per-cell text nodes, and their offsets are not comparable against one context (the
+  // plainInlineEditable clamp below would happily map a foreign cell's offset into this one).
+  if (!range.isSingleBlock() || !range.isSingleTextNode() || range.isCollapsed()) {
     return false;
   }
   const NodeId focusContextId = range.focus.text.nodeId.isValid() ? range.focus.text.nodeId : range.focus.blockId;

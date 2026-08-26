@@ -867,8 +867,10 @@ CursorFormatState EditorController::queryCursorFormatState() const {
 
   const SelectionRange sel = selection_.selection();
 
-  // Multi-block selection: no inline format applies uniformly across paragraphs
-  if (!sel.isCollapsed() && !sel.isSingleBlock()) {
+  // Multi-block selection: no inline format applies uniformly across paragraphs. Cross-cell
+  // table selections are equally non-uniform (two cells share a blockId but not a text node, so
+  // their offsets are not comparable) — treated as multi-block here.
+  if (!sel.isCollapsed() && (!sel.isSingleBlock() || !sel.isSingleTextNode())) {
     return state;
   }
 
