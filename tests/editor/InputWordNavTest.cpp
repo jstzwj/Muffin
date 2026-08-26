@@ -92,13 +92,14 @@ void testCtrlBackspaceDeletesWord() {
 
   session.setMarkdownText(QStringLiteral("beta gamma delta"), false);
   MarkdownNode* block = blockAt(session, 0);
+  const NodeId blockId = block->id();  // captured BEFORE the edit: the reparse may replace the node
   setCursor(selection, block, QStringLiteral("beta gamma delta").size());
 
   require(pressKey(input, &view, Qt::Key_Backspace, Qt::ControlModifier), "ctrl+backspace should be handled");
   const QString after = session.markdownText().toString();
   require(after.contains(QStringLiteral("gamma")), "ctrl+backspace must keep earlier words");
   require(!after.contains(QStringLiteral("delta")), "ctrl+backspace should remove the trailing word");
-  require(selection.cursorPosition().blockId == block->id(),
+  require(selection.cursorPosition().blockId == blockId,
           "caret should stay in the edited block");
   require(selection.cursorPosition().text.textOffset <= QStringLiteral("beta gamma ").size(),
           "caret should rest at (or before, after trailing-space reparse) the deletion start");
