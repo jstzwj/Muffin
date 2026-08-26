@@ -34,6 +34,17 @@ namespace {
 
 Q_LOGGING_CATEGORY(viewPerf, "muffin.perf", QtWarningMsg)
 
+// The selection overlay color from the theme, capped to translucent: the overlay paints ON TOP of
+// rendered text, so an opaque theme selection (GitHub's #d7e8ff) must stay see-through enough to
+// read the glyphs under it. Themes that design their own translucency keep it up to the cap.
+QColor selectionOverlayColor(const RenderTheme& theme) {
+  QColor color = theme.selectionColor();
+  if (color.alphaF() > 0.5) {
+    color.setAlphaF(0.5);
+  }
+  return color;
+}
+
 // Map a block to its CSS host key for decoration/hover lookup ("" → none).
 // Duplicated from EditorView.cpp's anonymous namespace: both TUs are part of the
 // same EditorView class, and `muffin.perf` is a per-TU category registered by name
@@ -280,7 +291,7 @@ void EditorView::paintSelection(QPainter& painter) const {
     return;
   }
 
-  const QColor color(79, 143, 247, 72);
+  const QColor color = selectionOverlayColor(theme_);
   painter.save();
   painter.setPen(Qt::NoPen);
   painter.setBrush(color);
@@ -371,7 +382,7 @@ void EditorView::paintSelectedRuleOutline(QPainter& painter, const BlockLayout* 
   QRectF outline(box.left() + 2.0, cy - frameH / 2.0, qMax<qreal>(1.0, box.width() - 4.0), frameH);
   outline.translate(0.0, -scrollY());
   painter.setBrush(Qt::NoBrush);
-  painter.setPen(QPen(QColor(79, 143, 247), 1.0));  // the selection accent blue
+  painter.setPen(QPen(theme_.selectionColor(), 1.0));  // the themed selection accent
   painter.drawRoundedRect(outline, 4.0, 4.0);
 }
 
@@ -402,7 +413,9 @@ void EditorView::paintCurrentTableCell(QPainter& painter) const {
 
   painter.save();
   painter.setPen(QPen(theme_.linkColor(), 1.4));
-  painter.setBrush(QColor(79, 143, 247, 28));
+  QColor wash = theme_.selectionColor();
+  wash.setAlpha(28);  // a faint wash of the themed selection color (opaque themes included)
+  painter.setBrush(wash);
   painter.drawRect(rect.adjusted(0.5, 0.5, -0.5, -0.5));
   painter.restore();
 }

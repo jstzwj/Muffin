@@ -9,6 +9,7 @@
 #include <QImage>
 #include <QInputMethodEvent>
 #include <QPainter>
+#include <QScrollBar>
 
 #include <algorithm>
 #include <vector>
@@ -1262,6 +1263,54 @@ void testCrossCellSelectionCoversBothCells() {
   }
 }
 
+// The selection overlay color comes from the theme (selectionColor, alpha-capped for legibility),
+// not the historical hardcoded blue — sampled at the painted pixel.
+void testSelectionColorIsThemed() {
+  DocumentSession session;
+  EditorView view;
+  view.resize(900, 500);
+  session.setMarkdownText(QStringLiteral("plain words here"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+
+  SelectionRange selection;
+  selection.anchor.blockId = block->id();
+  selection.anchor.text.nodeId = block->id();
+  selection.anchor.text.textOffset = 6;
+  selection.focus.blockId = block->id();
+  selection.focus.text.nodeId = block->id();
+  selection.focus.text.textOffset = 11;
+  view.setSelectionRange(selection);
+
+  const QImage image = captureView(view);
+  const QRectF selRect = view.nodeRect(block->id());
+  // Sample the middle of the first selected glyph row.
+  const InlineLayout* layout = view.blockAtViewportPos(selRect.center())->inlineLayout();
+  require(layout != nullptr, "layout should exist");
+  const QRectF firstRect = layout->selectionRects(6, 11).value(0);
+  require(!firstRect.isEmpty(), "selection should produce a rect");
+  const QPointF sampleDoc = firstRect.center();
+  const QPoint sample(static_cast<int>(sampleDoc.x()), static_cast<int>(sampleDoc.y() - view.verticalScrollBar()->value()));
+  require(image.rect().contains(sample), "sample point should be inside the capture");
+  const QColor pixel = image.pixelColor(sample);
+
+  // Expected blend: theme selection color (default #d7e8ff) at the 0.5 alpha cap over the page
+  // background. The old hardcoded color (79,143,247, a=72) blends much bluer — reject it.
+  const QColor themed = view.theme().selectionColor();
+  const QColor expected(
+      qRound(0.5 * themed.red() + 0.5 * 255),
+      qRound(0.5 * themed.green() + 0.5 * 255),
+      qRound(0.5 * themed.blue() + 0.5 * 255));
+  const int distThemed = qAbs(pixel.red() - expected.red()) + qAbs(pixel.green() - expected.green()) +
+                         qAbs(pixel.blue() - expected.blue());
+  const QColor oldBlue(qRound((79 * 72 + 255 * (255 - 72)) / 255.0),
+                       qRound((143 * 72 + 255 * (255 - 72)) / 255.0),
+                       qRound((247 * 72 + 255 * (255 - 72)) / 255.0));
+  const int distOld = qAbs(pixel.red() - oldBlue.red()) + qAbs(pixel.green() - oldBlue.green()) +
+                      qAbs(pixel.blue() - oldBlue.blue());
+  require(distThemed < distOld, "selection overlay must derive from the theme, not the old hardcoded blue");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1291,6 +1340,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testListItemOwnSelectionRectsDoNotLeakToNested);
   RUN_TEST(testCrossCellSelectionIsNotCollapsed);
   RUN_TEST(testCrossCellSelectionCoversBothCells);
+  RUN_TEST(testSelectionColorIsThemed);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;
