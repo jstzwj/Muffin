@@ -58,6 +58,11 @@ public:
   // first; returns false when there is nothing to search for.
   bool selectNextOccurrence();
   bool selectSourceRange(qsizetype start, qsizetype end);
+  // Accessibility seam: selection extent in UTF-16 source offsets (empty range when collapsed)
+  // and source-offset→CursorPosition resolution, consumed by the EditorController delegates the
+  // EditorAccessibility adapters call. Const, non-mutating queries.
+  bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
+  CursorPosition cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
 
   void performLocalEdit(
       EditTransaction::Kind kind,
@@ -145,7 +150,6 @@ private:
   // True when the caret rests on such a non-text leaf — in its afterBlock virtual area or landed on
   // it directly via arrow nav — so Enter/typing must insert a fresh paragraph after the block.
   bool caretRestsOnNonTextBlock() const;
-  bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(qsizetype& start, qsizetype& end) const;
   // Node whose content text word operations should scan: the caret's block, or the table cell
   // node when the caret sits inside one (word ops stay within the cell).
@@ -153,7 +157,6 @@ private:
   BlockEditContextResolver contextResolver() const;
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;
   CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
-  CursorPosition cursorForSourceOffset(qsizetype sourceOffset, bool preferLaterEmptyAtOffset = false) const;
   // Resolve an absolute source offset that is known to land inside the editable-text `node`
   // (paragraph / heading / list item / cell / definition). O(block) — it fills the node's edit
   // context and maps source→visible locally, instead of cursorForSourceOffset's document-wide

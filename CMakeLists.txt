@@ -1104,6 +1104,8 @@ set(MUFFIN_UI_SOURCES
   src/editor/EditorViewPaint.cpp
   src/editor/EditorViewViewport.cpp
   src/editor/EditorView.h
+  src/editor/EditorAccessibility.cpp
+  src/editor/EditorAccessibility.h
   src/editor/EditorViewGeometry.cpp
   src/editor/EditorViewGeometry.h
   src/editor/HtmlBlockHoverController.cpp

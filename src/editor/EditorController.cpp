@@ -10,6 +10,7 @@
 #include "document/MarkdownNode.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"
+#include "editor/EditorAccessibility.h"
 #include "editor/EditorView.h"
 #include "unicode/WordBoundary.h"
 
@@ -216,6 +217,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
   view_ = view;
   if (view_ != nullptr) {
     view_->setCodeFenceScroll(&codeFenceScroll_);
+    a11y::registerController(view_, this);
   }
 
   const EditorContext ctx{session_, &selection_, &undoStack_, &brushQueue_, view_,
@@ -356,6 +358,7 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
 void EditorController::detach() {
   if (view_) {
     view_->disconnect(this);
+    a11y::unregisterController(view_);
   }
   selection_.disconnect(this);
   undoStack_.disconnect(this);
@@ -363,6 +366,22 @@ void EditorController::detach() {
   inputController_.setContext(EditorContext{});
   session_ = nullptr;
   view_ = nullptr;
+}
+
+bool EditorController::selectionSourceRange(qsizetype& start, qsizetype& end) const {
+  return inputController_.selectionSourceRange(start, end);
+}
+
+bool EditorController::selectSourceRange(qsizetype start, qsizetype end) {
+  return inputController_.selectSourceRange(start, end);
+}
+
+CursorPosition EditorController::cursorForSourceOffset(qsizetype sourceOffset) const {
+  return inputController_.cursorForSourceOffset(sourceOffset);
+}
+
+void EditorController::setCursorForSourceOffset(qsizetype sourceOffset) {
+  selection_.setCursorPosition(inputController_.cursorForSourceOffset(sourceOffset));
 }
 
 DocumentSession* EditorController::session() const {

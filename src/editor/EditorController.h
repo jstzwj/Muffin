@@ -83,6 +83,14 @@ public:
   QString imageSrcAtCursor() const;
   bool imageSourceRangeAtCursor(qsizetype& outStart, qsizetype& outEnd) const;
 
+  // Accessibility seam (EditorAccessibility adapters): the accessible-text offsets ARE the
+  // document's UTF-16 source offsets, so these map between the QAccessibleTextInterface
+  // contract and the existing cursor machinery.
+  bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
+  bool selectSourceRange(qsizetype start, qsizetype end);
+  CursorPosition cursorForSourceOffset(qsizetype sourceOffset) const;
+  void setCursorForSourceOffset(qsizetype sourceOffset);
+
 signals:
   void cursorChanged(HitTestResult hit);
   void stateChanged();

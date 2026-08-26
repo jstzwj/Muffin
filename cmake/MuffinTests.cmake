@@ -316,6 +316,7 @@ muffin_add_test(NAME MuffinInputWordNavTest            SOURCE tests/editor/Input
 muffin_add_test(NAME MuffinInputPageNavTest            SOURCE tests/editor/InputPageNavTest.cpp            LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinTableTabNavTest             SOURCE tests/editor/TableTabNavTest.cpp             LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinFocusEscapeTest             SOURCE tests/editor/FocusEscapeTest.cpp             LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinEditorAccessibleTest        SOURCE tests/editor/EditorAccessibleTest.cpp        LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinSourceEditorBackendDeleteTest SOURCE tests/app/SourceEditorBackendDeleteTest.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinDocumentSearchTest             SOURCE tests/editor/DocumentSearchTest.cpp       LINK MuffinUi)
 muffin_add_test(NAME MuffinInputLiteralMergeTest       SOURCE tests/editor/InputLiteralMergeTest.cpp       LINK MuffinUi RESOURCE_LOCK)
