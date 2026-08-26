@@ -147,6 +147,9 @@ private:
   bool caretRestsOnNonTextBlock() const;
   bool selectionSourceRange(qsizetype& start, qsizetype& end) const;
   bool blockSelectionSourceRange(qsizetype& start, qsizetype& end) const;
+  // Node whose content text word operations should scan: the caret's block, or the table cell
+  // node when the caret sits inside one (word ops stay within the cell).
+  MarkdownNode* wordEditNode(const CursorPosition& current) const;
   BlockEditContextResolver contextResolver() const;
   CursorPosition cursorFor(NodeId blockId, qsizetype offset) const;
   CursorPosition cursorForNode(MarkdownNode& node, qsizetype offset) const;
@@ -175,6 +178,15 @@ private:
   // grapheme-aware caret stepping.
   QString selectableTextOf(const MarkdownNode& node) const;
   bool moveCursorHorizontal(int direction, bool extendSelection);
+  // Ctrl+Left/Right: caret by programmer word (shared muffin::words semantics), crossing to the
+  // neighbouring block when the caret is already at the word-less edge of this one.
+  bool moveCursorWord(int direction, bool extendSelection);
+  // Ctrl+Backspace / Ctrl+Delete: delete to the previous/next word boundary within the current
+  // block. Returns false when there is nothing word-wise to eat in that direction (block edge,
+  // non-editable caret) so the caller can fall back to character semantics.
+  bool deleteWordBackward();
+  bool deleteWordForward();
+  bool deleteWordInDirection(int direction);
   bool moveCursorVertical(int direction, bool extendSelection);
   bool moveTableCellHorizontal(int direction, bool extendSelection);
   bool moveTableCellVertical(int direction, bool extendSelection, qreal documentX);

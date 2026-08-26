@@ -5,6 +5,7 @@
 #include "blocks/code/CodeFenceScrollController.h"
 #include "document/MarkdownDocument.h"
 #include "editor/CodeLanguageEditor.h"
+#include "editor/EditorKeyRouting.h"
 #include "editor/EditorViewGeometry.h"
 #include "editor/HtmlBlockHoverController.h"
 #include "editor/HoverAnimator.h"
@@ -489,6 +490,14 @@ bool EditorView::event(QEvent* event) {
   if (event->type() == QEvent::KeyPress || event->type() == QEvent::ShortcutOverride) {
     auto* keyEvent = static_cast<QKeyEvent*>(event);
     if (keyEvent->key() == Qt::Key_A && keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
+      if (event->type() == QEvent::ShortcutOverride) {
+        event->accept();
+        return true;
+      }
+      return QAbstractScrollArea::event(event);
+    }
+    if (keyEvent->modifiers().testFlag(Qt::ControlModifier) &&
+        editor_keys::isEditorOwnedCtrlKey(keyEvent->key(), keyEvent->modifiers().testFlag(Qt::ShiftModifier))) {
       if (event->type() == QEvent::ShortcutOverride) {
         event->accept();
         return true;

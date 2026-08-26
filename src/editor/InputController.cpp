@@ -10,12 +10,14 @@
 #include "projection/InlineProjection.h"
 #include "document/MarkdownNode.h"
 #include "editor/BrushQueue.h"
+#include "editor/EditorKeyRouting.h"
 #include "editor/EditorView.h"
 #include "editor/EmojiCompleter.h"
 #include "editor/EmojiProvider.h"
 #include "editor/SelectionController.h"
 #include "editor/SmartPunctuation.h"
 #include "editor/TextBlockCommandBuilder.h"
+#include "editor/WordBoundary.h"
 #include "edit/UndoStack.h"
 #include "blocks/code/CodeFenceController.h"
 #include "blocks/literal/LiteralBlockController.h"
@@ -138,6 +140,11 @@ bool InputController::eventFilter(QObject* watched, QEvent* event) {
     if (event->type() == QEvent::ShortcutOverride) {
       auto* keyEvent = static_cast<QKeyEvent*>(event);
       if (keyEvent->key() == Qt::Key_A && keyEvent->modifiers().testFlag(Qt::ControlModifier)) {
+        keyEvent->accept();
+        return true;
+      }
+      if (keyEvent->modifiers().testFlag(Qt::ControlModifier) &&
+          editor_keys::isEditorOwnedCtrlKey(keyEvent->key(), keyEvent->modifiers().testFlag(Qt::ShiftModifier))) {
         keyEvent->accept();
         return true;
       }
@@ -760,7 +767,13 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
     return true;
   }
 
-  if (!ctx_.hasSession() || !ctx_.hasSelection() || !ctx_.view || event->modifiers().testFlag(Qt::ControlModifier) ||
+  // Ctrl-combos the editor owns (word/paragraph/page navigation, word delete) are dispatched
+  // below; every other Ctrl combo keeps falling through so menu shortcuts (Ctrl+S, Ctrl+F, ...)
+  // and widget actions (Ctrl+Shift+Backspace = delete table row) win. Alt is never ours.
+  const bool ctrlOwned = event->modifiers().testFlag(Qt::ControlModifier) &&
+      editor_keys::isEditorOwnedCtrlKey(event->key(), event->modifiers().testFlag(Qt::ShiftModifier));
+  if (!ctx_.hasSession() || !ctx_.hasSelection() || !ctx_.view ||
+      (event->modifiers().testFlag(Qt::ControlModifier) && !ctrlOwned) ||
       event->modifiers().testFlag(Qt::AltModifier)) {
     return false;
   }
@@ -869,17 +882,38 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       }
       return outdentListItem();
     case Qt::Key_Backspace:
+      if (event->modifiers().testFlag(Qt::ControlModifier)) {
+        return deleteWordBackward();
+      }
       return deleteBackward();
     case Qt::Key_Delete:
+      if (event->modifiers().testFlag(Qt::ControlModifier)) {
+        return deleteWordForward();
+      }
       return deleteForward();
     case Qt::Key_Left:
+      if (event->modifiers().testFlag(Qt::ControlModifier)) {
+        return moveCursorWord(-1, event->modifiers().testFlag(Qt::ShiftModifier));
+      }
       return moveCursorHorizontal(-1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Right:
+      if (event->modifiers().testFlag(Qt::ControlModifier)) {
+        return moveCursorWord(1, event->modifiers().testFlag(Qt::ShiftModifier));
+      }
       return moveCursorHorizontal(1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Up:
+      if (event->modifiers().testFlag(Qt::ControlModifier)) {
+        return false;  // paragraph navigation lands in a follow-up change
+      }
       return moveCursorVertical(-1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Down:
+      if (event->modifiers().testFlag(Qt::ControlModifier)) {
+        return false;  // paragraph navigation lands in a follow-up change
+      }
       return moveCursorVertical(1, event->modifiers().testFlag(Qt::ShiftModifier));
+    case Qt::Key_PageUp:
+    case Qt::Key_PageDown:
+      return false;  // page navigation lands in a follow-up change
     case Qt::Key_Home:
       return moveJump(event->modifiers().testFlag(Qt::ControlModifier) ? JumpTarget::DocumentStart : JumpTarget::LineStart,
                       event->modifiers().testFlag(Qt::ShiftModifier));
@@ -1542,6 +1576,130 @@ bool InputController::moveCursorHorizontal(int direction, bool extendSelection) 
   nextOffset = snapOffsetToGrapheme(selectableTextOf(*node), nextOffset, direction);
 
   setCursorOrExtend(cursorForNode(*node, nextOffset), extendSelection);
+  return true;
+}
+
+MarkdownNode* InputController::wordEditNode(const CursorPosition& current) const {
+  if (!ctx_.hasSession()) {
+    return nullptr;
+  }
+  if (tableController_) {
+    const TableLocation location = tableController_->currentCell();
+    if (location.isValid() && location.tableId.isValid() && ctx_.view) {
+      const BlockLayout* tableLayout = ctx_.view->blockLayoutForNode(location.tableId);
+      if (tableLayout && location.row >= 0 && location.row < static_cast<int>(tableLayout->tableRows().size())) {
+        const auto& row = tableLayout->tableRows().at(static_cast<size_t>(location.row));
+        if (location.column >= 0 && location.column < static_cast<int>(row.cells.size())) {
+          return ctx_.session->document().node(row.cells.at(static_cast<size_t>(location.column)).nodeId);
+        }
+      }
+    }
+  }
+  return ctx_.session->document().node(current.blockId);
+}
+
+bool InputController::moveCursorWord(int direction, bool extendSelection) {
+  clearVerticalNavigationX();
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || direction == 0) {
+    return false;
+  }
+  const CursorPosition current = ctx_.selection->cursorPosition();
+  MarkdownNode* node = wordEditNode(current);
+  if (!node) {
+    return false;
+  }
+
+  BlockEditContextResolver resolver = contextResolver();
+  BlockEditContext context;
+  if (!resolver.fill(*node, context)) {
+    return false;
+  }
+  const qsizetype currentSourceOffset =
+      current.text.sourceOffset >= context.contentRange.byteStart && current.text.sourceOffset <= context.contentRange.byteEnd
+          ? current.text.sourceOffset
+          : context.contentRange.byteStart + qBound<qsizetype>(0, current.text.textOffset, context.contentText.size());
+  // Word semantics run on the source-space content text (same text the source-mode editor scans,
+  // so both modes agree). Render-only folds are ASCII punctuation in source, so no folded-span
+  // handling is needed at word granularity.
+  const qsizetype local = qBound<qsizetype>(0, currentSourceOffset - context.contentRange.byteStart, context.contentText.size());
+  const qsizetype nextLocal = direction < 0
+      ? words::previousWordOffset(QStringView(context.contentText), local)
+      : words::nextWordOffset(QStringView(context.contentText), local);
+
+  if (nextLocal == local) {
+    // No word boundary in that direction within this block — cross to the neighbouring block
+    // (or stay put at the document edge, still consuming the key).
+    if (MarkdownNode* neighbor = selectableBlockByDirection(current.blockId, direction)) {
+      setCursorOrExtend(cursorForNode(*neighbor, direction > 0 ? 0 : selectableTextLength(*neighbor)), extendSelection);
+    }
+    return true;
+  }
+
+  const qsizetype nextSourceOffset = context.contentRange.byteStart +
+      snapOffsetToGrapheme(context.contentText, nextLocal, direction);
+  setCursorOrExtend(cursorForSourceInNode(*node, nextSourceOffset), extendSelection);
+  return true;
+}
+
+bool InputController::deleteWordBackward() {
+  if (hasActiveLiteralEditor()) {
+    return deleteBackward();  // literal blocks keep character semantics for now
+  }
+  if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
+    return deleteSelection();
+  }
+  return deleteWordInDirection(-1) || deleteBackward();
+}
+
+bool InputController::deleteWordForward() {
+  if (hasActiveLiteralEditor()) {
+    return deleteForward();
+  }
+  if (ctx_.selection && ctx_.selection->hasCursor() && !ctx_.selection->selection().isCollapsed()) {
+    return deleteSelection();
+  }
+  return deleteWordInDirection(1) || deleteForward();
+}
+
+bool InputController::deleteWordInDirection(int direction) {
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || direction == 0) {
+    return false;
+  }
+  const CursorPosition current = ctx_.selection->cursorPosition();
+  MarkdownNode* node = wordEditNode(current);
+  if (!node) {
+    return false;
+  }
+
+  BlockEditContextResolver resolver = contextResolver();
+  BlockEditContext context;
+  if (!resolver.fill(*node, context)) {
+    return false;
+  }
+  const qsizetype currentSourceOffset =
+      current.text.sourceOffset >= context.contentRange.byteStart && current.text.sourceOffset <= context.contentRange.byteEnd
+          ? current.text.sourceOffset
+          : context.contentRange.byteStart + qBound<qsizetype>(0, current.text.textOffset, context.contentText.size());
+  const qsizetype local = qBound<qsizetype>(0, currentSourceOffset - context.contentRange.byteStart, context.contentText.size());
+  const qsizetype stop = direction < 0
+      ? words::previousWordOffset(QStringView(context.contentText), local)
+      : words::nextWordOffset(QStringView(context.contentText), local);
+  if (stop == local) {
+    return false;  // block edge: caller falls back to character semantics (merge across blocks)
+  }
+
+  const qsizetype start = direction < 0 ? context.contentRange.byteStart + stop : currentSourceOffset;
+  const qsizetype end = direction < 0 ? currentSourceOffset : context.contentRange.byteStart + stop;
+  const CursorPosition preferred = cursorForSourceInNode(*node, start);
+  applyLocalEdit(
+      EditTransaction::Kind::DeleteText,
+      QStringLiteral("Delete Word"),
+      start,
+      end - start,
+      QString(),
+      preferred,
+      start,
+      QVector<LocalEditNodeHint>{LocalEditNodeHint{node->id(), context.contentRange.byteStart, node->type()}});
   return true;
 }
 
