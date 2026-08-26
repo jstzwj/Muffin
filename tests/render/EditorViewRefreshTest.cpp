@@ -6,10 +6,13 @@
 #include "EditorViewTestUtils.h"
 
 #include <QApplication>
+#include <QImage>
+#include <QScrollBar>
 #include <QSettings>
 
 
 #include "render/BlockLayout.h"
+#include "document/TopLevelRangeChange.h"
 
 using namespace muffin;
 
@@ -86,6 +89,64 @@ void testRefreshBlocksStillHonorsStamp() {
           "stamped refreshBlocks should still succeed");
 }
 
+// Records the region Qt asks the viewport to repaint. QWidget::grab() full-renders, so dirty-rect
+// bugs are invisible to pixel captures — the only honest observable is the paint event's region.
+class PaintRegionSpy final : public QObject {
+ public:
+  using QObject::QObject;
+  QRect boundingRect;
+  bool sawPaint = false;
+
+ protected:
+  bool eventFilter(QObject* watched, QEvent* event) override {
+    if (event->type() == QEvent::Paint) {
+      sawPaint = true;
+      boundingRect = boundingRect.united(static_cast<QPaintEvent*>(event)->region().boundingRect());
+    }
+    return QObject::eventFilter(watched, event);
+  }
+};
+
+// refreshTopLevelRange must dirty the caret rects even when the rebuilt range is nowhere near the
+// caret: without the union, a range refresh that relocates (or hides) the caret leaves its old
+// pixels standing on the incremental repaint.
+void testRefreshTopLevelRangeDirtiesCaretRects() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(600, 400);
+  view.show();
+
+  // Caret in the FIRST block; the range rebuild targets the LAST block, so the range's
+  // {old, new, shifted} rects cannot cover the caret position.
+  session.setMarkdownText(QStringLiteral("para one\n\npara two\n\npara three"), false);
+  view.setDocument(session.document());
+  setCursor(controller.selection(), blockAt(session, 0), 4);
+  view.repaint();
+  QApplication::processEvents();
+
+  const QRect caretViewportRect =
+      view.effectiveCursorRect().translated(0.0, -static_cast<qreal>(view.verticalScrollBar()->value())).toAlignedRect();
+
+  PaintRegionSpy spy;
+  view.viewport()->installEventFilter(&spy);
+  // Rebuild the last top-level slot (index 2) in place — a minimal range dirty that excludes
+  // the caret entirely, so only the caret union can bring the repaint region up to the caret.
+  TopLevelRangeChange range;
+  range.first = 2;
+  range.oldCount = 1;
+  range.newCount = 1;
+  range.documentRevision = session.document().revision();
+  require(view.refreshTopLevelRange(range, session.document()), "range refresh should succeed");
+  QApplication::processEvents();
+
+  require(spy.sawPaint, "a paint event should have been requested");
+  require(spy.boundingRect.intersects(caretViewportRect.adjusted(-6, -6, 6, 6)),
+          "refreshTopLevelRange must dirty the caret rect even when the range is elsewhere");
+  view.viewport()->removeEventFilter(&spy);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -99,6 +160,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testRefreshVisibleBlocksRebuildsStampedBlock);
   RUN_TEST(testRefreshBlocksStillHonorsStamp);
+  RUN_TEST(testRefreshTopLevelRangeDirtiesCaretRects);
 #undef RUN_TEST
   qInfo("All refresh tests passed.");
   return 0;

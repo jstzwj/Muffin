@@ -361,6 +361,12 @@ bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownD
   if (!badgeRect.isEmpty()) {
     dirty = dirty.united(badgeRect.adjusted(-2, -2, 2, 2).toAlignedRect());
   }
+  // Structural range rebuilds (undo/redo of a block move/delete) can relocate the caret well
+  // outside the range's {old, new, shifted} rects — e.g. onto the trailing paragraph after the
+  // caret block was removed. Dirty both caret positions like refreshBlock does, or the old caret
+  // pixels survive as a ghost.
+  dirty = uniteDocumentRectDirty(dirty, effectiveCursorRect(), scrollY(), viewport()->size());
+  dirty = uniteDocumentRectDirty(dirty, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
   viewport()->update(dirty.isEmpty() ? viewport()->rect() : dirty);
   return true;
 }
