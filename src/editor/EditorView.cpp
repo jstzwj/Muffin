@@ -801,6 +801,38 @@ void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
   event->accept();
 }
 
+void EditorView::focusInEvent(QFocusEvent* event) {
+  QAbstractScrollArea::focusInEvent(event);
+  // A composition abandoned mid-focus-change may not receive the platform's reset; make sure no
+  // stale preedit survives (the caret repaint below covers the composition area).
+  if (!preedit_.isEmpty()) {
+    resetComposition();
+  }
+  viewport()->update();
+}
+
+void EditorView::focusOutEvent(QFocusEvent* event) {
+  QAbstractScrollArea::focusOutEvent(event);
+  if (!preedit_.isEmpty()) {
+    // Reset the composition on focus loss instead of waiting for the platform's reset event —
+    // a stale preedit splice at a caret that has since moved is worse than dropping it here.
+    resetComposition();
+  }
+}
+
+void EditorView::resetComposition() {
+  if (layout_) {
+    layout_->setPreedit({}, {}, -1);
+  }
+  preedit_.clear();
+  preeditFormats_.clear();
+  preeditCursor_ = -1;
+  if (document_ && cursorPosition_.blockId.isValid()) {
+    blockBuiltAt_.remove(cursorPosition_.blockId);
+    refreshBlocks({cursorPosition_.blockId}, *document_);
+  }
+}
+
 void EditorView::contextMenuEvent(QContextMenuEvent* event) {
   const HitTestResult hit = hitTest(QPointF(event->pos()));
 

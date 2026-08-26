@@ -1091,6 +1091,11 @@ void VirtualSourceEdit::focusInEvent(QFocusEvent* event) {
 void VirtualSourceEdit::focusOutEvent(QFocusEvent* event) {
   cursorTimer_->stop();
   cursorVisible_ = false;
+  if (!preedit_.isEmpty()) {
+    // Reset the composition on focus loss instead of waiting for the platform's reset — a stale
+    // preedit painted at a caret that has since moved is worse than dropping it here.
+    preedit_.clear();
+  }
   viewport()->update();
   QAbstractScrollArea::focusOutEvent(event);
 }

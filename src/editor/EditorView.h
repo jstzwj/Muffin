@@ -126,6 +126,8 @@ protected:
   void mouseMoveEvent(QMouseEvent* event) override;
   void mouseReleaseEvent(QMouseEvent* event) override;
   void contextMenuEvent(QContextMenuEvent* event) override;
+  void focusInEvent(QFocusEvent* event) override;
+  void focusOutEvent(QFocusEvent* event) override;
   void inputMethodEvent(QInputMethodEvent* event) override;
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dragMoveEvent(QDragMoveEvent* event) override;
@@ -189,6 +191,9 @@ private:
   // coalescing check for callers whose visible output depends on state outside the stamp's
   // {selection, revision} key (spell toggle, smart-punct rendering, mermaid async arrival).
   bool refreshBlocksInternal(const QVector<NodeId>& blockIds, const MarkdownDocument& document, bool forceRebuild);
+  // Drop any active IME composition (splice + state) and rebuild the caret block. Called on
+  // focus changes so a composition cannot survive at a caret that has moved on.
+  void resetComposition();
   void applyScrollBarStyle();
   void updateCodeLanguageEditor();
   void updateTableToolbar();

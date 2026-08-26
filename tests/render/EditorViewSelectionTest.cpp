@@ -1372,6 +1372,44 @@ void testInputMethodQueryAnswersImeContext() {
   require(!font.family().isEmpty(), "ImFont must return a real font");
 }
 
+// Focus-out resets an active composition: the splice is dropped and the block rebuilds, so no
+// stale preedit survives at a caret that may have moved on.
+void testFocusOutResetsPreedit() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("hello world"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::Text;
+  hit.blockId = block->id();
+  hit.textNodeId = block->id();
+  hit.textOffset = 6;
+  hit.sourceOffset = block->sourceRange().byteStart + 6;
+  controller.activateHit(hit);
+  QApplication::processEvents();
+
+  // Start a composition the way the IME tests do.
+  QInputMethodEvent preeditEvent(QStringLiteral("にほんご"), {});
+  QApplication::sendEvent(&view, &preeditEvent);
+  QApplication::processEvents();
+
+  const InlineLayout* withPreedit = view.blockAtViewportPos(view.nodeRect(block->id()).center())->inlineLayout();
+  require(withPreedit != nullptr && withPreedit->hasPreedit(), "composition should be spliced into the layout");
+
+  // Focus-out clears it.
+  QFocusEvent focusOut(QEvent::FocusOut);
+  QApplication::sendEvent(&view, &focusOut);
+  const InlineLayout* after = view.blockAtViewportPos(view.nodeRect(block->id()).center())->inlineLayout();
+  require(after != nullptr && !after->hasPreedit(), "focus-out must reset the composition splice");
+  require(view.inputMethodQuery(Qt::ImSurroundingText).toString() == QStringLiteral("hello world"),
+          "surrounding text must be the plain block again");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1403,6 +1441,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testCrossCellSelectionCoversBothCells);
   RUN_TEST(testSelectionColorIsThemed);
   RUN_TEST(testInputMethodQueryAnswersImeContext);
+  RUN_TEST(testFocusOutResetsPreedit);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;
