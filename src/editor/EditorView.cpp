@@ -95,6 +95,8 @@ struct PerfTimer : diag::ScopedPerfProbe {
 EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(std::make_unique<DocumentLayout>()) {
   setFrameShape(QFrame::NoFrame);
   setFocusPolicy(Qt::StrongFocus);
+  setAccessibleName(tr("Markdown editor"));
+  setAccessibleDescription(tr("Rendered Markdown document"));
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setAttribute(Qt::WA_InputMethodEnabled, true);

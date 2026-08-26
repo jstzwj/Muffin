@@ -63,6 +63,7 @@ muffin::PreferencesDialog::PreferencesDialog(QWidget* parent) : QDialog(parent) 
   sidebarLayout->addWidget(sidebarTitleLabel_);
 
   categoryList_ = new QListWidget(sidebar);
+  categoryList_->setAccessibleName(tr("Categories"));
   categoryList_->setFocusPolicy(Qt::NoFocus);
   sidebarLayout->addWidget(categoryList_, 1);
   rootLayout->addWidget(sidebar);

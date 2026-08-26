@@ -524,6 +524,7 @@ bool muffin::MainWindow::offerDraftRecovery() {
   layout->addWidget(label);
 
   auto* list = new QListWidget(&dialog);
+  list->setAccessibleName(tr("Unsaved Drafts Found"));
   // Single selection: Muffin is a single-document window, so only one draft can
   // be the active document. Leftover drafts stay on disk for the next launch.
   list->setSelectionMode(QAbstractItemView::SingleSelection);

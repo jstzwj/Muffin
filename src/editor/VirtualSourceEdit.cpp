@@ -252,6 +252,8 @@ SourceEditorColors SourceEditorColors::fromTheme(const RenderTheme& theme) {
 VirtualSourceEdit::VirtualSourceEdit(QWidget* parent)
     : QAbstractScrollArea(parent), colors_(SourceEditorColors::fromTheme(RenderTheme::github())) {
   setFocusPolicy(Qt::StrongFocus);
+  setAccessibleName(tr("Markdown source editor"));
+  setAccessibleDescription(tr("Plain-text Markdown source"));
   setAttribute(Qt::WA_InputMethodEnabled, true);
   setAcceptDrops(true);
   setFrameShape(QFrame::NoFrame);

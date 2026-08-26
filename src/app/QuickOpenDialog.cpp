@@ -36,10 +36,12 @@ muffin::QuickOpenDialog::QuickOpenDialog(QWidget* parent) : QDialog(parent) {
   auto* layout = new QVBoxLayout(this);
 
   filterEdit_ = new QLineEdit(this);
+  filterEdit_->setAccessibleName(tr("Quick Open"));
   filterEdit_->installEventFilter(this);
   layout->addWidget(filterEdit_);
 
   list_ = new QListWidget(this);
+  list_->setAccessibleName(tr("Matching files"));
   list_->setUniformItemSizes(true);
   list_->setSortingEnabled(false);
   layout->addWidget(list_, 1);

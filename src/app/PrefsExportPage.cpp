@@ -37,6 +37,7 @@ muffin::PrefsExportPage::PrefsExportPage(QWidget* parent) : PreferencesPage(pare
   leftLayout->addWidget(sectionLabel);
 
   formatList_ = new QListWidget(leftWidget);
+  formatList_->setAccessibleName(tr("Formats"));
   formatList_->setFocusPolicy(Qt::NoFocus);
   leftLayout->addWidget(formatList_, 1);
 

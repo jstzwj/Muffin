@@ -220,6 +220,7 @@ void muffin::SidebarWidget::setupFilesPanel() {
   fileModel_->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot);
 
   fileTree_ = new QTreeView(filesPanel_);
+  fileTree_->setAccessibleName(tr("Files"));
   fileTree_->setObjectName(QStringLiteral("FileTree"));
   fileTree_->setModel(fileModel_);
   fileTree_->setHeaderHidden(true);
@@ -318,6 +319,7 @@ void muffin::SidebarWidget::setupOutlinePanel() {
   outlineModel_ = new muffin::OutlineModel(this);
   outlineModel_->setFoldable(outlineFoldable_);
   outlineTree_ = new QTreeView(outlinePanel_);
+  outlineTree_->setAccessibleName(tr("Outline"));
   outlineTree_->setObjectName(QStringLiteral("OutlineTree"));
   outlineTree_->setModel(outlineModel_);
   outlineTree_->setHeaderHidden(true);
