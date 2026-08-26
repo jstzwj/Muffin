@@ -31,6 +31,7 @@
 #include <QLoggingCategory>
 #include <QInputMethodEvent>
 #include <QPoint>
+#include <QScrollBar>
 #include <QSettings>
 #include <QTextBoundaryFinder>
 
@@ -912,8 +913,9 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       }
       return moveCursorVertical(1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_PageUp:
+      return moveCursorPage(-1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_PageDown:
-      return false;  // page navigation lands in a follow-up change
+      return moveCursorPage(1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Home:
       return moveJump(event->modifiers().testFlag(Qt::ControlModifier) ? JumpTarget::DocumentStart : JumpTarget::LineStart,
                       event->modifiers().testFlag(Qt::ShiftModifier));
@@ -1815,6 +1817,37 @@ bool InputController::moveBlockVertical(int direction, bool extendSelection) {
   }
   // Word-like paragraph navigation: land at the target block's start in either direction.
   setCursorOrExtend(cursorForNode(*target, 0), extendSelection);
+  return true;
+}
+
+// PageUp/PageDown: move the caret one viewport page (less a line of overlap) and scroll by the
+// same delta so the caret keeps its screen position. Caret moves in this editor never auto-scroll,
+// so the page handler owns both halves explicitly.
+bool InputController::moveCursorPage(int direction, bool extendSelection) {
+  clearVerticalNavigationX();
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || !ctx_.view || direction == 0) {
+    return false;
+  }
+
+  QScrollBar* bar = ctx_.view->verticalScrollBar();
+  const QRectF caret = ctx_.view->effectiveCursorRect();
+  const qreal lineHeight = qMax<qreal>(1.0, caret.height());
+  const qreal viewportHeight = static_cast<qreal>(ctx_.view->viewport()->height());
+  // One page of caret travel, keeping one line of context at the boundary.
+  const qreal delta = qBound<qreal>(lineHeight, viewportHeight - lineHeight, viewportHeight);
+  const qreal maxY = qMax<qreal>(0.0, ctx_.view->layoutTotalHeight() - 1.0);
+  const qreal docY = qBound<qreal>(0.0, caret.center().y() + direction * delta, maxY);
+  const qreal newScroll =
+      qBound<qreal>(static_cast<qreal>(bar->minimum()), static_cast<qreal>(bar->value()) + direction * delta,
+                    static_cast<qreal>(bar->maximum()));
+
+  // Scroll first, then resolve the caret: hitTest interprets viewport coordinates against the
+  // CURRENT scroll position, so the hit must be taken in the already-scrolled frame.
+  bar->setValue(qRound(newScroll));
+  const HitTestResult hit = ctx_.view->hitTest(QPointF(caret.left(), docY - newScroll));
+  if (hit.isValid()) {
+    setHitOrExtend(hit, extendSelection);
+  }
   return true;
 }
 

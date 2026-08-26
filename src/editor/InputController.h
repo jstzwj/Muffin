@@ -191,6 +191,10 @@ private:
   // Ctrl+Up/Down: caret to the start of the previous/next block in document order (Word-like
   // paragraph navigation). neighbourBlockInDocumentDirection climbs out of lists and quotes.
   bool moveBlockVertical(int direction, bool extendSelection);
+  // PageUp/PageDown: caret one viewport page (with a one-line overlap), scrolling by the same
+  // delta so the caret keeps its screen Y. Caret moves never auto-scroll, so both halves are
+  // owned here.
+  bool moveCursorPage(int direction, bool extendSelection);
   bool moveTableCellHorizontal(int direction, bool extendSelection);
   bool moveTableCellVertical(int direction, bool extendSelection, qreal documentX);
   bool moveLiteralVertical(const BlockLayout& block, MarkdownNode& node, int direction, bool extendSelection);
