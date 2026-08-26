@@ -138,6 +138,19 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
     if (loadingPhase_ >= 1.0) loadingPhase_ -= 1.0;
     viewport()->update();
   });
+  // Caret blink, unified with the source editor's cadence (cursorFlashTime/2). The timer only
+  // runs while focused with an active caret and no composition; each toggle dirties nothing but
+  // the caret rect. Offscreen tests never gain focus, so the caret stays deterministically on.
+  cursorTimer_ = new QTimer(this);
+  cursorTimer_->setInterval(qMax(0, QApplication::cursorFlashTime() / 2));
+  QObject::connect(cursorTimer_, &QTimer::timeout, this, [this] {
+    caretBlinkOn_ = !caretBlinkOn_;
+    QRect dirty = uniteDocumentRectDirty({}, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
+    dirty = uniteDocumentRectDirty(dirty, effectiveCursorRect(), scrollY(), viewport()->size());
+    if (!dirty.isEmpty()) {
+      viewport()->update(dirty);
+    }
+  });
 
   codeLanguageEditor_ = new CodeLanguageEditor(viewport(), this);
   codeLanguageEditor_->setSuggestions({
@@ -410,6 +423,7 @@ void EditorView::setCursorHit(HitTestResult hit) {
   cursorPosition_ = hit.cursorPosition();
   selection_.anchor = cursorPosition_;
   selection_.focus = cursorPosition_;
+  resetCaretBlink();
   refreshInlineProjectionForSelectionChange(previousSelection);
   ensureCodeFenceCursorVisible();
   updateTableToolbar();
@@ -434,6 +448,7 @@ void EditorView::setCursorPosition(CursorPosition position) {
     PerfTimer t("view.setSelection.updateBlockFocus");
     updateBlockFocus();
   }
+  resetCaretBlink();
 }
 
 void EditorView::setSelectionRange(SelectionRange selection) {
@@ -465,12 +480,25 @@ void EditorView::applySelectionRange(SelectionRange selection) {
   updateBlockFocus();
   if (dragState_ == DragState::Dragging) {
     cursorVisible_ = false;
+    cursorTimer_->stop();
     viewport()->update();
     updateTableToolbar();
     return;
   }
+  resetCaretBlink();
   refreshInlineProjectionForSelectionChange(previousSelection);
   updateTableToolbar();
+}
+
+void EditorView::resetCaretBlink() {
+  caretBlinkOn_ = true;
+  // Flash time 0 means "no blinking" (accessibility); no focus means no blink (offscreen tests
+  // stay deterministic); an active composition replaces the caret entirely.
+  if (hasFocus() && QApplication::cursorFlashTime() > 0 && preedit_.isEmpty()) {
+    cursorTimer_->start();
+  } else {
+    cursorTimer_->stop();
+  }
 }
 
 void EditorView::clearCursor() {
@@ -479,6 +507,7 @@ void EditorView::clearCursor() {
   preDragSelection_ = {};
   cursorHit_ = {};
   cursorVisible_ = false;
+  cursorTimer_->stop();
   lastPaintedCaretDocumentRect_ = {};
   dragState_ = DragState::Idle;
   updateCodeLanguageEditor();
@@ -808,6 +837,7 @@ void EditorView::focusInEvent(QFocusEvent* event) {
   if (!preedit_.isEmpty()) {
     resetComposition();
   }
+  resetCaretBlink();
   viewport()->update();
 }
 
@@ -818,6 +848,8 @@ void EditorView::focusOutEvent(QFocusEvent* event) {
     // a stale preedit splice at a caret that has since moved is worse than dropping it here.
     resetComposition();
   }
+  cursorTimer_->stop();
+  caretBlinkOn_ = true;  // unfocused: steady caret, no blink
 }
 
 void EditorView::resetComposition() {
@@ -932,6 +964,7 @@ void EditorView::inputMethodEvent(QInputMethodEvent* event) {
     // inline layout re-splices the preedit (following text shifts/wraps) and repaints. The block's
     // BuiltStamp is dropped so the cached build is discarded; refreshBlocks resolves a nested caret
     // (list item / quote paragraph) up to its top-level block. configureBuilder forwards the preedit.
+    resetCaretBlink();  // a composition replaces the caret — stop blinking while composing
     if (layout_ && document_ && cursorPosition_.blockId.isValid()) {
       layout_->setPreedit(preedit_, preeditFormats_, preeditCursor_);
       blockBuiltAt_.remove(cursorPosition_.blockId);

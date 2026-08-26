@@ -516,6 +516,11 @@ void EditorView::paintInsertionCursor(QPainter& painter) const {
   // un-clamped record under-covered short lines (drawn bottom top+14 vs recorded +4px margin when
   // h<10 — a ghost tail) and over-dirtied capped image lines.
   lastPaintedCaretDocumentRect_ = QRectF(cursor.left(), cursor.top(), 1.5, height);
+  // Blink phase gates only the DRAWING — the recorded rect must survive so the next move (or
+  // blink-on) still erases the last painted position.
+  if (!caretBlinkOn_) {
+    return;
+  }
   cursor.translate(0, -scrollY());
 
   if (!viewport()->rect().adjusted(-4, -4, 4, 4).intersects(cursor.toAlignedRect())) {

@@ -194,6 +194,9 @@ private:
   // Drop any active IME composition (splice + state) and rebuild the caret block. Called on
   // focus changes so a composition cannot survive at a caret that has moved on.
   void resetComposition();
+  // Restart the caret blink phase (visible + timer armed when focused, not flashing-disabled,
+  // and no active composition). Called from every caret-moving entry point.
+  void resetCaretBlink();
   void applyScrollBarStyle();
   void updateCodeLanguageEditor();
   void updateTableToolbar();
@@ -328,6 +331,8 @@ private:
   bool inScrollBuild_ = false;
   bool loading_ = false;  // set by setLoading; paintEvent shows a loading hint while true
   QTimer* loadingTimer_ = nullptr;  // idle-gated: runs only while loading_, advancing loadingPhase_
+  QTimer* cursorTimer_ = nullptr;   // caret blink; runs only while focused with a caret, no preedit
+  bool caretBlinkOn_ = true;        // blink phase; stays true unfocused/offscreen (steady caret)
   qreal loadingPhase_ = 0.0;  // 0..1 head position of the bright wave around the dot ring
 };
 
