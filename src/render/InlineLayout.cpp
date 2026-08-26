@@ -572,6 +572,13 @@ QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype en
   return selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset);
 }
 
+QVector<QRectF> InlineLayout::selectionRects(
+    qsizetype startOffset, qsizetype endOffset, qreal fillRight, bool selectionEndsInBlock) const {
+  const qsizetype startDisplayOffset = displayOffsetForVisibleOffset(qMin(startOffset, endOffset));
+  const qsizetype endDisplayOffset = displayOffsetForVisibleOffset(qMax(startOffset, endOffset));
+  return selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset, fillRight, selectionEndsInBlock);
+}
+
 QVector<QRectF> InlineLayout::selectionRectsForSourceOffsets(qsizetype startSourceOffset, qsizetype endSourceOffset) const {
   qsizetype startDisplayOffset = -1;
   qsizetype endDisplayOffset = -1;
@@ -583,6 +590,11 @@ QVector<QRectF> InlineLayout::selectionRectsForSourceOffsets(qsizetype startSour
 }
 
 QVector<QRectF> InlineLayout::selectionRectsForDisplayOffsets(qsizetype startDisplayOffset, qsizetype endDisplayOffset) const {
+  return selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset, /*fillRight=*/-1.0, /*selectionEndsInBlock=*/true);
+}
+
+QVector<QRectF> InlineLayout::selectionRectsForDisplayOffsets(
+    qsizetype startDisplayOffset, qsizetype endDisplayOffset, qreal fillRight, bool selectionEndsInBlock) const {
   QVector<QRectF> rects;
   if (!textLayout_) {
     return rects;
@@ -604,6 +616,15 @@ QVector<QRectF> InlineLayout::selectionRectsForDisplayOffsets(qsizetype startDis
     const int rangeStart = qMax(start, lineStart);
     const int rangeEnd = qMin(end, lineEnd);
     if (rangeStart >= rangeEnd) {
+      continue;
+    }
+    // Contiguous fill: a line the selection covers through its end becomes a full-width band,
+    // unless it is the boundary line of a block where the selection ends (that line keeps its
+    // glyph run — the Typora partial-line look).
+    if (fillRight >= 0.0 && rangeEnd >= lineEnd &&
+        !(selectionEndsInBlock && end >= lineStart && end <= lineEnd)) {
+      const qreal left = line.naturalTextRect().left();
+      rects.push_back(QRectF(left, line.y(), qMax<qreal>(1.0, fillRight - left), line.height()));
       continue;
     }
     const qreal x1 = line.cursorToX(rangeStart);

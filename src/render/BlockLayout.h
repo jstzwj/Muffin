@@ -294,7 +294,13 @@ public:
   // (visible as a darker, double-highlighted band) and would smear the ancestor's offsets onto the
   // descendant's text. Containers (List / BlockQuote / nested List) have no own content and return
   // nothing, exactly as wanted — their content is painted by their own child entries.
-  QVector<QRectF> selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const;
+  // contiguousFill variant: fully-covered visual lines extend to the block's right edge and an
+  // empty covered paragraph emits a line-height band, so a multi-block selection reads as one
+  // continuous band (Typora-style). selectionEndsInBlock marks the block holding the selection's
+  // focus in document direction — its boundary line keeps the glyph run.
+  QVector<QRectF> selectionRectsSelfForOffsets(
+      qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme,
+      bool contiguousFill = false, bool selectionEndsInBlock = true) const;
 
 private:
   void paintSelf(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintState hover) const;

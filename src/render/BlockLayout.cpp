@@ -1834,7 +1834,9 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
   return rects;
 }
 
-QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme) const {
+QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(
+    qsizetype startOffset, qsizetype endOffset, const RenderTheme& theme,
+    bool contiguousFill, bool selectionEndsInBlock) const {
   QVector<QRectF> rects;
 
   switch (type_) {
@@ -1877,8 +1879,17 @@ QVector<QRectF> BlockLayout::selectionRectsSelfForOffsets(qsizetype startOffset,
     return rects;
   }
 
+  // Contiguous fill: fill to the block's right edge; an empty covered paragraph emits a
+  // line-height band (it has no glyph run to show at all otherwise).
+  if (contiguousFill && inlineLayout_->plainText().isEmpty()) {
+    const QRectF band(rect_.left(), rect_.top(), rect_.width(), qMax<qreal>(1.0, inlineLayout_->height()));
+    rects.push_back(band);
+    return rects;
+  }
+  const qreal fillRight = contiguousFill ? rect_.right() : -1.0;
+
   const QPointF origin = inlineTextOrigin(theme);
-  for (QRectF rect : inlineLayout_->selectionRects(startOffset, endOffset)) {
+  for (QRectF rect : inlineLayout_->selectionRects(startOffset, endOffset, fillRight, selectionEndsInBlock)) {
     rect.translate(origin);
     rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
   }
