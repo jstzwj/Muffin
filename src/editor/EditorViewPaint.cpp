@@ -513,18 +513,22 @@ void EditorView::paintInsertionCursor(QPainter& painter) const {
   // the translated character: the text is painted with painter.translate(-offset), so without this
   // the caret sat at the natural advance and was clipped out of view whenever the fence scrolled.
   QRectF cursor = effectiveCursorRect();
-  lastPaintedCaretDocumentRect_ = cursor;
+  // The cap only guards image/preview lines, whose line height can be hundreds
+  // of px; text lines — including large headings (a 2.1rem H1 is ~38px) — must
+  // use their natural line height, or the caret is clipped short and looks
+  // vertically offset from the glyphs.
+  const qreal height = qBound<qreal>(14.0, cursor.height(), 96.0);
+  // Record exactly what is drawn (clamped height, document space, before the viewport translate so
+  // off-screen carets still erase on scroll): erase coverage must match the drawn pixels. The old
+  // un-clamped record under-covered short lines (drawn bottom top+14 vs recorded +4px margin when
+  // h<10 — a ghost tail) and over-dirtied capped image lines.
+  lastPaintedCaretDocumentRect_ = QRectF(cursor.left(), cursor.top(), 1.5, height);
   cursor.translate(0, -scrollY());
 
   if (!viewport()->rect().adjusted(-4, -4, 4, 4).intersects(cursor.toAlignedRect())) {
     return;
   }
 
-  // The cap only guards image/preview lines, whose line height can be hundreds
-  // of px; text lines — including large headings (a 2.1rem H1 is ~38px) — must
-  // use their natural line height, or the caret is clipped short and looks
-  // vertically offset from the glyphs.
-  const qreal height = qBound<qreal>(14.0, cursor.height(), 96.0);
   QRectF visibleCursor(cursor.left(), cursor.top(), 1.5, height);
   painter.save();
   painter.setPen(Qt::NoPen);
