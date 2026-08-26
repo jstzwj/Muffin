@@ -160,6 +160,52 @@ void testDetachClearsRegistry() {
   require(textInterfaceFor(&view)->characterCount() == 5, "re-attach should serve text again");
 }
 
+// Event emission: caret/selection events fire through QAccessible::updateAccessibility when a
+// bridge is active. Offscreen usually has no bridge, so the assertions are gated — the wiring
+// compiles and runs either way, and environments with an active bridge get the full check.
+int g_caretEvents = 0;
+int g_selectionEvents = 0;
+
+void countingUpdateHandler(QAccessibleEvent* event) {
+  if (!event) {
+    return;
+  }
+  if (event->type() == QAccessible::TextCaretMoved) {
+    ++g_caretEvents;
+  } else if (event->type() == QAccessible::TextSelectionChanged) {
+    ++g_selectionEvents;
+  }
+}
+
+void testAccessibleEvents() {
+  if (!QAccessible::isActive()) {
+    qInfo("skip: accessibility bridge inactive in this environment");
+    return;
+  }
+  QAccessible::UpdateHandler previous = QAccessible::installUpdateHandler(&countingUpdateHandler);
+  g_caretEvents = 0;
+  g_selectionEvents = 0;
+
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+  session.setMarkdownText(QStringLiteral("alpha beta"), false);
+  view.setDocument(session.document());
+  setCursor(controller.selection(), blockAt(session, 0), 0);
+
+  controller.setCursorForSourceOffset(6);
+  QApplication::processEvents();
+  require(g_caretEvents > 0, "caret move should fire a text caret event");
+
+  textInterfaceFor(&view)->addSelection(0, 5);
+  QApplication::processEvents();
+  require(g_selectionEvents > 0, "selection change should fire a selection event");
+
+  QAccessible::installUpdateHandler(previous);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -173,6 +219,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testRenderedAdapterBasics);
   RUN_TEST(testSourceModeAdapter);
   RUN_TEST(testDetachClearsRegistry);
+  RUN_TEST(testAccessibleEvents);
 #undef RUN_TEST
   qInfo("All accessibility adapter tests passed.");
   return 0;

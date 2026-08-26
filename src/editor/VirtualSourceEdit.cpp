@@ -10,6 +10,8 @@
 #include "theme/RenderTheme.h"
 
 #include <QApplication>
+#include <QAccessible>
+#include <QAccessibleEvent>
 #include <QClipboard>
 #include <QContextMenuEvent>
 #include <QCoreApplication>
@@ -445,6 +447,10 @@ bool VirtualSourceEdit::applyEdit(
   ensureCursorVisible();
   emitCursorPosition();
   emit editApplied();
+  if (QAccessible::isActive()) {
+    QAccessibleTextUpdateEvent event(this, static_cast<int>(start), record.removed, inserted);
+    QAccessible::updateAccessibility(&event);
+  }
   viewport()->update();
   return true;
 }
@@ -1202,6 +1208,10 @@ void VirtualSourceEdit::dropEvent(QDropEvent* event) {
 
 void VirtualSourceEdit::emitCursorPosition() {
   emit cursorPositionChanged(cursorLine(), cursorColumn());
+  if (QAccessible::isActive()) {
+    QAccessibleTextCursorEvent event(this, static_cast<int>(boundedOffset(cursor_)));
+    QAccessible::updateAccessibility(&event);
+  }
 }
 
 void VirtualSourceEdit::scrollContentsBy(int dx, int dy) {

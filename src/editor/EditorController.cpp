@@ -10,6 +10,10 @@
 #include "document/MarkdownNode.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/BlockEditContext.h"
+
+#include <QAccessible>
+#include <QAccessibleEvent>
+#include <QVariant>
 #include "editor/EditorAccessibility.h"
 #include "editor/EditorView.h"
 #include "unicode/WordBoundary.h"
@@ -294,6 +298,22 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
       PerfTimer t("selectionChanged.cursorChangedEmit");
       emit cursorChanged(hit);
     }
+    // Screen-reader notifications. Guarded by isActive() so the bridge stays dormant (zero cost)
+    // when no assistive technology is attached. A collapsed caret reports its source offset; a
+    // real selection reports the whole range (the selection event also carries the focus end).
+    if (QAccessible::isActive() && view_ != nullptr) {
+      if (selection.isCollapsed()) {
+        QAccessibleTextCursorEvent event(view_, static_cast<int>(qMax<qsizetype>(0, hit.sourceOffset)));
+        QAccessible::updateAccessibility(&event);
+      } else {
+        qsizetype start = 0;
+        qsizetype end = 0;
+        if (inputController_.selectionSourceRange(start, end) && end > start) {
+          QAccessibleTextSelectionEvent event(view_, static_cast<int>(start), static_cast<int>(end));
+          QAccessible::updateAccessibility(&event);
+        }
+      }
+    }
     {
       PerfTimer t("selectionChanged.stateChangedEmit");
       emit stateChanged();
@@ -353,12 +373,35 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
       view_->setDocument(session_->document(), session_->filePath());
     }
   });
+  if (session_ != nullptr && view_ != nullptr) {
+    // Local text deltas carry position + inserted text (the removed text is no longer available
+    // at emit time; screen readers treat the empty oldText as an opaque change). Full reparses
+    // report a generic value change.
+    connect(session_, &DocumentSession::documentLocallyEdited, this,
+            [this](qsizetype start, qsizetype removedLength, QString insertedText) {
+              Q_UNUSED(removedLength);
+              if (QAccessible::isActive() && view_ != nullptr) {
+                QAccessibleTextUpdateEvent event(
+                    view_, static_cast<int>(qMax<qsizetype>(0, start)), QString(), std::move(insertedText));
+                QAccessible::updateAccessibility(&event);
+              }
+            });
+    connect(session_, &DocumentSession::parsed, this, [this](int) {
+      if (QAccessible::isActive() && view_ != nullptr) {
+        QAccessibleValueChangeEvent event(view_, QVariant());
+        QAccessible::updateAccessibility(&event);
+      }
+    });
+  }
 }
 
 void EditorController::detach() {
   if (view_) {
     view_->disconnect(this);
     a11y::unregisterController(view_);
+  }
+  if (session_) {
+    session_->disconnect(this);
   }
   selection_.disconnect(this);
   undoStack_.disconnect(this);
