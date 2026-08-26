@@ -867,6 +867,11 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
         }
         return insertTextIntoActiveLiteral(activeLiteralTabText());
       }
+      if (tableController_ && tableController_->currentCell().isValid()) {
+        // Tab in a cell navigates cells (row-major, wrapping; last cell appends a row) instead of
+        // inserting a zero-width space.
+        return moveTableCell(event->modifiers().testFlag(Qt::ShiftModifier) ? -1 : 1);
+      }
       if (event->modifiers().testFlag(Qt::ShiftModifier)) {
         return outdentListItem();
       }
@@ -880,6 +885,9 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
           return true;
         }
         return insertTextIntoActiveLiteral(activeLiteralTabText());
+      }
+      if (tableController_ && tableController_->currentCell().isValid()) {
+        return moveTableCell(-1);
       }
       return outdentListItem();
     case Qt::Key_Backspace:
@@ -1503,6 +1511,109 @@ bool InputController::moveTableCellVertical(int direction, bool extendSelection,
   hit.cursorRect = targetCell.text.cursorRectForSourceOffset(localSource).translated(origin);
   setHitOrExtend(hit, extendSelection);
   return true;
+}
+
+// Place the caret at the start of a table cell, building the same rich hit the cell navigation
+// paths produce. Returns false when the cell does not resolve (stale layout, out of range).
+bool InputController::landOnTableCell(const NodeId& tableId, int row, int column) {
+  if (!ctx_.hasSession() || !ctx_.view) {
+    return false;
+  }
+  const BlockLayout* tableLayout = ctx_.view->blockLayoutForNode(tableId);
+  if (!tableLayout || row < 0 || row >= static_cast<int>(tableLayout->tableRows().size())) {
+    return false;
+  }
+  const auto& rowCells = tableLayout->tableRows().at(static_cast<size_t>(row)).cells;
+  if (column < 0 || column >= static_cast<int>(rowCells.size())) {
+    return false;
+  }
+  const auto& cell = rowCells.at(static_cast<size_t>(column));
+  MarkdownNode* cellNode = ctx_.session->document().node(cell.nodeId);
+  if (!cellNode) {
+    return false;
+  }
+  BlockEditContext context;
+  if (!contextResolver().fill(*cellNode, context)) {
+    return false;
+  }
+
+  HitTestResult hit;
+  hit.zone = HitTestResult::Zone::TableCell;
+  hit.blockId = tableId;
+  hit.textNodeId = cell.nodeId;
+  hit.tableRow = row;
+  hit.tableColumn = column;
+  hit.sourceOffset = context.contentRange.byteStart;
+  hit.textOffset = 0;
+  hit.blockRect = tableLayout->rect();
+  const QPointF origin = editor_geometry::tableCellTextOrigin(cell, ctx_.view->theme());
+  hit.cursorRect = cell.text.cursorRectForSourceOffset(0).translated(origin);
+  setHitOrExtend(hit, false);
+  return true;
+}
+
+// Tab/Backtab inside a table: move to the next/previous cell in row-major order, wrapping across
+// rows. Tab from the last cell appends a row (Typora behaviour); Backtab from (0,0) leaves the
+// table for the previous block.
+bool InputController::moveTableCell(int direction) {
+  if (!tableController_ || !ctx_.hasSession() || !ctx_.view || direction == 0) {
+    return false;
+  }
+  const TableLocation location = tableController_->currentCell();
+  if (!location.isValid() || !location.tableId.isValid()) {
+    return false;
+  }
+  const BlockLayout* tableLayout = ctx_.view->blockLayoutForNode(location.tableId);
+  const auto cellsInRow = [tableLayout](int row) -> int {
+    if (!tableLayout || row < 0 || row >= static_cast<int>(tableLayout->tableRows().size())) {
+      return -1;
+    }
+    return static_cast<int>(tableLayout->tableRows().at(static_cast<size_t>(row)).cells.size());
+  };
+
+  int targetRow = location.row;
+  int targetColumn = location.column;
+
+  if (direction > 0) {
+    const int width = cellsInRow(targetRow);
+    if (width > 0 && targetColumn + 1 < width) {
+      ++targetColumn;
+    } else {
+      ++targetRow;
+      targetColumn = 0;
+      if (cellsInRow(targetRow) < 0) {
+        // Past the last row: Tab appends a row and lands on its first cell.
+        if (!tableController_->insertRowAfter()) {
+          return false;
+        }
+        const TableLocation updated = tableController_->currentCell();
+        if (!updated.isValid() || !updated.tableId.isValid()) {
+          return false;
+        }
+        return landOnTableCell(updated.tableId, updated.row, 0);
+      }
+    }
+  } else {
+    if (targetColumn > 0) {
+      --targetColumn;
+    } else if (targetRow > 0) {
+      --targetRow;
+      targetColumn = qMax(0, cellsInRow(targetRow) - 1);
+    } else {
+      // (0,0): leave the table for the previous block.
+      MarkdownNode* table = ctx_.session->document().node(location.tableId);
+      if (!table) {
+        return false;
+      }
+      if (MarkdownNode* previous = neighborBlockInDocumentDirection(*table, -1)) {
+        setHitOrExtend(
+            visualEdgeHitForBlock(previous->id(), -1, ctx_.view->effectiveCursorRect().left()), false);
+        return true;
+      }
+      return false;
+    }
+  }
+  return landOnTableCell(location.tableId, targetRow, targetColumn);
 }
 
 bool InputController::moveCursorHorizontal(int direction, bool extendSelection) {

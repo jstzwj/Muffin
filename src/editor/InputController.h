@@ -197,6 +197,10 @@ private:
   bool moveCursorPage(int direction, bool extendSelection);
   bool moveTableCellHorizontal(int direction, bool extendSelection);
   bool moveTableCellVertical(int direction, bool extendSelection, qreal documentX);
+  // Tab/Backtab cell navigation (row-major, wrapping; Tab at the last cell appends a row,
+  // Backtab at (0,0) leaves the table for the previous block).
+  bool moveTableCell(int direction);
+  bool landOnTableCell(const NodeId& tableId, int row, int column);
   bool moveLiteralVertical(const BlockLayout& block, MarkdownNode& node, int direction, bool extendSelection);
   enum class JumpTarget { LineStart, LineEnd, DocumentStart, DocumentEnd };
   bool moveJump(JumpTarget target, bool extendSelection);
