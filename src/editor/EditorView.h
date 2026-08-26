@@ -45,6 +45,10 @@ public:
   // un-promoted blocks pick up the new state when they scroll into view.
   bool refreshVisibleBlocks(const MarkdownDocument& document);
   bool refreshTopLevelRange(TopLevelRangeChange range, const MarkdownDocument& document);
+  // Full IME context (surrounding text, cursor offset within it, current selection, font) so
+  // predictive/conversion IMEs (pinyin, kana) can see context and do reconversion. Public like
+  // cursorHit()/effectiveCursorRect() so tests can query it directly.
+  QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
   void setZoomPercent(int percent);
   void setFontSizePx(int px);
   void setContentWidthPx(int px);
@@ -123,7 +127,6 @@ protected:
   void mouseReleaseEvent(QMouseEvent* event) override;
   void contextMenuEvent(QContextMenuEvent* event) override;
   void inputMethodEvent(QInputMethodEvent* event) override;
-  QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
   void dragEnterEvent(QDragEnterEvent* event) override;
   void dragMoveEvent(QDragMoveEvent* event) override;
   void dropEvent(QDropEvent* event) override;

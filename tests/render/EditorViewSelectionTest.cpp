@@ -1311,6 +1311,67 @@ void testSelectionColorIsThemed() {
   require(distThemed < distOld, "selection overlay must derive from the theme, not the old hardcoded blue");
 }
 
+// inputMethodQuery answers the full IME context (surrounding text in the VISIBLE projection,
+// cursor offset within it, same-node selection text) so conversion IMEs get real context.
+void testInputMethodQueryAnswersImeContext() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("before **bold** after\n\nplain"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+
+  // Caret inside the bold inline: surrounding reports the visible projection ("bold", not
+  // "**bold**"), and the cursor offset is in that same visible space.
+  CursorPosition inside = inlineCursor(block->id(), 9, 13);  // inside "bold" (visible off 9)
+  view.setCursorPosition(inside);
+  const QString surrounding = view.inputMethodQuery(Qt::ImSurroundingText).toString();
+  require(surrounding == QStringLiteral("before bold after"),
+          "ImSurroundingText must report the visible projection, not raw markdown");
+  require(view.inputMethodQuery(Qt::ImCursorPosition).toInt() == 9,
+          "ImCursorPosition must be the visible-space cursor offset");
+
+  // Same-text-node selection reads back as the substring.
+  SelectionRange selection;
+  selection.anchor = inlineCursor(block->id(), 7, 11);
+  selection.focus = inlineCursor(block->id(), 7, 11);
+  selection.focus.text.textOffset = 11;
+  view.setSelectionRange(selection);
+  require(view.inputMethodQuery(Qt::ImCurrentSelection).toString() == QStringLiteral("bold"),
+          "ImCurrentSelection must return the selected substring");
+
+  // Table cell caret reports the cell text.
+  session.setMarkdownText(QStringLiteral("| alpha | beta |\n| --- | --- |\n| gamma | delta |"), false);
+  view.setDocument(session.document());
+  MarkdownNode* table = blockAt(session, 0);
+  std::vector<MarkdownNode*> cells;
+  for (const auto& row : table->children()) {
+    if (row->type() == BlockType::TableRow) {
+      for (const auto& cell : row->children()) {
+        cells.push_back(cell.get());
+      }
+    }
+  }
+  HitTestResult cellHit;
+  cellHit.zone = HitTestResult::Zone::TableCell;
+  cellHit.blockId = table->id();
+  cellHit.textNodeId = cells.at(2)->id();
+  cellHit.tableRow = 1;
+  cellHit.tableColumn = 0;
+  cellHit.textOffset = 0;
+  controller.activateHit(cellHit);
+  require(view.inputMethodQuery(Qt::ImSurroundingText).toString() == QStringLiteral("gamma"),
+          "table-cell caret must report the cell text as surrounding");
+
+  // ImEnabled and a font are answered.
+  require(view.inputMethodQuery(Qt::ImEnabled).toBool(), "ImEnabled must be true");
+  const QFont font = view.inputMethodQuery(Qt::ImFont).value<QFont>();
+  require(!font.family().isEmpty(), "ImFont must return a real font");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1341,6 +1402,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testCrossCellSelectionIsNotCollapsed);
   RUN_TEST(testCrossCellSelectionCoversBothCells);
   RUN_TEST(testSelectionColorIsThemed);
+  RUN_TEST(testInputMethodQueryAnswersImeContext);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

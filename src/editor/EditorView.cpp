@@ -914,14 +914,57 @@ void EditorView::inputMethodEvent(QInputMethodEvent* event) {
 }
 
 QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
-  if (query == Qt::ImCursorRectangle) {
-    // effectiveCursorRect matches where the caret is painted (offset-adjusted for a scrolled code
-    // fence); without it the IME panel anchored at the natural advance, far from the visible caret.
-    QRectF cursor = effectiveCursorRect();
-    cursor.translate(0, -scrollY());
-    return cursor.toRect();
+  switch (query) {
+    case Qt::ImCursorRectangle: {
+      // effectiveCursorRect matches where the caret is painted (offset-adjusted for a scrolled code
+      // fence); without it the IME panel anchored at the natural advance, far from the visible caret.
+      QRectF cursor = effectiveCursorRect();
+      cursor.translate(0, -scrollY());
+      return cursor.toRect();
+    }
+    case Qt::ImEnabled:
+      return true;
+    case Qt::ImFont:
+      return preeditFont();
+    case Qt::ImSurroundingText: {
+      // The caret block's visible text — the paragraph around the cursor, which is what conversion
+      // IMEs consume for context/reconversion. Folded inline syntax reports the VISIBLE projection.
+      const BlockLayout* block =
+          layout_ ? layout_->blockIfPromoted(cursorPosition_.blockId) : nullptr;
+      if (!block) {
+        return QString();
+      }
+      if (cursorHit_.zone == HitTestResult::Zone::TableCell &&
+          cursorHit_.tableRow >= 0 && cursorHit_.tableRow < static_cast<int>(block->tableRows().size())) {
+        const auto& row = block->tableRows().at(static_cast<size_t>(cursorHit_.tableRow));
+        if (cursorHit_.tableColumn >= 0 && cursorHit_.tableColumn < static_cast<int>(row.cells.size())) {
+          return row.cells.at(static_cast<size_t>(cursorHit_.tableColumn)).text.visibleText();
+        }
+        return QString();
+      }
+      if (block->inlineLayout() != nullptr) {
+        return block->inlineLayout()->visibleText();
+      }
+      return block->literal();
+    }
+    case Qt::ImCursorPosition: {
+      const QString surrounding = inputMethodQuery(Qt::ImSurroundingText).toString();
+      return static_cast<int>(qBound<qsizetype>(0, cursorPosition_.text.textOffset, surrounding.size()));
+    }
+    case Qt::ImCurrentSelection: {
+      // Only a same-text-node selection maps into the surrounding text; cross-block/cross-cell
+      // selections have no single surrounding string.
+      if (selection_.isCollapsed() || !selection_.isSingleTextNode()) {
+        return QString();
+      }
+      const QString surrounding = inputMethodQuery(Qt::ImSurroundingText).toString();
+      const qsizetype start = qBound<qsizetype>(0, selection_.startOffset(), surrounding.size());
+      const qsizetype end = qBound<qsizetype>(start, selection_.endOffset(), surrounding.size());
+      return surrounding.mid(start, end - start);
+    }
+    default:
+      return QAbstractScrollArea::inputMethodQuery(query);
   }
-  return QAbstractScrollArea::inputMethodQuery(query);
 }
 
 void EditorView::rebuildLayout() {
