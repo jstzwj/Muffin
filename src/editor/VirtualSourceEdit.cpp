@@ -1,6 +1,7 @@
 #include "editor/VirtualSourceEdit.h"
 
 #include "document/DocumentSession.h"
+#include "editor/WordBoundary.h"
 #include "io/FilePathOps.h"
 #include "io/MuffinMime.h"
 #include "projection/SelectionSerializer.h"
@@ -156,10 +157,6 @@ QVector<QTextLayout::FormatRange> sourceFormats(
     }
   }
   return ranges;
-}
-
-bool isWordCharacter(QChar ch) {
-  return ch.isLetterOrNumber() || ch == QLatin1Char('_');
 }
 
 int boundedScrollRange(qint64 value) {
@@ -347,46 +344,19 @@ qsizetype VirtualSourceEdit::boundedOffset(qsizetype offset) const {
 }
 
 qsizetype VirtualSourceEdit::previousCharacterOffset(qsizetype offset) const {
-  offset = boundedOffset(offset);
-  if (offset == 0) return 0;
-  --offset;
-  if (source().at(offset).isLowSurrogate() && offset > 0 &&
-      source().at(offset - 1).isHighSurrogate()) {
-    --offset;
-  }
-  return offset;
+  return words::previousCharacterOffset(source(), offset);
 }
 
 qsizetype VirtualSourceEdit::nextCharacterOffset(qsizetype offset) const {
-  offset = boundedOffset(offset);
-  if (offset >= source().size()) return source().size();
-  if (source().at(offset).isHighSurrogate() && offset + 1 < source().size() &&
-      source().at(offset + 1).isLowSurrogate()) {
-    return offset + 2;
-  }
-  return offset + 1;
+  return words::nextCharacterOffset(source(), offset);
 }
 
 qsizetype VirtualSourceEdit::previousWordOffset(qsizetype offset) const {
-  offset = boundedOffset(offset);
-  while (offset > 0 && !isWordCharacter(source().at(previousCharacterOffset(offset)))) {
-    offset = previousCharacterOffset(offset);
-  }
-  while (offset > 0 && isWordCharacter(source().at(previousCharacterOffset(offset)))) {
-    offset = previousCharacterOffset(offset);
-  }
-  return offset;
+  return words::previousWordOffset(source(), offset);
 }
 
 qsizetype VirtualSourceEdit::nextWordOffset(qsizetype offset) const {
-  offset = boundedOffset(offset);
-  while (offset < source().size() && isWordCharacter(source().at(offset))) {
-    offset = nextCharacterOffset(offset);
-  }
-  while (offset < source().size() && !isWordCharacter(source().at(offset))) {
-    offset = nextCharacterOffset(offset);
-  }
-  return offset;
+  return words::nextWordOffset(source(), offset);
 }
 
 void VirtualSourceEdit::setCursorPosition(qsizetype position, bool keepAnchor) {
@@ -432,18 +402,7 @@ void VirtualSourceEdit::selectLine() {
 std::pair<qsizetype, qsizetype> VirtualSourceEdit::wordRangeAt(qsizetype position) const {
   const qsizetype bounded = boundedOffset(position);
   const int line = lineForOffset(bounded);
-  const qsizetype startBound = lineStart(line);
-  const qsizetype endBound = lineEnd(line);
-  qsizetype probe = bounded;
-  if (probe == endBound && probe > startBound) --probe;
-  if (probe < startBound || probe >= endBound || !isWordCharacter(source().at(probe))) {
-    return {bounded, bounded};
-  }
-  qsizetype start = probe;
-  qsizetype end = probe + 1;
-  while (start > startBound && isWordCharacter(source().at(start - 1))) --start;
-  while (end < endBound && isWordCharacter(source().at(end))) ++end;
-  return {start, end};
+  return words::wordRangeAt(source(), bounded, lineStart(line), lineEnd(line));
 }
 
 void VirtualSourceEdit::selectWord() {

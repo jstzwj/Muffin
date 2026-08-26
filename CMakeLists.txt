@@ -1125,6 +1125,7 @@ set(MUFFIN_UI_SOURCES
   src/editor/TableToolbar.h
   src/editor/InputController.cpp
   src/editor/InputController.h
+  src/editor/WordBoundary.h
   src/editor/InputControllerAutoPair.cpp
   src/editor/InputControllerSmartPunct.cpp
   src/editor/InputControllerEmoji.cpp
