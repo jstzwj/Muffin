@@ -197,6 +197,10 @@ private:
   // Restart the caret blink phase (visible + timer armed when focused, not flashing-disabled,
   // and no active composition). Called from every caret-moving entry point.
   void resetCaretBlink();
+  // Manual multi-click counter (Qt has no triple-click event): press→1, dblclick→2, press→3
+  // within doubleClickInterval() and ~4px of the last click. Count 3 selects the block's text.
+  int registerClick(QPointF viewportPos);
+  void selectBlockForTripleClick(const HitTestResult& hit);
   void applyScrollBarStyle();
   void updateCodeLanguageEditor();
   void updateTableToolbar();
@@ -301,6 +305,9 @@ private:
   bool dragFromWord_ = false;
   CursorPosition dragWordStart_;
   CursorPosition dragWordEnd_;
+  int clickCount_ = 0;
+  QElapsedTimer clickClock_;
+  QPointF lastClickViewportPos_;
   CodeLanguageEditor* codeLanguageEditor_ = nullptr;
   TableToolbar* tableToolbar_ = nullptr;
   bool typewriterMode_ = false;

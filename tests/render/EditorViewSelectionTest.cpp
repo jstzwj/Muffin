@@ -1568,6 +1568,53 @@ void testDragThresholdAndWordDragExtend() {
   }
 }
 
+// Triple click selects the whole block's text (a cell's content inside a table); a fourth click
+// in the same spot starts a fresh count (caret placement).
+void testTripleClickSelectsBlock() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("first words here\n\nsecond block"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+  const NodeId blockId = block->id();
+
+  const auto pointFor = [&](qsizetype offset) {
+    return view.nodeRect(blockId).topLeft() +
+           view.blockLayoutForNode(blockId)->inlineLayout()->cursorRectForSourceOffset(offset).center();
+  };
+  const QPointF spot = pointFor(6);
+
+  // Qt's triple-click sequence: press, release, dblclick, release, press, release.
+  QMouseEvent press1(QEvent::MouseButtonPress, spot, spot, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press1);
+  QMouseEvent release(QEvent::MouseButtonRelease, spot, spot, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &release);
+  QMouseEvent dbl(QEvent::MouseButtonDblClick, spot, spot, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &dbl);
+  QApplication::sendEvent(view.viewport(), &release);
+  QMouseEvent press3(QEvent::MouseButtonPress, spot, spot, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press3);
+  QApplication::sendEvent(view.viewport(), &release);
+
+  const SelectionRange selection = controller.selection().selection();
+  require(!selection.isCollapsed(), "triple click should select the block's text");
+  require(selection.startOffset() == 0,
+          "block selection must start at offset 0");
+  require(selection.endOffset() == QStringLiteral("first words here").size(),
+          "block selection must span the whole block text");
+
+  // Fourth click: fresh count — caret placement collapses the selection.
+  QMouseEvent press4(QEvent::MouseButtonPress, spot, spot, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press4);
+  QApplication::sendEvent(view.viewport(), &release);
+  require(controller.selection().selection().isCollapsed(),
+          "a fourth click must start a fresh count (plain caret placement)");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1602,6 +1649,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testFocusOutResetsPreedit);
   RUN_TEST(testMultiBlockSelectionFillsContinuously);
   RUN_TEST(testDragThresholdAndWordDragExtend);
+  RUN_TEST(testTripleClickSelectsBlock);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

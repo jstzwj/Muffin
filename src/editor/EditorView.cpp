@@ -702,6 +702,14 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
       event->accept();
       return;
     }
+    const int clickCount = registerClick(event->position());
+    if (clickCount == 3 && hit.isValid() && isSelectableZone(hit.zone)) {
+      // Triple click: select the whole block's text (a table cell's content for cell hits).
+      selectBlockForTripleClick(hit);
+      dragState_ = DragState::Idle;
+      event->accept();
+      return;
+    }
     setCursorHit(hit);
     emit blockClicked(hit);
     updateCodeLanguageEditor();
@@ -774,6 +782,7 @@ void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
 
   setFocus(Qt::MouseFocusReason);
   const HitTestResult hit = hitTest(event->position());
+  registerClick(event->position());  // press(1) → dblclick(2): the third press makes 3
   if (!hit.isValid() || !isSelectableZone(hit.zone)) {
     QAbstractScrollArea::mouseDoubleClickEvent(event);
     return;
@@ -842,6 +851,51 @@ void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
   dragWordEnd_ = focus;
 
   event->accept();
+}
+
+int EditorView::registerClick(QPointF viewportPos) {
+  // Qt delivers press(1) → dblclick(2) → press(3) for a triple click; count in both handlers.
+  const bool sameSpot =
+      (viewportPos - lastClickViewportPos_).manhattanLength() < 4.0;
+  if (clickCount_ > 0 && sameSpot && clickClock_.elapsed() < QApplication::doubleClickInterval()) {
+    ++clickCount_;
+  } else {
+    clickCount_ = 1;
+  }
+  clickClock_.restart();
+  lastClickViewportPos_ = viewportPos;
+  return clickCount_;
+}
+
+void EditorView::selectBlockForTripleClick(const HitTestResult& hit) {
+  const BlockLayout* block = layout_ ? layout_->blockIfPromoted(hit.blockId) : nullptr;
+  if (!block) {
+    return;
+  }
+  CursorPosition anchor;
+  anchor.blockId = hit.blockId;
+  anchor.text.nodeId = hit.textNodeId.isValid() ? hit.textNodeId : hit.blockId;
+  anchor.text.textOffset = 0;
+  anchor.text.sourceOffset = -1;
+
+  qsizetype length = editor_geometry::selectableLength(block);
+  if (hit.zone == HitTestResult::Zone::TableCell && hit.tableRow >= 0 &&
+      hit.tableRow < static_cast<int>(block->tableRows().size())) {
+    const auto& row = block->tableRows().at(static_cast<size_t>(hit.tableRow));
+    if (hit.tableColumn >= 0 && hit.tableColumn < static_cast<int>(row.cells.size())) {
+      const auto& cell = row.cells.at(static_cast<size_t>(hit.tableColumn));
+      anchor.text.nodeId = cell.nodeId;
+      length = cell.text.plainText().size();
+    }
+  }
+
+  CursorPosition focus = anchor;
+  focus.text.textOffset = length;
+  SelectionRange range;
+  range.anchor = anchor;
+  range.focus = focus;
+  applySelectionRange(range);
+  emit selectionChanged(range, hit);
 }
 
 void EditorView::focusInEvent(QFocusEvent* event) {
