@@ -1490,6 +1490,84 @@ void testMultiBlockSelectionFillsContinuously() {
           "every row through the empty paragraph must be tinted (continuous band incl. gaps)");
 }
 
+// A sloppy click that jitters a pixel stays a click (3px drag threshold), and dragging off a
+// double-click word selection extends word-to-drag-point (anchor flips to the word's far end).
+void testDragThresholdAndWordDragExtend() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("alpha beta gamma"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+  const NodeId blockId = block->id();
+
+  const auto cursorRectFor = [&view, blockId](qsizetype visibleOffset) {
+    return view.nodeRect(blockId).topLeft() +
+           view.blockLayoutForNode(blockId)->inlineLayout()->cursorRectForSourceOffset(visibleOffset).center();
+  };
+
+  // --- Threshold: press at offset 8, move 2px → still collapsed; move far → selection.
+  {
+    const QPointF pressPoint = cursorRectFor(8);
+    QMouseEvent press(QEvent::MouseButtonPress, pressPoint, pressPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    const QPointF tinyMove = pressPoint + QPointF(1.5, 0.0);
+    QMouseEvent move1(QEvent::MouseMove, tinyMove, tinyMove, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &move1);
+    require(controller.selection().selection().isCollapsed(),
+            "a 1.5px jitter must not start a selection (3px threshold)");
+    const QPointF realMove = cursorRectFor(13);
+    QMouseEvent move2(QEvent::MouseMove, realMove, realMove, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &move2);
+    require(!controller.selection().selection().isCollapsed(),
+            "a real drag must still extend the selection");
+    QMouseEvent release(QEvent::MouseButtonRelease, realMove, realMove, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+  }
+
+  // --- Word drag-extend: double-click "beta", drag right of the word → word start .. drag point.
+  {
+    const QPointF wordPoint = cursorRectFor(8);  // middle of "beta"
+    QMouseEvent press(QEvent::MouseButtonPress, wordPoint, wordPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    QMouseEvent dblClick(QEvent::MouseButtonDblClick, wordPoint, wordPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &dblClick);
+    const SelectionRange word = controller.selection().selection();
+    require(word.startOffset() == 6 && word.endOffset() == 10,
+            "double-click should select the word 'beta'");
+
+    const QPointF rightPoint = cursorRectFor(14);  // inside "gamma"
+    QMouseEvent dragRight(QEvent::MouseMove, rightPoint, rightPoint, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &dragRight);
+    const SelectionRange extended = controller.selection().selection();
+    require(extended.startOffset() == 6, "dragging right must keep the word start anchored");
+    require(extended.endOffset() >= 12, "dragging right must extend into 'gamma'");
+    QMouseEvent release(QEvent::MouseButtonRelease, rightPoint, rightPoint, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+  }
+
+  // --- Drag back LEFT of the word: anchor flips to the word end (drag point .. word end).
+  {
+    const QPointF wordPoint = cursorRectFor(8);
+    QMouseEvent press(QEvent::MouseButtonPress, wordPoint, wordPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    QMouseEvent dblClick(QEvent::MouseButtonDblClick, wordPoint, wordPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &dblClick);
+
+    const QPointF leftPoint = cursorRectFor(2);  // inside "alpha"
+    QMouseEvent dragLeft(QEvent::MouseMove, leftPoint, leftPoint, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &dragLeft);
+    const SelectionRange mirrored = controller.selection().selection();
+    require(mirrored.startOffset() == 2, "dragging left must anchor the selection at the drag point");
+    require(mirrored.endOffset() == 10, "dragging left must keep the word end in the selection");
+    QMouseEvent release(QEvent::MouseButtonRelease, leftPoint, leftPoint, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1523,6 +1601,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testInputMethodQueryAnswersImeContext);
   RUN_TEST(testFocusOutResetsPreedit);
   RUN_TEST(testMultiBlockSelectionFillsContinuously);
+  RUN_TEST(testDragThresholdAndWordDragExtend);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

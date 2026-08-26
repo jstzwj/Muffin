@@ -297,6 +297,10 @@ private:
   SelectionRange preDragSelection_;
   QPointF dragStartViewportPos_;
   HitTestResult dragAnchorHit_;
+  // Double-click drag-extend: dragging off a word selection anchors at the word's far end.
+  bool dragFromWord_ = false;
+  CursorPosition dragWordStart_;
+  CursorPosition dragWordEnd_;
   CodeLanguageEditor* codeLanguageEditor_ = nullptr;
   TableToolbar* tableToolbar_ = nullptr;
   bool typewriterMode_ = false;

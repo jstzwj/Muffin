@@ -710,6 +710,7 @@ void EditorView::mousePressEvent(QMouseEvent* event) {
       dragState_ = DragState::Pending;
       dragStartViewportPos_ = event->position();
       dragAnchorHit_ = hit;
+      dragFromWord_ = false;  // a plain press anchors the drag at the press point
     }
   }
   QAbstractScrollArea::mousePressEvent(event);
@@ -724,6 +725,12 @@ void EditorView::mouseMoveEvent(QMouseEvent* event) {
   }
   if (dragState_ != DragState::Idle && (event->buttons() & Qt::LeftButton)) {
     if (dragState_ == DragState::Pending) {
+      // Small drag threshold: a sloppy click that jitters a pixel or two stays a click (no
+      // accidental one-character selection).
+      if ((event->position() - dragStartViewportPos_).manhattanLength() < 3.0) {
+        event->accept();
+        return;
+      }
       dragState_ = DragState::Dragging;
     }
     if (dragState_ == DragState::Dragging) {
@@ -824,8 +831,15 @@ void EditorView::mouseDoubleClickEvent(QMouseEvent* event) {
   emit blockClicked(hit);
   emit selectionChanged(range, hit);
 
-  // Prevent drag from overriding the word selection.
-  dragState_ = DragState::Idle;
+  // Arm drag-extend from the word selection (standard editor behavior): dragging past the word
+  // grows the selection word-to-drag-point instead of overriding the double-click.
+  preDragSelection_ = range;
+  dragState_ = DragState::Pending;
+  dragStartViewportPos_ = event->position();
+  dragAnchorHit_ = hit;
+  dragFromWord_ = true;
+  dragWordStart_ = anchor;
+  dragWordEnd_ = focus;
 
   event->accept();
 }
@@ -1400,6 +1414,21 @@ void EditorView::updateDragSelection(QPointF viewportPos) {
   SelectionRange range;
   range.anchor = dragAnchorHit_.cursorPosition();
   range.focus = focusHit.cursorPosition();
+  if (dragFromWord_) {
+    // Dragging off a double-click word selection: the anchor flips to the FAR end of the word —
+    // drag right of the word and the selection starts at the word start; drag left and it starts
+    // at the drag point (anchored at the word end). Standard editor word-drag semantics.
+    const CursorPosition focusPos = focusHit.cursorPosition();
+    const auto focusBeforeWordStart = [&]() {
+      if (focusPos.blockId == dragWordStart_.blockId) {
+        return focusPos.text.textOffset < dragWordStart_.text.textOffset;
+      }
+      return editor_geometry::blockComesBefore(*layout_, focusPos.blockId, dragWordStart_.blockId) &&
+             focusPos.blockId != dragWordStart_.blockId;
+    }();
+    range.anchor = focusBeforeWordStart ? dragWordEnd_ : dragWordStart_;
+    range.focus = focusPos;
+  }
   if (range.isCollapsed()) {
     return;
   }
