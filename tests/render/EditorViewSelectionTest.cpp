@@ -10,6 +10,7 @@
 #include <QInputMethodEvent>
 #include <QPainter>
 
+#include <algorithm>
 #include <vector>
 
 using namespace muffin;
@@ -1143,6 +1144,124 @@ void testCrossCellSelectionIsNotCollapsed() {
   require(session.markdownText().toString() == source, "cross-cell bold must not corrupt the table");
 }
 
+// The cross-cell highlight must cover BOTH endpoint cells (and everything between in row-major
+// order) — historically only the focus cell highlighted, using min/max of two cells' offsets.
+void testCrossCellSelectionCoversBothCells() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("| alpha | beta |\n| --- | --- |\n| gamma | delta |"), false);
+  view.setDocument(session.document());
+
+  MarkdownNode* table = blockAt(session, 0);
+  std::vector<MarkdownNode*> cells;  // row-major: [alpha, beta, gamma, delta]
+  for (const auto& row : table->children()) {
+    if (row->type() == BlockType::TableRow) {
+      for (const auto& cell : row->children()) {
+        cells.push_back(cell.get());
+      }
+    }
+  }
+  require(cells.size() == 4, "2x2 table should expose four cells");
+  const RenderTheme& theme = view.theme();
+  // Fetched AFTER each setSelection: selection changes rebuild block layouts, so a pointer taken
+  // earlier would be stale.
+  const auto layoutFor = [&view, table]() { return view.blockLayoutForNode(table->id()); };
+
+  const auto cellRect = [&](int row, int col) { return layoutFor()->tableCellRect(row, col); };
+
+  // Full span: anchor (2,0) start of "gamma" → focus (2,1) end of "delta" (body row).
+  // Row indices here include the header, so the body row is 1 in layout terms.
+  {
+    SelectionRange range;
+    range.anchor.blockId = table->id();
+    range.anchor.text.nodeId = cells.at(2)->id();
+    range.anchor.text.textOffset = 0;
+    range.focus.blockId = table->id();
+    range.focus.text.nodeId = cells.at(3)->id();
+    range.focus.text.textOffset = 5;
+    controller.selection().setSelection(range);
+
+    const QVector<QRectF> rects = layoutFor()->selectionRects(controller.selection().selection(), theme);
+    require(!rects.isEmpty(), "cross-cell selection should produce rects");
+    const auto covered = [&](const QRectF& cell) {
+      return std::any_of(rects.cbegin(), rects.cend(), [&cell](const QRectF& r) {
+        return r.intersects(cell.adjusted(1.0, 1.0, -1.0, -1.0));
+      });
+    };
+    require(covered(cellRect(1, 0)), "anchor cell (gamma) must be highlighted");
+    require(covered(cellRect(1, 1)), "focus cell (delta) must be highlighted");
+  }
+
+  // Whole-table span (header → body end): every cell highlights, header included.
+  {
+    SelectionRange range;
+    range.anchor.blockId = table->id();
+    range.anchor.text.nodeId = cells.at(0)->id();
+    range.anchor.text.textOffset = 0;
+    range.focus.blockId = table->id();
+    range.focus.text.nodeId = cells.at(3)->id();
+    range.focus.text.textOffset = 5;
+    controller.selection().setSelection(range);
+
+    const QVector<QRectF> rects = layoutFor()->selectionRects(controller.selection().selection(), theme);
+    const auto covered = [&](int row, int col) {
+      return std::any_of(rects.cbegin(), rects.cend(), [&](const QRectF& r) {
+        return r.intersects(cellRect(row, col).adjusted(1.0, 1.0, -1.0, -1.0));
+      });
+    };
+    require(covered(0, 0) && covered(0, 1) && covered(1, 0) && covered(1, 1),
+            "whole-table span must highlight all four cells");
+  }
+
+  // Partial span: anchor mid-"gamma" → focus mid-"delta" — endpoint cells highlight only their
+  // partial halves; nothing crashes on incomparable offsets.
+  {
+    SelectionRange range;
+    range.anchor.blockId = table->id();
+    range.anchor.text.nodeId = cells.at(2)->id();
+    range.anchor.text.textOffset = 3;  // inside "gamma"
+    range.focus.blockId = table->id();
+    range.focus.text.nodeId = cells.at(3)->id();
+    range.focus.text.textOffset = 2;   // inside "delta"
+    controller.selection().setSelection(range);
+
+    const QVector<QRectF> rects = layoutFor()->selectionRects(controller.selection().selection(), theme);
+    require(!rects.isEmpty(), "partial cross-cell selection should produce rects");
+    qreal anchorWidth = 0.0;
+    qreal focusWidth = 0.0;
+    for (const QRectF& r : rects) {
+      if (r.intersects(cellRect(1, 0).adjusted(1.0, 1.0, -1.0, -1.0))) anchorWidth += r.width();
+      if (r.intersects(cellRect(1, 1).adjusted(1.0, 1.0, -1.0, -1.0))) focusWidth += r.width();
+    }
+    require(anchorWidth > 2.0, "anchor cell should show a partial highlight (tail of 'gamma')");
+    require(focusWidth > 2.0, "focus cell should show a partial highlight (head of 'delta')");
+  }
+
+  // Backward selection mirrors: focus in the earlier cell.
+  {
+    SelectionRange range;
+    range.anchor.blockId = table->id();
+    range.anchor.text.nodeId = cells.at(3)->id();
+    range.anchor.text.textOffset = 5;
+    range.focus.blockId = table->id();
+    range.focus.text.nodeId = cells.at(2)->id();
+    range.focus.text.textOffset = 0;
+    controller.selection().setSelection(range);
+
+    const QVector<QRectF> rects = layoutFor()->selectionRects(controller.selection().selection(), theme);
+    const auto covered = [&](int row, int col) {
+      return std::any_of(rects.cbegin(), rects.cend(), [&](const QRectF& r) {
+        return r.intersects(cellRect(row, col).adjusted(1.0, 1.0, -1.0, -1.0));
+      });
+    };
+    require(covered(1, 0) && covered(1, 1), "backward cross-cell selection must cover both cells");
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1171,6 +1290,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testEditorViewBackwardNestedSelectionCoversBothBlocks);
   RUN_TEST(testListItemOwnSelectionRectsDoNotLeakToNested);
   RUN_TEST(testCrossCellSelectionIsNotCollapsed);
+  RUN_TEST(testCrossCellSelectionCoversBothCells);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

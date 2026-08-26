@@ -1721,29 +1721,92 @@ QVector<QRectF> BlockLayout::selectionRectsSelf(const SelectionRange& selection,
       }
       rects.push_back(rect_.adjusted(-1.0, -1.0, 1.0, 1.0));
       return rects;
-    case BlockType::Table:
+    case BlockType::Table: {
+      // Cross-cell selection: classify every cell in row-major order. The anchor cell selects
+      // from its endpoint's boundary to the cell edge (in document direction), the focus cell
+      // conversely, and cells strictly between the endpoints are fully selected. Cells outside
+      // the span stay untouched. (Historically only the FOCUS cell highlighted, using min/max of
+      // two cells' incomparable offsets.)
+      int anchorIndex = -1;
+      int focusIndex = -1;
+      int cellCount = 0;
       for (const TableRowLayout& row : tableRows_) {
         for (const TableCellLayout& cell : row.cells) {
-          if (cell.nodeId != selection.focus.text.nodeId) {
-            continue;
+          if (cell.nodeId == selection.anchor.text.nodeId) {
+            anchorIndex = cellCount;
           }
-          const qsizetype localAnchorSourceOffset =
-              selection.anchor.text.sourceOffset >= 0 && cell.contentSourceStart >= 0 ? selection.anchor.text.sourceOffset - cell.contentSourceStart : -1;
-          const qsizetype localFocusSourceOffset =
-              selection.focus.text.sourceOffset >= 0 && cell.contentSourceStart >= 0 ? selection.focus.text.sourceOffset - cell.contentSourceStart : -1;
-          const QVector<QRectF> inlineRects =
-              localAnchorSourceOffset >= 0 && localFocusSourceOffset >= 0
-                  ? cell.text.selectionRectsForSourceOffsets(localAnchorSourceOffset, localFocusSourceOffset)
-                  : cell.text.selectionRects(selection.startOffset(), selection.endOffset());
-          const QPointF origin = tableCellTextOrigin(cell, theme);
-          for (QRectF rect : inlineRects) {
-            rect.translate(origin);
-            rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
+          if (cell.nodeId == selection.focus.text.nodeId) {
+            focusIndex = cellCount;
           }
-          return rects;
+          ++cellCount;
         }
       }
+      if (anchorIndex < 0 || focusIndex < 0) {
+        return rects;  // endpoints not in this table — the multi-block whole-table path covers it
+      }
+      const bool anchorFirst = anchorIndex <= focusIndex;
+
+      int cellIndex = 0;
+      int rowIndex = 0;
+      for (const TableRowLayout& row : tableRows_) {
+        int colIndex = 0;
+        for (const TableCellLayout& cell : row.cells) {
+          const qsizetype cellLength = cell.text.plainText().size();
+          qsizetype startOff = -1;  // -1 = cell not covered
+          qsizetype endOff = -1;
+          const qsizetype anchorBoundary = qBound<qsizetype>(
+              0, selection.anchor.text.textOffset, cellLength);
+          const qsizetype focusBoundary =
+              qBound<qsizetype>(0, selection.focus.text.textOffset, cellLength);
+          if (anchorIndex == focusIndex && cellIndex == anchorIndex) {
+            startOff = qMin(anchorBoundary, focusBoundary);
+            endOff = qMax(anchorBoundary, focusBoundary);
+          } else if (cellIndex == anchorIndex) {
+            startOff = anchorFirst ? anchorBoundary : 0;
+            endOff = anchorFirst ? cellLength : anchorBoundary;
+          } else if (cellIndex == focusIndex) {
+            startOff = anchorFirst ? 0 : focusBoundary;
+            endOff = anchorFirst ? focusBoundary : cellLength;
+          } else if (cellIndex > qMin(anchorIndex, focusIndex) && cellIndex < qMax(anchorIndex, focusIndex)) {
+            startOff = 0;
+            endOff = cellLength;
+          }
+
+          if (startOff >= 0) {
+            QVector<QRectF> inlineRects;
+            if (endOff > startOff) {
+              if (anchorIndex == focusIndex && selection.anchor.text.sourceOffset >= 0 &&
+                  selection.focus.text.sourceOffset >= 0 && cell.contentSourceStart >= 0) {
+                // Same-cell endpoints keep the historical source-offset fidelity.
+                inlineRects = cell.text.selectionRectsForSourceOffsets(
+                    selection.anchor.text.sourceOffset - cell.contentSourceStart,
+                    selection.focus.text.sourceOffset - cell.contentSourceStart);
+              } else {
+                inlineRects = cell.text.selectionRects(startOff, endOff);
+              }
+            }
+            if (!inlineRects.isEmpty()) {
+              const QPointF origin = tableCellTextOrigin(cell, theme);
+              for (QRectF rect : inlineRects) {
+                rect.translate(origin);
+                rects.push_back(rect.adjusted(-1.0, 0, 1.0, 0));
+              }
+            } else if (endOff <= startOff) {
+              // A covered but empty extent (empty cell, or boundary at the cell edge): emit the
+              // cell band so the selection reads as continuous.
+              const QRectF band = tableCellRect(rowIndex, colIndex).adjusted(2.0, 2.0, -2.0, -2.0);
+              if (!band.isEmpty()) {
+                rects.push_back(band);
+              }
+            }
+          }
+          ++cellIndex;
+          ++colIndex;
+        }
+        ++rowIndex;
+      }
       return rects;
+    }
     case BlockType::LinkDefinition:
     case BlockType::FootnoteDefinition:
       return definitionSelectionRects(selection.startOffset(), selection.endOffset(), theme);
