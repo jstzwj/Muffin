@@ -214,7 +214,7 @@ Muffin 以原生 block tree 作为运行时模型。导入时，Markdown 被解�
 
 Muffin 已经支持几乎全部核心与扩展 Markdown 语法——标题、段落、列表、任务列表、引用、表格、代码块、行内格式、链接、reference-style 链接与图片、脚注、front matter、数学和 HTML——并已实现多格式导出与导入。仍在推进的工作包括：
 
-- [ ] 打磨渲染编辑面 — 选区、光标、IME 和局部刷新的边缘情况。
+- [x] 打磨渲染编辑面 — 选区（表格跨格高亮、主题化颜色、Typora 式连续填充、三击选段、拖拽阈值/扩展/自动滚动）、光标（闪烁、残影擦除修复）、IME（完整上下文查询、源码模式组合渲染、失焦重置）、局部刷新（BuiltStamp 旁路、光标脏矩形）。
 - [x] 加入原生 Mermaid 流程图、泳道、时序图、类图、状态图、ER、需求图、饼图、象限图、旅程图、雷达图、XY 图、时间线、报文图、看板、思维导图、Block、GitGraph、C4、TreeView、事件建模、石川图、维恩图、桑基图、树图、Cynefin、Wardley、架构图、甘特图和 Info 图。
 - [x] 加入 Mermaid 安全链接/提示、实时 Flowchart 边动画和 Sequence 参与者菜单。
 - [x] 加入确定性的原生 Mermaid SVG 导出，包括 HTML 内联输出和右键保存单图。
