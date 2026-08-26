@@ -397,6 +397,43 @@ QVector<const BlockLayout*> blocksBetween(const DocumentLayout& layout, NodeId f
   return result;
 }
 
+void forEachMultiBlockSelectionBlock(
+    const DocumentLayout& layout,
+    const SelectionRange& selection,
+    const std::function<void(const BlockLayout* block, qsizetype start, qsizetype end)>& visit) {
+  if (!visit || selection.isSingleBlock() || selection.isCollapsed()) {
+    return;
+  }
+  const bool anchorFirst = blockComesBefore(layout, selection.anchor.blockId, selection.focus.blockId);
+  const QVector<const BlockLayout*> selectedBlocks =
+      blocksBetween(layout, selection.anchor.blockId, selection.focus.blockId);
+  for (const BlockLayout* block : selectedBlocks) {
+    if (!block) {
+      continue;
+    }
+    qsizetype start = 0;
+    qsizetype end = selectableLength(block);
+    const bool isAnchor = block->nodeId() == selection.anchor.blockId;
+    const bool isFocus = block->nodeId() == selection.focus.blockId;
+    // Tables are atomic in a multi-block span: their whole rect highlights (selectableLength==1).
+    if (isAnchor) {
+      if (anchorFirst) {
+        start = block->type() == BlockType::Table ? 0 : selection.anchor.text.textOffset;
+      } else {
+        end = block->type() == BlockType::Table ? selectableLength(block) : selection.anchor.text.textOffset;
+      }
+    }
+    if (isFocus) {
+      if (anchorFirst) {
+        end = block->type() == BlockType::Table ? selectableLength(block) : selection.focus.text.textOffset;
+      } else {
+        start = block->type() == BlockType::Table ? 0 : selection.focus.text.textOffset;
+      }
+    }
+    visit(block, start, end);
+  }
+}
+
 bool blockComesBefore(const DocumentLayout& layout, NodeId first, NodeId second) {
   if (first == second) {
     return true;

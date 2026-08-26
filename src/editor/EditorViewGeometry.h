@@ -84,5 +84,17 @@ QVector<const BlockLayout*> blocksBetween(const DocumentLayout& layout, NodeId f
 // True if `first` precedes (or equals) `second` in document order.
 bool blockComesBefore(const DocumentLayout& layout, NodeId first, NodeId second);
 
+// Visit every block covered by a MULTI-block selection in document order, with the per-block
+// [start, end] selectable offsets paintSelection draws: fully-covered middle blocks get
+// [0, selectableLength], endpoint blocks clamp to their anchor/focus text offsets, and tables
+// collapse to their whole-block [0, 1]. Single source of truth for paintSelection and
+// selectionContainsViewportPoint (the right-click in-selection test) so the two can never drift.
+// Single-block selections are NOT handled here — paint uses the recursive selectionRects against
+// the endpoint block instead.
+void forEachMultiBlockSelectionBlock(
+    const DocumentLayout& layout,
+    const SelectionRange& selection,
+    const std::function<void(const BlockLayout* block, qsizetype start, qsizetype end)>& visit);
+
 }  // namespace editor_geometry
 }  // namespace muffin

@@ -837,50 +837,22 @@ bool EditorView::selectionContainsViewportPoint(const HitTestResult& hit, QPoint
     }
     rects = block->selectionRects(selection_, theme_);
   } else {
-    // Multi-block: BlockLayout::selectionRectsSelf bails on non-single-block
-    // selections (BlockLayout.cpp:934), so selectionRects() returns nothing and
-    // the naive check would always say "not in selection" — collapsing the
-    // selection on right-click. Compute the per-block selected [start, end]
-    // range exactly as paintSelection does, then use selectionRectsForOffsets.
-    const NodeId anchorBlock = selection_.anchor.blockId;
-    const NodeId focusBlock = selection_.focus.blockId;
-    const QVector<const BlockLayout*> selectedBlocks = blocksBetween(*layout_, anchorBlock, focusBlock);
-    bool inSelection = false;
-    for (const BlockLayout* sb : selectedBlocks) {
-      if (sb && sb->nodeId() == clickTop) {
-        inSelection = true;
-        break;
-      }
-    }
-    if (!inSelection) {
+    // Multi-block: the per-block [start, end] ranges are shared with paintSelection via
+    // editor_geometry::forEachMultiBlockSelectionBlock — the two paths cannot drift. The click
+    // must land in one of the covered blocks AND inside that block's selected rects.
+    bool found = false;
+    editor_geometry::forEachMultiBlockSelectionBlock(
+        *layout_, selection_,
+        [&](const BlockLayout* covered, qsizetype start, qsizetype end) {
+          if (found || covered == nullptr || covered->nodeId() != clickTop) {
+            return;
+          }
+          found = true;
+          rects = covered->selectionRectsForOffsets(start, end, theme_);
+        });
+    if (!found) {
       return false;
     }
-    const bool anchorFirst = blockComesBefore(*layout_, anchorBlock, focusBlock);
-    // The click is inside one of the selection's covered blocks. Compute its per-block selected
-    // [start, end] range exactly as paintSelection does. The default [0, selectableLength] covers a
-    // fully-selected middle block; the anchor/focus endpoints narrow it to their text offsets.
-    // (A table reached here would use selectableLength()==1 and select its whole rect via
-    // selectionRectsSelfForOffsets, but a table-cell right-click is classified as onObject in
-    // contextMenuEvent and never reaches this point.)
-    qsizetype start = 0;
-    qsizetype end = selectableLength(block);
-    const bool isAnchor = clickTop == anchorBlock;
-    const bool isFocus = clickTop == focusBlock;
-    if (isAnchor) {
-      if (anchorFirst) {
-        start = selection_.anchor.text.textOffset;
-      } else {
-        end = selection_.anchor.text.textOffset;
-      }
-    }
-    if (isFocus) {
-      if (anchorFirst) {
-        end = selection_.focus.text.textOffset;
-      } else {
-        start = selection_.focus.text.textOffset;
-      }
-    }
-    rects = block->selectionRectsForOffsets(start, end, theme_);
   }
 
   const QPointF documentPos(viewportPos.x(), viewportPos.y() + scrollY());

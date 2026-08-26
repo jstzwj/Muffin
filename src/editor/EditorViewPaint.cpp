@@ -307,36 +307,16 @@ void EditorView::paintSelection(QPainter& painter) const {
       }
     }
   } else {
-    const bool anchorFirst = blockComesBefore(*layout_, selection_.anchor.blockId, selection_.focus.blockId);
-    const QVector<const BlockLayout*> selectedBlocks = blocksBetween(*layout_, selection_.anchor.blockId, selection_.focus.blockId);
-    for (qsizetype i = 0; i < selectedBlocks.size(); ++i) {
-      const BlockLayout* block = selectedBlocks.at(i);
-      if (!block) {
-        continue;
-      }
-      const bool isAnchor = block->nodeId() == selection_.anchor.blockId;
-      const bool isFocus = block->nodeId() == selection_.focus.blockId;
-      qsizetype start = 0;
-      qsizetype end = selectableLength(block);
-      if (isAnchor) {
-        if (anchorFirst) {
-          start = block->type() == BlockType::Table ? 0 : selection_.anchor.text.textOffset;
-        } else {
-          end = block->type() == BlockType::Table ? selectableLength(block) : selection_.anchor.text.textOffset;
-        }
-      }
-      if (isFocus) {
-        if (anchorFirst) {
-          end = block->type() == BlockType::Table ? selectableLength(block) : selection_.focus.text.textOffset;
-        } else {
-          start = block->type() == BlockType::Table ? 0 : selection_.focus.text.textOffset;
-        }
-      }
-      // Self-only rects: blocksBetween already lists every block (containers and descendants) once,
-      // so we must NOT recurse here — recursing would repaint each nested item once per owning
-      // ancestor (a darker double-highlighted band) and smear this block's offsets onto its children.
-      paintSelectionRectsForBlock(painter, block, block->selectionRectsSelfForOffsets(start, end, theme_));
-    }
+    // The per-block [start, end] ranges live in editor_geometry (shared with the right-click
+    // in-selection test) — one source of truth. Self-only rects: the visitor lists every block
+    // (containers and descendants) once, so we must NOT recurse — recursing would repaint each
+    // nested item once per owning ancestor (a darker double-highlighted band) and smear this
+    // block's offsets onto its children.
+    editor_geometry::forEachMultiBlockSelectionBlock(
+        *layout_, selection_,
+        [this, &painter](const BlockLayout* block, qsizetype start, qsizetype end) {
+          paintSelectionRectsForBlock(painter, block, block->selectionRectsSelfForOffsets(start, end, theme_));
+        });
   }
   painter.restore();
 }
