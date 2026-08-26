@@ -993,27 +993,27 @@ C++와 Qt 6 Widgets으로 제작된 빠르고 가벼운 네이티브 Markdown �
         <translation type="vanished">C++ 및 Qt 6 Widgets로 만든 빠른 네이티브 Markdown 편집기입니다.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="101"/>
+        <location filename="../src/main.cpp" line="170"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>빠르고 가벼운 네이티브 Markdown 편집기로, C++ 및 Qt 6로 만들어졌습니다.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="111"/>
+        <location filename="../src/main.cpp" line="180"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="115"/>
+        <location filename="../src/main.cpp" line="184"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="150"/>
+        <location filename="../src/main.cpp" line="220"/>
         <source>Default Markdown editor</source>
         <translation>기본 Markdown 편집기</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="151"/>
+        <location filename="../src/main.cpp" line="221"/>
         <source>Muffin is registered as an editor for Markdown files.
 Make it your default editor now?</source>
         <translation>Muffin이 Markdown 파일용 편집기로 등록되어 있습니다.
@@ -1402,6 +1402,11 @@ Make it your default editor now?</source>
 %1</source>
         <translation>이미지를 이동할 수 없습니다:
 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1692"/>
+        <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
+        <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;플랫폼:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;작성자:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;라이선스:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;웹사이트:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1750"/>
@@ -2180,9 +2185,8 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>창 전환</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1692"/>
         <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;플랫폼:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;작성자:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;라이선스:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;웹사이트:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;플랫폼:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;작성자:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;라이선스:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;웹사이트:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1891"/>

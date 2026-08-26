@@ -993,27 +993,27 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation type="vanished">一款使用 C++ 和 Qt 6 Widgets 构建的快速原生 Markdown 编辑器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="101"/>
+        <location filename="../src/main.cpp" line="170"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>一款使用 C++ 和 Qt 6 构建的快速、轻量级原生 Markdown 编辑器。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="111"/>
+        <location filename="../src/main.cpp" line="180"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation>在侧边栏文件浏览器中打开 &lt;folder&gt;。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="115"/>
+        <location filename="../src/main.cpp" line="184"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation>要打开的 Markdown 或文本文件（或文件夹）。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="150"/>
+        <location filename="../src/main.cpp" line="220"/>
         <source>Default Markdown editor</source>
         <translation>默认 Markdown 编辑器</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="151"/>
+        <location filename="../src/main.cpp" line="221"/>
         <source>Muffin is registered as an editor for Markdown files.
 Make it your default editor now?</source>
         <translation>Muffin 已注册为 Markdown 文件的编辑器。
@@ -1402,6 +1402,11 @@ Make it your default editor now?</source>
 %1</source>
         <translation>无法移动图片：
 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1692"/>
+        <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
+        <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;平台:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;作者:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;许可证:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;网站:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1750"/>
@@ -2165,9 +2170,8 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
         <translation>切换窗口</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1692"/>
         <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;平台:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;作者:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;许可证:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;网站:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;平台:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;作者:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;许可证:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;网站:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1891"/>

@@ -989,27 +989,27 @@ Un editor Markdown nativo, rápido y ligero, construido con C++ y Qt 6 Widgets.<
         <translation type="vanished">Un editor Markdown nativo rápido creado con C++ y Qt 6 Widgets.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="101"/>
+        <location filename="../src/main.cpp" line="170"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>Un editor Markdown rápido, ligero y nativo, creado con C++ y Qt 6.</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="111"/>
+        <location filename="../src/main.cpp" line="180"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="115"/>
+        <location filename="../src/main.cpp" line="184"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="150"/>
+        <location filename="../src/main.cpp" line="220"/>
         <source>Default Markdown editor</source>
         <translation>Editor de Markdown predeterminado</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="151"/>
+        <location filename="../src/main.cpp" line="221"/>
         <source>Muffin is registered as an editor for Markdown files.
 Make it your default editor now?</source>
         <translation>Muffin está registrado como editor de archivos Markdown.
@@ -1398,6 +1398,11 @@ Make it your default editor now?</source>
 %1</source>
         <translation>No se pudieron mover las imágenes:
 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1692"/>
+        <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
+        <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Plataforma:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Autor:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;Licencia:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Sitio web:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1750"/>
@@ -2176,9 +2181,8 @@ Vista previa en vivo y edición de código fuente; exportación a PDF, HTML y mu
         <translation>Cambiar ventanas</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1692"/>
         <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Plataforma:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Autor:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;Licencia:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Sitio web:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Plataforma:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Autor:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;Licencia:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Sitio web:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1891"/>

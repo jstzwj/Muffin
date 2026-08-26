@@ -1692,7 +1692,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
              muffin::MainWindow::tr(
                  "<h3>Muffin %1</h3>"
                  "<p><b>Platform:</b> %2<br>"
-                 "<b>Author:</b> jstzwj<br>"
+                 "<b>Author:</b> 夏寒<br>"
                  "<b>License:</b> MIT License<br>"
                  "<b>Website:</b> https://github.com/jstzwj/Muffin</p>")
                  .arg(QApplication::applicationVersion(), QSysInfo::prettyProductName()));

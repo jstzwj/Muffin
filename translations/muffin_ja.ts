@@ -993,27 +993,27 @@ C++ と Qt 6 Widgets で構築された高速で軽量なネイティブ Markdow
         <translation type="vanished">C++ と Qt 6 Widgets で構築された高速なネイティブ Markdown エディターです。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="101"/>
+        <location filename="../src/main.cpp" line="170"/>
         <source>A fast, lightweight, native Markdown editor built with C++ and Qt 6.</source>
         <translation>C++ と Qt 6 で構築された、高速で軽量なネイティブ Markdown エディタ。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="111"/>
+        <location filename="../src/main.cpp" line="180"/>
         <source>Open &lt;folder&gt; in the sidebar file browser.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="115"/>
+        <location filename="../src/main.cpp" line="184"/>
         <source>Markdown or text file (or folder) to open.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="150"/>
+        <location filename="../src/main.cpp" line="220"/>
         <source>Default Markdown editor</source>
         <translation>既定の Markdown エディター</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="151"/>
+        <location filename="../src/main.cpp" line="221"/>
         <source>Muffin is registered as an editor for Markdown files.
 Make it your default editor now?</source>
         <translation>Muffin は Markdown ファイルのエディターとして登録されています。
@@ -1402,6 +1402,11 @@ Make it your default editor now?</source>
 %1</source>
         <translation>画像を移動できませんでした：
 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1692"/>
+        <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
+        <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;プラットフォーム:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;作者:&lt;/b&gt; 夏寒&lt;br&gt;&lt;b&gt;ライセンス:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Webサイト:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1750"/>
@@ -2180,9 +2185,8 @@ C++ と Qt 6 で構築された、高速で軽量なネイティブ Markdown エ
         <translation>ウィンドウを切り替え</translation>
     </message>
     <message>
-        <location filename="../src/app/CommandDeclarations.cpp" line="1692"/>
         <source>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;Platform:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;Author:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;License:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Website:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;プラットフォーム:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;作者:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;ライセンス:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Webサイト:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
+        <translation type="vanished">&lt;h3&gt;Muffin %1&lt;/h3&gt;&lt;p&gt;&lt;b&gt;プラットフォーム:&lt;/b&gt; %2&lt;br&gt;&lt;b&gt;作者:&lt;/b&gt; jstzwj&lt;br&gt;&lt;b&gt;ライセンス:&lt;/b&gt; MIT License&lt;br&gt;&lt;b&gt;Webサイト:&lt;/b&gt; https://github.com/jstzwj/Muffin&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1891"/>
