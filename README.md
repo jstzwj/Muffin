@@ -221,7 +221,7 @@ Muffin already covers nearly all of core and extended Markdown — headings, par
 - [x] Finish absolute SVG marker URL parity (flowchart/Swimlane/sequence serialize absolute marker references when the export context supplies a document URL; other 11.16 families keep fragment references, matching upstream).
 - [ ] Continue extending GFM coverage.
 - [ ] Harden performance — structured 1–100 MB parser phases scale approximately linearly; AST node bodies are now 96 B smaller each and the 100 MiB roundtrip uses about 834 MiB less resident memory. Next, reduce cmark's parse-tree peak and very-large-document layout cost.
-- [ ] Accessibility — keyboard navigation improvements and screen reader support.
+- [x] Accessibility — word/paragraph/page keyboard navigation, table Tab navigation, focus escape (Ctrl+Tab, F6 pane cycling), and QAccessible screen-reader adapters for both editor canvases.
 
 ## Contributing
 
