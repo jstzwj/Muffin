@@ -903,12 +903,12 @@ bool InputController::handleKeyPress(QKeyEvent* event) {
       return moveCursorHorizontal(1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Up:
       if (event->modifiers().testFlag(Qt::ControlModifier)) {
-        return false;  // paragraph navigation lands in a follow-up change
+        return moveBlockVertical(-1, event->modifiers().testFlag(Qt::ShiftModifier));
       }
       return moveCursorVertical(-1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_Down:
       if (event->modifiers().testFlag(Qt::ControlModifier)) {
-        return false;  // paragraph navigation lands in a follow-up change
+        return moveBlockVertical(1, event->modifiers().testFlag(Qt::ShiftModifier));
       }
       return moveCursorVertical(1, event->modifiers().testFlag(Qt::ShiftModifier));
     case Qt::Key_PageUp:
@@ -1789,6 +1789,32 @@ bool InputController::moveCursorVertical(int direction, bool extendSelection) {
   const qsizetype offset = direction > 0 ? 0 : selectableTextLength(*target);
   setCursorOrExtend(cursorForNode(*target, offset), extendSelection);
   verticalNavigationCursor_ = ctx_.selection->cursorPosition();
+  return true;
+}
+
+bool InputController::moveBlockVertical(int direction, bool extendSelection) {
+  clearVerticalNavigationX();
+  if (!ctx_.hasSession() || !ctx_.hasCursor() || direction == 0) {
+    return false;
+  }
+  // In a table cell, "paragraph" navigation degrades to row navigation (same as plain arrows)
+  // so Ctrl+Up/Down never jumps the caret unexpectedly out of the table.
+  if (tableController_ && tableController_->currentCell().isValid() && ctx_.view) {
+    const QRectF caret = ctx_.view->effectiveCursorRect();
+    if (moveTableCellVertical(direction, extendSelection, caret.isEmpty() ? 0.0 : caret.left())) {
+      return true;
+    }
+  }
+  MarkdownNode* node = ctx_.session->document().node(ctx_.selection->cursorPosition().blockId);
+  if (!node) {
+    return false;
+  }
+  MarkdownNode* target = neighborBlockInDocumentDirection(*node, direction);
+  if (!target) {
+    return true;  // document edge: stay put, but the key is still ours
+  }
+  // Word-like paragraph navigation: land at the target block's start in either direction.
+  setCursorOrExtend(cursorForNode(*target, 0), extendSelection);
   return true;
 }
 

@@ -188,6 +188,9 @@ private:
   bool deleteWordForward();
   bool deleteWordInDirection(int direction);
   bool moveCursorVertical(int direction, bool extendSelection);
+  // Ctrl+Up/Down: caret to the start of the previous/next block in document order (Word-like
+  // paragraph navigation). neighbourBlockInDocumentDirection climbs out of lists and quotes.
+  bool moveBlockVertical(int direction, bool extendSelection);
   bool moveTableCellHorizontal(int direction, bool extendSelection);
   bool moveTableCellVertical(int direction, bool extendSelection, qreal documentX);
   bool moveLiteralVertical(const BlockLayout& block, MarkdownNode& node, int direction, bool extendSelection);

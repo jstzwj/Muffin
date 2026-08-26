@@ -224,6 +224,49 @@ void testCtrlArrowsInTableCell() {
   require(after.contains(QStringLiteral("alpha beta")), "no text should change on movement");
 }
 
+// Ctrl+Up/Down move by block in document order (Word-like paragraph navigation).
+void testCtrlUpDownMoveByParagraph() {
+  DocumentSession session;
+  SelectionController selection;
+  UndoStack undoStack;
+  BrushQueue brushQueue;
+  InputController input;
+  EditorView view;
+  wireInput(input, session, selection, undoStack, brushQueue, &view);
+
+  session.setMarkdownText(QStringLiteral("first\n\n- item one\n- item two\n\nlast block"), false);
+  MarkdownNode* list = blockAt(session, 1);
+  setCursor(selection, listItemAt(session, 1, 1), 4);  // middle of "item two"
+
+  require(pressKey(input, &view, Qt::Key_Down, Qt::ControlModifier), "ctrl+down should be handled");
+  require(selection.cursorPosition().blockId == blockAt(session, 2)->id(),
+          "ctrl+down should reach the block after the list");
+  require(selection.cursorPosition().text.textOffset == 0, "ctrl+down should land at the block start");
+
+  require(pressKey(input, &view, Qt::Key_Up, Qt::ControlModifier), "ctrl+up should be handled");
+  // Climbing out of the list: the previous editable block in document order is the last item.
+  require(selection.cursorPosition().blockId == listItemAt(session, 1, 1)->id(),
+          "ctrl+up should climb into the list's last item");
+  require(selection.cursorPosition().text.textOffset == 0, "ctrl+up should land at the item start");
+
+  pressKey(input, &view, Qt::Key_Up, Qt::ControlModifier);
+  pressKey(input, &view, Qt::Key_Up, Qt::ControlModifier);
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(),
+          "repeated ctrl+up should reach the first block");
+
+  require(pressKey(input, &view, Qt::Key_Up, Qt::ControlModifier), "ctrl+up at the top is still ours");
+  require(selection.cursorPosition().blockId == blockAt(session, 0)->id(),
+          "ctrl+up at the document top should stay put");
+
+  // Shift variant extends the selection to the target block start.
+  setCursor(selection, listItemAt(session, 1, 0), 2);
+  require(pressKey(input, &view, Qt::Key_Up, Qt::ControlModifier | Qt::ShiftModifier),
+          "ctrl+shift+up should be handled");
+  require(!selection.selection().isCollapsed(), "ctrl+shift+up should extend the selection");
+  require(selection.selection().anchor.blockId == listItemAt(session, 1, 0)->id(),
+          "selection anchor should stay at the origin");
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -238,6 +281,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testCtrlHomeEndJump);
   RUN_TEST(testCtrlComboPassthrough);
   RUN_TEST(testCtrlArrowsInTableCell);
+  RUN_TEST(testCtrlUpDownMoveByParagraph);
 #undef RUN_TEST
   qInfo("All word-navigation tests passed.");
   return 0;
