@@ -25,13 +25,21 @@ inline void require(bool condition, const QString& message) {
   }
 }
 
+// The RUN line is flushed to BOTH standard streams before the test body runs:
+// buffered output is lost entirely when a test crashes the process (a Windows
+// segfault under ctest otherwise reports the failure with an empty log, which
+// cost a full blind CI round on the ARM64 runner).
 inline void runTest(const char* name, void (*test)()) {
   qInfo().noquote() << QStringLiteral("RUN %1").arg(QString::fromUtf8(name));
+  std::fflush(stdout);
+  std::fflush(stderr);
   test();
 }
 
 inline void runTest(const char* name, const std::function<void()>& test) {
   qInfo().noquote() << QStringLiteral("RUN %1").arg(QString::fromUtf8(name));
+  std::fflush(stdout);
+  std::fflush(stderr);
   test();
 }
 
