@@ -456,6 +456,10 @@ hb_blob_t* hbDWriteTable(hb_face_t*, hb_tag_t tag, void* data) {
 }
 }  // namespace
 
+// Defined below (after the layout code that shares it); forward-declared here
+// because the shaping path needs the Blink zero-width unit model too.
+bool letterSpacingReceiverUnit(char32_t unit);
+
 class SystemDWriteStyledFace {
 public:
   SystemDWriteStyledFace() {
@@ -592,9 +596,35 @@ public:
           hb_buffer_get_glyph_positions(buffer, &count);
       qint64 runAdvance = 0;  // in font units == 1/128 px
       for (unsigned index = 0; index < count; ++index) {
-        // A missing glyph (id 0) means the segment needs the fallback-run
-        // machinery (another family owns some cluster) — leave the width to
-        // the legacy path rather than measuring against the wrong face.
+        // Blink hides default-ignorable clusters outright
+        // (TreatAsZeroWidthSpace): a cluster whose EVERY UTF-16 unit fails
+        // the receiver test below contributes zero width and no ink in
+        // Chrome — no matter what the local font stack does with it. This
+        // matters in practice because HarfBuzz substitutes a wide glyph for
+        // a standalone FVS (dotted-circle class), and Arial carries no glyph
+        // for VS/ZWJ/bidi controls at all, so without this pass the width
+        // would be machine-dependent through DirectWrite's system fallback.
+        // Clusters with a visible base (A+VS16) keep their shaped width: the
+        // selector joins the base's cluster and the base passes the test.
+        const unsigned clusterHere = infos[index].cluster;
+        const unsigned clusterNext =
+            index + 1 < count ? infos[index + 1].cluster : length;
+        const unsigned clusterLow = std::min(clusterHere, clusterNext);
+        const unsigned clusterHigh = std::max(clusterHere, clusterNext);
+        bool allHidden = clusterHigh > clusterLow;
+        for (unsigned unit = clusterLow; unit < clusterHigh && unit < length;
+             ++unit) {
+          if (letterSpacingReceiverUnit(
+                  char32_t(characters.at(start + unit)))) {
+            allHidden = false;
+            break;
+          }
+        }
+        if (allHidden) continue;
+        // A missing glyph (id 0) on a VISIBLE cluster means the segment needs
+        // the fallback-run machinery (another family owns some cluster) —
+        // leave the width to the legacy path rather than measuring against
+        // the wrong face.
         if (infos[index].codepoint == 0) {
           ok = false;
           break;
