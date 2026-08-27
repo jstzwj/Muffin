@@ -7,7 +7,19 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <functional>
+
+#if defined(_WIN32)
+// WIN32_LEAN_AND_MEAN keeps windows.h from dragging in msxml.h, whose
+// CMARK_NODE_* #defines collide with cmark-gfm's enums in TUs that include
+// both this header and the parser.
+#define WIN32_LEAN_AND_MEAN
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 inline void require(bool condition, const char* message) {
   if (!condition) {
@@ -41,6 +53,44 @@ inline void runTest(const char* name, const std::function<void()>& test) {
   std::fflush(stderr);
   test();
 }
+
+#if defined(_WIN32)
+// Crash localizer for CI-only failures (the ARM64 SHARED-library teardown
+// segfault): prints the faulting module + offset and a small frame backtrace
+// straight to unbuffered stderr, where ctest reliably captures it. No symbol
+// resolution — module+offset is enough to say exe vs MuffinUi.dll vs a Qt DLL.
+inline void installMuffinTestCrashHandler() {
+  static auto handler = +[](EXCEPTION_POINTERS* info) -> LONG {
+    std::fprintf(stderr, "CRASH code=0x%08lX addr=%p\n",
+                 info->ExceptionRecord->ExceptionCode,
+                 info->ExceptionRecord->ExceptionAddress);
+    void* frames[12] = {};
+    const USHORT captured = CaptureStackBackTrace(0, 12, frames, nullptr);
+    for (USHORT index = 0; index < captured; ++index) {
+      HMODULE module = nullptr;
+      char moduleName[MAX_PATH] = "?";
+      if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                                 GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                             static_cast<LPCWSTR>(frames[index]), &module) &&
+          module) {
+        GetModuleFileNameA(module, moduleName, MAX_PATH);
+        const char* base = std::strrchr(moduleName, '\\');
+        base = base ? base + 1 : moduleName;
+        std::fprintf(stderr, "  frame %u: %s+0x%tx\n", index, base,
+                     reinterpret_cast<char*>(frames[index]) -
+                         reinterpret_cast<char*>(module));
+      } else {
+        std::fprintf(stderr, "  frame %u: %p (no module)\n", index, frames[index]);
+      }
+    }
+    std::fflush(stderr);
+    return EXCEPTION_CONTINUE_SEARCH;
+  };
+  SetUnhandledExceptionFilter(handler);
+}
+#else
+inline void installMuffinTestCrashHandler() {}
+#endif
 
 // RAII guard that sets a QSettings key for the duration of a scope and restores (or removes) the
 // prior value on destruction. QSettings is process-global, so tests that exercise a preference
