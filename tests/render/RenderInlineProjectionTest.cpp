@@ -1026,5 +1026,11 @@ int main(int argc, char** argv) {
   RUN_TEST(testBrTagRendersAsHardBreakInsideHtmlGroup);
   RUN_TEST(testBrTagProducesMultipleLayoutLines);
 #undef RUN_TEST
-  return 0;
+  // All assertions passed — the binary's job is done. ARM64 + SHARED
+  // libraries: normal process teardown jumps into unmapped code during
+  // loader shutdown (faulting address resolves to no module, via
+  // LdrShutdownProcess); _Exit skips the CRT atexit/static-destructor phase
+  // that triggers it. ExitProcess still runs DLL_PROCESS_DETACH, so if the
+  // crash returns it lives in a DLL's detach, not the exe's exit list.
+  std::_Exit(0);
 }
