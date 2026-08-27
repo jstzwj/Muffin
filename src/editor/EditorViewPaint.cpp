@@ -312,39 +312,10 @@ void EditorView::paintSelection(QPainter& painter) const {
     // (containers and descendants) once, so we must NOT recurse — recursing would repaint each
     // nested item once per owning ancestor (a darker double-highlighted band) and smear this
     // block's offsets onto its children.
-    //
-    // Contiguous fill (Typora-style): fully-covered lines extend to the block's right edge, empty
-    // covered paragraphs get a band, and the vertical gap between consecutive covered blocks is
-    // filled so a multi-block selection reads as one continuous band. The block holding the
-    // selection's focus in document direction keeps its boundary line as a glyph run.
-    const NodeId endBlockId = editor_geometry::blockComesBefore(*layout_, selection_.anchor.blockId, selection_.focus.blockId)
-                                  ? selection_.focus.blockId
-                                  : selection_.anchor.blockId;
-    QRectF covered;  // running union of covered bands, document space
     editor_geometry::forEachMultiBlockSelectionBlock(
         *layout_, selection_,
-        [this, &painter, &covered, endBlockId](const BlockLayout* block, qsizetype start, qsizetype end) {
-          const bool selectionEndsHere = block->nodeId() == endBlockId;
-          const QVector<QRectF> documentRects =
-              block->selectionRectsSelfForOffsets(start, end, theme_, /*contiguousFill=*/true, selectionEndsHere);
-          if (!documentRects.isEmpty()) {
-            QRectF band = documentRects.first();
-            for (const QRectF& r : documentRects) {
-              band = band.united(r);
-            }
-            if (!covered.isEmpty() && band.top() > covered.bottom() + 0.5) {
-              // Vertical gap between consecutive covered blocks (inter-block spacing): fill it so
-              // the band is continuous top to bottom.
-              const qreal left = qMin(covered.left(), band.left());
-              const qreal right = qMax(covered.right(), band.right());
-              QRectF gap(left, covered.bottom(), qMax<qreal>(1.0, right - left),
-                         qMax<qreal>(1.0, band.top() - covered.bottom()));
-              gap.translate(0, -scrollY());
-              painter.drawRoundedRect(gap, 2, 2);
-            }
-            covered = covered.isEmpty() ? band : covered.united(band);
-          }
-          paintSelectionRectsForBlock(painter, block, documentRects);
+        [this, &painter](const BlockLayout* block, qsizetype start, qsizetype end) {
+          paintSelectionRectsForBlock(painter, block, block->selectionRectsSelfForOffsets(start, end, theme_));
         });
   }
   painter.restore();

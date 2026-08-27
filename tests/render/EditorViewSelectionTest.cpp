@@ -1410,86 +1410,6 @@ void testFocusOutResetsPreedit() {
           "surrounding text must be the plain block again");
 }
 
-// Multi-block selection reads as ONE continuous band: fully-covered lines fill to the block's
-// right edge, an empty covered paragraph gets a line-height band, and the vertical gaps between
-// covered blocks are filled. The focus block's boundary line keeps its glyph run.
-void testMultiBlockSelectionFillsContinuously() {
-  DocumentSession session;
-  EditorView view;
-  EditorController controller;
-  controller.attach(&session, &view);
-  view.resize(700, 500);
-
-  session.setMarkdownText(QStringLiteral("first paragraph\n\n\n\nthird paragraph"), false);
-  view.setDocument(session.document());
-  MarkdownNode* first = blockAt(session, 0);
-  MarkdownNode* empty = blockAt(session, 1);
-  MarkdownNode* third = blockAt(session, 2);
-  require(first->type() == BlockType::Paragraph && empty->type() == BlockType::Paragraph &&
-              third->type() == BlockType::Paragraph,
-          "fixture should be three paragraphs (middle empty)");
-
-  SelectionRange selection;
-  selection.anchor.blockId = first->id();
-  selection.anchor.text.nodeId = first->id();
-  selection.anchor.text.textOffset = 0;
-  selection.focus.blockId = third->id();
-  selection.focus.text.nodeId = third->id();
-  selection.focus.text.textOffset = QStringLiteral("third paragraph").size();
-  controller.selection().setSelection(selection);
-
-  const RenderTheme& theme = view.theme();
-  // Middle (empty) block: with contiguous fill it must emit a visible band, not nothing.
-  const BlockLayout* emptyLayout = view.blockLayoutForNode(empty->id());
-  require(emptyLayout != nullptr, "empty paragraph layout should exist");
-  const QVector<QRectF> emptyRects = emptyLayout->selectionRectsSelfForOffsets(
-      0, 0, theme, /*contiguousFill=*/true, /*selectionEndsInBlock=*/false);
-  require(emptyRects.size() == 1 && emptyRects.first().height() > 4.0,
-          "a covered empty paragraph must emit a line-height band");
-
-  // First block: fully covered and the selection continues past it → its single line fills to the
-  // block's right edge.
-  const BlockLayout* firstLayout = view.blockLayoutForNode(first->id());
-  const QVector<QRectF> firstRects = firstLayout->selectionRectsSelfForOffsets(
-      0, QStringLiteral("first paragraph").size(), theme, /*contiguousFill=*/true, /*selectionEndsInBlock=*/false);
-  require(firstRects.size() == 1, "single-line block should emit one rect");
-  require(firstRects.first().right() >= firstLayout->rect().right() - 8.0,
-          "a fully-covered continuing line must fill to the block's right edge");
-
-  // Focus block: the selection ends here → its boundary line keeps the glyph run (no fill).
-  const BlockLayout* thirdLayout = view.blockLayoutForNode(third->id());
-  const QVector<QRectF> thirdRects = thirdLayout->selectionRectsSelfForOffsets(
-      0, QStringLiteral("third paragraph").size(), theme, /*contiguousFill=*/true, /*selectionEndsInBlock=*/true);
-  require(thirdRects.size() == 1, "endpoint block should emit one rect");
-  require(thirdRects.first().right() < thirdLayout->rect().right() - 20.0,
-          "the boundary line must keep its glyph run, not fill");
-
-  // End-to-end: the span from the first block through the empty paragraph (up to the focus
-  // block's top) paints as ONE continuous tinted column — sample the page center x and require
-  // every row to be tinted. (The focus block's own rows are excluded: its boundary line keeps the
-  // glyph run by design, so the column there is legitimately unselected right of the glyphs.)
-  const QImage image = captureView(view);
-  const QRectF firstRectViewport = view.nodeRect(first->id()).translated(0, -view.verticalScrollBar()->value());
-  const QRectF thirdRectViewport = view.nodeRect(third->id()).translated(0, -view.verticalScrollBar()->value());
-  const int x = static_cast<int>((firstRectViewport.left() + firstRectViewport.right()) / 2.0);
-  int tinted = 0;
-  int rows = 0;
-  for (int y = static_cast<int>(firstRectViewport.top()) + 2; y < static_cast<int>(thirdRectViewport.top()) - 2; ++y) {
-    if (y < 0 || y >= image.height() || x < 0 || x >= image.width()) {
-      continue;
-    }
-    ++rows;
-    const QColor pixel = image.pixelColor(x, y);
-    // The tinted selection blend differs measurably from the page background.
-    if (pixel != image.pixelColor(2, 2) || pixel.saturation() > 0 || pixel.lightness() < 250) {
-      ++tinted;
-    }
-  }
-  require(rows > 20, "the covered span should span a meaningful number of rows");
-  require(tinted == rows,
-          "every row through the empty paragraph must be tinted (continuous band incl. gaps)");
-}
-
 // A sloppy click that jitters a pixel stays a click (3px drag threshold), and dragging off a
 // double-click word selection extends word-to-drag-point (anchor flips to the word's far end).
 void testDragThresholdAndWordDragExtend() {
@@ -1699,7 +1619,6 @@ int main(int argc, char** argv) {
   RUN_TEST(testSelectionColorIsThemed);
   RUN_TEST(testInputMethodQueryAnswersImeContext);
   RUN_TEST(testFocusOutResetsPreedit);
-  RUN_TEST(testMultiBlockSelectionFillsContinuously);
   RUN_TEST(testDragThresholdAndWordDragExtend);
   RUN_TEST(testTripleClickSelectsBlock);
   RUN_TEST(testDragAutoScrollsPastViewportEdge);

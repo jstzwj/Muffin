@@ -129,11 +129,6 @@ public:
   qsizetype textOffsetAtVisualLineX(int lineIndex, qreal localX) const;
   qsizetype sourceOffsetAtVisualLineX(int lineIndex, qreal localX) const;
   QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset) const;
-  // contiguousFill variant: when fillRight >= 0, a visual line whose text the selection covers to
-  // the line's end is emitted as a full-width band [line.x(), fillRight] instead of its glyph run —
-  // except the boundary line when selectionEndsInBlock (the line holding the selection's focus in
-  // document direction keeps the Typora-style partial glyph run).
-  QVector<QRectF> selectionRects(qsizetype startOffset, qsizetype endOffset, qreal fillRight, bool selectionEndsInBlock) const;
   QVector<QRectF> selectionRectsForSourceOffsets(qsizetype startSourceOffset, qsizetype endSourceOffset) const;
 
   QString plainText() const;
@@ -257,8 +252,6 @@ private:
   qsizetype textLayoutDisplayOffsetForPoint(QPointF localPos) const;
   QRectF textLayoutCursorRectForDisplayOffset(qsizetype displayOffset) const;
   QVector<QRectF> selectionRectsForDisplayOffsets(qsizetype startDisplayOffset, qsizetype endDisplayOffset) const;
-  QVector<QRectF> selectionRectsForDisplayOffsets(
-      qsizetype startDisplayOffset, qsizetype endDisplayOffset, qreal fillRight, bool selectionEndsInBlock) const;
 
   std::unique_ptr<QTextLayout> textLayout_;
   QSizeF size_;
