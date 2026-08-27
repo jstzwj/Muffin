@@ -214,7 +214,7 @@ Third-party sources live in `third_party/` and are built as part of the CMake pr
 
 Muffin already covers nearly all of core and extended Markdown — headings, paragraphs, lists, task lists, blockquotes, tables, code blocks, inline formatting, links, reference-style links and images, footnotes, front matter, math, and HTML — plus multi-format export and import. Ongoing work includes:
 
-- [x] Polish the rendered editor surface — selection (cross-cell table spans, themed color, Typora-style contiguous fill, triple-click, drag threshold/extend/auto-scroll), caret (blink, ghost-erase fixes), IME (full context queries, source-mode composition rendering, focus reset), and partial refresh (BuiltStamp bypass, caret dirty rects).
+- [x] Polish the rendered editor surface — selection (cross-cell table spans, themed color, triple-click, drag threshold/extend/auto-scroll), caret (blink, ghost-erase fixes), IME (full context queries, source-mode composition rendering, focus reset), and partial refresh (BuiltStamp bypass, caret dirty rects).
 - [x] Add native Mermaid flowchart, Swimlane, sequence, class, state, ER, requirement, pie, quadrant, journey, radar, XY, timeline, packet, Kanban, mindmap, Block, GitGraph, C4, TreeView, Event Modeling, Ishikawa, Venn, Sankey, Treemap, Cynefin, Wardley, Architecture, Gantt, and Info diagrams.
 - [x] Add safe Mermaid links/tooltips, live Flowchart edge animation, and Sequence participant menus.
 - [x] Add deterministic native Mermaid SVG export, including inline HTML output and single-diagram context-menu saving.
