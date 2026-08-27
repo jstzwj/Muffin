@@ -1587,6 +1587,143 @@ void testDragAutoScrollsPastViewportEdge() {
   QApplication::sendEvent(view.viewport(), &release);
 }
 
+// Right-clicking INSIDE an existing selection must preserve it (so the context menu's Copy acts
+// on the selection); clicking outside moves the caret as usual.
+void testRightClickInsideSelectionKeepsSelection() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  view.resize(900, 500);
+
+  session.setMarkdownText(QStringLiteral("alpha beta gamma delta"), false);
+  view.setDocument(session.document());
+  MarkdownNode* block = blockAt(session, 0);
+
+  // Select "beta gamma" (visible offsets 6..16) the way the user does: a real drag.
+  const NodeId blockId = block->id();
+  const auto pointFor = [&](qsizetype offset) {
+    return view.nodeRect(blockId).topLeft() +
+           view.blockLayoutForNode(blockId)->inlineLayout()->cursorRectForSourceOffset(offset).center();
+  };
+  {
+    const QPointF pressPoint = pointFor(6);
+    QMouseEvent press(QEvent::MouseButtonPress, pressPoint, pressPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    const QPointF releasePoint = pointFor(16);
+    QMouseEvent move(QEvent::MouseMove, releasePoint, releasePoint, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &move);
+    QMouseEvent release(QEvent::MouseButtonRelease, releasePoint, releasePoint, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+  }
+  const SelectionRange dragged = controller.selection().selection();
+  require(!dragged.isCollapsed() && dragged.startOffset() == 6 && dragged.endOffset() == 16,
+          "the drag should select offsets 6..16");
+
+  // Right-click at the middle of the selected span.
+  const QPointF clickViewport = pointFor(11) - QPointF(0, view.verticalScrollBar()->value());
+  QContextMenuEvent menu(QContextMenuEvent::Mouse, clickViewport.toPoint(), clickViewport.toPoint());
+  {
+    // Diagnostics: replicate selectionContainsViewportPoint's single-block path step by step.
+    const HitTestResult hit = view.hitTest(clickViewport);
+    const BlockLayout* top = view.blockLayoutForNode(block->id());
+    const QVector<QRectF> rects = top->selectionRects(controller.selection().selection(), view.theme());
+    const QPointF documentPos(clickViewport.x(), clickViewport.y());
+    bool contains = false;
+    for (const QRectF& r : rects) {
+      if (r.contains(documentPos)) contains = true;
+    }
+  }
+  QApplication::sendEvent(view.viewport(), &menu);
+
+  const SelectionRange after = controller.selection().selection();
+  require(!after.isCollapsed(), "right-click inside the selection must not collapse it");
+  require(after.startOffset() == 6 && after.endOffset() == 16, "the selection must survive the right click");
+}
+
+// The same right-click preservation must hold for selections inside NESTED blocks (a list item's
+// focus.blockId is the item, while the click's top-level block is the List) and for MULTI-block
+// spans.
+void testRightClickInsideSelectionKeepsSelectionNestedAndMultiBlock() {
+  {
+    // List item selection.
+    DocumentSession session;
+    EditorView view;
+    EditorController controller;
+    controller.attach(&session, &view);
+    view.resize(900, 500);
+
+    session.setMarkdownText(QStringLiteral("- first item text\n- second item text"), false);
+    view.setDocument(session.document());
+    MarkdownNode* item = listItemAt(session, 0, 0);
+    require(item != nullptr, "list item should exist");
+
+    const auto pointFor = [&](qsizetype offset) {
+      const BlockLayout* l = view.blockLayoutForNode(item->id());
+      return l->inlineTextOrigin(view.theme()) +
+             l->inlineLayout()->cursorRectForSourceOffset(offset).center();
+    };
+    const QPointF pressPoint = pointFor(5);
+    {
+      const HitTestResult hit = view.hitTest(pressPoint);
+      const BlockLayout* l = view.blockLayoutForNode(item->id());
+    }
+    QMouseEvent press(QEvent::MouseButtonPress, pressPoint, pressPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    const QPointF releasePoint = pointFor(12);
+    QMouseEvent move(QEvent::MouseMove, releasePoint, releasePoint, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &move);
+    QMouseEvent release(QEvent::MouseButtonRelease, releasePoint, releasePoint, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+    require(!controller.selection().selection().isCollapsed(), "drag inside a list item should select");
+
+    const QPointF rightClick = pointFor(9);
+    {
+      const HitTestResult hit = view.hitTest(rightClick);
+    }
+    QContextMenuEvent menu(QContextMenuEvent::Mouse, rightClick.toPoint(), rightClick.toPoint());
+    QApplication::sendEvent(view.viewport(), &menu);
+    require(!controller.selection().selection().isCollapsed(),
+            "right-click inside a list-item selection must not collapse it");
+  }
+
+  {
+    // Multi-block selection: right-click in the middle block.
+    DocumentSession session;
+    EditorView view;
+    EditorController controller;
+    controller.attach(&session, &view);
+    view.resize(900, 500);
+
+    session.setMarkdownText(QStringLiteral("first para\n\nmiddle para\n\nlast para"), false);
+    view.setDocument(session.document());
+    MarkdownNode* first = blockAt(session, 0);
+    MarkdownNode* middle = blockAt(session, 1);
+    MarkdownNode* last = blockAt(session, 2);
+
+    const auto pointIn = [&](MarkdownNode* b, qsizetype offset) {
+      return view.nodeRect(b->id()).topLeft() +
+             view.blockLayoutForNode(b->id())->inlineLayout()->cursorRectForSourceOffset(offset).center();
+    };
+    const QPointF pressPoint = pointIn(first, 2);
+    QMouseEvent press(QEvent::MouseButtonPress, pressPoint, pressPoint, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &press);
+    const QPointF releasePoint = pointIn(last, 4);
+    QMouseEvent move(QEvent::MouseMove, releasePoint, releasePoint, Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &move);
+    QMouseEvent release(QEvent::MouseButtonRelease, releasePoint, releasePoint, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+    QApplication::sendEvent(view.viewport(), &release);
+    require(controller.selection().selection().anchor.blockId != controller.selection().selection().focus.blockId,
+            "the drag should span blocks");
+
+    const QPointF rightClick = pointIn(middle, 3);
+    QContextMenuEvent menu(QContextMenuEvent::Mouse, rightClick.toPoint(), rightClick.toPoint());
+    QApplication::sendEvent(view.viewport(), &menu);
+    require(!controller.selection().selection().isCollapsed(),
+            "right-click inside a multi-block selection must not collapse it");
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
@@ -1622,6 +1759,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testDragThresholdAndWordDragExtend);
   RUN_TEST(testTripleClickSelectsBlock);
   RUN_TEST(testDragAutoScrollsPastViewportEdge);
+  RUN_TEST(testRightClickInsideSelectionKeepsSelection);
+  RUN_TEST(testRightClickInsideSelectionKeepsSelectionNestedAndMultiBlock);
 #undef RUN_TEST
   QApplication::clipboard()->clear();
   return 0;

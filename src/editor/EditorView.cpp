@@ -1006,8 +1006,12 @@ bool EditorView::selectionContainsViewportPoint(const HitTestResult& hit, QPoint
 
   QVector<QRectF> rects;
   if (selection_.isSingleBlock()) {
-    if (clickTop != selection_.focus.blockId) {
-      return false;  // click is in a different block than the (single) selected one
+    // Compare TOP-LEVEL blocks: a selection inside a nested block (a list item, a quoted
+    // paragraph) has focus.blockId = the nested node, which never equals the click's top-level
+    // block — the historical direct comparison rejected every nested selection, so a right-click
+    // inside it collapsed the selection instead of opening Copy/Cut on it.
+    if (clickTop != layout_->topLevelBlockIdFor(selection_.focus.blockId)) {
+      return false;  // click is in a different top-level block than the (single) selected one
     }
     rects = block->selectionRects(selection_, theme_);
   } else {
