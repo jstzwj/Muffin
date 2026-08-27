@@ -6,11 +6,22 @@ project(Muffin
   LANGUAGES C CXX
 )
 
-# STATIC by default. The CI AddressSanitizer job overrides this to SHARED:
-# ~320 ASan-instrumented test executables each embedding a full static copy of
-# the instrumented MuffinCore/MuffinUi exhausts the runner's disk, while a
-# single instrumented .so per library keeps the whole suite within budget.
-set(MUFFIN_LIB_TYPE STATIC CACHE STRING "Link type of the MuffinCore/MuffinUi libraries")
+# SHARED by default. Muffin.exe, muffin-mmdc and ~320 test executables all link
+# MuffinCore/MuffinUi; under STATIC every one of them embeds a full copy of the
+# code (the shipped Muffin.exe + muffin-mmdc pair alone duplicated ~100 MB on
+# disk). One DLL/.so/.dylib pair shared by all binaries is also what keeps the
+# CI AddressSanitizer job's disk usage in check. STATIC remains selectable for
+# single-file experimentation, but the dist/installer layout assumes SHARED.
+set(MUFFIN_LIB_TYPE SHARED CACHE STRING "Link type of the MuffinCore/MuffinUi libraries")
+
+if(MUFFIN_LIB_TYPE STREQUAL "SHARED")
+  # The codebase has no visibility macros; Windows DLLs export nothing without
+  # this, and every consumer link would fail on unresolved symbols. (Linux and
+  # macOS export all symbols from shared libraries by default.) The generated
+  # .def carries functions only — data symbols such as the moc staticMetaObject
+  # come from the MUFFIN_*_EXPORT class attributes (see src/Export.h).
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 set(MUFFIN_VERSION_OVERRIDE "" CACHE STRING "Override Muffin application version")
 set(MUFFIN_EFFECTIVE_VERSION "${PROJECT_VERSION}")
@@ -444,9 +455,20 @@ else()
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-set(MUFFIN_CORE_SOURCES
+# Font/qrc embedding for the libraries goes through qt_add_resources (compiled
+# as a regular .cpp), NOT AUTORCC: under MUFFIN_LIB_TYPE=SHARED on MSVC, the
+# pre-link "Auto build dll exports" pass (CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS)
+# looks for rcc objects at their plain obj paths, but AUTORCC compiles them
+# under <target>_autogen/<token>/ with a .cpp.obj suffix, and the symbol scan
+# aborts with "Couldn't open file ... qrc_katex_fonts.obj" (MSB3073). Regular
+# sources are enumerated correctly. Registration (:/... paths) is identical.
+qt_add_resources(MUFFIN_CORE_QRC_SOURCES
   src/katex_fonts.qrc
   src/mermaid_fonts.qrc
+)
+
+set(MUFFIN_CORE_SOURCES
+  ${MUFFIN_CORE_QRC_SOURCES}
   src/math/MathBuilder.cpp
   src/math/MathBuilderArray.cpp
   src/math/MathBuilderSpacing.cpp
@@ -862,8 +884,10 @@ add_library(MuffinCore ${MUFFIN_LIB_TYPE}
 target_link_libraries(MuffinCore
   PUBLIC
     Qt6::Core
-    harfbuzz::harfbuzz
   PRIVATE
+    # Implementation detail of the library; no consumer includes hb.h directly.
+    # (Under STATIC this still propagates as a LINK_ONLY requirement.)
+    harfbuzz::harfbuzz
     Qt6::Concurrent
     Qt6::Gui
     Qt6::Svg
@@ -1001,15 +1025,23 @@ add_executable(Muffin
   src/app/PrefsAppearancePage.h
   src/app/PrefsGeneralPage.cpp
   src/app/PrefsGeneralPage.h
-  src/io/FileController.cpp
-  src/io/FileController.h
+)
+
+# Same AUTORCC-vs-export-all workaround as MuffinCore above (qrc as a regular
+# compiled source so the Windows symbol-scan pass finds the object file).
+qt_add_resources(MUFFIN_UI_QRC_SOURCES
+  src/tree_sitter_queries.qrc
 )
 
 set(MUFFIN_UI_SOURCES
   third_party/katex/src/fontMetricsData.js
   third_party/katex/src/svgGeometry.ts
   third_party/katex/src/symbols.ts
-  src/tree_sitter_queries.qrc
+  ${MUFFIN_UI_QRC_SOURCES}
+  src/io/FileController.cpp
+  src/io/FileController.h
+  src/unicode/WordBoundary.cpp
+  src/unicode/WordBoundary.h
   src/projection/InlineProjection.cpp
   src/projection/InlineProjection.h
   src/projection/SelectionSerializer.cpp
@@ -1230,11 +1262,17 @@ target_link_libraries(MuffinUi
     Qt6::Widgets
     Qt6::Network
     MuffinCore
+  PRIVATE
+    # Folded into MuffinUi alone. Under SHARED these are implementation
+    # details of the DLL; listing them PUBLIC would statically relink the
+    # whole tree-sitter grammar set + ICU into every consumer exe too
+    # (Muffin.exe ballooned to ~42 MB from tree-sitter-languages alone).
+    # Under STATIC, CMake turns PRIVATE deps of an archive into LINK_ONLY
+    # interface requirements, so final-exe linking keeps working.
     tree-sitter-runtime
     tree-sitter-languages
     ICU::uc
     ICU::i18n
-  PRIVATE
     WebP::webp
     avif_static
     # avif_static is a merged static archive (merge_static_libs) that only folds in libavif's
@@ -1265,6 +1303,40 @@ target_include_directories(MuffinUi
     ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+if(MUFFIN_LIB_TYPE STREQUAL "SHARED")
+  target_compile_definitions(MuffinCore PRIVATE MUFFIN_CORE_LIBRARY)
+  target_compile_definitions(MuffinUi PRIVATE MUFFIN_UI_LIBRARY)
+  # Every consumer (Muffin.exe, muffin-mmdc, the test executables) then sees
+  # Q_DECL_IMPORT through src/Export.h. Under STATIC nothing is defined and
+  # the export macros expand to nothing.
+  target_compile_definitions(MuffinCore PUBLIC MUFFIN_SHARED_LIBS)
+endif()
+
+# --- SHARED-library runtime wiring -------------------------------------------
+# Under SHARED, MuffinCore/MuffinUi travel as DLLs/.so/.dylib beside their
+# consumers. Windows and Linux need nothing extra here: the DLLs land next to
+# the exes in the build tree, and MuffinDeploy.cmake harvests them from
+# TARGET_RUNTIME_DLLS (Windows) or the resolved ELF dependency graph (Linux).
+# macOS moves the app into a bundle away from that flat layout, so the .app
+# carries its own copies and locates them via @executable_path.
+if(MUFFIN_LIB_TYPE STREQUAL "SHARED" AND APPLE)
+  # The dylibs reference each other (MuffinUi -> MuffinCore) through @rpath
+  # install names; @loader_path keeps them co-resolved wherever they sit
+  # together — the build dir, Muffin.app/Contents/MacOS, or a dist bundle.
+  set_target_properties(MuffinCore MuffinUi PROPERTIES BUILD_RPATH "@loader_path")
+  # The bundled app finds the dylibs copied in by the POST_BUILD steps below.
+  # ($<TARGET_FILE_DIR:Muffin> is Muffin.app/Contents/MacOS for a bundle exe.)
+  set_target_properties(Muffin PROPERTIES BUILD_RPATH "@executable_path")
+  foreach(_muffin_shared_lib MuffinCore MuffinUi)
+    add_custom_command(TARGET Muffin POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:${_muffin_shared_lib}>"
+        "$<TARGET_FILE_DIR:Muffin>/$<TARGET_FILE_NAME:${_muffin_shared_lib}>"
+      COMMENT "Bundling $<TARGET_FILE_NAME:${_muffin_shared_lib}> into Muffin.app"
+      VERBATIM)
+  endforeach()
+endif()
+
 target_sources(Muffin
   PRIVATE
     src/main.cpp
@@ -1275,12 +1347,13 @@ target_link_libraries(Muffin
     Qt6::Widgets
     Qt6::Svg
     Qt6::PrintSupport
-    ICU::uc
-    ICU::i18n
     MuffinCore
     MuffinUi
 )
 
+# The exe links no ICU: its only ICU users (word segmentation, charset
+# conversion) live inside MuffinUi (WordBoundary.cpp / FileController.cpp).
+# Linking ICU here again would statically relink ~30 MB of ICU into the exe.
 target_include_directories(Muffin
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Export.h"
+
 #include <QColor>
 #include <QString>
 #include <QWidget>
@@ -27,7 +29,7 @@ struct StatusBarStats {
 // trigger, cursor position, and a clickable spell-check language button that
 // opens a language menu). Clicking the stats trigger emits statsClicked() so the
 // owner can compute counts and call showStatsPopup().
-class StatusBarWidget : public QWidget {
+class MUFFIN_UI_EXPORT StatusBarWidget : public QWidget {
   Q_OBJECT
 
 public:

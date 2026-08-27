@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Export.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
 
@@ -11,7 +12,7 @@
 
 namespace muffin {
 
-class ThemeManager final : public QObject {
+class MUFFIN_UI_EXPORT ThemeManager final : public QObject {
   Q_OBJECT
 
 public:

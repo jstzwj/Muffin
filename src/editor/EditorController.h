@@ -14,6 +14,7 @@
 #include "editor/ClipboardController.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
+#include "Export.h"
 
 #include <QObject>
 
@@ -21,7 +22,7 @@ namespace muffin {
 
 class EditorView;
 
-class EditorController final : public QObject {
+class MUFFIN_UI_EXPORT EditorController final : public QObject {
   Q_OBJECT
 
 public:

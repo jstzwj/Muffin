@@ -1,6 +1,7 @@
 #pragma once
 
 #include "edit/EditTransaction.h"
+#include "Export.h"
 
 #include <QObject>
 #include <QElapsedTimer>
@@ -8,7 +9,7 @@
 
 namespace muffin {
 
-class UndoStack final : public QObject {
+class MUFFIN_UI_EXPORT UndoStack final : public QObject {
   Q_OBJECT
 
 public:

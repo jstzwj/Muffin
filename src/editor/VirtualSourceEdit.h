@@ -2,6 +2,7 @@
 
 #include "document/PieceTable.h"
 #include "editor/SourceLineHeightIndex.h"
+#include "Export.h"
 
 #include <QAbstractScrollArea>
 #include <QColor>
@@ -60,7 +61,7 @@ struct SourceEditorColors {
 
 // Source editor whose text remains in DocumentSession::PieceTable. It owns no
 // QTextDocument and creates QTextLayout objects only for visible logical lines.
-class VirtualSourceEdit final : public QAbstractScrollArea {
+class MUFFIN_UI_EXPORT VirtualSourceEdit final : public QAbstractScrollArea {
   Q_OBJECT
 
 public:

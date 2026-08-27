@@ -111,6 +111,18 @@
       <Component Id="Qt6Network" Guid="*">
         <File Id="Qt6NetworkDll" Source="$(var.DistDir)/Qt6Network.dll" />
       </Component>
+      <!-- Muffin's own code, shipped as shared libraries under the default
+           MUFFIN_LIB_TYPE=SHARED (Muffin.exe and muffin-mmdc.exe both link
+           them, sharing one copy of the ~100 MB of code instead of embedding
+           it twice). A STATIC build's dist has no such files and the msi
+           target would fail here. Note Qt6Concurrent.dll is NOT shipped:
+           nothing imports it (QFutureWatcher/QThreadPool live in QtCore). -->
+      <Component Id="MuffinCoreDll" Guid="*">
+        <File Id="MuffinCoreDllFile" Source="$(var.DistDir)/MuffinCore.dll" />
+      </Component>
+      <Component Id="MuffinUiDll" Guid="*">
+        <File Id="MuffinUiDllFile" Source="$(var.DistDir)/MuffinUi.dll" />
+      </Component>
       <Component Id="QtConf" Guid="c7d8e9f0-a1b2-4c3d-e4f5-a6b7c8d9e0f1">
         <File Id="QtConfFile" Source="$(var.DistDir)/qt.conf" />
       </Component>

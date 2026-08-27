@@ -2,6 +2,7 @@
 
 #include "document/TopLevelRangeChange.h"
 #include "editor/HtmlBlockHoverController.h"
+#include "Export.h"
 #include "mermaid/editor/MermaidRenderCache.h"
 #include "render/DocumentLayout.h"
 #include "theme/RenderTheme.h"
@@ -28,7 +29,7 @@ class CodeLanguageEditor;
 class MarkdownDocument;
 class TableToolbar;
 
-class EditorView final : public QAbstractScrollArea {
+class MUFFIN_UI_EXPORT EditorView final : public QAbstractScrollArea {
   Q_OBJECT
 
 public:

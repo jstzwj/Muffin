@@ -5,12 +5,13 @@
 #include "document/OutlineBuilder.h"
 #include "document/PieceTable.h"
 #include "document/SourcePositionIndex.h"
+#include "Export.h"
 
 #include <QObject>
 
 namespace muffin {
 
-class MarkdownDocument : public QObject {
+class MUFFIN_CORE_EXPORT MarkdownDocument : public QObject {
   Q_OBJECT
 
 public:

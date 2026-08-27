@@ -5,6 +5,7 @@
 #include "edit/EditTransaction.h"
 #include "editor/EditorContext.h"
 #include "editor/TextBlockCommandBuilder.h"
+#include "Export.h"
 
 #include <QObject>
 #include <QVector>
@@ -26,7 +27,7 @@ class MarkdownNode;
 class SelectionController;
 class TableController;
 
-class InputController final : public QObject {
+class MUFFIN_UI_EXPORT InputController final : public QObject {
   Q_OBJECT
 
 public:

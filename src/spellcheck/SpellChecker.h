@@ -8,6 +8,8 @@
 
 #include <memory>
 
+#include "Export.h"
+
 // nuspell wraps its public types in a versioned inline namespace (v5); forward-declare
 // with that same inline namespace so the name resolves to the real type, not a phantom.
 namespace nuspell {
@@ -22,7 +24,7 @@ namespace muffin {
 // configured locale from the bundled ":/dicts/" resources (falling back to en_US) and
 // answers fast spell/suggest queries used by both the virtual source editor
 // and the rendered-mode squiggle overlay. GUI-thread only.
-class SpellChecker : public QObject {
+class MUFFIN_UI_EXPORT SpellChecker : public QObject {
   Q_OBJECT
 
  public:

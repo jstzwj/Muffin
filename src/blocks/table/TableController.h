@@ -5,6 +5,7 @@
 #include "edit/EditTransaction.h"
 #include "editor/CursorPosition.h"
 #include "editor/EditorContext.h"
+#include "Export.h"
 
 #include <QObject>
 
@@ -26,7 +27,7 @@ struct TableLocation {
   }
 };
 
-class TableController final : public QObject {
+class MUFFIN_UI_EXPORT TableController final : public QObject {
   Q_OBJECT
 
 public:

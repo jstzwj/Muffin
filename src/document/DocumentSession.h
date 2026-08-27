@@ -2,6 +2,7 @@
 
 #include "document/MarkdownDocument.h"
 #include "document/TopLevelRangeChange.h"
+#include "Export.h"
 #include "io/TextFileFormat.h"
 #include "parser/CmarkGfmParser.h"
 
@@ -23,7 +24,7 @@ struct LocalEditNodeHint {
   BlockType type = BlockType::Unknown;
 };
 
-class DocumentSession final : public QObject {
+class MUFFIN_CORE_EXPORT DocumentSession final : public QObject {
   Q_OBJECT
 
 public:

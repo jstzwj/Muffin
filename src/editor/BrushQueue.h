@@ -2,13 +2,14 @@
 
 #include "document/NodeId.h"
 #include "document/TopLevelRangeChange.h"
+#include "Export.h"
 
 #include <QObject>
 #include <QVector>
 
 namespace muffin {
 
-class BrushQueue final : public QObject {
+class MUFFIN_UI_EXPORT BrushQueue final : public QObject {
   Q_OBJECT
 
 public:

@@ -94,6 +94,11 @@ int main(int argc, char** argv) {
   // lib name -> (artifact info, newest-source barrier)
   struct LibState {
     QFileInfo artifact;
+    qint64 effectiveMs = 0;  // max(.lib, .dll) — the .dll is the authoritative
+                             // link product under SHARED; MSVC incremental
+                             // links preserve the import lib's timestamp when
+                             // its export content is unchanged, so the .lib
+                             // alone can legitimately lag a fresh relink.
     qint64 sourceMs = 0;
     QString newestSource;
   };
@@ -116,6 +121,11 @@ int main(int argc, char** argv) {
       LibState state;
       state.artifact = QFileInfo(
           exeDir.absoluteFilePath(entry.target + QStringLiteral(".lib")));
+      state.effectiveMs = modifiedMs(state.artifact);
+      const QFileInfo dll(exeDir.absoluteFilePath(
+          entry.target + QStringLiteral(".dll")));
+      if (dll.exists())
+        state.effectiveMs = std::max(state.effectiveMs, modifiedMs(dll));
       state.sourceMs = sourceBarrierMs(entry.sources, sourceRoot,
                                        &state.newestSource);
       libs.insert(entry.target, state);
@@ -133,7 +143,7 @@ int main(int argc, char** argv) {
       return fail(QStringLiteral("%1.lib not found in %2")
                       .arg(it.key(), exeDir.absolutePath()));
     if (state.sourceMs > 0 &&
-        modifiedMs(state.artifact) < state.sourceMs)
+        state.effectiveMs < state.sourceMs)
       return fail(QStringLiteral(
                       "STALE %1.lib (%2 < %3 %4) — the build skipped "
                       "recompiling the library; every downstream ctest "

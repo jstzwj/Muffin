@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/NodeId.h"
+#include "Export.h"
 
 #include <QElapsedTimer>
 #include <QObject>
@@ -18,7 +19,7 @@ namespace muffin {
 //
 // MVP: one block at a time. When hover moves from A to B, A's glow snaps off (its
 // rect is repainted once without glow) while B fades in; unhover fades B out.
-class HoverAnimator : public QObject {
+class MUFFIN_UI_EXPORT HoverAnimator : public QObject {
   Q_OBJECT
 public:
   explicit HoverAnimator(QObject* parent = nullptr);

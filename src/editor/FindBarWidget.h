@@ -2,6 +2,8 @@
 
 #include <QWidget>
 
+#include "Export.h"
+
 class QLineEdit;
 class QPushButton;
 class QLabel;
@@ -9,7 +11,7 @@ class QCheckBox;
 
 namespace muffin {
 
-class FindBarWidget final : public QWidget {
+class MUFFIN_UI_EXPORT FindBarWidget final : public QWidget {
   Q_OBJECT
 
 public:

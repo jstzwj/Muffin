@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/NodeId.h"
+#include "Export.h"
 
 #include <QElapsedTimer>
 #include <QObject>
@@ -21,7 +22,7 @@ namespace muffin {
 // Focus is "sticky": the caret block stays at phase 1 until the caret moves to a
 // different top-level block, at which point the old block fades out and the new
 // one fades in.
-class FocusAnimator : public QObject {
+class MUFFIN_UI_EXPORT FocusAnimator : public QObject {
   Q_OBJECT
 public:
   explicit FocusAnimator(QObject* parent = nullptr);

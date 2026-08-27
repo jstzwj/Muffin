@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Export.h"
 #include "document/OutlineBuilder.h"
 #include "theme/ThemeDefinition.h"
 
@@ -36,7 +37,7 @@ struct InlineValidation {
   QString errorText;
 };
 
-class SidebarWidget final : public QWidget {
+class MUFFIN_UI_EXPORT SidebarWidget final : public QWidget {
   Q_OBJECT
 
 public:

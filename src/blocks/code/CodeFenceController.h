@@ -4,6 +4,7 @@
 #include "document/NodeId.h"
 #include "edit/EditTransaction.h"
 #include "editor/EditorContext.h"
+#include "Export.h"
 
 #include <QObject>
 
@@ -11,7 +12,7 @@
 
 namespace muffin {
 
-class CodeFenceController final : public QObject {
+class MUFFIN_UI_EXPORT CodeFenceController final : public QObject {
   Q_OBJECT
 
 public:

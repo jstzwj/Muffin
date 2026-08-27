@@ -29,6 +29,8 @@ ctest --preset conan-release --output-on-failure
 
 ## Package And Run
 
+MuffinCore/MuffinUi build as SHARED libraries by default (`MUFFIN_LIB_TYPE`); `Muffin.exe` and `muffin-mmdc.exe` are thin executables that need `MuffinCore.dll`/`MuffinUi.dll` beside them. The dist target and the MSI assume this layout. Run the packaged app (or any test exe) from its own directory — the DLLs sit next to it.
+
 `cmake --build --preset conan-release` updates `build\Release\Muffin.exe`, but it does not update `build\dist\Muffin.exe`.
 
 To refresh the distributable app bundle, run the dist target after building:

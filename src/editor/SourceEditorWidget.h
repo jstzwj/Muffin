@@ -3,6 +3,8 @@
 #include <QWidget>
 #include <QStringView>
 
+#include "Export.h"
+
 class QEvent;
 class QResizeEvent;
 
@@ -14,7 +16,7 @@ class VirtualSourceEdit;
 
 // Stable facade for source-mode commands. Positions are UTF-16 source offsets
 // into DocumentSession::PieceTable; no QTextDocument is exposed or retained.
-class SourceEditorWidget final : public QWidget {
+class MUFFIN_UI_EXPORT SourceEditorWidget final : public QWidget {
   Q_OBJECT
 
 public:

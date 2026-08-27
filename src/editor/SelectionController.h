@@ -1,12 +1,13 @@
 #pragma once
 
 #include "editor/CursorPosition.h"
+#include "Export.h"
 
 #include <QObject>
 
 namespace muffin {
 
-class SelectionController final : public QObject {
+class MUFFIN_UI_EXPORT SelectionController final : public QObject {
   Q_OBJECT
 
 public:

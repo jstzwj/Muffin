@@ -2,6 +2,7 @@
 
 #include "document/MarkdownTypes.h"
 #include "document/NodeId.h"
+#include "Export.h"
 
 #include <QObject>
 #include <QPair>
@@ -16,7 +17,7 @@ class BlockLayout;
 struct HitTestResult;
 class DocumentLayout;
 
-class TableToolbar : public QObject {
+class MUFFIN_UI_EXPORT TableToolbar : public QObject {
   Q_OBJECT
 
 public:

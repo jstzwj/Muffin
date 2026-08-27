@@ -13,6 +13,7 @@
 // transform. Old entries age out via LRU. Mirrors DocumentSession's async
 // QtConcurrent + QFutureWatcher pattern.
 
+#include "Export.h"
 #include "mermaid/classdiagram/ClassScenePainter.h"
 #include "mermaid/erdiagram/ErScenePainter.h"
 #include "mermaid/MermaidDiagnostic.h"
@@ -80,7 +81,7 @@ struct MermaidSvgRenderResult {
   QJsonObject errorDiagnostic;
 };
 
-class MermaidRenderCache : public QObject {
+class MUFFIN_CORE_EXPORT MermaidRenderCache : public QObject {
   Q_OBJECT
 public:
   explicit MermaidRenderCache(QObject* parent = nullptr, int capacity = 64);

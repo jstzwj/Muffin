@@ -2,6 +2,7 @@
 
 #include "projection/SelectionSerializer.h"
 #include "editor/EditorContextHolder.h"
+#include "Export.h"
 
 #include <QObject>
 
@@ -9,7 +10,7 @@ namespace muffin {
 
 class InputController;
 
-class ClipboardController final : public QObject, private EditorContextHolder {
+class MUFFIN_UI_EXPORT ClipboardController final : public QObject, private EditorContextHolder {
   Q_OBJECT
 
 public:

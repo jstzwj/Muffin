@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Export.h"
 #include "render/KeyframeSampler.h"
 #include "theme/ThemeDefinition.h"
 
@@ -27,7 +28,7 @@ class RenderTheme;
 // glow). Finite/hover/state-triggered animations need a start trigger and are
 // deferred. Animated properties: opacity, box-shadow glow, transform: scale()
 // (see KeyframeSampler).
-class KeyframeAnimator : public QObject {
+class MUFFIN_UI_EXPORT KeyframeAnimator : public QObject {
   Q_OBJECT
 public:
   explicit KeyframeAnimator(QObject* parent = nullptr);

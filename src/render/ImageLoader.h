@@ -9,11 +9,13 @@
 
 #include <memory>
 
+#include "Export.h"
+
 namespace muffin {
 
 /// Async image loader with in-memory cache. Loads remote (HTTP/HTTPS) images
 /// in the background and notifies via the imageReady() signal.
-class ImageLoader : public QObject {
+class MUFFIN_UI_EXPORT ImageLoader : public QObject {
   Q_OBJECT
 
 public:

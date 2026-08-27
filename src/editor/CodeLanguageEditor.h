@@ -1,6 +1,7 @@
 #pragma once
 
 #include "document/NodeId.h"
+#include "Export.h"
 
 #include <QObject>
 #include <QStringList>
@@ -17,7 +18,7 @@ class DocumentLayout;
 struct HitTestResult;
 class MarkdownDocument;
 
-class CodeLanguageEditor : public QObject {
+class MUFFIN_UI_EXPORT CodeLanguageEditor : public QObject {
   Q_OBJECT
 
 public:

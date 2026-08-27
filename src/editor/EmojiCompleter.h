@@ -1,6 +1,7 @@
 #pragma once
 
 #include "editor/EmojiProvider.h"
+#include "Export.h"
 
 #include <QObject>
 #include <QPoint>
@@ -20,7 +21,7 @@ namespace muffin {
 // The controller (InputController) owns the trigger state — the source offset of the leading ':' —
 // so this widget is purely presentational: it shows filtered candidates and emits `accepted` with
 // the chosen glyph when the user picks one.
-class EmojiCompleter : public QObject {
+class MUFFIN_UI_EXPORT EmojiCompleter : public QObject {
   Q_OBJECT
 
 public:

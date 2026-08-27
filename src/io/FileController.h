@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Export.h"
+
 #include <QObject>
 #include <QString>
 
@@ -15,7 +17,7 @@ struct TextFileFormat;
 // clobber it); callers may retry once the parse finishes.
 enum class SaveOutcome { Saved, SkippedBusy, Failed };
 
-class FileController final : public QObject {
+class MUFFIN_UI_EXPORT FileController final : public QObject {
   Q_OBJECT
 
 public:

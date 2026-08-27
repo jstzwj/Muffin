@@ -5,6 +5,7 @@
 #include "document/SourceRangeUtil.h"
 #include "edit/EditTransaction.h"
 #include "editor/EditorContextHolder.h"
+#include "Export.h"
 
 #include <QObject>
 
@@ -12,7 +13,7 @@ namespace muffin {
 
 class MarkdownNode;
 
-class ParagraphController final : public QObject, private EditorContextHolder {
+class MUFFIN_UI_EXPORT ParagraphController final : public QObject, private EditorContextHolder {
   Q_OBJECT
 
 public:

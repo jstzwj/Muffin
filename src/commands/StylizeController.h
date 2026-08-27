@@ -7,6 +7,7 @@
 #include "edit/EditTransaction.h"
 #include "editor/BlockEditContext.h"
 #include "editor/EditorContextHolder.h"
+#include "Export.h"
 
 #include <QObject>
 
@@ -14,7 +15,7 @@ namespace muffin {
 
 class MarkdownNode;
 
-class StylizeController final : public QObject, private EditorContextHolder {
+class MUFFIN_UI_EXPORT StylizeController final : public QObject, private EditorContextHolder {
   Q_OBJECT
 
 public:
