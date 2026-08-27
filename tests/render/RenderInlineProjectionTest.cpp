@@ -1035,5 +1035,9 @@ int main(int argc, char** argv) {
   // DLL_PROCESS_DETACH chain. TerminateProcess skips ALL detach — the test
   // has nothing left to verify at that point. Production impact unknown but
   // confined to process exit; tracked as a follow-up.
+#if defined(_WIN32)
   TerminateProcess(GetCurrentProcess(), 0);
+#else
+  std::_Exit(0);
+#endif
 }
