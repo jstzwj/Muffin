@@ -932,7 +932,13 @@ endforeach()
 string(CONCAT MUFFIN_HELP_QRC_CONTENT "${MUFFIN_HELP_QRC_CONTENT}"
   "  </qresource>\n"
   "</RCC>\n")
-file(WRITE "${MUFFIN_HELP_QRC}" "${MUFFIN_HELP_QRC_CONTENT}")
+set(MUFFIN_HELP_QRC_EXISTING "")
+if(EXISTS "${MUFFIN_HELP_QRC}")
+  file(READ "${MUFFIN_HELP_QRC}" MUFFIN_HELP_QRC_EXISTING)
+endif()
+if(NOT MUFFIN_HELP_QRC_EXISTING STREQUAL "${MUFFIN_HELP_QRC_CONTENT}")
+  file(WRITE "${MUFFIN_HELP_QRC}" "${MUFFIN_HELP_QRC_CONTENT}")
+endif()
 
 # Spell-check dictionaries: hunspell .aff/.dic per locale, embedded as zlib-compressed
 # resources (compress="9" shrinks the text dicts ~3-4x; Qt decompresses transparently on
@@ -956,19 +962,37 @@ endforeach()
 string(CONCAT MUFFIN_DICTS_QRC_CONTENT "${MUFFIN_DICTS_QRC_CONTENT}"
   "  </qresource>\n"
   "</RCC>\n")
-file(WRITE "${MUFFIN_DICTS_QRC}" "${MUFFIN_DICTS_QRC_CONTENT}")
+# Write only on content change: an unconditional file(WRITE) bumps the mtime on
+# every configure, and the build-freshness manifest treats these generated
+# .qrc files as source barriers for every binary that embeds them (the app and
+# the tests EXTRA_SOURCESing them), so a plain re-configure would turn all of
+# them spuriously "stale". Same guard for emoji.qrc and help.qrc below.
+set(MUFFIN_DICTS_QRC_EXISTING "")
+if(EXISTS "${MUFFIN_DICTS_QRC}")
+  file(READ "${MUFFIN_DICTS_QRC}" MUFFIN_DICTS_QRC_EXISTING)
+endif()
+if(NOT MUFFIN_DICTS_QRC_EXISTING STREQUAL "${MUFFIN_DICTS_QRC_CONTENT}")
+  file(WRITE "${MUFFIN_DICTS_QRC}" "${MUFFIN_DICTS_QRC_CONTENT}")
+endif()
 
 # Emoji autocomplete dataset: a single shortcode->glyph table (one "shortcode<TAB>glyph" per line)
 # embedded as a zlib-compressed resource so the BundledEmojiProvider can load it without disk I/O.
 set(MUFFIN_EMOJI_QRC "${CMAKE_CURRENT_BINARY_DIR}/emoji.qrc")
 file(RELATIVE_PATH MUFFIN_EMOJI_QRC_REL "${CMAKE_CURRENT_BINARY_DIR}"
   "${CMAKE_CURRENT_SOURCE_DIR}/resources/emoji/emoji.txt")
-file(WRITE "${MUFFIN_EMOJI_QRC}"
+string(CONCAT MUFFIN_EMOJI_QRC_CONTENT
   "<RCC>\n"
   "  <qresource prefix=\"/emoji\">\n"
   "    <file alias=\"emoji.txt\" compress=\"9\">${MUFFIN_EMOJI_QRC_REL}</file>\n"
   "  </qresource>\n"
   "</RCC>\n")
+set(MUFFIN_EMOJI_QRC_EXISTING "")
+if(EXISTS "${MUFFIN_EMOJI_QRC}")
+  file(READ "${MUFFIN_EMOJI_QRC}" MUFFIN_EMOJI_QRC_EXISTING)
+endif()
+if(NOT MUFFIN_EMOJI_QRC_EXISTING STREQUAL "${MUFFIN_EMOJI_QRC_CONTENT}")
+  file(WRITE "${MUFFIN_EMOJI_QRC}" "${MUFFIN_EMOJI_QRC_CONTENT}")
+endif()
 
 add_executable(Muffin
   src/translations.qrc

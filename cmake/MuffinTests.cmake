@@ -351,8 +351,17 @@ muffin_add_test(NAME MuffinBlockCodeFrontMatterTest SOURCE tests/blocks/BlockCod
 # --- app ---
 muffin_add_test(NAME MuffinTranslationResourceTest SOURCE tests/app/TranslationResourceTest.cpp LINK Qt6::Widgets EXTRA_SOURCES src/translations.qrc RESOURCE_LOCK)
 
-# --- spell check (needs the bundled dictionaries, hence dicts.qrc as an extra source) ---
-muffin_add_test(NAME MuffinSpellCheckerTest SOURCE tests/spellcheck/SpellCheckerTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_DICTS_QRC} RESOURCE_LOCK)
+# Spell check: the test binary embeds the zlib-compressed dictionaries, and
+# that high-entropy blob trips Huorong's HEUR:Ransom STATIC heuristic on local
+# Windows dev machines (the AV quarantines the exe seconds after link — it also
+# flagged a host binary we tried merging the assertions into, so it is the
+# embedded data, not the binary). Gate on CI=true (set by GitHub Actions on
+# every runner): CI keeps the coverage, local Windows ctest runs stop dying on
+# a "Not Run". To run it locally, whitelist the build dir (or set CI=1 in the
+# configure environment and rebuild).
+if(NOT WIN32 OR DEFINED ENV{CI})
+  muffin_add_test(NAME MuffinSpellCheckerTest SOURCE tests/spellcheck/SpellCheckerTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_DICTS_QRC} RESOURCE_LOCK)
+endif()
 
 # Close the build-freshness manifest: the two first-party libraries and the
 # app contribute their exact compiled source lists (relative paths resolve
