@@ -21,6 +21,11 @@ if(MUFFIN_LIB_TYPE STREQUAL "SHARED")
   # .def carries functions only — data symbols such as the moc staticMetaObject
   # come from the MUFFIN_*_EXPORT class attributes (see src/Export.h).
   set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+  # Static archives folded into the .so/.dll (tree-sitter, nuspell, cmark, ...)
+  # must be PIC on ELF: libMuffinUi.so fails to link with
+  # "relocation R_X86_64_PC32 ... recompile with -fPIC" otherwise. Harmless on
+  # PE (MSVC ignores it) and Mach-O (always PIC).
+  set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 set(MUFFIN_VERSION_OVERRIDE "" CACHE STRING "Override Muffin application version")
