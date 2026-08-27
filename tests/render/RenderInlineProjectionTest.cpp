@@ -994,7 +994,15 @@ int main(int argc, char** argv) {
   // handler prints the faulting module + frame backtrace before the process
   // dies (all 29 RUN lines print first — the crash is after main returns).
   installMuffinTestCrashHandler();
-  QApplication app(argc, argv);
+  // Leaked ON PURPOSE: destroying QApplication unloads the offscreen platform
+  // plugin while its process-wide TLS/callback registrations may linger; on
+  // ARM64 the later shutdown dispatch then jumps into the unmapped plugin
+  // (the crash under investigation). Leaving qApp alive keeps the plugin
+  // loaded through process exit. Combined with the _Exit below this also
+  // isolates the trigger: if this round passes, the crash lives in the
+  // QApplication teardown path, not in a first-party DLL's detach.
+  QApplication* app = new QApplication(argc, argv);
+  Q_UNUSED(app);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testEmptyTableCellRendersEmpty);
   RUN_TEST(testTableCellEscapedPipeRendersDecoded);
