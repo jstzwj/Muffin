@@ -1,0 +1,119 @@
+name: ARM64 teardown debug
+
+# Diagnostics-only workflow for the ARM64 x SHARED-library teardown crash in
+# MuffinRenderInlineProjectionTest (deterministic, after all assertions pass,
+# inside DLL_PROCESS_DETACH via LdrShutdownProcess; faulting address in no
+# loaded module). Builds the reproducer with PDBs, enables WER LocalDumps,
+# runs the REAL teardown via MUFFIN_RUN_TEARDOWN=1, and analyzes the dump
+# with cdb — the full dump carries the unloaded-module list, which should
+# name the DLL whose code the dying process jumped into. The dump is also
+# uploaded for cross-architecture local analysis (x64 cdb opens ARM64 dumps).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  crash-dump:
+    name: Capture and analyze teardown crash (windows-11-arm)
+    runs-on: windows-11-arm
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python tools
+        run: python -m pip install --upgrade conan PySide6==6.10.2
+
+      - name: Restore Conan packages
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.conan2/p
+          key: conan-pkg-${{ runner.os }}-armv8-${{ hashFiles('conanfile.txt') }}
+          restore-keys: |
+            conan-pkg-${{ runner.os }}-armv8-
+
+      - name: Detect Conan profile
+        run: conan profile detect --force
+
+      - name: Install dependencies
+        run: conan install . -s build_type=Release -s compiler.cppstd=20 -s arch=armv8 --build=missing
+
+      - name: Configure (with PDBs)
+        run: cmake --preset conan-default -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT=ProgramDatabase
+
+      - name: Build the reproducer test
+        run: cmake --build --preset conan-release --target MuffinRenderInlineProjectionTest
+
+      - name: Enable WER LocalDumps for the test binary
+        run: |
+          $dumps = Join-Path $env:RUNNER_TEMP "dumps"
+          New-Item -ItemType Directory -Force -Path $dumps | Out-Null
+          Write-Host "dump folder: $dumps"
+          reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\MuffinRenderInlineProjectionTest.exe" /v DumpFolder /t REG_EXPAND_SZ /d "$dumps" /f
+          reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\MuffinRenderInlineProjectionTest.exe" /v DumpType /t REG_DWORD /d 2 /f
+          reg add "HKLM\SOFTWARE\Microsoft\Windows\Windows Error Reporting\LocalDumps\MuffinRenderInlineProjectionTest.exe" /v DumpCount /t REG_DWORD /d 3 /f
+
+      - name: Run the test through the real teardown
+        env:
+          MUFFIN_RUN_TEARDOWN: '1'
+        # The crash IS the payload here; ctest reports it as failed.
+        continue-on-error: true
+        run: ctest --preset conan-release -R "^MuffinRenderInlineProjectionTest$" --output-on-failure
+
+      - name: Collect dumps
+        run: |
+          $dumps = Join-Path $env:RUNNER_TEMP "dumps"
+          if (Test-Path $dumps) {
+            Get-ChildItem $dumps | ForEach-Object { Write-Host ("{0}  {1} bytes" -f $_.Name, $_.Length) }
+          } else {
+            Write-Host "!! no dump folder was created"
+          }
+
+      - name: Locate cdb
+        id: cdb
+        run: |
+          $roots = @(
+            "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers",
+            "$env:ProgramFiles\Windows Kits\10\Debuggers"
+          )
+          $all = @()
+          foreach ($root in $roots) {
+            if (Test-Path $root) {
+              $all += Get-ChildItem $root -Recurse -Filter cdb.exe -ErrorAction SilentlyContinue
+            }
+          }
+          $cdb = $all | Where-Object { $_.FullName -match '\\arm64(\\|$)' } | Select-Object -First 1
+          if (-not $cdb) { $cdb = $all | Select-Object -First 1 }
+          if ($cdb) {
+            Write-Host "cdb: $($cdb.FullName)"
+            "path=$($cdb.FullName)" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "!! no cdb.exe found on the image; dump uploaded for local analysis"
+          }
+
+      - name: Analyze dump with cdb
+        if: steps.cdb.outputs.path != ''
+        run: |
+          $dumps = Join-Path $env:RUNNER_TEMP "dumps"
+          $dump = Get-ChildItem $dumps -Filter *.dmp | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $dump) { Write-Host "!! no dump to analyze"; exit 0 }
+          $env:_NT_SYMBOL_PATH = "srv*C:\symbols*https://msdl.microsoft.com/download/symbols"
+          $log = Join-Path $env:RUNNER_TEMP "analysis.txt"
+          & ${{ steps.cdb.outputs.path }} -z $dump.FullName -logo $log -c "!analyze -v; q"
+          Write-Host "=== tail of analysis ==="
+          Get-Content $log | Select-Object -Last 250
+
+      - name: Upload dump and analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm64-teardown-crash
+          path: |
+            ${{ runner.temp }}/dumps/*.dmp
+            ${{ runner.temp }}/analysis.txt
+          if-no-files-found: warn
+          retention-days: 7

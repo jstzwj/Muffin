@@ -1036,7 +1036,13 @@ int main(int argc, char** argv) {
   // has nothing left to verify at that point. Production impact unknown but
   // confined to process exit; tracked as a follow-up.
 #if defined(_WIN32)
-  TerminateProcess(GetCurrentProcess(), 0);
+  // MUFFIN_RUN_TEARDOWN=1 lets a diagnostics build fall through into the
+  // crashing teardown (WER LocalDumps then captures a full minidump on the
+  // ARM64 runner). Default stays the workaround.
+  if (qEnvironmentVariableIsEmpty("MUFFIN_RUN_TEARDOWN")) {
+    TerminateProcess(GetCurrentProcess(), 0);
+  }
+  return 0;
 #else
   std::_Exit(0);
 #endif
