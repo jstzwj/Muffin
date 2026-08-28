@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.4] - 2026-08-28
+
+### Added
+- **Screen reader accessibility** - Both editing surfaces are exposed to accessibility clients through QAccessible adapters (text, caret, and selection with UTF-16 offsets, plus update events for caret/selection/text changes), and the main UI regions carry labels. Ctrl+Tab/Ctrl+Shift+Tab escape the editor and F6 cycles panes, so the app is navigable without a mouse
+- **Richer caret navigation in rendered mode** - Word-level motion and deletion (Ctrl+Left/Right, Ctrl+Backspace/Delete), paragraph jumps (Ctrl+Up/Down), PageUp/PageDown, and Tab/Backtab moving between table cells
+
+### Fixed
+- **Stale rendering after programmatic refreshes** - Toggling spell check, smart punctuation, or code-fence line wrapping no longer leaves stale pixels: the visible-block refresh now force-rebuilds instead of trusting per-block stamps
+- **Caret ghosting after structural undo/redo** - Refreshing a top-level range now dirties the caret rects, and the recorded caret rect is the one actually drawn (post-clamp), so hit tests and IME anchors stay aligned
+- **Cross-cell table selections** - Selecting across table cells highlights both endpoint cells correctly and can no longer be misread as collapsed; mixed-cell ranges are guarded everywhere the old code assumed a single text node
+- **Selection interactions** - The selection overlay derives from the theme instead of a hard-coded blue; a selection drag needs a small threshold before starting, double-click-drag extends by words, triple-click selects a block's text, dragging past the viewport auto-scrolls, and right-clicking inside a selection (including in nested blocks such as list items or quotes) preserves it instead of collapsing it
+- **IME in both editors** - Rendered mode answers the full input-method context (surrounding text, cursor position, selection, font); composition is cleared on focus changes instead of leaking between the two editors; source mode draws the preedit string properly (background, emphasis formats, composition cursor, and the text after it) instead of a raw drawText overlay
+- **Caret blinks in rendered mode** - The caret now blinks like the source editor's, resetting on movement and pausing during composition and drags
+- **Mermaid label width for default-ignorable characters** - A label made only of baseless format characters (a standalone Mongolian free variation selector, variation selectors, ZWJ, bidi controls) no longer measures ~1em wide where Chromium renders zero advance
+- **Exit crash on Windows ARM64** - A singleton's exit-time destructor tore down its QNetworkAccessManager inside DLL teardown under the loader lock, crashing the process at exit on Windows ARM64 (and aborting under glibc on Linux); the singleton is now intentionally leaked, and the crash was verified fixed on real ARM64 hardware
+
+### Changed
+- **Much smaller binaries** - MuffinCore and MuffinUi now build as shared libraries: Muffin.exe shrinks from ~110 MB to ~12 MB, muffin-mmdc from ~31 MB to a thin launcher, and the installer from ~70 MB to ~54 MB
+- The About dialog shows 夏寒 as the author
+
 ## [0.6.3] - 2026-08-26
 
 ### Added
