@@ -10,7 +10,9 @@ name: ARM64 teardown debug
 # uploaded for cross-architecture local analysis (x64 cdb opens ARM64 dumps).
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - arm64-teardown-debug
 
 jobs:
   crash-dump:
