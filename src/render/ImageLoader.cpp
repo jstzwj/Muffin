@@ -8,18 +8,24 @@
 namespace muffin {
 
 ImageLoader& ImageLoader::instance() {
-  static ImageLoader loader;
-  return loader;
+  // Intentionally leaked, never destroyed. A destroyed-at-exit() static would
+  // run during MuffinUi.dll's DLL_PROCESS_DETACH in SHARED builds: tearing down
+  // QNetworkAccessManager there waits on Qt's internal threads and touches
+  // already-freed socket notifiers under the loader lock — a deterministic
+  // exit-time access violation on Windows ARM64 (confirmed by WER dump:
+  // ~QNetworkAccessManager -> QThread::wait -> doUnregisterSocketNotifier),
+  // and a glibc heap abort on Linux when it outlives QApplication. The
+  // aboutToQuit hook below still releases the network resources early in the
+  // real app; the shell object itself is left for the OS to reclaim.
+  static ImageLoader* loader = new ImageLoader();
+  return *loader;
 }
 
 ImageLoader::ImageLoader(QObject* parent) : QObject(parent), network_(new QNetworkAccessManager(this)) {
-  // ImageLoader is a function-local static, so it is destroyed during exit(),
-  // AFTER the QApplication (a stack local in main) is gone. QNetworkAccessManager
-  // and its pending replies must be destroyed while a QCoreApplication still
-  // exists — otherwise Qt's network teardown corrupts the heap (on Linux glibc
-  // aborts with "malloc_consolidate(): unaligned fastbin chunk"). Tear down
-  // networking on aboutToQuit, while the application object still lives, and
-  // null out the pointer so the member does not destruct again at exit().
+  // QNetworkAccessManager and its pending replies must be released while a
+  // QCoreApplication still exists (see instance() above). Note that aboutToQuit
+  // only fires after an event loop has run — applications (and tests) that
+  // never call exec() rely on the instance being leaked instead.
   if (auto* app = QCoreApplication::instance()) {
     connect(app, &QCoreApplication::aboutToQuit, this, [this] {
       if (network_) {

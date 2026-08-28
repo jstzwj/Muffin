@@ -1026,18 +1026,10 @@ int main(int argc, char** argv) {
   RUN_TEST(testBrTagRendersAsHardBreakInsideHtmlGroup);
   RUN_TEST(testBrTagProducesMultipleLayoutLines);
 #undef RUN_TEST
-  // All assertions passed — the binary's job is done. On ARM64 + SHARED
-  // libraries the process then crashes during loader shutdown: the faulting
-  // address belongs to no loaded module, reached via LdrShutdownProcess ->
-  // KERNELBASE (deterministic offset, three CI rounds identical). Neither
-  // _Exit (skips the exe's atexit list) nor leaking QApplication (skips
-  // platform-plugin teardown) avoids it, so the trigger sits in a
-  // DLL_PROCESS_DETACH chain. TerminateProcess skips ALL detach — the test
-  // has nothing left to verify at that point. Production impact unknown but
-  // confined to process exit; tracked as a follow-up.
-#if defined(_WIN32)
-  TerminateProcess(GetCurrentProcess(), 0);
-#else
-  std::_Exit(0);
-#endif
+  // All assertions passed. The ARM64 SHARED-library teardown crash that used
+  // to fire here was root-caused (via a WER dump on the runner) to the
+  // ImageLoader singleton's atexit destructor destroying its
+  // QNetworkAccessManager inside MuffinUi.dll's DLL_PROCESS_DETACH; the
+  // singleton is now intentionally leaked, and normal teardown is safe again.
+  return 0;
 }
