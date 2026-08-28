@@ -105,7 +105,7 @@ jobs:
           if (-not $dump) { Write-Host "!! no dump to analyze"; exit 0 }
           $env:_NT_SYMBOL_PATH = "srv*C:\symbols*https://msdl.microsoft.com/download/symbols"
           $log = Join-Path $env:RUNNER_TEMP "analysis.txt"
-          & ${{ steps.cdb.outputs.path }} -z $dump.FullName -logo $log -c "!analyze -v; q"
+          & "${{ steps.cdb.outputs.path }}" -z $dump.FullName -logo $log -c "!analyze -v; q"
           Write-Host "=== tail of analysis ==="
           Get-Content $log | Select-Object -Last 250
 
