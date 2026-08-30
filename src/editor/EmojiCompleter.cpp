@@ -3,6 +3,7 @@
 #include <QFile>
 #include <QGraphicsDropShadowEffect>
 #include <QListView>
+#include <QScreen>
 #include <QStringListModel>
 #include <QTextStream>
 
@@ -130,14 +131,17 @@ void EmojiCompleter::present(const QString& prefix, const QPoint& caretViewportP
   const int visibleRows = qMin(entries_.size(), 8);
   popup_->setFixedSize(width, qMax(1, visibleRows) * rowHeight + 8);
 
-  int x = caretViewportPos.x();
-  int y = caretViewportPos.y() + 4;
-  const QRect available = viewport_->rect();
+  // The popup is a top-level window (Qt::ToolTip), so move() takes global screen coordinates —
+  // map the caret's viewport position out of the viewport before positioning.
+  const QPoint caretGlobal = viewport_->mapToGlobal(caretViewportPos);
+  int x = caretGlobal.x();
+  int y = caretGlobal.y() + 4;
+  const QRect available = viewport_->screen()->availableGeometry();
   if (x + width > available.right()) {
     x = qMax(0, available.right() - width);
   }
   if (y + popup_->height() > available.bottom()) {
-    y = qMax(0, caretViewportPos.y() - popup_->height() - 4);  // flip above the caret
+    y = qMax(available.top(), caretGlobal.y() - popup_->height() - 4);  // flip above the caret
   }
   popup_->move(qMax(0, x), qMax(0, y));
   popup_->show();
