@@ -177,4 +177,13 @@ void SourceLineHeightIndex::setHeight(qsizetype line, int height) {
   root_ = merge(merge(std::move(left), makeNode(1, boundedHeight)), std::move(right));
 }
 
+void SourceLineHeightIndex::replaceLines(qsizetype firstLine, qsizetype removedCount, qsizetype insertedCount) {
+  firstLine = qBound<qsizetype>(0, firstLine, lineCount());
+  removedCount = qBound<qsizetype>(0, removedCount, lineCount() - firstLine);
+  auto [left, tail] = split(std::move(root_), firstLine);
+  auto [removed, right] = split(std::move(tail), removedCount);
+  Q_UNUSED(removed);
+  root_ = merge(merge(std::move(left), makeNode(insertedCount, estimatedHeight_)), std::move(right));
+}
+
 }  // namespace muffin

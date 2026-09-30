@@ -28,6 +28,7 @@ public:
   qsizetype lineAtY(qint64 y) const;
   int heightForLine(qsizetype line) const;
   void setHeight(qsizetype line, int height);
+  void replaceLines(qsizetype firstLine, qsizetype removedCount, qsizetype insertedCount);
 
 private:
   struct Node {

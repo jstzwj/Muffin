@@ -1,4 +1,5 @@
 #include "editor/VirtualSourceEdit.h"
+#include "document/DocumentSession.h"
 
 #include "../TestUtils.h"
 
@@ -7,10 +8,52 @@
 #include <QImage>
 #include <QInputMethodEvent>
 #include <QPainter>
+#include <QScrollBar>
 
 using namespace muffin;
 
 namespace {
+
+void testWrappedSourceEditingPreservesViewport() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("word ").repeated(2000), false);
+  VirtualSourceEdit edit;
+  edit.bindSession(&session);
+  QObject::connect(&session, &DocumentSession::documentLocallyEdited, &edit,
+                   [&edit](qsizetype, qsizetype, const QString&) { edit.notifyDocumentChanged(); });
+  edit.resize(500, 240);
+  edit.show();
+  QApplication::processEvents();
+  edit.setCursorPosition(5000);
+  edit.ensureCursorVisible();
+  QApplication::processEvents();
+  // Revisit after the initial lazy measurement has expanded the scroll range.
+  edit.ensureCursorVisible();
+  QApplication::processEvents();
+  const int before = edit.verticalScrollBar()->value();
+  require(before > 100, "wrapped paragraph should scroll away from the start");
+
+  const auto requireStable = [&edit, before] {
+    QApplication::processEvents();
+    require(qAbs(edit.verticalScrollBar()->value() - before) < 50,
+            "source editing should preserve the viewport inside a wrapped paragraph");
+    const QRect caret = edit.inputMethodQuery(Qt::ImCursorRectangle).toRect();
+    require(caret.top() >= 0 && caret.bottom() <= edit.viewport()->height(),
+            "source caret should remain visible after editing");
+  };
+  edit.insertText(QStringLiteral("x"));
+  requireStable();
+  edit.deleteBackward();
+  requireStable();
+  edit.undo();
+  requireStable();
+  edit.redo();
+  requireStable();
+  edit.insertText(QStringLiteral("\n"));
+  requireStable();
+  edit.deleteBackward();
+  requireStable();
+}
 
 QImage captureEdit(VirtualSourceEdit& edit) {
   return edit.grab().toImage();
@@ -135,6 +178,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testSourcePreeditRendersWithoutOverlap);
   RUN_TEST(testSourcePreeditClearsOnFocusOut);
+  RUN_TEST(testWrappedSourceEditingPreservesViewport);
 #undef RUN_TEST
   qInfo("All source-editor IME tests passed.");
   return 0;

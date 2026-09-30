@@ -313,10 +313,10 @@ void VirtualSourceEdit::syncFromSession(bool preserveCursor) {
 }
 
 void VirtualSourceEdit::notifyDocumentChanged() {
-  if (!applyingEdit_) {
-    undoStack_.clear();
-    redoStack_.clear();
-  }
+  // Our own delta is reconciled by applyEdit after the session has emitted its signals.
+  if (applyingEdit_) return;
+  undoStack_.clear();
+  redoStack_.clear();
   cursor_ = boundedOffset(cursor_);
   anchor_ = boundedOffset(anchor_);
   resetGeometryIndex(true);
@@ -426,6 +426,9 @@ bool VirtualSourceEdit::applyEdit(
   record.beforeAnchor = anchor_;
   record.beforeCursor = cursor_;
   record.afterAnchor = record.afterCursor = start + inserted.size();
+  const int firstLine = lineForOffset(start);
+  const int lastLine = lineForOffset(end);
+  const qsizetype oldLineCount = source().lineCount();
 
   bool applied = true;
   applyingEdit_ = true;
@@ -443,7 +446,15 @@ bool VirtualSourceEdit::applyEdit(
     undoStack_.push_back(record);
     redoStack_.clear();
   }
-  resetGeometryIndex(true);
+  invalidateLayoutCache();
+  const qsizetype replacementLines = lastLine - firstLine + 1 + source().lineCount() - oldLineCount;
+  heights_.replaceLines(firstLine, lastLine - firstLine + 1, replacementLines);
+  // Measure the edited line and the caret before updating the range: an estimated single row
+  // can otherwise clamp a wrapped paragraph's scrollbar to zero on every keystroke.
+  heights_.setHeight(firstLine, measuredLineHeight(firstLine));
+  const int caretLine = lineForOffset(cursor_);
+  heights_.setHeight(caretLine, measuredLineHeight(caretLine));
+  updateScrollBars();
   preferredColumn_ = -1;
   resetCursorBlink();
   ensureCursorVisible();
