@@ -195,11 +195,38 @@ void testDeleteRangeForwardCollapsesSelection() {
   require(h.session.markdownText().toString() == QStringLiteral("lpha"), "forward delete should remove one char");
 }
 
+void testRenderedDeletionUsesWholeGraphemes() {
+  const QStringList clusters{QStringLiteral("\U0001F600"), QStringLiteral("\U00020000"),
+                             QStringLiteral("e\u0301"), QStringLiteral("\U0001F469\u200D\U0001F4BB"),
+                             QStringLiteral("\U0001F1E8\U0001F1F3")};
+  for (const QString& prefix : {QString(), QStringLiteral("# "), QStringLiteral("- ")}) {
+    for (const QString& cluster : clusters) {
+      for (const bool backward : {false, true}) {
+        Harness h;
+        const QString before = prefix + QStringLiteral("a") + cluster + QStringLiteral("b");
+        h.load(before);
+        MarkdownNode* block = prefix == QStringLiteral("- ")
+            ? listItemAt(h.session, 0, 0) : blockAt(h.session, 0);
+        h.placeIn(block, backward ? 1 + cluster.size() : 1);
+        h.backend.deleteRange(backward ? DeleteTarget::Backward : DeleteTarget::Forward);
+        require(h.session.markdownText().toString() == prefix + QStringLiteral("ab"),
+                "rendered delete must remove the whole Unicode grapheme");
+        h.controller.undo();
+        require(h.session.markdownText().toString() == before, "Unicode deletion undo must restore exact source");
+        h.controller.redo();
+        require(h.session.markdownText().toString() == prefix + QStringLiteral("ab"),
+                "Unicode deletion redo must remain well formed");
+      }
+    }
+  }
+}
+
 int main(int argc, char** argv) {
   if (qgetenv("QT_QPA_PLATFORM").isEmpty()) {
     qputenv("QT_QPA_PLATFORM", "offscreen");
   }
   QApplication app(argc, argv);
+  testRenderedDeletionUsesWholeGraphemes();
   testDeleteWordInParagraph();
   testDeleteWordMidWord();
   testDeleteWordNoWordAtCursor();

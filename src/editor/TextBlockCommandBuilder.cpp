@@ -1,6 +1,7 @@
 #include "editor/TextBlockCommandBuilder.h"
 
 #include "document/MarkdownNode.h"
+#include "document/GraphemeDeletion.h"
 #include "document/NodeNavigation.h"
 #include "document/PendingBlockMarker.h"
 #include "document/SourceRangeUtil.h"
@@ -307,11 +308,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
           nextParagraph.remove(tokenStart, tokenEnd - tokenStart);
           nextOffset = tokenStart;
         } else {
-          command.sourceStart = context.contentRange.byteStart + nextOffset - 1;
-          command.removedLength = 1;
+          const auto removed = graphemeDeletion(nextParagraph, nextOffset, true);
+          command.sourceStart = context.contentRange.byteStart + removed.start;
+          command.removedLength = removed.length;
           command.insertedText.clear();
-          nextParagraph.remove(nextOffset - 1, 1);
-          --nextOffset;
+          nextParagraph.remove(removed.start, removed.length);
+          nextOffset = removed.start;
         }
       }
       command.kind = EditTransaction::Kind::DeleteText;
@@ -344,10 +346,12 @@ TextBlockCommandBuilder::Command TextBlockCommandBuilder::buildTextEdit(
           command.insertedText.clear();
           nextParagraph.remove(tokenStart, tokenEnd - tokenStart);
         } else {
-          command.sourceStart = context.contentRange.byteStart + nextOffset;
-          command.removedLength = 1;
+          const auto removed = graphemeDeletion(nextParagraph, nextOffset, false);
+          command.sourceStart = context.contentRange.byteStart + removed.start;
+          command.removedLength = removed.length;
           command.insertedText.clear();
-          nextParagraph.remove(nextOffset, 1);
+          nextParagraph.remove(removed.start, removed.length);
+          nextOffset = removed.start;
         }
       }
       command.kind = EditTransaction::Kind::DeleteText;

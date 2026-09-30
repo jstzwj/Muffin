@@ -1,4 +1,5 @@
 #include "blocks/table/TableCellSourceEdit.h"
+#include "document/GraphemeDeletion.h"
 
 #include "projection/InlineProjection.h"
 #include "document/MarkdownNode.h"
@@ -248,13 +249,8 @@ std::optional<TableCellSourceEdit> tableCellDeleteEdit(
   // aggressive: it blocked forward delete at closing marker boundaries and
   // backspace at opening marker boundaries, and caused backspace to skip
   // markers and delete content characters instead.
-  if (direction == DeleteDirection::Backward && sourceOffset > 0) {
-    return TableCellSourceEdit{sourceOffset - 1, 1, QString(), sourceOffset - 1};
-  }
-  if (direction == DeleteDirection::Forward && sourceOffset < content.size()) {
-    return TableCellSourceEdit{sourceOffset, 1, QString(), sourceOffset};
-  }
-  return TableCellSourceEdit{sourceOffset, 0, QString(), sourceOffset};
+  const auto removed = graphemeDeletion(content, sourceOffset, direction == DeleteDirection::Backward);
+  return TableCellSourceEdit{removed.start, removed.length, QString(), removed.start};
 }
 
 }  // namespace

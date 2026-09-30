@@ -11,6 +11,8 @@
 #include "parser/CmarkGfmParser.h"
 #include "parser/MarkdownSerializer.h"
 
+#include <QStringList>
+
 #include <cstdlib>
 #include <iostream>
 #include <variant>
@@ -257,7 +259,29 @@ void testTableCellHiddenMarkerOffsetsWithTableAfterParagraph() {
           "offset bold insert text cursor mismatch");
 }
 
+void testTableCellDeletionUsesWholeGraphemes() {
+  const QStringList clusters{QStringLiteral("\U0001F600"), QStringLiteral("\U00020000"),
+                             QStringLiteral("e\u0301"), QStringLiteral("\U0001F469\u200D\U0001F4BB")};
+  for (const auto& cluster : clusters) {
+    MarkdownDocument document;
+    const QString content = QStringLiteral("a") + cluster + QStringLiteral("b");
+    MarkdownNode& table = parseTable(QStringLiteral("| A |\n| --- |\n| %1 |").arg(content), document);
+    const MarkdownNode* cell = TableModelOps::cellAt(table, 1, 0);
+    require(cell != nullptr, "Unicode cell must parse");
+    for (const auto& edit : {buildTableCellDeleteBackwardEdit(*cell, content, 1 + cluster.size()),
+                             buildTableCellDeleteForwardEdit(*cell, content, 1),
+                             buildTableCellDeleteForwardEdit(*cell, content, 2)}) {
+      require(edit.has_value(), "Unicode delete should produce an edit");
+      QString changed = content;
+      changed.replace(edit->replaceStart, edit->replaceLength, edit->replacement);
+      require(changed == QStringLiteral("ab"), "table delete must remove complete grapheme even from its interior");
+      require(edit->nextSourceOffset == 1, "Unicode delete cursor must be at the removed cluster start");
+    }
+  }
+}
+
 int main() {
+  testTableCellDeletionUsesWholeGraphemes();
   testTableCellSourceEditMixedTableTokensAndInlineMarkers();
   testTableCellHiddenMarkerOffsetsWithTableAfterParagraph();
   testTableControllerInsertInsideBr();
