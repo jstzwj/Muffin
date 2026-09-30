@@ -37,6 +37,40 @@ void testReplacementRetiresSourceHistory() {
   require(edit.text() == QStringLiteral("other") && !edit.canRedo(), "replacement must retire old redo too");
 }
 
+void testEmptyReplacementDeletesSelection() {
+  for (const bool bound : {false, true}) {
+    DocumentSession session;
+    VirtualSourceEdit edit;
+    if (bound) {
+      session.setMarkdownText(QStringLiteral("abc"), false);
+      edit.bindSession(&session);
+    } else {
+      edit.setStandaloneText(QStringLiteral("abc"));
+    }
+    edit.setSelection(1, 2);
+    edit.replaceSelection(QString());
+    require(edit.text() == QStringLiteral("ac"), "empty Replace must delete selected text");
+    require(!edit.hasSelection() && edit.cursorPosition() == 1, "replacement must collapse selection");
+    edit.undo();
+    require(edit.text() == QStringLiteral("abc"), "empty replacement must be undoable");
+    edit.redo();
+    require(edit.text() == QStringLiteral("ac"), "empty replacement must be redoable");
+    edit.selectAll();
+    edit.insertText(QString());  // Replace All uses this path when its result is empty.
+    require(edit.text().isEmpty(), "Replace All must be able to empty the entire document");
+    edit.undo();
+    require(edit.text() == QStringLiteral("ac"), "empty-document replacement must undo");
+    edit.setReadOnly(true);
+    edit.selectAll();
+    edit.replaceSelection(QString());
+    require(edit.text() == QStringLiteral("ac"), "read-only replacement must remain blocked");
+  }
+  VirtualSourceEdit edit;
+  edit.setStandaloneText(QStringLiteral("abc"));
+  edit.insertText(QString());
+  require(edit.text() == QStringLiteral("abc") && !edit.canUndo(), "empty insertion without selection must be a no-op");
+}
+
 void testWrappedSourceEditingPreservesViewport() {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("word ").repeated(2000), false);
@@ -200,6 +234,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testReplacementRetiresSourceHistory);
+  RUN_TEST(testEmptyReplacementDeletesSelection);
   RUN_TEST(testSourcePreeditRendersWithoutOverlap);
   RUN_TEST(testSourcePreeditClearsOnFocusOut);
   RUN_TEST(testWrappedSourceEditingPreservesViewport);

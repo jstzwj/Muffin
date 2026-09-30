@@ -482,7 +482,8 @@ bool VirtualSourceEdit::applyEdit(
 }
 
 void VirtualSourceEdit::insertText(const QString& text) {
-  if (text.isEmpty()) return;
+  // An empty replacement still removes the selection (including Replace All's whole document).
+  if (text.isEmpty() && !hasSelection()) return;
   QString normalized = text;
   normalized.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
   normalized.replace(QLatin1Char('\r'), QLatin1Char('\n'));
