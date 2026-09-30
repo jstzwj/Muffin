@@ -1,6 +1,12 @@
 #include "export/PandocRunner.h"
 
-#include <QCoreApplication>
+#include <QApplication>
+#include <QDir>
+#include <QProgressDialog>
+#include <QTemporaryDir>
+#include <QThread>
+#include <QTimer>
+#include <cstdio>
 #include <QDebug>
 #include <QFileInfo>
 #include <QSettings>
@@ -86,12 +92,41 @@ void testFindFirstExistingSkipsNonExecutables() {
   require(got == self, QStringLiteral("findFirstExistingExecutable should skip bad entries and return the executable"));
 }
 
+void testWorkingDirectoryAndProgressLabelAreIndependent() {
+  QTemporaryDir dir;
+  require(dir.isValid(), QStringLiteral("Fixture directory missing"));
+  QSettings().setValue(QStringLiteral("export/pandocPath"), QCoreApplication::applicationFilePath());
+  const QString label = QStringLiteral("Importing document…");
+  bool sawLabel = false;
+  QTimer::singleShot(0, [&] {
+    for (QWidget* widget : QApplication::topLevelWidgets()) {
+      if (auto* progress = qobject_cast<QProgressDialog*>(widget)) {
+        sawLabel = progress->labelText() == label;
+      }
+    }
+  });
+  const auto result = muffin::PandocRunner::run(nullptr, {QStringLiteral("--fake-pandoc")},
+                                               {.workDir = dir.path(), .progressLabel = label});
+  require(result.ran && result.exitCode == 0, QStringLiteral("Import process should start"));
+  require(QString::fromUtf8(result.out) == dir.path(), QStringLiteral("Wrong import working directory"));
+  require(sawLabel, QStringLiteral("Import label should be shown as progress text"));
+  QSettings().remove(QStringLiteral("export/pandocPath"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
-  QCoreApplication app(argc, argv);
+  if (argc == 2 && QByteArray(argv[1]) == "--fake-pandoc") {
+    const QByteArray cwd = QDir::currentPath().toUtf8();
+    std::fwrite(cwd.constData(), 1, cwd.size(), stdout);
+    QThread::msleep(300);  // let the parent exercise its responsive progress loop
+    return 0;
+  }
+  if (qgetenv("QT_QPA_PLATFORM").isEmpty()) qputenv("QT_QPA_PLATFORM", "offscreen");
+  QApplication app(argc, argv);
   QCoreApplication::setOrganizationName(QStringLiteral("Muffin"));
   QCoreApplication::setApplicationName(QStringLiteral("MuffinTests"));
+  testWorkingDirectoryAndProgressLabelAreIndependent();
   testEmptySettingFallsBackToSystemSearchOrBarePandoc();
   testNonExistentConfiguredPathFallsBack();
   testRealExecutablePathIsHonored();

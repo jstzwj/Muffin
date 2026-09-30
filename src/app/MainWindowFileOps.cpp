@@ -672,7 +672,8 @@ void muffin::MainWindow::importFile() {
   // Pandoc infers the input format from the file extension; GFM output matches
   // Muffin's cmark-gfm parser best.
   const PandocResult result =
-      PandocRunner::run(this, {QStringLiteral("-t"), QStringLiteral("gfm"), sourcePath}, {}, importingMsg);
+      PandocRunner::run(this, {QStringLiteral("-t"), QStringLiteral("gfm"), sourcePath},
+                        {.workDir = QFileInfo(sourcePath).absolutePath(), .progressLabel = importingMsg});
   statusBar()->clearMessage();
   if (result.canceled) {
     return;
@@ -832,7 +833,7 @@ void muffin::MainWindow::exportAs(ExportFormat format) {
       const PandocResult result = PandocRunner::run(
           this, {QStringLiteral("-f"), inputFormat, QStringLiteral("-t"), exportPandocWriter(format),
                  QStringLiteral("-o"), target},
-          markdown.toUtf8(), {}, exportingMsg);
+          {.stdinData = markdown.toUtf8(), .progressLabel = exportingMsg});
       statusBar()->clearMessage();
       if (result.canceled) {
         QFile::remove(target);  // drop partial output

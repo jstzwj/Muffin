@@ -135,28 +135,27 @@ bool PandocRunner::isAvailable() {
   return probe.exitCode() == 0;
 }
 
-PandocResult PandocRunner::run(QWidget* parent, const QStringList& args, const QByteArray& stdinData,
-                               const QString& workDir, const QString& progressLabel) {
+PandocResult PandocRunner::run(QWidget* parent, const QStringList& args, const PandocRunOptions& options) {
   PandocResult result;
 
   QProcess process;
   process.setProgram(resolvedExecutable());
   process.setArguments(args);
-  if (!workDir.isEmpty()) {
-    process.setWorkingDirectory(workDir);
+  if (!options.workDir.isEmpty()) {
+    process.setWorkingDirectory(options.workDir);
   }
 
   // Indeterminate modal progress: gives visible feedback for large documents
   // and a way out (Cancel → kill) if Pandoc hangs. processEvents in the wait
   // loop keeps the dialog repainting. Pandoc emits no conversion progress, so
-  // the bar stays indeterminate — `progressLabel` is the textual feedback.
+  // the bar stays indeterminate — `options.progressLabel` is the textual feedback.
   QProgressDialog progress(parent);
   progress.setWindowModality(Qt::WindowModal);
   progress.setRange(0, 0);
   progress.setMinimumDuration(0);
   progress.setValue(0);
-  if (!progressLabel.isEmpty()) {
-    progress.setLabelText(progressLabel);
+  if (!options.progressLabel.isEmpty()) {
+    progress.setLabelText(options.progressLabel);
   }
   progress.show();
 
@@ -171,8 +170,8 @@ PandocResult PandocRunner::run(QWidget* parent, const QStringList& args, const Q
     result.err = process.errorString().toUtf8();
     return result;
   }
-  if (!stdinData.isNull()) {
-    process.write(stdinData);
+  if (!options.stdinData.isNull()) {
+    process.write(options.stdinData);
     process.closeWriteChannel();
   }
 

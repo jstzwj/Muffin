@@ -19,6 +19,13 @@ struct PandocResult {
   QByteArray err;  // stderr
 };
 
+// Named fields keep the input payload, resource directory and UI label distinct.
+struct PandocRunOptions {
+  QByteArray stdinData;
+  QString workDir;
+  QString progressLabel;
+};
+
 // Thin wrapper around a QProcess that drives the external Pandoc executable.
 // The codebase has no other external-process usage, so this is the canonical
 // helper for it: it resolves the executable, runs synchronously while keeping a
@@ -66,8 +73,7 @@ public:
   // if non-empty, is shown as the dialog's status text (Pandoc does not report
   // conversion progress, so the bar is indeterminate — the label is the only
   // textual feedback). This class is tr()-free, so callers pass translated text.
-  static PandocResult run(QWidget* parent, const QStringList& args, const QByteArray& stdinData = {},
-                          const QString& workDir = {}, const QString& progressLabel = {});
+  static PandocResult run(QWidget* parent, const QStringList& args, const PandocRunOptions& options = {});
 };
 
 }  // namespace muffin
