@@ -622,7 +622,7 @@ bool muffin::MainWindow::paintDocumentToPrinter(QPrinter* printer) {
     layout.setMermaidRenderCache(renderView_->mermaidRenderCache());
     layout.setMermaidSyncMode(true);
   }
-  layout.rebuild(session_.document(), theme, page.width());
+  layout.rebuild(session_.document(), theme, page.width(), session_.filePath());
 
   QPainter painter(printer);
   if (!painter.isActive()) {

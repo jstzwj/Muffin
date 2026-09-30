@@ -2,6 +2,7 @@
 #include "render/RenderMetrics.h"
 
 #include "document/ImageSyntaxOps.h"
+#include "editor/ResourceUrl.h"
 #include "render/Blur.h"
 #include "render/DecorationPainter.h"
 #include "render/GradientPainter.h"
@@ -211,7 +212,7 @@ void InlineLayout::build(
                                  options.renderEmoji);
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
-  buildImageAtoms(inlines, theme, width);
+  buildImageAtoms(inlines, theme, width, options.documentPath);
   // Phase 3c: reserve inline flow for `a::before` icons (must run before the
   // HTML-span / text-layout passes, which consume the shifted offset maps).
   {
@@ -1120,7 +1121,7 @@ QString InlineLayout::texForInlineMathSpan(const QVector<InlineNode>& inlines, c
   return visit(visit, inlines);
 }
 
-void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width) {
+void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QString& documentPath) {
   Q_UNUSED(inlines);
   Q_UNUSED(theme);
   Q_UNUSED(width);
@@ -1172,28 +1173,31 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
 
     // Try to load the image
     QImage image;
-    const bool isRemote = srcUrl.startsWith(QStringLiteral("http:")) || srcUrl.startsWith(QStringLiteral("https:"));
-    const bool isDataUri = srcUrl.startsWith(QStringLiteral("data:"), Qt::CaseInsensitive);
+    const QUrl resolved = resolvedUrlForDocumentResource(srcUrl, documentPath);
+    const QString resourceKey = resolved.toString(QUrl::FullyEncoded);
+    const bool isRemote = resolved.scheme() == QLatin1String("http") || resolved.scheme() == QLatin1String("https");
+    const bool isDataUri = resolved.scheme() == QLatin1String("data");
     if (isRemote) {
-      image = ImageLoader::instance().cached(srcUrl);
+      image = ImageLoader::instance().cached(resourceKey);
       if (image.isNull()) {
-        ImageLoader::instance().request(srcUrl);
+        ImageLoader::instance().request(resourceKey);
       }
     } else if (isDataUri) {
       // Inline data: URI (RFC 2397, base64 or percent-encoded) — decode synchronously.
       image = image_decoder::decodeDataUri(srcUrl);
-    } else {
+    } else if (resolved.isLocalFile()) {
+      const QString localPath = resolved.toLocalFile();
       // Prefer our bundled decoders (png/jpeg/webp/avif/svg) so local image display
       // never depends on Qt's imageformat plugins (qjpeg is absent from this Qt build).
-      image = image_decoder::decodeFileFallback(srcUrl);
+      image = image_decoder::decodeFileFallback(localPath);
       if (image.isNull()) {
-        image.load(srcUrl);  // last resort for formats we don't ship (tiff/bmp/gif/ico)
+        image.load(localPath);  // last resort for formats we don't ship (tiff/bmp/gif/ico)
       }
     }
 
     if (image.isNull()) {
       // Image not yet available — show a placeholder icon inline.
-      const bool isLoading = isRemote && ImageLoader::instance().isPending(srcUrl);
+      const bool isLoading = isRemote && ImageLoader::instance().isPending(resourceKey);
       constexpr qreal kPlaceholderSize = 24.0;
       QImage placeholder = isLoading
           ? image_placeholder::loading(QSizeF(kPlaceholderSize, kPlaceholderSize))

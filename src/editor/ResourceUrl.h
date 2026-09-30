@@ -14,28 +14,29 @@
 namespace muffin {
 
 inline QUrl resolvedUrlForDocumentResource(const QString& value, const QString& documentPath) {
-  const QFileInfo info(value);
-  if (info.isAbsolute()) {
-    return QUrl::fromLocalFile(info.absoluteFilePath());
-  }
-
   const QUrl url(value);
-  if (url.isLocalFile()) {
-    return QUrl::fromLocalFile(QFileInfo(url.toLocalFile()).absoluteFilePath());
+#ifdef Q_OS_WIN
+  // A native drive/UNC path is not a URL scheme (QUrl parses C: as scheme "c").
+  if (QFileInfo(value).isAbsolute() && !value.startsWith(QLatin1Char('/'))) {
+    return QUrl::fromLocalFile(value);
   }
-  if (url.isValid() && !url.scheme().isEmpty()) {
+#endif
+  if (url.isLocalFile() && QFileInfo(url.toLocalFile()).isAbsolute()) {
+    return url;
+  }
+  if (url.isValid() && !url.scheme().isEmpty() && !url.isLocalFile()) {
     return url;
   }
   if (value.startsWith(QLatin1Char('#'))) {
     return url;
   }
 
-  if (!documentPath.isEmpty()) {
-    const QString baseDirectory = QFileInfo(documentPath).absolutePath();
-    return QUrl::fromLocalFile(QFileInfo(QDir(baseDirectory).absoluteFilePath(value)).absoluteFilePath());
-  }
-
-  return QUrl(value);
+  // Resolve URLs, not encoded filename strings: a%20b.png names "a b.png",
+  // and query/fragment components must not become part of a local filename.
+  const QUrl base = documentPath.isEmpty()
+      ? QUrl::fromLocalFile(QDir::currentPath() + QLatin1Char('/'))
+      : QUrl::fromLocalFile(QFileInfo(documentPath).absoluteFilePath());
+  return base.resolved(url.isLocalFile() ? QUrl(url.toLocalFile()) : url);
 }
 
 }  // namespace muffin

@@ -185,6 +185,16 @@ void muffin::MainWindow::connectSessionSignals() {
   QObject::connect(&window.session_, &DocumentSession::filePathChanged, window.editor_,
                    [&window](const QString& path) { window.editor_->setDocumentPath(path); });
   window.editor_->setDocumentPath(window.session_.filePath());
+  // Save As/move changes the resource base without reparsing the text. Defer until the
+  // switch finishes so an async open never renders the previous buffer under its new path.
+  QObject::connect(&window.session_, &DocumentSession::filePathChanged, &window, [&window] {
+    if (window.session_.isAsyncParseInProgress() || (window.backend_ && window.backend_->isSourceMode())) {
+      window.renderViewDirty_ = true;
+      return;
+    }
+    window.renderView_->setDocument(window.session_.document(), window.session_.filePath());
+    window.renderViewDirty_ = false;
+  }, Qt::QueuedConnection);
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, &MainWindow::updateTitle);
   QObject::connect(&window.session_, &DocumentSession::modifiedChanged, &window, [&window] {
     window.scheduleEditorStateRefresh();

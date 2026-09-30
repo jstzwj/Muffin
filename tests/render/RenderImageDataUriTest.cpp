@@ -3,11 +3,16 @@
 #include "document/MarkdownNode.h"
 #include "render/DocumentLayout.h"
 #include "render/BlockLayout.h"
+#include "editor/ResourceUrl.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
 
 #include <QApplication>
+#include <QDir>
+#include <QFile>
+#include <QTemporaryDir>
+#include <QUrl>
 #include <QByteArray>
 #include <QImage>
 #include <QPainter>
@@ -84,6 +89,62 @@ QRect colorBBox(const QImage& image, const std::function<bool(QRgb)>& pred) {
 RenderTheme plainTheme() {
   return RenderTheme::fromDefinition(
       CssThemeMapper::fromCss(QStringLiteral("#write { color:#000000; }"), QStringLiteral("t"), QString()));
+}
+
+QImage renderDocumentImage(DocumentLayout& layout, DocumentSession& session, const QString& path) {
+  const RenderTheme theme = plainTheme();
+  layout.rebuild(session.document(), theme, 800.0, path);
+  QImage image(800, qMax(1, int(layout.totalHeight()) + 8), QImage::Format_ARGB32_Premultiplied);
+  image.fill(Qt::white);
+  QPainter painter(&image);
+  for (const auto& child : session.document().root().children()) {
+    if (const auto* block = layout.block(child->id())) block->paint(painter, theme, 0.0, nullptr);
+  }
+  return image;
+}
+
+void testDocumentRelativeImagesAndIndependentBases() {
+  QTemporaryDir root;
+  require(root.isValid(), QStringLiteral("image fixture directory unavailable"));
+  const QString originalCwd = QDir::currentPath();
+  const auto isBlue = [](QRgb pixel) { return qBlue(pixel) > 150 && qRed(pixel) < 90 && qGreen(pixel) < 90; };
+  for (const QString& folder : {QStringLiteral("red"), QStringLiteral("blue")}) {
+    require(QDir().mkpath(root.filePath(folder + QStringLiteral("/assets"))), QStringLiteral("fixture mkdir failed"));
+    QFile image(root.filePath(folder + QStringLiteral("/assets/a b.svg")));
+    require(image.open(QIODevice::WriteOnly), QStringLiteral("fixture image open failed"));
+    QByteArray bytes = redSvgBytes();
+    if (folder == QStringLiteral("blue")) bytes.replace("#d00000", "#0000d0");
+    require(image.write(bytes) == bytes.size(), QStringLiteral("fixture image write failed"));
+  }
+  const QString redPath = root.filePath(QStringLiteral("red/doc.md"));
+  const QString bluePath = root.filePath(QStringLiteral("blue/doc.md"));
+  const QString image = QStringLiteral("![x](assets/a%20b.svg)");
+  const QStringList markdown{image, QStringLiteral("# ") + image, QStringLiteral("- ") + image,
+                            QStringLiteral("| A |\n| --- |\n| %1 |").arg(image)};
+  for (const QString& md : markdown) {
+    DocumentSession session;
+    session.setMarkdownText(md, false);
+    DocumentLayout first, second;
+    require(colorBBox(renderDocumentImage(first, session, redPath), isRed).isValid(),
+            QStringLiteral("relative image must resolve from document in every block kind"));
+    require(colorBBox(renderDocumentImage(second, session, bluePath), isBlue).isValid(),
+            QStringLiteral("same href in another document must not reuse first document's resource"));
+    require(colorBBox(renderDocumentImage(first, session, bluePath), isBlue).isValid(),
+            QStringLiteral("Save As resource-base change must rebuild image atoms"));
+    require(colorBBox(renderDocumentImage(first, session, redPath), isRed).isValid(),
+            QStringLiteral("changing resource base back must reload the right image"));
+  }
+  const QString local = root.filePath(QStringLiteral("red/assets/a b.svg"));
+  require(resolvedUrlForDocumentResource(QStringLiteral("assets/a%20b.svg"), redPath).toLocalFile() == local,
+          QStringLiteral("encoded spaces must decode once for local images"));
+  require(resolvedUrlForDocumentResource(QStringLiteral("../red/assets/a%20b.svg"), bluePath).toLocalFile() == local,
+          QStringLiteral("parent-relative URL must resolve from its own document"));
+  const QUrl fileUrl = QUrl::fromLocalFile(local);
+  require(resolvedUrlForDocumentResource(fileUrl.toString(QUrl::FullyEncoded), bluePath) == fileUrl,
+          QStringLiteral("absolute file URL must stay absolute"));
+  require(resolvedUrlForDocumentResource(QStringLiteral("https://example.com/a%20b.png"), redPath).toString(QUrl::FullyEncoded)
+              == QStringLiteral("https://example.com/a%20b.png"), QStringLiteral("remote URL must retain its own base and escapes"));
+  require(QDir::currentPath() == originalCwd, QStringLiteral("resource resolution must not change process CWD"));
 }
 
 // Regression guard for the "inline image paints above its own block" bug: under a
@@ -183,6 +244,7 @@ int main(int argc, char** argv) {
   }
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testDocumentRelativeImagesAndIndependentBases);
   RUN_TEST(testImageDoesNotOverflowAboveItsBlock);
   RUN_TEST(testPercentEncodedDataUriRendersImage);
   RUN_TEST(testBase64DataUriRendersImage);

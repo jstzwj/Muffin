@@ -31,6 +31,7 @@ class InlineLayout {
 public:
   struct BuildOptions {
     InlineProjectionState projectionState;
+    QString documentPath;  // resource base belongs to this layout/document, never global CWD
     qsizetype sourceBase = -1;
     qsizetype pendingPrefixLength = 0;
     // When set, misspelled prose words within Text spans receive a SpellCheck underline.
@@ -217,7 +218,7 @@ private:
   void buildLinkBeforeAtoms();
   void buildHtmlFormatSpans();
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
-  void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
+  void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QString& documentPath);
   QString texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const;
   void buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont);
   // Map a displayText_-space offset to a layoutText_ offset, accounting for the spliced preedit
