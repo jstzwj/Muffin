@@ -644,7 +644,8 @@ bool muffin::FileController::reload(DocumentSession& session, QWidget* parent) {
   // trigger autoSaveOnSwitch and overwrite the very external change being reloaded. Re-baseline so
   // the watcher treats the reloaded content as the new reference.
   session.setFileFormat(format);
-  session.setMarkdownText(text, false);
+  session.replaceDocument(std::move(text));
   session.recordFileBaseline();
+  emit documentBecameClean(session.filePath());
   return true;
 }

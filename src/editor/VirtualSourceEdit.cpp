@@ -298,7 +298,19 @@ PieceTable& VirtualSourceEdit::standaloneSource() {
 
 void VirtualSourceEdit::bindSession(DocumentSession* session) {
   if (session_ == session) return;
+  QObject::disconnect(replacementConnection_);
   session_ = session;
+  if (session_) {
+    replacementConnection_ = connect(session_, &DocumentSession::documentAboutToBeReplaced, this, [this] {
+      undoStack_.clear();
+      redoStack_.clear();
+      cursor_ = anchor_ = 0;
+      preferredColumn_ = -1;
+      preedit_.clear();
+      preeditFormats_.clear();
+      preeditCursor_ = -1;
+    });
+  }
   undoStack_.clear();
   redoStack_.clear();
   syncFromSession(false);
@@ -323,6 +335,7 @@ void VirtualSourceEdit::notifyDocumentChanged() {
 }
 
 void VirtualSourceEdit::setStandaloneText(QString text) {
+  QObject::disconnect(replacementConnection_);
   session_ = nullptr;
   standalone_ = PieceTable(std::move(text));
   cursor_ = anchor_ = 0;

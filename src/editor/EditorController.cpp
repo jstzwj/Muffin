@@ -373,6 +373,10 @@ void EditorController::attach(DocumentSession* session, EditorView* view) {
       view_->setDocument(session_->document(), session_->filePath());
     }
   });
+  if (session_ != nullptr) {
+    connect(session_, &DocumentSession::documentAboutToBeReplaced,
+            this, &EditorController::clearHistoryAndSelection);
+  }
   if (session_ != nullptr && view_ != nullptr) {
     // Local text deltas carry position + inserted text (the removed text is no longer available
     // at emit time; screen readers treat the empty oldText as an opaque change). Full reparses

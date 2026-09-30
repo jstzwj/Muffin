@@ -14,6 +14,29 @@ using namespace muffin;
 
 namespace {
 
+void testReplacementRetiresSourceHistory() {
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("abc"), false);
+  VirtualSourceEdit edit;
+  edit.bindSession(&session);
+  QObject::connect(&session, &DocumentSession::documentTextChanged, &edit,
+                   [&] { edit.syncFromSession(); });
+  edit.insertText(QStringLiteral("X"));
+  require(edit.canUndo(), "source edit must create history");
+  session.replaceDocument(QStringLiteral("12345"));
+  require(!edit.canUndo() && !edit.canRedo(), "replacement must clear source history");
+  require(edit.cursorPosition() == 0 && !edit.hasSelection(), "replacement must reset source selection");
+  edit.undo();
+  require(edit.text() == QStringLiteral("12345"), "old source undo must not mutate reloaded text");
+
+  edit.insertText(QStringLiteral("Y"));
+  edit.undo();
+  require(edit.canRedo(), "fixture must contain redo history");
+  session.replaceDocument(QStringLiteral("other"));
+  edit.redo();
+  require(edit.text() == QStringLiteral("other") && !edit.canRedo(), "replacement must retire old redo too");
+}
+
 void testWrappedSourceEditingPreservesViewport() {
   DocumentSession session;
   session.setMarkdownText(QStringLiteral("word ").repeated(2000), false);
@@ -176,6 +199,7 @@ int main(int argc, char** argv) {
   }
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testReplacementRetiresSourceHistory);
   RUN_TEST(testSourcePreeditRendersWithoutOverlap);
   RUN_TEST(testSourcePreeditClearsOnFocusOut);
   RUN_TEST(testWrappedSourceEditingPreservesViewport);

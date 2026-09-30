@@ -76,6 +76,8 @@ public:
 
   void newDocument();
   void setFilePath(QString path);
+  // Replace the logical document, retiring consumers' old history and selection first.
+  void replaceDocument(QString text);
   void setMarkdownText(QString text, bool modified);
   // Asynchronous full-parse entry used by FileController::open: runs parser_.parseDocument on a
   // worker thread so the UI stays responsive on huge files, then finishes (setMarkdownText +
@@ -107,6 +109,7 @@ public:
       bool modified);
 
 signals:
+  void documentAboutToBeReplaced();
   void documentTextChanged(QString text);
   void documentLocallyEdited(qsizetype start, qsizetype removedLength, QString insertedText);
   void filePathChanged(QString path);

@@ -188,6 +188,7 @@ private:
   void emitCursorPosition();
   void scrollContentsBy(int dx, int dy) override;
 
+  QMetaObject::Connection replacementConnection_;
   DocumentSession* session_ = nullptr;
   PieceTable standalone_;
   SourceLineHeightIndex heights_;

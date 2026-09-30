@@ -616,6 +616,7 @@ muffin::TopLevelRangeChange muffin::DocumentSession::lastLocalTopLevelRangeChang
 }
 
 void muffin::DocumentSession::newDocument() {
+  emit documentAboutToBeReplaced();
   if (fileWatcher_ && !filePath_.isEmpty()) {
     fileWatcher_->removePath(filePath_);
     fileWatcher_->removePath(QFileInfo(filePath_).absolutePath());
@@ -701,6 +702,11 @@ void muffin::DocumentSession::onFileChanged() {
     lastNotifiedSize_ = observedSize;
     emit externalFileChanged();
   }
+}
+
+void muffin::DocumentSession::replaceDocument(QString text) {
+  emit documentAboutToBeReplaced();
+  setMarkdownText(std::move(text), false);
 }
 
 void muffin::DocumentSession::setMarkdownText(QString text, bool modified) {
@@ -932,6 +938,7 @@ void muffin::DocumentSession::finishAsyncParse() {
 }
 
 void muffin::DocumentSession::openDocumentAsync(QString text) {
+  emit documentAboutToBeReplaced();
   // Async open: document_ isn't updated until finishAsyncParse, so documentTextChanged is emitted
   // there (not here) to avoid broadcasting stale text. filePath is set by the caller (FileController).
   parseAndStore(std::move(text), false, {}, /*async=*/true);

@@ -1,6 +1,7 @@
 #include "document/DocumentSession.h"
 #include "document/MarkdownNode.h"
 #include "edit/UndoStack.h"
+#include "io/FileController.h"
 #include "editor/BrushQueue.h"
 #include "editor/EditorController.h"
 #include "editor/EditorView.h"
@@ -10,6 +11,7 @@
 #include "EditorTestUtils.h"
 
 #include <QApplication>
+#include <QTemporaryFile>
 
 #include <iostream>
 #include <variant>
@@ -100,6 +102,35 @@ void testCoalescedBackspaceUndoRedo() {
   require(session.markdownText().toString() == QStringLiteral("de"), "third backspace result mismatch");
   controller.undo();
   require(session.markdownText().toString() == QStringLiteral("abcde"), "three coalesced deletions must undo together");
+}
+
+void testExternalReloadResetsHistoryAndSelection() {
+  QTemporaryFile file;
+  require(file.open(), "reload fixture should open");
+  require(file.write("12345") == 5, "reload fixture should write");
+  file.flush();
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  FileController files;
+  controller.attach(&session, &view);
+  session.setFilePath(file.fileName());
+  session.setMarkdownText(QStringLiteral("abc"), false);
+  view.setDocument(session.document());
+  setCursor(controller.selection(), blockAt(session, 0), 0);
+  require(controller.inputController().insertText(QStringLiteral("X")), "pre-reload edit should succeed");
+  require(controller.canUndo(), "pre-reload edit should be undoable");
+  bool recoveryCleared = false;
+  QObject::connect(&files, &FileController::documentBecameClean, &session, [&](const QString& path) {
+    recoveryCleared = path == file.fileName();
+  });
+  require(files.reload(session, nullptr), "external reload should succeed");
+  require(!controller.canUndo() && !controller.canRedo(), "reload must retire both histories");
+  require(!controller.selection().hasCursor(), "reload must retire stale node selection");
+  require(recoveryCleared, "successful reload must retire the discarded draft");
+  controller.undo();
+  require(session.markdownText().toString() == QStringLiteral("12345"), "undo after reload must not edit replacement text");
+  require(!session.document().isModified(), "reload must remain clean");
 }
 
 // testInputSelectionReplaceAndDelete (lines 843-878)
@@ -251,6 +282,7 @@ int main(int argc, char** argv) {
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInputUndoRedoSnapshots);
   RUN_TEST(testCoalescedBackspaceUndoRedo);
+  RUN_TEST(testExternalReloadResetsHistoryAndSelection);
   RUN_TEST(testControllerUndoRedoRemapsCursorAfterReparse);
   RUN_TEST(testInputSelectionReplaceAndDelete);
   RUN_TEST(testInputCrossParagraphSelectionReplaceAndDelete);
