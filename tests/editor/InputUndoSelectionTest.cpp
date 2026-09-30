@@ -75,6 +75,33 @@ void testControllerUndoRedoRemapsCursorAfterReparse() {
   require(controller.selection().cursorPosition().text.sourceOffset == 2, "controller redo cursor source mismatch");
 }
 
+// Coalesced Backspaces must replay at the left edge of the complete removed span.
+void testCoalescedBackspaceUndoRedo() {
+  DocumentSession session;
+  EditorView view;
+  EditorController controller;
+  controller.attach(&session, &view);
+  session.setMarkdownText(QStringLiteral("abcde"), false);
+  view.setDocument(session.document());
+  setCursor(controller.selection(), blockAt(session, 0), 3);
+
+  require(controller.inputController().deleteBackward(), "first backspace should edit");
+  require(controller.inputController().deleteBackward(), "second backspace should edit");
+  require(session.markdownText().toString() == QStringLiteral("ade"), "backspace result mismatch");
+  controller.undo();
+  require(session.markdownText().toString() == QStringLiteral("abcde"), "coalesced undo must restore at the left edge");
+  require(controller.selection().cursorPosition().text.textOffset == 3, "undo must restore original cursor");
+  controller.redo();
+  require(session.markdownText().toString() == QStringLiteral("ade"), "coalesced redo must remove the same span");
+  require(controller.selection().cursorPosition().text.textOffset == 1, "redo must restore final cursor");
+
+  // A third deletion must still merge relative to the updated left edge.
+  require(controller.inputController().deleteBackward(), "third backspace should edit");
+  require(session.markdownText().toString() == QStringLiteral("de"), "third backspace result mismatch");
+  controller.undo();
+  require(session.markdownText().toString() == QStringLiteral("abcde"), "three coalesced deletions must undo together");
+}
+
 // testInputSelectionReplaceAndDelete (lines 843-878)
 void testInputSelectionReplaceAndDelete() {
   DocumentSession session;
@@ -223,6 +250,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInputUndoRedoSnapshots);
+  RUN_TEST(testCoalescedBackspaceUndoRedo);
   RUN_TEST(testControllerUndoRedoRemapsCursorAfterReparse);
   RUN_TEST(testInputSelectionReplaceAndDelete);
   RUN_TEST(testInputCrossParagraphSelectionReplaceAndDelete);

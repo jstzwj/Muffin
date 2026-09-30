@@ -410,6 +410,10 @@ void EditTransaction::mergeTextDelta(const TextDeltaCommand& next) {
   const TextDelta& nextDelta = next.delta;
   prevDelta.insertedText += nextDelta.insertedText;
   prevDelta.removedText = nextDelta.removedText + prevDelta.removedText;
+  // Backspaces extend the removed span to the left; replay the combined delta there.
+  if (nextDelta.start < prevDelta.start) {
+    prevDelta.start = nextDelta.start;
+  }
   updateAfterCursor(next.afterCursor);
 }
 
