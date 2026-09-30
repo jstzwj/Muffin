@@ -2,6 +2,9 @@
 #include "io/FileController.h"
 
 #include <QApplication>
+#include <QAbstractButton>
+#include <QMessageBox>
+#include <QTimer>
 #include <QCoreApplication>
 #include <QDebug>
 #include <QElapsedTimer>
@@ -43,6 +46,42 @@ void waitForParse(DocumentSession& session) {
     QThread::msleep(5);
   }
   require(!session.isAsyncParseInProgress(), QStringLiteral("Async parse timed out"));
+}
+
+void answerSavePrompt(QMessageBox::StandardButton choice) {
+  QTimer::singleShot(0, [choice] {
+    auto* box = qobject_cast<QMessageBox*>(QApplication::activeModalWidget());
+    require(box && box->button(choice), QStringLiteral("Expected save/discard prompt"));
+    box->button(choice)->click();
+  });
+}
+
+void testReopenDirtyFile(const QString& path, QMessageBox::StandardButton choice, bool autoSave) {
+  writeBytes(path, QByteArrayLiteral("original"));
+  DocumentSession session;
+  FileController controller;
+  require(controller.open(session, nullptr, path), QStringLiteral("Initial open failed"));
+  waitForParse(session);
+  session.setMarkdownText(QStringLiteral("edited"), true);
+  QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), autoSave);
+  if (!autoSave) {
+    answerSavePrompt(choice);
+  }
+  const bool opened = controller.open(session, nullptr, path);
+  if (choice == QMessageBox::Cancel && !autoSave) {
+    require(!opened, QStringLiteral("Cancel must abort reopen"));
+    require(session.document().isModified(), QStringLiteral("Cancel must retain dirty state"));
+    require(session.markdownText().toString() == QStringLiteral("edited"), QStringLiteral("Cancel lost edits"));
+  } else {
+    require(opened, QStringLiteral("Reopen failed"));
+    waitForParse(session);
+    const QString expected = autoSave || choice == QMessageBox::Save
+        ? QStringLiteral("edited") : QStringLiteral("original");
+    require(session.markdownText().toString() == expected, QStringLiteral("Reopen installed stale pre-save text"));
+    require(!session.document().isModified(), QStringLiteral("Reopened content should be clean"));
+    require(readBytes(path) == expected.toUtf8(), QStringLiteral("Disk and clean buffer must agree"));
+  }
+  QSettings().setValue(QStringLiteral("files/autoSaveOnSwitch"), false);
 }
 
 void testExistingLfFileIgnoresNewFileDefault(const QString& path) {
@@ -144,6 +183,10 @@ int main(int argc, char** argv) {
 
   QTemporaryDir dir;
   require(dir.isValid(), QStringLiteral("Temp dir invalid"));
+  testReopenDirtyFile(dir.filePath(QStringLiteral("reopen.md")), QMessageBox::Save, false);
+  testReopenDirtyFile(dir.filePath(QStringLiteral("reopen.md")), QMessageBox::Discard, false);
+  testReopenDirtyFile(dir.filePath(QStringLiteral("reopen.md")), QMessageBox::Cancel, false);
+  testReopenDirtyFile(dir.filePath(QStringLiteral("reopen.md")), QMessageBox::Save, true);
   testExistingLfFileIgnoresNewFileDefault(dir.filePath(QStringLiteral("lf.md")));
   testLegacyEncodingRoundTrips(dir.filePath(QStringLiteral("legacy.md")));
   testWindows1252PunctuationRoundTrips(dir.filePath(QStringLiteral("windows1252.md")));

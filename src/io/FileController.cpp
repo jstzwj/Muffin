@@ -298,11 +298,16 @@ bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QSt
     return false;
   }
 
-  // Do not resolve the current document until the target is known to be
-  // readable. Canceling the picker or failing to read must leave its dirty
-  // state and recovery snapshot untouched.
+  // Validate before resolving unsaved work: unreadable targets must not discard edits.
+  // Saving (including auto-save or Save As) can replace the target we just read. Refresh
+  // after that decision rather than marking a stale pre-save buffer clean. Re-read for
+  // any dirty source, since Save As can make an initially different target the same file.
+  const bool wasModified = session.document().isModified();
   autoSaveOnSwitchIfEnabled(session, parent);
   if (!confirmDiscardIfModified(session, parent)) {
+    return false;
+  }
+  if (wasModified && !readTextFile(path, &text, &format, parent)) {
     return false;
   }
 
