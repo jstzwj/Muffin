@@ -2,8 +2,51 @@
 
 #include <QTextLayout>
 #include <QTextOption>
+#include <QScrollBar>
 
 using namespace muffin;
+
+void testCrossBlockClickPreservesScreenPosition() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(700, 400);
+  view.show();
+  session.setMarkdownText(QStringLiteral("before **").append(QStringLiteral("wide ").repeated(25)) +
+                          QStringLiteral("** after\n\n") + QStringLiteral("target ").repeated(40) +
+                          QStringLiteral("\n\n") + QStringLiteral("tail\n\n").repeated(30), false);
+  view.setDocument(session.document());
+  QApplication::processEvents();
+  MarkdownNode* a = blockAt(session, 0);
+  MarkdownNode* b = blockAt(session, 1);
+  setCursor(controller.selection(), a, 15);
+  const BlockLayout* block = view.blockLayoutForNode(b->id());
+  const QPointF click = view.mapDocumentToViewport(block->rect().topLeft() + block->inlineLayout()->cursorRect(25).center());
+  const auto before = view.hitTest(click);
+  QMouseEvent press(QEvent::MouseButtonPress, click, click, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &press);
+  const QPointF after = view.mapDocumentToViewport(view.effectiveCursorRect().center());
+  require(qAbs(after.y() - click.y()) < 2, "cross-block plain-text caret should remain on the clicked line");
+  require(controller.selection().cursorPosition().text.sourceOffset == before.sourceOffset,
+          "cross-block click should preserve the clicked source offset");
+
+  // Clicking a visible line near the top edge must not invoke keyboard comfort-margin scrolling.
+  setCursor(controller.selection(), a, 15);
+  const QRectF target = view.hitForCursorPosition(before.cursorPosition()).cursorRect;
+  view.verticalScrollBar()->setValue(qRound(target.top() - 4));
+  const QPointF edgeClick = view.mapDocumentToViewport(target.center());
+  const int scrollBefore = view.verticalScrollBar()->value();
+  QMouseEvent release(QEvent::MouseButtonRelease, click, click, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &release);
+  QMouseEvent edgePress(QEvent::MouseButtonPress, edgeClick, edgeClick, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(view.viewport(), &edgePress);
+  require(view.verticalScrollBar()->value() == scrollBefore,
+          "clicking a visible line near the viewport edge must not scroll it away from the pointer");
+  QApplication::processEvents();
+  require(view.effectiveCursorRect() == view.hitForCursorPosition(view.cursorPosition()).cursorRect,
+          "cached caret geometry should match the final layout after a cross-block click");
+}
 
 void testDefinitionPlaceholderHitKeepsCursorInSlot() {
   DocumentSession session;
@@ -885,6 +928,7 @@ int main(int argc, char** argv) {
   QCoreApplication::setOrganizationName(QStringLiteral("MuffinTest"));
   QCoreApplication::setApplicationName(QStringLiteral("EditorViewHitTestTest"));
 #define RUN_TEST(test) runTest(#test, test)
+  RUN_TEST(testCrossBlockClickPreservesScreenPosition);
   RUN_TEST(testGapClickBelowNonLastBlockIsNotTrailingBlockAfter);
   RUN_TEST(testDefinitionPlaceholderHitKeepsCursorInSlot);
   RUN_TEST(testEmptyLinkDefinitionTitlePlaceholderOnlyWhenFocused);

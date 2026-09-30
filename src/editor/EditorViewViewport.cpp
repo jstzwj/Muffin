@@ -114,9 +114,11 @@ void EditorView::ensureCursorVisible() {
   const qreal top = bar->value();
   const qreal bottom = top + viewport()->height();
   const qreal margin = qMin<qreal>(24.0, viewport()->height() / 4.0);
-  if (cursor.top() < top + margin) {
+  // A mouse click on a visible line must leave it under the pointer. Apply the comfort
+  // margin only after the caret actually leaves the viewport, as with code-fence scrolling.
+  if (cursor.top() < top) {
     bar->setValue(qRound(cursor.top() - margin));
-  } else if (cursor.bottom() > bottom - margin) {
+  } else if (cursor.bottom() > bottom) {
     bar->setValue(qRound(cursor.bottom() + margin - viewport()->height()));
   }
 }
