@@ -6,11 +6,13 @@
 
 namespace muffin {
 
+class DocumentSession;
+
 // Crash-recovery snapshots for unsaved documents. The active document's markdown
 // text (plus its source path) is written to a per-application drafts directory
 // on a debounce timer; on the next launch pending snapshots are offered for
-// restoration. Pure data I/O — it knows nothing about DocumentSession, taking
-// raw text + path, which keeps it unit-testable with a temp directory.
+// restoration. The raw-text API handles data I/O;
+// snapshotSession additionally enforces the live document lifecycle.
 class DraftRecovery {
 public:
   struct PendingDraft {
@@ -33,6 +35,10 @@ public:
   // the text is empty (nothing worth recovering).
   void snapshot(const QString& markdownText, const QString& sourceFilePath,
                 const QString& draftKey = QString());
+
+  // Snapshot only a stable dirty document. During async open, its path and buffer
+  // temporarily refer to different files; never persist that transitional state.
+  bool snapshotSession(const DocumentSession& session, const QString& draftKey);
 
   // Remove the snapshot for this source path (called after a successful save).
   void markClean(const QString& sourceFilePath, const QString& draftKey = QString());

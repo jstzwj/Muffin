@@ -311,10 +311,12 @@ bool muffin::FileController::open(DocumentSession& session, QWidget* parent, QSt
     return false;
   }
 
-  session.setFilePath(path);
   session.setFileFormat(format);
-  session.recordFileBaseline();  // baseline the file as it was at open (external-change detection)
+  // Enter the busy state before publishing the new path: even direct path-change
+  // observers must never persist the previous buffer under the target's identity.
   session.openDocumentAsync(text);  // async parse keeps the UI responsive on huge files
+  session.setFilePath(path);
+  session.recordFileBaseline();  // baseline the file as it was at open (external-change detection)
   return true;
 }
 

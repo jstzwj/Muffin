@@ -490,8 +490,7 @@ void muffin::MainWindow::snapshotDraft() {
   // only when content actually changed. snapshot() takes the text by const-ref and does the UTF-8
   // encode + sync write internally — no 50MB copy/compare here on every fire.
   const quint64 revision = session_.document().revision();
-  if (revision != lastDraftSnapshotRevision_ && !session_.markdownText().isEmpty()) {
-    drafts_.snapshot(session_.markdownText().toString(), session_.filePath(), draftKey_);
+  if (revision != lastDraftSnapshotRevision_ && drafts_.snapshotSession(session_, draftKey_)) {
     lastDraftSnapshotRevision_ = revision;
   }
   // Heartbeat: re-arm for as long as the document stays dirty. modifiedChanged

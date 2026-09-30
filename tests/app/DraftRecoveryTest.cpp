@@ -1,7 +1,10 @@
 #include "app/DraftRecovery.h"
+#include "document/DocumentSession.h"
 
 #include <QCoreApplication>
 #include <QDebug>
+#include <QElapsedTimer>
+#include <QThread>
 #include <QDir>
 #include <QString>
 #include <QTemporaryDir>
@@ -32,6 +35,41 @@ DraftRecovery makeRecovery(const QTemporaryDir& dir) {
   QDir(dir.path()).removeRecursively();
   QDir().mkpath(dir.path());
   return DraftRecovery(dir.path());
+}
+
+void testAsyncOpenNeverSnapshotsPreviousDocument() {
+  QTemporaryDir dir;
+  DraftRecovery recovery = makeRecovery(dir);
+  DocumentSession session;
+  const QString oldPath = dir.filePath(QStringLiteral("A.md"));
+  const QString newPath = dir.filePath(QStringLiteral("B.md"));
+  const QString oldKey = DraftRecovery::createDraftKey();
+  const QString newKey = DraftRecovery::createDraftKey();
+  session.setFilePath(oldPath);
+  session.setMarkdownText(QStringLiteral("unsaved A"), true);
+  require(recovery.snapshotSession(session, oldKey), QStringLiteral("Stable dirty document must be recoverable"));
+  require(recovery.pendingDrafts().size() == 1, QStringLiteral("A snapshot missing"));
+  recovery.markClean(oldPath, oldKey);  // user chose Discard before opening B
+  session.openDocumentAsync(QStringLiteral("disk B"));
+  session.setFilePath(newPath);
+  require(session.isAsyncParseInProgress(), QStringLiteral("Async fixture should be pending before event processing"));
+  require(!recovery.snapshotSession(session, newKey), QStringLiteral("Timer must not snapshot old buffer under B"));
+  require(!recovery.snapshotSession(session, newKey), QStringLiteral("Close-time snapshot must also be blocked"));
+  require(recovery.pendingDrafts().isEmpty(), QStringLiteral("Discarded A must not reappear as B draft"));
+  QElapsedTimer wait;
+  wait.start();
+  while (session.isAsyncParseInProgress() && wait.elapsed() < 5000) {
+    QCoreApplication::processEvents();
+    QThread::msleep(1);
+  }
+  require(!session.isAsyncParseInProgress(), QStringLiteral("Async parse did not finish"));
+  require(!recovery.snapshotSession(session, newKey), QStringLiteral("Clean B needs no recovery draft"));
+  session.setMarkdownText(QStringLiteral("edited B"), true);
+  require(recovery.snapshotSession(session, newKey), QStringLiteral("Real edits after open must remain recoverable"));
+  const auto drafts = recovery.pendingDrafts();
+  require(drafts.size() == 1 && drafts.first().sourcePath == newPath && drafts.first().key == newKey,
+          QStringLiteral("New draft must have B's identity"));
+  require(recovery.loadDraft(drafts.first()) == QStringLiteral("edited B"), QStringLiteral("New draft must contain B's edits"));
 }
 
 void testEmptyDirectoryHasNoDrafts() {
@@ -190,6 +228,7 @@ void testPruneLeavesUntitledAndStrayFiles() {
 
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
+  testAsyncOpenNeverSnapshotsPreviousDocument();
   testEmptyDirectoryHasNoDrafts();
   testSnapshotRoundTrips();
   testUntitledSnapshotHasEmptySource();

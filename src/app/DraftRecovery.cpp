@@ -1,4 +1,5 @@
 #include "app/DraftRecovery.h"
+#include "document/DocumentSession.h"
 
 #include <QCryptographicHash>
 #include <QDateTime>
@@ -179,3 +180,11 @@ void DraftRecovery::pruneOrphaned() {
 }
 
 }  // namespace muffin
+
+bool muffin::DraftRecovery::snapshotSession(const DocumentSession& session, const QString& draftKey) {
+  if (session.isAsyncParseInProgress() || !session.document().isModified() || session.markdownText().isEmpty()) {
+    return false;
+  }
+  snapshot(session.markdownText().toString(), session.filePath(), draftKey);
+  return true;
+}
