@@ -342,6 +342,35 @@ void testDataImage() {
   require(allowed.contains(QStringLiteral("<img src=\"data:image/png")), QStringLiteral("data:image/ allowed"));
 }
 
+void testEncodedUrlsPreserveEscapesAndSafety() {
+  const QString url = QStringLiteral("assets/a%20b%2520.md?q=%2F%26%25&other=%E4%B8%AD#x%2fy");
+  const QString attribute = QStringLiteral("assets/a%20b%2520.md?q=%2F%26%25&amp;other=%E4%B8%AD#x%2fy");
+  const QString linked = serialize(QStringLiteral("[x](%1)").arg(url));
+  require(linked.contains(QStringLiteral("href=\"%1\"").arg(attribute)),
+          QStringLiteral("link must retain existing percent escapes and escape ampersands"));
+  const QString image = serialize(QStringLiteral("![x](%1)").arg(url));
+  require(image.contains(QStringLiteral("src=\"%1\"").arg(attribute)),
+          QStringLiteral("image must retain existing percent escapes"));
+  require(serialize(QStringLiteral("[x](100%done.md)")).contains(QStringLiteral("100%25done.md")),
+          QStringLiteral("a literal percent must be encoded"));
+
+  for (const QString& unsafe : {QStringLiteral("javascript:alert(1)"),
+                                QStringLiteral("java&#x09;script:alert(1)"),
+                                QStringLiteral("vbscript:evil"),
+                                QStringLiteral("data:text/html,%3Cscript%3Ebad%3C/script%3E")}) {
+    require(!serialize(QStringLiteral("[x](%1)").arg(unsafe)).contains(QStringLiteral("href=")),
+            QStringLiteral("URL escape preservation must not weaken scheme filtering"));
+  }
+  require(!serialize(QStringLiteral("![x](data:image/svg+xml,%3Csvg%3E%3C/svg%3E)")).contains(QStringLiteral("<img")),
+          QStringLiteral("encoded SVG data must stay blocked"));
+  const QString encodedScheme = serialize(QStringLiteral("[x](%6aavascript:alert(1))"));
+  require(!encodedScheme.contains(QStringLiteral("href=\"javascript:")),
+          QStringLiteral("encoded URLs must never be decoded into an executable scheme"));
+  const QString quote = serialize(QStringLiteral("[x](https://example.com/?q=%22&x=&quot;bad)") );
+  require(quote.contains(QStringLiteral("%22&amp;x=&quot;bad")),
+          QStringLiteral("encoded and literal quotes must remain inside the attribute"));
+}
+
 // --- emoji parity (bonus) ---
 void testEmoji() {
   // Compare against the map's glyph (a proper QString) rather than hardcoded UTF-8 bytes: QStringLiteral
@@ -416,6 +445,7 @@ int main(int argc, char** argv) {
   testTableAlignments();
   testJavascriptLinkDropped();
   testDataImage();
+  testEncodedUrlsPreserveEscapesAndSafety();
   testEmoji();
   testSerializeSourceReadsSettings();
   return 0;

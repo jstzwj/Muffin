@@ -42,12 +42,17 @@ QString escapeText(QStringView text) {
 // Escape a URL for a double-quoted href/src attribute. Minimal-safe subset of cmark's
 // houdini_escape_href: escapes the chars that could break out of the attribute (`&` `"` `'`) or
 // break the URL (space / control chars → %XX). Not byte-identical to houdini (which percent-encodes
-// a broader set incl. non-ASCII), but equally injection-safe; no test asserts exact href bytes and
-// browsers handle the raw chars we leave (notably non-ASCII) when navigating.
+// a broader set incl. non-ASCII). Valid percent escapes are retained; attribute delimiters
+// remain HTML-escaped independently of the URL encoding.
 QString escapeHref(QStringView url) {
   QString out;
   out.reserve(url.size());
-  for (const QChar ch : url) {
+  const auto isHex = [](QChar ch) {
+    const ushort u = ch.unicode();
+    return (u >= '0' && u <= '9') || (u >= 'a' && u <= 'f') || (u >= 'A' && u <= 'F');
+  };
+  for (qsizetype i = 0; i < url.size(); ++i) {
+    const QChar ch = url.at(i);
     const ushort u = ch.unicode();
     if (u < 0x20 || ch == QLatin1Char(' ')) {
       out += QLatin1Char('%');
@@ -55,7 +60,14 @@ QString escapeHref(QStringView url) {
       if (hex.size() < 2) out += QLatin1Char('0');
       out += hex;
     } else if (ch == QLatin1Char('%')) {
-      out += QStringLiteral("%25");  // encode literal % so it can't smuggle a pre-encoded scheme
+      // Safety is checked before escaping. Keep existing URL escapes byte-for-byte;
+      // double encoding changes filenames, query values and signed URLs.
+      if (i + 2 < url.size() && isHex(url.at(i + 1)) && isHex(url.at(i + 2))) {
+        out += url.mid(i, 3);
+        i += 2;
+      } else {
+        out += QStringLiteral("%25");
+      }
     } else if (ch == QLatin1Char('&')) {
       out += QStringLiteral("&amp;");
     } else if (ch == QLatin1Char('"')) {
