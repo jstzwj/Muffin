@@ -118,6 +118,49 @@ void testShiftPageDownExtendsSelection() {
   require(range.anchor.blockId == blockAt(session, 0)->id(), "anchor should stay at the origin block");
 }
 
+void testCaretFollowsRepeatedEditingAndNavigation() {
+  DocumentSession session;
+  EditorController controller;
+  EditorView view;
+  controller.attach(&session, &view);
+  view.resize(800, 240);
+  session.setMarkdownText(QStringLiteral("start"), false);
+  view.setDocument(session.document());
+  setCursor(controller.selection(), blockAt(session, 0), 5);
+
+  const auto requireVisible = [&view](const char* message) {
+    const QRectF caret = view.effectiveCursorRect();
+    const qreal top = view.verticalScrollBar()->value();
+    if (caret.top() < top - 1 || caret.bottom() > top + view.viewport()->height() + 1) {
+      std::fprintf(stderr, "caret=%f..%f viewport=%f..%f max=%d total=%f\n", caret.top(), caret.bottom(), top,
+                   top + view.viewport()->height(), view.verticalScrollBar()->maximum(), view.layoutTotalHeight());
+    }
+    require(caret.top() >= top - 1 && caret.bottom() <= top + view.viewport()->height() + 1, message);
+  };
+
+  for (int i = 0; i < 30; ++i) {
+    require(pressKey(controller.inputController(), &view, Qt::Key_Return), "Enter should be handled");
+    requireVisible("caret should remain visible after Enter");
+  }
+  require(view.verticalScrollBar()->value() > 0, "repeated Enter should scroll the viewport");
+
+  for (int i = 0; i < 12; ++i) {
+    require(pressKey(controller.inputController(), &view, Qt::Key_Up), "Up should be handled");
+    requireVisible("caret should remain visible while moving up");
+  }
+  for (int i = 0; i < 12; ++i) {
+    require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down should be handled");
+    requireVisible("caret should remain visible while moving down");
+  }
+  QKeyEvent letter(QEvent::KeyPress, Qt::Key_A, Qt::NoModifier, QStringLiteral("a"));
+  require(controller.inputController().eventFilter(&view, &letter), "typing should be handled");
+  requireVisible("caret should remain visible after typing");
+  for (int i = 0; i < 12; ++i) {
+    require(pressKey(controller.inputController(), &view, Qt::Key_Backspace), "Backspace should be handled");
+    requireVisible("caret should remain visible after Backspace");
+  }
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -130,6 +173,7 @@ int main(int argc, char** argv) {
   RUN_TEST(testPageUpFromLaterBlock);
   RUN_TEST(testPageDownClampsAtDocumentEnd);
   RUN_TEST(testShiftPageDownExtendsSelection);
+  RUN_TEST(testCaretFollowsRepeatedEditingAndNavigation);
 #undef RUN_TEST
   qInfo("All page-navigation tests passed.");
   return 0;

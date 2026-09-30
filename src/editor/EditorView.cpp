@@ -369,6 +369,7 @@ bool EditorView::refreshBlocksInternal(
   }
   updateCursorHitFromPosition();
   updateTableToolbar();
+  ensureCursorVisible();
   // Include the caret so a caret outside the refreshed blocks (e.g. on the
   // virtual trailing paragraph below the last block) repaints too — both the
   // new position (to draw) and the previous one (to erase the ghost on move).
@@ -397,6 +398,7 @@ bool EditorView::refreshTopLevelRange(TopLevelRangeChange range, const MarkdownD
   updateCursorHitFromPosition();
   updateCodeLanguageEditor();
   updateTableToolbar();
+  ensureCursorVisible();
   QRect dirty;
   addRebuildDirtyRect(dirty, result, documentViewportRect(), scrollY(), viewport()->size());
   const QRectF badgeRect = headingBadgeViewportRectForBlock(cursorPosition_.blockId);
@@ -455,6 +457,7 @@ void EditorView::setCursorHit(HitTestResult hit) {
   resetCaretBlink();
   refreshInlineProjectionForSelectionChange(previousSelection);
   ensureCodeFenceCursorVisible();
+  ensureCursorVisible();
   updateTableToolbar();
   updateBlockFocus();
 }
@@ -478,6 +481,7 @@ void EditorView::setCursorPosition(CursorPosition position) {
     updateBlockFocus();
   }
   resetCaretBlink();
+  ensureCursorVisible();
 }
 
 void EditorView::setSelectionRange(SelectionRange selection) {
@@ -517,6 +521,7 @@ void EditorView::applySelectionRange(SelectionRange selection) {
   resetCaretBlink();
   refreshInlineProjectionForSelectionChange(previousSelection);
   updateTableToolbar();
+  ensureCursorVisible();
 }
 
 void EditorView::resetCaretBlink() {
@@ -1194,6 +1199,9 @@ void EditorView::rebuildLayout() {
   }
   updateCodeLanguageEditor();
   updateTableToolbar();
+  if (cursorPosition_.isValid()) {
+    ensureCursorVisible();
+  }
   viewport()->update();
 }
 

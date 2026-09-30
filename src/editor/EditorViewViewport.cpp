@@ -101,6 +101,26 @@ int EditorView::typewriterScrollTarget(const QRectF& cursor) const {
   return -1;
 }
 
+void EditorView::ensureCursorVisible() {
+  const QRectF cursor = effectiveCursorRect();
+  if (cursor.isEmpty() || viewport()->height() <= 0) {
+    return;
+  }
+  if (typewriterMode_) {
+    return;
+  }
+
+  QScrollBar* bar = verticalScrollBar();
+  const qreal top = bar->value();
+  const qreal bottom = top + viewport()->height();
+  const qreal margin = qMin<qreal>(24.0, viewport()->height() / 4.0);
+  if (cursor.top() < top + margin) {
+    bar->setValue(qRound(cursor.top() - margin));
+  } else if (cursor.bottom() > bottom - margin) {
+    bar->setValue(qRound(cursor.bottom() + margin - viewport()->height()));
+  }
+}
+
 void EditorView::scrollToCursorCentered() {
   const QRectF cursor = effectiveCursorRect();
   if (cursor.isEmpty()) {

@@ -76,6 +76,7 @@ public:
   qreal layoutTotalHeight() const { return layout_ ? layout_->totalHeight() : 0.0; }
   const RenderTheme& theme() const { return theme_; }
   void scrollToNode(NodeId id);
+  void ensureCursorVisible();
   void scrollToCursorCentered();
   void scrollToCursorCenteredAnimated();
   void setTypewriterMode(bool enabled);
