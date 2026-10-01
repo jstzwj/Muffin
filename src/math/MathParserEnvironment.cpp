@@ -23,8 +23,8 @@ QVector<std::shared_ptr<MathParseNode>> toSharedNodes(QVector<MathParseNode> nod
 
 }  // namespace
 
-MathParseNode MathParser::parseBeginEnvironment() {
-  const QString name = parseRawGroupText(QStringLiteral("\\begin"));
+MathParseTask<MathParseNode> MathParser::parseBeginEnvironment() {
+  const QString name = (co_await parseRawGroupText(QStringLiteral("\\begin")));
   if (name == QStringLiteral("matrix") || name == QStringLiteral("pmatrix") || name == QStringLiteral("bmatrix") ||
       name == QStringLiteral("Bmatrix") || name == QStringLiteral("vmatrix") || name == QStringLiteral("Vmatrix") ||
       name == QStringLiteral("matrix*") || name == QStringLiteral("pmatrix*") || name == QStringLiteral("bmatrix*") ||
@@ -37,15 +37,15 @@ MathParseNode MathParser::parseBeginEnvironment() {
       name == QStringLiteral("gather") || name == QStringLiteral("gather*") || name == QStringLiteral("alignedat") ||
       name == QStringLiteral("alignat") || name == QStringLiteral("alignat*") ||
       name == QStringLiteral("equation") || name == QStringLiteral("equation*")) {
-    return parseArrayEnvironment(name);
+    co_return (co_await parseArrayEnvironment(name));
   }
   if (name == QStringLiteral("CD")) {
-    return parseCDEnvironment();
+    co_return (co_await parseCDEnvironment());
   }
-  return errorNode(QStringLiteral("Unsupported environment %1").arg(name));
+  co_return errorNode(QStringLiteral("Unsupported environment %1").arg(name));
 }
 
-MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
+MathParseTask<MathParseNode> MathParser::parseArrayEnvironment(const QString& name) {
   MathParseNode array;
   array.type = MathNodeType::Array;
   array.label = name;
@@ -53,10 +53,10 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
   configureArrayEnvironment(array, name);
 
   if ((name == QStringLiteral("array") || name == QStringLiteral("darray")) && lexer_.peek().text == QStringLiteral("{")) {
-    const QString preamble = parseRawGroupText(QStringLiteral("\\begin{array}"));
+    const QString preamble = (co_await parseRawGroupText(QStringLiteral("\\begin{array}")));
     parseArrayPreamble(array, preamble);
   } else if (name == QStringLiteral("subarray") && lexer_.peek().text == QStringLiteral("{")) {
-    const QString alignment = parseRawGroupText(QStringLiteral("\\begin{subarray}")).trimmed();
+    const QString alignment = (co_await parseRawGroupText(QStringLiteral("\\begin{subarray}"))).trimmed();
     if (!alignment.isEmpty()) {
       const QChar align = alignment.at(0);
       if (align == QLatin1Char('l') || align == QLatin1Char('c')) {
@@ -87,7 +87,7 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
     // Consume the mandatory {numCols} argument.  The column count is
     // determined by the preamble &-count at parse time; the numeric argument
     // is only for validation in LaTeX and not needed for rendering.
-    parseRawGroupText(QStringLiteral("\\begin{") + name + QStringLiteral("}"));
+    (co_await parseRawGroupText(QStringLiteral("\\begin{") + name + QStringLiteral("}")));
   }
 
   if (array.columnAlignments.isEmpty()) {
@@ -104,7 +104,7 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
   while (lexer_.peek().text != QStringLiteral("EOF")) {
     if (lexer_.peek().text == QStringLiteral("\\end")) {
       lexer_.consume();
-      const QString endName = parseRawGroupText(QStringLiteral("\\end"));
+      const QString endName = (co_await parseRawGroupText(QStringLiteral("\\end")));
       if (endName != name && settings_.throwOnError) {
         throw MathParseError(QStringLiteral("Mismatch: \\begin{%1} ended by \\end{%2}").arg(name, endName), QStringLiteral("\\end"), lexer_.peek().position);
       }
@@ -112,8 +112,8 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
     }
 
     MathArrayCell cell;
-    cell.body = toSharedNodes(parseExpressionUntilAny(
-        {QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")}));
+    cell.body = toSharedNodes((co_await parseExpressionUntilAny(
+        {QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")})));
     row.push_back(std::move(cell));
     if (lexer_.peek().text == QStringLiteral("&")) {
       lexer_.consume();
@@ -165,7 +165,7 @@ MathParseNode MathParser::parseArrayEnvironment(const QString& name) {
     array.columns.push_back(column);
     ++alignCount;
   }
-  return array;
+  co_return array;
 }
 
 void MathParser::parseArrayPreamble(MathParseNode& array, const QString& preamble) {
@@ -332,7 +332,7 @@ void MathParser::configureArrayEnvironment(MathParseNode& array, const QString& 
   }
 }
 
-MathParseNode MathParser::parseCDEnvironment() {
+MathParseTask<MathParseNode> MathParser::parseCDEnvironment() {
   // KaTeX CD (commutative diagram) environment.
   // CD syntax: rows separated by \\, cells separated by @arrow_specs.
   //   Node rows: node @arrow node @arrow node ...
@@ -454,7 +454,7 @@ MathParseNode MathParser::parseCDEnvironment() {
   while (lexer_.peek().text != QStringLiteral("EOF")) {
     if (lexer_.peek().text == QStringLiteral("\\end")) {
       lexer_.consume();
-      parseRawGroupText(QStringLiteral("\\end"));
+      (co_await parseRawGroupText(QStringLiteral("\\end")));
       break;
     }
 
@@ -550,7 +550,7 @@ MathParseNode MathParser::parseCDEnvironment() {
     }
   }
 
-  return result;
+  co_return result;
 }
 
 }  // namespace muffin::math

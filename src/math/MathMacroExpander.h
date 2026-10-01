@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math/MathSettings.h"
+#include "math/MathParseTask.h"
 
 #include <QHash>
 #include <QString>
@@ -43,9 +44,9 @@ private:
   Macro macro(const QString& name) const;
   void setMacro(const QString& name, const Macro& macro, bool global = false);
   void undefineMacro(const QString& name, bool global = false);
-  QString expandOnce(QString input, bool* changed);
-  bool expandOnce(TokenStream& stream);
-  MacroToken expandNextToken(TokenStream& stream);
+  MathParseTask<QString> expandInput(QString input);
+  MathParseTask<bool> expandOnce(TokenStream& stream);
+  MathParseTask<MacroToken> expandNextToken(TokenStream& stream);
   void countExpansion(int amount, qsizetype position, qsizetype endPosition);
 
   QHash<QString, Macro> macros_;
@@ -55,7 +56,7 @@ private:
   // Shared across re-entrant \edef/\xdef sub-expanders so a fresh sub-expander can't reset the
   // maxExpand budget (DoS bypass). The outermost expander owns a fresh counter (make_shared<int>(0)).
   std::shared_ptr<int> expansionCount_;
-  int expandDepth_ = 0;  // bounds \expandafter's C++ recursion in expandOnce
+  int expandDepth_ = 0;  // bounds logical \expandafter nesting
 };
 
 }  // namespace muffin::math

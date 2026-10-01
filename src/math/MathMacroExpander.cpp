@@ -13,15 +13,16 @@ namespace {
 
 constexpr int kMaxExpandDepth = 200;
 
-// RAII frame bounding \expandafter's recursive expandOnce call. The destructor rolls back on
-// exception unwind so a thrown MathParseError never leaves expandDepth_ bumped.
+// Bound logical nesting independently of native stack size. Continuations are
+// scheduled by MathParseTask, including the nested edef/xdef expansion path.
 struct ExpandDepthFrame {
   int& depth;
   qsizetype position;
   ExpandDepthFrame(int& d, qsizetype pos) : depth(d), position(pos) {
-    if (++depth > kMaxExpandDepth) {
+    if (depth >= kMaxExpandDepth) {
       throw MathParseError(QStringLiteral("Too many nested \\expandafter"), {}, position, position);
     }
+    ++depth;
   }
   ~ExpandDepthFrame() { --depth; }
 };
@@ -720,6 +721,10 @@ void MathMacroExpander::countExpansion(int amount, qsizetype position, qsizetype
 }
 
 QString MathMacroExpander::expand(QString input) {
+  return expandInput(std::move(input)).run();
+}
+
+MathParseTask<QString> MathMacroExpander::expandInput(QString input) {
   // The shared expansion budget is seeded at construction (make_shared<int>(0)) and reused by
   // re-entrant \edef expanders, so it is NOT reset here — only the local \expandafter depth resets
   // per top-level expand (a fresh call starts a new recursion frontier).
@@ -727,7 +732,7 @@ QString MathMacroExpander::expand(QString input) {
   TokenStream stream(std::move(input));
   QVector<MacroToken> output;
   while (!stream.empty()) {
-    MacroToken token = expandNextToken(stream);
+    MacroToken token = (co_await expandNextToken(stream));
     if (token.text == QStringLiteral("EOF")) {
       break;
     }
@@ -739,39 +744,29 @@ QString MathMacroExpander::expand(QString input) {
     output.push_back(std::move(token));
   }
   endGroups();
-  return tokensToString(output);
+  co_return tokensToString(output);
 }
 
-QString MathMacroExpander::expandOnce(QString input, bool* changed) {
-  TokenStream stream(std::move(input));
-  *changed = expandOnce(stream) != false;
-  QVector<MacroToken> output;
-  while (!stream.empty()) {
-    output.push_back(stream.popToken());
-  }
-  return tokensToString(output);
-}
-
-MacroToken MathMacroExpander::expandNextToken(TokenStream& stream) {
+MathParseTask<MacroToken> MathMacroExpander::expandNextToken(TokenStream& stream) {
   for (;;) {
-    if (!expandOnce(stream)) {
+    if (!(co_await expandOnce(stream))) {
       MacroToken token = stream.popToken();
       if (token.treatAsRelax) {
         token.text = QStringLiteral("\\relax");
         token.noExpand = false;
         token.treatAsRelax = false;
       }
-      return token;
+      co_return token;
     }
   }
 }
 
-bool MathMacroExpander::expandOnce(TokenStream& stream) {
+MathParseTask<bool> MathMacroExpander::expandOnce(TokenStream& stream) {
   MacroToken token = stream.popToken();
   const QString command = token.text;
   if (command == QStringLiteral("EOF")) {
     stream.pushToken(token);
-    return false;
+    co_return false;
   }
 
   if (command == QStringLiteral("\\noexpand")) {
@@ -782,16 +777,16 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     }
     stream.pushToken(next);
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (command == QStringLiteral("\\expandafter")) {
-    ExpandDepthFrame frame{expandDepth_, token.position};  // bounds the C++ recursion in expandOnce
+    ExpandDepthFrame frame{expandDepth_, token.position};
     MacroToken held = stream.popToken();
-    expandOnce(stream);
+    (co_await expandOnce(stream));
     stream.pushToken(held);
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (command == QStringLiteral("\\@ifnextchar")) {
@@ -804,7 +799,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     std::reverse(chosen.begin(), chosen.end());
     stream.pushTokens(chosen);
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   bool globalPrefix = false;
@@ -818,14 +813,14 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
   if (actualCommand == QStringLiteral("\\begingroup")) {
     beginGroup();
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
   if (actualCommand == QStringLiteral("\\endgroup")) {
     if (!undoStack_.isEmpty()) {
       endGroup();
     }
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   // braket.sty braketHelper (KaTeX macros.ts:893-968):
@@ -849,7 +844,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     stream.pushTokens(reversedTokensFromString(body, token.position));
     stream.pushTokens(reversedTokensFromString(left, token.position));
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (actualCommand == QStringLiteral("\\newcommand") || actualCommand == QStringLiteral("\\renewcommand") ||
@@ -865,7 +860,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
       setMacro(name, Macro{replacement, numArgs, false}, globalPrefix);
     }
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (actualCommand == QStringLiteral("\\def") || actualCommand == QStringLiteral("\\gdef") || actualCommand == QStringLiteral("\\edef") ||
@@ -874,14 +869,17 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     const QString name = stream.consumeCommandArgument();
     const QString parameterText = stream.consumeUntilGroupStart();
     QString replacement = stream.consumeArgText();
+    // Reserve this expansion before scheduling a child. Otherwise nested
+    // edef/xdef commands can descend arbitrarily far before any parent charges
+    // the shared maxExpand budget on its way back out.
+    countExpansion(1, token.position, token.endPosition);
     if (actualCommand == QStringLiteral("\\edef") || actualCommand == QStringLiteral("\\xdef")) {
-      replacement = MathMacroExpander(settings_, expansionCount_).expand(replacement);
+      replacement = co_await MathMacroExpander(settings_, expansionCount_).expandInput(replacement);
     }
     if (!name.isEmpty()) {
       setMacro(name, Macro{replacement, countDefArgs(parameterText), false}, global);
     }
-    countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (actualCommand == QStringLiteral("\\let")) {
@@ -899,7 +897,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
       }
     }
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (actualCommand == QStringLiteral("\\futurelet")) {
@@ -911,7 +909,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     }
     stream.pushToken(first);
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   // KaTeX macros.ts:452: \dots is context-sensitive, dispatches to
@@ -920,7 +918,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     const QString variant = dotsVariantForNext(stream.future().text);
     stream.pushTokens(reversedTokensFromString(variant, token.position));
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (actualCommand == QStringLiteral("\\dotso") || actualCommand == QStringLiteral("\\dotsc") || actualCommand == QStringLiteral("\\cdots")) {
@@ -935,7 +933,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     }
     stream.pushTokens(reversedTokensFromString(replacement, token.position));
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (actualCommand == QStringLiteral("\\char")) {
@@ -952,7 +950,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
       const QChar ch = next.text.startsWith(QLatin1Char('\\')) && next.text.size() > 1 ? next.text.at(1) : (next.text.isEmpty() ? QChar() : next.text.at(0));
       stream.pushTokens(reversedTokensFromString(QStringLiteral("\\text{%1}").arg(ch), token.position));
       countExpansion(1, token.position, token.endPosition);
-      return true;
+      co_return true;
     }
     bool ok = false;
     int value = next.text.toInt(&ok, base);
@@ -961,20 +959,20 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
     }
     stream.pushTokens(reversedTokensFromString(QStringLiteral("\\text{%1}").arg(QChar(value)), token.position));
     countExpansion(1, token.position, token.endPosition);
-    return true;
+    co_return true;
   }
 
   if (token.noExpand || !hasMacro(actualCommand)) {
     token.text = actualCommand;
     stream.pushToken(token);
-    return false;
+    co_return false;
   }
 
   const Macro expansion = macro(actualCommand);
   if (expansion.unexpandable) {
     token.text = actualCommand;
     stream.pushToken(token);
-    return false;
+    co_return false;
   }
   QVector<QVector<MacroToken>> args;
   for (int i = 0; i < expansion.numArgs; ++i) {
@@ -987,7 +985,7 @@ bool MathMacroExpander::expandOnce(TokenStream& stream) {
   }
   stream.pushTokens(applyArgs(std::move(body), args));
   countExpansion(1, token.position, token.endPosition);
-  return true;
+  co_return true;
 }
 
 }  // namespace muffin::math

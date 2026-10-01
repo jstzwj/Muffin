@@ -101,8 +101,8 @@ void testMathMetricsMacrosAndState() {
 }
 
 void testRecursionGuards() {
-  // Deeply nested {{...x...}} must hit the parser depth limit (a rendered error node), not
-  // overflow the 1MB GUI-thread stack — the same class of crash NodeCssElement was fixed to avoid.
+  // Deeply nested groups must retain the parser's logical resource limit.
+  // MuffinMathParserStackTest also exercises this on a deliberately small stack.
   {
     QString deep;
     for (int i = 0; i < 2000; ++i) { deep += QLatin1Char('{'); }
@@ -117,8 +117,7 @@ void testRecursionGuards() {
     }
     require(threw, QStringLiteral("deeply nested groups must hit the depth limit, not overflow the stack"));
   }
-  // A long \expandafter chain is direct C++ recursion in expandOnce; it must hit the expand-depth
-  // limit instead of overflowing.
+  // A long \expandafter chain must retain the logical expansion-depth limit.
   {
     math::MathMacroExpander expander;
     QString chain;

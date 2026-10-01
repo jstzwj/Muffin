@@ -13,22 +13,23 @@
 namespace muffin::math {
 
 namespace {
-// KaTeX caps parse recursion; unbounded descent over {{{...}}} / \sqrt{\sqrt{...}} /
-// \left(\left(...\right)\right) / \text{\text{...}} blows the 1MB GUI-thread stack (the same
-// class of crash NodeCssElement was fixed to avoid). The guard counts active recursive frames;
-// linear scanning (a long run of atoms, or a long \text{...} body) does NOT accumulate depth —
-// only genuine nesting does, so the limit never trips on realistic input.
+// Retain the existing logical nesting budget for heap usage and downstream
+// render-tree processing. MathParseTask makes parser descent independent of the
+// native stack; this is a resource limit, not an estimate of stack-frame size.
+// Linear scanning does not accumulate depth.
 constexpr int kMaxMathDepth = 512;
 }  // namespace
 
-// RAII: bump depth_ on entry, roll it back on exit (incl. exception unwind). Throwing from the
-// constructor turns a would-be stack overflow into a rendered error node (caught in MathRenderer).
+// The guard lives in the suspended continuation and releases its depth on both
+// success and failure. Check before incrementing: a throwing constructor has
+// no destructor, so it must not consume part of the nesting budget.
 class MathParser::DepthGuard {
 public:
   explicit DepthGuard(MathParser& parser) : parser_(parser) {
-    if (++parser_.depth_ > kMaxMathDepth) {
+    if (parser_.depth_ >= kMaxMathDepth) {
       throw MathParseError(QStringLiteral("LaTeX input is too deeply nested"));
     }
+    ++parser_.depth_;
   }
   ~DepthGuard() { --parser_.depth_; }
   DepthGuard(const DepthGuard&) = delete;
@@ -41,10 +42,10 @@ MathParser::MathParser(QString input, MathSettings settings)
     : lexer_(MathMacroExpander(settings).expand(std::move(input))), settings_(std::move(settings)) {}
 
 QVector<MathParseNode> MathParser::parse() {
-  return parseExpression();
+  return parseExpression().run();
 }
 
-QVector<MathParseNode> MathParser::parseExpression(const QString& breakOn) {
+MathParseTask<QVector<MathParseNode>> MathParser::parseExpression(const QString& breakOn) {
   DepthGuard frameGuard(*this);
   // Save and propagate break tokens so inner handlers (Styling, Sizing, Color)
   // respect the enclosing context (e.g. \right inside \left...\right,
@@ -69,16 +70,16 @@ QVector<MathParseNode> MathParser::parseExpression(const QString& breakOn) {
     }
     if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(next.text); function != nullptr && function->infix) {
       const MathToken infix = lexer_.next();
-      nodes = QVector<MathParseNode>{parseInfixFraction(infix, std::move(nodes), breakOn)};
+      nodes = QVector<MathParseNode>{(co_await parseInfixFraction(infix, std::move(nodes), breakOn))};
       continue;
     }
-    nodes.push_back(parseAtom());
+    nodes.push_back((co_await parseAtom()));
   }
   outerBreakTokens_ = prevBreakTokens;
-  return nodes;
+  co_return nodes;
 }
 
-QVector<MathParseNode> MathParser::parseExpressionUntilAny(const QVector<QString>& breakTokens) {
+MathParseTask<QVector<MathParseNode>> MathParser::parseExpressionUntilAny(const QVector<QString>& breakTokens) {
   DepthGuard frameGuard(*this);
   // Save and propagate break tokens so inner handlers (Styling, Sizing, Color,
   // numArgs=0 Text) respect the enclosing context.
@@ -93,7 +94,7 @@ QVector<MathParseNode> MathParser::parseExpressionUntilAny(const QVector<QString
     }
     if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(next.text); function != nullptr && function->infix) {
       const MathToken infix = lexer_.next();
-      nodes = QVector<MathParseNode>{parseInfixFractionUntilAny(infix, std::move(nodes), breakTokens)};
+      nodes = QVector<MathParseNode>{(co_await parseInfixFractionUntilAny(infix, std::move(nodes), breakTokens))};
       continue;
     }
     bool shouldBreak = false;
@@ -106,10 +107,10 @@ QVector<MathParseNode> MathParser::parseExpressionUntilAny(const QVector<QString
     if (shouldBreak) {
       break;
     }
-    nodes.push_back(parseAtom());
+    nodes.push_back((co_await parseAtom()));
   }
   outerBreakTokens_ = prevBreakTokens;
-  return nodes;
+  co_return nodes;
 }
 
 namespace {
@@ -197,25 +198,25 @@ QString longestKnownSizeUnitPrefix(const QString& text) {
 
 }  // namespace
 
-MathParseNode MathParser::parseInfixFraction(const MathToken& token, QVector<MathParseNode> numerator, const QString& breakOn) {
+MathParseTask<MathParseNode> MathParser::parseInfixFraction(const MathToken& token, QVector<MathParseNode> numerator, const QString& breakOn) {
   qreal lineThickness = -1.0;
   if (token.text == QStringLiteral("\\above")) {
-    lineThickness = sizeTextToEm(parseSizeText(token.text));
+    lineThickness = sizeTextToEm((co_await parseSizeText(token.text)));
   }
-  QVector<MathParseNode> denominator = parseExpression(breakOn);
-  return makeInfixFraction(token, std::move(numerator), std::move(denominator), lineThickness);
+  QVector<MathParseNode> denominator = (co_await parseExpression(breakOn));
+  co_return (co_await makeInfixFraction(token, std::move(numerator), std::move(denominator), lineThickness));
 }
 
-MathParseNode MathParser::parseInfixFractionUntilAny(const MathToken& token, QVector<MathParseNode> numerator, const QVector<QString>& breakTokens) {
+MathParseTask<MathParseNode> MathParser::parseInfixFractionUntilAny(const MathToken& token, QVector<MathParseNode> numerator, const QVector<QString>& breakTokens) {
   qreal lineThickness = -1.0;
   if (token.text == QStringLiteral("\\above")) {
-    lineThickness = sizeTextToEm(parseSizeText(token.text));
+    lineThickness = sizeTextToEm((co_await parseSizeText(token.text)));
   }
-  QVector<MathParseNode> denominator = parseExpressionUntilAny(breakTokens);
-  return makeInfixFraction(token, std::move(numerator), std::move(denominator), lineThickness);
+  QVector<MathParseNode> denominator = (co_await parseExpressionUntilAny(breakTokens));
+  co_return (co_await makeInfixFraction(token, std::move(numerator), std::move(denominator), lineThickness));
 }
 
-MathParseNode MathParser::makeInfixFraction(const MathToken& token,
+MathParseTask<MathParseNode> MathParser::makeInfixFraction(const MathToken& token,
                                             QVector<MathParseNode> numerator,
                                             QVector<MathParseNode> denominator,
                                             qreal lineThickness) {
@@ -252,21 +253,21 @@ MathParseNode MathParser::makeInfixFraction(const MathToken& token,
     frac.leftDelim = leftDelim;
     frac.rightDelim = rightDelim;
   }
-  return parseScripts(std::move(frac));
+  co_return (co_await parseScripts(std::move(frac)));
 }
 
-MathParseNode MathParser::parseAtom() {
+MathParseTask<MathParseNode> MathParser::parseAtom() {
   DepthGuard frameGuard(*this);
   const MathToken token = lexer_.next();
   if (token.text == QStringLiteral("\\\\")) {
-    return parseCr(token);
+    co_return parseCr(token);
   }
   if (token.text == QStringLiteral("{")) {
     MathParseNode group;
     group.type = MathNodeType::Group;
-    group.body = parseExpression(QStringLiteral("}"));
+    group.body = (co_await parseExpression(QStringLiteral("}")));
     expect(QStringLiteral("}"), QStringLiteral("group"));
-    return parseScripts(std::move(group));
+    co_return (co_await parseScripts(std::move(group)));
   }
 
   // KaTeX: $ in text mode switches to inline math, consuming until matching $.
@@ -275,10 +276,10 @@ MathParseNode MathParser::parseAtom() {
     MathParseNode styling;
     styling.type = MathNodeType::Styling;
     styling.style = QStringLiteral("\\textstyle");
-    styling.body = parseExpression(QStringLiteral("$"));
+    styling.body = (co_await parseExpression(QStringLiteral("$")));
     expect(QStringLiteral("$"), QStringLiteral("text-math"));
     lexer_.setPreserveSpaces(true);
-    return styling;
+    co_return styling;
   }
 
   // KaTeX: bare ^ or _ without preceding base creates empty-base supsub.
@@ -286,85 +287,85 @@ MathParseNode MathParser::parseAtom() {
     lexer_.pushFront(token);
     MathParseNode emptyBase;
     emptyBase.type = MathNodeType::Ord;
-    return parseScripts(std::move(emptyBase));
+    co_return (co_await parseScripts(std::move(emptyBase)));
   }
 
   if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(token.text)) {
-    return parseFunction(token, *function);
+    co_return (co_await parseFunction(token, *function));
   }
 
-  return parseScripts(parseSymbol(token));
+  co_return (co_await parseScripts(parseSymbol(token)));
 }
 
-MathParseNode MathParser::parseFunction(const MathToken& token, const MathFunctionSpec& function) {
+MathParseTask<MathParseNode> MathParser::parseFunction(const MathToken& token, const MathFunctionSpec& function) {
   reportFunctionPolicy(token, function);
   switch (function.handlerKind) {
-  case MathFunctionHandlerKind::Fraction: return parseFraction(token);
-  case MathFunctionHandlerKind::Sqrt: return parseSqrt(token);
-  case MathFunctionHandlerKind::Accent: return parseAccent(token);
-  case MathFunctionHandlerKind::AccentUnder: return parseAccentUnder(token);
-  case MathFunctionHandlerKind::HorizBrace: return parseHorizBrace(token);
-  case MathFunctionHandlerKind::XArrow: return parseXArrow(token);
-  case MathFunctionHandlerKind::Underline: return parseUnderline(token);
-  case MathFunctionHandlerKind::Overline: return parseOverline(token);
-  case MathFunctionHandlerKind::Phantom: return parsePhantom(token);
-  case MathFunctionHandlerKind::Smash: return parseSmash(token);
-  case MathFunctionHandlerKind::Rule: return parseRule(token);
-  case MathFunctionHandlerKind::Kern: return parseKern(token);
-  case MathFunctionHandlerKind::RaiseBox: return parseRaiseBox(token);
-  case MathFunctionHandlerKind::VCenter: return parseVCenter(token);
-  case MathFunctionHandlerKind::Lap: return parseLap(token);
-  case MathFunctionHandlerKind::Enclose: return parseEnclose(token);
-  case MathFunctionHandlerKind::IncludeGraphics: return parseIncludeGraphics(token, function);
-  case MathFunctionHandlerKind::MathChoice: return parseMathChoice(token);
-  case MathFunctionHandlerKind::Href: return parseHref(token, function);
-  case MathFunctionHandlerKind::Url: return parseUrl(token, function);
-  case MathFunctionHandlerKind::Html: return parseHtml(token, function);
-  case MathFunctionHandlerKind::Tag: return parseTag(token);
-  case MathFunctionHandlerKind::Verb: return parseVerb(token);
-  case MathFunctionHandlerKind::Styling: return parseStyling(token);
-  case MathFunctionHandlerKind::Sizing: return parseSizing(token);
-  case MathFunctionHandlerKind::MathClass: return parseMathClass(token);
-  case MathFunctionHandlerKind::Stack: return parseStack(token);
-  case MathFunctionHandlerKind::Text: return parseText(token, function);
-  case MathFunctionHandlerKind::Color: return parseColor(token);
-  case MathFunctionHandlerKind::DelimSizing: return parseDelimSizing(token, function);
-  case MathFunctionHandlerKind::OperatorName: return parseOperatorName(token);
-  case MathFunctionHandlerKind::Operator: return parseOperator(token);
-  case MathFunctionHandlerKind::BeginEnvironment: return parseScripts(parseBeginEnvironment());
-  case MathFunctionHandlerKind::LeftRight: return parseScripts(parseLeftRight());
+  case MathFunctionHandlerKind::Fraction: co_return (co_await parseFraction(token));
+  case MathFunctionHandlerKind::Sqrt: co_return (co_await parseSqrt(token));
+  case MathFunctionHandlerKind::Accent: co_return (co_await parseAccent(token));
+  case MathFunctionHandlerKind::AccentUnder: co_return (co_await parseAccentUnder(token));
+  case MathFunctionHandlerKind::HorizBrace: co_return (co_await parseHorizBrace(token));
+  case MathFunctionHandlerKind::XArrow: co_return (co_await parseXArrow(token));
+  case MathFunctionHandlerKind::Underline: co_return (co_await parseUnderline(token));
+  case MathFunctionHandlerKind::Overline: co_return (co_await parseOverline(token));
+  case MathFunctionHandlerKind::Phantom: co_return (co_await parsePhantom(token));
+  case MathFunctionHandlerKind::Smash: co_return (co_await parseSmash(token));
+  case MathFunctionHandlerKind::Rule: co_return (co_await parseRule(token));
+  case MathFunctionHandlerKind::Kern: co_return (co_await parseKern(token));
+  case MathFunctionHandlerKind::RaiseBox: co_return (co_await parseRaiseBox(token));
+  case MathFunctionHandlerKind::VCenter: co_return (co_await parseVCenter(token));
+  case MathFunctionHandlerKind::Lap: co_return (co_await parseLap(token));
+  case MathFunctionHandlerKind::Enclose: co_return (co_await parseEnclose(token));
+  case MathFunctionHandlerKind::IncludeGraphics: co_return (co_await parseIncludeGraphics(token, function));
+  case MathFunctionHandlerKind::MathChoice: co_return (co_await parseMathChoice(token));
+  case MathFunctionHandlerKind::Href: co_return (co_await parseHref(token, function));
+  case MathFunctionHandlerKind::Url: co_return (co_await parseUrl(token, function));
+  case MathFunctionHandlerKind::Html: co_return (co_await parseHtml(token, function));
+  case MathFunctionHandlerKind::Tag: co_return (co_await parseTag(token));
+  case MathFunctionHandlerKind::Verb: co_return (co_await parseVerb(token));
+  case MathFunctionHandlerKind::Styling: co_return (co_await parseStyling(token));
+  case MathFunctionHandlerKind::Sizing: co_return (co_await parseSizing(token));
+  case MathFunctionHandlerKind::MathClass: co_return (co_await parseMathClass(token));
+  case MathFunctionHandlerKind::Stack: co_return (co_await parseStack(token));
+  case MathFunctionHandlerKind::Text: co_return (co_await parseText(token, function));
+  case MathFunctionHandlerKind::Color: co_return (co_await parseColor(token));
+  case MathFunctionHandlerKind::DelimSizing: co_return (co_await parseDelimSizing(token, function));
+  case MathFunctionHandlerKind::OperatorName: co_return (co_await parseOperatorName(token));
+  case MathFunctionHandlerKind::Operator: co_return (co_await parseOperator(token));
+  case MathFunctionHandlerKind::BeginEnvironment: co_return (co_await parseScripts((co_await parseBeginEnvironment())));
+  case MathFunctionHandlerKind::LeftRight: co_return (co_await parseScripts((co_await parseLeftRight())));
   }
 
-  return parseScripts(parseSymbol(token));
+  co_return (co_await parseScripts(parseSymbol(token)));
 }
 
-MathParseNode MathParser::parseFraction(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseFraction(const MathToken& token) {
   MathParseNode frac;
   frac.type = MathNodeType::Fraction;
   if (token.text == QStringLiteral("\\genfrac")) {
     // First two args are Primitive: consume a single token (or braced group).
-    auto consumePrimitiveArg = [&]() -> QString {
+    auto consumePrimitiveArg = [&]() -> MathParseTask<QString> {
       if (lexer_.peek().text == QStringLiteral("{")) {
-        return parseRawGroupText(token.text);
+        co_return (co_await parseRawGroupText(token.text));
       }
-      return lexer_.next().text;
+      co_return lexer_.next().text;
     };
-    const QString left = delimiterReplacement(consumePrimitiveArg());
-    const QString right = delimiterReplacement(consumePrimitiveArg());
-    const QString thickness = parseRawGroupText(token.text).trimmed();
+    const QString left = delimiterReplacement((co_await consumePrimitiveArg()));
+    const QString right = delimiterReplacement((co_await consumePrimitiveArg()));
+    const QString thickness = (co_await parseRawGroupText(token.text)).trimmed();
     frac.lineThickness = thickness.isEmpty() ? -1.0 : sizeTextToEm(thickness);
-    const QString styleText = parseRawGroupText(token.text).trimmed();
+    const QString styleText = (co_await parseRawGroupText(token.text)).trimmed();
     if (styleText == QStringLiteral("0")) frac.style = QStringLiteral("\\displaystyle");
     else if (styleText == QStringLiteral("1")) frac.style = QStringLiteral("\\textstyle");
     else if (styleText == QStringLiteral("2")) frac.style = QStringLiteral("\\scriptstyle");
     else if (styleText == QStringLiteral("3")) frac.style = QStringLiteral("\\scriptscriptstyle");
-    frac.numerator = parseRequiredGroup(token.text);
-    frac.denominator = parseRequiredGroup(token.text);
+    frac.numerator = (co_await parseRequiredGroup(token.text));
+    frac.denominator = (co_await parseRequiredGroup(token.text));
     if (!left.isEmpty() || !right.isEmpty()) {
       frac.leftDelim = left.isEmpty() ? QStringLiteral(".") : left;
       frac.rightDelim = right.isEmpty() ? QStringLiteral(".") : right;
     }
-    return parseScripts(std::move(frac));
+    co_return (co_await parseScripts(std::move(frac)));
   }
   if (token.text == QStringLiteral("\\cfrac")) {
     frac.style = QStringLiteral("\\displaystyle");
@@ -374,91 +375,91 @@ MathParseNode MathParser::parseFraction(const MathToken& token) {
   } else if (token.text == QStringLiteral("\\tfrac") || token.text == QStringLiteral("\\tbinom")) {
     frac.style = QStringLiteral("\\textstyle");
   }
-  frac.numerator = parseRequiredGroup(token.text);
-  frac.denominator = parseRequiredGroup(token.text);
+  frac.numerator = (co_await parseRequiredGroup(token.text));
+  frac.denominator = (co_await parseRequiredGroup(token.text));
   if (token.text.contains(QStringLiteral("binom"))) {
     frac.lineThickness = 0.0;
     frac.leftDelim = QStringLiteral("(");
     frac.rightDelim = QStringLiteral(")");
   }
-  return parseScripts(std::move(frac));
+  co_return (co_await parseScripts(std::move(frac)));
 }
 
-MathParseNode MathParser::parseSqrt(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseSqrt(const MathToken& token) {
   MathParseNode sqrt;
   sqrt.type = MathNodeType::Sqrt;
   if (lexer_.peek().text == QStringLiteral("[")) {
     lexer_.consume();
-    sqrt.rootIndex = parseExpression(QStringLiteral("]"));
+    sqrt.rootIndex = (co_await parseExpression(QStringLiteral("]")));
     expect(QStringLiteral("]"), token.text);
   }
-  sqrt.body = parseRequiredGroup(token.text);
-  return parseScripts(std::move(sqrt));
+  sqrt.body = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(sqrt)));
 }
 
-MathParseNode MathParser::parseAccent(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseAccent(const MathToken& token) {
   MathParseNode accent;
   accent.type = MathNodeType::Accent;
   accent.label = token.text;
-  accent.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(accent));
+  accent.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(accent)));
 }
 
-MathParseNode MathParser::parseAccentUnder(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseAccentUnder(const MathToken& token) {
   MathParseNode accent;
   accent.type = MathNodeType::AccentUnder;
   accent.label = token.text;
-  accent.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(accent));
+  accent.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(accent)));
 }
 
-MathParseNode MathParser::parseHorizBrace(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseHorizBrace(const MathToken& token) {
   MathParseNode brace;
   brace.type = MathNodeType::HorizBrace;
   brace.label = token.text;
   brace.isOver = token.text.contains(QStringLiteral("\\over"));
-  brace.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(brace));
+  brace.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(brace)));
 }
 
-MathParseNode MathParser::parseXArrow(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseXArrow(const MathToken& token) {
   MathParseNode arrow;
   arrow.type = MathNodeType::XArrow;
   arrow.label = token.text;
   if (lexer_.peek().text == QStringLiteral("[")) {
     lexer_.consume();
-    arrow.sub = parseExpression(QStringLiteral("]"));
+    arrow.sub = (co_await parseExpression(QStringLiteral("]")));
     expect(QStringLiteral("]"), token.text);
   }
-  arrow.body = parseRequiredGroup(token.text);
-  return parseScripts(std::move(arrow));
+  arrow.body = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(arrow)));
 }
 
-MathParseNode MathParser::parseUnderline(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseUnderline(const MathToken& token) {
   MathParseNode underline;
   underline.type = MathNodeType::Underline;
   underline.label = token.text;
-  underline.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(underline));
+  underline.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(underline)));
 }
 
-MathParseNode MathParser::parseOverline(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseOverline(const MathToken& token) {
   MathParseNode overline;
   overline.type = MathNodeType::Overline;
   overline.label = token.text;
-  overline.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(overline));
+  overline.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(overline)));
 }
 
-MathParseNode MathParser::parsePhantom(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parsePhantom(const MathToken& token) {
   MathParseNode phantom;
   phantom.type = MathNodeType::Phantom;
   phantom.label = token.text;
-  phantom.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(phantom));
+  phantom.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(phantom)));
 }
 
-MathParseNode MathParser::parseSmash(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseSmash(const MathToken& token) {
   MathParseNode smash;
   smash.type = MathNodeType::Smash;
   const QString option = parseOptionalBracketText();
@@ -471,68 +472,68 @@ MathParseNode MathParser::parseSmash(const MathToken& token) {
       else if (ch == QLatin1Char('b')) smash.smashDepth = true;
     }
   }
-  smash.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(smash));
+  smash.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(smash)));
 }
 
-MathParseNode MathParser::parseRule(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseRule(const MathToken& token) {
   MathParseNode rule;
   rule.type = MathNodeType::Rule;
   rule.shift = parseOptionalBracketText();
-  rule.width = parseSizeText(token.text);
-  rule.height = parseSizeText(token.text);
-  return parseScripts(std::move(rule));
+  rule.width = (co_await parseSizeText(token.text));
+  rule.height = (co_await parseSizeText(token.text));
+  co_return (co_await parseScripts(std::move(rule)));
 }
 
-MathParseNode MathParser::parseKern(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseKern(const MathToken& token) {
   MathParseNode kern;
   kern.type = MathNodeType::Kern;
-  kern.width = parseSizeText(token.text);
+  kern.width = (co_await parseSizeText(token.text));
   reportKernUnitPolicy(token, kern.width);
-  return parseScripts(std::move(kern));
+  co_return (co_await parseScripts(std::move(kern)));
 }
 
-MathParseNode MathParser::parseRaiseBox(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseRaiseBox(const MathToken& token) {
   MathParseNode raise;
   raise.type = MathNodeType::RaiseBox;
-  raise.shift = parseSizeText(token.text);
-  raise.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(raise));
+  raise.shift = (co_await parseSizeText(token.text));
+  raise.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(raise)));
 }
 
-MathParseNode MathParser::parseVCenter(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseVCenter(const MathToken& token) {
   MathParseNode vcenter;
   vcenter.type = MathNodeType::VCenter;
-  vcenter.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(vcenter));
+  vcenter.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(vcenter)));
 }
 
-MathParseNode MathParser::parseLap(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseLap(const MathToken& token) {
   MathParseNode lap;
   lap.type = MathNodeType::Lap;
   lap.label = token.text;
-  lap.base = parseRequiredGroup(token.text);
-  return parseScripts(std::move(lap));
+  lap.base = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(lap)));
 }
 
-MathParseNode MathParser::parseEnclose(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseEnclose(const MathToken& token) {
   MathParseNode enclose;
   enclose.type = MathNodeType::Enclose;
   enclose.label = token.text;
   if (token.text == QStringLiteral("\\colorbox")) {
-    enclose.backgroundColor = parseRawGroupText(token.text);
-    enclose.base = parseRequiredGroup(token.text);
+    enclose.backgroundColor = (co_await parseRawGroupText(token.text));
+    enclose.base = (co_await parseRequiredGroup(token.text));
   } else if (token.text == QStringLiteral("\\fcolorbox")) {
-    enclose.borderColor = parseRawGroupText(token.text);
-    enclose.backgroundColor = parseRawGroupText(token.text);
-    enclose.base = parseRequiredGroup(token.text);
+    enclose.borderColor = (co_await parseRawGroupText(token.text));
+    enclose.backgroundColor = (co_await parseRawGroupText(token.text));
+    enclose.base = (co_await parseRequiredGroup(token.text));
   } else {
-    enclose.base = parseRequiredGroup(token.text);
+    enclose.base = (co_await parseRequiredGroup(token.text));
   }
-  return parseScripts(std::move(enclose));
+  co_return (co_await parseScripts(std::move(enclose)));
 }
 
-MathParseNode MathParser::parseIncludeGraphics(const MathToken& token, const MathFunctionSpec& function) {
+MathParseTask<MathParseNode> MathParser::parseIncludeGraphics(const MathToken& token, const MathFunctionSpec& function) {
   MathParseNode graphics;
   graphics.type = MathNodeType::IncludeGraphics;
   const QString options = parseOptionalBracketText();
@@ -548,58 +549,58 @@ MathParseNode MathParser::parseIncludeGraphics(const MathToken& token, const Mat
     else if (key == QStringLiteral("totalheight")) graphics.totalHeight = value;
     else if (key == QStringLiteral("alt")) graphics.alt = value;
   }
-  graphics.href = parseRawGroupText(token.text);
+  graphics.href = (co_await parseRawGroupText(token.text));
   if (!ensureTrusted(token, function, trustContextForNode(token, function, graphics))) {
-    return parseScripts(errorNode(token.text, &token));
+    co_return (co_await parseScripts(errorNode(token.text, &token)));
   }
-  return parseScripts(std::move(graphics));
+  co_return (co_await parseScripts(std::move(graphics)));
 }
 
-MathParseNode MathParser::parseMathChoice(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseMathChoice(const MathToken& token) {
   MathParseNode choice;
   choice.type = MathNodeType::MathChoice;
-  choice.display = parseRequiredGroup(token.text);
-  choice.body = parseRequiredGroup(token.text);
-  choice.script = parseRequiredGroup(token.text);
-  choice.scriptScript = parseRequiredGroup(token.text);
-  return parseScripts(std::move(choice));
+  choice.display = (co_await parseRequiredGroup(token.text));
+  choice.body = (co_await parseRequiredGroup(token.text));
+  choice.script = (co_await parseRequiredGroup(token.text));
+  choice.scriptScript = (co_await parseRequiredGroup(token.text));
+  co_return (co_await parseScripts(std::move(choice)));
 }
 
-MathParseNode MathParser::parseHref(const MathToken& token, const MathFunctionSpec& function) {
+MathParseTask<MathParseNode> MathParser::parseHref(const MathToken& token, const MathFunctionSpec& function) {
   MathParseNode href;
   href.type = MathNodeType::Href;
-  href.href = parseRawGroupText(token.text);
-  href.body = parseRequiredGroup(token.text);
+  href.href = (co_await parseRawGroupText(token.text));
+  href.body = (co_await parseRequiredGroup(token.text));
   if (!ensureTrusted(token, function, trustContextForNode(token, function, href))) {
-    return parseScripts(errorNode(token.text, &token));
+    co_return (co_await parseScripts(errorNode(token.text, &token)));
   }
-  return parseScripts(std::move(href));
+  co_return (co_await parseScripts(std::move(href)));
 }
 
-MathParseNode MathParser::parseUrl(const MathToken& token, const MathFunctionSpec& function) {
+MathParseTask<MathParseNode> MathParser::parseUrl(const MathToken& token, const MathFunctionSpec& function) {
   MathParseNode url;
   url.type = MathNodeType::Href;
-  url.href = parseRawGroupText(token.text);
+  url.href = (co_await parseRawGroupText(token.text));
   url.text = url.href;
   if (!ensureTrusted(token, function, trustContextForNode(token, function, url))) {
-    return parseScripts(errorNode(token.text, &token));
+    co_return (co_await parseScripts(errorNode(token.text, &token)));
   }
-  return parseScripts(std::move(url));
+  co_return (co_await parseScripts(std::move(url)));
 }
 
-MathParseNode MathParser::parseHtml(const MathToken& token, const MathFunctionSpec& function) {
+MathParseTask<MathParseNode> MathParser::parseHtml(const MathToken& token, const MathFunctionSpec& function) {
   MathParseNode html;
   html.type = MathNodeType::Html;
   html.label = token.text;
-  html.text = parseRawGroupText(token.text);
-  html.body = parseRequiredGroup(token.text);
+  html.text = (co_await parseRawGroupText(token.text));
+  html.body = (co_await parseRequiredGroup(token.text));
   if (!ensureTrusted(token, function, trustContextForNode(token, function, html))) {
-    return parseScripts(errorNode(token.text, &token));
+    co_return (co_await parseScripts(errorNode(token.text, &token)));
   }
-  return parseScripts(std::move(html));
+  co_return (co_await parseScripts(std::move(html)));
 }
 
-MathParseNode MathParser::parseTag(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseTag(const MathToken& token) {
   MathParseNode tag;
   tag.type = MathNodeType::Tag;
   // KaTeX parses \tag content in text mode where $ acts as a math-mode
@@ -608,13 +609,13 @@ MathParseNode MathParser::parseTag(const MathToken& token) {
   const bool wasInTextBody = inTextBody_;
   inTextBody_ = true;
   lexer_.setPreserveSpaces(true);
-  tag.tag = parseRequiredGroup(token.text);
+  tag.tag = (co_await parseRequiredGroup(token.text));
   inTextBody_ = wasInTextBody;
   lexer_.setPreserveSpaces(wasInTextBody);
-  return tag;
+  co_return tag;
 }
 
-MathParseNode MathParser::parseVerb(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseVerb(const MathToken& token) {
   MathParseNode verb;
   verb.type = MathNodeType::Verb;
   verb.label = token.text;
@@ -623,47 +624,47 @@ MathParseNode MathParser::parseVerb(const MathToken& token) {
   MathToken delimiter;
   const QString body = lexer_.readVerbBody(starred, ok, delimiter);
   if (delimiter.text == QStringLiteral("EOF")) {
-    return parseScripts(errorNode(QStringLiteral("\\verb ended by end of line instead of matching delimiter"), &delimiter));
+    co_return (co_await parseScripts(errorNode(QStringLiteral("\\verb ended by end of line instead of matching delimiter"), &delimiter)));
   }
   if (!ok) {
-    return parseScripts(errorNode(QStringLiteral("\\verb ended by end of line instead of matching delimiter"), &delimiter));
+    co_return (co_await parseScripts(errorNode(QStringLiteral("\\verb ended by end of line instead of matching delimiter"), &delimiter)));
   }
   if (starred) {
     verb.label = QStringLiteral("\\verb*");
   }
   verb.text = body;
-  return parseScripts(std::move(verb));
+  co_return (co_await parseScripts(std::move(verb)));
 }
 
-MathParseNode MathParser::parseStyling(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseStyling(const MathToken& token) {
   MathParseNode styling;
   styling.type = MathNodeType::Styling;
   styling.style = token.text;
   if (outerBreakTokens_.isEmpty()) {
-    styling.body = parseExpression();
+    styling.body = (co_await parseExpression());
   } else {
-    styling.body = parseExpressionUntilAny(outerBreakTokens_);
+    styling.body = (co_await parseExpressionUntilAny(outerBreakTokens_));
   }
-  return styling;
+  co_return styling;
 }
 
-MathParseNode MathParser::parseSizing(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseSizing(const MathToken& token) {
   MathParseNode sizing;
   sizing.type = MathNodeType::Sizing;
   sizing.size = token.text;
   if (outerBreakTokens_.isEmpty()) {
-    sizing.body = parseExpression();
+    sizing.body = (co_await parseExpression());
   } else {
-    sizing.body = parseExpressionUntilAny(outerBreakTokens_);
+    sizing.body = (co_await parseExpressionUntilAny(outerBreakTokens_));
   }
-  return sizing;
+  co_return sizing;
 }
 
-MathParseNode MathParser::parseMathClass(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseMathClass(const MathToken& token) {
   if (token.text == QStringLiteral("\\@binrel")) {
     MathParseNode klass;
     klass.type = MathNodeType::Class;
-    const QVector<MathParseNode> source = parseRequiredGroup(token.text);
+    const QVector<MathParseNode> source = (co_await parseRequiredGroup(token.text));
     klass.sourceMathClass = source.isEmpty() ? QString() : source.first().mathClass;
     if (source.isEmpty()) {
       klass.mathClass = QStringLiteral("\\mathord");
@@ -673,13 +674,13 @@ MathParseNode MathParser::parseMathClass(const MathToken& token) {
       else if (sourceType == MathNodeType::Relation) klass.mathClass = QStringLiteral("\\mathrel");
       else klass.mathClass = QStringLiteral("\\mathord");
     }
-    klass.body = parseRequiredGroup(token.text);
-    return parseScripts(std::move(klass));
+    klass.body = (co_await parseRequiredGroup(token.text));
+    co_return (co_await parseScripts(std::move(klass)));
   }
   MathParseNode klass;
   klass.type = MathNodeType::Class;
   klass.mathClass = (token.text == QStringLiteral("\\boldsymbol") || token.text == QStringLiteral("\\bm")) ? QStringLiteral("\\mathord") : token.text;
-  klass.body = parseRequiredGroup(token.text);
+  klass.body = (co_await parseRequiredGroup(token.text));
   if (token.text == QStringLiteral("\\boldsymbol") || token.text == QStringLiteral("\\bm")) {
     klass.fontClass = QStringLiteral("mathbf");
     if (!klass.body.isEmpty()) {
@@ -688,18 +689,18 @@ MathParseNode MathParser::parseMathClass(const MathToken& token) {
       else if (bodyType == MathNodeType::Relation) klass.mathClass = QStringLiteral("\\mathrel");
     }
   }
-  return parseScripts(std::move(klass));
+  co_return (co_await parseScripts(std::move(klass)));
 }
 
-MathParseNode MathParser::parseStack(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseStack(const MathToken& token) {
   MathParseNode shifted;
   shifted.type = MathNodeType::SupSub;
-  const QVector<MathParseNode> annotation = parseRequiredGroup(token.text);
+  const QVector<MathParseNode> annotation = (co_await parseRequiredGroup(token.text));
   MathParseNode op;
   op.type = MathNodeType::Operator;
   op.limits = true;
   op.alwaysHandleSupSub = true;
-  QVector<MathParseNode> baseBody = parseRequiredGroup(token.text);
+  QVector<MathParseNode> baseBody = (co_await parseRequiredGroup(token.text));
   op.body = baseBody;
   shifted.base.push_back(std::move(op));
   if (token.text == QStringLiteral("\\underset")) {
@@ -718,28 +719,28 @@ MathParseNode MathParser::parseStack(const MathToken& token) {
     else if (baseType == MathNodeType::Relation) klass.mathClass = QStringLiteral("\\mathrel");
   }
   klass.body.push_back(std::move(shifted));
-  return parseScripts(std::move(klass));
+  co_return (co_await parseScripts(std::move(klass)));
 }
 
-MathParseNode MathParser::parseText(const MathToken& token, const MathFunctionSpec& function) {
+MathParseTask<MathParseNode> MathParser::parseText(const MathToken& token, const MathFunctionSpec& function) {
   if (token.text == QStringLiteral("\\@char")) {
     MathParseNode text;
     text.type = MathNodeType::Text;
     text.label = token.text;
     text.fontClass = QStringLiteral("main");
-    const QString codeText = parseRawGroupText(token.text).trimmed();
+    const QString codeText = (co_await parseRawGroupText(token.text)).trimmed();
     bool ok = false;
     const uint codepoint = codeText.toUInt(&ok);
     text.text = ok ? QString(QChar(codepoint)) : QString();
-    return parseScripts(std::move(text));
+    co_return (co_await parseScripts(std::move(text)));
   }
   if (token.text == QStringLiteral("\\html@mathml")) {
     MathParseNode node;
     node.type = MathNodeType::Group;
     node.label = token.text;
-    node.body = parseRequiredGroup(token.text);
-    parseRequiredGroup(token.text);
-    return parseScripts(std::move(node));
+    node.body = (co_await parseRequiredGroup(token.text));
+    (co_await parseRequiredGroup(token.text));
+    co_return (co_await parseScripts(std::move(node)));
   }
   if (token.text == QStringLiteral("\\hbox")) {
     MathParseNode node;
@@ -749,10 +750,10 @@ MathParseNode MathParser::parseText(const MathToken& token, const MathFunctionSp
     const bool wasInTextBody = inTextBody_;
     inTextBody_ = true;
     lexer_.setPreserveSpaces(true);
-    node.body = parseRequiredGroup(token.text);
+    node.body = (co_await parseRequiredGroup(token.text));
     inTextBody_ = wasInTextBody;
     lexer_.setPreserveSpaces(wasInTextBody);
-    return parseScripts(std::move(node));
+    co_return (co_await parseScripts(std::move(node)));
   }
   const auto fontClassForCommand = [](const QString& command) {
     if (command == QStringLiteral("\\mathbf") || command == QStringLiteral("\\textbf") || command == QStringLiteral("\\bold") ||
@@ -800,10 +801,10 @@ MathParseNode MathParser::parseText(const MathToken& token, const MathFunctionSp
     const bool wasInTextBody = inTextBody_;
     inTextBody_ = true;
     lexer_.setPreserveSpaces(true);
-    text.body = parseExpressionUntilAny(textBreaks);
+    text.body = (co_await parseExpressionUntilAny(textBreaks));
     inTextBody_ = wasInTextBody;
     lexer_.setPreserveSpaces(wasInTextBody);
-    return parseScripts(std::move(text));
+    co_return (co_await parseScripts(std::move(text)));
   }
   MathParseNode text;
   text.type = MathNodeType::Text;
@@ -818,20 +819,20 @@ MathParseNode MathParser::parseText(const MathToken& token, const MathFunctionSp
     inTextBody_ = true;
     lexer_.setPreserveSpaces(true);
   }
-  text.body = parseRequiredGroup(token.text);
+  text.body = (co_await parseRequiredGroup(token.text));
   inTextBody_ = wasInTextBody;
   lexer_.setPreserveSpaces(wasInTextBody);
-  return parseScripts(std::move(text));
+  co_return (co_await parseScripts(std::move(text)));
 }
 
-MathParseNode MathParser::parseColor(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseColor(const MathToken& token) {
   MathParseNode color;
   color.type = MathNodeType::Color;
   if (token.text == QStringLiteral("\\textcolor")) {
-    color.color = parseRawGroupText(token.text);
-    color.body = parseRequiredGroup(token.text);
+    color.color = (co_await parseRawGroupText(token.text));
+    color.body = (co_await parseRequiredGroup(token.text));
   } else {
-    color.color = parseRawGroupText(token.text);
+    color.color = (co_await parseRawGroupText(token.text));
     // Build break tokens from the standard set plus any outer context
     // (e.g. \right inside \left...\right).
     QVector<QString> colorBreaks = {
@@ -842,12 +843,12 @@ MathParseNode MathParser::parseColor(const MathToken& token) {
         colorBreaks.push_back(outer);
       }
     }
-    color.body = parseExpressionUntilAny(colorBreaks);
+    color.body = (co_await parseExpressionUntilAny(colorBreaks));
   }
-  return parseScripts(std::move(color));
+  co_return (co_await parseScripts(std::move(color)));
 }
 
-MathParseNode MathParser::parseDelimSizing(const MathToken& token, const MathFunctionSpec& function) {
+MathParseTask<MathParseNode> MathParser::parseDelimSizing(const MathToken& token, const MathFunctionSpec& function) {
   MathParseNode delim;
   delim.type = MathNodeType::DelimSizing;
   delim.delimiterSize = function.delimiterSize;
@@ -856,10 +857,10 @@ MathParseNode MathParser::parseDelimSizing(const MathToken& token, const MathFun
   delim.label = token.text;
   delim.body.push_back(parseSymbol(MathToken{delim.text, delimiter.position, delimiter.endPosition}));
   delim.body.first().type = function.delimiterNodeType;
-  return parseScripts(std::move(delim));
+  co_return (co_await parseScripts(std::move(delim)));
 }
 
-MathParseNode MathParser::parseOperatorName(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseOperatorName(const MathToken& token) {
   MathParseNode op;
   op.type = MathNodeType::Operator;
   bool limits = token.text == QStringLiteral("\\operatornamewithlimits");
@@ -869,66 +870,66 @@ MathParseNode MathParser::parseOperatorName(const MathToken& token) {
   }
   // KaTeX uses parseArgumentGroup, which handles both {braced} and bare-token cases.
   // parseGroup() mirrors this: it parses {expr} or a single atom.
-  op.body = parseGroup();
+  op.body = (co_await parseGroup());
   op.label = token.text;
   op.limits = limits;
   op.explicitLimits = limits;
   op.alwaysHandleSupSub = true;
   op.opSymbol = false;
-  return parseScripts(std::move(op));
+  co_return (co_await parseScripts(std::move(op)));
 }
 
-MathParseNode MathParser::parseOperator(const MathToken& token) {
+MathParseTask<MathParseNode> MathParser::parseOperator(const MathToken& token) {
   MathParseNode op;
   op.type = MathNodeType::Operator;
   op.label = token.text;
-  op.body = parseRequiredGroup(token.text);
+  op.body = (co_await parseRequiredGroup(token.text));
   op.limits = false;
   op.opSymbol = false;
-  return parseScripts(std::move(op));
+  co_return (co_await parseScripts(std::move(op)));
 }
 
 
-QVector<MathParseNode> MathParser::parseGroup() {
+MathParseTask<QVector<MathParseNode>> MathParser::parseGroup() {
   if (lexer_.peek().text == QStringLiteral("{")) {
     lexer_.consume();
-    QVector<MathParseNode> group = parseExpression(QStringLiteral("}"));
+    QVector<MathParseNode> group = (co_await parseExpression(QStringLiteral("}")));
     expect(QStringLiteral("}"), QStringLiteral("group"));
-    return group;
+    co_return group;
   }
-  return QVector<MathParseNode>{parseAtom()};
+  co_return QVector<MathParseNode>{(co_await parseAtom())};
 }
 
-QVector<MathParseNode> MathParser::parseScriptGroup() {
+MathParseTask<QVector<MathParseNode>> MathParser::parseScriptGroup() {
   if (lexer_.peek().text == QStringLiteral("{")) {
-    return parseGroup();
+    co_return (co_await parseGroup());
   }
 
   const MathToken token = lexer_.next();
   if (token.text == QStringLiteral("EOF") || token.text == QStringLiteral("^") || token.text == QStringLiteral("_") || token.text == QStringLiteral("}") ||
       token.text == QStringLiteral("&")) {
-    return QVector<MathParseNode>{errorNode(QStringLiteral("Expected script argument"), &token)};
+    co_return QVector<MathParseNode>{errorNode(QStringLiteral("Expected script argument"), &token)};
   }
   if (token.text == QStringLiteral("{")) {
-    QVector<MathParseNode> group = parseExpression(QStringLiteral("}"));
+    QVector<MathParseNode> group = (co_await parseExpression(QStringLiteral("}")));
     expect(QStringLiteral("}"), QStringLiteral("script"));
-    return group;
+    co_return group;
   }
   if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(token.text)) {
-    return QVector<MathParseNode>{parseFunction(token, *function)};
+    co_return QVector<MathParseNode>{(co_await parseFunction(token, *function))};
   }
-  return QVector<MathParseNode>{parseSymbol(token)};
+  co_return QVector<MathParseNode>{parseSymbol(token)};
 }
 
-QVector<MathParseNode> MathParser::parseRequiredGroup(const QString& command) {
+MathParseTask<QVector<MathParseNode>> MathParser::parseRequiredGroup(const QString& command) {
   if (lexer_.peek().text == QStringLiteral("{")) {
-    return parseGroup();
+    co_return (co_await parseGroup());
   }
   const MathToken token = lexer_.peek();
   if (!canStartRequiredArgument(token)) {
-    return QVector<MathParseNode>{errorNode(QStringLiteral("%1 expects a group").arg(command), &token)};
+    co_return QVector<MathParseNode>{errorNode(QStringLiteral("%1 expects a group").arg(command), &token)};
   }
-  return QVector<MathParseNode>{parseAtom()};
+  co_return QVector<MathParseNode>{(co_await parseAtom())};
 }
 
 bool MathParser::canStartRequiredArgument(const MathToken& token) const {
@@ -946,11 +947,11 @@ bool MathParser::canStartRequiredArgument(const MathToken& token) const {
   return !invalidStarts.contains(token.text);
 }
 
-QString MathParser::parseRawGroupText(const QString& command) {
+MathParseTask<QString> MathParser::parseRawGroupText(const QString& command) {
   DepthGuard frameGuard(*this);
   if (lexer_.peek().text != QStringLiteral("{")) {
     const MathToken token = lexer_.peek();
-    return errorNode(QStringLiteral("%1 expects a group").arg(command), &token).text;
+    co_return errorNode(QStringLiteral("%1 expects a group").arg(command), &token).text;
   }
   lexer_.consume();
   QString text;
@@ -975,7 +976,7 @@ QString MathParser::parseRawGroupText(const QString& command) {
               ? lookupSymbol(token.text).replacement
               : token.text.mid(1);
           text += accentChar;
-          text += parseRawGroupTextArgument();
+          text += (co_await parseRawGroupTextArgument());
           continue;
         }
         if (func->numArgs == 0 && (func->typeName == QStringLiteral("text") ||
@@ -990,7 +991,7 @@ QString MathParser::parseRawGroupText(const QString& command) {
                                     func->typeName == QStringLiteral("font"))) {
           // Nested text/font command (\textbf{...}, \mathrm{...}) inside \text{...}
           // Recursively extract the text content
-          text += parseRawGroupText(token.text);
+          text += (co_await parseRawGroupText(token.text));
           continue;
         }
       }
@@ -1005,19 +1006,19 @@ QString MathParser::parseRawGroupText(const QString& command) {
   text.replace(QStringLiteral("--"), QString(QChar(0x2013)));   // en dash
   text.replace(QStringLiteral("``"), QString(QChar(0x201C)));   // left double quote
   text.replace(QStringLiteral("''"), QString(QChar(0x201D)));   // right double quote
-  return text;
+  co_return text;
 }
 
-QString MathParser::parseRawGroupTextArgument() {
+MathParseTask<QString> MathParser::parseRawGroupTextArgument() {
   if (lexer_.peek().text == QStringLiteral("{")) {
-    return parseRawGroupText(QStringLiteral("accent"));
+    co_return (co_await parseRawGroupText(QStringLiteral("accent")));
   }
   const MathToken token = lexer_.next();
   if (token.text.startsWith(QLatin1Char('\\'))) {
     const MathSymbolInfo symbol = lookupSymbol(token.text);
-    return symbol.known ? symbol.replacement : token.text.mid(1);
+    co_return symbol.known ? symbol.replacement : token.text.mid(1);
   }
-  return token.text;
+  co_return token.text;
 }
 
 QString MathParser::applyTextAccent(const QString& accent, const QString& base) const {
@@ -1069,9 +1070,9 @@ QString MathParser::parseOptionalBracketText() {
   return text;
 }
 
-QString MathParser::parseSizeText(const QString& command) {
+MathParseTask<QString> MathParser::parseSizeText(const QString& command) {
   if (lexer_.peek().text == QStringLiteral("{")) {
-    return parseRawGroupText(command);
+    co_return (co_await parseRawGroupText(command));
   }
   QString text;
   enum class Part { SignOrNumber, Unit };
@@ -1133,9 +1134,9 @@ QString MathParser::parseSizeText(const QString& command) {
   }
   if (text.isEmpty()) {
     const MathToken token{command, lexer_.peek().position, lexer_.peek().position + command.size()};
-    return errorNode(QStringLiteral("%1 expects a size").arg(command), &token).text;
+    co_return errorNode(QStringLiteral("%1 expects a size").arg(command), &token).text;
   }
-  return text;
+  co_return text;
 }
 
 MathParseNode MathParser::parseCr(const MathToken& token) {
@@ -1153,26 +1154,26 @@ MathParseNode MathParser::parseCr(const MathToken& token) {
   return cr;
 }
 
-MathParseNode MathParser::parseLeftRight() {
+MathParseTask<MathParseNode> MathParser::parseLeftRight() {
   MathParseNode leftRight;
   leftRight.type = MathNodeType::LeftRight;
   leftRight.leftDelim = delimiterReplacement(lexer_.next().text);
-  leftRight.body = parseExpression(QStringLiteral("\\right"));
+  leftRight.body = (co_await parseExpression(QStringLiteral("\\right")));
   expect(QStringLiteral("\\right"), QStringLiteral("\\left"));
   if (lexer_.peek().text == QStringLiteral("EOF")) {
     leftRight.rightDelim = QStringLiteral(".");
-    return leftRight;
+    co_return leftRight;
   }
   leftRight.rightDelim = delimiterReplacement(lexer_.next().text);
-  return leftRight;
+  co_return leftRight;
 }
 
-QVector<MathParseNode> MathParser::parseOptionalGroupExpression(const QString& command) {
+MathParseTask<QVector<MathParseNode>> MathParser::parseOptionalGroupExpression(const QString& command) {
   if (lexer_.peek().text == QStringLiteral("{")) {
-    return parseGroup();
+    co_return (co_await parseGroup());
   }
   Q_UNUSED(command);
-  return {};
+  co_return {};
 }
 
 void MathParser::reportFunctionPolicy(const MathToken& token, const MathFunctionSpec& function) {
@@ -1490,7 +1491,7 @@ MathParseNode MathParser::applyOperatorLimitsModifier(MathParseNode base, const 
   return base;
 }
 
-MathParseNode MathParser::parseScripts(MathParseNode base) {
+MathParseTask<MathParseNode> MathParser::parseScripts(MathParseNode base) {
   while (lexer_.peek().text == QStringLiteral("\\limits") || lexer_.peek().text == QStringLiteral("\\nolimits")) {
     base = applyOperatorLimitsModifier(std::move(base), lexer_.next());
   }
@@ -1499,20 +1500,20 @@ MathParseNode MathParser::parseScripts(MathParseNode base) {
   while (lexer_.peek().text == QStringLiteral("^") || lexer_.peek().text == QStringLiteral("_")) {
     const QString marker = lexer_.next().text;
     if (marker == QStringLiteral("^")) {
-      sup = parseScriptGroup();
+      sup = (co_await parseScriptGroup());
     } else {
-      sub = parseScriptGroup();
+      sub = (co_await parseScriptGroup());
     }
   }
   if (sup.isEmpty() && sub.isEmpty()) {
-    return base;
+    co_return base;
   }
   MathParseNode node;
   node.type = MathNodeType::SupSub;
   node.base.push_back(std::move(base));
   node.sup = std::move(sup);
   node.sub = std::move(sub);
-  return node;
+  co_return node;
 }
 
 void MathParser::expect(const QString& token, const QString& context) {

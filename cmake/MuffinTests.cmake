@@ -247,6 +247,7 @@ muffin_add_test(NAME MuffinRenderInlineHitTestTest    SOURCE tests/render/Render
 muffin_add_test(NAME MuffinRenderMathLayoutTest       SOURCE tests/render/RenderMathLayoutTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
 muffin_add_test(NAME MuffinRenderMathGeometryTest     SOURCE tests/render/RenderMathGeometryTest.cpp     LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
 muffin_add_test(NAME MuffinRenderMathAuditTest        SOURCE tests/render/RenderMathAuditTest.cpp        LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
+muffin_add_test(NAME MuffinMathParserStackTest        SOURCE tests/render/MathParserStackTest.cpp        LINK MuffinCore EXTRA_LINK Qt6::Gui)
 muffin_add_test(NAME MuffinRenderMathFunctions1Test   SOURCE tests/render/RenderMathFunctions1Test.cpp   LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
 muffin_add_test(NAME MuffinRenderMathFunctions2Test   SOURCE tests/render/RenderMathFunctions2Test.cpp   LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)
 muffin_add_test(NAME MuffinRenderHtmlLayoutTest       SOURCE tests/render/RenderHtmlLayoutTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)

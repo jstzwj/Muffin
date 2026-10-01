@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math/MathLexer.h"
+#include "math/MathParseTask.h"
 #include "math/MathFunctionRegistry.h"
 #include "math/MathParseNode.h"
 #include "math/MathSettings.h"
@@ -17,66 +18,66 @@ public:
   QVector<MathParseNode> parse();
 
 private:
-  class DepthGuard;  // RAII recursion-depth guard, defined in the .cpp
-  QVector<MathParseNode> parseExpression(const QString& breakOn = {});
-  QVector<MathParseNode> parseExpressionUntilAny(const QVector<QString>& breakTokens);
-  MathParseNode parseInfixFraction(const MathToken& token, QVector<MathParseNode> numerator, const QString& breakOn);
-  MathParseNode parseInfixFractionUntilAny(const MathToken& token, QVector<MathParseNode> numerator, const QVector<QString>& breakTokens);
-  MathParseNode makeInfixFraction(const MathToken& token, QVector<MathParseNode> numerator, QVector<MathParseNode> denominator, qreal lineThickness = -1.0);
-  MathParseNode parseAtom();
-  MathParseNode parseFunction(const MathToken& token, const MathFunctionSpec& function);
+  class DepthGuard;  // logical nesting budget, defined in the .cpp
+  MathParseTask<QVector<MathParseNode>> parseExpression(const QString& breakOn = {});
+  MathParseTask<QVector<MathParseNode>> parseExpressionUntilAny(const QVector<QString>& breakTokens);
+  MathParseTask<MathParseNode> parseInfixFraction(const MathToken& token, QVector<MathParseNode> numerator, const QString& breakOn);
+  MathParseTask<MathParseNode> parseInfixFractionUntilAny(const MathToken& token, QVector<MathParseNode> numerator, const QVector<QString>& breakTokens);
+  MathParseTask<MathParseNode> makeInfixFraction(const MathToken& token, QVector<MathParseNode> numerator, QVector<MathParseNode> denominator, qreal lineThickness = -1.0);
+  MathParseTask<MathParseNode> parseAtom();
+  MathParseTask<MathParseNode> parseFunction(const MathToken& token, const MathFunctionSpec& function);
   // LaTeX function-command handlers — one per MathFunctionHandlerKind. parseFunction is a thin
   // dispatch over these; each consumes its command's arguments and returns the parsed node.
-  MathParseNode parseFraction(const MathToken& token);
-  MathParseNode parseSqrt(const MathToken& token);
-  MathParseNode parseAccent(const MathToken& token);
-  MathParseNode parseAccentUnder(const MathToken& token);
-  MathParseNode parseHorizBrace(const MathToken& token);
-  MathParseNode parseXArrow(const MathToken& token);
-  MathParseNode parseUnderline(const MathToken& token);
-  MathParseNode parseOverline(const MathToken& token);
-  MathParseNode parsePhantom(const MathToken& token);
-  MathParseNode parseSmash(const MathToken& token);
-  MathParseNode parseRule(const MathToken& token);
-  MathParseNode parseKern(const MathToken& token);
-  MathParseNode parseRaiseBox(const MathToken& token);
-  MathParseNode parseVCenter(const MathToken& token);
-  MathParseNode parseLap(const MathToken& token);
-  MathParseNode parseEnclose(const MathToken& token);
-  MathParseNode parseIncludeGraphics(const MathToken& token, const MathFunctionSpec& function);
-  MathParseNode parseMathChoice(const MathToken& token);
-  MathParseNode parseHref(const MathToken& token, const MathFunctionSpec& function);
-  MathParseNode parseUrl(const MathToken& token, const MathFunctionSpec& function);
-  MathParseNode parseHtml(const MathToken& token, const MathFunctionSpec& function);
-  MathParseNode parseTag(const MathToken& token);
-  MathParseNode parseVerb(const MathToken& token);
-  MathParseNode parseStyling(const MathToken& token);
-  MathParseNode parseSizing(const MathToken& token);
-  MathParseNode parseMathClass(const MathToken& token);
-  MathParseNode parseStack(const MathToken& token);
-  MathParseNode parseText(const MathToken& token, const MathFunctionSpec& function);
-  MathParseNode parseColor(const MathToken& token);
-  MathParseNode parseDelimSizing(const MathToken& token, const MathFunctionSpec& function);
-  MathParseNode parseOperatorName(const MathToken& token);
-  MathParseNode parseOperator(const MathToken& token);
-  QVector<MathParseNode> parseGroup();
-  QVector<MathParseNode> parseScriptGroup();
-  QVector<MathParseNode> parseRequiredGroup(const QString& command);
+  MathParseTask<MathParseNode> parseFraction(const MathToken& token);
+  MathParseTask<MathParseNode> parseSqrt(const MathToken& token);
+  MathParseTask<MathParseNode> parseAccent(const MathToken& token);
+  MathParseTask<MathParseNode> parseAccentUnder(const MathToken& token);
+  MathParseTask<MathParseNode> parseHorizBrace(const MathToken& token);
+  MathParseTask<MathParseNode> parseXArrow(const MathToken& token);
+  MathParseTask<MathParseNode> parseUnderline(const MathToken& token);
+  MathParseTask<MathParseNode> parseOverline(const MathToken& token);
+  MathParseTask<MathParseNode> parsePhantom(const MathToken& token);
+  MathParseTask<MathParseNode> parseSmash(const MathToken& token);
+  MathParseTask<MathParseNode> parseRule(const MathToken& token);
+  MathParseTask<MathParseNode> parseKern(const MathToken& token);
+  MathParseTask<MathParseNode> parseRaiseBox(const MathToken& token);
+  MathParseTask<MathParseNode> parseVCenter(const MathToken& token);
+  MathParseTask<MathParseNode> parseLap(const MathToken& token);
+  MathParseTask<MathParseNode> parseEnclose(const MathToken& token);
+  MathParseTask<MathParseNode> parseIncludeGraphics(const MathToken& token, const MathFunctionSpec& function);
+  MathParseTask<MathParseNode> parseMathChoice(const MathToken& token);
+  MathParseTask<MathParseNode> parseHref(const MathToken& token, const MathFunctionSpec& function);
+  MathParseTask<MathParseNode> parseUrl(const MathToken& token, const MathFunctionSpec& function);
+  MathParseTask<MathParseNode> parseHtml(const MathToken& token, const MathFunctionSpec& function);
+  MathParseTask<MathParseNode> parseTag(const MathToken& token);
+  MathParseTask<MathParseNode> parseVerb(const MathToken& token);
+  MathParseTask<MathParseNode> parseStyling(const MathToken& token);
+  MathParseTask<MathParseNode> parseSizing(const MathToken& token);
+  MathParseTask<MathParseNode> parseMathClass(const MathToken& token);
+  MathParseTask<MathParseNode> parseStack(const MathToken& token);
+  MathParseTask<MathParseNode> parseText(const MathToken& token, const MathFunctionSpec& function);
+  MathParseTask<MathParseNode> parseColor(const MathToken& token);
+  MathParseTask<MathParseNode> parseDelimSizing(const MathToken& token, const MathFunctionSpec& function);
+  MathParseTask<MathParseNode> parseOperatorName(const MathToken& token);
+  MathParseTask<MathParseNode> parseOperator(const MathToken& token);
+  MathParseTask<QVector<MathParseNode>> parseGroup();
+  MathParseTask<QVector<MathParseNode>> parseScriptGroup();
+  MathParseTask<QVector<MathParseNode>> parseRequiredGroup(const QString& command);
   bool canStartRequiredArgument(const MathToken& token) const;
-  QString parseRawGroupText(const QString& command);
-  QString parseRawGroupTextArgument();
+  MathParseTask<QString> parseRawGroupText(const QString& command);
+  MathParseTask<QString> parseRawGroupTextArgument();
   QString applyTextAccent(const QString& accent, const QString& base) const;
   QString parseOptionalBracketText();
-  QString parseSizeText(const QString& command);
-  MathParseNode parseBeginEnvironment();
+  MathParseTask<QString> parseSizeText(const QString& command);
+  MathParseTask<MathParseNode> parseBeginEnvironment();
   MathParseNode parseCr(const MathToken& token);
-  MathParseNode parseArrayEnvironment(const QString& name);
-  MathParseNode parseCDEnvironment();
+  MathParseTask<MathParseNode> parseArrayEnvironment(const QString& name);
+  MathParseTask<MathParseNode> parseCDEnvironment();
   void parseArrayPreamble(MathParseNode& array, const QString& preamble);
   void consumeArrayHLines(MathParseNode& array, int beforeRow);
   void configureArrayEnvironment(MathParseNode& array, const QString& name);
-  MathParseNode parseLeftRight();
-  QVector<MathParseNode> parseOptionalGroupExpression(const QString& command);
+  MathParseTask<MathParseNode> parseLeftRight();
+  MathParseTask<QVector<MathParseNode>> parseOptionalGroupExpression(const QString& command);
   void reportFunctionPolicy(const MathToken& token, const MathFunctionSpec& function);
   void reportKernUnitPolicy(const MathToken& token, const QString& sizeText);
   bool ensureTrusted(const MathToken& token, const MathFunctionSpec& function, const MathTrustContext& context);
@@ -96,7 +97,7 @@ private:
   QString delimiterReplacement(const QString& token) const;
   MathParseNode parseSymbol(const MathToken& token);
   MathParseNode applyOperatorLimitsModifier(MathParseNode base, const MathToken& token);
-  MathParseNode parseScripts(MathParseNode base);
+  MathParseTask<MathParseNode> parseScripts(MathParseNode base);
 
   void expect(const QString& token, const QString& context);
   MathParseNode errorNode(QString message, const MathToken* token = nullptr);
@@ -113,9 +114,8 @@ private:
   // KaTeX registers $ as a text-mode function that switches to inline math.
   bool inTextBody_ = false;
 
-  // Active recursive-parse frame count (RAII-bumped by DepthGuard). Caps nesting so deeply
-  // nested {{{...}}} / \sqrt{...} / \left..\right / \text{...} input can't overflow the
-  // GUI-thread stack — same class of crash NodeCssElement was fixed to avoid.
+  // Active logical parse depth. Grammar continuations live on the heap, while
+  // DepthGuard preserves the resource budget for the resulting parse tree.
   int depth_ = 0;
 };
 
