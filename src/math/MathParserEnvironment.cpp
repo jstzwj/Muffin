@@ -112,8 +112,13 @@ MathParseTask<MathParseNode> MathParser::parseArrayEnvironment(const QString& na
     }
 
     MathArrayCell cell;
-    cell.body = toSharedNodes((co_await parseExpressionUntilAny(
-        {QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"), QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")})));
+    // Keep initializer lists outside await expressions for GCC's coroutine
+    // lowering, and keep the break-token storage alive across suspension.
+    const QVector<QString> cellBreaks{
+        QStringLiteral("&"), QStringLiteral("\\\\"), QStringLiteral("\\cr"),
+        QStringLiteral("\\end"), QStringLiteral("\\hline"), QStringLiteral("\\hdashline")};
+    const QVector<MathParseNode> body = co_await parseExpressionUntilAny(cellBreaks);
+    cell.body = toSharedNodes(body);
     row.push_back(std::move(cell));
     if (lexer_.peek().text == QStringLiteral("&")) {
       lexer_.consume();

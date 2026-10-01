@@ -70,7 +70,9 @@ MathParseTask<QVector<MathParseNode>> MathParser::parseExpression(const QString&
     }
     if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(next.text); function != nullptr && function->infix) {
       const MathToken infix = lexer_.next();
-      nodes = QVector<MathParseNode>{(co_await parseInfixFraction(infix, std::move(nodes), breakOn))};
+      MathParseNode fraction = co_await parseInfixFraction(infix, std::move(nodes), breakOn);
+      nodes.clear();
+      nodes.push_back(std::move(fraction));
       continue;
     }
     nodes.push_back((co_await parseAtom()));
@@ -94,7 +96,9 @@ MathParseTask<QVector<MathParseNode>> MathParser::parseExpressionUntilAny(const 
     }
     if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(next.text); function != nullptr && function->infix) {
       const MathToken infix = lexer_.next();
-      nodes = QVector<MathParseNode>{(co_await parseInfixFractionUntilAny(infix, std::move(nodes), breakTokens))};
+      MathParseNode fraction = co_await parseInfixFractionUntilAny(infix, std::move(nodes), breakTokens);
+      nodes.clear();
+      nodes.push_back(std::move(fraction));
       continue;
     }
     bool shouldBreak = false;
@@ -897,7 +901,10 @@ MathParseTask<QVector<MathParseNode>> MathParser::parseGroup() {
     expect(QStringLiteral("}"), QStringLiteral("group"));
     co_return group;
   }
-  co_return QVector<MathParseNode>{(co_await parseAtom())};
+  MathParseNode atom = co_await parseAtom();
+  QVector<MathParseNode> result;
+  result.push_back(std::move(atom));
+  co_return result;
 }
 
 MathParseTask<QVector<MathParseNode>> MathParser::parseScriptGroup() {
@@ -916,7 +923,10 @@ MathParseTask<QVector<MathParseNode>> MathParser::parseScriptGroup() {
     co_return group;
   }
   if (const MathFunctionSpec* function = MathFunctionRegistry::lookup(token.text)) {
-    co_return QVector<MathParseNode>{(co_await parseFunction(token, *function))};
+    MathParseNode node = co_await parseFunction(token, *function);
+    QVector<MathParseNode> result;
+    result.push_back(std::move(node));
+    co_return result;
   }
   co_return QVector<MathParseNode>{parseSymbol(token)};
 }
@@ -929,7 +939,10 @@ MathParseTask<QVector<MathParseNode>> MathParser::parseRequiredGroup(const QStri
   if (!canStartRequiredArgument(token)) {
     co_return QVector<MathParseNode>{errorNode(QStringLiteral("%1 expects a group").arg(command), &token)};
   }
-  co_return QVector<MathParseNode>{(co_await parseAtom())};
+  MathParseNode atom = co_await parseAtom();
+  QVector<MathParseNode> result;
+  result.push_back(std::move(atom));
+  co_return result;
 }
 
 bool MathParser::canStartRequiredArgument(const MathToken& token) const {
