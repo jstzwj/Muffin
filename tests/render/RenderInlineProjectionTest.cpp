@@ -1006,8 +1006,10 @@ int main(int argc, char** argv) {
   }
   // This binary is the ARM64 SHARED-library teardown-crash reproducer; the
   // handler prints the faulting module + frame backtrace before the process
-  // dies (all 29 RUN lines print first — the crash is after main returns).
+  // dies (all 29 subtest RUN lines print first — the crash is after main returns).
   installMuffinTestCrashHandler();
+  std::fprintf(stderr, "RUN QApplication initialization\n");
+  std::fflush(stderr);
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testEmptyTableCellRendersEmpty);
@@ -1040,6 +1042,8 @@ int main(int argc, char** argv) {
   RUN_TEST(testBrTagRendersAsHardBreakInsideHtmlGroup);
   RUN_TEST(testBrTagProducesMultipleLayoutLines);
 #undef RUN_TEST
+  std::fprintf(stderr, "PASS all inline projection subtests; starting QApplication/process teardown\n");
+  std::fflush(stderr);
   // All assertions passed. The ARM64 SHARED-library teardown crash that used
   // to fire here was root-caused (via a WER dump on the runner) to the
   // ImageLoader singleton's atexit destructor destroying its

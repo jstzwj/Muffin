@@ -23,7 +23,7 @@ jobs:
             configure-preset: conan-default
             conan-cppstd: 20
             cmake-args: '-DMUFFIN_MSI_ARCH=x64'
-            test-command: ctest --preset conan-release --output-on-failure
+            test-command: ctest --preset conan-release --verbose
           - name: Windows ARM64
             runner: windows-11-arm
             artifact-suffix: windows-arm64
@@ -31,7 +31,7 @@ jobs:
             configure-preset: conan-default
             conan-cppstd: 20
             cmake-args: '-DMUFFIN_MSI_ARCH=arm64'
-            test-command: ctest --preset conan-release --output-on-failure
+            test-command: ctest --preset conan-release --verbose
           - name: macOS ARM64
             runner: macos-latest
             artifact-suffix: macos-arm64
@@ -39,7 +39,7 @@ jobs:
             configure-preset: conan-release
             conan-cppstd: 20
             cmake-args: ''
-            test-command: ctest --preset conan-release --output-on-failure
+            test-command: ctest --preset conan-release --verbose
           - name: Linux x64
             runner: ubuntu-latest
             artifact-suffix: linux-x64
@@ -47,7 +47,7 @@ jobs:
             configure-preset: conan-release
             conan-cppstd: gnu20
             cmake-args: ''
-            test-command: xvfb-run ctest --preset conan-release --output-on-failure
+            test-command: xvfb-run ctest --preset conan-release --verbose
 
     steps:
       - name: Check out source
@@ -229,6 +229,7 @@ jobs:
       - name: Build
         run: cmake --build --preset conan-release
 
+      # Stream flushed RUN markers while each process is alive, including before a hang.
       - name: Test
         run: ${{ matrix.test-command }}
 

@@ -242,6 +242,9 @@ muffin_add_test(NAME MuffinRenderIncrementalTest      SOURCE tests/render/Render
 muffin_add_test(NAME MuffinEditorViewRefreshTest      SOURCE tests/render/EditorViewRefreshTest.cpp      LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderListMarkerTest       SOURCE tests/render/RenderListMarkerTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderInlineProjectionTest SOURCE tests/render/RenderInlineProjectionTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_EMOJI_QRC} FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
+# Normally sub-second. Bound startup, subtests and teardown so a hang cannot
+# hold MuffinQtGui and block the rest of the render suite indefinitely.
+set_tests_properties(MuffinRenderInlineProjectionTest PROPERTIES TIMEOUT 60)
 muffin_add_test(NAME MuffinRenderInlineGeometryTest   SOURCE tests/render/RenderInlineGeometryTest.cpp   LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderInlineHitTestTest    SOURCE tests/render/RenderInlineHitTest.cpp        LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK)
 muffin_add_test(NAME MuffinRenderMathLayoutTest       SOURCE tests/render/RenderMathLayoutTest.cpp       LINK MuffinUi FIXTURE tests/fixtures/render_smoke.md RESOURCE_LOCK DISABLED_ON APPLE)

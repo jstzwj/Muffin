@@ -19,25 +19,25 @@ jobs:
             conan-arch: x86_64
             configure-preset: conan-default
             conan-cppstd: 20
-            test-command: ctest --preset conan-release --output-on-failure
+            test-command: ctest --preset conan-release --verbose
           - name: Windows ARM64
             runner: windows-11-arm
             conan-arch: armv8
             configure-preset: conan-default
             conan-cppstd: 20
-            test-command: ctest --preset conan-release --output-on-failure
+            test-command: ctest --preset conan-release --verbose
           - name: macOS
             runner: macos-latest
             conan-arch: armv8
             configure-preset: conan-release
             conan-cppstd: 20
-            test-command: ctest --preset conan-release --output-on-failure
+            test-command: ctest --preset conan-release --verbose
           - name: Linux
             runner: ubuntu-latest
             conan-arch: x86_64
             configure-preset: conan-release
             conan-cppstd: gnu20
-            test-command: xvfb-run ctest --preset conan-release --output-on-failure
+            test-command: xvfb-run ctest --preset conan-release --verbose
 
     steps:
       - name: Check out source
@@ -156,8 +156,9 @@ jobs:
         run: cmake --build --preset conan-release
 
       - name: Verify bundled Math font contract
-        run: ctest --preset conan-release --output-on-failure -L math-font-oracle
+        run: ctest --preset conan-release --verbose -L math-font-oracle
 
+      # Stream flushed RUN markers while each process is alive, including before a hang.
       - name: Test
         run: ${{ matrix.test-command }}
 
@@ -283,4 +284,4 @@ jobs:
         run: cmake --build --preset conan-release
 
       - name: Test (AddressSanitizer)
-        run: xvfb-run ctest --preset conan-release --output-on-failure
+        run: xvfb-run ctest --preset conan-release --verbose
