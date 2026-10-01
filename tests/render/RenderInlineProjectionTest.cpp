@@ -209,17 +209,31 @@ void testInlineProjectionContract() {
           QStringLiteral("active link cursor rect should round-trip source offset"));
   require(!activeLink.selectionRects(0, 5).isEmpty(), QStringLiteral("active link selection rects should remain valid"));
 
-  const QString imageMarkdown = QStringLiteral("![alt](https://example.com/image.png)");
+  // Projection/layout tests must not start an asynchronous network request.
+  // Resolve a real local image relative to the document, including on Windows.
+  QTemporaryDir imageDir;
+  require(imageDir.isValid(), QStringLiteral("temporary image directory should be valid"));
+  QImage image(QSize(16, 12), QImage::Format_ARGB32);
+  image.fill(QColor(20, 120, 200));
+  require(image.save(imageDir.filePath(QStringLiteral("projection-image.png"))),
+          QStringLiteral("projection image fixture should save"));
+  const QString imageMarkdown = QStringLiteral("![alt](projection-image.png)");
   DocumentSession imageSession;
   imageSession.setMarkdownText(imageMarkdown, false);
   const QVector<InlineNode> imageInlines = imageSession.document().root().children().front()->inlines();
 
+  // The projection retains the alt text; layout replaces it with an image atom.
+  const InlineProjection imageProjection(imageInlines, imageMarkdown, options.projectionState, 0);
+  require(imageProjection.displayText() == QStringLiteral("alt"), QStringLiteral("inactive image projection text mismatch"));
+  InlineLayout::BuildOptions imageOptions = options;
+  imageOptions.documentPath = imageDir.filePath(QStringLiteral("document.md"));
   InlineLayout collapsedImage;
-  collapsedImage.build(imageInlines, imageMarkdown, theme, 400.0, theme.paragraphFont(), options);
-  require(collapsedImage.displayText() == QStringLiteral("alt"), QStringLiteral("inactive image projection text mismatch"));
+  collapsedImage.build(imageInlines, imageMarkdown, theme, 400.0, theme.paragraphFont(), imageOptions);
+  require(collapsedImage.plainText() == QStringLiteral("alt"), QStringLiteral("inactive image should retain alt text"));
+  require(collapsedImage.displayText().size() == 1, QStringLiteral("inactive loaded image should collapse to one image atom"));
   require(!collapsedImage.displayText().contains(QStringLiteral("![")), QStringLiteral("inactive image should not render source syntax"));
 
-  InlineLayout::BuildOptions activeImageOptions = options;
+  InlineLayout::BuildOptions activeImageOptions = imageOptions;
   activeImageOptions.projectionState.cursorSourceOffset = 2;
   InlineLayout activeImage;
   activeImage.build(imageInlines, imageMarkdown, theme, 400.0, theme.paragraphFont(), activeImageOptions);
