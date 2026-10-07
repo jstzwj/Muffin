@@ -95,8 +95,7 @@ struct PerfTimer : diag::ScopedPerfProbe {
 EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(std::make_unique<DocumentLayout>()) {
   setFrameShape(QFrame::NoFrame);
   setFocusPolicy(Qt::StrongFocus);
-  setAccessibleName(tr("Markdown editor"));
-  setAccessibleDescription(tr("Rendered Markdown document"));
+  retranslateAccessibility();
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setAttribute(Qt::WA_InputMethodEnabled, true);
@@ -559,6 +558,19 @@ void EditorView::setCodeLanguageSuggestions(QStringList languages) {
 void EditorView::setFocusMode(bool enabled) {
   focusMode_ = enabled;
   viewport()->update();
+}
+
+void EditorView::retranslateAccessibility() {
+  // Explicit contexts keep lupdate independent of the namespace wrapper.
+  setAccessibleName(QCoreApplication::translate("muffin::EditorView", "Markdown editor"));
+  setAccessibleDescription(QCoreApplication::translate("muffin::EditorView", "Rendered Markdown document"));
+}
+
+void EditorView::changeEvent(QEvent* event) {
+  QAbstractScrollArea::changeEvent(event);
+  if (event->type() == QEvent::LanguageChange) {
+    retranslateAccessibility();
+  }
 }
 
 bool EditorView::event(QEvent* event) {

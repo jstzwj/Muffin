@@ -1343,7 +1343,7 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          }
          if (!res.ran || res.urls.size() != paths.size()) {
            QMessageBox::warning(&window, muffin::MainWindow::tr("Upload All Images"),
-               muffin::MainWindow::tr("Upload failed:\n%1").arg(res.error.isEmpty() ? QStringLiteral("the uploader did not return one URL per image") : res.error));
+               muffin::MainWindow::tr("Upload failed:\n%1").arg(res.error.isEmpty() ? muffin::MainWindow::tr("the uploader did not return one URL per image") : res.error));
            return;
          }
          QHash<QString, QString> pathToUrl;

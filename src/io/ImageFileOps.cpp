@@ -5,6 +5,7 @@
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
 
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
@@ -175,7 +176,7 @@ muffin::ImageFileOps::MoveAllResult muffin::ImageFileOps::moveAllImages(
     const QString& documentDir, const QDir& destDir) {
   MoveAllResult result;
   if (documentDir.isEmpty() || !destDir.exists()) {
-    result.error = QStringLiteral("source or destination directory is unavailable");
+    result.error = QCoreApplication::translate("muffin::ImageFileOps", "source or destination directory is unavailable");
     return result;
   }
 
@@ -203,7 +204,7 @@ muffin::ImageFileOps::MoveAllResult muffin::ImageFileOps::moveAllImages(
         QDir(documentDir).relativeFilePath(destination.value()));
     const QString replaced = image_syntax::replaceSource(snippet, relative);
     if (replaced == snippet && relative != it->href) {
-      result.error = QStringLiteral("could not locate an image destination in the document source");
+      result.error = QCoreApplication::translate("muffin::ImageFileOps", "could not locate an image destination in the document source");
       return result;
     }
     rewritten.replace(it->sourceStart, it->sourceEnd - it->sourceStart, replaced);
@@ -219,9 +220,9 @@ muffin::ImageFileOps::MoveAllResult muffin::ImageFileOps::moveAllImages(
           rollbackFailures.append(rollback->first);
         }
       }
-      result.error = QStringLiteral("could not move %1").arg(it.key());
+      result.error = QCoreApplication::translate("muffin::ImageFileOps", "could not move %1").arg(it.key());
       if (!rollbackFailures.isEmpty()) {
-        result.error += QStringLiteral("; rollback failed for %1")
+        result.error += QCoreApplication::translate("muffin::ImageFileOps", "; rollback failed for %1")
                             .arg(rollbackFailures.join(QStringLiteral(", ")));
       }
       return result;

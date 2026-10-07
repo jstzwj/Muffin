@@ -252,8 +252,7 @@ SourceEditorColors SourceEditorColors::fromTheme(const RenderTheme& theme) {
 VirtualSourceEdit::VirtualSourceEdit(QWidget* parent)
     : QAbstractScrollArea(parent), colors_(SourceEditorColors::fromTheme(RenderTheme::github())) {
   setFocusPolicy(Qt::StrongFocus);
-  setAccessibleName(tr("Markdown source editor"));
-  setAccessibleDescription(tr("Plain-text Markdown source"));
+  retranslateAccessibility();
   setAttribute(Qt::WA_InputMethodEnabled, true);
   setAcceptDrops(true);
   setFrameShape(QFrame::NoFrame);
@@ -286,6 +285,18 @@ VirtualSourceEdit::VirtualSourceEdit(QWidget* parent)
   });
   applyScrollBarStyle();
   resetGeometryIndex(false);
+}
+
+void VirtualSourceEdit::retranslateAccessibility() {
+  setAccessibleName(QCoreApplication::translate("muffin::VirtualSourceEdit", "Markdown source editor"));
+  setAccessibleDescription(QCoreApplication::translate("muffin::VirtualSourceEdit", "Plain-text Markdown source"));
+}
+
+void VirtualSourceEdit::changeEvent(QEvent* event) {
+  QAbstractScrollArea::changeEvent(event);
+  if (event->type() == QEvent::LanguageChange) {
+    retranslateAccessibility();
+  }
 }
 
 const PieceTable& VirtualSourceEdit::source() const {

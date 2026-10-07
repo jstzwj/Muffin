@@ -5,7 +5,7 @@ Bienvenue dans **Muffin**, un éditeur Markdown natif et rapide, construit en C+
 ## Créer ou ouvrir un document
 
 - Choisissez **Fichier → Nouveau** pour un document vierge, ou **Fichier → Ouvrir** pour ouvrir un fichier `.md` existant.
-- **Fichier → Ovrir un dossier** ouvre un dossier dans le panneau latéral afin que vous puissiez parcourir et basculer entre les fichiers.
+- **Fichier → Ouvrir un dossier** ouvre un dossier dans le panneau latéral afin que vous puissiez parcourir et basculer entre les fichiers.
 
 ## Deux modes d'édition
 

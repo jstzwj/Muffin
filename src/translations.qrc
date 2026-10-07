@@ -16,6 +16,7 @@
     <file alias="muffin_nl.qm">../translations/muffin_nl.qm</file>
   </qresource>
   <qresource prefix="/i18n/qt">
+    <file alias="qtbase_vi.qm">../translations/qtbase_vi.qm</file>
     <file alias="qtbase_ja.qm">../translations/qtbase_ja.qm</file>
     <file alias="qtbase_zh_CN.qm">../translations/qtbase_zh_CN.qm</file>
     <file alias="qtbase_fr.qm">../translations/qtbase_fr.qm</file>

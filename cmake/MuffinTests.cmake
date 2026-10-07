@@ -354,6 +354,8 @@ muffin_add_test(NAME MuffinBlockCodeFrontMatterTest SOURCE tests/blocks/BlockCod
 
 # --- app ---
 muffin_add_test(NAME MuffinTranslationResourceTest SOURCE tests/app/TranslationResourceTest.cpp LINK Qt6::Widgets EXTRA_SOURCES src/translations.qrc RESOURCE_LOCK)
+target_compile_definitions(MuffinTranslationResourceTest PRIVATE MUFFIN_TRANSLATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/translations")
+muffin_add_test(NAME MuffinLanguageIntegrationTest SOURCE tests/app/LanguageIntegrationTest.cpp LINK MuffinUi EXTRA_SOURCES src/app/LanguageManager.cpp src/app/LanguageManager.h src/app/HelpViewerDialog.cpp src/app/HelpViewerDialog.h src/translations.qrc ${MUFFIN_HELP_QRC} RESOURCE_LOCK)
 
 # Spell check: the test binary embeds the zlib-compressed dictionaries, and
 # that high-entropy blob trips Huorong's HEUR:Ransom STATIC heuristic on local

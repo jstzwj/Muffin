@@ -124,4 +124,4 @@ Here is a statement.[^1]
 
 ---
 
-需要上手協助嗎？請查閱 [快速開始](help:quick-start)。
+需要上手協助嗎？請查閱 [快速入門](help:quick-start)。

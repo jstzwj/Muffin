@@ -23,6 +23,8 @@ public:
 
   QVector<LanguageInfo> availableLanguages() const;
   QString currentLanguageCode() const;
+  // Resource language after resolving "system", regional aliases and fallback.
+  QString effectiveLanguageCode() const;
   void initialize();
   bool setLanguage(QString code);
 

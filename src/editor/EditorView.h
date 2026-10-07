@@ -118,6 +118,7 @@ signals:
   void contextMenuRequested(HitTestResult hit, QPoint globalPos);
 
 protected:
+  void changeEvent(QEvent* event) override;
   bool event(QEvent* event) override;
   void paintEvent(QPaintEvent* event) override;
   void resizeEvent(QResizeEvent* event) override;
@@ -136,6 +137,7 @@ protected:
   void dropEvent(QDropEvent* event) override;
 
 private:
+  void retranslateAccessibility();
   struct HeadingBadge {
     NodeId blockId;
     QRectF viewportRect;

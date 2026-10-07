@@ -1,5 +1,6 @@
 #include "io/FilePathOps.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -17,21 +18,23 @@
 namespace {
 
 // Generic error used when the platform API gives no detail (e.g. moveToTrash).
-const QString kUnsupported = QStringLiteral("operation failed");
+QString unsupportedError() {
+  return QCoreApplication::translate("muffin::FilePathOps", "operation failed");
+}
 
 }  // namespace
 
 bool muffin::FilePathOps::createFile(const QString& path, QString* error) {
   if (QFileInfo::exists(path)) {
     if (error) {
-      *error = QStringLiteral("file already exists");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "file already exists");
     }
     return false;
   }
   const QDir parentDir = QFileInfo(path).dir();
   if (!parentDir.exists() && !parentDir.mkpath(QStringLiteral("."))) {
     if (error) {
-      *error = QStringLiteral("could not create parent directory");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "could not create parent directory");
     }
     return false;
   }
@@ -49,13 +52,13 @@ bool muffin::FilePathOps::createFile(const QString& path, QString* error) {
 bool muffin::FilePathOps::createFolder(const QString& path, QString* error) {
   if (QFileInfo::exists(path)) {
     if (error) {
-      *error = QStringLiteral("path already exists");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "path already exists");
     }
     return false;
   }
   if (!QDir().mkpath(path)) {
     if (error) {
-      *error = QStringLiteral("could not create folder");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "could not create folder");
     }
     return false;
   }
@@ -78,14 +81,14 @@ bool muffin::FilePathOps::renamePath(const QString& oldPath, const QString& newP
       && oldCanonical == QFileInfo(newPath).canonicalFilePath();
   if (!caseOnly) {
     if (error) {
-      *error = QStringLiteral("could not rename (target may exist or the move crosses volumes)");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "could not rename (target may exist or the move crosses volumes)");
     }
     return false;
   }
   const QString tempPath = uniqueDuplicatePath(oldPath);
   if (!QFile::rename(oldPath, tempPath)) {
     if (error) {
-      *error = QStringLiteral("could not rename (case-change intermediate step failed)");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "could not rename (case-change intermediate step failed)");
     }
     return false;
   }
@@ -95,7 +98,7 @@ bool muffin::FilePathOps::renamePath(const QString& oldPath, const QString& newP
   // Best-effort revert so the file is not left stranded under the temp name.
   QFile::rename(tempPath, oldPath);
   if (error) {
-    *error = QStringLiteral("could not rename (case-change final step failed)");
+    *error = QCoreApplication::translate("muffin::FilePathOps", "could not rename (case-change final step failed)");
   }
   return false;
 }
@@ -129,13 +132,13 @@ bool muffin::FilePathOps::copyFile(const QString& srcPath, const QString& destPa
   const QDir destDir = QFileInfo(destPath).dir();
   if (!destDir.exists() && !destDir.mkpath(QStringLiteral("."))) {
     if (error) {
-      *error = QStringLiteral("could not create destination directory");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "could not create destination directory");
     }
     return false;
   }
   if (!QFile::copy(srcPath, destPath)) {
     if (error) {
-      *error = QStringLiteral("could not copy (destination may already exist)");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "could not copy (destination may already exist)");
     }
     return false;
   }
@@ -145,7 +148,7 @@ bool muffin::FilePathOps::copyFile(const QString& srcPath, const QString& destPa
 bool muffin::FilePathOps::moveToTrash(const QString& path, QString* error) {
   if (!QFile::moveToTrash(path)) {
     if (error) {
-      *error = kUnsupported;
+      *error = unsupportedError();
     }
     return false;
   }
@@ -156,7 +159,7 @@ bool muffin::FilePathOps::removePermanently(const QString& path, QString* error)
   if (QFileInfo(path).isDir()) {
     if (!QDir(path).removeRecursively()) {
       if (error) {
-        *error = kUnsupported;
+        *error = unsupportedError();
       }
       return false;
     }
@@ -164,7 +167,7 @@ bool muffin::FilePathOps::removePermanently(const QString& path, QString* error)
   }
   if (!QFile::remove(path)) {
     if (error) {
-      *error = kUnsupported;
+      *error = unsupportedError();
     }
     return false;
   }
@@ -174,7 +177,7 @@ bool muffin::FilePathOps::removePermanently(const QString& path, QString* error)
 bool muffin::FilePathOps::revealPathInManager(const QString& path, QString* error) {
   if (path.isEmpty() || !QFileInfo::exists(path)) {
     if (error) {
-      *error = QStringLiteral("path does not exist");
+      *error = QCoreApplication::translate("muffin::FilePathOps", "path does not exist");
     }
     return false;
   }
@@ -186,14 +189,14 @@ bool muffin::FilePathOps::revealPathInManager(const QString& path, QString* erro
   const HINSTANCE res = ShellExecuteW(nullptr, L"open", L"explorer.exe", params.c_str(), nullptr, SW_SHOWNORMAL);
   const bool ok = reinterpret_cast<INT_PTR>(res) > 32;
   if (!ok && error) {
-    *error = kUnsupported;
+    *error = unsupportedError();
   }
   return ok;
 #elif defined(Q_OS_MAC)
   // `open -R <path>` reveals the item in Finder with it selected.
   const bool ok = QProcess::startDetached(QStringLiteral("open"), {QStringLiteral("-R"), path});
   if (!ok && error) {
-    *error = kUnsupported;
+    *error = unsupportedError();
   }
   return ok;
 #else
@@ -203,7 +206,7 @@ bool muffin::FilePathOps::revealPathInManager(const QString& path, QString* erro
   const QString target = info.isDir() ? path : info.absolutePath();
   if (!QDesktopServices::openUrl(QUrl::fromLocalFile(target))) {
     if (error) {
-      *error = kUnsupported;
+      *error = unsupportedError();
     }
     return false;
   }

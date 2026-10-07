@@ -4,14 +4,12 @@
 <context>
     <name>EditorView</name>
     <message>
-        <location filename="../src/editor/EditorView.cpp" line="98"/>
         <source>Markdown editor</source>
-        <translation>Markdown 編輯器</translation>
+        <translation type="vanished">Markdown 編輯器</translation>
     </message>
     <message>
-        <location filename="../src/editor/EditorView.cpp" line="99"/>
         <source>Rendered Markdown document</source>
-        <translation>渲染後的 Markdown 文件</translation>
+        <translation type="vanished">渲染後的 Markdown 文件</translation>
     </message>
 </context>
 <context>
@@ -825,174 +823,140 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
         <translation type="vanished">欄數：</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="881"/>
         <source>Unicode</source>
-        <translation>Unicode</translation>
+        <translation type="vanished">Unicode</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="883"/>
         <source>UTF-8</source>
-        <translation>UTF-8</translation>
+        <translation type="vanished">UTF-8</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="884"/>
         <source>UTF-16 LE</source>
-        <translation>UTF-16 LE</translation>
+        <translation type="vanished">UTF-16 LE</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="885"/>
         <source>UTF-16 BE</source>
-        <translation>UTF-16 BE</translation>
+        <translation type="vanished">UTF-16 BE</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="887"/>
         <source>Western</source>
-        <translation>西歐語言</translation>
+        <translation type="vanished">西歐語言</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="889"/>
         <source>Western (Windows-1252)</source>
-        <translation>西歐語言 (Windows-1252)</translation>
+        <translation type="vanished">西歐語言 (Windows-1252)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="891"/>
         <source>Cyrillic</source>
-        <translation>斯拉夫文</translation>
+        <translation type="vanished">斯拉夫文</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="893"/>
         <source>Cyrillic (Windows-1251)</source>
-        <translation>斯拉夫文 (Windows-1251)</translation>
+        <translation type="vanished">斯拉夫文 (Windows-1251)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="894"/>
         <source>Cyrillic (ISO-8859-5)</source>
-        <translation>斯拉夫文 (ISO-8859-5)</translation>
+        <translation type="vanished">斯拉夫文 (ISO-8859-5)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="895"/>
         <source>Cyrillic (IBM866)</source>
-        <translation>斯拉夫文 (IBM866)</translation>
+        <translation type="vanished">斯拉夫文 (IBM866)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="896"/>
         <source>Cyrillic (IBM855)</source>
-        <translation>斯拉夫文 (IBM855)</translation>
+        <translation type="vanished">斯拉夫文 (IBM855)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="897"/>
         <source>Cyrillic (KOI8-R)</source>
-        <translation>斯拉夫文 (KOI8-R)</translation>
+        <translation type="vanished">斯拉夫文 (KOI8-R)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="898"/>
         <source>Cyrillic (Mac)</source>
-        <translation>斯拉夫文 (Mac)</translation>
+        <translation type="vanished">斯拉夫文 (Mac)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="900"/>
         <source>Central European</source>
-        <translation>中歐語言</translation>
+        <translation type="vanished">中歐語言</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="902"/>
         <source>Central European (Windows-1250)</source>
-        <translation>中歐語言 (Windows-1250)</translation>
+        <translation type="vanished">中歐語言 (Windows-1250)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="903"/>
         <source>Central European (ISO-8859-2)</source>
-        <translation>中歐語言 (ISO-8859-2)</translation>
+        <translation type="vanished">中歐語言 (ISO-8859-2)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="905"/>
         <source>Greek</source>
-        <translation>希臘文</translation>
+        <translation type="vanished">希臘文</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="907"/>
         <source>Greek (Windows-1253)</source>
-        <translation>希臘文 (Windows-1253)</translation>
+        <translation type="vanished">希臘文 (Windows-1253)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="908"/>
         <source>Greek (ISO-8859-7)</source>
-        <translation>希臘文 (ISO-8859-7)</translation>
+        <translation type="vanished">希臘文 (ISO-8859-7)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="910"/>
         <source>Hebrew</source>
-        <translation>希伯來文</translation>
+        <translation type="vanished">希伯來文</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="912"/>
         <source>Hebrew (Windows-1255)</source>
-        <translation>希伯來文 (Windows-1255)</translation>
+        <translation type="vanished">希伯來文 (Windows-1255)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="913"/>
         <source>Hebrew (ISO-8859-8)</source>
-        <translation>希伯來文 (ISO-8859-8)</translation>
+        <translation type="vanished">希伯來文 (ISO-8859-8)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="915"/>
         <source>Chinese Simplified</source>
-        <translation>簡體中文</translation>
+        <translation type="vanished">簡體中文</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="917"/>
         <source>Chinese Simplified (GB2312)</source>
-        <translation>簡體中文 (GB2312)</translation>
+        <translation type="vanished">簡體中文 (GB2312)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="918"/>
         <source>Chinese Simplified (GB18030)</source>
-        <translation>簡體中文 (GB18030)</translation>
+        <translation type="vanished">簡體中文 (GB18030)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="920"/>
         <source>Chinese Traditional</source>
-        <translation>繁體中文</translation>
+        <translation type="vanished">繁體中文</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="922"/>
         <source>Chinese Traditional (Big5)</source>
-        <translation>繁體中文 (Big5)</translation>
+        <translation type="vanished">繁體中文 (Big5)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="924"/>
         <source>Japanese</source>
-        <translation>日文</translation>
+        <translation type="vanished">日文</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="926"/>
         <source>Japanese (Shift_JIS)</source>
-        <translation>日文 (Shift_JIS)</translation>
+        <translation type="vanished">日文 (Shift_JIS)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="927"/>
         <source>Japanese (EUC-JP)</source>
-        <translation>日文 (EUC-JP)</translation>
+        <translation type="vanished">日文 (EUC-JP)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="929"/>
         <source>Korean</source>
-        <translation>韓文</translation>
+        <translation type="vanished">韓文</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="931"/>
         <source>Korean (EUC-KR)</source>
-        <translation>韓文 (EUC-KR)</translation>
+        <translation type="vanished">韓文 (EUC-KR)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="933"/>
         <source>Thai</source>
-        <translation>泰文</translation>
+        <translation type="vanished">泰文</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="935"/>
         <source>Thai (TIS-620)</source>
-        <translation>泰文 (TIS-620)</translation>
+        <translation type="vanished">泰文 (TIS-620)</translation>
     </message>
     <message>
         <source>Toggle source / rendered mode</source>
@@ -1006,14 +970,12 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
 <context>
     <name>VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="255"/>
         <source>Markdown source editor</source>
-        <translation>Markdown 原始碼編輯器</translation>
+        <translation type="vanished">Markdown 原始碼編輯器</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="256"/>
         <source>Plain-text Markdown source</source>
-        <translation>純文字 Markdown 原始碼</translation>
+        <translation type="vanished">純文字 Markdown 原始碼</translation>
     </message>
 </context>
 <context>
@@ -1063,6 +1025,29 @@ Make it your default editor now?</source>
     </message>
 </context>
 <context>
+    <name>muffin::CustomCommandUploader</name>
+    <message>
+        <location filename="../src/image/CustomCommandUploader.cpp" line="24"/>
+        <source>no upload command configured</source>
+        <translation>尚未設定上傳命令</translation>
+    </message>
+    <message>
+        <location filename="../src/image/CustomCommandUploader.cpp" line="33"/>
+        <source>empty upload command</source>
+        <translation>上傳命令為空</translation>
+    </message>
+    <message>
+        <location filename="../src/image/CustomCommandUploader.cpp" line="90"/>
+        <source>uploader exited with code %1</source>
+        <translation>上傳程式已結束，結束代碼為 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/image/CustomCommandUploader.cpp" line="104"/>
+        <source>uploader produced no URLs</source>
+        <translation>上傳程式未傳回任何 URL</translation>
+    </message>
+</context>
+<context>
     <name>muffin::DocumentSession</name>
     <message>
         <location filename="../src/document/DocumentSession.cpp" line="585"/>
@@ -1074,20 +1059,30 @@ Make it your default editor now?</source>
     <name>muffin::EditorView</name>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="68"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1139"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1240"/>
         <source>(no spelling suggestions)</source>
         <translation>(無拼寫建議)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="82"/>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1151"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1252"/>
         <source>Ignore &quot;%1&quot;</source>
         <translation>忽略「%1」</translation>
     </message>
     <message>
-        <location filename="../src/editor/EditorViewPaint.cpp" line="59"/>
+        <location filename="../src/editor/EditorViewPaint.cpp" line="70"/>
         <source>Loading…</source>
         <translation>載入中…</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/EditorView.cpp" line="565"/>
+        <source>Markdown editor</source>
+        <translation>Markdown 編輯器</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/EditorView.cpp" line="566"/>
+        <source>Rendered Markdown document</source>
+        <translation>渲染後的 Markdown 文件</translation>
     </message>
 </context>
 <context>
@@ -1103,78 +1098,78 @@ Make it your default editor now?</source>
         <translation>Markdown 和文字檔 (*.md *.markdown *.mdown *.txt);;所有檔案 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="387"/>
+        <location filename="../src/io/FileController.cpp" line="394"/>
         <source>Save As</source>
         <translation>另存新檔</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="513"/>
+        <location filename="../src/io/FileController.cpp" line="520"/>
         <source>The document cannot be encoded as %1.</source>
         <translation>無法將文件編碼為 %1。</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="612"/>
+        <location filename="../src/io/FileController.cpp" line="619"/>
         <source>Markdown files (*.md);;Text files (*.txt);;All files (*.*)</source>
         <translation>Markdown 檔案 (*.md);;文字檔 (*.txt);;所有檔案 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="423"/>
-        <location filename="../src/io/FileController.cpp" line="571"/>
+        <location filename="../src/io/FileController.cpp" line="430"/>
+        <location filename="../src/io/FileController.cpp" line="578"/>
         <source>Muffin</source>
         <translation>Muffin</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="389"/>
+        <location filename="../src/io/FileController.cpp" line="396"/>
         <source>Markdown files (*.md *.markdown);;Text files (*.txt);;All files (*.*)</source>
         <translation>Markdown 檔案 (*.md *.markdown);;文字檔 (*.txt);;所有檔案 (*.*)</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="424"/>
+        <location filename="../src/io/FileController.cpp" line="431"/>
         <source>The current document has unsaved changes.</source>
         <translation>目前文件有尚未儲存的變更。</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="444"/>
+        <location filename="../src/io/FileController.cpp" line="451"/>
         <source>File Missing</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案不存在</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="445"/>
+        <location filename="../src/io/FileController.cpp" line="452"/>
         <source>The file &quot;%1&quot; no longer exists on disk. Use Save As to write it to a new location.</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案「%1」已不在磁碟上。請使用「另存新檔」將其儲存到新位置。</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="453"/>
+        <location filename="../src/io/FileController.cpp" line="460"/>
         <source>File Changed on Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>磁碟上的檔案已變更</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="454"/>
+        <location filename="../src/io/FileController.cpp" line="461"/>
         <source>The file &quot;%1&quot; has been changed outside Muffin. Overwrite it?</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案「%1」已在 Muffin 之外被修改。要覆寫嗎？</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="463"/>
-        <location filename="../src/io/FileController.cpp" line="548"/>
+        <location filename="../src/io/FileController.cpp" line="470"/>
+        <location filename="../src/io/FileController.cpp" line="555"/>
         <source>Open Failed</source>
         <translation>開啟失敗</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="472"/>
+        <location filename="../src/io/FileController.cpp" line="479"/>
         <source>Could not detect a lossless text encoding for this file.</source>
         <translation>無法偵測出可無損讀取此檔案的文字編碼。</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="484"/>
-        <location filename="../src/io/FileController.cpp" line="521"/>
-        <location filename="../src/io/FileController.cpp" line="526"/>
+        <location filename="../src/io/FileController.cpp" line="491"/>
+        <location filename="../src/io/FileController.cpp" line="528"/>
+        <location filename="../src/io/FileController.cpp" line="533"/>
         <source>Save Failed</source>
         <translation>儲存失敗</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="471"/>
-        <location filename="../src/io/FileController.cpp" line="512"/>
-        <location filename="../src/io/FileController.cpp" line="554"/>
+        <location filename="../src/io/FileController.cpp" line="478"/>
+        <location filename="../src/io/FileController.cpp" line="519"/>
+        <location filename="../src/io/FileController.cpp" line="561"/>
         <source>Encoding Error</source>
         <translation>編碼錯誤</translation>
     </message>
@@ -1183,31 +1178,89 @@ Make it your default editor now?</source>
         <translation type="vanished">不支援的編碼：%1</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="555"/>
+        <location filename="../src/io/FileController.cpp" line="562"/>
         <source>Failed to decode file with encoding: %1</source>
         <translation>使用編碼 %1 解碼檔案失敗</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="572"/>
+        <location filename="../src/io/FileController.cpp" line="579"/>
         <source>The document has unsaved changes. Save before reopening with a new encoding?</source>
         <translation>文件有未儲存的變更。是否在以新編碼重新開啟前儲存？</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="610"/>
+        <location filename="../src/io/FileController.cpp" line="617"/>
         <source>Move To</source>
         <translation>移動到</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="618"/>
+        <location filename="../src/io/FileController.cpp" line="625"/>
         <source>Move Failed</source>
         <translation>移動失敗</translation>
     </message>
     <message>
-        <location filename="../src/io/FileController.cpp" line="619"/>
+        <location filename="../src/io/FileController.cpp" line="626"/>
         <source>Could not move file to:
 %1</source>
         <translation>無法將檔案移動到：
 %1</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::FilePathOps</name>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="180"/>
+        <source>path does not exist</source>
+        <translation>路徑不存在</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="22"/>
+        <source>operation failed</source>
+        <translation>操作失敗</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="30"/>
+        <source>file already exists</source>
+        <translation>檔案已存在</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="37"/>
+        <source>could not create parent directory</source>
+        <translation>無法建立上層目錄</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="55"/>
+        <source>path already exists</source>
+        <translation>路徑已存在</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="61"/>
+        <source>could not create folder</source>
+        <translation>無法建立資料夾</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="84"/>
+        <source>could not rename (target may exist or the move crosses volumes)</source>
+        <translation>無法重新命名（目標可能已存在，或移動操作跨越磁碟區）</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="91"/>
+        <source>could not rename (case-change intermediate step failed)</source>
+        <translation>無法重新命名（變更大小寫的中間步驟失敗）</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="101"/>
+        <source>could not rename (case-change final step failed)</source>
+        <translation>無法重新命名（變更大小寫的最後步驟失敗）</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="135"/>
+        <source>could not create destination directory</source>
+        <translation>無法建立目標目錄</translation>
+    </message>
+    <message>
+        <location filename="../src/io/FilePathOps.cpp" line="141"/>
+        <source>could not copy (destination may already exist)</source>
+        <translation>無法複製（目標可能已存在）</translation>
     </message>
 </context>
 <context>
@@ -1306,6 +1359,29 @@ Make it your default editor now?</source>
         <location filename="../src/app/HelpViewerDialog.cpp" line="211"/>
         <source>This page is not available.</source>
         <translation>此頁面暫不可用。</translation>
+    </message>
+</context>
+<context>
+    <name>muffin::ImageFileOps</name>
+    <message>
+        <location filename="../src/io/ImageFileOps.cpp" line="179"/>
+        <source>source or destination directory is unavailable</source>
+        <translation>來源或目標目錄無法使用</translation>
+    </message>
+    <message>
+        <location filename="../src/io/ImageFileOps.cpp" line="207"/>
+        <source>could not locate an image destination in the document source</source>
+        <translation>無法在文件原始碼中找到圖片的目標路徑</translation>
+    </message>
+    <message>
+        <location filename="../src/io/ImageFileOps.cpp" line="223"/>
+        <source>could not move %1</source>
+        <translation>無法移動 %1</translation>
+    </message>
+    <message>
+        <location filename="../src/io/ImageFileOps.cpp" line="225"/>
+        <source>; rollback failed for %1</source>
+        <translation>；無法將 %1 還原至原位置</translation>
     </message>
 </context>
 <context>
@@ -2080,6 +2156,11 @@ Set up a custom upload command in Preferences → Images.</source>
         <translation>沒有可上傳的本機圖片。</translation>
     </message>
     <message>
+        <location filename="../src/app/CommandDeclarations.cpp" line="1346"/>
+        <source>the uploader did not return one URL per image</source>
+        <translation>上傳程式未為每張圖片傳回一個 URL</translation>
+    </message>
+    <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1380"/>
         <source>Uploaded %1 image(s).</source>
         <translation>已上傳 %1 張圖片。</translation>
@@ -2286,68 +2367,68 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="122"/>
         <source>Document is still loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>文件仍在載入中…</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="184"/>
         <source>PDF</source>
-        <translation type="unfinished"></translation>
+        <translation>PDF</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="190"/>
         <location filename="../src/app/CommandDeclarations.cpp" line="1975"/>
         <source>HTML</source>
-        <translation type="unfinished"></translation>
+        <translation>HTML</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="196"/>
         <source>HTML (without Styles)</source>
-        <translation type="unfinished">HTML (不含樣式)</translation>
+        <translation>HTML (不含樣式)</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="202"/>
         <source>Word (.docx)</source>
-        <translation type="unfinished"></translation>
+        <translation>Word (.docx)</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="208"/>
         <source>OpenOffice</source>
-        <translation type="unfinished"></translation>
+        <translation>OpenOffice</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="214"/>
         <source>RTF</source>
-        <translation type="unfinished"></translation>
+        <translation>RTF</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="220"/>
         <source>Epub</source>
-        <translation type="unfinished"></translation>
+        <translation>EPUB</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="226"/>
         <source>LaTeX</source>
-        <translation type="unfinished"></translation>
+        <translation>LaTeX</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="232"/>
         <source>Media Wiki</source>
-        <translation type="unfinished"></translation>
+        <translation>MediaWiki</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="238"/>
         <source>reStructuredText</source>
-        <translation type="unfinished"></translation>
+        <translation>reStructuredText</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="244"/>
         <source>Textile</source>
-        <translation type="unfinished"></translation>
+        <translation>Textile</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="250"/>
         <source>OPML</source>
-        <translation type="unfinished"></translation>
+        <translation>OPML</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="266"/>
@@ -2472,7 +2553,7 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1049"/>
         <source>Convert on Input</source>
-        <translation type="unfinished">輸入時轉換</translation>
+        <translation>輸入時轉換</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1068"/>
@@ -2482,12 +2563,12 @@ Live preview and source editing; export to PDF, HTML, and many more formats via 
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1087"/>
         <source>Smart Quotes</source>
-        <translation type="unfinished">智慧引號</translation>
+        <translation>智慧引號</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1099"/>
         <source>Smart Dashes</source>
-        <translation type="unfinished">智慧破折號</translation>
+        <translation>智慧破折號</translation>
     </message>
     <message>
         <location filename="../src/app/CommandDeclarations.cpp" line="1111"/>
@@ -2748,7 +2829,7 @@ A fast, lightweight native Markdown editor built with C++ and Qt 6 Widgets.</sou
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="116"/>
         <source>Clear Recent Folders</source>
-        <translation type="unfinished"></translation>
+        <translation>清除最近開啟的資料夾</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="206"/>
@@ -2776,75 +2857,75 @@ Parse time: %6 ms</source>
 解析耗時：%6 ms</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="516"/>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="527"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="515"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="526"/>
         <source>Unsaved Drafts Found</source>
         <translation>發現未儲存的草稿</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/MainWindowFileOps.cpp" line="521"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="520"/>
         <source>Muffin found %n unsaved draft(s) from a previous session. Restore one into this window, discard all of them, or keep them for later.</source>
         <translation>
             <numerusform>Muffin 發現上次工作階段留下的 %n 個未儲存草稿。可將其中一個還原至目前視窗、全部捨棄，或留待稍後處理。</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="534"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="533"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="781"/>
         <source>Untitled</source>
         <translation>無標題</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/app/MainWindowFileOps.cpp" line="536"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="535"/>
         <source>%1  —  %2  (%n char(s))</source>
         <translation>
             <numerusform>%1  —  %2  (%n 個字元)</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="544"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="543"/>
         <source>Restore</source>
         <translation>還原</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="545"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="544"/>
         <source>Discard All</source>
         <translation>全部捨棄</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="546"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="545"/>
         <source>Later</source>
         <translation>稍後</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="637"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="636"/>
         <source>No files to open</source>
         <translation>沒有可開啟的檔案</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="655"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="654"/>
         <source>Import</source>
         <translation>匯入</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="656"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="655"/>
         <source>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Word (*.docx);;OpenDocument (*.odt);;RTF (*.rtf);;EPUB (*.epub);;HTML (*.html *.htm);;LaTeX (*.tex *.latex);;MediaWiki (*.wiki *.mediawini);;reStructuredText (*.rst);;Textile (*.textile);;OPML (*.opml);;所有檔案 (*)</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="665"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="664"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="681"/>
         <source>Import Failed</source>
         <translation>匯入失敗</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="666"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="665"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="822"/>
         <source>Pandoc was not found. Install Pandoc or set its path in Preferences → Export.</source>
         <translation>找不到 Pandoc。請安裝 Pandoc，或在偏好設定 → 匯出中設定其路徑。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowFileOps.cpp" line="670"/>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="669"/>
         <source>Importing %1…</source>
         <translation>正在匯入 %1…</translation>
     </message>
@@ -2952,17 +3033,17 @@ This action cannot be undone.</source>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1170"/>
         <source>Name cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>名稱不可為空。</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1184"/>
         <source>An item named &quot;%1&quot; already exists.</source>
-        <translation type="unfinished"></translation>
+        <translation>名為「%1」的項目已存在。</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1206"/>
         <source>Could not rename: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>無法重新命名：%1</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1123"/>
@@ -2970,12 +3051,185 @@ This action cannot be undone.</source>
 %1
 
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>無法建立檔案：
+%1
+
+%2</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="806"/>
         <source>PDF export failed: the printer device could not be opened.</source>
-        <translation type="unfinished"></translation>
+        <translation>PDF 匯出失敗：無法開啟印表機裝置。</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="881"/>
+        <source>Unicode</source>
+        <translation>Unicode</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="883"/>
+        <source>UTF-8</source>
+        <translation>UTF-8</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="884"/>
+        <source>UTF-16 LE</source>
+        <translation>UTF-16 LE</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="885"/>
+        <source>UTF-16 BE</source>
+        <translation>UTF-16 BE</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="887"/>
+        <source>Western</source>
+        <translation>西歐語言</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="889"/>
+        <source>Western (Windows-1252)</source>
+        <translation>西歐語言 (Windows-1252)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="891"/>
+        <source>Cyrillic</source>
+        <translation>斯拉夫文</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="893"/>
+        <source>Cyrillic (Windows-1251)</source>
+        <translation>斯拉夫文 (Windows-1251)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="894"/>
+        <source>Cyrillic (ISO-8859-5)</source>
+        <translation>斯拉夫文 (ISO-8859-5)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="895"/>
+        <source>Cyrillic (IBM866)</source>
+        <translation>斯拉夫文 (IBM866)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="896"/>
+        <source>Cyrillic (IBM855)</source>
+        <translation>斯拉夫文 (IBM855)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="897"/>
+        <source>Cyrillic (KOI8-R)</source>
+        <translation>斯拉夫文 (KOI8-R)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="898"/>
+        <source>Cyrillic (Mac)</source>
+        <translation>斯拉夫文 (Mac)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="900"/>
+        <source>Central European</source>
+        <translation>中歐語言</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="902"/>
+        <source>Central European (Windows-1250)</source>
+        <translation>中歐語言 (Windows-1250)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="903"/>
+        <source>Central European (ISO-8859-2)</source>
+        <translation>中歐語言 (ISO-8859-2)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="905"/>
+        <source>Greek</source>
+        <translation>希臘文</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="907"/>
+        <source>Greek (Windows-1253)</source>
+        <translation>希臘文 (Windows-1253)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="908"/>
+        <source>Greek (ISO-8859-7)</source>
+        <translation>希臘文 (ISO-8859-7)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="910"/>
+        <source>Hebrew</source>
+        <translation>希伯來文</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="912"/>
+        <source>Hebrew (Windows-1255)</source>
+        <translation>希伯來文 (Windows-1255)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="913"/>
+        <source>Hebrew (ISO-8859-8)</source>
+        <translation>希伯來文 (ISO-8859-8)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="915"/>
+        <source>Chinese Simplified</source>
+        <translation>簡體中文</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="917"/>
+        <source>Chinese Simplified (GB2312)</source>
+        <translation>簡體中文 (GB2312)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="918"/>
+        <source>Chinese Simplified (GB18030)</source>
+        <translation>簡體中文 (GB18030)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="920"/>
+        <source>Chinese Traditional</source>
+        <translation>繁體中文</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="922"/>
+        <source>Chinese Traditional (Big5)</source>
+        <translation>繁體中文 (Big5)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="924"/>
+        <source>Japanese</source>
+        <translation>日文</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="926"/>
+        <source>Japanese (Shift_JIS)</source>
+        <translation>日文 (Shift_JIS)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="927"/>
+        <source>Japanese (EUC-JP)</source>
+        <translation>日文 (EUC-JP)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="929"/>
+        <source>Korean</source>
+        <translation>韓文</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="931"/>
+        <source>Korean (EUC-KR)</source>
+        <translation>韓文 (EUC-KR)</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="933"/>
+        <source>Thai</source>
+        <translation>泰文</translation>
+    </message>
+    <message>
+        <location filename="../src/app/MainWindowFileOps.cpp" line="935"/>
+        <source>Thai (TIS-620)</source>
+        <translation>泰文 (TIS-620)</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1142"/>
@@ -2983,7 +3237,10 @@ This action cannot be undone.</source>
 %1
 
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>無法建立資料夾：
+%1
+
+%2</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1258"/>
@@ -2991,42 +3248,49 @@ This action cannot be undone.</source>
 %1
 
 %2</source>
-        <translation type="unfinished"></translation>
+        <translation>無法建立複本：
+%1
+
+%2</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1271"/>
         <source>Delete Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>刪除資料夾</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1273"/>
         <source>Are you sure you want to move &quot;%1&quot; and all its contents to the trash?
 
 This action cannot be undone.</source>
-        <translation type="unfinished"></translation>
+        <translation>確定要將「%1」及其所有內容移至垃圾桶嗎？
+
+此操作無法復原。</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1302"/>
         <source>Could not delete:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>無法刪除：
+%1</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1328"/>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>資料夾</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1328"/>
         <source>File</source>
         <comment>properties: entry type</comment>
-        <translation type="unfinished">檔案(&amp;F)</translation>
+        <translation>檔案</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1330"/>
         <source>Size: %1 bytes
 </source>
-        <translation type="unfinished"></translation>
+        <translation>大小：%1 位元組
+</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1331"/>
@@ -3034,13 +3298,17 @@ This action cannot be undone.</source>
 Type: %2
 Location: %3
 %4Modified: %5</source>
-        <translation type="unfinished"></translation>
+        <translation>名稱：%1
+類型：%2
+位置：%3
+%4修改時間：%5</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1351"/>
         <source>Could not reveal:
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>無法顯示檔案位置：
+%1</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1036"/>
@@ -3117,23 +3385,24 @@ Location: %3
         <translation>尋找上一個</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="210"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="220"/>
         <source>File Changed on Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>磁碟上的檔案已變更</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="211"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="221"/>
         <source>The file &quot;%1&quot; has changed outside Muffin. Reload it?
 Unsaved changes in the editor will be lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>檔案「%1」已在 Muffin 之外被修改。要重新載入嗎？
+編輯器中尚未儲存的變更將會遺失。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="316"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="326"/>
         <source>Update Available</source>
         <translation>有可用的更新</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="317"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="327"/>
         <source>A new version of Muffin (%1) is available.
 
 Would you like to open the download page?</source>
@@ -3142,27 +3411,27 @@ Would you like to open the download page?</source>
 是否要開啟下載頁面？</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="324"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="334"/>
         <source>Muffin %1 is available. Use Help &gt; Check for Updates to download.</source>
         <translation>Muffin %1 已可供下載。請使用 說明 &gt; 檢查更新 進行下載。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="331"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="341"/>
         <source>Up to Date</source>
         <translation>已是最新版本</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="332"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="342"/>
         <source>You are running the latest version of Muffin.</source>
         <translation>您正在使用最新版本的 Muffin。</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="339"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="349"/>
         <source>Update Check Failed</source>
         <translation>更新檢查失敗</translation>
     </message>
     <message>
-        <location filename="../src/app/MainWindowSignalBinder.cpp" line="340"/>
+        <location filename="../src/app/MainWindowSignalBinder.cpp" line="350"/>
         <source>Could not check for updates:
 %1</source>
         <translation>無法檢查更新：
@@ -3196,20 +3465,20 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="304"/>
         <source>Open</source>
-        <translation type="unfinished">開啟</translation>
+        <translation>開啟</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="305"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="320"/>
         <source>Open in New Window</source>
-        <translation type="unfinished"></translation>
+        <translation>在新視窗開啟</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="307"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="322"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1122"/>
         <source>New File</source>
-        <translation type="unfinished">新增檔案</translation>
+        <translation>新增檔案</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="308"/>
@@ -3217,31 +3486,31 @@ Would you like to open the download page?</source>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1135"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1141"/>
         <source>New Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>新增資料夾</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="310"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>重新命名</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="311"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1257"/>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>建立複本</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="316"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="325"/>
         <source>Copy Path</source>
-        <translation type="unfinished"></translation>
+        <translation>複製路徑</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="317"/>
         <location filename="../src/app/MainWindowContextMenu.cpp" line="326"/>
         <location filename="../src/app/MainWindowFileOps.cpp" line="1350"/>
         <source>Reveal in File Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>在檔案管理員中顯示</translation>
     </message>
     <message>
         <location filename="../src/app/MainWindowFind.cpp" line="56"/>
@@ -4073,7 +4342,7 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="258"/>
         <source>Strict Mode turns off tables, strikethrough and task lists for plain CommonMark structure. Inline extensions (formulas, auto links, sub/superscript, etc.) always follow their own switches and are not affected by Strict Mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>嚴格模式會停用表格、刪除線與工作清單，採用標準 CommonMark 結構。行內擴充（公式、自動連結、上下標等）始終由各自的開關控制，不受嚴格模式影響。</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="262"/>
@@ -4153,12 +4422,12 @@ Would you like to open the download page?</source>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="284"/>
         <source>Render Emoji Shortcodes</source>
-        <translation type="unfinished"></translation>
+        <translation>轉譯 Emoji 短代碼</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="285"/>
         <source>Convert GitHub-style shortcodes like :smile: and :heart: into emoji glyphs when rendering. Turn off to keep the literal :shortcode: text (e.g. for technical documentation).</source>
-        <translation type="unfinished"></translation>
+        <translation>轉譯時將 :smile:、:heart: 等 GitHub 風格的短代碼轉換為 Emoji 字元。關閉後保留原始的 :shortcode: 文字（例如用於技術文件）。</translation>
     </message>
     <message>
         <location filename="../src/app/PrefsMarkdownPage.cpp" line="288"/>
@@ -4416,32 +4685,42 @@ Would you like to open the download page?</source>
 <context>
     <name>muffin::VirtualSourceEdit</name>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1160"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="291"/>
+        <source>Markdown source editor</source>
+        <translation>Markdown 原始碼編輯器</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="292"/>
+        <source>Plain-text Markdown source</source>
+        <translation>純文字 Markdown 原始碼</translation>
+    </message>
+    <message>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1261"/>
         <source>Undo</source>
         <translation>復原</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1161"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1262"/>
         <source>Redo</source>
         <translation>重做</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1165"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1266"/>
         <source>Cut</source>
         <translation>剪下</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1171"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1272"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1174"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1275"/>
         <source>Paste</source>
         <translation>貼上</translation>
     </message>
     <message>
-        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1186"/>
+        <location filename="../src/editor/VirtualSourceEdit.cpp" line="1287"/>
         <source>Select All</source>
         <translation>全部選取</translation>
     </message>

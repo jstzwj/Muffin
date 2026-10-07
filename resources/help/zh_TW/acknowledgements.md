@@ -31,4 +31,4 @@ Muffin 站在眾多優秀開源專案的肩膀上。
 
 感謝每一位協助 Muffin 持續進步的譯者、測試者與貢獻者。歡迎在 [問題追蹤器](https://github.com/jstzwj/Muffin/issues) 中提供您的意見回饋。
 
-前往 [專案首頁](https://github.com/jstzwj/Muffin)，或返回 [快速開始](help:quick-start)。
+前往 [專案首頁](https://github.com/jstzwj/Muffin)，或返回 [快速入門](help:quick-start)。

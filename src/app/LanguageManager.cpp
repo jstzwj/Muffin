@@ -36,6 +36,10 @@ QString muffin::LanguageManager::currentLanguageCode() const {
   return selectedCode_;
 }
 
+QString muffin::LanguageManager::effectiveLanguageCode() const {
+  return currentCode_;
+}
+
 void muffin::LanguageManager::initialize() {
   QSettings settings;
   setLanguage(settings.value(settingsKey(), QStringLiteral("system")).toString());

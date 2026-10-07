@@ -131,6 +131,7 @@ signals:
   void editApplied();
 
 protected:
+  void changeEvent(QEvent* event) override;
   void paintEvent(QPaintEvent* event) override;
   void resizeEvent(QResizeEvent* event) override;
   void keyPressEvent(QKeyEvent* event) override;
@@ -146,6 +147,7 @@ protected:
   void dropEvent(QDropEvent* event) override;
 
 private:
+  void retranslateAccessibility();
   struct EditRecord {
     qsizetype start = 0;
     QString removed;

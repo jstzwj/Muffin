@@ -128,6 +128,17 @@ set(MUFFIN_TRANSLATION_BINARY_SOURCES
   translations/muffin_nl.qm
 )
 
+# Vietnamese supplements are maintained locally; keep them out of lupdate,
+# which extracts only Muffin's own strings.
+set(MUFFIN_LOCAL_TRANSLATION_SOURCES
+  ${MUFFIN_TRANSLATION_SOURCES}
+  translations/qtbase_vi.ts
+)
+set(MUFFIN_LOCAL_TRANSLATION_BINARY_SOURCES
+  ${MUFFIN_TRANSLATION_BINARY_SOURCES}
+  translations/qtbase_vi.qm
+)
+
 # Qt base translations for standard dialog buttons (Save, Discard, Cancel, etc.)
 set(MUFFIN_QT_TRANSLATION_BINARY_SOURCES
   translations/qtbase_ja.qm
@@ -180,6 +191,9 @@ set(MUFFIN_TRANSLATABLE_SOURCES
   src/editor/FindBarWidget.cpp
   src/render/BlockLayoutBuilder.cpp
   src/io/FileController.cpp
+  src/io/FilePathOps.cpp
+  src/io/ImageFileOps.cpp
+  src/image/CustomCommandUploader.cpp
 )
 
 if(MUFFIN_LUPDATE_EXECUTABLE)
@@ -198,21 +212,21 @@ if(MUFFIN_LRELEASE_EXECUTABLE)
   add_custom_target(release_translations
     COMMAND
       "${MUFFIN_LRELEASE_EXECUTABLE}"
-      ${MUFFIN_TRANSLATION_SOURCES}
+      ${MUFFIN_LOCAL_TRANSLATION_SOURCES}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     COMMENT "Compile Qt Linguist translation files"
     VERBATIM
   )
 endif()
 
-foreach(MUFFIN_TRANSLATION_BINARY_SOURCE IN LISTS MUFFIN_TRANSLATION_BINARY_SOURCES)
+foreach(MUFFIN_TRANSLATION_BINARY_SOURCE IN LISTS MUFFIN_LOCAL_TRANSLATION_BINARY_SOURCES)
   if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${MUFFIN_TRANSLATION_BINARY_SOURCE}")
     if(MUFFIN_LRELEASE_EXECUTABLE)
       message(STATUS "Generating missing translation resource ${MUFFIN_TRANSLATION_BINARY_SOURCE}")
       execute_process(
         COMMAND
           "${MUFFIN_LRELEASE_EXECUTABLE}"
-          ${MUFFIN_TRANSLATION_SOURCES}
+          ${MUFFIN_LOCAL_TRANSLATION_SOURCES}
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         COMMAND_ERROR_IS_FATAL ANY
       )

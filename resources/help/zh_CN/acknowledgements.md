@@ -16,9 +16,9 @@ Muffin 站在众多优秀开源项目的肩膀上。
 - [Yoga](https://github.com/facebook/yoga) —— Flexbox 布局引擎。
 - [Lexbor](https://github.com/lexbor/lexbor) —— HTML 解析。
 
-## 图像解码
+## 图片解码
 
-- [libavif](https://github.com/AOMediaCodec/libavif) 与 [dav1d](https://code.videolan.org/videolan/dav1d) —— AVIF 图像解码。
+- [libavif](https://github.com/AOMediaCodec/libavif) 与 [dav1d](https://code.videolan.org/videolan/dav1d) —— AVIF 图片解码。
 - [libjpeg](https://www.ijg.org) —— JPEG 解码。
 - [libpng](https://www.libpng.org/pub/png/libpng.html) —— PNG 解码。
 - [libwebp](https://developers.google.com/speed/webp) —— WebP 解码。
@@ -31,4 +31,4 @@ Muffin 站在众多优秀开源项目的肩膀上。
 
 感谢每一位帮助 Muffin 不断改进的译者、测试者和贡献者。欢迎在 [问题追踪器](https://github.com/jstzwj/Muffin/issues) 中提交您的反馈。
 
-访问 [项目主页](https://github.com/jstzwj/Muffin)，或返回 [快速开始](help:quick-start)。
+访问 [项目主页](https://github.com/jstzwj/Muffin)，或返回 [快速入门](help:quick-start)。

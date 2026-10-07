@@ -141,7 +141,7 @@ void muffin::HelpViewerDialog::goHome() {
 }
 
 void muffin::HelpViewerDialog::renderCurrent() {
-  const QString locale = LanguageManager::instance().currentLanguageCode();
+  const QString locale = LanguageManager::instance().effectiveLanguageCode();
   const QString markdown = readTopicDoc(currentTopic_, locale);
   browser_->document()->setMarkdown(markdown, QTextDocument::MarkdownDialectGitHub);
   browser_->moveCursor(QTextCursor::Start);

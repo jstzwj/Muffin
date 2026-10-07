@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Help pages now follow the resolved application language when using System Default or a regional language alias.
+- Encoding menu labels and editor accessibility descriptions use the correct translation contexts; accessibility descriptions also update when switching languages.
+- Filled missing entries and reviewed unfinished translations in all 14 application catalogs, including file and image operation errors and upload errors. Corrected terminology in Chinese help pages and added Vietnamese translations for common Qt dialog controls.
+
 ## [0.6.4] - 2026-08-28
 
 ### Added

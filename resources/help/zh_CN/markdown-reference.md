@@ -124,4 +124,4 @@ Here is a statement.[^1]
 
 ---
 
-需要上手帮助？请查阅 [快速开始](help:quick-start)。
+需要上手帮助？请查阅 [快速入门](help:quick-start)。
