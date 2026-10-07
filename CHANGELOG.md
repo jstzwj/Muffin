@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.6] - 2026-10-08
+
+### Changed
+
+- Windows releases use high-compression MSI cabinets and complete solid LZMA2 `.7z` portable packages instead of ZIP archives. Fonts, dictionaries and translations remain bundled for offline use.
+
 ### Fixed
 
 - Local image operations resolve relative paths against the document folder and decode file URLs consistently with rendering, preventing same-named files in the working directory from being moved or uploaded by mistake.
@@ -604,6 +610,8 @@ An internal-architecture release. No user-visible behavior changes — every edi
 - **List indentation** - Fixed list item indent/outdent logic
 - **Cross-platform build** - Added `libxcb-util-dev` dependency for Linux CI and offscreen rendering environment for macOS tests
 
+[Unreleased]: https://github.com/jstzwj/Muffin/compare/v0.6.6...HEAD
+[0.6.6]: https://github.com/jstzwj/Muffin/releases/tag/v0.6.6
 [0.6.0]: https://github.com/jstzwj/Muffin/releases/tag/v0.6.0
 [0.5.5]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.5
 [0.5.4]: https://github.com/jstzwj/Muffin/releases/tag/v0.5.4
