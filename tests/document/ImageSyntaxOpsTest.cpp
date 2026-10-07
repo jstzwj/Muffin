@@ -1,4 +1,7 @@
 #include "document/ImageSyntaxOps.h"
+#include "document/DocumentSession.h"
+#include "document/InlineNode.h"
+#include "document/MarkdownNode.h"
 
 #include "../TestUtils.h"
 
@@ -224,6 +227,49 @@ void testMenuRoundTrips() {
   require(image_syntax::zoomPercent(reset) == 100, QStringLiteral("reset image reports 100%"));
 }
 
+const InlineNode* findImage(const MarkdownNode& node) {
+  for (const auto& in : node.inlines()) if (in.type() == InlineType::Image) return &in;
+  for (const auto& child : node.children()) if (const InlineNode* image = findImage(*child)) return image;
+  return nullptr;
+}
+
+void testDestinationRewriteParses() {
+  const QString target = QStringLiteral("https://cdn.example/my image(2).png?q=1&x=2");
+  for (const QString& source : {QStringLiteral("![alt](<old image.png> \"title\")"),
+                               QStringLiteral("![alt](old(1).png 'title')"),
+                               QStringLiteral("![alt\\]\\(x](old\\(1\\).png)")}) {
+    const QString changed = image_syntax::replaceSource(source, target);
+    DocumentSession session;
+    session.setMarkdownText(changed, false);
+    const InlineNode* image = findImage(session.document().root());
+    require(image && image->href() == target, QStringLiteral("Destination rewrite must preserve a real image: %1").arg(changed));
+    if (source.contains(QStringLiteral("title"))) {
+      require(image->title() == QStringLiteral("title"), QStringLiteral("Image title must survive URL replacement"));
+    }
+  }
+}
+
+void testSpacedImageConversionRoundTrip() {
+  const QString href = QStringLiteral("my image(1).png?q=1&x=2");
+  const QString alt = QStringLiteral("literal ](alt) & \"caption\"");
+  const QString title = QStringLiteral("Keep \"quotes\", \\ and &amp;");
+  const QString markdown = image_syntax::markdownImage(alt, href, title);
+  const auto parsed = image_syntax::parse(markdown);
+  require(parsed.src == href && parsed.alt == alt && parsed.title == title,
+          QStringLiteral("Image parsing must decode destination brackets, escapes and entities"));
+  const QString resized = image_syntax::setZoom(markdown, 50);
+  const auto htmlImage = image_syntax::parse(resized);
+  require(htmlImage.syntax == Syntax::Html && htmlImage.src == href && htmlImage.alt == alt,
+          QStringLiteral("Resizing a spaced image must preserve the actual URL and alt"));
+  require(!resized.contains(QStringLiteral("src=\"<")),
+          QStringLiteral("Markdown destination brackets must not become part of HTML src"));
+  DocumentSession session;
+  session.setMarkdownText(image_syntax::toMarkdown(resized), false);
+  const InlineNode* image = findImage(session.document().root());
+  require(image && image->href() == href && image->alt() == alt,
+          QStringLiteral("Converting back to Markdown must produce the same parseable image"));
+}
+
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
   testParseMarkdown();
@@ -242,5 +288,7 @@ int main(int argc, char** argv) {
   testToHtml();
   testFindImgTag();
   testMenuRoundTrips();
+  testDestinationRewriteParses();
+  testSpacedImageConversionRoundTrip();
   return 0;
 }

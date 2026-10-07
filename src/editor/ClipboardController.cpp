@@ -1,6 +1,7 @@
 #include "editor/ClipboardController.h"
 
 #include "document/DocumentSession.h"
+#include "document/ImageSyntaxOps.h"
 #include "editor/InputController.h"
 #include "editor/SelectionController.h"
 #include "image/ImageInsertionPolicy.h"
@@ -82,7 +83,7 @@ bool ClipboardController::paste() {
       QSettings settings;
       const muffin::ImageInsertResult res = muffin::ImageInsertionPolicy::resolveHref(req, settings, nullptr);
       if (res.ok) {
-        return inputController_->insertText(QStringLiteral("![image](%1)").arg(res.href));
+        return inputController_->insertText(image_syntax::markdownImage(QStringLiteral("image"), res.href));
       }
     }
   }

@@ -4,6 +4,8 @@
 #include "document/ImageSyntaxOps.h"
 #include "document/MarkdownDocument.h"
 #include "document/MarkdownNode.h"
+#include "document/LinkSyntaxOps.h"
+#include "editor/ResourceUrl.h"
 
 #include <QCoreApplication>
 #include <QDateTime>
@@ -75,29 +77,19 @@ void collectImageRefsRecursive(const muffin::MarkdownNode& node, QVector<muffin:
 }  // namespace
 
 QString muffin::ImageFileOps::resolveImagePath(const QString& src, const QString& documentDir) {
-  if (src.startsWith(QStringLiteral("http:")) || src.startsWith(QStringLiteral("https:")) ||
-      src.startsWith(QStringLiteral("data:"))) {
-    return {};
-  }
-  if (QFileInfo::exists(src)) {
-    return QFileInfo(src).absoluteFilePath();
-  }
-  if (!documentDir.isEmpty()) {
-    const QString absolute = QDir(documentDir).absoluteFilePath(src);
-    if (QFileInfo::exists(absolute)) {
-      return QFileInfo(absolute).absoluteFilePath();
-    }
-  }
-  return {};
+  if (src.isEmpty()) { return {}; }
+  const QUrl url = resolvedUrlForDirectoryResource(src, documentDir);
+  if (!url.isValid() || !url.isLocalFile()) { return {}; }
+  const QFileInfo info(url.toLocalFile());
+  return info.isFile() ? info.absoluteFilePath() : QString();
 }
 
 bool muffin::ImageFileOps::isLocalImageSrc(const QString& src) {
   if (src.isEmpty()) {
     return false;
   }
-  return !src.startsWith(QStringLiteral("http:")) &&
-         !src.startsWith(QStringLiteral("https:")) &&
-         !src.startsWith(QStringLiteral("data:"));
+  const QUrl url = resolvedUrlForDirectoryResource(src, {});
+  return url.isValid() && url.isLocalFile();
 }
 
 QStringList muffin::ImageFileOps::collectLocalImagePaths(const MarkdownDocument& document, const QString& documentDir) {
@@ -120,6 +112,29 @@ QVector<muffin::ImageFileOps::ImageRef> muffin::ImageFileOps::collectImageRefs(c
   QVector<ImageRef> refs;
   collectImageRefsRecursive(document.root(), refs);
   return refs;
+}
+
+QString muffin::ImageFileOps::rewriteImageSources(
+    const MarkdownDocument& document, const QString& markdown, const QString& documentDir,
+    const QHash<QString, QString>& replacements, int* rewrittenCount) {
+  auto refs = collectImageRefs(document);
+  std::sort(refs.begin(), refs.end(), [](const ImageRef& left, const ImageRef& right) {
+    return left.sourceStart < right.sourceStart;
+  });
+  QString rewritten = markdown;
+  int count = 0;
+  for (auto it = refs.crbegin(); it != refs.crend(); ++it) {
+    const auto replacement = replacements.constFind(resolveImagePath(it->href, documentDir));
+    if (replacement == replacements.cend() || it->sourceStart < 0 ||
+        it->sourceEnd <= it->sourceStart || it->sourceEnd > markdown.size()) { continue; }
+    const QString snippet = rewritten.mid(it->sourceStart, it->sourceEnd - it->sourceStart);
+    if (!image_syntax::findSource(snippet).found) { continue; }
+    const QString replaced = image_syntax::replaceSource(snippet, replacement.value());
+    rewritten.replace(it->sourceStart, it->sourceEnd - it->sourceStart, replaced);
+    ++count;
+  }
+  if (rewrittenCount) { *rewrittenCount = count; }
+  return rewritten;
 }
 
 bool muffin::ImageFileOps::copyImageTo(const QString& srcPath, const QDir& destDir, QString* outNewPath) {
@@ -202,7 +217,7 @@ muffin::ImageFileOps::MoveAllResult muffin::ImageFileOps::moveAllImages(
     const QString snippet = rewritten.mid(it->sourceStart, it->sourceEnd - it->sourceStart);
     const QString relative = QDir::fromNativeSeparators(
         QDir(documentDir).relativeFilePath(destination.value()));
-    const QString replaced = image_syntax::replaceSource(snippet, relative);
+    const QString replaced = image_syntax::replaceSource(snippet, link_syntax::localPathHref(relative));
     if (replaced == snippet && relative != it->href) {
       result.error = QCoreApplication::translate("muffin::ImageFileOps", "could not locate an image destination in the document source");
       return result;

@@ -2,6 +2,7 @@
 
 #include "image/CustomCommandUploader.h"
 #include "io/ImageFileOps.h"
+#include "document/LinkSyntaxOps.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -103,7 +104,9 @@ QString formatLocalHref(const QString& path, const QString& docDir, QSettings& s
   }
   if (settings.value(QStringLiteral("image/escapeImageUrl"), false).toBool()) {
     // Encode spaces and other unsafe chars, preserving the chars that are valid in a path/URL.
-    p = QUrl::toPercentEncoding(p, QByteArrayLiteral("/:#?&=+@%,._-"));
+    p = QUrl::toPercentEncoding(QDir::fromNativeSeparators(p), QByteArrayLiteral("/:&=+@,._-"));
+  } else {
+    p = link_syntax::localPathHref(p);
   }
   return p;
 }

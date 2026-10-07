@@ -31,9 +31,9 @@ public:
   // windows editing the same file) never overwrite each other's recovery data.
   static QString createDraftKey();
 
-  // Write a snapshot for the given source path (empty path = untitled). No-op if
-  // the text is empty (nothing worth recovering).
-  void snapshot(const QString& markdownText, const QString& sourceFilePath,
+  // Write the latest state, including an intentionally emptied document.
+  // Return true only after both content and metadata have been committed.
+  bool snapshot(const QString& markdownText, const QString& sourceFilePath,
                 const QString& draftKey = QString());
 
   // Snapshot only a stable dirty document. During async open, its path and buffer
@@ -44,7 +44,8 @@ public:
   void markClean(const QString& sourceFilePath, const QString& draftKey = QString());
 
   QVector<PendingDraft> pendingDrafts() const;
-  QString loadDraft(const PendingDraft& draft) const;
+  // Empty content is valid. The optional flag distinguishes it from a read failure.
+  QString loadDraft(const PendingDraft& draft, bool* ok = nullptr) const;
   void discard(const PendingDraft& draft);
   // Drop only half-written (.md/.meta) pairs left behind by a crash
   // mid-snapshot. A complete draft is retained even when its source file was

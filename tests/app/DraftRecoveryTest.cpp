@@ -119,11 +119,52 @@ void testExplicitKeysIsolateUntitledDocuments() {
           QStringLiteral("Wrong untitled draft survived cleanup"));
 }
 
-void testEmptyTextIsIgnored() {
+void testEmptyTextIsRecoverable() {
   QTemporaryDir dir;
   DraftRecovery recovery = makeRecovery(dir);
-  recovery.snapshot(QString(), QStringLiteral("/tmp/empty.md"));
-  require(recovery.pendingDrafts().isEmpty(), QStringLiteral("Empty text should not be snapshotted"));
+  require(recovery.snapshot(QString(), QStringLiteral("/tmp/empty.md")), QStringLiteral("Empty snapshot must commit"));
+  const auto pending = recovery.pendingDrafts();
+  require(pending.size() == 1 && pending.first().charCount == 0, QStringLiteral("Empty draft must be listed"));
+  bool loaded = false;
+  require(recovery.loadDraft(pending.first(), &loaded).isEmpty() && loaded,
+          QStringLiteral("Reading an empty draft must succeed"));
+}
+
+void testClearedDocumentReplacesPreviousSnapshot() {
+  QTemporaryDir dir;
+  DraftRecovery recovery = makeRecovery(dir);
+  DocumentSession session;
+  const QString key = DraftRecovery::createDraftKey();
+  require(!recovery.snapshotSession(session, key), QStringLiteral("An unmodified empty document needs no draft"));
+  session.setMarkdownText(QStringLiteral("before deletion"), true);
+  require(recovery.snapshotSession(session, key), QStringLiteral("Initial dirty snapshot must commit"));
+  require(session.applyTextDelta(0, session.markdownText().size(), QString(), true),
+          QStringLiteral("Deleting all document text must succeed"));
+  require(recovery.snapshotSession(session, key), QStringLiteral("Cleared dirty document must replace the snapshot"));
+  recovery.pruneOrphaned();
+  const auto pending = recovery.pendingDrafts();
+  require(pending.size() == 1 && pending.first().key == key && pending.first().charCount == 0,
+          QStringLiteral("Cleared snapshot must retain its identity and survive pruning"));
+  bool loaded = false;
+  const QString restored = recovery.loadDraft(pending.first(), &loaded);
+  require(loaded && restored.isEmpty(), QStringLiteral("Recover the empty state, not the earlier text"));
+  recovery.discard(pending.first());
+  loaded = true;
+  recovery.loadDraft(pending.first(), &loaded);
+  require(!loaded, QStringLiteral("A missing draft must report a read failure"));
+}
+
+void testFailedSnapshotIsReported() {
+  QTemporaryDir dir;
+  const QString blocked = dir.filePath(QStringLiteral("not-a-directory"));
+  QFile file(blocked);
+  require(file.open(QIODevice::WriteOnly), QStringLiteral("Could not create blocking file"));
+  file.close();
+  DraftRecovery recovery(blocked);
+  DocumentSession session;
+  session.setMarkdownText(QStringLiteral("dirty"), true);
+  require(!recovery.snapshotSession(session, DraftRecovery::createDraftKey()),
+          QStringLiteral("Unwritable snapshots must not be reported as saved"));
 }
 
 void testMarkCleanRemovesDraft() {
@@ -233,7 +274,9 @@ int main(int argc, char** argv) {
   testSnapshotRoundTrips();
   testUntitledSnapshotHasEmptySource();
   testExplicitKeysIsolateUntitledDocuments();
-  testEmptyTextIsIgnored();
+  testEmptyTextIsRecoverable();
+  testClearedDocumentReplacesPreviousSnapshot();
+  testFailedSnapshotIsReported();
   testMarkCleanRemovesDraft();
   testDiscardRemovesDraft();
   testSnapshotOverwritesSameKey();

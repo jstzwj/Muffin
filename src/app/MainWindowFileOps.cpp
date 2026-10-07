@@ -503,8 +503,8 @@ void muffin::MainWindow::snapshotDraft() {
 }
 
 bool muffin::MainWindow::offerDraftRecovery() {
-  // Drop drafts whose source file vanished plus crash-leftover half-pairs first,
-  // so the dialog only ever shows drafts that are genuinely restorable.
+  // Drop crash-leftover half-pairs; complete drafts with missing sources can
+  // still be recovered into untitled documents.
   drafts_.pruneOrphaned();
   const QVector<DraftRecovery::PendingDraft> drafts = drafts_.pendingDrafts();
   if (drafts.isEmpty()) {
@@ -572,8 +572,9 @@ bool muffin::MainWindow::offerDraftRecovery() {
 }
 
 bool muffin::MainWindow::restoreDraft(const DraftRecovery::PendingDraft& draft) {
-  const QString content = drafts_.loadDraft(draft);
-  if (content.isEmpty()) {
+  bool loaded = false;
+  const QString content = drafts_.loadDraft(draft, &loaded);
+  if (!loaded) {
     return false;
   }
   if (!draft.sourcePath.isEmpty() && QFileInfo(draft.sourcePath).isFile()) {

@@ -14,6 +14,8 @@
 #include "editor/ResourceUrl.h"
 #include "editor/TableToolbar.h"
 #include "io/FilePathOps.h"
+#include "document/ImageSyntaxOps.h"
+#include "document/LinkSyntaxOps.h"
 #include "io/MuffinMime.h"
 #include "render/DecorationPainter.h"
 #include "render/ImageLoader.h"
@@ -1653,8 +1655,8 @@ void EditorView::dropEvent(QDropEvent* event) {
     moveCaretToViewportPos(event->position());
     const QString alt = info.baseName();
     if (isImageSuffix(suffix)) {
-      const QString target = FilePathOps::linkTargetForPath(filePath, documentPath_);
-      emit textCommitted(QStringLiteral("![%1](%2)").arg(alt, target));
+      const QString target = link_syntax::localPathHref(FilePathOps::linkTargetForPath(filePath, documentPath_));
+      emit textCommitted(image_syntax::markdownImage(alt, target));
     } else {
       emit textCommitted(FilePathOps::markdownLinkForFile(filePath, documentPath_));
     }
@@ -1666,7 +1668,7 @@ void EditorView::dropEvent(QDropEvent* event) {
   if (isImageSuffix(suffix)) {
     moveCaretToViewportPos(event->position());
     const QString alt = info.baseName();
-    emit textCommitted(QStringLiteral("![%1](%2)").arg(alt, filePath));
+    emit textCommitted(image_syntax::markdownImage(alt, link_syntax::localPathHref(filePath)));
     return;
   }
   // Markdown is Muffin's native format, so a dropped .md/.txt opens. Other files are routed

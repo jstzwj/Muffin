@@ -1,4 +1,5 @@
 #include "io/FilePathOps.h"
+#include "document/LinkSyntaxOps.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -262,8 +263,9 @@ QString muffin::FilePathOps::linkTargetForPath(const QString& filePath, const QS
 }
 
 QString muffin::FilePathOps::markdownLinkForFile(const QString& filePath, const QString& documentDir) {
-  const QString label = QFileInfo(filePath).fileName();
-  return QStringLiteral("[%1](%2)").arg(label, linkTargetForPath(filePath, documentDir));
+  const QString label = link_syntax::escapedLabel(QFileInfo(filePath).fileName());
+  const QString href = link_syntax::localPathHref(linkTargetForPath(filePath, documentDir));
+  return QStringLiteral("[%1](%2)").arg(label, link_syntax::destination(href));
 }
 
 bool muffin::FilePathOps::isSameOrDescendant(const QString& candidate, const QString& root) {

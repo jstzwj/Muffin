@@ -866,6 +866,7 @@ set(MUFFIN_CORE_SOURCES
   src/io/TextFileFormat.h
   src/document/ImageSyntaxOps.cpp
   src/document/ImageSyntaxOps.h
+  src/document/LinkSyntaxOps.h
   src/document/DefinitionBlock.cpp
   src/document/DefinitionBlock.h
   src/document/InlineNode.cpp

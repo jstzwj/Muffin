@@ -6,6 +6,8 @@
 #include "app/UpdateChecker.h"
 #include "app/SidebarWidget.h"
 #include "document/MarkdownTypes.h"
+#include "document/ImageSyntaxOps.h"
+#include "document/LinkSyntaxOps.h"
 #include "editor/EditorView.h"
 #include "export/ExportFormat.h"
 #include "editor/FindBarWidget.h"
@@ -1214,15 +1216,8 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
            if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
              const PieceTable& md = window.session_.markdownText();
              const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
-             // Replace the src URL in the image syntax
-             QString newImage = oldImage;
-             const int urlStart = oldImage.indexOf(QStringLiteral("](")) + 2;
-             if (urlStart > 1) {
-               int urlEnd = urlStart;
-               while (urlEnd < oldImage.size() && oldImage[urlEnd] != QChar(')') && oldImage[urlEnd] != QChar(' ')) {
-                 ++urlEnd;
-               }
-               newImage = oldImage.left(urlStart) + relPath + oldImage.mid(urlEnd);
+             const QString newImage = image_syntax::replaceSource(oldImage, link_syntax::localPathHref(relPath));
+             if (newImage != oldImage) {
                window.session_.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
              }
            }
@@ -1251,14 +1246,8 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
            if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
              const PieceTable& md = window.session_.markdownText();
              const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
-             QString newImage = oldImage;
-             const int urlStart = oldImage.indexOf(QStringLiteral("](")) + 2;
-             if (urlStart > 1) {
-               int urlEnd = urlStart;
-               while (urlEnd < oldImage.size() && oldImage[urlEnd] != QChar(')') && oldImage[urlEnd] != QChar(' ')) {
-                 ++urlEnd;
-               }
-               newImage = oldImage.left(urlStart) + relPath + oldImage.mid(urlEnd);
+             const QString newImage = image_syntax::replaceSource(oldImage, link_syntax::localPathHref(relPath));
+             if (newImage != oldImage) {
                window.session_.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
              }
            }
@@ -1295,13 +1284,8 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          if (window.renderCommands_.imageSourceRangeAtCursor(srcStart, srcEnd)) {
            const PieceTable& md = window.session_.markdownText();
            const QString oldImage = md.mid(srcStart, srcEnd - srcStart);
-           const int urlStart = oldImage.indexOf(QStringLiteral("](")) + 2;
-           if (urlStart > 1) {
-             int urlEnd = urlStart;
-             while (urlEnd < oldImage.size() && oldImage[urlEnd] != QChar(')') && oldImage[urlEnd] != QChar(' ')) {
-               ++urlEnd;
-             }
-             const QString newImage = oldImage.left(urlStart) + url + oldImage.mid(urlEnd);
+           const QString newImage = image_syntax::replaceSource(oldImage, url);
+           if (newImage != oldImage) {
              window.session_.applyTextDelta(srcStart, srcEnd - srcStart, newImage, true);
            }
          }
@@ -1350,31 +1334,9 @@ const std::vector<muffin::CommandDeclaration>& muffin::commandDeclarations() {
          for (int i = 0; i < paths.size(); ++i) {
            pathToUrl.insert(paths[i], res.urls[i]);
          }
-         // Rewrite each ref's href in reverse so earlier offsets stay valid.
-         QString md = window.session_.markdownText().toString();
          int uploaded = 0;
-         for (int i = refs.size() - 1; i >= 0; --i) {
-           const auto& ref = refs[i];
-           if (!ImageFileOps::isLocalImageSrc(ref.href)) {
-             continue;
-           }
-           const QString resolved = ImageFileOps::resolveImagePath(ref.href, docDir);
-           const auto it = pathToUrl.constFind(resolved);
-           if (it == pathToUrl.constEnd()) {
-             continue;
-           }
-           const int urlSearchStart = md.indexOf(QStringLiteral("]("), ref.sourceStart);
-           if (urlSearchStart < 0 || urlSearchStart >= ref.sourceEnd) {
-             continue;
-           }
-           const int urlStart = urlSearchStart + 2;
-           int urlEnd = urlStart;
-           while (urlEnd < md.size() && urlEnd <= ref.sourceEnd && md[urlEnd] != QChar(')') && md[urlEnd] != QChar(' ')) {
-             ++urlEnd;
-           }
-           md.replace(urlStart, urlEnd - urlStart, it.value());
-           ++uploaded;
-         }
+         const QString md = ImageFileOps::rewriteImageSources(
+             window.session_.document(), window.session_.markdownText().toString(), docDir, pathToUrl, &uploaded);
          window.editorController_.applyMarkdownTextWithUndo(md, muffin::MainWindow::tr("Upload All Images"));
          QMessageBox::information(&window, muffin::MainWindow::tr("Upload All Images"),
              muffin::MainWindow::tr("Uploaded %1 image(s).").arg(uploaded));

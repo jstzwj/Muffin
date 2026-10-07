@@ -7,9 +7,8 @@ class QDir;
 namespace muffin {
 
 // Filesystem primitives for arbitrary paths (create / rename / copy / delete /
-// reveal). The sidebar file-tree context menu drives these; MainWindow maps the
-// technical error strings to translated user messages, so this class has no tr()
-// and is intentionally NOT a translatable source. Mirrors the ImageFileOps shape.
+// reveal). The sidebar file-tree context menu drives these; errors use explicit
+// translation contexts so they match both Qt extraction and runtime lookup.
 class FilePathOps final {
 public:
   /// Create an empty file (and any missing parent directories). Fails if the

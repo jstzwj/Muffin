@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Local image operations resolve relative paths against the document folder and decode file URLs consistently with rendering, preventing same-named files in the working directory from being moved or uploaded by mistake.
+- File links and inserted images preserve filenames with spaces and special characters using valid Markdown destinations. Image copy, move and upload preserve bracketed paths and titles when rewriting destinations.
+- Crash recovery retains the latest state after a modified document is cleared, and restores empty drafts instead of falling back to older content.
 - Help pages now follow the resolved application language when using System Default or a regional language alias.
 - Encoding menu labels and editor accessibility descriptions use the correct translation contexts; accessibility descriptions also update when switching languages.
 - Filled missing entries and reviewed unfinished translations in all 14 application catalogs, including file and image operation errors and upload errors. Corrected terminology in Chinese help pages and added Vietnamese translations for common Qt dialog controls.

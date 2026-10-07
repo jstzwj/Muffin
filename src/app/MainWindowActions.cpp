@@ -1,6 +1,7 @@
 #include "app/MainWindow.h"
 
 #include "document/MarkdownNode.h"
+#include "document/ImageSyntaxOps.h"
 #include "document/SourceRangeUtil.h"
 #include "editor/EditorView.h"
 #include "editor/SourceEditorWidget.h"
@@ -240,12 +241,7 @@ void muffin::MainWindow::insertImageWithDialog() {
   const QString alt = altEdit->text().trimmed();
   const QString title = titleEdit->text().trimmed();
 
-  QString markdown;
-  if (title.isEmpty()) {
-    markdown = QStringLiteral("![%1](%2)").arg(alt, url);
-  } else {
-    markdown = QStringLiteral("![%1](%2 \"%3\")").arg(alt, url, title);
-  }
+  const QString markdown = image_syntax::markdownImage(alt, url, title);
 
   editorController_.inputController().insertText(markdown);
 }
@@ -276,7 +272,7 @@ void muffin::MainWindow::insertLocalImageWithDialog() {
   }
 
   const QString alt = res.alt.isEmpty() ? QStringLiteral("image") : res.alt;
-  const QString markdown = QStringLiteral("![%1](%2)").arg(alt, res.href);
+  const QString markdown = image_syntax::markdownImage(alt, res.href);
   editorController_.inputController().insertText(markdown);
 }
 

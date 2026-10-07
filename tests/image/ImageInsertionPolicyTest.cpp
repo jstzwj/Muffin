@@ -1,4 +1,7 @@
 #include "image/ImageInsertionPolicy.h"
+#include "document/DocumentSession.h"
+#include "document/ImageSyntaxOps.h"
+#include "io/ImageFileOps.h"
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -132,6 +135,25 @@ void testEscapeImageUrl() {
           QStringLiteral("escapeImageUrl should encode the space, got '%1'").arg(res.href));
 }
 
+void testSpacedImageParsesWithoutEscapePreference() {
+  QTemporaryDir dir;
+  const QDir docDir(dir.path());
+  const QString img = makeImage(docDir, "my image (1).png");
+  const QString docPath = docDir.filePath("doc.md");
+  QSettings().setValue(QStringLiteral("image/insertAction"), static_cast<int>(muffin::ImageInsertAction::None));
+  QSettings().setValue(QStringLiteral("image/escapeImageUrl"), false);
+  muffin::ImageInsertRequest req;
+  req.sourcePath = img;
+  req.documentPath = docPath;
+  const auto res = resolve(req);
+  muffin::DocumentSession session;
+  session.setMarkdownText(muffin::image_syntax::markdownImage(QStringLiteral("literal ](alt)"), res.href), false);
+  const auto refs = muffin::ImageFileOps::collectImageRefs(session.document());
+  require(res.ok && refs.size() == 1, QStringLiteral("Insertion must produce a real image without URL-escape preference"));
+  require(muffin::ImageFileOps::resolveImagePath(refs.first().href, dir.path()) == img,
+          QStringLiteral("Inserted image must resolve to the chosen file"));
+}
+
 void testYamlDirectiveWithoutSettingDoesNotForceUpload() {
   QTemporaryDir dir;
   const QDir docDir(dir.path());
@@ -201,6 +223,8 @@ int main(int argc, char** argv) {
   testAddLeadingSlash();
   for (const QString& k : imageKeys) { QSettings().remove(k); }
   testEscapeImageUrl();
+  for (const QString& k : imageKeys) { QSettings().remove(k); }
+  testSpacedImageParsesWithoutEscapePreference();
   for (const QString& k : imageKeys) { QSettings().remove(k); }
   testYamlDirectiveWithoutSettingDoesNotForceUpload();
   for (const QString& k : imageKeys) { QSettings().remove(k); }

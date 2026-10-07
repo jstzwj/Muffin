@@ -1,11 +1,54 @@
 #include "document/ImageSyntaxOps.h"
+#include "document/LinkSyntaxOps.h"
+#include "cmark-gfm.h"
+#include "houdini.h"
 
 #include <QRegularExpression>
 #include <QDir>
 #include <QStringView>
 
+#include <memory>
+
 namespace muffin::image_syntax {
 namespace {
+
+qsizetype markdownLabelEnd(QStringView source) {
+  int depth = 1;
+  bool escaped = false;
+  for (qsizetype i = 2; i < source.size(); ++i) {
+    const QChar c = source.at(i);
+    if (escaped) { escaped = false; continue; }
+    if (c == QLatin1Char('\\')) { escaped = true; continue; }
+    if (c == QLatin1Char('[')) { ++depth; }
+    if (c == QLatin1Char(']') && --depth == 0) { return i; }
+  }
+  return -1;
+}
+
+QString imageAlt(cmark_node* node) {
+  QString text;
+  for (cmark_node* child = cmark_node_first_child(node); child; child = cmark_node_next(child)) {
+    if (const char* literal = cmark_node_get_literal(child)) {
+      text += QString::fromUtf8(literal);
+    } else if (cmark_node_get_type(child) == CMARK_NODE_SOFTBREAK ||
+               cmark_node_get_type(child) == CMARK_NODE_LINEBREAK) {
+      text += QLatin1Char('\n');
+    } else {
+      text += imageAlt(child);
+    }
+  }
+  return text;
+}
+
+QString decodedAttribute(const QString& value) {
+  const QByteArray bytes = value.toUtf8();
+  cmark_strbuf decoded = CMARK_BUF_INIT(cmark_get_default_mem_allocator());
+  houdini_unescape_html_f(&decoded, reinterpret_cast<const uint8_t*>(bytes.constData()),
+                         static_cast<bufsize_t>(bytes.size()));
+  const QString result = QString::fromUtf8(cmark_strbuf_cstr(&decoded), cmark_strbuf_len(&decoded));
+  cmark_strbuf_free(&decoded);
+  return result;
+}
 
 // Matches a single HTML attribute name (CSS/HTML identifier), capturing the name.
 // Uses a delimited raw string (R"re(...)re") because the patterns contain `)"`,
@@ -124,47 +167,18 @@ Image parse(const QString& source) {
 
   // Markdown image: ![alt](src) or ![alt](src "title")
   if (s.startsWith(QStringLiteral("!["))) {
-    const int labelEnd = s.indexOf(QLatin1Char(']'), 2);
-    if (labelEnd < 0) {
-      return img;
-    }
-    const int openParen = s.indexOf(QLatin1Char('('), labelEnd);
-    if (openParen < 0) {
-      return img;
-    }
-    int depth = 1;
-    int closeParen = -1;
-    for (int i = openParen + 1; i < s.size(); ++i) {
-      const QChar ch = s.at(i);
-      if (ch == QLatin1Char('(')) {
-        ++depth;
-      } else if (ch == QLatin1Char(')')) {
-        --depth;
-        if (depth == 0) {
-          closeParen = i;
-          break;
-        }
-      }
-    }
-    if (closeParen < 0) {
-      return img;
-    }
-
+    // Use the same CommonMark parser as the document: destinations can be angle
+    // bracketed or escaped, and labels/titles can contain entities and escapes.
+    const QByteArray bytes = s.toUtf8();
+    const std::unique_ptr<cmark_node, decltype(&cmark_node_free)> document(
+        cmark_parse_document(bytes.constData(), bytes.size(), CMARK_OPT_DEFAULT), cmark_node_free);
+    cmark_node* paragraph = document ? cmark_node_first_child(document.get()) : nullptr;
+    cmark_node* image = paragraph ? cmark_node_first_child(paragraph) : nullptr;
+    if (!image || cmark_node_get_type(image) != CMARK_NODE_IMAGE) { return img; }
     img.syntax = Syntax::Markdown;
-    img.alt = s.mid(2, labelEnd - 2);
-
-    const QString paren = s.mid(openParen + 1, closeParen - openParen - 1).trimmed();
-    // Optional title: a quoted string following the URL after whitespace.
-    const int titleStart = paren.indexOf(QLatin1Char('"'));
-    if (titleStart > 0) {
-      const int titleEnd = paren.lastIndexOf(QLatin1Char('"'));
-      if (titleEnd > titleStart) {
-        img.src = paren.left(titleStart).trimmed();
-        img.title = paren.mid(titleStart + 1, titleEnd - titleStart - 1);
-        return img;
-      }
-    }
-    img.src = paren;
+    img.alt = imageAlt(image);
+    img.src = QString::fromUtf8(cmark_node_get_url(image));
+    img.title = QString::fromUtf8(cmark_node_get_title(image));
     return img;
   }
 
@@ -176,8 +190,8 @@ Image parse(const QString& source) {
       return img;
     }
     img.syntax = Syntax::Html;
-    img.src = extractAttr(s, QStringLiteral("src"));
-    img.alt = extractAttr(s, QStringLiteral("alt"));
+    img.src = decodedAttribute(extractAttr(s, QStringLiteral("src")));
+    img.alt = decodedAttribute(extractAttr(s, QStringLiteral("alt")));
     auto it = kAttrNameRE.globalMatch(s);
     while (it.hasNext()) {
       const QString name = it.next().captured(1).toLower();
@@ -199,8 +213,9 @@ SourceLocation findSource(QStringView source) {
   const QStringView s = source.mid(left, right - left);
 
   if (s.startsWith(QStringLiteral("!["))) {
-    const qsizetype labelEnd = s.indexOf(QLatin1Char(']'), 2);
-    const qsizetype openParen = labelEnd >= 0 ? s.indexOf(QLatin1Char('('), labelEnd) : -1;
+    const qsizetype labelEnd = markdownLabelEnd(s);
+    const qsizetype openParen = labelEnd >= 0 && labelEnd + 1 < s.size() &&
+        s.at(labelEnd + 1) == QLatin1Char('(') ? labelEnd + 1 : -1;
     if (openParen < 0) { return {}; }
     qsizetype start = openParen + 1;
     while (start < s.size() && s.at(start).isSpace()) { ++start; }
@@ -247,14 +262,10 @@ QString replaceSource(const QString& source, const QString& replacement) {
   const SourceLocation location = findSource(source);
   if (!location.found) { return source; }
   QString value = QDir::fromNativeSeparators(replacement);
-  const Image image = parse(source);
-  if (image.syntax == Syntax::Markdown) {
+  if (source.trimmed().startsWith(QStringLiteral("!["))) {
     const bool wasBracketed = source.at(location.start) == QLatin1Char('<');
-    if (wasBracketed || value.contains(QLatin1Char(' ')) || value.contains(QLatin1Char(')'))) {
-      value.replace(QLatin1Char('>'), QStringLiteral("%3E"));
-      value = QLatin1Char('<') + value + QLatin1Char('>');
-    }
-  } else if (image.syntax == Syntax::Html) {
+    value = link_syntax::destination(value, wasBracketed);
+  } else {
     value.replace(QLatin1Char('&'), QStringLiteral("&amp;"));
     const QChar quote = location.start > 0 ? source.at(location.start - 1) : QLatin1Char('"');
     value.replace(quote, quote == QLatin1Char('"') ? QStringLiteral("&quot;") : QStringLiteral("&#39;"));
@@ -264,7 +275,21 @@ QString replaceSource(const QString& source, const QString& replacement) {
   return result;
 }
 
+QString markdownImage(const QString& alt, const QString& href, const QString& title) {
+  QString suffix;
+  if (!title.isEmpty()) {
+    QString escaped = title;
+    escaped.replace(QLatin1Char('\\'), QStringLiteral("\\\\"));
+    escaped.replace(QLatin1Char('"'), QStringLiteral("\\\""));
+    escaped.replace(QLatin1Char('&'), QStringLiteral("&amp;"));
+    suffix = QStringLiteral(" \"%1\"").arg(escaped);
+  }
+  return QStringLiteral("![%1](%2%3)").arg(link_syntax::escapedLabel(alt), link_syntax::destination(href), suffix);
+}
+
 int zoomPercent(const QString& source) {
+  // Markdown images cannot encode zoom; avoid parsing them again while rendering.
+  if (source.trimmed().startsWith(QStringLiteral("!["))) { return 100; }
   const Image img = parse(source);
   if (img.syntax == Syntax::None) {
     return 100;
@@ -325,7 +350,7 @@ QString toMarkdown(const QString& source) {
   if (img.syntax != Syntax::Html) {
     return source;
   }
-  return QStringLiteral("![%1](%2)").arg(img.alt, img.src);
+  return markdownImage(img.alt, img.src);
 }
 
 QString toHtml(const QString& source) {
@@ -333,7 +358,7 @@ QString toHtml(const QString& source) {
   if (img.syntax != Syntax::Markdown) {
     return source;
   }
-  return QStringLiteral("<img src=\"%1\" alt=\"%2\">").arg(img.src, img.alt);
+  return QStringLiteral("<img src=\"%1\" alt=\"%2\">").arg(img.src.toHtmlEscaped(), img.alt.toHtmlEscaped());
 }
 
 ImgTagLocation findImgTag(QStringView source) {

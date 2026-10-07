@@ -35,6 +35,9 @@ struct SourceLocation {
 SourceLocation findSource(QStringView source);
 QString replaceSource(const QString& source, const QString& replacement);
 
+// Construct a Markdown image with a literal alt label and a URL-safe destination.
+QString markdownImage(const QString& alt, const QString& href, const QString& title = QString());
+
 /// Zoom percent encoded in a `style="zoom:N%"` declaration. Returns 100 when the
 /// snippet carries no zoom (or an unparseable one) — i.e. the natural size.
 int zoomPercent(const QString& source);

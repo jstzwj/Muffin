@@ -76,33 +76,28 @@ QString DraftRecovery::metaPath(const QString& key) const {
   return directory_ + QLatin1Char('/') + key + QStringLiteral(".meta");
 }
 
-void DraftRecovery::snapshot(const QString& markdownText, const QString& sourceFilePath,
+bool DraftRecovery::snapshot(const QString& markdownText, const QString& sourceFilePath,
                              const QString& draftKey) {
-  if (markdownText.isEmpty()) {
-    return;
-  }
   if (directory_.isEmpty() || !QDir().mkpath(directory_)) {
-    return;
+    return false;
   }
   const QString key = keyFor(sourceFilePath, draftKey);
 
   // Content + sidecar meta are written independently (each via QSaveFile, which is
   // atomic on its own). pendingDrafts() only lists a draft when its .md survives.
   QSaveFile content(draftPath(key));
-  if (content.open(QIODevice::WriteOnly)) {
-    content.write(markdownText.toUtf8());
-    content.commit();
-  }
+  if (!content.open(QIODevice::WriteOnly)) { return false; }
+  const QByteArray bytes = markdownText.toUtf8();
+  if (content.write(bytes) != bytes.size() || !content.commit()) { return false; }
 
   QJsonObject meta;
   meta[QStringLiteral("sourcePath")] = sourceFilePath;
   meta[QStringLiteral("timestamp")] = QDateTime::currentMSecsSinceEpoch();
   meta[QStringLiteral("charCount")] = qint64(markdownText.size());
   QSaveFile metaFile(metaPath(key));
-  if (metaFile.open(QIODevice::WriteOnly)) {
-    metaFile.write(QJsonDocument(meta).toJson(QJsonDocument::Compact));
-    metaFile.commit();
-  }
+  if (!metaFile.open(QIODevice::WriteOnly)) { return false; }
+  const QByteArray metadata = QJsonDocument(meta).toJson(QJsonDocument::Compact);
+  return metaFile.write(metadata) == metadata.size() && metaFile.commit();
 }
 
 void DraftRecovery::markClean(const QString& sourceFilePath, const QString& draftKey) {
@@ -139,12 +134,16 @@ QVector<DraftRecovery::PendingDraft> DraftRecovery::pendingDrafts() const {
   return drafts;
 }
 
-QString DraftRecovery::loadDraft(const PendingDraft& draft) const {
+QString DraftRecovery::loadDraft(const PendingDraft& draft, bool* ok) const {
+  if (ok) { *ok = false; }
   QFile f(draftPath(draft.key));
   if (!f.open(QIODevice::ReadOnly)) {
     return QString();
   }
-  return QString::fromUtf8(f.readAll());
+  const QByteArray bytes = f.readAll();
+  if (f.error() != QFileDevice::NoError) { return {}; }
+  if (ok) { *ok = true; }
+  return QString::fromUtf8(bytes);
 }
 
 void DraftRecovery::discard(const PendingDraft& draft) {
@@ -182,9 +181,8 @@ void DraftRecovery::pruneOrphaned() {
 }  // namespace muffin
 
 bool muffin::DraftRecovery::snapshotSession(const DocumentSession& session, const QString& draftKey) {
-  if (session.isAsyncParseInProgress() || !session.document().isModified() || session.markdownText().isEmpty()) {
+  if (session.isAsyncParseInProgress() || !session.document().isModified()) {
     return false;
   }
-  snapshot(session.markdownText().toString(), session.filePath(), draftKey);
-  return true;
+  return snapshot(session.markdownText().toString(), session.filePath(), draftKey);
 }

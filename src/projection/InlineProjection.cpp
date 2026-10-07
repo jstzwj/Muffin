@@ -1,5 +1,6 @@
 #include "projection/InlineProjection.h"
 
+#include "document/ImageSyntaxOps.h"
 #include "editor/EmojiDictionary.h"
 #include "editor/SmartPunctuation.h"
 #include "houdini.h"
@@ -872,15 +873,14 @@ bool InlineProjection::appendHtmlImageAtom(
     qsizetype sourceEnd,
     qsizetype contentSourceStart,
     qsizetype contentSourceEnd) {
-  const QString src = extractHtmlAttr(tagText, QStringLiteral("src"));
-  if (src.isEmpty()) {
+  const image_syntax::Image image = image_syntax::parse(tagText);
+  if (image.src.isEmpty()) {
     return false;
   }
-  const QString alt = extractHtmlAttr(tagText, QStringLiteral("alt"));
   appendTextSpan(state, InlineType::Image, InlineSpanKind::Atom,
                  sourceStart, sourceEnd, contentSourceStart, contentSourceEnd,
-                 alt.isEmpty() ? QString(QChar::Space) : alt, true);
-  state.spans.last().href = src;
+                 image.alt.isEmpty() ? QString(QChar::Space) : image.alt, true);
+  state.spans.last().href = image.src;
   return true;
 }
 

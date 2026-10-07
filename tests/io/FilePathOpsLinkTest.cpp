@@ -1,4 +1,8 @@
 #include "io/FilePathOps.h"
+#include "document/DocumentSession.h"
+#include "document/InlineNode.h"
+#include "document/MarkdownNode.h"
+#include "editor/ResourceUrl.h"
 
 #include "../TestUtils.h"
 
@@ -75,8 +79,8 @@ void testMarkdownLinkLabelAndTarget() {
   const QString file = docDir + QStringLiteral("/read me.pdf");
 
   const QString link = FilePathOps::markdownLinkForFile(file, docDir);
-  requireEq(link, QStringLiteral("[read me.pdf](read me.pdf)"),
-            QStringLiteral("markdownLinkForFile → [fileName](relativeTarget); spaces preserved"));
+  requireEq(link, QStringLiteral("[read me.pdf](<read me.pdf>)"),
+            QStringLiteral("Spaces in a Markdown destination require angle brackets"));
 }
 
 void testMarkdownLinkAbsoluteFallback() {
@@ -86,10 +90,37 @@ void testMarkdownLinkAbsoluteFallback() {
 
   const QString link = FilePathOps::markdownLinkForFile(file, docDir);
   const QString expected =
-      QStringLiteral("[up here.md](%1)")
-          .arg(QDir::toNativeSeparators(QFileInfo(file).absoluteFilePath()));
+      QStringLiteral("[up here.md](<%1>)").arg(QDir::fromNativeSeparators(QFileInfo(file).absoluteFilePath()));
   requireEq(link, expected,
             QStringLiteral("markdownLinkForFile absolute fallback wraps absolute target"));
+}
+
+const InlineNode* findLink(const MarkdownNode& node) {
+  for (const auto& in : node.inlines()) {
+    if (in.type() == InlineType::Link) return &in;
+  }
+  for (const auto& child : node.children()) {
+    if (const InlineNode* link = findLink(*child)) return link;
+  }
+  return nullptr;
+}
+
+void testGeneratedLinksParseAndResolve() {
+  const QString docDir = QDir::tempPath() + QStringLiteral("/muffin-link-doc");
+  for (const QString& name : {QStringLiteral("read me.pdf"), QStringLiteral("x](y)[z].pdf"),
+                             QStringLiteral("literal%20#&amp;.pdf"), QStringLiteral("nested/示例 (1).md")}) {
+    const QString path = QDir(docDir).filePath(name);
+    DocumentSession session;
+    session.setMarkdownText(FilePathOps::markdownLinkForFile(path, docDir), false);
+    const InlineNode* link = findLink(session.document().root());
+    require(link, QStringLiteral("Generated link must parse: %1").arg(name));
+    requireEq(resolvedUrlForDocumentResource(link->href(), QDir(docDir).filePath(QStringLiteral("doc.md"))).toLocalFile(),
+              QDir::fromNativeSeparators(QFileInfo(path).absoluteFilePath()),
+              QStringLiteral("Parsed destination must name the original file"));
+    QString label;
+    for (const auto& child : link->children()) label += child.text();
+    requireEq(label, QFileInfo(path).fileName(), QStringLiteral("Link label must preserve the literal filename"));
+  }
 }
 
 int main(int argc, char** argv) {
@@ -103,5 +134,6 @@ int main(int argc, char** argv) {
 #endif
   testMarkdownLinkLabelAndTarget();
   testMarkdownLinkAbsoluteFallback();
+  testGeneratedLinksParseAndResolve();
   return 0;
 }

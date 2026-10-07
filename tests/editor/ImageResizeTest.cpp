@@ -218,6 +218,25 @@ void testStandaloneHtmlBlockImageConvertToMarkdown() {
           QStringLiteral("Convert ▸ Standard turned the <img> block into a markdown image"));
 }
 
+void testSpacedImageUrlSurvivesEditorConversions() {
+  const QString href = QStringLiteral("my image(1).png?q=1&x=2");
+  for (const QString& prefix : {QString(), QStringLiteral("a ")}) {
+    ImageHarness h(prefix + image_syntax::markdownImage(QStringLiteral("literal ](alt)"), href) + QLatin1Char('\n'));
+    h.cursorOn(blockAt(h.session, 0), prefix.size());
+    require(h.controller.imageSrcAtCursor() == href, QStringLiteral("Original spaced image URL must be readable"));
+    require(!h.applyTransform([](const QString& s) { return image_syntax::setZoom(s, 50); }).isEmpty(),
+            QStringLiteral("Spaced image must be resizable"));
+    h.cursorOn(blockAt(h.session, 0), prefix.size());
+    require(h.controller.imageSrcAtCursor() == href,
+            QStringLiteral("HTML image operations must use the decoded URL, for both inline and block images"));
+    require(!h.applyTransform([](const QString& s) { return image_syntax::toMarkdown(s); }).isEmpty(),
+            QStringLiteral("Resized image must convert back to Markdown"));
+    h.cursorOn(blockAt(h.session, 0), prefix.size());
+    require(h.controller.imageSrcAtCursor() == href,
+            QStringLiteral("Markdown conversion must preserve the exact image URL"));
+  }
+}
+
 int main(int argc, char** argv) {
   QApplication app(argc, argv);
   testMarkdownImageDetected();
@@ -231,5 +250,6 @@ int main(int argc, char** argv) {
   testStandaloneHtmlBlockImageDetected();
   testStandaloneHtmlBlockImageResize();
   testStandaloneHtmlBlockImageConvertToMarkdown();
+  testSpacedImageUrlSurvivesEditorConversions();
   return 0;
 }

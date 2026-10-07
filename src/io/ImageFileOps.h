@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QImage>
+#include <QHash>
 #include <QString>
 #include <QStringList>
 
@@ -28,6 +29,12 @@ public:
     QString href;
   };
   static QVector<ImageRef> collectImageRefs(const MarkdownDocument& document);
+
+  // Rewrite local inline-image destinations using resolved paths as keys.
+  // The original syntax, alt text and title are retained.
+  static QString rewriteImageSources(const MarkdownDocument& document, const QString& markdown,
+                                     const QString& documentDir, const QHash<QString, QString>& replacements,
+                                     int* rewrittenCount = nullptr);
 
   /// Copy an image file to a destination directory, returning the new path.
   static bool copyImageTo(const QString& srcPath, const QDir& destDir, QString* outNewPath);
