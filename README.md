@@ -125,6 +125,8 @@ Muffin is the only fully native, fully open-source WYSIWYG editor in this group 
 |:--------|:-------:|:-----:|:-----:|
 | Install | [MSI](https://github.com/jstzwj/Muffin/releases) | [DMG](https://github.com/jstzwj/Muffin/releases) | [Build from source](#development) |
 
+Windows releases also include a complete `.7z` portable package. Extract it and run `Muffin.exe`; fonts, dictionaries, and language support are bundled for offline use.
+
 ## Development
 
 Muffin uses [Conan](https://conan.io/) for dependency management and CMake for building. You need a C++20 compiler (MSVC 2022+, GCC 12+, or Clang 15+), Qt 6 (installed via Conan), Conan 2.x, and CMake 3.24+.

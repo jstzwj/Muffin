@@ -125,6 +125,8 @@ Muffin 由 C++ 与 Qt 6 打造。它把你的 Markdown 渲染成一张可以直�
 |:--------|:-------:|:-----:|:-----:|
 | 安装包 | [MSI](https://github.com/jstzwj/Muffin/releases) | [DMG](https://github.com/jstzwj/Muffin/releases) | [从源码构建](#开发) |
 
+Windows 发布同时提供完整的 `.7z` 便携包，解压后运行 `Muffin.exe` 即可。字体、拼写字典和语言支持均随包提供，可离线使用。
+
 ## 开发
 
 Muffin 使用 [Conan](https://conan.io/) 管理依赖，使用 CMake 构建。你需要 C++20 编译器（MSVC 2022+、GCC 12+ 或 Clang 15+）、Qt 6（通过 Conan 安装）、Conan 2.x 和 CMake 3.24+。

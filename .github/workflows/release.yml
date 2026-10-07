@@ -273,7 +273,11 @@ jobs:
       - name: Archive Windows distribution
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path build/dist/* -DestinationPath "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.zip"
+        run: |
+          $archive = "Muffin-${{ env.MUFFIN_RELEASE_TAG }}-${{ matrix.artifact-suffix }}.7z"
+          & "$env:ProgramFiles/7-Zip/7z.exe" a -t7z $archive "./build/dist/*" -m0=LZMA2 -mx=9 -md=64m -ms=on -mmt=2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$env:ProgramFiles/7-Zip/7z.exe" t $archive
 
       - name: Archive Unix distribution
         if: runner.os != 'Windows'
@@ -343,7 +347,7 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: Muffin ${{ github.ref_name }}
           files: |
-            release-artifacts/**/*.zip
+            release-artifacts/**/*.7z
             release-artifacts/**/*.tar.gz
             release-artifacts/**/*.msi
             release-artifacts/**/*.exe
