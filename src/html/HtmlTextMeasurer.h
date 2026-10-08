@@ -32,6 +32,7 @@ struct TextFormatSpan {
   ThemeElementStyle inlineBoxStyle;
   ThemeElementBoxStyle inlineUsedBox;
   quintptr inlineBoxId = 0;
+  qreal lineHeight = 0;
 };
 
 // Holds a pre-built QTextLayout for a text-containing box.

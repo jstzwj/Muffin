@@ -436,16 +436,19 @@ void testKeyboardVerticalCrossesParagraphsByVisualEdges() {
 
   const int lastLine = firstLayout->visualLineCount() - 1;
   const qreal localX = firstLayout->visualLineRect(lastLine).left() + 30.0;
-  const qreal documentX = view.nodeRect(firstBlock->id()).left() + localX;
   setSourceCursor(controller.selection(), firstBlock,
                   firstLayout->sourceOffsetAtVisualLineX(lastLine, localX),
                   firstLayout->sourceOffsetAtVisualLineX(lastLine, localX));
+  // A probe snaps to a glyph boundary. Navigation preserves the actual caret
+  // x, and changing selection can rebuild the source layout.
+  const qreal documentX = view.effectiveCursorRect().left();
 
   require(pressKey(controller.inputController(), &view, Qt::Key_Down), "Down from last visual line should be handled");
   CursorPosition cursor = controller.selection().cursorPosition();
   require(cursor.blockId == secondBlock->id(), "Down from last visual line should enter next paragraph");
   const InlineLayout* secondLayoutDown = requireViewInlineLayout(view, secondBlock->id(), QStringLiteral("wrapped cross second after down"));
-  const qsizetype expectedSecondSource = secondLayoutDown->sourceOffsetAtVisualLineX(0, documentX - view.nodeRect(secondBlock->id()).left());
+  const qsizetype expectedSecondSource =
+      secondLayoutDown->sourceOffsetAtVisualLineX(0, documentX - view.blockLayoutForNode(secondBlock->id())->inlineTextOrigin().x());
   require(cursor.text.sourceOffset == secondBlock->sourceRange().byteStart + expectedSecondSource,
           "Down into next paragraph should preserve document x on first visual line");
   require(secondLayoutDown->visualLineIndexForSourceOffset(cursor.text.sourceOffset - secondBlock->sourceRange().byteStart) == 0,

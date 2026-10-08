@@ -5,6 +5,7 @@
 #include "render/DocumentLayout.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/CssComputedStyleEngine.h"
+#include "BrowserLayoutFont.h"
 #include <QApplication>
 #include <QFile>
 #include <QJsonDocument>
@@ -34,7 +35,9 @@ void collect(const html::HtmlBox& box, QPointF parent, QHash<QString, QRectF>& r
 void browserFixtures() {
   QFile file(QStringLiteral(MUFFIN_SOURCE_DIR "/tests/fixtures/theme/flex-layout-browser.json"));
   require(file.open(QIODevice::ReadOnly), "open Flex browser fixture");
-  const auto cases = QJsonDocument::fromJson(file.readAll()).object()["cases"].toArray();
+  const auto reference = QJsonDocument::fromJson(file.readAll()).object();
+  const auto aliases = browserLayoutFont(reference);
+  const auto cases = reference["cases"].toArray();
   require(cases.size() >= 14, "browser fixture cases");
   html::HtmlRenderer renderer;
   for (const auto& value : cases) {
@@ -42,6 +45,7 @@ void browserFixtures() {
     const auto name = c["id"].toString();
     for (const int scale : {1, 2}) {
       auto palette = html::HtmlColorPalette::defaultLight();
+      palette.fontAliases = aliases;
       palette.cssZoom = scale;
       const auto result = renderer.render(c["html"].toString(), 12, 800 * scale, {}, palette);
       require(result.valid(), name + " valid");
@@ -152,6 +156,7 @@ void markdownContainer() {
 }
 }  // namespace
 int main(int argc, char** argv) {
+  qputenv("QT_FONT_DPI", "96");
   QApplication app(argc, argv);
   browserFixtures();
   computedFlex();

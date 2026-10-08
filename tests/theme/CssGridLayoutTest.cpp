@@ -2,6 +2,7 @@
 #include "html/HtmlRenderer.h"
 #include "render/DocumentLayout.h"
 #include "theme/CssThemeMapper.h"
+#include "BrowserLayoutFont.h"
 #include <QApplication>
 #include <QFile>
 #include <QJsonArray>
@@ -32,13 +33,16 @@ void collect(const html::HtmlBox& box, QPointF parent, QHash<QString, QRectF>& r
 void browserFixtures() {
   QFile file(QStringLiteral(MUFFIN_SOURCE_DIR "/tests/fixtures/theme/grid-layout-browser.json"));
   require(file.open(QIODevice::ReadOnly), "open Grid browser fixture");
-  const auto cases = QJsonDocument::fromJson(file.readAll()).object()["cases"].toArray();
+  const auto reference = QJsonDocument::fromJson(file.readAll()).object();
+  const auto aliases = browserLayoutFont(reference);
+  const auto cases = reference["cases"].toArray();
   require(cases.size() >= 60, "Grid browser case coverage");
   html::HtmlRenderer renderer;
   for (const auto& value : cases) {
     const auto c = value.toObject();
     for (const int scale : {1, 2}) {
       auto palette = html::HtmlColorPalette::defaultLight();
+      palette.fontAliases = aliases;
       palette.cssZoom = scale;
       const auto result = renderer.render(c["html"].toString(), 12, c["viewportWidth"].toInt(800) * scale, {}, palette);
       require(result.valid(), "valid Grid rendering");
@@ -808,6 +812,7 @@ void inlineSourceMapping() {
 }
 }  // namespace
 int main(int argc, char** argv) {
+  qputenv("QT_FONT_DPI", "96");
   QApplication app(argc, argv);
   browserFixtures();
   computedGrid();

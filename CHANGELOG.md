@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- HTML explicit line heights can be smaller than the font's natural metrics; mixed text and inline Flex/Grid still contribute their own line boxes and baselines.
+- Flex/Grid browser comparisons use verified bundled font files at 96 logical DPI. Linux tests locate the system Fontconfig configuration, and cross-paragraph caret assertions account for character-boundary snapping.
 - Editing text inside paired inline HTML preserves parser source ranges, including entity spellings whose source and displayed lengths differ.
 - Percentage gaps in auto-height Flex containers no longer acquire a circular height dependency; mixed `calc()` gaps retain their absolute component. HTML line breaks contribute separate lines during intrinsic measurement, and formatted containers no longer count padding twice.
 - Grid intrinsic sizing applies zoomed constraints once and revisits image ratio contributions after definite row allocation. HTML image dimension attributes follow document zoom, and Markdown image sizing no longer imposes a hardcoded height limit outside the theme's CSS constraints.

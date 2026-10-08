@@ -1,5 +1,6 @@
 // Used-box references from Chrome for the shared Grid formatter.
 import fs from 'node:fs';
+import {browserLayoutFont, loadBrowserLayoutFont} from './browser_layout_font.mjs';
 import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -223,11 +224,14 @@ try {
   cases.push(...JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/theme/wpt/cases.json'),'utf8')).cases.filter(c => c.kind === 'grid'));
   const page = await browser.newPage({viewport:{width:800,height:700}});
   const base = fs.readFileSync(path.join(root,'resources/themes/document-base.css'),'utf8');
+  const font = browserLayoutFont(root);
   for (const c of cases) {
     const viewportWidth = c.viewportWidth ?? 800;
     await page.setViewportSize({width:viewportWidth,height:700});
     c.html ??= `<div id="case" style="${attribute(`display:grid;font:16px Arial;line-height:20px;${c.container}`)}">${c.children.map((style,i)=>`<div id="${'abcd'[i]}" style="${attribute(style)}">${c.texts?.[i] ?? ''}</div>`).join('')}</div>`;
-    await page.setContent(`<!doctype html><style>${base}</style><div id="write" style="padding:0;width:${viewportWidth}px">${c.html}</div>`);
+    c.html = font.replace(c.html);
+    await page.setContent(`<!doctype html><style>${base}\n${font.css}</style><div id="write" style="padding:0;width:${viewportWidth}px">${c.html}</div>`);
+    await loadBrowserLayoutFont(page, font);
     const parsed = await page.evaluate(() => {
       const el = document.querySelector('#case');
       return {display:getComputedStyle(el).display, areas:el.style.gridTemplateAreas, columns:el.style.gridTemplateColumns};
@@ -256,5 +260,5 @@ try {
     });
     delete c.container; delete c.children; delete c.texts;
   }
-  fs.writeFileSync(process.argv[2] ?? path.join(root,'tests/fixtures/theme/grid-layout-browser.json'),JSON.stringify({browser:await browser.version(),cases},null,2)+'\n');
+  fs.writeFileSync(process.argv[2] ?? path.join(root,'tests/fixtures/theme/grid-layout-browser.json'),JSON.stringify({browser:await browser.version(),font:font.metadata,cases},null,2)+'\n');
 } finally { await browser.close(); }

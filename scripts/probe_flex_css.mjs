@@ -1,5 +1,6 @@
 // Browser geometry reference for the shared Markdown/HTML Flex formatter.
 import fs from "node:fs";
+import {browserLayoutFont, loadBrowserLayoutFont} from './browser_layout_font.mjs';
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -7,6 +8,7 @@ const moduleName = process.env.MUFFIN_PLAYWRIGHT_MODULE;
 const { chromium } = await import(moduleName ? pathToFileURL(path.resolve(moduleName)).href : "playwright");
 const browser = await chromium.launch({headless:true, ...(process.env.CHROME_EXECUTABLE ? {executablePath:process.env.CHROME_EXECUTABLE} : {})});
 const cases = [
+  {id: 'explicit-tight-line-height', html: '<div id="case" style="display:flex;align-items:start;width:300px;font:16px Arial;line-height:12px"><div id="a">first<br>second</div><pre id="b" style="font:inherit;line-height:8px;margin:0">first\nsecond</pre></div>'},
   {"id": "image-small-auto-min", "html": "<div id=\"case\" style=\"display:flex;width:140px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
   {"id": "image-small-zero-min", "html": "<div id=\"case\" style=\"display:flex;width:140px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
   {"id": "image-grow", "html": "<div id=\"case\" style=\"display:flex;width:300px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"flex:1;min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>"},
@@ -66,7 +68,7 @@ const cases = [
   {id:"display-none", container:"width:200px;gap:10px", children:["flex:1;height:20px", "display:none;width:100px;height:60px", "flex:1;height:30px"]},
   {id:"nested", html:'<div id="case" style="display:flex;width:300px;gap:10px;font:16px Arial;line-height:20px"><div id="a" style="display:flex;flex:1;min-width:0;gap:5px"><div id="c" style="flex:1;height:20px"></div><div id="d" style="flex:2;height:30px"></div></div><div id="b" style="width:50px;height:40px"></div></div>'},
 ];
-const imageSource = /src="([^"]+)"/.exec(cases[0].html)[1];
+const imageSource = /src="([^"]+)"/.exec(cases.find(c => c.html.includes('<img')).html)[1];
 for (const [id, attributes] of [
   ['image-width-attribute', 'width="80"'],
   ['image-width-attribute-css-auto', 'width="80" style="width:auto"'],
@@ -86,12 +88,15 @@ for (const [id, container, image] of [
   ['image-column-ratio', 'height:200px', 'aspect-ratio:1;max-height:70px'],
 ]) cases.push({id, html:`<div id="case" style="display:flex;flex-direction:column;width:300px;align-items:start;gap:10px;${container}"><img id="a" src="${imageSource}" style="${image}"><div id="b" style="width:50px;height:30px;flex-shrink:0"></div></div>`});
 const base = fs.readFileSync(path.join(root,"resources/themes/document-base.css"),"utf8");
+const font = browserLayoutFont(root);
 cases.push(...JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/theme/wpt/cases.json'),'utf8')).cases.filter(c => c.kind === 'flex'));
 try {
   const page = await browser.newPage({viewport:{width:800,height:700}});
   for (const c of cases) {
     c.html ??= `<div id="case" style="display:flex;font-family:Arial;font-size:16px;line-height:20px;${c.container}">${c.children.map((style,i)=>`<div id="${"abcd"[i]}" style="${style}">${c.texts?.[i] ?? ""}</div>`).join("")}</div>`;
-    await page.setContent(`<!doctype html><style>${base}</style><div id="write" style="padding:0;width:800px">${c.html}</div>`);
+    c.html = font.replace(c.html);
+    await page.setContent(`<!doctype html><style>${base}\n${font.css}</style><div id="write" style="padding:0;width:800px">${c.html}</div>`);
+    await loadBrowserLayoutFont(page, font);
     if (await page.evaluate(() => document.compatMode) !== "CSS1Compat") throw new Error("Browser oracle must use standards mode");
     c.expected = await page.evaluate(()=>{
       const outer=document.querySelector("#case").getBoundingClientRect();
@@ -104,5 +109,5 @@ try {
     }
     delete c.container; delete c.children; delete c.texts;
   }
-  fs.writeFileSync(process.argv[2] ?? path.join(root,"tests/fixtures/theme/flex-layout-browser.json"),JSON.stringify({browser:await browser.version(),cases},null,2)+"\n");
+  fs.writeFileSync(process.argv[2] ?? path.join(root,"tests/fixtures/theme/flex-layout-browser.json"),JSON.stringify({browser:await browser.version(),font:font.metadata,cases},null,2)+"\n");
 } finally {await browser.close();}

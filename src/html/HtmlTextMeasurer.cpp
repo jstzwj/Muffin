@@ -15,7 +15,7 @@ qreal resolvedLineHeight(const HtmlComputedStyle& style, const QFont& font) {
   QFontMetricsF metrics(font);
   if (style.lineHeight > 0) {
     // The shared computed-style projection has already resolved this to px.
-    return std::ceil(qMax<qreal>(metrics.height(), style.lineHeight));
+    return style.lineHeight;
   }
   return std::ceil(metrics.height() * kLineHeightFactor);
 }
@@ -106,8 +106,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   collectInlineText(blockBox, text, spans, links, offset, false, false, false, false, HtmlTextDecoration::None, defaultTextColor_, QColor(),
                     QTextCharFormat::AlignNormal, QString(), fontSize, fontSize, &atoms, availableWidth, &blockBox, &sources);
 
-  QFont baseFont;
-  baseFont.setFamilies(blockBox.style().font.families());
+  QFont baseFont = blockBox.style().font;
   baseFont.setPointSizeF(fontSize);
   // Apply letter-spacing from the block box style (inherited property)
   if (blockBox.style().letterSpacing != 0) {
@@ -263,8 +262,22 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
     line.setLineWidth(qMax<qreal>(1.0, availableWidth));
     const QFontMetricsF strut(baseFont);
     const qreal leading = (result->lineHeight - strut.height()) * .5;
-    qreal ascent = qMax(line.ascent(), strut.ascent() + leading);
-    qreal descent = qMax(line.descent(), strut.descent() + leading);
+    // CSS line boxes use half-leading, including negative leading when the
+    // authored line-height is smaller than the font's em/metric box. Qt's
+    // natural ascent/descent describes glyph painting, not the CSS line box.
+    qreal ascent = strut.ascent() + leading;
+    qreal descent = strut.descent() + leading;
+    for (const auto& span : spans) {
+      if (span.start >= line.textStart() + line.textLength() || span.start + span.length <= line.textStart()) continue;
+      const QFontMetricsF metrics(span.fontSet ? span.font : baseFont);
+      const qreal spanLeading = (span.lineHeight - metrics.height()) * .5;
+      ascent = qMax(ascent, metrics.ascent() + spanLeading);
+      descent = qMax(descent, metrics.descent() + spanLeading);
+      if (span.verticalAlignment != QTextCharFormat::AlignNormal) {
+        ascent = qMax(ascent, line.ascent());
+        descent = qMax(descent, line.descent());
+      }
+    }
     for (const auto& atom : result->atoms)
       if (atom.start >= line.textStart() && atom.start < line.textStart() + line.textLength()) {
         ascent = qMax(ascent, atom.baseline + atom.margin.top());
@@ -345,7 +358,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildPreLayout(
                                 : 1000000.0;
     line.setLineWidth(lineWidth);
     const qreal naturalLineHeight = line.height();
-    const qreal lineHeight = qMax(result->lineHeight, naturalLineHeight);
+    const qreal lineHeight = result->lineHeight;
     line.setPosition(QPointF(0, height + (lineHeight - naturalLineHeight) * 0.5));
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
     height += lineHeight;
@@ -411,10 +424,7 @@ void HtmlTextMeasurer::collectInlineText(const HtmlBox& box, QString& outText, s
     offset += box.text().length();
     if (sources) sources->push_back({start, int(box.text().size()), box.plainTextStart});
 
-    if (bold || italic || mono || keyboard || decoration != HtmlTextDecoration::None || color.isValid() ||
-        backgroundColor.isValid() ||
-        (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ||
-        verticalAlignment != QTextCharFormat::AlignNormal) {
+    {
       outSpans.push_back(TextFormatSpan{
           start, offset - start, bold, italic, decoration, color, backgroundColor, mono, keyboard,
           (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ? fontSize : 0.0,
@@ -423,6 +433,7 @@ void HtmlTextMeasurer::collectInlineText(const HtmlBox& box, QString& outText, s
       span.fontFamilies = box.style().font.families();
       span.font = box.style().font;
       span.fontSet = true;
+      span.lineHeight = resolvedLineHeight(box.style(), span.font);
       for (const HtmlBox* ancestor = box.parent(); ancestor; ancestor = ancestor->parent()) {
         if (ancestor->tag() != HtmlTag::Kbd && ancestor->tag() != HtmlTag::Code) continue;
         span.inlineBoxStyle = ancestor->style().computed;

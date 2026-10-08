@@ -1,9 +1,42 @@
 {
-  "browser": "153.0.8010.54",
+  "browser": "148.0.7778.96",
+  "font": {
+    "family": "MuffinFixtureSans",
+    "files": {
+      "github/open-sans-v17-latin-ext_latin-regular.woff2": "537d46273fe124bbced2f098f26222fa3155741e9d76f906c3c39e7fa09bf6a8",
+      "github/open-sans-v17-latin-ext_latin-italic.woff2": "8ddc89881ca5f355826d20b2229266c56a2c8d7be69ff9533b1891b55dc15825",
+      "github/open-sans-v17-latin-ext_latin-700.woff2": "59a3166f7bacce6a65bf901ad20f141b619bca39a1318ea5efbdaa587b48a800",
+      "github/open-sans-v17-latin-ext_latin-700italic.woff2": "a250cc9c90a94d628301cbeaca7d8aa6276cda73c8a32af07d3ede513447931a"
+    }
+  },
   "cases": [
     {
+      "id": "explicit-tight-line-height",
+      "html": "<div id=\"case\" style=\"display:flex;align-items:start;width:300px;font:16px MuffinFixtureSans;line-height:12px\"><div id=\"a\">first<br>second</div><pre id=\"b\" style=\"font:inherit;line-height:8px;margin:0\">first\nsecond</pre></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 36
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 53.515625,
+          "height": 24
+        },
+        "b": {
+          "x": 53.515625,
+          "y": 0,
+          "width": 77.515625,
+          "height": 36
+        }
+      }
+    },
+    {
       "id": "image-small-auto-min",
-      "html": "<div id=\"case\" style=\"display:flex;width:140px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:140px;align-items:start;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -27,7 +60,7 @@
     },
     {
       "id": "image-small-zero-min",
-      "html": "<div id=\"case\" style=\"display:flex;width:140px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:140px;align-items:start;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -51,7 +84,7 @@
     },
     {
       "id": "image-grow",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"flex:1;min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;align-items:start;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"flex:1;min-width:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -75,7 +108,7 @@
     },
     {
       "id": "image-explicit-stretch",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;height:140px;align-items:stretch;justify-items:stretch;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;height:140px;align-items:stretch;justify-items:stretch;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -99,7 +132,7 @@
     },
     {
       "id": "image-transferred-size",
-      "html": "<div id=\"case\" style=\"display:flex;width:140px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:140px;align-items:start;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -123,7 +156,7 @@
     },
     {
       "id": "image-percent-padding-image",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;padding:5%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;align-items:start;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;padding:5%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -147,7 +180,7 @@
     },
     {
       "id": "image-percent-height-image",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;height:200px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:50%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;height:200px;align-items:start;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:50%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -171,7 +204,7 @@
     },
     {
       "id": "image-auto-ratio-border",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;align-items:start;gap:10px;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black;box-sizing:border-box;aspect-ratio:auto 1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;align-items:start;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black;box-sizing:border-box;aspect-ratio:auto 1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -195,7 +228,7 @@
     },
     {
       "id": "image-natural",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -219,7 +252,7 @@
     },
     {
       "id": "image-width",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -243,7 +276,7 @@
     },
     {
       "id": "image-height",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -267,7 +300,7 @@
     },
     {
       "id": "image-max-width",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-width:80px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-width:80px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -291,7 +324,7 @@
     },
     {
       "id": "image-min-width",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:230px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-width:230px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -315,7 +348,7 @@
     },
     {
       "id": "image-max-height",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:40px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -339,7 +372,7 @@
     },
     {
       "id": "image-min-height",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-height:140px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-height:140px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -363,7 +396,7 @@
     },
     {
       "id": "image-ratio",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"aspect-ratio:1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"aspect-ratio:1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -387,7 +420,7 @@
     },
     {
       "id": "image-auto-ratio",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"aspect-ratio:auto 1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"aspect-ratio:auto 1\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -411,7 +444,7 @@
     },
     {
       "id": "image-percent",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:50%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:50%\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -435,7 +468,7 @@
     },
     {
       "id": "image-constraints",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-width:80px;min-height:70px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-width:80px;min-height:70px\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -459,7 +492,7 @@
     },
     {
       "id": "image-box-content",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -483,7 +516,7 @@
     },
     {
       "id": "image-box-border",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -507,7 +540,7 @@
     },
     {
       "id": "image-ratio-border",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;aspect-ratio:1;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:100px;aspect-ratio:1;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -531,7 +564,7 @@
     },
     {
       "id": "ratio-box",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"width:100px;aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><div id=\"a\" style=\"width:100px;aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -555,7 +588,7 @@
     },
     {
       "id": "ratio-stretch",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><div id=\"a\" style=\"aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -579,7 +612,7 @@
     },
     {
       "id": "ratio-cross-size",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"height:40px;aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><div id=\"a\" style=\"height:40px;aspect-ratio:2\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -603,7 +636,7 @@
     },
     {
       "id": "ratio-min",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"width:80px;aspect-ratio:2;min-height:70px\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><div id=\"a\" style=\"width:80px;aspect-ratio:2;min-height:70px\"></div><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -627,7 +660,7 @@
     },
     {
       "id": "cyclic-column-gap",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;flex-direction:column;row-gap:20%\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;flex-direction:column;row-gap:20%\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -651,7 +684,7 @@
     },
     {
       "id": "cyclic-column-calc-gap",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;flex-direction:column;row-gap:calc(20% + 10px)\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;flex-direction:column;row-gap:calc(20% + 10px)\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -675,7 +708,7 @@
     },
     {
       "id": "cyclic-flex-height",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;flex-direction:column\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;flex-direction:column\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -699,7 +732,7 @@
     },
     {
       "id": "flex-min-height-percent",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;flex-direction:column;min-height:150px\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;flex-direction:column;min-height:150px\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -723,7 +756,7 @@
     },
     {
       "id": "flex-max-height-percent",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;flex-direction:column;max-height:40px\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;flex-direction:column;max-height:40px\"><div id=\"a\" style=\"height:50%\">A</div><div id=\"b\" style=\"height:calc(50% + 10px)\">A<br>B<br>C</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -747,7 +780,7 @@
     },
     {
       "id": "grow-gap",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:320px;gap:10px\"><div id=\"a\" style=\"flex:1;height:40px\"></div><div id=\"b\" style=\"flex:2;height:40px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:320px;gap:10px\"><div id=\"a\" style=\"flex:1;height:40px\"></div><div id=\"b\" style=\"flex:2;height:40px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -771,7 +804,7 @@
     },
     {
       "id": "reverse-order",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:320px;flex-direction:row-reverse;justify-content:space-between\"><div id=\"a\" style=\"width:40px;height:20px;order:2\"></div><div id=\"b\" style=\"width:50px;height:30px;order:-1\"></div><div id=\"c\" style=\"width:60px;height:40px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:320px;flex-direction:row-reverse;justify-content:space-between\"><div id=\"a\" style=\"width:40px;height:20px;order:2\"></div><div id=\"b\" style=\"width:50px;height:30px;order:-1\"></div><div id=\"c\" style=\"width:60px;height:40px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -801,7 +834,7 @@
     },
     {
       "id": "wrap-gap",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:220px;flex-wrap:wrap;gap:11px 10px;align-items:flex-start\"><div id=\"a\" style=\"width:100px;height:30px\"></div><div id=\"b\" style=\"width:100px;height:40px\"></div><div id=\"c\" style=\"width:100px;height:50px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:220px;flex-wrap:wrap;gap:11px 10px;align-items:flex-start\"><div id=\"a\" style=\"width:100px;height:30px\"></div><div id=\"b\" style=\"width:100px;height:40px\"></div><div id=\"c\" style=\"width:100px;height:50px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -831,7 +864,7 @@
     },
     {
       "id": "column-reverse",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:200px;height:200px;flex-direction:column-reverse;gap:10px;align-items:center\"><div id=\"a\" style=\"width:50px;height:30px\"></div><div id=\"b\" style=\"width:80px;height:40px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:200px;height:200px;flex-direction:column-reverse;gap:10px;align-items:center\"><div id=\"a\" style=\"width:50px;height:30px\"></div><div id=\"b\" style=\"width:80px;height:40px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -855,7 +888,7 @@
     },
     {
       "id": "percent-basis",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:0 0 25%;height:20px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:0 0 25%;height:20px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -879,7 +912,7 @@
     },
     {
       "id": "auto-margin",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:flex-end;height:80px\"><div id=\"a\" style=\"width:60px;height:30px\"></div><div id=\"b\" style=\"width:40px;height:40px;margin-left:auto\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;align-items:flex-end;height:80px\"><div id=\"a\" style=\"width:60px;height:30px\"></div><div id=\"b\" style=\"width:40px;height:40px;margin-left:auto\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -903,7 +936,7 @@
     },
     {
       "id": "border-box",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;padding:10px;border:2px solid black;box-sizing:border-box;gap:10px\"><div id=\"a\" style=\"flex:1;padding:5px;border:2px solid red;min-width:0;height:40px;box-sizing:border-box\"></div><div id=\"b\" style=\"flex:1;height:50px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;padding:10px;border:2px solid black;box-sizing:border-box;gap:10px\"><div id=\"a\" style=\"flex:1;padding:5px;border:2px solid red;min-width:0;height:40px;box-sizing:border-box\"></div><div id=\"b\" style=\"flex:1;height:50px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -927,7 +960,7 @@
     },
     {
       "id": "auto-minimum",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1\">x</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1\">x</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -938,20 +971,20 @@
         "a": {
           "x": 0,
           "y": 0,
-          "width": 241.625,
+          "width": 237,
           "height": 20
         },
         "b": {
-          "x": 241.625,
+          "x": 237,
           "y": 0,
-          "width": 8,
+          "width": 8.390625,
           "height": 20
         }
       }
     },
     {
       "id": "zero-minimum",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1;min-width:0\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1;min-width:0\">x</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1;min-width:0\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1;min-width:0\">x</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -975,7 +1008,7 @@
     },
     {
       "id": "wrap-text",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:200px;gap:10px;align-items:flex-start\"><div id=\"a\" style=\"flex:1;min-width:0\">alpha beta gamma delta epsilon zeta</div><div id=\"b\" style=\"width:50px;flex-shrink:0\">B</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:200px;gap:10px;align-items:flex-start\"><div id=\"a\" style=\"flex:1;min-width:0\">alpha beta gamma delta epsilon zeta</div><div id=\"b\" style=\"width:50px;flex-shrink:0\">B</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -999,7 +1032,7 @@
     },
     {
       "id": "max-width-freeze",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:1;max-width:60px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:1;max-width:60px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1023,7 +1056,7 @@
     },
     {
       "id": "explicit-minimum",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px\"><div id=\"a\" style=\"flex:1;min-width:100px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px\"><div id=\"a\" style=\"flex:1;min-width:100px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1047,7 +1080,7 @@
     },
     {
       "id": "explicit-minimum-freeze",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:150px\"><div id=\"a\" style=\"flex:1;min-width:100px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:150px\"><div id=\"a\" style=\"flex:1;min-width:100px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1071,7 +1104,7 @@
     },
     {
       "id": "baseline",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:baseline\"><div id=\"a\" style=\"font-size:16px;line-height:20px\">Hello</div><div id=\"b\" style=\"font-size:32px;line-height:40px\">Hello</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;align-items:baseline\"><div id=\"a\" style=\"font-size:16px;line-height:20px\">Hello</div><div id=\"b\" style=\"font-size:32px;line-height:40px\">Hello</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1082,20 +1115,20 @@
         "a": {
           "x": 0,
           "y": 16,
-          "width": 36.46875,
+          "width": 38.546875,
           "height": 20
         },
         "b": {
-          "x": 36.46875,
+          "x": 38.546875,
           "y": 0,
-          "width": 72.921875,
+          "width": 77.078125,
           "height": 40
         }
       }
     },
     {
       "id": "intrinsic-width",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:flex-start\"><div id=\"a\" style=\"width:min-content\">alpha beta</div><div id=\"b\" style=\"width:max-content\">alpha beta</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;align-items:flex-start\"><div id=\"a\" style=\"width:min-content\">alpha beta</div><div id=\"b\" style=\"width:max-content\">alpha beta</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1106,20 +1139,20 @@
         "a": {
           "x": 0,
           "y": 0,
-          "width": 39.15625,
+          "width": 41.46875,
           "height": 40
         },
         "b": {
-          "x": 39.15625,
+          "x": 41.46875,
           "y": 0,
-          "width": 74.734375,
+          "width": 78.953125,
           "height": 20
         }
       }
     },
     {
       "id": "percent-padding",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:240px\"><div id=\"a\" style=\"flex:1;padding:10%;min-width:0\">A</div><div id=\"b\" style=\"flex:1;padding:10%;min-width:0\">B</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:240px\"><div id=\"a\" style=\"flex:1;padding:10%;min-width:0\">A</div><div id=\"b\" style=\"flex:1;padding:10%;min-width:0\">B</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1143,7 +1176,7 @@
     },
     {
       "id": "calc-basis",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:0 0 calc(50% - 20px);height:20px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:0 0 calc(50% - 20px);height:20px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1167,7 +1200,7 @@
     },
     {
       "id": "calc-gap-margin",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;column-gap:calc(10% + 5px)\"><div id=\"a\" style=\"flex:1;height:20px;margin-left:calc(5% + 2px)\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;column-gap:calc(10% + 5px)\"><div id=\"a\" style=\"flex:1;height:20px;margin-left:calc(5% + 2px)\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1191,7 +1224,7 @@
     },
     {
       "id": "percent-height",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:200px;height:200px;flex-direction:column\"><div id=\"a\" style=\"height:25%;flex-shrink:0\"></div><div id=\"b\" style=\"flex:1\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:200px;height:200px;flex-direction:column\"><div id=\"a\" style=\"height:25%;flex-shrink:0\"></div><div id=\"b\" style=\"flex:1\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1215,7 +1248,7 @@
     },
     {
       "id": "hidden-minimum",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1;overflow:hidden\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1\">x</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1;overflow:hidden\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1\">x</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1239,7 +1272,7 @@
     },
     {
       "id": "wrap-reverse",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:220px;height:200px;flex-wrap:wrap-reverse;align-content:space-between;gap:10px\"><div id=\"a\" style=\"width:100px;height:30px\"></div><div id=\"b\" style=\"width:100px;height:40px\"></div><div id=\"c\" style=\"width:100px;height:50px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:220px;height:200px;flex-wrap:wrap-reverse;align-content:space-between;gap:10px\"><div id=\"a\" style=\"width:100px;height:30px\"></div><div id=\"b\" style=\"width:100px;height:40px\"></div><div id=\"c\" style=\"width:100px;height:50px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1269,7 +1302,7 @@
     },
     {
       "id": "intrinsic-border-box",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:flex-start\"><div id=\"a\" style=\"width:min-content;box-sizing:border-box;padding:5px;border:2px solid black\">alpha beta</div><div id=\"b\" style=\"width:max-content;box-sizing:border-box;padding:5px;border:2px solid black\">alpha beta</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;align-items:flex-start\"><div id=\"a\" style=\"width:min-content;box-sizing:border-box;padding:5px;border:2px solid black\">alpha beta</div><div id=\"b\" style=\"width:max-content;box-sizing:border-box;padding:5px;border:2px solid black\">alpha beta</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1280,20 +1313,20 @@
         "a": {
           "x": 0,
           "y": 0,
-          "width": 53.15625,
+          "width": 55.46875,
           "height": 54
         },
         "b": {
-          "x": 53.15625,
+          "x": 55.46875,
           "y": 0,
-          "width": 88.734375,
+          "width": 92.953125,
           "height": 34
         }
       }
     },
     {
       "id": "baseline-padding",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:baseline\"><div id=\"a\" style=\"font-size:16px;line-height:20px;padding:7px 3px;border:2px solid red\">Hello</div><div id=\"b\" style=\"font-size:32px;line-height:40px;padding:3px\">Hello</div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:300px;align-items:baseline\"><div id=\"a\" style=\"font-size:16px;line-height:20px;padding:7px 3px;border:2px solid red\">Hello</div><div id=\"b\" style=\"font-size:32px;line-height:40px;padding:3px\">Hello</div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1304,20 +1337,20 @@
         "a": {
           "x": 0,
           "y": 10,
-          "width": 46.46875,
+          "width": 48.546875,
           "height": 38
         },
         "b": {
-          "x": 46.46875,
+          "x": 48.546875,
           "y": 0,
-          "width": 78.921875,
+          "width": 83.078125,
           "height": 46
         }
       }
     },
     {
       "id": "display-none",
-      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:200px;gap:10px\"><div id=\"a\" style=\"flex:1;height:20px\"></div><div id=\"b\" style=\"display:none;width:100px;height:60px\"></div><div id=\"c\" style=\"flex:1;height:30px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:MuffinFixtureSans;font-size:16px;line-height:20px;width:200px;gap:10px\"><div id=\"a\" style=\"flex:1;height:20px\"></div><div id=\"b\" style=\"display:none;width:100px;height:60px\"></div><div id=\"c\" style=\"flex:1;height:30px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1347,7 +1380,7 @@
     },
     {
       "id": "nested",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:flex;flex:1;min-width:0;gap:5px\"><div id=\"c\" style=\"flex:1;height:20px\"></div><div id=\"d\" style=\"flex:2;height:30px\"></div></div><div id=\"b\" style=\"width:50px;height:40px\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;font:16px MuffinFixtureSans;line-height:20px\"><div id=\"a\" style=\"display:flex;flex:1;min-width:0;gap:5px\"><div id=\"c\" style=\"flex:1;height:20px\"></div><div id=\"d\" style=\"flex:2;height:30px\"></div></div><div id=\"b\" style=\"width:50px;height:40px\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1383,7 +1416,7 @@
     },
     {
       "id": "image-width-attribute",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" width=\"80\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" width=\"80\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1407,7 +1440,7 @@
     },
     {
       "id": "image-width-attribute-css-auto",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" width=\"80\" style=\"width:auto\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" width=\"80\" style=\"width:auto\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1431,7 +1464,7 @@
     },
     {
       "id": "image-ratio-degenerate",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;aspect-ratio:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;aspect-ratio:0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1455,7 +1488,7 @@
     },
     {
       "id": "image-ratio-zero-denominator",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;aspect-ratio:2/0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"width:80px;aspect-ratio:2/0\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1479,7 +1512,7 @@
     },
     {
       "id": "image-max-height-padding",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:40px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:40px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1503,7 +1536,7 @@
     },
     {
       "id": "image-min-height-padding",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-height:120px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"min-height:120px;padding:10px;border:2px solid black\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1527,7 +1560,7 @@
     },
     {
       "id": "image-max-height-border-box",
-      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px Arial;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:64px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;align-items:start;font:16px MuffinFixtureSans;line-height:20px\"><img id=\"a\" src=\"data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PC9zdmc+\" style=\"max-height:64px;padding:10px;border:2px solid black;box-sizing:border-box\"><div id=\"b\" style=\"width:50px;height:30px;flex-shrink:0\"></div></div>",
       "expected": {
         "case": {
           "x": 0,
@@ -1674,7 +1707,7 @@
       "kind": "flex",
       "upstream": "css/css-flexbox/flex-item-percentage-in-nested-flex-bsize-001.html",
       "adaptation": "Inline declarations and stable IDs replace support stylesheets/testharness; only the in-flow horizontal sizing assertion is exercised.",
-      "html": "<div id=\"case\" style=\"font:16px Arial;line-height:20px;display:flex;width:max-content\"><div id=\"a\" style=\"display:flex;flex-direction:column\"><div id=\"b\" style=\"display:flex;flex-direction:column\"><div id=\"c\" style=\"min-height:100px\"><div id=\"d\" style=\"width:100px;height:100%\"><div style=\"width:10px;height:10px\"></div></div></div></div></div></div>",
+      "html": "<div id=\"case\" style=\"font:16px MuffinFixtureSans;line-height:20px;display:flex;width:max-content\"><div id=\"a\" style=\"display:flex;flex-direction:column\"><div id=\"b\" style=\"display:flex;flex-direction:column\"><div id=\"c\" style=\"min-height:100px\"><div id=\"d\" style=\"width:100px;height:100%\"><div style=\"width:10px;height:10px\"></div></div></div></div></div></div>",
       "assertions": {
         "d": {
           "width": 100,
