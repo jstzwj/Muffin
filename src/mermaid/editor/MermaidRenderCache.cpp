@@ -1,4 +1,7 @@
 #include "mermaid/editor/MermaidRenderCache.h"
+#include "render/LayoutResources.h"
+#include <QUuid>
+#include <QDataStream>
 
 #include "mermaid/editor/MermaidSvgExporter.h"
 
@@ -334,7 +337,7 @@ void attachErrorFallbackScene(MermaidRenderEntry& entry,
 }  // namespace
 
 MermaidRenderCache::MermaidRenderCache(QObject* parent, int capacity)
-    : QObject(parent), capacity_(capacity) {
+    : QObject(parent), capacity_(capacity), resourceIdentity_(QUuid::createUuid().toString()) {
   debounceTimer_.setSingleShot(true);
   connect(&debounceTimer_, &QTimer::timeout, this, [this]() {
     if (!debouncePending_) return;
@@ -361,8 +364,23 @@ MermaidRenderKey MermaidRenderCache::makeKey(const QString& source) {
   MermaidRenderKey key;
   key.sourceHash = QCryptographicHash::hash(source.toUtf8(), QCryptographicHash::Sha256);
   key.theme = theme;
+  key.fontGeneration = LayoutResources::instance().read(LayoutResources::fontKey()).geometry;
   return key;
 }
+
+QString MermaidRenderCache::resourceKey(const MermaidRenderKey& key) const {
+  return QStringLiteral("mermaid:") + resourceIdentity_ + ':' + QString::fromLatin1(key.sourceHash.toHex()) + ':' + key.theme + ':' +
+         QString::number(key.fontGeneration);
+}
+
+namespace {
+QByteArray resourceMetrics(const MermaidRenderEntry& entry) {
+  QByteArray bytes;
+  QDataStream stream(&bytes, QIODevice::WriteOnly);
+  stream << int(entry.status) << entry.naturalSize << entry.errorMessage << entry.errorDiagnostic;
+  return bytes;
+}
+}  // namespace
 
 void MermaidRenderCache::touch(const MermaidRenderKey& key) {
   lru_.removeAll(key);
@@ -376,13 +394,15 @@ void MermaidRenderCache::evict() {
   }
 }
 
-void MermaidRenderCache::commit(const MermaidRenderKey& key, const MermaidRenderEntry& entry) {
+bool MermaidRenderCache::commit(const MermaidRenderKey& key, const MermaidRenderEntry& entry) {
   // Only commit if the key is still pending (not evicted while the worker ran).
   auto it = entries_.find(key);
-  if (it == entries_.end()) return;
-  if (it.value().status != MermaidRenderStatus::Loading) return;  // superseded
+  if (it == entries_.end()) return false;
+  if (it.value().status != MermaidRenderStatus::Loading) return false;  // superseded
   it.value() = entry;
   touch(key);
+  LayoutResources::instance().publish(resourceKey(key), resourceMetrics(entry));
+  return true;
 }
 
 void MermaidRenderCache::launchWorker(
@@ -390,13 +410,12 @@ void MermaidRenderCache::launchWorker(
   auto* watcher = new QFutureWatcher<MermaidRenderEntry>(this);
   watchers_.insert(watcher, key);
   const QString theme = key.theme;
-  connect(watcher, &QFutureWatcher<MermaidRenderEntry>::finished, this,
-          [this, watcher, key]() {
+  const auto epoch = epoch_;
+  connect(watcher, &QFutureWatcher<MermaidRenderEntry>::finished, this, [this, watcher, key, epoch]() {
     watchers_.remove(watcher);
     const MermaidRenderEntry result = watcher->result();
     watcher->deleteLater();
-    commit(key, result);
-    emit renderReady(key);
+    if (epoch == epoch_ && commit(key, result)) emit renderReady(key);
   });
   watcher->setFuture(QtConcurrent::run(
       [source, theme]() { return renderSource(source, theme); }));
@@ -419,6 +438,7 @@ void MermaidRenderCache::cancelDebouncedRequest(bool removeLoadingEntry) {
 
 MermaidRenderEntry MermaidRenderCache::request(
     const MermaidRenderKey& key, const QString& source) {
+  LayoutResources::instance().read(resourceKey(key));
   auto it = entries_.find(key);
   if (it != entries_.end()) {
     if (debouncePending_ && debouncedKey_ == key) {
@@ -440,6 +460,7 @@ MermaidRenderEntry MermaidRenderCache::request(
 
 MermaidRenderEntry MermaidRenderCache::requestDebounced(
     const MermaidRenderKey& key, const QString& source, int delayMs) {
+  LayoutResources::instance().read(resourceKey(key));
   auto it = entries_.find(key);
   if (it != entries_.end()) {
     touch(key);
@@ -461,6 +482,7 @@ MermaidRenderEntry MermaidRenderCache::requestDebounced(
 }
 
 MermaidRenderEntry MermaidRenderCache::getSync(const MermaidRenderKey& key, const QString& source) {
+  LayoutResources::instance().read(resourceKey(key));
   auto it = entries_.find(key);
   if (it != entries_.end() && it.value().status != MermaidRenderStatus::Loading) {
     touch(key);
@@ -472,13 +494,18 @@ MermaidRenderEntry MermaidRenderCache::getSync(const MermaidRenderKey& key, cons
   entries_.insert(key, result);
   touch(key);
   evict();
+  LayoutResources::instance().publish(resourceKey(key), resourceMetrics(result));
+  LayoutResources::instance().read(resourceKey(key));
   return result;
 }
 
 void MermaidRenderCache::clear() {
+  ++epoch_;
   cancelDebouncedRequest(false);
+  const auto keys = entries_.keys();
   entries_.clear();
   lru_.clear();
+  for (const auto& key : keys) LayoutResources::instance().publish(resourceKey(key), {});
 }
 
 MermaidPngRenderResult MermaidRenderCache::renderMermaidSourceToPng(

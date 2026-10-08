@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Images, font database changes and Mermaid results carry separate paint/geometry resource versions. Editor resource notifications update affected blocks, preserve same-size image layout and coalesce asynchronous completions.
+- Incremental layout reuses nested native blocks and validates the measurements consumed by cached Flex/Grid track solutions. Equal contributions stop size invalidation at container boundaries; resource and real-theme regressions compare fresh and lazy rendering.
 - Flex/Grid measurements carry explicit sizing phases, definite containing sizes and inherited tracks. Selected upstream WPT cases and browser fixtures cover nested percentage, aspect-ratio and subgrid dependencies.
 - Inline Flex/Grid components participate in paragraph wrapping and baseline layout through the shared formatting engine, including native painting, links, source caret mapping and selection. Grid supports first/last baseline alignment.
 - Root Flex/Grid edits reuse unchanged content measurements and allocated block layouts. Content, computed styles, projection state and size dependencies invalidate reuse; full refreshes retain resource invalidation.

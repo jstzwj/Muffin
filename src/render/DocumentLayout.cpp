@@ -1,4 +1,5 @@
 #include "render/DocumentLayout.h"
+#include <QScopedValueRollback>
 
 #include "blocks/code/CodeFenceScrollController.h"
 #include "render/BlockLayoutBuilder.h"
@@ -293,7 +294,7 @@ void DocumentLayout::rebuild(
     for (size_t i = 0; i < previousSlots.size(); ++i) previousIndices.insert(previousSlots[i].nodeId, i);
   }
   // Style snapshots and the sparse tree belong to this document generation.
-  theme.invalidateDocumentStyles();
+  if (!resourceOnlyUpdate_) theme.invalidateDocumentStyles();
   document_ = &document;
   documentPath_ = std::move(documentPath);
   viewportWidth_ = viewportWidth;
@@ -343,32 +344,19 @@ void DocumentLayout::rebuild(
         usedRoot.heightLength.status == CssLengthStatus::Valid && !usedRoot.heightLength.hasPercentage
             ? qMax<qreal>(0, usedRoot.heightLength.px - (usedRoot.borderBox ? rootInset.top() + rootInset.bottom() : 0))
             : -1;
-    const auto formatted = layoutFormattingItems(container, items, pageWidth_, rootHeight);
+    for (auto& previous : previousSlots) builder_.retainLayouts(previous.detail);
+    const auto formatted = builder_.solveFormatting({}, container, items, pageWidth_, rootHeight);
     formattingHeight_ = formatted.size.height();
     for (size_t i = 0; i < children.size(); ++i) {
       const auto allocation = formatted.items[i].translated(pageLeft_, cursorY);
-      const auto signature = builder_.formattingSignature(*children[i], theme);
-      const auto key = signature + cssMeasureKey({allocation.width(), formatted.containingWidths[i], rootHeight, allocation.height(),
-                                                  formatted.inheritedGrids[i], CssLayoutPhase::Final});
-      std::unique_ptr<BlockLayout> block;
       const auto old = previousIndices.constFind(children[i]->id());
-      if (!signature.isEmpty() && old != previousIndices.cend()) {
-        auto& previous = previousSlots[old.value()];
-        if (previous.detail && previous.formattingKey == key && previous.detail->stylesMatch(theme, document)) {
-          block = std::move(previous.detail);
-          const auto shift = allocation.topLeft() - block->rect().topLeft();
-          block->translate(shift.x(), shift.y());
-          block->shiftSourceOffsets(children[i]->sourceRange().byteStart - previous.sourceStart);
-          ++formattingReuseStats_.reusedBlocks;
-        }
-      }
-      if (!block) {
-        block = builder_.buildAllocated(*children[i], theme, allocation, formatted.containingWidths[i], 0, formatted.inheritedGrids[i]);
+      const auto* previous = old == previousIndices.cend() ? nullptr : previousSlots[old.value()].detail.get();
+      auto block = builder_.buildAllocated(*children[i], theme, allocation, formatted.containingWidths[i], 0, formatted.inheritedGrids[i]);
+      if (previous && block.get() == previous)
+        ++formattingReuseStats_.reusedBlocks;
+      else
         ++formattingReuseStats_.builtBlocks;
-      }
       BlockSlot slot;
-      slot.formattingKey = key;
-      slot.sourceStart = children[i]->sourceRange().byteStart;
       slot.nodeId = children[i]->id();
       slot.type = children[i]->type();
       slot.top = block->rect().top();
@@ -433,6 +421,10 @@ void DocumentLayout::rebuild(
   const auto measurementStats = builder_.finishFormattingPass();
   formattingReuseStats_.measurementHits = measurementStats.first;
   formattingReuseStats_.measurementMisses = measurementStats.second;
+  formattingReuseStats_.reusedLayouts = builder_.reusedLayouts;
+  formattingReuseStats_.builtLayouts = builder_.builtLayouts;
+  formattingReuseStats_.reusedContexts = builder_.reusedContexts;
+  formattingReuseStats_.solvedContexts = builder_.solvedContexts;
   const QVector<LayoutPositionToken*> positionTokens =
       positionIndex_.reset(static_cast<qsizetype>(slots_.size()));
   for (qsizetype i = 0; i < static_cast<qsizetype>(slots_.size()); ++i) {
@@ -544,7 +536,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
 
   // The edit starts one style generation. Dependent geometry rebuilds below
   // consume that generation without discarding the same shared caches again.
-  if (!refreshingStyles_) theme.invalidateDocumentStyles();
+  if (!refreshingStyles_ && !resourceOnlyUpdate_) theme.invalidateDocumentStyles();
   const MarkdownNode* node = topLevelBlockFor(blockId, document);
   if (!node) {
     return result;
@@ -563,7 +555,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
     return result;
   }
 
-  configureBuilder(selection);
+  configureBuilder(selection, true);
   BlockSlot& slot = slots_.at(static_cast<size_t>(index));
   ensureSlotDetailPosition(index);
   const qreal currentTop = slotTop(index);
@@ -581,7 +573,9 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
     newTop = slotTop(index - 1) + slotHeight(index - 1) + spacingBetweenBlocks(previous, *node, theme, false, pageWidth_);
   } else
     newTop += spacingBeforeBlock(*node, theme, newTop, false, pageWidth_);
+  builder_.retainLayouts(slot.detail);
   auto replacement = builder_.build(*node, theme, pageLeft_, newTop, pageWidth_);
+  builder_.clearRetainedLayouts();
   result.newRect = replacement->rect();
 
   // Shared structural-spacing formula (nextTopAfterBuild) — promoteSlot uses the same,
@@ -623,6 +617,7 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   }
 
   result.rebuilt = true;
+  if (resourceOnlyUpdate_) return result;
   const qreal beforeRefresh = totalHeight_;
   result.shiftedRect = result.shiftedRect.united(refreshDependentStyles(document, theme, selection));
   result.heightDelta += totalHeight_ - beforeRefresh;
@@ -710,7 +705,11 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     topLevelIndex_.remove(oldSlot.nodeId);
   }
 
-  configureBuilder(selection);
+  configureBuilder(selection, true);
+  for (qsizetype i = range.first; i < range.first + range.oldCount; ++i) {
+    ensureSlotDetailPosition(i);
+    builder_.retainLayouts(slots_[size_t(i)].detail);
+  }
   // A structural edit can change the heading outline (and shift every subsequent
   // heading's ordinal), so recompute the whole-document counter map before building
   // the range. Single-block rebuilds (rebuildBlock) deliberately skip this — they
@@ -760,6 +759,7 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
     qCDebug(layoutPerf).nospace() << "layout.range.build n=" << range.newCount << " "
                                   << buildTimer.nsecsElapsed() / 1000000.0 << " ms";
   }
+  builder_.clearRetainedLayouts();
   result.newRect = newRectUnion;
 
   qreal newNextTop = cursorY;
@@ -1316,6 +1316,67 @@ void DocumentLayout::ensureSlotDetailPosition(qsizetype index) const {
     slot.detail->translateY(delta);
   }
   slot.detailShift = shift;
+}
+
+DocumentLayout::ResourceRefreshResult DocumentLayout::refreshResources(const RenderTheme& theme, SelectionRange selection) {
+  ResourceRefreshResult result;
+  if (!document_) return result;
+  formattingReuseStats_ = {};
+  QVector<NodeId> affected;
+  bool fontsChanged = false;
+  for (qsizetype i = 0; i < qsizetype(slots_.size()); ++i) {
+    auto& slot = slots_[size_t(i)];
+    if (slot.detail && !LayoutResources::instance().matches(slot.detail->reuse.resources)) {
+      const auto font = slot.detail->reuse.resources.constFind(LayoutResources::fontKey());
+      if (font != slot.detail->reuse.resources.cend() &&
+          font->geometry != LayoutResources::instance().read(LayoutResources::fontKey()).geometry)
+        fontsChanged = true;
+      ensureSlotDetailPosition(i);
+      ++result.updatedBlocks;
+      result.dirty = result.dirty.united(slot.detail->visualOverflowRect());
+      if (LayoutResources::instance().matches(slot.detail->reuse.resources, false))
+        slot.detail->refreshPaintResources();
+      else
+        affected.push_back(slot.nodeId);
+    }
+  }
+  if (affected.isEmpty()) return result;
+  // Image/diagram pixels cannot change CSS selectors or computed text styles.
+  // Font metrics can, so font database updates retain the style refresh path.
+  QScopedValueRollback resourceUpdate(resourceOnlyUpdate_, !fontsChanged);
+  if (formattingRoot_) {
+    const auto oldHeight = totalHeight_;
+    QHash<NodeId, QRectF> oldRects;
+    for (const auto& slot : slots_)
+      if (slot.detail) oldRects.insert(slot.nodeId, slot.detail->rect());
+    incrementalFormatting_ = true;
+    rebuild(*document_, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+    result.geometryChanged = oldHeight != totalHeight_;
+    for (const auto& slot : slots_)
+      if (slot.detail) {
+        const auto before = oldRects.value(slot.nodeId);
+        if (before != slot.detail->rect()) {
+          result.geometryChanged = true;
+          result.dirty = result.dirty.united(before).united(slot.detail->visualOverflowRect());
+        } else if (affected.contains(slot.nodeId))
+          result.dirty = result.dirty.united(slot.detail->visualOverflowRect());
+      }
+  } else {
+    formattingReuseStats_ = {};
+    for (const auto id : affected) {
+      const auto before = block(id)->rect();
+      const auto refresh = rebuildBlock(id, *document_, theme, selection);
+      if (refresh.rebuilt) {
+        result.geometryChanged = result.geometryChanged || refresh.newRect != before || !qFuzzyIsNull(refresh.heightDelta);
+        result.dirty = result.dirty.united(refresh.oldRect).united(refresh.newRect).united(refresh.shiftedRect);
+      }
+      formattingReuseStats_.reusedLayouts += builder_.reusedLayouts;
+      formattingReuseStats_.builtLayouts += builder_.builtLayouts;
+      formattingReuseStats_.reusedContexts += builder_.reusedContexts;
+      formattingReuseStats_.solvedContexts += builder_.solvedContexts;
+    }
+  }
+  return result;
 }
 
 void DocumentLayout::configureBuilder(SelectionRange selection, bool reuseFormatting) {

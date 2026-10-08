@@ -1,5 +1,4 @@
 #include "html/HtmlLayoutResult.h"
-#include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
 #include "render/ImagePlaceholder.h"
 
@@ -446,38 +445,9 @@ void HtmlLayoutResult::paintImage(QPainter& painter, const HtmlBox& box, QPointF
 }
 
 const QImage& HtmlLayoutResult::cachedImage(const QString& src) const {
-  auto it = imageCache_.constFind(src);
-  if (it != imageCache_.constEnd()) {
-    return it.value();
-  }
-
-  // Remote URL: consult async ImageLoader singleton
-  if (src.startsWith(QLatin1String("http://")) ||
-      src.startsWith(QLatin1String("https://"))) {
-    QImage cached = ImageLoader::instance().cached(src);
-    if (!cached.isNull()) {
-      it = imageCache_.insert(src, std::move(cached));
-      return it.value();
-    }
-    // Not yet downloaded — request async; imageReady signal triggers a rebuild
-    ImageLoader::instance().request(src);
-    it = imageCache_.insert(src, QImage());
-    return it.value();
-  }
-
-  // Inline data: URI (RFC 2397, base64 or percent-encoded) — decode synchronously.
-  if (src.startsWith(QLatin1String("data:"), Qt::CaseInsensitive)) {
-    QImage img = image_decoder::decodeDataUri(src);
-    it = imageCache_.insert(src, std::move(img));
-    return it.value();
-  }
-
-  // Local file path — fall back to ImageDecoder for SVG, WebP, AVIF
-  QImage img(src);
-  if (img.isNull()) {
-    img = image_decoder::decodeFileFallback(src);
-  }
-  it = imageCache_.insert(src, std::move(img));
+  // The shared loader versions local and remote images; a retained HTML box
+  // must not keep a private null/old image after the resource changes.
+  auto it = imageCache_.insert(src, ImageLoader::instance().image(src));
   return it.value();
 }
 

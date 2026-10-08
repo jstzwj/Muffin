@@ -63,14 +63,20 @@ class DocumentLayout {
     qreal detailShift = 0.0;
     bool measured = false;
     std::unique_ptr<BlockLayout> detail;
-    QByteArray formattingKey;
-    qsizetype sourceStart = 0;
   };
   struct FormattingReuseStats {
     qsizetype reusedBlocks = 0, builtBlocks = 0;
     quint64 measurementHits = 0, measurementMisses = 0;
+    qsizetype reusedLayouts = 0, builtLayouts = 0, reusedContexts = 0, solvedContexts = 0;
   };
   const FormattingReuseStats& formattingReuseStats() const { return formattingReuseStats_; }
+  struct ResourceRefreshResult {
+    qsizetype updatedBlocks = 0;
+    bool geometryChanged = false;
+    QRectF dirty;
+  };
+  ResourceRefreshResult refreshResources(const RenderTheme& theme, SelectionRange selection = {});
+  void invalidateRenderState() { builder_.invalidateRenderState(); }
 
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, QString documentPath = {});
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection, QString documentPath = {});
@@ -134,6 +140,7 @@ class DocumentLayout {
  private:
   QRectF refreshDependentStyles(const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
   bool refreshingStyles_ = false;
+  bool resourceOnlyUpdate_ = false;
   bool formattingRoot_ = false;
   bool incrementalFormatting_ = false;
   QSet<NodeId> formattingDirty_;

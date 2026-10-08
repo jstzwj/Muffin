@@ -8,7 +8,6 @@
 #include "render/Blur.h"
 #include "render/DecorationPainter.h"
 #include "render/GradientPainter.h"
-#include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
 #include "render/ImagePlaceholder.h"
 #include "html/HtmlRenderer.h"
@@ -1263,29 +1262,10 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       continue;
     }
 
-    // Try to load the image
-    QImage image;
     const QUrl resolved = resolvedUrlForDocumentResource(srcUrl, documentPath);
     const QString resourceKey = resolved.toString(QUrl::FullyEncoded);
     const bool isRemote = resolved.scheme() == QLatin1String("http") || resolved.scheme() == QLatin1String("https");
-    const bool isDataUri = resolved.scheme() == QLatin1String("data");
-    if (isRemote) {
-      image = ImageLoader::instance().cached(resourceKey);
-      if (image.isNull()) {
-        ImageLoader::instance().request(resourceKey);
-      }
-    } else if (isDataUri) {
-      // Inline data: URI (RFC 2397, base64 or percent-encoded) — decode synchronously.
-      image = image_decoder::decodeDataUri(srcUrl);
-    } else if (resolved.isLocalFile()) {
-      const QString localPath = resolved.toLocalFile();
-      // Prefer our bundled decoders (png/jpeg/webp/avif/svg) so local image display
-      // never depends on Qt's imageformat plugins (qjpeg is absent from this Qt build).
-      image = image_decoder::decodeFileFallback(localPath);
-      if (image.isNull()) {
-        image.load(localPath);  // last resort for formats we don't ship (tiff/bmp/gif/ico)
-      }
-    }
+    QImage image = ImageLoader::instance().image(resourceKey);
 
     if (image.isNull()) {
       // Image not yet available — show a placeholder icon inline.
@@ -1307,6 +1287,7 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
         atom.visibleStart = span.visibleStart;
         atom.visibleEnd = span.visibleEnd;
         atom.srcUrl = srcUrl;
+        atom.resourceUrl = resourceKey;
         atom.displaySize = QSizeF(kPlaceholderSize, kPlaceholderSize);
         atom.image = placeholder;
         atom.loaded = true;
@@ -1360,6 +1341,7 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
       atom.visibleStart = span.visibleStart;
       atom.visibleEnd = span.visibleEnd;
       atom.srcUrl = srcUrl;
+      atom.resourceUrl = resourceKey;
       atom.displaySize = displaySize;
       atom.cssBox = imageBox;
       atom.image = image;
@@ -1747,6 +1729,15 @@ void InlineLayout::paintTextLayoutMathAtoms(QPainter& painter, QPointF origin) c
       break;
     }
   }
+}
+
+void InlineLayout::refreshImageResources() {
+  for (auto* atoms : {&imageAtoms_, &previewAtoms_})
+    for (auto& atom : *atoms)
+      if (!atom.resourceUrl.isEmpty()) {
+        const auto current = ImageLoader::instance().cached(atom.resourceUrl);
+        if (!current.isNull()) atom.image = current;
+      }
 }
 
 void InlineLayout::paintTextLayoutImageAtoms(QPainter& painter, QPointF origin) const {

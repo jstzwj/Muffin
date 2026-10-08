@@ -89,6 +89,12 @@ public:
   void beginFormattingPass(bool incremental, QSet<NodeId> dirty);
   QPair<quint64, quint64> finishFormattingPass();
   QByteArray formattingSignature(const MarkdownNode& node, const RenderTheme& theme);
+  void retainLayouts(std::unique_ptr<BlockLayout>& layout);
+  void clearRetainedLayouts() { retainedLayouts_.clear(); }
+  void invalidateRenderState() { ++renderStateGeneration_; }
+  qsizetype reusedLayouts = 0, builtLayouts = 0, reusedContexts = 0, solvedContexts = 0;
+  CssFormattingResult solveFormatting(NodeId id, const ThemeElementStyle& style, const std::vector<CssFormattingItem>& items, qreal width,
+                                      qreal height, const CssGridInheritance& inherited = {});
 
  private:
   struct FormattingMeasurement {
@@ -98,13 +104,26 @@ public:
     qreal containingWidth = -1;
     std::shared_ptr<CssMeasurementCache> measurements = std::make_shared<CssMeasurementCache>();
     quint64 pass = 0;
+    LayoutResourceDependencies resources;
   };
   QHash<NodeId, std::shared_ptr<FormattingMeasurement>> formattingMeasurements_;
+  struct FormattingSolution {
+    QByteArray inputs;
+    CssFormattingResult result;
+    std::vector<CssMeasurementObservation> observations;
+    quint64 pass = 0;
+  };
+  QHash<NodeId, std::vector<std::shared_ptr<FormattingSolution>>> formattingSolutions_;
+  QHash<NodeId, std::unique_ptr<BlockLayout>*> retainedLayouts_;
+  bool materializing_ = true;
+  std::unique_ptr<BlockLayout> buildFresh(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
   QHash<NodeId, QByteArray> formattingSignatures_;
   QSet<NodeId> formattingDirty_;
   quint64 formattingPass_ = 0;
   QByteArray renderSettingsSignature_;
   QByteArray formattingThemeSignature_;
+  quint64 fontGeneration_ = 0;
+  quint64 renderStateGeneration_ = 0;
   QHash<const MarkdownNode*, QPair<QSizeF, qreal>> allocations_;
   QHash<const MarkdownNode*, CssGridInheritance> gridInheritance_;
   ThemeElementBoxStyle boxFor(const MarkdownNode& node, const RenderTheme& theme, const QString& key, qreal containingWidth) const;
@@ -140,6 +159,11 @@ public:
     BlockLayout::ListMarkerKind kind = BlockLayout::ListMarkerKind::None;
     QString text;
   };
+  struct ListMarkerLayout {
+    ResolvedMarker marker;
+    qreal contentIndent = 0;
+  };
+  ListMarkerLayout listMarkerLayout(const MarkdownNode& itemNode, const RenderTheme& theme);
   ResolvedMarker resolveListMarker(const MarkdownNode& itemNode, const RenderTheme& theme, qsizetype itemIndex) const;
   ListLineInfo authoredMarkerInfo(const MarkdownNode& itemNode) const;
   QVector<InlineNode> primaryInlinesForListItem(const MarkdownNode& node) const;
@@ -217,12 +241,10 @@ public:
   mutable QHash<QString, QPair<qreal, qreal>> fontMetricsCache_;  // QFont::key() -> {wideAdvance, narrowAdvance}
   mutable QHash<QString, qreal> lineHeightCache_;  // "elementKey|headingLevel" -> estimated line height
   mutable QHash<QString, qreal> avgCharWidthCache_;  // "elementKey|headingLevel" -> cached narrow advance
-  // Widest ordered-list marker width per list (keyed by the list NodeId), so buildListItem
-  // doesn't re-measure every sibling on every item (O(N²) per list). Cleared per pass in
-  // refreshRenderSettings — a list's marker width can change across a theme switch or an
-  // item add/remove (both trigger a rebuild pass); within one pass the first item of each
-  // list measures once and the rest reuse it.
-  QHash<NodeId, qreal> widestOrderedMarkerCache_;
+  // Labels and shared gutters are computed once per list per pass. Both the
+  // reuse signature and final layout consume the same values, so a changed
+  // sibling marker cannot leave retained list items with a stale indent.
+  QHash<NodeId, ListMarkerLayout> listMarkerLayouts_;
 
   const PieceTable* markdownText_ = &emptyText_;  // non-owning; refreshed by configureBuilder before each build
 };

@@ -9,7 +9,7 @@
 // text; NO QPainter state), so producing it on a worker thread is safe. Actual
 // pixel painting stays on the GUI thread in BlockLayout.
 //
-// Key = (sha256(source), mermaidTheme). Width and DPR affect only the final paint
+// Key = (sha256(source), mermaidTheme, fontGeneration). Width and DPR affect only the final paint
 // transform. Old entries age out via LRU. Mirrors DocumentSession's async
 // QtConcurrent + QFutureWatcher pattern.
 
@@ -40,10 +40,11 @@ namespace muffin::mermaid::editor {
 struct MermaidRenderKey {
   QByteArray sourceHash;  // sha256 of the (preprocessed) mermaid source
   QString theme;          // resolved mermaid theme name ("default", "dark", …)
+  quint64 fontGeneration = 0;
   bool operator==(const MermaidRenderKey&) const = default;
 };
 inline size_t qHash(const MermaidRenderKey& k, size_t seed = 0) noexcept {
-  return qHashMulti(seed, k.sourceHash, k.theme);
+  return qHashMulti(seed, k.sourceHash, k.theme, k.fontGeneration);
 }
 
 enum class MermaidRenderStatus { Absent, Loading, Ready, Error, Unsupported };
@@ -87,9 +88,10 @@ public:
   explicit MermaidRenderCache(QObject* parent = nullptr, int capacity = 64);
 
   // Build a key from the source. Extracts the mermaid theme the source declares
-  // (%%{init:{theme}}%%, else "default"). Native scenes depend only on source
-  // and theme; editor width/DPR affect the paint transform, recomputed per paint.
+  // (%%{init:{theme}}%%, else "default"). Native scenes depend on source, theme
+  // and fonts; editor width/DPR affect the paint transform, recomputed per paint.
   static MermaidRenderKey makeKey(const QString& source);
+  QString resourceKey(const MermaidRenderKey& key) const;
 
   // Async (editor): returns Loading on the first call and launches a worker.
   // When the worker finishes, renderReady(key) fires on
@@ -144,9 +146,11 @@ private:
   void cancelDebouncedRequest(bool removeLoadingEntry);
   void touch(const MermaidRenderKey& key);  // LRU: mark key most-recent
   void evict();
-  void commit(const MermaidRenderKey& key, const MermaidRenderEntry& entry);
+  bool commit(const MermaidRenderKey& key, const MermaidRenderEntry& entry);
 
   int capacity_;
+  QString resourceIdentity_;
+  quint64 epoch_ = 0;
   QHash<MermaidRenderKey, MermaidRenderEntry> entries_;
   QList<MermaidRenderKey> lru_;  // front = least-recently-used
   QHash<QFutureWatcher<MermaidRenderEntry>*, MermaidRenderKey> watchers_;

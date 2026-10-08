@@ -1,6 +1,5 @@
 #include "html/HtmlLayoutEngine.h"
 #include "html/HtmlTextMeasurer.h"
-#include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
 #include "render/CssSizing.h"
 
@@ -92,14 +91,7 @@ ThemeElementStyle formattingStyle(const HtmlBox& box, qreal containingWidth) {
 }
 
 QSizeF naturalImageSize(const HtmlBox& box) {
-  QSize natural;
-  const auto& src = box.src();
-  if (src.startsWith("data:", Qt::CaseInsensitive))
-    natural = image_decoder::decodeDataUri(src).size();
-  else if (src.startsWith("http://") || src.startsWith("https://"))
-    natural = ImageLoader::instance().cached(src).size();
-  else
-    natural = image_decoder::detectSize(src);
+  const auto natural = ImageLoader::instance().image(box.src()).size();
   return QSizeF(natural.width() > 0 ? natural.width() : kDefaultImageWidth, natural.height() > 0 ? natural.height() : kDefaultImageHeight) *
          box.style().cssScale * box.style().zoom;
 }

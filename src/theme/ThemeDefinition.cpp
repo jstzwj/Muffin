@@ -1,4 +1,5 @@
 #include "theme/ThemeDefinition.h"
+#include "render/LayoutResources.h"
 #include "theme/ThemeFontDecoder.h"
 #include <QCryptographicHash>
 #include <QGuiApplication>
@@ -70,6 +71,7 @@ QHash<QString, QString>& fontFaceAliases() {
 QHash<QString, QString> registerThemeFonts(const CssThemeSheet& sheet) {
   QHash<QString, QString> aliases;
   if (!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) return aliases;
+  LayoutResources::instance();  // Observe font database changes before registering a face.
   static QHash<QString, QString> registered;
   QSet<QString> loadedFaces;
   for (const CssFontFace& ff : sheet.fontFaces()) {

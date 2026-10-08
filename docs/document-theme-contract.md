@@ -253,13 +253,52 @@ the stylesheet including pseudo-element rules, font/zoom, render settings and
 active composition. Changed item identities and
 changed signatures invalidate the item and its enclosing contribution query.
 
-Container track allocation still runs for the whole affected context. Expensive
-text measurement and final block materialization are reused where those validated
-inputs and final allocations agree; movement alone translates the existing box
-and updates its absolute source positions. Removed entries are pruned after a
-pass. Explicit full refreshes clear persistent measurements. Images, embedded
-HTML, code/Mermaid and generated TOC content conservatively rebuild until their
-independent resource generations are available to this cache.
+Formatting contexts retain the constraints and measurements consumed by their
+previous track solution. A subsequent pass validates intrinsic inputs, styles,
+inherited tracks and the exact measured contributions before reusing that
+solution. A changed contribution triggers the ordinary shared Flex/Grid solver;
+equal contributions stop propagation at the container boundary. This still
+visits the affected context's input items; it does not promise sublinear track
+solving for arbitrary cross-track dependencies.
+
+Native block reuse applies recursively inside containers, including allocated
+children. Measurement passes cannot consume retained layout objects. Final
+materialization moves unchanged objects from the previous tree, translates their
+geometry and updates absolute source positions together with reuse metadata.
+Removed measurements/solutions are pruned after a full formatting pass. Explicit
+full refreshes clear persistent measurements. Generated TOC content still uses a
+conservative rebuild because of its document-wide outline dependency.
+List labels and their shared gutter are measured once per list per pass and are
+part of each item's reuse signature. A wider sibling marker invalidates the
+affected indents; ordinary body edits retain siblings whose marker geometry is
+unchanged.
+
+### Resource versions
+
+`LayoutResources` gives each image, font database and Mermaid cache entry separate
+paint and geometry versions. A resource scope captures reads, including nested
+reads, into the block or measurement dependency snapshot. Geometry version
+changes invalidate measurements; paint-only changes preserve their validity.
+Images with unchanged natural dimensions update retained pixels without text
+shaping or track solving. Changed natural dimensions revalidate size
+contributions, including CSS constraints that can make the allocated size stay
+unchanged.
+
+The shared image loader handles remote downloads, data URLs and cached local
+files. Local file/directory watches detect replacement and modification. HTML
+painting also consults this cache, so it cannot retain a private failed or stale
+remote image. Font database notifications invalidate metric caches even when
+the `QFont` key is unchanged. Mermaid keys include font geometry generations;
+cache clears invalidate dependent layouts and superseded workers cannot publish
+results into a later cache epoch.
+
+Editor resource notifications are coalesced per event-loop turn. The layout
+refreshes dependency owners among promoted blocks and pins the viewport across
+geometry changes. Unpromoted content reads the current resource versions when
+it is built. An in-progress asynchronous document open does not rebuild stale
+document contents in response to a resource notification.
+Leaving the loading state schedules a dependency refresh as well, so cancelling
+an open cannot lose resource changes deferred while the old document was hidden.
 
 ### Inline formatting contexts and baselines
 
@@ -301,6 +340,34 @@ Regenerate it with `node scripts/probe_document_css.mjs` after installing
 Playwright. `CHROME_EXECUTABLE` selects a local browser; otherwise Playwright's
 Chromium is used. The regular native test suite consumes this fixture without
 requiring a browser installation.
+
+`ResourceIncrementalLayoutTest` covers local file watching, asynchronous HTTP
+images, same-size pixel updates, font registration, Mermaid completion and cache
+clearing. Nested Flex/Grid/subgrid edits and image updates compare boxes, pixels,
+caret and selection geometry with fresh eager and lazy layouts. Editor-level
+checks cover coalesced notifications, viewport pinning and asynchronous open.
+Newsprint, GitHub and Night are exercised at 100%/200% and narrow/wide viewports.
+Work counters assert that paint-only changes skip layout and that an image
+completion in a long document rebuilds its owning block rather than every block.
+
+The same test includes a small timing probe without machine-dependent CI limits.
+For a longer local run, build the Release target, then use PowerShell:
+
+```powershell
+$env:MUFFIN_LAYOUT_BENCH_BLOCKS = '1200'
+$env:MUFFIN_LAYOUT_BENCH_ITERS = '12'
+$env:MUFFIN_LAYOUT_BENCH_OUTPUT = "$PWD/build/theme-audit/resource-layout-performance.json"
+ctest --preset conan-release -R '^MuffinResourceIncrementalLayoutTest$' --output-on-failure
+```
+
+The JSON reports median, p95 and maximum milliseconds for actual text edits,
+image completion and viewport resizing. Typing includes the document update;
+fresh references rebuild the same document at the same viewport width. Both
+paths use lazy layout with the first eleven slots promoted. Image timing excludes
+network transfer and measures decoded-resource publication through layout refresh.
+Resize includes responsive theme recalculation and rebuilding the lazy estimates;
+it deliberately has no unchanged-width reference. Remove these environment
+variables to restore the smaller default test workload.
 
 At 100% zoom and a 16px user text size, Chrome with the same host CSS and
 Newsprint sheet gives the following reference values:

@@ -147,6 +147,7 @@ public:
 
   QString plainText() const;
   QString displayText() const;
+  void refreshImageResources();
   QString visibleText() const;
   // True when the block has no visible content: empty text and no rendered
   // image. Distinct from plainText().isEmpty(), which is also empty for a
@@ -186,6 +187,7 @@ private:
     qsizetype visibleStart = 0;
     qsizetype visibleEnd = 0;
     QString srcUrl;
+    QString resourceUrl;
     QSizeF displaySize;
     std::shared_ptr<const LayoutBox> cssBox;
     QImage image;

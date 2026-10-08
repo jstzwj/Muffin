@@ -19,6 +19,8 @@
 #include <QFontMetricsF>
 #include <QLoggingCategory>
 #include <QSettings>
+#include <QScopedValueRollback>
+#include "render/LayoutResources.h"
 #include <QDataStream>
 #include <QCryptographicHash>
 #include <QStringList>
@@ -466,6 +468,11 @@ void BlockLayoutBuilder::setTocEntries(const QVector<OutlineEntry>* entries) {
 BlockLayoutBuilder::BlockLayoutBuilder() : perfEnabled_(blockBuildPerf().isDebugEnabled()) {}
 
 void BlockLayoutBuilder::refreshRenderSettings() {
+  const auto fonts = LayoutResources::instance().read(LayoutResources::fontKey()).geometry;
+  if (fonts != fontGeneration_) {
+    fontMetricsCache_.clear();
+    fontGeneration_ = fonts;
+  }
   // One QSettings hit per setting per layout pass, not per block. See header note.
   QSettings s;
   renderSettingsSignature_.clear();
@@ -484,13 +491,12 @@ void BlockLayoutBuilder::refreshRenderSettings() {
   // switch would otherwise keep serving the previous theme's lineHeight/avgCharWidth. Clearing here
   // (once per layout pass) keeps them fresh: they re-populate within a single estimate pass — many
   // blocks share the same elementKey — but never leak across passes or theme changes.
-  // fontMetricsCache_ is keyed by QFont::key() and already self-invalidates on a font change, so
-  // it is left alone.
+  // A changed font resource can replace a face without changing QFont::key().
   lineHeightCache_.clear();
   avgCharWidthCache_.clear();
   // Same per-pass freshness reasoning: an ordered list's widest marker can change with the
   // theme (decimal → roman) or with item add/remove, both of which force a rebuild pass.
-  widestOrderedMarkerCache_.clear();
+  listMarkerLayouts_.clear();
 }
 
 void BlockLayoutBuilder::dumpBuildBreakdown() const {
@@ -504,13 +510,44 @@ void BlockLayoutBuilder::dumpBuildBreakdown() const {
   qCDebug(blockBuildPerf).nospace() << "build.literalText " << literalTextNs_ / 1000000.0 << " ms";
 }
 
-std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
-    const MarkdownNode& node,
-    const RenderTheme& theme,
-    qreal x,
-    qreal y,
-    qreal width,
-    int depth) {
+void BlockLayoutBuilder::retainLayouts(std::unique_ptr<BlockLayout>& layout) {
+  if (!layout) return;
+  retainedLayouts_.insert(layout->nodeId(), &layout);
+  for (auto& child : layout->children()) retainLayouts(child);
+}
+
+std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                                       int depth) {
+  if (!materializing_) return buildFresh(node, theme, x, y, width, depth);
+  LayoutResourceScope resources;
+  LayoutResources::instance().read(LayoutResources::fontKey());
+  const auto signature = formattingSignature(node, theme);
+  QByteArray constraints;
+  QDataStream stream(&constraints, QIODevice::WriteOnly);
+  stream << width << depth << allocations_.contains(&node);
+  if (allocations_.contains(&node)) stream << allocations_.value(&node).first << allocations_.value(&node).second;
+  stream << cssMeasureKey({width, width, -1, -1, gridInheritance_.value(&node), CssLayoutPhase::Final});
+  const auto old = retainedLayouts_.value(node.id(), nullptr);
+  if (old && *old && !signature.isEmpty() && (*old)->reuse.signature == signature && (*old)->reuse.constraints == constraints &&
+      LayoutResources::instance().matches((*old)->reuse.resources)) {
+    auto result = std::move(*old);
+    const auto delta = QPointF(x, y) - result->reuse.origin;
+    result->translate(delta.x(), delta.y());
+    result->shiftSourceOffsets(node.sourceRange().byteStart - result->reuse.sourceStart);
+    result->reuse.sourceStart = node.sourceRange().byteStart;
+    result->reuse.origin = {x, y};
+    LayoutResources::instance().record(result->reuse.resources);
+    ++reusedLayouts;
+    return result;
+  }
+  auto result = buildFresh(node, theme, x, y, width, depth);
+  result->reuse = {signature, constraints, resources.dependencies, node.sourceRange().byteStart, {x, y}};
+  ++builtLayouts;
+  return result;
+}
+
+std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFresh(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
+                                                            qreal width, int depth) {
   const auto key = cssTagForNode(node);
   const auto* style = key.isEmpty() ? nullptr : theme.elementStyleForNode(node, key);
   if (style && style->layout.display == "none") {
@@ -722,6 +759,7 @@ CssIntrinsicMetrics BlockLayoutBuilder::intrinsicMetrics(const MarkdownNode& nod
   const auto* computed = theme.elementStyleForNode(node, cssTagForNode(node));
   if (computed && computed->layout.establishesFormattingContext() && !node.children().empty())
     return formattingItem(node, theme, containingWidth).intrinsic;
+  QScopedValueRollback measuring(materializing_, false);
   const auto built = buildAllocated(node, theme, {0, 0, 1e6, -1}, containingWidth);
   if (const auto* text = built->inlineLayout()) {
     const auto widths = text->intrinsicWidths();
@@ -743,10 +781,15 @@ CssIntrinsicMetrics BlockLayoutBuilder::intrinsicMetrics(const MarkdownNode& nod
 
 void BlockLayoutBuilder::beginFormattingPass(bool incremental, QSet<NodeId> dirty) {
   ++formattingPass_;
+  retainedLayouts_.clear();
+  reusedLayouts = builtLayouts = reusedContexts = solvedContexts = 0;
   formattingSignatures_.clear();
   formattingThemeSignature_.clear();
   formattingDirty_ = std::move(dirty);
-  if (!incremental) formattingMeasurements_.clear();
+  if (!incremental) {
+    formattingMeasurements_.clear();
+    formattingSolutions_.clear();
+  }
   for (auto& entry : formattingMeasurements_) entry->measurements->hits = entry->measurements->misses = 0;
 }
 
@@ -761,16 +804,20 @@ QPair<quint64, quint64> BlockLayoutBuilder::finishFormattingPass() {
       ++it;
     }
   }
+  for (auto it = formattingSolutions_.begin(); it != formattingSolutions_.end();) {
+    if (it.key().isValid() && !formattingSignatures_.contains(it.key()))
+      it = formattingSolutions_.erase(it);
+    else
+      ++it;
+  }
+  retainedLayouts_.clear();
   return stats;
 }
 
 QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, const RenderTheme& theme) {
   if (const auto it = formattingSignatures_.constFind(node.id()); it != formattingSignatures_.cend()) return it.value();
-  // Resource-driven content has independent invalidations (image completion,
-  // Mermaid renderReady, HTML descendants). Keep it fresh until those resources
-  // provide generation identities to this cache.
-  if (node.type() == BlockType::CodeFence || node.type() == BlockType::HtmlBlock || sourceTextForEditableNode(node).trimmed() == "[TOC]")
-    return {};
+  // Generated outlines have a separate document-wide dependency.
+  if (sourceTextForEditableNode(node).trimmed() == "[TOC]") return {};
   QByteArray data;
   QDataStream stream(&data, QIODevice::WriteOnly);
   if (formattingThemeSignature_.isEmpty()) {
@@ -791,7 +838,7 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
     }
     formattingThemeSignature_ = QCryptographicHash::hash(sheetData, QCryptographicHash::Sha256);
   }
-  stream << formattingThemeSignature_;
+  stream << formattingThemeSignature_ << renderStateGeneration_;
   const auto range = node.sourceRange();
   stream << node.id().toString() << int(node.type()) << md().mid(range.byteStart, qMax<qsizetype>(0, range.byteEnd - range.byteStart))
          << node.literal() << theme.zoomPercent() << theme.fontSizePx() << renderSettingsSignature_ << documentPath_;
@@ -808,11 +855,17 @@ QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, con
     for (const auto& format : preeditFormats_) stream << format.start << format.length << format.format;
   }
   if (headingCounterText_) stream << headingCounterText_->value(node.id());
+  if (node.type() == BlockType::ListItem) {
+    const auto marker = listMarkerLayout(node, theme);
+    stream << int(marker.marker.kind) << marker.marker.text << marker.contentIndent;
+  }
   if (formattingDirty_.contains(node.id())) stream << formattingPass_;
+  stream << editingHtmlBlockId_.toString() << mermaidSyncMode_;
+  if (node.type() == BlockType::CodeFence && node.codeLanguage() == "mermaid" && mermaidCache_)
+    stream << mermaidCache_->resourceKey(mermaidCache_->makeKey(node.literal()));
   bool reusable = true;
   const auto inlines = [&](const auto& self, const QVector<InlineNode>& nodes) -> void {
     for (const auto& inlineNode : nodes) {
-      if (inlineNode.type() == InlineType::Image || inlineNode.type() == InlineType::HtmlInline) reusable = false;
       const auto offset = inlineNode.contentRange().isValid() ? inlineNode.contentRange().start : inlineNode.sourceRange().start;
       stream << int(inlineNode.type()) << inlineNode.text() << inlineNode.href() << inlineNode.title() << inlineNode.alt()
              << theme.inlineStyleForNode(node, offset).fingerprint;
@@ -843,11 +896,14 @@ CssFormattingItem BlockLayoutBuilder::formattingItem(const MarkdownNode& node, c
   item.style = projected;
   const auto signature = formattingSignature(node, theme);
   auto& entry = formattingMeasurements_[node.id()];
-  if (!entry || signature.isEmpty() || entry->signature != signature) {
+  if (!entry || signature.isEmpty() || entry->signature != signature || !LayoutResources::instance().matches(entry->resources, false)) {
     entry = std::make_shared<FormattingMeasurement>();
     entry->signature = signature;
   }
   const auto cached = entry;
+  LayoutResourceScope resourceScope;
+  for (auto it = cached->resources.cbegin(); it != cached->resources.cend(); ++it) LayoutResources::instance().read(it.key());
+  LayoutResources::instance().read(LayoutResources::fontKey());
   cached->pass = formattingPass_;
   item.measurements = cached->measurements;
   if (projected.layout.establishesFormattingContext() && !node.children().empty()) {
@@ -866,12 +922,19 @@ CssFormattingItem BlockLayoutBuilder::formattingItem(const MarkdownNode& node, c
     }
     item.intrinsic = cached->intrinsic;
   }
-  item.measure = [this, &node, &theme, key, depth](const CssMeasureRequest& request) {
+  cached->resources = resourceScope.dependencies;
+  item.measurementIdentity = node.id().toString();
+  item.measure = [this, &node, &theme, key, depth, cached](const CssMeasureRequest& request) {
+    QScopedValueRollback measuring(materializing_, false);
+    LayoutResourceScope resourceScope;
+    LayoutResources::instance().read(LayoutResources::fontKey());
     const auto width = request.width, reference = request.containingWidth;
     const auto& inherited = request.inherited;
     const auto inset = LayoutBox::insets(theme.elementBoxStyle(key, &node, reference));
     const auto built = buildAllocated(node, theme, {0, 0, width < 0 ? 1e6 : width + inset.left() + inset.right(), request.allocatedHeight},
                                       reference, depth, inherited);
+    for (auto it = resourceScope.dependencies.cbegin(); it != resourceScope.dependencies.cend(); ++it)
+      cached->resources.insert(it.key(), it.value());
     const auto* text = built->inlineLayout();
     const qreal baseline = built->firstBaseline() < 0 ? -1 : built->firstBaseline() - inset.top();
     const qreal lastBaseline = built->lastBaseline() < 0 ? -1 : built->lastBaseline() - inset.top();
@@ -882,6 +945,61 @@ CssFormattingItem BlockLayoutBuilder::formattingItem(const MarkdownNode& node, c
         lastBaseline};
   };
   return item;
+}
+
+CssFormattingResult BlockLayoutBuilder::solveFormatting(NodeId id, const ThemeElementStyle& style,
+                                                        const std::vector<CssFormattingItem>& items, qreal width, qreal height,
+                                                        const CssGridInheritance& inherited) {
+  QByteArray inputs;
+  QDataStream stream(&inputs, QIODevice::WriteOnly);
+  stream << style.fingerprint << formattingThemeSignature_ << cssMeasureKey({width, width, height, height, inherited});
+  QHash<QString, const CssFormattingItem*> byIdentity;
+  const auto collect = [&](const auto& self, const std::vector<CssFormattingItem>& children) -> void {
+    stream << quint64(children.size());
+    for (const auto& child : children) {
+      byIdentity.insert(child.measurementIdentity, &child);
+      stream << child.measurementIdentity << child.style.fingerprint << child.intrinsic.minContent << child.intrinsic.maxContent
+             << bool(child.naturalSize);
+      if (child.naturalSize) stream << *child.naturalSize;
+      if (child.children)
+        self(self, *child.children);
+      else
+        stream << quint64(0);
+    }
+  };
+  collect(collect, items);
+  const auto candidates = formattingSolutions_.value(id);
+  for (const auto& cached : candidates)
+    if (cached->inputs == inputs) {
+      bool unchanged = true;
+      // Replay the exact constraints used by the previous solution. Content or
+      // resource changes only propagate when their measured contribution changes.
+      for (const auto& observation : cached->observations) {
+        const auto* item = byIdentity.value(observation.identity, nullptr);
+        if (!item || measureCssItem(*item, observation.request) != observation.value) {
+          unchanged = false;
+          break;
+        }
+      }
+      if (unchanged) {
+        cached->pass = formattingPass_;
+        ++reusedContexts;
+        return cached->result;
+      }
+    }
+  CssMeasurementTrace trace;
+  auto result = layoutFormattingItems(style, items, width, height, 1, inherited);
+  auto entry = std::make_shared<FormattingSolution>();
+  entry->inputs = inputs;
+  entry->result = result;
+  entry->observations = std::move(trace.observations);
+  entry->pass = formattingPass_;
+  auto& solutions = formattingSolutions_[id];
+  std::erase_if(solutions, [&](const auto& old) { return old->inputs == inputs; });
+  if (solutions.size() >= 16) solutions.erase(solutions.begin());
+  solutions.push_back(std::move(entry));
+  ++solvedContexts;
+  return result;
 }
 
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFormattingContainer(const MarkdownNode& node, const RenderTheme& theme, qreal x,
@@ -912,7 +1030,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFormattingContainer(const 
     items.push_back(formattingItem(*child, theme, contentWidth, depth + 1));
   }
   const auto formatted =
-      layoutFormattingItems(style, items, contentWidth, contentHeight, 1, contentGridInheritance(gridInheritance_.value(&node), inset));
+      solveFormatting(node.id(), style, items, contentWidth, contentHeight, contentGridInheritance(gridInheritance_.value(&node), inset));
   std::vector<std::unique_ptr<BlockLayout>> children;
   for (size_t i = 0; i < nodes.size(); ++i) {
     const auto allocation = formatted.items[i].translated(x + inset.left(), y + inset.top());
@@ -1029,6 +1147,34 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildContainer(
   return layout;
 }
 
+BlockLayoutBuilder::ListMarkerLayout BlockLayoutBuilder::listMarkerLayout(const MarkdownNode& itemNode, const RenderTheme& theme) {
+  if (const auto found = listMarkerLayouts_.constFind(itemNode.id()); found != listMarkerLayouts_.cend()) return found.value();
+  const ListMarkerLayout fallback{{BlockLayout::ListMarkerKind::BulletDisc, QString(QChar(0x2022))}, theme.listIndent()};
+  const auto* parent = itemNode.parent();
+  if (!parent) return fallback;
+  QVector<NodeId> items;
+  bool hasOrderedMarker = false;
+  qsizetype index = 0;
+  for (const auto& child : parent->children()) {
+    if (isVirtualEmptyParagraphNode(*child)) continue;
+    const auto marker = resolveListMarker(*child, theme, index++);
+    items.push_back(child->id());
+    hasOrderedMarker = hasOrderedMarker || marker.kind == BlockLayout::ListMarkerKind::OrderedText;
+    listMarkerLayouts_.insert(child->id(), {marker, theme.listIndent()});
+  }
+  if (hasOrderedMarker) {
+    const QFontMetricsF metrics(theme.paragraphFont());
+    qreal widest = 0;
+    for (const auto id : items) widest = qMax(widest, metrics.horizontalAdvance(listMarkerLayouts_.value(id).marker.text));
+    for (const auto id : items) {
+      auto& item = listMarkerLayouts_[id];
+      if (item.marker.kind == BlockLayout::ListMarkerKind::OrderedText)
+        item.contentIndent = qMax(theme.listIndent(), widest + theme.listMarkerGap());
+    }
+  }
+  return listMarkerLayouts_.value(itemNode.id(), fallback);
+}
+
 std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
     const MarkdownNode& node,
     const RenderTheme& theme,
@@ -1040,59 +1186,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildListItem(
   layout->setType(BlockType::ListItem);
   layout->setDepth(depth);
 
-  // Resolve the list marker up front so the content gutter can be sized to the widest
-  // sibling marker — the same way browsers size an <ol> marker box. For ordered lists
-  // this keeps multi-digit numbers ("34.", "100.") from overlapping the content and the
-  // caret; bullet/task lists keep the fixed theme indent.
-  const MarkdownNode* listParent = node.parent();
-  qsizetype itemIndex = 0;
-  if (listParent) {
-    for (const auto& sibling : listParent->children()) {
-      // VEPs synthesized between split items (insertVirtualEmptyParagraphsInLists) are list
-      // children but not items — they must not inflate positional numbering / counter(list-item).
-      if (isVirtualEmptyParagraphNode(*sibling)) {
-        continue;
-      }
-      if (sibling.get() == &node) {
-        break;
-      }
-      ++itemIndex;
-    }
-    const ResolvedMarker marker = resolveListMarker(node, theme, itemIndex);
-    layout->setListMarkerKind(marker.kind);
-    layout->setListMarker(marker.text);
-  } else {
-    layout->setListMarkerKind(BlockLayout::ListMarkerKind::BulletDisc);
-    layout->setListMarker(QStringLiteral("•"));
-  }
-
-  const qreal markerGap = theme.listMarkerGap();
-  qreal contentIndent = theme.listIndent();
-  if (layout->listMarkerKind() == BlockLayout::ListMarkerKind::OrderedText && listParent) {
-    const QFontMetricsF metrics(theme.paragraphFont());
-    // Measure the widest sibling marker once per list per pass (cached by the list NodeId);
-    // previously every item re-scanned all siblings → O(N²) on large ordered lists. All items
-    // of a list see the same widestMarker, so caching changes only the cost, not the result.
-    const auto cached = widestOrderedMarkerCache_.constFind(listParent->id());
-    qreal widestMarker = 0.0;
-    if (cached != widestOrderedMarkerCache_.cend()) {
-      widestMarker = cached.value();
-    } else {
-      const qsizetype itemCount = static_cast<qsizetype>(listParent->children().size());
-      qsizetype itemNumber = 0;
-      for (qsizetype index = 0; index < itemCount; ++index) {
-        const MarkdownNode& sibling = *listParent->children().at(index);
-        // Skip split-VEPs (not items); itemNumber keeps the marker index aligned with the
-        // positional numbering in buildListItem above.
-        if (isVirtualEmptyParagraphNode(sibling)) { continue; }
-        // Size the gutter to the widest CSS-styled marker too (e.g. roman "viii").
-        widestMarker = qMax(widestMarker, metrics.horizontalAdvance(resolveListMarker(sibling, theme, itemNumber).text));
-        ++itemNumber;
-      }
-      widestOrderedMarkerCache_.insert(listParent->id(), widestMarker);
-    }
-    contentIndent = qMax(theme.listIndent(), widestMarker + markerGap);
-  }
+  const auto marker = listMarkerLayout(node, theme);
+  layout->setListMarkerKind(marker.marker.kind);
+  layout->setListMarker(marker.marker.text);
+  const qreal contentIndent = marker.contentIndent;
   layout->setListContentIndent(contentIndent);
 
   const qreal contentX = x + contentIndent;

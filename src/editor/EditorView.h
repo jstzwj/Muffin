@@ -147,6 +147,7 @@ private:
   };
 
   void rebuildLayout();
+  void queueResourceRefresh();
   void updateScrollBars();
   // Lazy-layout: promote the visible window (+buffer) to full detail, pinning the scrollbar so
   // promoting blocks above the viewport doesn't shift what the user sees.
@@ -325,6 +326,7 @@ private:
   // selection or a content edit still wins. Cleared on full rebuild (setDocument).
   struct BuiltStamp { SelectionRange selection; quint64 revision; };
   QHash<NodeId, BuiltStamp> blockBuiltAt_;
+  bool resourceRefreshPending_ = false;
   CodeFenceScrollController* codeFenceScroll_ = nullptr;
   // Cached, async mermaid renderer (milestone I). Owned by the view; the layout
   // builder reads it. When a render finishes, the visible blocks are refreshed so

@@ -1,4 +1,5 @@
 #pragma once
+#include "render/LayoutResources.h"
 #include "render/LayoutBox.h"
 
 #include "document/MarkdownNode.h"
@@ -126,6 +127,12 @@ public:
   };
 
   explicit BlockLayout(NodeId id = {});
+  struct ReuseData {
+    QByteArray signature, constraints;
+    LayoutResourceDependencies resources;
+    qsizetype sourceStart = 0;
+    QPointF origin;
+  } reuse;
 
   NodeId nodeId() const;
   BlockType type() const;
@@ -142,6 +149,7 @@ public:
   bool stylesMatch(const RenderTheme& theme, const MarkdownDocument& document) const;
   void translate(qreal dx, qreal dy);
   void shiftSourceOffsets(qsizetype delta);
+  void refreshPaintResources();
   void setFormattingBaselines(qreal first, qreal last) { formattingBaselines_ = {first, last}; }
   qreal firstBaseline() const;
   qreal lastBaseline() const;

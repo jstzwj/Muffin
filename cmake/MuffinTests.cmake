@@ -10,6 +10,8 @@ muffin_add_test(NAME MuffinTypingPerfBench SOURCE tests/perf/TypingPerfBench.cpp
 muffin_add_test(NAME MuffinOpenMemBench SOURCE tests/perf/OpenMemBench.cpp LINK MuffinCore)
 muffin_add_test(NAME MuffinOpenRenderMemBench SOURCE tests/perf/OpenRenderMemBench.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinLargeDocumentRoundTripTest SOURCE tests/perf/LargeDocumentRoundTripTest.cpp LINK MuffinUi RESOURCE_LOCK)
+muffin_add_test(NAME MuffinResourceIncrementalLayoutTest SOURCE tests/render/ResourceIncrementalLayoutTest.cpp LINK MuffinUi EXTRA_LINK Qt6::Network EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
+target_compile_definitions(MuffinResourceIncrementalLayoutTest PRIVATE MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
 muffin_add_test(NAME MuffinThirdDashProbe SOURCE tests/perf/ThirdDashProbe.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinSplitAfterRuleProbe SOURCE tests/perf/SplitAfterRuleProbe.cpp LINK MuffinUi RESOURCE_LOCK)
 muffin_add_test(NAME MuffinThematicBreakRangeProbe SOURCE tests/perf/ThematicBreakRangeProbe.cpp LINK MuffinUi RESOURCE_LOCK)

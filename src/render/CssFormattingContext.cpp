@@ -10,6 +10,14 @@
 #include <QDataStream>
 
 namespace muffin {
+namespace {
+thread_local std::vector<CssMeasurementTrace*> measurementTraces;
+void observeMeasurement(const CssFormattingItem& item, const CssMeasureRequest& request, const CssMeasuredContent& value) {
+  for (auto* trace : measurementTraces) trace->observations.push_back({item.measurementIdentity, request, value});
+}
+}  // namespace
+CssMeasurementTrace::CssMeasurementTrace() { measurementTraces.push_back(this); }
+CssMeasurementTrace::~CssMeasurementTrace() { measurementTraces.pop_back(); }
 QByteArray cssMeasureKey(const CssMeasureRequest& request) {
   QByteArray key;
   QDataStream stream(&key, QIODevice::WriteOnly);
@@ -39,12 +47,14 @@ CssMeasuredContent measureCssItem(const CssFormattingItem& item, const CssMeasur
   for (const auto& entry : cache.entries)
     if (entry.key == key) {
       ++cache.hits;
+      observeMeasurement(item, request, entry.value);
       return entry.value;
     }
   ++cache.misses;
   const auto value = item.measure(request);
   if (cache.entries.size() >= 64) cache.entries.erase(cache.entries.begin());
   cache.entries.push_back({key, value});
+  observeMeasurement(item, request, value);
   return value;
 }
 CssFormattingResult layoutFormattingItems(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items,

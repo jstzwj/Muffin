@@ -19,6 +19,7 @@
 #include "io/MuffinMime.h"
 #include "render/DecorationPainter.h"
 #include "render/ImageLoader.h"
+#include "render/LayoutResources.h"
 #include "render/KeyframeSampler.h"
 
 #include <QAction>
@@ -103,14 +104,8 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   setAttribute(Qt::WA_InputMethodEnabled, true);
   viewport()->setMouseTracking(true);
   viewport()->setAutoFillBackground(false);
-  // When an async mermaid render finishes, refresh the visible blocks so the
-  // diagram replaces its loading placeholder at the correct height (the cache is
-  // queried again during the rebuild and now returns Ready). ScopedViewportPin
-  // inside refreshVisibleBlocks keeps the scroll position stable.
   layout_->setMermaidRenderCache(&mermaidCache_);
-  connect(&mermaidCache_, &muffin::mermaid::editor::MermaidRenderCache::renderReady, this, [this]() {
-    if (document_) refreshVisibleBlocks(*document_);
-  });
+  connect(&LayoutResources::instance(), &LayoutResources::resourceChanged, this, [this](const QString&) { queueResourceRefresh(); });
   // Enable external drag-and-drop. acceptDrops defaults to false, so without
   // this the overridden drag*/dropEvent handlers are never delivered and drops
   // of folders/.md/.txt/images onto the window are silently ignored. The
@@ -228,16 +223,6 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   connect(tableToolbar_, &TableToolbar::deleteRequested, this, &EditorView::tableDeleteRequested);
   connect(tableToolbar_, &TableToolbar::resizeRequested, this, &EditorView::tableResizeRequested);
 
-  connect(&ImageLoader::instance(), &ImageLoader::imageReady, this, [this](const QString&) {
-    if (document_ && !loading_) {
-      // Skip while an async open parse is in flight: document_ still points at
-      // the pre-open (stale) document, so rebuilding here would lay out stale
-      // content right before the worker's result lands. The freshly parsed
-      // document triggers its own rebuild via the parsed-signal path.
-      setDocument(*document_, documentPath_);
-    }
-  });
-
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this, [this] {
     clearHtmlHover();
     updateCodeLanguageEditor();
@@ -245,6 +230,35 @@ EditorView::EditorView(QWidget* parent) : QAbstractScrollArea(parent), layout_(s
   });
   connect(verticalScrollBar(), &QScrollBar::sliderPressed, this, [this] {
     stopScrollAnimation();
+  });
+}
+
+void EditorView::queueResourceRefresh() {
+  if (resourceRefreshPending_) return;
+  resourceRefreshPending_ = true;
+  // Coalesce resources completed during one event-loop turn. The dependency
+  // snapshots select affected promoted blocks; offscreen blocks read current
+  // resources when promoted, without rebuilding stale documents during open.
+  QTimer::singleShot(0, this, [this] {
+    resourceRefreshPending_ = false;
+    if (!document_ || loading_ || !layout_) return;
+    const auto previousScroll = scrollY();
+    DocumentLayout::ResourceRefreshResult result;
+    {
+      ScopedViewportPin pin(*this);
+      result = layout_->refreshResources(theme_, selection_);
+    }
+    if (!result.updatedBlocks) return;
+    updateCursorHitFromPosition();
+    updateTableToolbar();
+    if (previousScroll != scrollY()) {
+      viewport()->update();
+    } else {
+      auto dirty = result.dirty.translated(0, -scrollY()).adjusted(-3, -3, 3, 3).toAlignedRect();
+      dirty = uniteDocumentRectDirty(dirty, lastPaintedCaretDocumentRect_, scrollY(), viewport()->size());
+      dirty = uniteDocumentRectDirty(dirty, effectiveCursorRect(), scrollY(), viewport()->size());
+      viewport()->update(dirty);
+    }
   });
 }
 
@@ -266,6 +280,7 @@ void EditorView::setLoading(bool loading) {
       loadingTimer_->start();
     } else {
       loadingTimer_->stop();
+      queueResourceRefresh();  // Also consume deferred updates if an open was cancelled.
     }
     viewport()->update();
   }
@@ -1225,6 +1240,7 @@ bool EditorView::refreshVisibleBlocks(const MarkdownDocument& document) {
   if (!layout_) {
     return false;
   }
+  layout_->invalidateRenderState();
   return refreshBlocksInternal(layout_->promotedTopLevelIds(), document, /*forceRebuild=*/true);
 }
 

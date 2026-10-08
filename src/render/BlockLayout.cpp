@@ -502,6 +502,7 @@ bool BlockLayout::stylesMatch(const RenderTheme& theme, const MarkdownDocument& 
 }
 
 void BlockLayout::translate(qreal dx, qreal dy) {
+  reuse.origin += QPointF(dx, dy);
   rect_.translate(dx, dy);
   if (cssBoxGeometry_.valid) {
     cssBoxGeometry_.flowRect.translate(dx, dy);
@@ -550,6 +551,7 @@ qreal BlockLayout::lastBaseline() const {
 }
 
 void BlockLayout::shiftSourceOffsets(qsizetype delta) {
+  reuse.sourceStart += delta;
   if (contentSourceStart_ >= 0) contentSourceStart_ += delta;
   for (auto& child : children_) child->shiftSourceOffsets(delta);
   for (auto& row : tableRows_)
@@ -563,6 +565,14 @@ void BlockLayout::shiftSourceOffsets(qsizetype delta) {
     if (token.sourceStart >= 0) token.sourceStart += delta;
     if (token.sourceEnd >= 0) token.sourceEnd += delta;
   }
+}
+
+void BlockLayout::refreshPaintResources() {
+  if (inlineLayout_) inlineLayout_->refreshImageResources();
+  for (auto& row : tableRows_)
+    for (auto& cell : row.cells) cell.text.refreshImageResources();
+  for (auto& child : children_) child->refreshPaintResources();
+  for (auto it = reuse.resources.begin(); it != reuse.resources.end(); ++it) it.value() = LayoutResources::instance().read(it.key());
 }
 
 qreal BlockLayout::height() const {

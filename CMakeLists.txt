@@ -489,6 +489,8 @@ qt_add_resources(MUFFIN_CORE_QRC_SOURCES
 )
 
 set(MUFFIN_CORE_SOURCES
+  src/render/LayoutResources.cpp
+  src/render/LayoutResources.h
   ${MUFFIN_CORE_QRC_SOURCES}
   src/math/MathBuilder.cpp
   src/math/MathBuilderArray.cpp

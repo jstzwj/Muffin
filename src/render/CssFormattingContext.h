@@ -19,6 +19,7 @@ struct CssMeasuredContent {
   QSizeF size;
   qreal baseline = 0;
   qreal lastBaseline = -1;
+  bool operator==(const CssMeasuredContent&) const = default;
 };
 struct CssGridAxisGeometry {
   std::vector<qreal> starts, sizes;
@@ -47,6 +48,7 @@ struct CssMeasurementCache {
   quint64 hits = 0, misses = 0;
 };
 struct CssFormattingItem {
+  QString measurementIdentity;
   ThemeElementStyle style;
   CssIntrinsicMetrics intrinsic;
   // Measures content at the width allocated by the formatting algorithm.
@@ -59,6 +61,17 @@ struct CssFormattingItem {
   // still uses measure(), even when its CSS display happens to be grid.
   std::optional<std::vector<CssFormattingItem>> children;
   std::optional<QSizeF> naturalSize;  // replaced content, in layout pixels
+};
+struct CssMeasurementObservation {
+  QString identity;
+  CssMeasureRequest request;
+  CssMeasuredContent value;
+};
+class CssMeasurementTrace {
+ public:
+  CssMeasurementTrace();
+  ~CssMeasurementTrace();
+  std::vector<CssMeasurementObservation> observations;
 };
 CssMeasuredContent measureCssItem(const CssFormattingItem& item, const CssMeasureRequest& request);
 QByteArray cssMeasureKey(const CssMeasureRequest& request);
