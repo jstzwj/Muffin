@@ -327,67 +327,11 @@ std::vector<CssKeyframeStop> parseKeyframesStops(const QString& blockText) {
   return stops;
 }
 
-enum class ScreenMediaMatch {
-  NoMatch,
-  LightScope,
-  DarkScope,
-};
-
-// Theme CSS is evaluated for Muffin's editor surface, which is always a screen
-// medium. Resolve only queries whose truth is independent of the current
-// viewport. Width/orientation/resolution queries stay unresolved (and are
-// therefore skipped) until the theme model can evaluate them per viewport.
-// A comma-separated media list is OR: any unconditional screen branch wins.
-ScreenMediaMatch matchScreenMediaQuery(const QString& rawQuery) {
-  bool matchedDark = false;
-  for (QString query : CssThemeParser::splitTopLevelCommas(rawQuery)) {
-    query = query.simplified().toLower();
-    if (query.isEmpty()) { continue; }
-
-    if (query.startsWith(QStringLiteral("only "))) {
-      query = query.mid(5).trimmed();
-    }
-    if (query.startsWith(QStringLiteral("not "))) {
-      const QString negated = query.mid(4).trimmed();
-      if (negated == QStringLiteral("print") || negated == QStringLiteral("speech")) {
-        return ScreenMediaMatch::LightScope;
-      }
-      // `not screen`, `not all`, and feature negation do not provide an
-      // unconditional screen match.
-      continue;
-    }
-
-    QString conditions;
-    if (query == QStringLiteral("screen") || query == QStringLiteral("all")) {
-      return ScreenMediaMatch::LightScope;
-    }
-    if (query.startsWith(QStringLiteral("screen and "))) {
-      conditions = query.mid(11).trimmed();
-    } else if (query.startsWith(QStringLiteral("all and "))) {
-      conditions = query.mid(8).trimmed();
-    } else if (query.startsWith(QLatin1Char('('))) {
-      conditions = query;
-    } else {
-      // `print`, `speech`, unknown media types, and malformed queries.
-      continue;
-    }
-
-    if (conditions == QStringLiteral("(prefers-color-scheme: light)")) {
-      return ScreenMediaMatch::LightScope;
-    }
-    if (conditions == QStringLiteral("(prefers-color-scheme: dark)")) {
-      matchedDark = true;
-    }
-    // Any other feature depends on runtime environment/viewport and is skipped.
-  }
-  return matchedDark ? ScreenMediaMatch::DarkScope : ScreenMediaMatch::NoMatch;
-}
-
 // Parse top-level + @media-nested rules out of `text` into `sheet`. `baseDir`
 // is the owning CSS file's directory — used to resolve @font-face src url() to
 // absolute font paths (a font declared in an @import'd base must resolve
 // relative to that base, not the top file).
-void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const QString& baseDir) {
+void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const QString& baseDir, QStringList mediaQueries = {}) {
   const int n = text.size();
   int i = 0;
   while (i < n) {
@@ -421,11 +365,9 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
       int end = matchingBrace(text, brace, n);
       const QString blockText = text.mid(brace + 1, (end < 0 ? n : end) - (brace + 1));
       if (keyword == QLatin1String("media")) {
-        const ScreenMediaMatch match = matchScreenMediaQuery(text.mid(k, brace - k));
-        if (match != ScreenMediaMatch::NoMatch) {
-          parseRules(blockText, sheet,
-                     darkScope || match == ScreenMediaMatch::DarkScope, baseDir);
-        }
+        QStringList conditions = mediaQueries;
+        conditions.append(text.mid(k, brace - k).trimmed());
+        parseRules(blockText, sheet, false, baseDir, conditions);
       } else if (keyword == QLatin1String("font-face")) {
         // Capture family + local src font files so they can be registered with
         // QFontDatabase and the theme's font-family stacks resolve to the bundled
@@ -433,15 +375,17 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
         // and missing files are skipped by extractLocalUrlTargets. A @font-face
         // in an @import'd base resolves against that base's dir because parse()
         // recurses with the sub-sheet's own baseDir.
-        QString family;
+        QString family, weight = QStringLiteral("normal"), fontStyle = QStringLiteral("normal");
         for (const CssDeclaration& d : parseDeclarationBlock(blockText)) {
           if (d.property == QStringLiteral("font-family") && family.isEmpty()) {
             family = unquote(d.value.trimmed());
           }
+          if (d.property == QStringLiteral("font-weight")) weight = d.value;
+          if (d.property == QStringLiteral("font-style")) fontStyle = d.value;
         }
         if (!family.isEmpty()) {
           for (const QString& srcPath : extractLocalUrlTargets(blockText, baseDir)) {
-            sheet.addFontFace({family, srcPath});
+            sheet.addFontFace({family, srcPath, weight, fontStyle});
           }
         }
       } else if (keyword == QLatin1String("keyframes")) {
@@ -472,10 +416,11 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
         std::vector<CssDeclaration> elementDecls;
         for (const CssDeclaration& d : parseDeclarationBlock(blockText)) {
           if (d.property.startsWith(QLatin1String("--"))) {
-            sheet.setVariable(d.property, d.value);
-          } else {
-            elementDecls.push_back(d);
+            if (mediaQueries.isEmpty()) {
+              sheet.setVariable(d.property, d.value);
+            }
           }
+          elementDecls.push_back(d);
         }
         // Keep the non-variable :root declarations as a rule so they reach the CSS
         // engines, which model :root as the html root element — this lets
@@ -486,6 +431,7 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
           rule.selectors = selectors;
           rule.declarations = std::move(elementDecls);
           rule.darkScope = darkScope;
+          rule.mediaQueries = mediaQueries;
           sheet.addRule(std::move(rule));
         }
       } else {
@@ -493,6 +439,7 @@ void parseRules(const QString& text, CssThemeSheet& sheet, bool darkScope, const
         rule.selectors = selectors;
         rule.declarations = parseDeclarationBlock(blockText);
         rule.darkScope = darkScope;
+        rule.mediaQueries = mediaQueries;
         sheet.addRule(std::move(rule));
       }
     }
@@ -626,6 +573,75 @@ QString CssThemeParser::resolveVars(const QString& value, const QHash<QString, Q
     out = out.left(idx) + replacement + out.mid(close + 1);
   }
   return out;
+}
+
+bool CssThemeSheet::mediaMatches(const QString& raw, const CssEnvironment& env) {
+  static const QRegularExpression feature(QStringLiteral(R"(\(([^:()]+)(?::\s*([^()]+))?\))"));
+  for (QString branch : CssThemeParser::splitTopLevelCommas(raw)) {
+    branch = branch.simplified().toLower();
+    bool negate = branch.startsWith(QStringLiteral("not "));
+    if (negate) branch = branch.mid(4).trimmed();
+    if (branch.startsWith(QStringLiteral("only "))) branch = branch.mid(5).trimmed();
+    const QString medium = branch.section(QLatin1Char(' '), 0, 0);
+    bool matches = true;
+    if (!branch.startsWith(QLatin1Char('('))) {
+      matches = medium == QStringLiteral("all") || (medium == QStringLiteral("screen") && !env.print) ||
+                (medium == QStringLiteral("print") && env.print);
+      branch = branch.mid(medium.size()).trimmed();
+      if (branch.startsWith(QStringLiteral("and "))) branch = branch.mid(4).trimmed();
+    }
+    auto it = feature.globalMatch(branch);
+    QString remainder = branch;
+    while (it.hasNext()) {
+      const auto m = it.next();
+      const QString name = m.captured(1).trimmed(), value = m.captured(2).trimmed();
+      bool ok = false;
+      if (name == QStringLiteral("prefers-color-scheme")) {
+        matches = matches && ((value == QStringLiteral("dark") && env.dark) || (value == QStringLiteral("light") && !env.dark));
+      } else if (name == QStringLiteral("orientation")) {
+        matches = matches && ((value == QStringLiteral("landscape") && env.viewportWidth >= env.viewportHeight) ||
+                              (value == QStringLiteral("portrait") && env.viewportWidth < env.viewportHeight));
+      } else {
+        static const QRegularExpression length(QStringLiteral(R"(^([0-9]*\.?[0-9]+)(px|em|rem|dppx|dpi)?$)"));
+        const auto lm = length.match(value);
+        qreal wanted = lm.captured(1).toDouble(&ok);
+        if (lm.captured(2) == QStringLiteral("em") || lm.captured(2) == QStringLiteral("rem")) wanted *= 16.0;
+        if (lm.captured(2) == QStringLiteral("dpi")) wanted /= 96.0;
+        QString base = name;
+        if (base.startsWith(QStringLiteral("min-")) || base.startsWith(QStringLiteral("max-"))) base = base.mid(4);
+        const qreal actual = base == QStringLiteral("width")        ? env.viewportWidth
+                             : base == QStringLiteral("height")     ? env.viewportHeight
+                             : base == QStringLiteral("resolution") ? env.resolutionDppx
+                                                                    : -1.0;
+        matches = matches && ok && actual >= 0.0 &&
+                  (name.startsWith(QStringLiteral("min-"))   ? actual >= wanted
+                   : name.startsWith(QStringLiteral("max-")) ? actual <= wanted
+                                                             : qAbs(actual - wanted) < 0.001);
+      }
+      remainder.remove(m.captured());
+    }
+    remainder.replace(QStringLiteral("and"), QString());
+    if (!remainder.trimmed().isEmpty()) continue;  // Unsupported grammar never becomes unconditional.
+    if (negate ? !matches : matches) return true;
+  }
+  return false;
+}
+
+CssThemeSheet CssThemeSheet::evaluated(const CssEnvironment& env) const {
+  CssThemeSheet result;
+  result.fontFaces_ = fontFaces_;
+  result.keyframes_ = keyframes_;
+  result.variables_ = variables_;
+  for (const CssRule& rule : rules_) {
+    bool active = !rule.darkScope || env.dark;
+    for (const QString& query : rule.mediaQueries) active = active && mediaMatches(query, env);
+    if (!active) continue;
+    CssRule copy = rule;
+    copy.darkScope = false;
+    copy.mediaQueries.clear();
+    result.addRule(std::move(copy));
+  }
+  return result;
 }
 
 }  // namespace muffin

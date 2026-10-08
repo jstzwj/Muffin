@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Native theme fonts are generated from the original WOFF/WOFF2 files in the build directory. Source and release builds no longer require duplicate committed TTF files.
+
+### Fixed
+
+- CSS themes share computed font sizes, inheritance and shorthand/longhand cascading across prototype and live document nodes. Responsive media queries update with the editor viewport, including conditional custom properties.
+- Bundled theme fonts load natively on Windows, macOS and Linux; imported local WOFF/WOFF2 fonts decode offline before registration.
+- Document host styles, page box sizing, heading padding and borders, and inline code/keyboard spacing use consistent layout geometry for rendering and editing. HTML blocks consume the document theme cascade.
+
 ## [0.6.6] - 2026-10-08
 
 ### Changed

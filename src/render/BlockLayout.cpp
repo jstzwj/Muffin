@@ -1285,20 +1285,21 @@ void BlockLayout::paintInlineBlock(QPainter& painter, const RenderTheme& theme, 
     }
     if (type_ == BlockType::Heading) {
       painter.save();
+      const QRectF borderRect = cssBoxGeometry(theme).borderBox.translated(0, -scrollY);
       const QMarginsF pad = theme.headingPadding(headingLevel_);
       const QColor leftColor = theme.headingBorderLeftColor(headingLevel_);
       const qreal leftWidth = theme.headingBorderLeftWidth(headingLevel_);
       if (leftColor.isValid() && leftWidth > 0.0) {
         painter.setPen(Qt::NoPen);
         painter.setBrush(leftColor);
-        painter.drawRect(QRectF(viewRect.left() - pad.left(), viewRect.top(), leftWidth, inlineLayout_->height()));
+        painter.drawRect(QRectF(borderRect.left(), borderRect.top(), leftWidth, borderRect.height()));
       }
       const QColor bottomColor = theme.headingBorderBottomColor(headingLevel_);
       const qreal bottomWidth = theme.headingBorderBottomWidth(headingLevel_);
       if (bottomColor.isValid() && bottomWidth > 0.0) {
         painter.setPen(QPen(bottomColor, bottomWidth));
-        const qreal y = viewRect.top() + inlineLayout_->height() + theme.blockSpacing() * 0.15;
-        painter.drawLine(QPointF(viewRect.left() - pad.left(), y), QPointF(viewRect.right(), y));
+        const qreal y = borderRect.bottom() - bottomWidth / 2.0;
+        painter.drawLine(QPointF(borderRect.left(), y), QPointF(borderRect.right(), y));
       }
       painter.restore();
       // CSS ::before/::after decorations: a trailing SVG icon after the heading

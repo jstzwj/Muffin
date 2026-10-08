@@ -1,6 +1,9 @@
 #include "html/HtmlStyleResolver.h"
 
 #include "theme/FontRendering.h"
+#include "theme/CssComputedStyleEngine.h"
+#include "theme/CssThemeMapper.h"
+#include <functional>
 
 namespace muffin::html {
 
@@ -9,6 +12,107 @@ HtmlStyleResolver::~HtmlStyleResolver() = default;
 
 void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlColorPalette& palette) {
   resolveBox(root, baseFontSize, false, QColor(), QString(), palette);
+  if (palette.documentStyleSheet) {
+    const CssComputedStyleEngine engine(*palette.documentStyleSheet, palette.cssEnvironment);
+    CssElement html;
+    html.tag = QStringLiteral("html");
+    CssElement body;
+    body.tag = QStringLiteral("body");
+    body.parent = &html;
+    CssElement write;
+    write.id = QStringLiteral("write");
+    if (palette.parentFontPx > 0)
+      write.inlineDeclarations.push_back({QStringLiteral("font-size"), QString::number(palette.parentFontPx) + QStringLiteral("px"), true});
+    write.parent = &body;
+    const qreal zoom = palette.cssZoom;
+    const qreal fontScale = zoom * palette.cssEnvironment.textScale;
+    std::function<void(HtmlBox&, const CssElement&, const HtmlComputedStyle*)> project;
+    project = [&](HtmlBox& box, const CssElement& element, const HtmlComputedStyle* parent) {
+      auto& target = box.style();
+      if (box.tag() == HtmlTag::TextRun && parent) {
+        target.font = parent->font;
+        target.fontSize = parent->fontSize;
+        target.color = parent->color;
+        target.fontFamily = parent->fontFamily;
+        target.lineHeight = parent->lineHeight;
+        target.fontWeight = parent->fontWeight;
+        target.fontStyle = parent->fontStyle;
+      } else {
+        const auto computed = engine.styleFor(element);
+        const auto style = CssThemeMapper::projectComputedStyle(element.tag, computed);
+        if (style.paint.color.isValid()) target.color = style.paint.color;
+        if (style.paint.backgroundColor.isValid()) target.backgroundColor = style.paint.backgroundColor;
+        if (!style.text.fontFamily.isEmpty()) {
+          QStringList families = style.text.fontFamily.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+          for (QString& family : families) {
+            const QString alias = palette.fontAliases.value(family.toLower());
+            if (!alias.isEmpty()) family = alias;
+          }
+          target.font.setFamilies(families);
+          target.fontFamily = families.join(QStringLiteral(", "));
+        }
+        target.fontSize = pxToPt(computed.fontSizePx) * fontScale;
+        target.font.setPointSizeF(target.fontSize);
+        if (style.text.fontWeightSet) {
+          target.fontWeight = style.text.fontWeight;
+          target.font.setWeight(static_cast<QFont::Weight>(style.text.fontWeight));
+        }
+        if (style.text.italicSet) {
+          target.fontStyle = style.text.italic ? QFont::StyleItalic : QFont::StyleNormal;
+          target.font.setItalic(style.text.italic);
+        }
+        target.lineHeight = style.text.lineHeight > 0 ? computed.fontSizePx * fontScale * style.text.lineHeight : -1;
+        if (style.text.alignment) target.textAlign = style.text.alignment;
+        const auto scaleBox = [&](QMarginsF m) { return QMarginsF(m.left() * zoom, m.top() * zoom, m.right() * zoom, m.bottom() * zoom); };
+        const auto anySide = [&](const QString& name) {
+          return computed.hasProperty(name) || computed.hasProperty(name + QStringLiteral("-top")) ||
+                 computed.hasProperty(name + QStringLiteral("-right")) || computed.hasProperty(name + QStringLiteral("-bottom")) ||
+                 computed.hasProperty(name + QStringLiteral("-left"));
+        };
+        if (anySide(QStringLiteral("margin"))) {
+          target.margin = scaleBox(style.box.margin);
+          target.marginPercent = QMarginsF(-1, -1, -1, -1);
+        }
+        if (anySide(QStringLiteral("padding"))) {
+          target.padding = scaleBox(style.box.padding);
+          target.paddingPercent = QMarginsF(-1, -1, -1, -1);
+        }
+        if (computed.hasProperty(QStringLiteral("border")) || computed.hasProperty(QStringLiteral("border-top-width"))) {
+          target.borderWidth = scaleBox(
+              QMarginsF(style.box.borderLeftWidth, style.box.borderTopWidth, style.box.borderRightWidth, style.box.borderBottomWidth));
+          target.borderColor = style.box.borderTopColor;
+          target.borderRadius = style.box.borderRadius * zoom;
+        }
+        font_rendering::configureForScreen(target.font);
+      }
+      QVector<CssElement> children;
+      children.reserve(static_cast<qsizetype>(box.children().size()));
+      int childIndex = 0;
+      QHash<QString, int> typeIndices;
+      for (const auto& child : box.children()) {
+        CssElement el;
+        el.tag = child->cssTag;
+        el.id = child->cssId;
+        el.classes = child->cssClasses;
+        el.inlineDeclarations = CssThemeParser::parseDeclarations(child->cssInlineStyle);
+        el.parent = &element;
+        el.childIndex = child->tag() == HtmlTag::TextRun ? -1 : childIndex++;
+        if (el.childIndex >= 0) el.typeIndex = typeIndices[el.tag]++;
+        children.push_back(std::move(el));
+      }
+      CssElement* previous = nullptr;
+      for (auto& child : children) {
+        if (child.childIndex < 0) continue;
+        child.previousSibling = previous;
+        if (previous) previous->nextSibling = &child;
+        previous = &child;
+      }
+      for (qsizetype i = 0; i < children.size(); ++i) {
+        project(*box.children()[i], children[i], &target);
+      }
+    };
+    project(root, write, nullptr);
+  }
 }
 
 void HtmlStyleResolver::resolveBox(HtmlBox& box, qreal fontSize, bool inheritColor, QColor parentColor, const QString& parentFontFamily, const HtmlColorPalette& palette) {

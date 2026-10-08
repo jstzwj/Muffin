@@ -207,9 +207,16 @@ void InlineLayout::build(
   wordSpacing_ = options.wordSpacing;
   textShadow_ = options.textShadow;
   alignment_ = options.alignment;
+  html::HtmlColorPalette htmlPalette = html::HtmlColorPalette::defaultLight();
+  htmlPalette.documentStyleSheet = theme.documentStyleSheet();
+  htmlPalette.fontAliases = theme.fontAliases();
+  htmlPalette.cssEnvironment = theme.documentCssEnvironment();
+  htmlPalette.cssZoom = theme.zoomPercent() / 100.0;
+  htmlPalette.parentFontPx = baseFont.pointSizeF() * 96.0 / 72.0 / htmlPalette.cssZoom / htmlPalette.cssEnvironment.textScale;
+  htmlPalette.text = options.baseTextColor.isValid() ? options.baseTextColor : theme.textColor();
   projection_ = InlineProjection(inlines, std::move(sourceText), options.projectionState, options.sourceBase, baseFont.pointSizeF(),
                                  options.pendingPrefixLength, options.smartPunct, options.breakOnSingleNewline, options.textTransform,
-                                 options.renderEmoji);
+                                 options.renderEmoji, std::move(htmlPalette));
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width, options.documentPath);
@@ -223,6 +230,8 @@ void InlineLayout::build(
     linkBeforeIconAdvance_ = !linkBeforeIcon_.isEmpty() ? (iconW + linkBeforeIconMarginRight_) : 0.0;
   }
   buildLinkBeforeAtoms();
+  buildHtmlFormatSpans();
+  buildInlineBoxSpacing(theme);
   buildHtmlFormatSpans();
   buildTextLayout(theme, width, baseFont);
   // Genuinely empty: no text glyphs and no rendered image. Checking the image
@@ -631,7 +640,7 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
   }
   painter.setBrush(textLayoutCodeBackgroundColor_);
   // Phase 3b: chip geometry from CSS (defaults reproduce the legacy -3/+6 / r=3
-  // chip). Advance stays = text advance (paint-only), so editing/cursor/hit-test
+  // chip). Generated spacing participates in advance, editing and hit testing.
   // are unaffected; only the painted box grows with the theme's padding/radius.
   const qreal padH = codeBoxPaddingH_;
   const qreal padV = codeBoxPaddingV_;
@@ -659,7 +668,7 @@ void InlineLayout::paintTextLayoutCodeSpans(QPainter& painter, QPointF origin) c
       }
       const qreal x1 = line.cursorToX(rangeStart);
       const qreal x2 = line.cursorToX(rangeEnd);
-      // The chip wraps the code glyphs + CSS padding (paint-only, line-bounded).
+      // The chip wraps glyphs plus the flow-reserved CSS padding, line-bounded.
       // Vertical padding GROWS the box around the glyph height (naturalTextRect),
       // mirroring the horizontal growth — sizing against the full line height and
       // then subtracting padding collapses the chip to nothing when padV is large
@@ -789,9 +798,9 @@ void InlineLayout::paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF o
       : (darkTheme_ ? QColor(QStringLiteral("#444444")) : QColor(196, 201, 209));
   const QColor bottom = kbdShadow_.isValid() ? kbdShadow_
       : (darkTheme_ ? QColor(QStringLiteral("#222222")) : QColor(181, 186, 194));
-  const qreal padH = kbdPadH_ > 0.0 ? kbdPadH_ : (themed ? 4.0 : (darkTheme_ ? 8.0 : 4.0));
-  const qreal radius = kbdRadius_ > 0.0 ? kbdRadius_ : (themed ? 4.0 : (darkTheme_ ? 6.0 : 2.0));
-  const qreal borderWidth = kbdBorderWidth_ > 0.0 ? kbdBorderWidth_ : 1.0;
+  const qreal padH = themed ? kbdPadH_ : (darkTheme_ ? 8.0 : 4.0);
+  const qreal radius = themed ? kbdRadius_ : (darkTheme_ ? 6.0 : 2.0);
+  const qreal borderWidth = themed ? kbdBorderWidth_ : 1.0;
 
   painter.save();
   painter.setRenderHint(QPainter::Antialiasing, true);
@@ -832,7 +841,7 @@ void InlineLayout::paintTextLayoutHtmlKeyboardSpans(QPainter& painter, QPointF o
         painter.drawRect(QRectF(box.left() + radius, box.bottom(), box.width() - radius * 2.0, 2.0));
       }
       // Keycap body: fill + uniform border.
-      painter.setPen(QPen(border, borderWidth));
+      painter.setPen(borderWidth > 0.0 ? QPen(border, borderWidth) : QPen(Qt::NoPen));
       painter.setBrush(fill);
       painter.drawRoundedRect(box, radius, radius);
       // Bottom edge: phycat declares `border-bottom-width: 3px` for a chunky bottom.
@@ -990,6 +999,100 @@ void InlineLayout::buildLinkBeforeAtoms() {
   }
 }
 
+void InlineLayout::buildInlineBoxSpacing(const RenderTheme& theme) {
+  inlineSpacers_.clear();
+  struct Edge {
+    qsizetype position;
+    qreal width;
+  };
+  QVector<Edge> edges;
+  const auto addBox = [&](qsizetype start, qsizetype end, qreal width) {
+    if (end > start && width > 0) {
+      edges.push_back({start, width});
+      edges.push_back({end, width});
+    }
+  };
+  for (const auto& span : projection_.spans()) {
+    if (span.type != InlineType::Code || span.kind != InlineSpanKind::Text) continue;
+    const auto range = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+    if (range.valid) addBox(range.start, range.end, theme.inlineCodePaddingH() + theme.inlineCodeBorderWidth());
+  }
+  for (const auto& span : htmlFormatSpans_)
+    if (span.keyboard) addBox(span.layoutStart, span.layoutEnd, theme.kbdPaddingH() + theme.kbdBorderWidth());
+  if (edges.isEmpty()) return;
+  std::sort(edges.begin(), edges.end(), [](const auto& a, const auto& b) { return a.position < b.position; });
+  QVector<Edge> unique;
+  for (const auto& edge : edges) {
+    if (!unique.isEmpty() && unique.back().position == edge.position)
+      unique.back().width += edge.width;
+    else
+      unique.push_back(edge);
+  }
+  edges = std::move(unique);
+  const auto before = [&](qsizetype p) {
+    return p + std::count_if(edges.begin(), edges.end(), [&](const auto& e) { return e.position < p; });
+  };
+  const auto after = [&](qsizetype p) {
+    return p + std::count_if(edges.begin(), edges.end(), [&](const auto& e) { return e.position <= p; });
+  };
+  QVector<OffsetMapEntry> offsets;
+  QVector<DisplayOffsetMapEntry> displayOffsets;
+  for (const auto& e : offsetMap_) {
+    qsizetype start = e.displayStart;
+    const auto visible = [&](qsizetype p) {
+      return e.visibleStart +
+             (e.displayEnd > e.displayStart ? (e.visibleEnd - e.visibleStart) * (p - e.displayStart) / (e.displayEnd - e.displayStart) : 0);
+    };
+    for (const auto& edge : edges)
+      if (edge.position > start && edge.position < e.displayEnd) {
+        offsets.push_back({after(start), before(edge.position), visible(start), visible(edge.position)});
+        start = edge.position;
+      }
+    offsets.push_back({after(start), e.displayEnd > start ? before(e.displayEnd) : after(e.displayEnd), visible(start), e.visibleEnd});
+  }
+  for (const auto& e : displayOffsetMap_) {
+    qsizetype start = e.layoutStart;
+    const auto projected = [&](qsizetype p) {
+      return e.projectionStart + (e.layoutEnd > e.layoutStart
+                                      ? (e.projectionEnd - e.projectionStart) * (p - e.layoutStart) / (e.layoutEnd - e.layoutStart)
+                                      : 0);
+    };
+    for (const auto& edge : edges)
+      if (edge.position > start && edge.position < e.layoutEnd) {
+        displayOffsets.push_back({projected(start), projected(edge.position), after(start), before(edge.position)});
+        start = edge.position;
+      }
+    displayOffsets.push_back(
+        {projected(start), e.projectionEnd, after(start), e.layoutEnd > start ? before(e.layoutEnd) : after(e.layoutEnd)});
+  }
+  for (const auto& edge : edges) {
+    const qsizetype pos = before(edge.position);
+    const qsizetype visible = visibleOffsetForDisplayOffset(edge.position);
+    const qsizetype projected = projectionDisplayOffsetForLayoutOffset(edge.position, InlineProjectionBias::Backward);
+    offsets.push_back({pos, pos + 1, visible, visible});
+    displayOffsets.push_back({projected, projected, pos, pos + 1});
+    inlineSpacers_.push_back({pos, edge.width});
+  }
+  for (auto it = edges.rbegin(); it != edges.rend(); ++it) displayText_.insert(it->position, QChar(0x200a));
+  std::stable_sort(offsets.begin(), offsets.end(), [](const auto& a, const auto& b) { return a.displayStart < b.displayStart; });
+  std::stable_sort(displayOffsets.begin(), displayOffsets.end(),
+                   [](const auto& a, const auto& b) { return a.layoutStart < b.layoutStart; });
+  offsetMap_ = std::move(offsets);
+  displayOffsetMap_ = std::move(displayOffsets);
+  for (auto& atom : mathAtoms_) {
+    atom.displayEnd = before(atom.displayEnd);
+    atom.displayStart = after(atom.displayStart);
+  }
+  for (auto& atom : imageAtoms_) {
+    atom.displayEnd = before(atom.displayEnd);
+    atom.displayStart = after(atom.displayStart);
+  }
+  for (auto& atom : linkBeforeAtoms_) {
+    atom.displayEnd = before(atom.displayEnd);
+    atom.displayStart = after(atom.displayStart);
+  }
+}
+
 void InlineLayout::buildHtmlFormatSpans() {
   htmlFormatSpans_.clear();
   const auto& data = projection_.htmlFormatData();
@@ -1013,6 +1116,7 @@ void InlineLayout::buildHtmlFormatSpans() {
       hs.fontSize = fs.fontSize;
       hs.verticalAlignment = fs.verticalAlignment;
       hs.keyboard = fs.keyboard;
+      hs.fontFamilies = fs.fontFamilies;
       htmlFormatSpans_.push_back(hs);
     }
     // Register link ranges from inline HTML <a> tags
@@ -1619,8 +1723,8 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     }
     switch (span.type) {
       case InlineType::Code:
-        format.setFont(theme.codeFont());
-        applyLetterSpacing(format, theme.codeFont());
+        format.setFont(theme.inlineCodeFont());
+        applyLetterSpacing(format, theme.inlineCodeFont());
         if (theme.inlineCodeTextColor().isValid()) {
           format.setForeground(theme.inlineCodeTextColor());
         }
@@ -1763,17 +1867,21 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     if (hs.monospace) {
       format.setFontFamily(QStringLiteral("Courier New"));
     }
+    if (!hs.fontFamilies.isEmpty()) format.setFontFamilies(hs.fontFamilies);
     if (hs.keyboard) {
       // Phase 3c: prefer the theme's `kbd { font-family }`; keep Courier New as
       // the legacy default (built-ins + the geometry test's monospace assertion).
-      format.setFontFamily(kbdFont_.isEmpty() ? QStringLiteral("Courier New") : kbdFont_);
+      QFont keyboardFont = theme.textFontForElement(QStringLiteral("kbd"));
+      const auto* keyboardStyle = theme.elementStyle(QStringLiteral("kbd"));
+      if (!keyboardStyle || keyboardStyle->text.fontFamily.isEmpty()) keyboardFont.setFamily(QStringLiteral("Courier New"));
+      format.setFont(keyboardFont);
       format.setForeground(kbdText_.isValid() ? kbdText_
           : (textLayoutCodeTextColor_.isValid() ? textLayoutCodeTextColor_ : theme.textColor()));
     }
     if (hs.color.isValid()) {
       format.setForeground(hs.color);
     }
-    if (hs.fontSize > 0 && baseFont.pointSizeF() > 0) {
+    if (!hs.keyboard && hs.fontSize > 0 && baseFont.pointSizeF() > 0) {
       format.setFontPointSize(hs.fontSize);
     }
     if (hs.verticalAlignment != QTextCharFormat::AlignNormal) {
@@ -1850,6 +1958,14 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     }
   }
 
+  for (const InlineSpacer& spacer : inlineSpacers_) {
+    QFont font = baseFont;
+    font.setLetterSpacing(QFont::AbsoluteSpacing, spacer.width - QFontMetricsF(font).horizontalAdvance(QChar(0x200a)));
+    QTextCharFormat format;
+    format.setFont(font);
+    format.setForeground(Qt::transparent);
+    formats.push_back({static_cast<int>(spacer.start), 1, format});
+  }
   return formats;
 }
 
@@ -1988,8 +2104,27 @@ InlineLayout::DisplayOffsetRange InlineLayout::layoutDisplayRangeForProjectionRa
   if (projectionEnd <= projectionStart) {
     return range;
   }
-  range.start = layoutDisplayOffsetForProjectionOffset(projectionStart, InlineProjectionBias::Backward);
-  range.end = layoutDisplayOffsetForProjectionOffset(projectionEnd, InlineProjectionBias::Forward);
+  // Select content entries, excluding generated spacing at either boundary.
+  // Shared boundary offsets can denote both the preceding run and the spacer;
+  // mapping a whole span through one caret bias would include padding as text.
+  bool found = false;
+  for (const auto& entry : displayOffsetMap_) {
+    if (entry.projectionEnd <= entry.projectionStart || entry.projectionEnd <= projectionStart || entry.projectionStart >= projectionEnd)
+      continue;
+    const qsizetype a = qMax(projectionStart, entry.projectionStart), b = qMin(projectionEnd, entry.projectionEnd);
+    const qsizetype length = entry.projectionEnd - entry.projectionStart;
+    const qsizetype start = entry.layoutStart + (a - entry.projectionStart) * (entry.layoutEnd - entry.layoutStart) / length;
+    const qsizetype end = entry.layoutStart + (b - entry.projectionStart) * (entry.layoutEnd - entry.layoutStart) / length;
+    if (!found) {
+      range.start = start;
+      range.end = end;
+      found = true;
+    } else {
+      range.start = qMin(range.start, start);
+      range.end = qMax(range.end, end);
+    }
+  }
+  if (!found) return range;
   range.start = qBound<qsizetype>(0, range.start, displayText_.size());
   range.end = qBound<qsizetype>(0, range.end, displayText_.size());
   range.valid = range.end > range.start;

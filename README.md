@@ -134,6 +134,9 @@ Muffin uses [Conan](https://conan.io/) for dependency management and CMake for b
 ### Build
 
 ```bash
+# Install build-time font conversion tools
+python -m pip install -r requirements-build.txt
+
 # Detect your Conan profile
 conan profile detect --force
 

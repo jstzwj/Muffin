@@ -671,13 +671,13 @@ void testThemeMathFontUsesMappedMathJaxSize() {
 }
 
 void testLatexScreenPageGeometry(const MarkdownDocument& document) {
-  const ThemeDefinition definition = CssThemeMapper::fromCss(
-      QStringLiteral(":root { --set-margin:1.8cm 2cm 1.2cm 2cm; } "
-                     "#write { max-width:21cm; background:white; } "
-                     "@media print { #write { padding:0; } } "
-                     "@media screen { #write { padding:var(--set-margin); "
-                     "box-shadow:0 0 24px 12px #ccc; } }"),
-      QStringLiteral("latex-page"), QString());
+  const ThemeDefinition definition =
+      CssThemeMapper::fromCss(QStringLiteral(":root { --set-margin:1.8cm 2cm 1.2cm 2cm; } "
+                                             "#write { max-width:21cm; background:white; box-sizing:border-box; } "
+                                             "@media print { #write { padding:0; } } "
+                                             "@media screen { #write { padding:var(--set-margin); "
+                                             "box-shadow:0 0 24px 12px #ccc; } }"),
+                              QStringLiteral("latex-page"), QString());
   const RenderTheme theme = RenderTheme::fromDefinition(definition);
   DocumentLayout layout;
   constexpr qreal viewportWidth = 960.0;

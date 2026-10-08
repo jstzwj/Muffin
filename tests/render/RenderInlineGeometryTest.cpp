@@ -16,6 +16,19 @@ using namespace muffin;
 
 namespace {
 
+// The layout buffer contains zero-source-length spacers for CSS inline boxes.
+// Fixture text contains no authored hair spaces; projection/copy text must stay
+// unchanged while format ranges continue to address the actual layout buffer.
+QString withoutBoxSpacing(QString text) {
+  text.remove(QChar(0x200a));
+  return text;
+}
+QString keyboardFamily(const RenderTheme& theme) {
+  const auto* style = theme.elementStyle(QStringLiteral("kbd"));
+  return style && !style->text.fontFamily.isEmpty() ? theme.textFontForElement(QStringLiteral("kbd")).family()
+                                                 : QStringLiteral("Courier New");
+}
+
 void testInlineLayoutGeometryContract() {
   RenderTheme theme = RenderTheme::github();
   QVector<InlineNode> plainInlines;
@@ -45,7 +58,7 @@ void testInlineLayoutGeometryContract() {
   InlineLayout styled;
   styled.build(styledInlines, QStringLiteral("before **bold** [link](u) `code`"), theme, 180.0, theme.paragraphFont(), options);
   require(styled.height() > 0.0, QStringLiteral("inline layout should measure styled inline height"));
-  require(styled.displayText() == QStringLiteral("before **bold** [link](u) `code`"), QStringLiteral("styled display text should match projection"));
+  require(withoutBoxSpacing(styled.displayText()) == QStringLiteral("before **bold** [link](u) `code`"), QStringLiteral("styled display text should match projection"));
   const QRectF styledCursor = styled.cursorRect(9);
   require(!styledCursor.isEmpty(), QStringLiteral("inline layout styled cursor rect should be available"));
   const qsizetype styledHit = styled.hitTestTextOffset(QPointF(styledCursor.left(), styledCursor.center().y()));
@@ -194,7 +207,7 @@ void testInlineHtmlKeyboardLayoutContract() {
       theme.paragraphFont(),
       InlineLayout::BuildOptions{});
 
-  require(layout.displayText() == QStringLiteral("Ctrl+C"),
+  require(withoutBoxSpacing(layout.displayText()) == QStringLiteral("Ctrl+C"),
           QStringLiteral("inline html kbd fixture should collapse to visible keyboard chord"));
 
   const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
@@ -208,11 +221,16 @@ void testInlineHtmlKeyboardLayoutContract() {
     return result;
   };
 
-  require(formatAt(0).fontFamilies().toStringList().contains(QStringLiteral("Courier New")),
-          QStringLiteral("first kbd segment should use monospace keyboard font"));
-  require(formatAt(5).fontFamilies().toStringList().contains(QStringLiteral("Courier New")),
+  const QString expectedKeyboardFamily = keyboardFamily(theme);
+  const int firstKey = static_cast<int>(layout.displayText().indexOf(QStringLiteral("Ctrl")));
+  const int separator = static_cast<int>(layout.displayText().indexOf(QLatin1Char('+')));
+  const int lastKey = static_cast<int>(layout.displayText().lastIndexOf(QLatin1Char('C')));
+  require(formatAt(firstKey).fontFamilies().toStringList().contains(expectedKeyboardFamily),
+          QStringLiteral("first kbd segment should use computed keyboard font: expected=%1 actual=%2 at=%3")
+              .arg(expectedKeyboardFamily, formatAt(firstKey).fontFamilies().toStringList().join(QLatin1Char(','))).arg(firstKey));
+  require(formatAt(lastKey).fontFamilies().toStringList().contains(expectedKeyboardFamily),
           QStringLiteral("last kbd segment should map even at end of html fragment"));
-  require(!formatAt(4).fontFamilies().toStringList().contains(QStringLiteral("Courier New")),
+  require(!formatAt(separator).fontFamilies().toStringList().contains(expectedKeyboardFamily),
           QStringLiteral("keyboard format should not bleed into separator"));
 }
 
@@ -235,7 +253,7 @@ void testInlineLayoutProjectionDisplayMappingAfterCollapsedMath() {
       theme.paragraphFont(),
       InlineLayout::BuildOptions{});
   require(layout.mathAtomCount() == 1, QStringLiteral("mapping fixture should collapse first inline math"));
-  require(layout.displayText().contains(QStringLiteral(" then code and bold")),
+  require(withoutBoxSpacing(layout.displayText()).contains(QStringLiteral(" then code and bold")),
           QStringLiteral("mapping fixture should keep text after collapsed math"));
 
   const qsizetype codeStart = layout.displayText().indexOf(QStringLiteral("code"));
@@ -253,7 +271,7 @@ void testInlineLayoutProjectionDisplayMappingAfterCollapsedMath() {
     return result;
   };
 
-  require(formatAt(static_cast<int>(codeStart)).fontFamilies().toStringList().first() == theme.codeFont().family(),
+  require(formatAt(static_cast<int>(codeStart)).fontFamilies().toStringList().first() == theme.inlineCodeFont().family(),
           QStringLiteral("code format after collapsed math should use rebuilt display offset"));
   require(formatAt(static_cast<int>(boldStart)).fontWeight() >= QFont::Bold,
           QStringLiteral("strong format after collapsed math should use rebuilt display offset"));
@@ -439,18 +457,19 @@ void testInlineHtmlSimpleFormattingPassthrough() {
     InlineLayout layout;
     layout.build(inlines, QStringLiteral("<kbd>Ctrl</kbd>"), theme, 500.0, theme.paragraphFont(), InlineLayout::BuildOptions{});
 
-    require(layout.displayText() == QStringLiteral("Ctrl"),
+    require(withoutBoxSpacing(layout.displayText()) == QStringLiteral("Ctrl"),
             QStringLiteral("<kbd>Ctrl</kbd> should display as 'Ctrl', got '%1'").arg(layout.displayText()));
 
     const QVector<QTextLayout::FormatRange> formats = layout.debugTextFormats(theme, theme.paragraphFont());
     QTextCharFormat fmt;
     for (const auto& range : formats) {
-      if (0 >= range.start && 0 < range.start + range.length) {
+      const int contentStart = static_cast<int>(layout.displayText().indexOf(QStringLiteral("Ctrl")));
+      if (contentStart >= range.start && contentStart < range.start + range.length) {
         fmt = range.format;
       }
     }
-    require(fmt.fontFamilies().toStringList().contains(QStringLiteral("Courier New")),
-            QStringLiteral("<kbd>Ctrl</kbd> should still use monospace keyboard font (backward compat)"));
+    require(fmt.fontFamilies().toStringList().contains(keyboardFamily(theme)),
+            QStringLiteral("<kbd>Ctrl</kbd> should use the shared computed keyboard font"));
   }
 }
 

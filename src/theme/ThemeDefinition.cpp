@@ -1,4 +1,7 @@
 #include "theme/ThemeDefinition.h"
+#include "theme/ThemeFontDecoder.h"
+#include <QCryptographicHash>
+#include <QGuiApplication>
 
 #include "theme/CssThemeMapper.h"
 #include "theme/CssThemeParser.h"
@@ -64,21 +67,35 @@ QHash<QString, QString>& fontFaceAliases() {
 // re-register the same file — mirrors MathFontRegistry's static-loaded guard.
 // Must run before any render queries QFontDatabase::families(); ThemeManager
 // runs fromCss (and thus this) at load time, ahead of painting.
-void registerThemeFonts(const CssThemeSheet& sheet) {
-  static QSet<QString> registered;
+QHash<QString, QString> registerThemeFonts(const CssThemeSheet& sheet) {
+  QHash<QString, QString> aliases;
+  if (!qobject_cast<QGuiApplication*>(QCoreApplication::instance())) return aliases;
+  static QHash<QString, QString> registered;
+  QSet<QString> loadedFaces;
   for (const CssFontFace& ff : sheet.fontFaces()) {
-    if (ff.srcPath.isEmpty() || registered.contains(ff.srcPath)) { continue; }
+    const QString faceKey = ff.family.toLower() + QLatin1Char('/') + ff.weight + QLatin1Char('/') + ff.style;
+    if (ff.srcPath.isEmpty() || loadedFaces.contains(faceKey)) {
+      continue;
+    }
     if (!QFileInfo(ff.srcPath).isFile()) {
       // A silently-skipped @font-face (wrong path, file not installed) makes the
       // theme fall back to a heavier system typeface — the most common reason a
       // theme's text looks "blacker/sharper" than in Typora. Surface it.
       qWarning("Muffin theme: @font-face file not found for declared family \"%s\": %s",
                qPrintable(ff.family), qPrintable(ff.srcPath));
-      registered.insert(ff.srcPath);
       continue;
     }
-    const int id = QFontDatabase::addApplicationFont(ff.srcPath);
-    registered.insert(ff.srcPath);
+    QFile fontFile(ff.srcPath);
+    if (!fontFile.open(QIODevice::ReadOnly)) continue;
+    const QByteArray source = fontFile.readAll();
+    const QString fingerprint = QString::fromLatin1(QCryptographicHash::hash(source, QCryptographicHash::Sha256).toHex());
+    if (registered.contains(fingerprint)) {
+      aliases.insert(ff.family.toLower(), registered.value(fingerprint));
+      loadedFaces.insert(faceKey);
+      continue;
+    }
+    const QByteArray native = decodeThemeWebFont(source);
+    const int id = native.isEmpty() ? -1 : QFontDatabase::addApplicationFontFromData(native);
     if (id < 0) {
       qWarning("Muffin theme: QFontDatabase::addApplicationFont failed for declared family \"%s\": %s",
                qPrintable(ff.family), qPrintable(ff.srcPath));
@@ -88,11 +105,15 @@ void registerThemeFonts(const CssThemeSheet& sheet) {
     // (the font's internal name, which often differs from the declared alias).
     const QStringList fams = QFontDatabase::applicationFontFamilies(id);
     if (!fams.isEmpty()) {
+      registered.insert(fingerprint, fams.first());
+      aliases.insert(ff.family.toLower(), fams.first());
+      loadedFaces.insert(faceKey);
       fontFaceAliases().insert(ff.family.toLower(), fams.first());
       qWarning("Muffin theme: registered @font-face family \"%s\" -> \"%s\" (%s)",
                qPrintable(ff.family), qPrintable(fams.first()), qPrintable(ff.srcPath));
     }
   }
+  return aliases;
 }
 
 }  // namespace
@@ -447,11 +468,16 @@ ThemeDefinition ThemeDefinition::fromCss(const QString& cssPath, const QString& 
   // @import urls resolve relative to the CSS file's directory. Works for both
   // filesystem paths and :/resource paths (QFile/QDir handle both).
   const QString baseDir = QFileInfo(cssPath).absolutePath();
-  const CssThemeSheet sheet = CssThemeParser::parse(text, baseDir);
+  CssThemeSheet sheet;
+  QFile base(QStringLiteral(":/themes/document-base.css"));
+  if (base.open(QIODevice::ReadOnly)) sheet = CssThemeParser::parse(QString::fromUtf8(base.readAll()), QStringLiteral(":/themes"));
+  sheet.mergeIn(CssThemeParser::parse(text, baseDir));
   // Register @font-face fonts before translation so the font-family stacks the
   // mapper reads are backed by registered typefaces by the time anything paints.
-  registerThemeFonts(sheet);
-  return CssThemeMapper::fromSheet(sheet, id);
+  const auto aliases = registerThemeFonts(sheet);
+  auto definition = CssThemeMapper::fromSheet(sheet, id);
+  definition.fontAliases = aliases;
+  return definition;
 }
 
 QString ThemeDefinition::fontFamilyAlias(const QString& declaredName) {

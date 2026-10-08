@@ -168,6 +168,7 @@ struct ThemeTypography {
 // document card with its own max-width, margins and padding. All fields are
 // optional; invalid/zero values fall back to Muffin's legacy flat page metrics.
 struct ThemePage {
+  bool borderBox = false;
   QColor viewportBackground;
   QColor pageBackground;
   QColor pageBorderColor;
@@ -427,6 +428,8 @@ struct ThemeDecorations {
 
 struct ThemeElementBoxStyle {
   bool present = false;
+  bool marginSpecified = false;
+  bool paddingSpecified = false;
   QMarginsF margin;
   QMarginsF padding;
   qreal borderTopWidth = 0.0;
@@ -537,6 +540,8 @@ struct ThemeDefinition {
   bool hasNthOfType = false;
   qreal bodyFontPx = 16.0;  // body font size in CSS px (em basis for the structural path)
   std::shared_ptr<CssThemeSheet> structuralSheet;  // only populated when hasStructuralRules
+  std::shared_ptr<CssThemeSheet> sourceSheet;      // Immutable CSS, including responsive conditions.
+  QHash<QString, QString> fontAliases;
   bool isBuiltIn = true;
 
   bool valid() const;

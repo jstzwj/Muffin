@@ -111,7 +111,7 @@ QString platformCssFamilyAlias(const QString& requested, const QStringList& avai
   return requested;
 }
 
-QStringList themeFamilyList(const QString& raw, const QString& platformTail) {
+QStringList themeFamilyList(const QString& raw, const QString& platformTail, const QHash<QString, QString>& aliases) {
   QStringList requested = raw.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
   for (QString& f : requested) { f = f.trimmed(); }
   requested.removeAll(QString());
@@ -132,7 +132,7 @@ QStringList themeFamilyList(const QString& raw, const QString& platformTail) {
     // or `"LXGW WenKai"` whose internal name is 霞鹜文楷. Substitute the declared
     // alias with the registered name so the stack resolves to the bundled font.
     QString resolved = family;
-    if (const QString alias = ThemeDefinition::fontFamilyAlias(family); !alias.isEmpty()) {
+    if (const QString alias = aliases.value(family.toLower()); !alias.isEmpty()) {
       resolved = alias;
     }
     resolved = platformCssFamilyAlias(resolved, availableFamilies);
@@ -171,6 +171,9 @@ RenderTheme RenderTheme::defaultTheme(int zoomPercent) {
 RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int zoomPercent, int fontSizePx) {
   const ThemeColors& c = definition.colors;
   RenderTheme t;
+  t.sourceSheet_ = definition.sourceSheet;
+  t.sourceId_ = definition.id;
+  t.fontAliases_ = definition.fontAliases;
   t.backgroundColor_ = c.background;
   t.textColor_ = c.text;
   t.mutedTextColor_ = c.muted;
@@ -245,6 +248,7 @@ RenderTheme RenderTheme::fromDefinition(const ThemeDefinition& definition, int z
   t.pageMargin_ = definition.page.pageMargin;
   t.pageMarginExplicit_ = definition.page.pageMarginExplicit;
   t.pageMaxWidth_ = definition.page.pageMaxWidth;
+  t.pageBorderBox_ = definition.page.borderBox;
   t.pageShadowColor_ = definition.page.pageShadowColor;
   t.pageShadowOffsetX_ = definition.page.pageShadowOffsetX;
   t.pageShadowBlur_ = definition.page.pageShadowBlur;
@@ -330,10 +334,42 @@ int RenderTheme::fontSizePx() const {
 
 void RenderTheme::setFontSizePx(int px) {
   fontSizePx_ = qBound(12, px, 24);
+  cssViewportWidth_ = -1.0;
+}
+
+bool RenderTheme::updateForViewport(qreal width, qreal height) {
+  if (!sourceSheet_) return false;
+  const qreal zoom = zoomPercent_ / 100.0;
+  const qreal cssWidth = width / zoom, cssHeight = height / zoom;
+  if (qAbs(cssWidth - cssViewportWidth_) < 0.01 && qAbs(cssHeight - cssViewportHeight_) < 0.01) return false;
+  CssEnvironment environment;
+  environment.viewportWidth = cssWidth;
+  environment.viewportHeight = cssHeight;
+  environment.textScale = fontSizePx_ / 16.0;
+  environment.dark = backgroundColor_.lightnessF() < 0.5;
+  const auto definition = CssThemeMapper::fromSheet(*sourceSheet_, sourceId_, environment);
+  RenderTheme resolved = fromDefinition(definition, zoomPercent_, fontSizePx_);
+  if (resolved.structuralSheet_)
+    resolved.structuralEngine_ = std::make_shared<CssComputedStyleEngine>(*resolved.structuralSheet_, environment);
+  resolved.contentWidthPx_ = contentWidthPx_;
+  resolved.fontAliases_ = fontAliases_;
+  resolved.cssViewportWidth_ = cssWidth;
+  resolved.cssViewportHeight_ = cssHeight;
+  *this = std::move(resolved);
+  return true;
 }
 
 int RenderTheme::contentWidthPx() const {
   return contentWidthPx_;
+}
+
+CssEnvironment RenderTheme::documentCssEnvironment() const {
+  CssEnvironment environment;
+  if (cssViewportWidth_ > 0) environment.viewportWidth = cssViewportWidth_;
+  if (cssViewportHeight_ > 0) environment.viewportHeight = cssViewportHeight_;
+  environment.textScale = fontSizePx_ / 16.0;
+  environment.dark = backgroundColor_.lightnessF() < 0.5;
+  return environment;
 }
 
 void RenderTheme::setContentWidthPx(int px) {
@@ -586,13 +622,24 @@ Qt::Alignment RenderTheme::textAlignment(BlockType type, int headingLevel) const
   return bodyAlignment_;
 }
 
+bool RenderTheme::hasBlockMargin(BlockType type, int headingLevel, const MarkdownNode* node) const {
+  const QString key = type == BlockType::Heading      ? QStringLiteral("h%1").arg(headingLevel)
+                      : type == BlockType::Paragraph  ? QStringLiteral("p")
+                      : type == BlockType::BlockQuote ? QStringLiteral("blockquote")
+                      : type == BlockType::CodeFence  ? QStringLiteral("pre")
+                      : type == BlockType::Table      ? QStringLiteral("table")
+                                                      : QString();
+  if (const auto* style = node ? elementStyleForNode(*node, key) : elementStyle(key)) return style->box.marginSpecified;
+  return !blockMargin(type, headingLevel, node).isNull();
+}
+
 QFont RenderTheme::paragraphFont() const {
   const QString& platform = serifBody_ ? serifFamily() : sansFamily();
   QFont font;
   if (!bodyFont_.isEmpty()) {
     // Theme font primary, platform family as substitution tail so missing glyphs
     // (CJK, symbols) still resolve.
-    font.setFamilies(themeFamilyList(bodyFont_, platform));
+    font.setFamilies(themeFamilyList(bodyFont_, platform, fontAliases_));
   } else {
     font.setFamily(platform);
   }
@@ -617,11 +664,14 @@ QFont RenderTheme::textFontForElement(const QString& key, const MarkdownNode* no
     const auto it = prototypeFontCache_.constFind(key);
     if (it != prototypeFontCache_.constEnd()) { return it.value(); }
   }
-  QFont font = paragraphFont();
+  const bool heading = key.size() == 2 && key[0] == QLatin1Char('h') && key[1] >= QLatin1Char('1') && key[1] <= QLatin1Char('6');
+  QFont font = heading ? headingFont(key[1].digitValue()) : paragraphFont();
   const ThemeElementStyle* style = node ? elementStyleForNode(*node, key) : elementStyle(key);
   if (!style) { return font; }
   const QString& platform = serifBody_ ? serifFamily() : sansFamily();
-  if (!style->text.fontFamily.isEmpty()) { font.setFamilies(themeFamilyList(style->text.fontFamily, platform)); }
+  if (!style->text.fontFamily.isEmpty()) {
+    font.setFamilies(themeFamilyList(style->text.fontFamily, platform, fontAliases_));
+  }
   if (style->text.fontSizePx > 0.0) { font.setPointSizeF(scaledFont(style->text.fontSizePx * 72.0 / 96.0)); }
   if (style->text.fontWeightSet) {
     font.setWeight(static_cast<QFont::Weight>(qBound(static_cast<int>(QFont::Thin), style->text.fontWeight, static_cast<int>(QFont::Black))));
@@ -732,20 +782,29 @@ QFont RenderTheme::headingFont(int level) const {
   // font-family: element-style → legacy heading family.
   const QString family = (style && !style->text.fontFamily.isEmpty()) ? style->text.fontFamily : headingFont_;
   if (!family.isEmpty()) {
-    font.setFamilies(themeFamilyList(family, serifBody_ ? serifFamily() : sansFamily()));
+    font.setFamilies(themeFamilyList(family, serifBody_ ? serifFamily() : sansFamily(), fontAliases_));
   }
   return font;
 }
 
-QFont RenderTheme::codeFont() const {
+QFont RenderTheme::codeFont() const { return codeFontForElement(QStringLiteral("pre")); }
+
+QFont RenderTheme::inlineCodeFont() const { return codeFontForElement(QStringLiteral("code")); }
+
+QFont RenderTheme::codeFontForElement(const QString& key) const {
   QFont font;
-  if (!codeFont_.isEmpty()) {
-    font.setFamilies(themeFamilyList(codeFont_, codeFamily()));
+  const ThemeElementStyle* codeStyle = elementStyle(key);
+  if (codeStyle && !codeStyle->text.fontFamily.isEmpty()) {
+    font.setFamilies(themeFamilyList(codeStyle->text.fontFamily, codeFamily(), fontAliases_));
+  } else if (!codeFont_.isEmpty()) {
+    font.setFamilies(themeFamilyList(codeFont_, codeFamily(), fontAliases_));
   } else {
     font.setFamily(codeFamily());
   }
   font.setStyleHint(QFont::Monospace);
-  font.setPointSizeF(scaledFont(10.8));
+  font.setPointSizeF(scaledFont(codeStyle && codeStyle->text.fontSizePx > 0.0 ? pxToPt(codeStyle->text.fontSizePx) : 10.8));
+  if (codeStyle && codeStyle->text.fontWeightSet) font.setWeight(static_cast<QFont::Weight>(codeStyle->text.fontWeight));
+  if (codeStyle && codeStyle->text.italicSet) font.setItalic(codeStyle->text.italic);
   if (codeLetterSpacing_ > 0.0) {
     font.setLetterSpacing(QFont::AbsoluteSpacing, scaled(codeLetterSpacing_));
   }
@@ -754,13 +813,15 @@ QFont RenderTheme::codeFont() const {
 }
 
 qreal RenderTheme::codeLineHeight() const {
+  const auto* style = elementStyle(QStringLiteral("pre"));
+  if (style && style->text.fontSizePx > 0 && style->text.lineHeight > 0) return scaledFont(style->text.fontSizePx * style->text.lineHeight);
   return scaledFont(23.04);
 }
 
 QFont RenderTheme::mathFont() const {
   QFont font;
   if (!mathFont_.isEmpty()) {
-    font.setFamilies(themeFamilyList(mathFont_, mathFamily()));
+    font.setFamilies(themeFamilyList(mathFont_, mathFamily(), fontAliases_));
   } else {
     font.setFamily(mathFamily());
   }

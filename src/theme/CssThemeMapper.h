@@ -2,6 +2,7 @@
 
 #include "theme/CssValueParser.h"
 #include "theme/ThemeDefinition.h"
+#include "theme/CssThemeParser.h"
 
 #include <QHash>
 
@@ -11,6 +12,7 @@ namespace muffin {
 
 class CssThemeSheet;  // defined in CssThemeParser.h
 class CssComputedStyleEngine;  // defined in CssComputedStyleEngine.h
+class CssComputedStyle;
 class NodeCssElementBuilder;  // defined in NodeCssElement.h
 class MarkdownNode;
 
@@ -18,11 +20,10 @@ class MarkdownNode;
 // chokepoint used by extractColor()/varColor()/JSON parseColor() and HtmlBoxBuilder.
 
 // Translates a parsed CSS-theme sheet into a Muffin ThemeDefinition. This
-// is the "external-CSS compatibility" contract: a fixed table maps CSS selectors +
-// :root variables to Muffin semantic tokens (ThemeColors / ThemeTypography).
-// Anything the table doesn't cover (gradients, ::after decorations, animations,
-// CSS counters, masks, …) is deliberately ignored — Muffin paints directly, it
-// does not run a CSS engine.
+// projects the shared CSS computed styles into document typography and boxes.
+// Semantic tokens supply application chrome and native paint capabilities such
+// as gradients, pseudo decorations and counters; layout-time nodes use the same
+// computed-style projection as theme prototypes.
 //
 // The mapping is intentionally lenient: a stock CSS theme that only sets
 // element colours + fonts produces a usable theme; Muffin-specific knobs with no
@@ -37,7 +38,8 @@ public:
   // Translate an already-parsed sheet. Split from fromCss so the caller can
   // inspect the sheet (e.g. register its @font-face fonts) between parse and
   // translation. `id` is the machine name; it overrides any name the CSS declares.
-  static ThemeDefinition fromSheet(const CssThemeSheet& sheet, const QString& id);
+  static ThemeDefinition fromSheet(const CssThemeSheet& sheet, const QString& id, CssEnvironment environment = {});
+  static ThemeElementStyle projectComputedStyle(const QString& key, const CssComputedStyle& style);
   // Parse a CSS `linear-gradient(...)` / `radial-gradient(...)` value into a
   // GradientSpec (rect-independent data; the painter builds a QGradient per
   // target rect). Exposed for unit testing. var()/color-mix()/rgb()/hex stops
@@ -56,7 +58,8 @@ public:
   // Real-tree computed style for a node: build a CssElement view of `node` (its
   // live ancestors/siblings/position), run the cascade through `engine`, and map
   // the result to a ThemeElementStyle the same way the load-time precompute does.
-  // Used by the structural-selector layout path. `bodyPx` is the em/rem basis.
+  // Used by the structural-selector layout path. Font-relative lengths use the
+  // computed element and root font sizes; bodyPx supplies the user text scale.
   // `builder` is the caller-owned (persistent) CSS element tree, so the sibling chain is built once
   // per rebuild instead of per node (the latter was O(n²) on flat block lists).
   static ThemeElementStyle elementStyleForNode(NodeCssElementBuilder& builder, const CssComputedStyleEngine& engine,

@@ -3,6 +3,7 @@
 #include "document/MarkdownNode.h"
 #include "render/DocumentLayout.h"
 #include "render/BlockLayout.h"
+#include "render/InlineLayout.h"
 #include "theme/CssThemeMapper.h"
 #include "theme/RenderTheme.h"
 #include "theme/ThemeDefinition.h"
@@ -83,6 +84,36 @@ void testInlineCodeChipGrowsWithPadding() {
           QStringLiteral("padding should widen the chip (base=%1 padded=%2)").arg(baseRed.width()).arg(paddedRed.width()));
 }
 
+void testInlineBoxPaddingReservesFlowAndPreservesText() {
+  const auto endpoint = [](const QString& css, const QString& markdown) {
+    const auto theme = RenderTheme::fromDefinition(CssThemeMapper::fromCss(css, QStringLiteral("flow"), QString()));
+    DocumentSession session;
+    session.setMarkdownText(markdown, false);
+    DocumentLayout layout;
+    layout.rebuild(session.document(), theme, 800);
+    const auto* node = findFirstBlock(session.document().root(), BlockType::Paragraph);
+    const auto* block = layout.block(node->id());
+    const auto* text = block->inlineLayout();
+    const QString visible = text->visibleText();
+    require(visible == QStringLiteral("a ab c"), QStringLiteral("generated spacing must not enter visible/copy text"));
+    const auto cursor = text->cursorRect(visible.size());
+    for (qsizetype offset = 0; offset <= visible.size(); ++offset) {
+      const auto caret = text->cursorRect(offset);
+      require(text->hitTestTextOffset(QPointF(caret.left(), caret.center().y())) == offset,
+              QStringLiteral("clicking the caret must round-trip through inline box padding at offset %1").arg(offset));
+    }
+    return cursor.x();
+  };
+  const qreal codeBase = endpoint(QStringLiteral("#write{color:black}code{padding:0;border:none}"), QStringLiteral("a `ab` c\n"));
+  const qreal codePad = endpoint(QStringLiteral("#write{color:black}code{padding:0 14px;border:none}"), QStringLiteral("a `ab` c\n"));
+  require(qAbs(codePad - codeBase - 28) < .1, QStringLiteral("code padding must reserve exactly 28px in text flow"));
+  const qreal kbdBase =
+      endpoint(QStringLiteral("#write{color:black}kbd{padding:0;border:0 solid black}"), QStringLiteral("a <kbd>ab</kbd> c\n"));
+  const qreal kbdPad =
+      endpoint(QStringLiteral("#write{color:black}kbd{padding:0 12px;border:0 solid black}"), QStringLiteral("a <kbd>ab</kbd> c\n"));
+  require(qAbs(kbdPad - kbdBase - 24) < .1, QStringLiteral("kbd padding must reserve exactly 24px in text flow"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -92,6 +123,7 @@ int main(int argc, char** argv) {
   QApplication app(argc, argv);
 #define RUN_TEST(test) runTest(#test, test)
   RUN_TEST(testInlineCodeChipGrowsWithPadding);
+  RUN_TEST(testInlineBoxPaddingReservesFlowAndPreservesText);
 #undef RUN_TEST
   return 0;
 }

@@ -67,6 +67,9 @@ function(muffin_add_test)
       ${MUFFIN_TEST_SOURCE}
       ${MUFFIN_TEST_EXTRA_SOURCES})
   target_link_libraries(${MUFFIN_TEST_NAME} PRIVATE ${MUFFIN_TEST_LINK} ${MUFFIN_TEST_EXTRA_LINK})
+  if(MUFFIN_THEMES_QRC IN_LIST MUFFIN_TEST_EXTRA_SOURCES)
+    muffin_use_theme_fonts(${MUFFIN_TEST_NAME})
+  endif()
   muffin_freshness_link_closure(freshness_links
       ${MUFFIN_TEST_LINK} ${MUFFIN_TEST_EXTRA_LINK})
   file(APPEND "${MUFFIN_FRESHNESS_MANIFEST}"

@@ -26,6 +26,7 @@ struct TextFormatSpan {
   bool keyboard = false;
   qreal fontSize = 0;
   QTextCharFormat::VerticalAlignment verticalAlignment = QTextCharFormat::AlignNormal;
+  QStringList fontFamilies;
 };
 
 // Holds a pre-built QTextLayout for a text-containing box.

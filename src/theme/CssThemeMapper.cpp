@@ -503,6 +503,8 @@ qreal CssThemeMapper::resolveLengthPx(const QString& value, const QHash<QString,
 // `emPx` is the box-geometry em basis; `fontSizeEmPx` (default emPx) is the
 // font-size em basis (parent computed font size); `bodyPx` resolves rem/%.
 ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssComputedStyle& style, qreal emPx, qreal bodyPx, qreal fontSizeEmPx) {
+  emPx = style.fontSizePx * style.textScale;
+  bodyPx = style.rootFontSizePx * style.textScale;
   static const std::vector<QString> colorProps = {QStringLiteral("color")};
   static const std::vector<QString> bgProps = {QStringLiteral("background-color"), QStringLiteral("background")};
   const auto styleColor = [&](const std::vector<QString>& properties) {
@@ -517,7 +519,7 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
     const auto applySide = [&](const QString& side, auto setter) {
       const QString raw = style.rawValue(base + QLatin1Char('-') + side);
       if (raw.isEmpty()) { return; }
-      const qreal v = lengthToPx(raw, style.customProperties(), emPx);
+      const qreal v = lengthToPx(raw, style.customProperties(), emPx, bodyPx, style.containingWidthPx);
       setter(v);
       box.present = true;
     };
@@ -536,8 +538,10 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   ThemeElementStyle out;
   out.key = key;
   out.box = styleBox(QStringLiteral("margin"));
+  out.box.marginSpecified = out.box.present;
   const ThemeElementBoxStyle pad = styleBox(QStringLiteral("padding"));
   out.box.padding = pad.padding;
+  out.box.paddingSpecified = pad.present;
   out.box.present = out.box.present || pad.present;
   const auto borderSide = [&](const QString& side, auto setW, auto setC) {
     const QString sh = style.rawValue(QStringLiteral("border-") + side);
@@ -546,10 +550,21 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
     const QString globalSh = style.rawValue(QStringLiteral("border"));
     const QString globalW = style.rawValue(QStringLiteral("border-width"));
     const QString globalC = style.rawValue(QStringLiteral("border-color"));
+    const QString borderStyle = style.resolvedValue(QStringLiteral("border-") + side + QStringLiteral("-style"));
     const QString wRaw = !wLong.isEmpty() ? wLong : (!sh.isEmpty() ? sh : (!globalW.isEmpty() ? globalW : globalSh));
     const QString cRaw = !cLong.isEmpty() ? cLong : (!sh.isEmpty() ? sh : (!globalC.isEmpty() ? globalC : globalSh));
-    if (const qreal w = borderWidthPx(wRaw, style.customProperties(), emPx); w > 0.0) { setW(w); out.box.present = true; }
-    if (const QColor c = extractColor(cRaw, style.customProperties()); c.isValid()) { setC(c); out.box.present = true; }
+    qreal w = wRaw == QStringLiteral("thin")     ? 1.0
+              : wRaw == QStringLiteral("medium") ? 3.0
+              : wRaw == QStringLiteral("thick")  ? 5.0
+                                                 : borderWidthPx(wRaw, style.customProperties(), emPx);
+    if (borderStyle == QStringLiteral("none") || borderStyle == QStringLiteral("hidden")) w = 0.0;
+    setW(w);
+    const QColor c = cRaw.compare(QStringLiteral("currentColor"), Qt::CaseInsensitive) == 0 ? styleColor(colorProps)
+                                                                                            : extractColor(cRaw, style.customProperties());
+    if (c.isValid()) {
+      setC(c);
+      out.box.present = true;
+    }
   };
   borderSide(QStringLiteral("top"),    [&](qreal v) { out.box.borderTopWidth = v; },    [&](const QColor& v) { out.box.borderTopColor = v; });
   borderSide(QStringLiteral("right"),  [&](qreal v) { out.box.borderRightWidth = v; },  [&](const QColor& v) { out.box.borderRightColor = v; });
@@ -635,9 +650,10 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
     }
   }
   out.text.fontFamily = firstFamily(style.rawValue(QStringLiteral("font-family")), style.customProperties());
-  const qreal textEmPx = fontSizeEmPx > 0.0 ? fontSizeEmPx : emPx;
-  out.text.fontSizePx = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), textEmPx);
-  out.text.lineHeight = parseLineHeightMultiplier(style.rawValue(QStringLiteral("line-height")), style.customProperties(), emPx);
+  Q_UNUSED(fontSizeEmPx);
+  out.text.fontSizePx = style.hasProperty(QStringLiteral("font-size")) ? style.fontSizePx : 0.0;
+  out.text.lineHeight =
+      parseLineHeightMultiplier(style.rawValue(QStringLiteral("line-height")), style.customProperties(), style.fontSizePx);
   out.text.wordSpacing = lengthToPx(style.rawValue(QStringLiteral("word-spacing")), style.customProperties(), emPx);
   out.text.alignment = parseTextAlign(style.rawValue(QStringLiteral("text-align")), style.customProperties());
   const QString ttRaw = style.resolvedValue(QStringLiteral("text-transform")).trimmed().toLower();
@@ -668,12 +684,17 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   return out;
 }
 
-ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QString& id) {
+ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& source, const QString& id, CssEnvironment environment) {
+  const CssThemeSheet sheet = source.evaluated(environment);
   ThemeDefinition d;
   d.isBuiltIn = false;
   d.id = id.toLower();
+  d.sourceSheet = std::make_shared<CssThemeSheet>(source);
 
-  const QHash<QString, QString>& vars = sheet.variables();
+  CssComputedStyleEngine styleEngine(sheet, environment);
+  CssElement rootVariables;
+  rootVariables.tag = QStringLiteral("html");
+  const QHash<QString, QString> vars = styleEngine.styleFor(rootVariables).customProperties();
   // `allFlat` carries ::before/::after declarations too (extractPseudoRules reads
   // them). Base token extraction must NOT see pseudo-element declarations — a
   // rule like `h6::before { color: accent }` is the marker's colour, not the h6
@@ -732,16 +753,8 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   if (bodyPx <= 0.0) { bodyPx = kRootEmPx; }
   d.bodyFontPx = bodyPx;
 
-  // --- Computed-style gap fill (Phase 1) -------------------------------------
-  // The flat last-compound extractor above is the primary source (it preserves
-  // every existing token value). The cascade/inheritance-aware engine fills ONLY
-  // the tokens it leaves invalid — e.g. a colour declared on an ancestor
-  // (`#write { color }`) that the last-compound heuristic can't see, or a value
-  // reachable only through a descendant selector. It never overwrites a value
-  // the flat pass already resolved, so existing themes are byte-identical and the
-  // engine is exercised productively at every theme load. Phase 2 promotes this
-  // to the primary source once block/inline renderers consume ComputedStyle.
-  CssComputedStyleEngine styleEngine(sheet);
+  // One cascade supplies prototype and live document styles. Flat extraction
+  // remains for application palette extensions and generated decorations.
   CssElement csHtml; csHtml.tag = QStringLiteral("html");
   CssElement csBody; csBody.tag = QStringLiteral("body"); csBody.parent = &csHtml;
   CssElement csWrite; csWrite.id = QStringLiteral("write"); csWrite.parent = &csBody;
@@ -782,8 +795,8 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   const CssComputedStyle csThStyle = styleEngine.styleFor(csTh);
   const CssComputedStyle csTrEvenStyle = styleEngine.styleFor(csTrEven);
   const auto computedFontPx = [&](const CssComputedStyle& style, qreal parentFontPx) {
-    const qreal px = lengthToPx(style.rawValue(QStringLiteral("font-size")), style.customProperties(), parentFontPx);
-    return px > 0.0 ? px : parentFontPx;
+    Q_UNUSED(parentFontPx);
+    return style.fontSizePx;
   };
   const qreal documentFontPx = computedFontPx(csWriteStyle, bodyPx);
   const qreal paragraphFontPx = computedFontPx(csParagraphStyle, documentFontPx);
@@ -1215,6 +1228,96 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
     if (v > 0.0) { d.typography.headingLineHeight[level - 1] = v; }
   }
 
+  // Document tokens are projections of the same cascade used by live nodes.
+  // The flat rules above remain for decoration/chrome compatibility only.
+  const auto projectColor = [&](QColor& target, const CssComputedStyle& style, const std::vector<QString>& properties) {
+    const QColor value = styleColor(style, properties);
+    if (value.isValid()) target = value;
+  };
+  projectColor(d.page.viewportBackground, csBodyStyle, bgProps);
+  projectColor(d.page.pageBackground, csWriteStyle, bgProps);
+  k.background = d.page.pageBackground.isValid() ? d.page.pageBackground : d.page.viewportBackground;
+  projectColor(k.text, csParagraphStyle, colorProps);
+  projectColor(k.link, csLinkStyle, colorProps);
+  projectColor(k.codeBackground, csInlineCodeStyle, bgProps);
+  projectColor(k.codeBlockBackground, csCodeFenceStyle, bgProps);
+  projectColor(k.highlight, csMarkStyle, bgProps);
+  projectColor(k.blockquoteBackground, csBlockquoteStyle, bgProps);
+  projectColor(k.tableHeaderBackground, csThStyle, bgProps);
+  projectColor(k.tableAlternateBackground, csTrEvenStyle, bgProps);
+  const auto documentBox = makeElementStyle(QStringLiteral("#write"), csWriteStyle, documentFontPx);
+  d.page.pagePadding = documentBox.box.padding;
+  d.page.borderBox = csWriteStyle.resolvedValue(QStringLiteral("box-sizing")) == QStringLiteral("border-box");
+  d.page.pageMargin = documentBox.box.margin;
+  d.page.pageMarginExplicit = documentBox.box.present;
+  d.page.pageBorderWidth = documentBox.box.borderTopWidth;
+  d.page.pageBorderColor = documentBox.box.borderTopColor;
+  const QString widthValue = csWriteStyle.resolvedValue(QStringLiteral("width"));
+  const QString maxValue = csWriteStyle.resolvedValue(QStringLiteral("max-width"));
+  const auto pageLength = [&](const QString& value) {
+    if (isIntrinsicPageWidthKeyword(value)) return kUnboundedPageWidth;
+    return lengthToPx(value, vars, documentFontPx * environment.textScale, csHtmlStyle.fontSizePx * environment.textScale,
+                      environment.viewportWidth);
+  };
+  const qreal preferred = pageLength(widthValue), maximum = pageLength(maxValue);
+  d.page.pageMaxWidth = preferred > 0 ? preferred : maximum;
+  if (preferred > 0 && maximum > 0) d.page.pageMaxWidth = qMin(preferred, maximum);
+  d.typography.bodyFont = firstFamily(csParagraphStyle.rawValue(QStringLiteral("font-family")), csParagraphStyle.customProperties());
+  if (csParagraphStyle.hasProperty(QStringLiteral("font-size"))) d.typography.bodySizePt = pxToPt(documentFontPx);
+  d.typography.lineHeight = parseLineHeightMultiplier(csParagraphStyle.rawValue(QStringLiteral("line-height")), vars, paragraphFontPx);
+  d.typography.codeFont = firstFamily(csInlineCodeStyle.rawValue(QStringLiteral("font-family")), csInlineCodeStyle.customProperties());
+  const auto inlineStyle = makeElementStyle(QStringLiteral("code"), csInlineCodeStyle, csInlineCodeStyle.fontSizePx);
+  d.elementStyles.push_back(inlineStyle);
+  d.elementStyles.push_back(makeElementStyle(QStringLiteral("pre"), csCodeFenceStyle, csCodeFenceStyle.fontSizePx));
+  if (csInlineCodeStyle.hasProperty(QStringLiteral("padding")) || csInlineCodeStyle.hasProperty(QStringLiteral("padding-left"))) {
+    d.typography.inlineCodePaddingH = qMax(inlineStyle.box.padding.left(), inlineStyle.box.padding.right());
+    d.typography.inlineCodePaddingV = qMax(inlineStyle.box.padding.top(), inlineStyle.box.padding.bottom());
+  }
+  if (csInlineCodeStyle.hasProperty(QStringLiteral("border-radius"))) d.typography.inlineCodeBorderRadius = inlineStyle.box.borderRadius;
+  if (csInlineCodeStyle.hasProperty(QStringLiteral("border-top-width")))
+    d.typography.inlineCodeBorderWidth = inlineStyle.box.borderTopWidth;
+  projectColor(d.typography.inlineCodeTextColor, csInlineCodeStyle, colorProps);
+  d.spacing.codeBlockMargin = makeElementStyle(QStringLiteral("pre"), csCodeFenceStyle, csCodeFenceStyle.fontSizePx).box.margin;
+  if (csCodeFenceStyle.hasProperty(QStringLiteral("padding")) || csCodeFenceStyle.hasProperty(QStringLiteral("padding-left"))) {
+    d.spacing.codeBlockPadding = makeElementStyle(QStringLiteral("pre"), csCodeFenceStyle, csCodeFenceStyle.fontSizePx).box.padding;
+    d.spacing.codeBlockBoxThemed = true;
+  }
+  CssElement kbdElement;
+  kbdElement.tag = QStringLiteral("kbd");
+  kbdElement.parent = &csParagraph;
+  const auto kbdComputed = styleEngine.styleFor(kbdElement);
+  const auto kbdStyle = makeElementStyle(QStringLiteral("kbd"), kbdComputed, kbdComputed.fontSizePx);
+  d.elementStyles.push_back(kbdStyle);
+  if (kbdStyle.box.present) {
+    d.typography.kbdPaddingH = qMax(kbdStyle.box.padding.left(), kbdStyle.box.padding.right());
+    d.typography.kbdPaddingV = qMax(kbdStyle.box.padding.top(), kbdStyle.box.padding.bottom());
+    d.typography.kbdBorderWidth = kbdStyle.box.borderTopWidth;
+    d.typography.kbdBorderColor = kbdStyle.box.borderTopColor;
+    d.typography.kbdBorderRadius = kbdStyle.box.borderRadius;
+    if (!kbdStyle.paint.backgroundColor.isValid()) d.typography.kbdBackground = QColor(Qt::transparent);
+  }
+  if (kbdComputed.hasProperty(QStringLiteral("background")) || kbdComputed.hasProperty(QStringLiteral("background-color")) ||
+      kbdComputed.hasProperty(QStringLiteral("padding")) || kbdComputed.hasProperty(QStringLiteral("border"))) {
+    projectColor(d.typography.kbdBackground, kbdComputed, bgProps);
+    projectColor(d.typography.kbdTextColor, kbdComputed, colorProps);
+  }
+  CssElement td;
+  td.tag = QStringLiteral("td");
+  td.parent = &csTrEven;
+  const auto tdComputed = styleEngine.styleFor(td);
+  const auto tdStyle = makeElementStyle(QStringLiteral("td"), tdComputed, tdComputed.fontSizePx);
+  const auto thStyle = makeElementStyle(QStringLiteral("th"), csThStyle, csThStyle.fontSizePx);
+  const auto tableStyle = makeElementStyle(QStringLiteral("table"), csTableStyle, csTableStyle.fontSizePx);
+  d.elementStyles.push_back(tdStyle);
+  d.elementStyles.push_back(thStyle);
+  d.elementStyles.push_back(tableStyle);
+  d.spacing.tableMargin = tableStyle.box.margin;
+  if (tdStyle.box.paddingSpecified || thStyle.box.paddingSpecified) {
+    d.spacing.tableCellPadding = tdStyle.box.paddingSpecified ? tdStyle.box.padding : thStyle.box.padding;
+    d.spacing.tableBoxThemed = true;
+  }
+  if (tableStyle.box.borderRadius > 0) d.spacing.tableBorderRadius = tableStyle.box.borderRadius;
+
   // --- Tier 2: conventional :root variable vocabulary (gap fill) ----------
   // CSS themes speak a conventional :root vocabulary (--bg-color,
   // --text-color, --primary-color, --side-bar-bg-color, …). That vocabulary IS
@@ -1383,14 +1486,16 @@ ThemeDefinition CssThemeMapper::fromSheet(const CssThemeSheet& sheet, const QStr
   return d;
 }
 
+ThemeElementStyle CssThemeMapper::projectComputedStyle(const QString& key, const CssComputedStyle& style) {
+  return makeElementStyleForComputed(key, style, style.fontSizePx, style.rootFontSizePx, style.fontSizePx);
+}
+
 ThemeElementStyle CssThemeMapper::elementStyleForNode(NodeCssElementBuilder& builder, const CssComputedStyleEngine& engine,
                                                       const MarkdownNode& node, const QString& key, qreal bodyPx) {
   // The sparse builder memoizes only nodes reached by this rebuild's selector queries.
   const CssElement* element = builder.build(node);
   const CssComputedStyle computed = engine.styleFor(*element);
-  // em basis = bodyPx for the structural path. (Heading em-relative geometry under
-  // a structural selector resolves against body px — a documented limitation;
-  // structural selectors on headings are rare.)
+  // Prototype and live-node geometry use the same computed font/length context.
   return makeElementStyleForComputed(key, computed, bodyPx, bodyPx, bodyPx);
 }
 

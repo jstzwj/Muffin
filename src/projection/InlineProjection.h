@@ -126,9 +126,9 @@ class InlineProjection {
 public:
   InlineProjection() = default;
   InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState state = {}, qsizetype sourceBase = -1,
-                   qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0,
-                   SmartPunctRenderOptions smartPunct = {}, bool breakOnSingleNewline = false,
-                   TextTransform textTransform = TextTransform::None, bool renderEmoji = true);
+                   qreal baseFontSize = 16.0, qsizetype pendingPrefixLength = 0, SmartPunctRenderOptions smartPunct = {},
+                   bool breakOnSingleNewline = false, TextTransform textTransform = TextTransform::None, bool renderEmoji = true,
+                   html::HtmlColorPalette htmlPalette = html::HtmlColorPalette::defaultLight());
 
   bool isValid() const;
   QString sourceText() const;
@@ -171,6 +171,7 @@ private:
     bool subscript = false;
     bool superscript = false;
     qreal baseFontSize = 16.0;
+    html::HtmlColorPalette htmlPalette;
     SmartPunctRenderOptions smartPunct;
     // markdown/breakOnSingleNewline (default on): render a single '\n' soft break as a line break
     // instead of joining it into one paragraph line (CommonMark).

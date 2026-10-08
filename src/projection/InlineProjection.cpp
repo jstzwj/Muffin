@@ -365,15 +365,17 @@ InlineProjectionState InlineProjectionState::forSelection(
   return state;
 }
 
-InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState, qsizetype sourceBase,
-                                   qreal baseFontSize, qsizetype pendingPrefixLength, SmartPunctRenderOptions smartPunct, bool breakOnSingleNewline,
-                                   TextTransform textTransform, bool renderEmoji)
+InlineProjection::InlineProjection(const QVector<InlineNode>& inlines, QString sourceText, InlineProjectionState projectionState,
+                                   qsizetype sourceBase, qreal baseFontSize, qsizetype pendingPrefixLength,
+                                   SmartPunctRenderOptions smartPunct, bool breakOnSingleNewline, TextTransform textTransform,
+                                   bool renderEmoji, html::HtmlColorPalette htmlPalette)
     : sourceText_(std::move(sourceText)), visibleText_(plainTextForInlines(inlines)) {
   BuildState state;
   state.sourceText = &sourceText_;
   state.sourceBase = sourceBase;
   state.projectionState = projectionState;
   state.baseFontSize = baseFontSize;
+  state.htmlPalette = std::move(htmlPalette);
   state.smartPunct = smartPunct;
   state.breakOnSingleNewline = breakOnSingleNewline;
   state.textTransform = textTransform;
@@ -1108,7 +1110,7 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
       htmlFragment += inlines[j].text();
     }
     static const html::InlineHtmlRenderer renderer;
-    rendered = renderer.render(htmlFragment, state.baseFontSize);
+    rendered = renderer.render(htmlFragment, state.baseFontSize, state.htmlPalette);
     visibleSize = rendered.text.size();
   }
 

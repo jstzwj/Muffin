@@ -463,7 +463,9 @@ QHash<QString, ElementStyle> resolveElements(
   CssThemeSheet sheet = scopedSheet(builtInCss);
   const CssThemeSheet userSheet = scopedSheet(themeCss);
   for (const CssRule& rule : userSheet.rules()) sheet.addRule(rule);
-  const CssComputedStyleEngine engine(sheet);
+  CssEnvironment environment;
+  environment.deferComputedValues = true;
+  const CssComputedStyleEngine engine(sheet, environment);
   QVector<CssElement> elements(inputs.size());
   QHash<QString, qsizetype> indexes;
   indexes.reserve(inputs.size());
@@ -521,7 +523,9 @@ FlowchartProjection resolveFlowchart(
     const QString& look,
     bool htmlLabels) {
   const CssThemeSheet sheet = flowSheet(data, theme, themeCss, swimlane);
-  const CssComputedStyleEngine engine(sheet);
+  CssEnvironment environment;
+  environment.deferComputedValues = true;
+  const CssComputedStyleEngine engine(sheet, environment);
   FlowchartProjection result;
 
   CssElement svg;

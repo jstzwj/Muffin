@@ -54,7 +54,8 @@ QString cssTagForNode(const MarkdownNode& node) {
     case BlockType::FrontMatter: return QStringLiteral("pre");
     case BlockType::Table: return QStringLiteral("table");
     case BlockType::TableRow: return QStringLiteral("tr");
-    case BlockType::TableCell: return QStringLiteral("td");
+    case BlockType::TableCell:
+      return node.parent() && node.parent()->tableRowIsHeader() ? QStringLiteral("th") : QStringLiteral("td");
     case BlockType::ThematicBreak: return QStringLiteral("hr");
     default: return QString();
   }

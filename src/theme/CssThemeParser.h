@@ -26,6 +26,19 @@ struct CssRule {
   QStringList selectors;
   std::vector<CssDeclaration> declarations;
   bool darkScope = false;
+  QStringList mediaQueries;  // Nested media lists are AND; each list is OR.
+};
+
+struct CssEnvironment {
+  qreal viewportWidth = 1024.0;
+  qreal viewportHeight = 768.0;
+  bool dark = false;
+  bool print = false;
+  qreal resolutionDppx = 1.0;
+  qreal textScale = 1.0;
+  // SVG's semantic projection supplies parent presentation/inline values and
+  // initial values; preserve CSS-wide keywords until that used-value stage.
+  bool deferComputedValues = false;
 };
 
 // An @font-face declaration. `srcPath` is the font file's ABSOLUTE path,
@@ -37,6 +50,8 @@ struct CssRule {
 struct CssFontFace {
   QString family;   // quotes stripped, e.g. "LXGW WenKai" or "CascadiaCode"
   QString srcPath;  // absolute, cleaned path to the .ttf/.otf/.woff(2) on disk
+  QString weight = QStringLiteral("normal");
+  QString style = QStringLiteral("normal");
 };
 
 // One keyframe stop: a position along the timeline (0..1, from `from`/`to`/`N%`)
@@ -68,6 +83,8 @@ public:
   void setVariable(const QString& name, const QString& value) { variables_.insert(name, value); }
   void addFontFace(CssFontFace f) { fontFaces_.push_back(std::move(f)); }
   void addKeyframes(CssKeyframes k) { keyframes_.push_back(std::move(k)); }
+  CssThemeSheet evaluated(const CssEnvironment& environment) const;
+  static bool mediaMatches(const QString& query, const CssEnvironment& environment);
   // Merge another sheet into this one: rules appended after, variables inserted
   // (overriding on name clash), font-faces appended. Used to fold @import'd
   // sheets under the importer — each font-face already carries its own correctly
@@ -88,16 +105,10 @@ private:
   std::vector<CssKeyframes> keyframes_;
 };
 
-// Minimal, robust-enough CSS parser tailored for CSS theme files. It is NOT a
-// browser-grade cascade engine — it collects rules + :root variables + @font-face
-// declarations in source order and lets CssThemeMapper do the (deliberately
-// simplified) winning-decl selection. Handles: comments, "..." / '...' strings,
-// url(...)/var(...) parens, `@import url(...)` (resolved relative to baseDir,
-// merged first, recursive, missing/remote skipped), `@media (prefers-color-
-// scheme: dark)` (marks rules), static screen media (`screen`, `all`, `not print`),
-// `@font-face` (family + local src captured for
-// font registration), `:root` (→ variables), and skips other at-rules
-// (@keyframes/@page/…) by balanced-brace matching.
+// CSS theme parser retaining source order, nested media conditions, custom
+// properties, font faces and keyframes. Local @imports resolve relative to their
+// owning sheet. CssComputedStyleEngine evaluates the environment and cascade;
+// this parser leaves declarations and variable references intact.
 class CssThemeParser {
 public:
   static CssThemeSheet parse(const QString& text, const QString& baseDir);

@@ -3,6 +3,7 @@
 #include "theme/CssThemeParser.h"
 #include "theme/CssSelectorUtils.h"
 #include "theme/TyporaEditorOnly.h"
+#include "theme/CssValueParser.h"
 
 #include <QRegularExpression>
 #include <QSet>
@@ -27,13 +28,15 @@ struct Candidate {
 };
 
 const QSet<QString>& inheritedProperties() {
-  static const QSet<QString> props = {
-      QStringLiteral("color"), QStringLiteral("font-family"), QStringLiteral("font-size"),
-      QStringLiteral("line-height"), QStringLiteral("text-align"), QStringLiteral("font-weight"),
-      QStringLiteral("font-style"), QStringLiteral("fill"),
-      QStringLiteral("fill-opacity"), QStringLiteral("stroke"),
-      QStringLiteral("stroke-opacity"), QStringLiteral("stroke-width"),
-      QStringLiteral("visibility")};
+  static const QSet<QString> props = {QStringLiteral("color"),           QStringLiteral("font-family"),
+                                      QStringLiteral("font-size"),       QStringLiteral("line-height"),
+                                      QStringLiteral("text-align"),      QStringLiteral("font-weight"),
+                                      QStringLiteral("font-style"),      QStringLiteral("fill"),
+                                      QStringLiteral("fill-opacity"),    QStringLiteral("stroke"),
+                                      QStringLiteral("stroke-opacity"),  QStringLiteral("stroke-width"),
+                                      QStringLiteral("visibility"),      QStringLiteral("letter-spacing"),
+                                      QStringLiteral("word-spacing"),    QStringLiteral("text-transform"),
+                                      QStringLiteral("list-style-type"), QStringLiteral("list-style-position")};
   return props;
 }
 
@@ -525,7 +528,8 @@ bool CssComputedStyle::hasProperty(const QString& property) const {
   return key.startsWith(QStringLiteral("--")) ? customProperties_.contains(key) : properties_.contains(key);
 }
 
-CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet) : sheet_(sheet) {
+CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet, CssEnvironment environment)
+    : sheet_(sheet.evaluated(environment)), environment_(environment) {
   // Pre-parse every selector once. The match path (applyStyleForElement) reads
   // parsedSelectors_ / ruleSelectorRange_ instead of re-running parseSelector
   // (regex + char walk) on every node × every ancestor level × every rule.
@@ -559,144 +563,184 @@ CssComputedStyleEngine::CssComputedStyleEngine(const CssThemeSheet& sheet) : she
   }
 }
 
-void CssComputedStyleEngine::applyStyleForElement(const CssElement& element, const CssElementState& state,
-                                                  CssComputedStyle& style) const {
-  QHash<QString, Candidate> winners;
-  int order = 0;
-  const auto& rules = sheet_.rules();
-  for (std::size_t ri = 0; ri < rules.size(); ++ri) {
-    const CssRule& rule = rules[ri];
-    if (rule.darkScope) { continue; }
-    bool matched = false;
-    int spec = 0;
-    QString matchedSelector;
-    const int sStart = ruleSelectorRange_[ri].first;
-    const int sEnd = ruleSelectorRange_[ri].second;
-    for (int si = sStart; si < sEnd; ++si) {
-      const ParsedSelector& parsed = parsedSelectors_[si];
-      if (!selectorMatches(parsed, element, state)) { continue; }
-      if (!matched || parsed.specificity > spec) {
-        matched = true;
-        spec = parsed.specificity;
-        matchedSelector = parsed.selectorText;
+namespace {
+std::vector<CssDeclaration> expandDeclaration(const CssDeclaration& decl, const QHash<QString, QString>& vars) {
+  std::vector<CssDeclaration> result{decl};
+  const QString property = decl.property, value = CssThemeParser::resolveVars(decl.value, vars).trimmed();
+  const auto add = [&](const QString& key, const QString& v) { result.push_back({key, v, decl.important}); };
+  const QStringList sides{QStringLiteral("top"), QStringLiteral("right"), QStringLiteral("bottom"), QStringLiteral("left")};
+  const bool wide = value == QStringLiteral("inherit") || value == QStringLiteral("initial") || value == QStringLiteral("unset");
+  if (property == QStringLiteral("margin") || property == QStringLiteral("padding") || property == QStringLiteral("border-width") ||
+      property == QStringLiteral("border-style") || property == QStringLiteral("border-color")) {
+    const auto parts = splitTopLevelSpaces(value);
+    if (parts.isEmpty() || parts.size() > 4) return result;
+    const QString values[] = {parts[0], parts.size() > 1 ? parts[1] : parts[0], parts.size() > 2 ? parts[2] : parts[0],
+                              parts.size() > 3 ? parts[3] : (parts.size() > 1 ? parts[1] : parts[0])};
+    for (int i = 0; i < 4; ++i)
+      add(property.startsWith(QStringLiteral("border-")) ? QStringLiteral("border-") + sides[i] + property.mid(6)
+                                                         : property + QLatin1Char('-') + sides[i],
+          values[i]);
+  } else if (property == QStringLiteral("border") || (property.startsWith(QStringLiteral("border-")) && sides.contains(property.mid(7)))) {
+    QString width = QStringLiteral("medium"), style = QStringLiteral("none"), color = QStringLiteral("currentColor");
+    if (wide)
+      width = style = color = value;
+    else
+      for (const QString& part : splitTopLevelSpaces(value)) {
+        static const QSet<QString> styles{QStringLiteral("none"),   QStringLiteral("hidden"), QStringLiteral("solid"),
+                                          QStringLiteral("dotted"), QStringLiteral("dashed"), QStringLiteral("double"),
+                                          QStringLiteral("groove"), QStringLiteral("ridge"),  QStringLiteral("inset"),
+                                          QStringLiteral("outset")};
+        if (styles.contains(part))
+          style = part;
+        else if (part == QStringLiteral("thin") || part == QStringLiteral("medium") || part == QStringLiteral("thick") ||
+                 (!part.isEmpty() && (part[0].isDigit() || part.startsWith(QStringLiteral("calc(")))))
+          width = part;
+        else
+          color = part;
       }
+    for (const QString& side : sides) {
+      if (property != QStringLiteral("border") && property != QStringLiteral("border-") + side) continue;
+      add(QStringLiteral("border-") + side + QStringLiteral("-width"), width);
+      add(QStringLiteral("border-") + side + QStringLiteral("-style"), style);
+      add(QStringLiteral("border-") + side + QStringLiteral("-color"), color);
     }
-    for (const CssDeclaration& decl : rule.declarations) {
-      if (matched) {
-        Candidate c{decl.value, matchedSelector, decl.important, spec, order};
-        const auto it = winners.constFind(decl.property);
-        if (it == winners.constEnd() || cascadeBeats(c, it.value())) { winners.insert(decl.property, c); }
-      }
-      ++order;
+  } else if (property == QStringLiteral("font")) {
+    static const QRegularExpression re(QStringLiteral(R"(^(.+?\s+)?([\d.]+(?:px|pt|em|rem|%))(?:\s*/\s*([^\s]+))?\s+(.+)$)"));
+    const auto m = re.match(value);
+    if (m.hasMatch()) {
+      add(QStringLiteral("font-size"), m.captured(2));
+      add(QStringLiteral("font-family"), m.captured(4));
+      add(QStringLiteral("line-height"), m.captured(3).isEmpty() ? QStringLiteral("normal") : m.captured(3));
+      const auto prefix = splitTopLevelSpaces(m.captured(1));
+      add(QStringLiteral("font-style"), prefix.contains(QStringLiteral("italic")) ? QStringLiteral("italic") : QStringLiteral("normal"));
+      QString weight = QStringLiteral("normal");
+      for (const QString& token : prefix)
+        if (token == QStringLiteral("bold") || token.toInt() > 0) weight = token;
+      add(QStringLiteral("font-weight"), weight);
     }
   }
-  for (auto it = winners.constBegin(); it != winners.constEnd(); ++it) {
-    if (it.key().startsWith(QStringLiteral("--"))) {
-      style.customProperties_.insert(it.key(), it.value().value);
-    } else {
-      style.properties_.insert(it.key(), it.value().value);
+  return result;
+}
+}  // namespace
+
+void CssComputedStyleEngine::applyStyleForElement(const CssElement& element, const CssElementState& state, CssComputedStyle& style,
+                                                  const std::vector<CssDeclaration>& inlineDeclarations,
+                                                  const std::vector<CssDeclaration>& presentationDeclarations) const {
+  struct Match {
+    const std::vector<CssDeclaration>* declarations;
+    QString selector;
+    int specificity;
+  };
+  std::vector<Match> matches;
+  if (!presentationDeclarations.empty()) matches.push_back({&presentationDeclarations, {}, 0});
+  const auto& rules = sheet_.rules();
+  for (std::size_t ri = 0; ri < rules.size(); ++ri) {
+    int spec = -1;
+    QString selected;
+    for (int si = ruleSelectorRange_[ri].first; si < ruleSelectorRange_[ri].second; ++si) {
+      const auto& parsed = parsedSelectors_[si];
+      if (selectorMatches(parsed, element, state) && parsed.specificity > spec) {
+        spec = parsed.specificity;
+        selected = parsed.selectorText;
+      }
     }
+    if (spec >= 0) matches.push_back({&rules[ri].declarations, selected, spec});
+  }
+  if (!inlineDeclarations.empty()) matches.push_back({&inlineDeclarations, QStringLiteral("style attribute"), 1000000});
+  QHash<QString, Candidate> winners;
+  const auto collect = [&](bool custom) {
+    int order = 0;
+    for (const auto& match : matches)
+      for (const auto& decl : *match.declarations) {
+        ++order;
+        if (decl.property.startsWith(QStringLiteral("--")) != custom) continue;
+        const auto expanded = custom ? std::vector<CssDeclaration>{decl} : expandDeclaration(decl, style.customProperties_);
+        for (const auto& component : expanded) {
+          Candidate c{component.value, match.selector, component.important, match.specificity, order};
+          const auto it = winners.constFind(component.property);
+          if (it == winners.constEnd() || cascadeBeats(c, it.value())) winners.insert(component.property, c);
+        }
+      }
+  };
+  collect(true);
+  for (auto it = winners.cbegin(); it != winners.cend(); ++it) style.customProperties_.insert(it.key(), it.value().value);
+  winners.clear();
+  collect(false);
+  for (auto it = winners.cbegin(); it != winners.cend(); ++it) style.properties_.insert(it.key(), it.value().value);
+}
+
+void CssComputedStyleEngine::computeValues(CssComputedStyle& style, const CssComputedStyle& parent, bool root) const {
+  static const QHash<QString, QString> initialValues{
+      {QStringLiteral("color"), QStringLiteral("rgb(0, 0, 0)")}, {QStringLiteral("fill"), QStringLiteral("rgb(0, 0, 0)")},
+      {QStringLiteral("stroke"), QStringLiteral("none")},        {QStringLiteral("font-size"), QStringLiteral("16px")},
+      {QStringLiteral("font-weight"), QStringLiteral("normal")}, {QStringLiteral("font-style"), QStringLiteral("normal")},
+      {QStringLiteral("line-height"), QStringLiteral("normal")}, {QStringLiteral("visibility"), QStringLiteral("visible")}};
+  for (auto it = style.properties_.begin(); it != style.properties_.end();) {
+    const QString value = style.resolvedValue(it.key()).trimmed();
+    if (value == QStringLiteral("inherit") || (value == QStringLiteral("unset") && inheritedProperties().contains(it.key()))) {
+      const auto inherited = parent.properties_.constFind(it.key());
+      if (inherited != parent.properties_.cend()) {
+        it.value() = inherited.value();
+        ++it;
+      } else if (initialValues.contains(it.key())) {
+        it.value() = initialValues.value(it.key());
+        ++it;
+      } else
+        it = style.properties_.erase(it);
+    } else if (value == QStringLiteral("initial") || value == QStringLiteral("unset")) {
+      if (initialValues.contains(it.key())) {
+        it.value() = initialValues.value(it.key());
+        ++it;
+      } else
+        it = style.properties_.erase(it);
+    } else
+      ++it;
+  }
+  const QString raw = style.resolvedValue(QStringLiteral("font-size"));
+  const qreal px = lengthToPx(raw, style.customProperties_, parent.fontSizePx, parent.rootFontSizePx, parent.fontSizePx);
+  style.fontSizePx = px > 0 ? px : parent.fontSizePx;
+  style.rootFontSizePx = root ? style.fontSizePx : parent.rootFontSizePx;
+  style.containingWidthPx = environment_.viewportWidth;
+  style.textScale = environment_.textScale;
+  if (!raw.isEmpty())
+    style.properties_.insert(QStringLiteral("font-size"), QString::number(style.fontSizePx, 'g', 12) + QStringLiteral("px"));
+  const QString line = style.resolvedValue(QStringLiteral("line-height"));
+  bool number = false;
+  line.toDouble(&number);
+  if (!line.isEmpty() && !number && line != QStringLiteral("normal")) {
+    const qreal height = lengthToPx(line, style.customProperties_, style.fontSizePx, style.rootFontSizePx, style.fontSizePx);
+    if (height > 0) style.properties_.insert(QStringLiteral("line-height"), QString::number(height, 'g', 12) + QStringLiteral("px"));
   }
 }
 
 CssComputedStyle CssComputedStyleEngine::parentStyleFor(const CssElement* parent) const {
-  if (!parent) {
-    CssComputedStyle root;
-    root.customProperties_ = sheet_.variables();
-    return root;
-  }
-  CssComputedStyle inherited = parentStyleFor(parent->parent);
-  CssComputedStyle own;
-  own.customProperties_ = inherited.customProperties_;
-  for (auto it = inherited.properties_.constBegin(); it != inherited.properties_.constEnd(); ++it) {
-    if (inheritedProperties().contains(it.key())) { own.properties_.insert(it.key(), it.value()); }
-  }
-  applyStyleForElement(*parent, CssElementState{}, own);
-  // CSS inheritance: a child inherits only the parent's inherited properties
-  // (color, font-*, line-height, text-align) plus CSS variables — NOT padding,
-  // margin, border, width, etc. Returning `own` verbatim leaked the parent's
-  // non-inherited declarations into every descendant. Concrete symptom: github's
-  // `#write { padding: 30px; padding-bottom: 100px }` injected padding-bottom:100px
-  // into every element, and blockquote — which declares only the `padding`
-  // shorthand, never the `padding-bottom` longhand — kept the leaked 100px,
-  // growing every quote ~112px too tall.
-  CssComputedStyle inheritable;
-  inheritable.customProperties_ = own.customProperties_;
-  for (auto it = own.properties_.constBegin(); it != own.properties_.constEnd(); ++it) {
-    if (inheritedProperties().contains(it.key())) { inheritable.properties_.insert(it.key(), it.value()); }
-  }
-  return inheritable;
+  if (parent) return styleFor(*parent);
+  CssComputedStyle initial;
+  initial.customProperties_ = sheet_.variables();
+  return initial;
 }
-
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element) const {
-  return styleFor(element, CssElementState{});
+  return styleFor(element, {}, element.inlineDeclarations);
 }
-
 CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, const CssElementState& state) const {
-  CssComputedStyle style = parentStyleFor(element.parent);
-  applyStyleForElement(element, state, style);
-  return style;
+  return styleFor(element, state, element.inlineDeclarations, {});
 }
-
-CssComputedStyle CssComputedStyleEngine::styleFor(
-    const CssElement& element, const CssElementState& state,
-    const std::vector<CssDeclaration>& inlineDeclarations) const {
+CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, const CssElementState& state,
+                                                  const std::vector<CssDeclaration>& inlineDeclarations) const {
   return styleFor(element, state, inlineDeclarations, {});
 }
-
-CssComputedStyle CssComputedStyleEngine::styleFor(
-    const CssElement& element, const CssElementState& state,
-    const std::vector<CssDeclaration>& inlineDeclarations,
-    const std::vector<CssDeclaration>& presentationDeclarations) const {
-  CssComputedStyle style = parentStyleFor(element.parent);
-  // SVG presentation attributes are author-origin declarations with zero
-  // specificity and precede author stylesheets. Seed them before applying the
-  // sheet so any matching normal rule wins; inline style is applied last below.
-  for (const CssDeclaration& declaration : presentationDeclarations) {
-    const QString property = declaration.property.toLower();
-    if (property.startsWith(QStringLiteral("--")))
-      style.customProperties_.insert(property, declaration.value);
-    else
-      style.properties_.insert(property, declaration.value);
-  }
-  applyStyleForElement(element, state, style);
-
-  // Inline declarations form an author-origin rule with specificity greater
-  // than every selector, but a stylesheet !important still beats inline
-  // normal. Re-run only the properties touched inline so the public value map
-  // remains compact. The winner metadata is recovered from a one-property
-  // probe of the stylesheet cascade.
-  QHash<QString, CssDeclaration> inlineWinners;
-  for (const CssDeclaration& declaration : inlineDeclarations) {
-    const QString property = declaration.property.toLower();
-    const auto current = inlineWinners.constFind(property);
-    if (current == inlineWinners.constEnd() || declaration.important ||
-        !current.value().important)
-      inlineWinners.insert(property, declaration);
-  }
-  for (auto inlineIt = inlineWinners.constBegin();
-       inlineIt != inlineWinners.constEnd(); ++inlineIt) {
-    const QString& property = inlineIt.key();
-    const CssDeclaration& declaration = inlineIt.value();
-    bool stylesheetImportant = false;
-    for (const CssRule& rule : sheet_.rules()) {
-      bool matches = false;
-      for (const QString& selector : rule.selectors) {
-        const ParsedSelector parsed = parseSelector(selector);
-        if (selectorMatches(parsed, element, state)) { matches = true; break; }
-      }
-      if (!matches) continue;
-      for (const CssDeclaration& candidate : rule.declarations)
-        if (candidate.property == property && candidate.important)
-          stylesheetImportant = true;
-    }
-    if (stylesheetImportant && !declaration.important) continue;
-    if (property.startsWith(QStringLiteral("--")))
-      style.customProperties_.insert(property, declaration.value);
-    else
-      style.properties_.insert(property, declaration.value);
-  }
+CssComputedStyle CssComputedStyleEngine::styleFor(const CssElement& element, const CssElementState& state,
+                                                  const std::vector<CssDeclaration>& inlineDeclarations,
+                                                  const std::vector<CssDeclaration>& presentationDeclarations) const {
+  const CssComputedStyle parent = parentStyleFor(element.parent);
+  CssComputedStyle style;
+  style.customProperties_ = parent.customProperties_;
+  style.fontSizePx = parent.fontSizePx;
+  style.rootFontSizePx = parent.rootFontSizePx;
+  for (auto it = parent.properties_.cbegin(); it != parent.properties_.cend(); ++it)
+    if (inheritedProperties().contains(it.key())) style.properties_.insert(it.key(), it.value());
+  applyStyleForElement(element, state, style, inlineDeclarations, presentationDeclarations);
+  if (!environment_.deferComputedValues) computeValues(style, parent, !element.parent);
   return style;
 }
-
 }  // namespace muffin

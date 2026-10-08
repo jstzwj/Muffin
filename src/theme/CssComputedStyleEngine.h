@@ -40,6 +40,7 @@ public:
 // full set from the live MarkdownNode tree, unlocking `+`/`~`, `:first-child`,
 // `:nth-child(n)`, `:has(...)` etc.
 struct CssElement {
+  std::vector<CssDeclaration> inlineDeclarations;
   QString tag;
   QString id;
   QStringList classes;
@@ -92,6 +93,10 @@ public:
 
   QHash<QString, QString> properties_;
   QHash<QString, QString> customProperties_;
+  qreal fontSizePx = 16.0;
+  qreal rootFontSizePx = 16.0;
+  qreal containingWidthPx = -1.0;
+  qreal textScale = 1.0;
 };
 
 // Selector parse tree. Pre-parsed once per sheet in the engine constructor and
@@ -157,28 +162,28 @@ struct CssSelectorFeatures {
 
 class CssComputedStyleEngine {
 public:
-  explicit CssComputedStyleEngine(const CssThemeSheet& sheet);
+ explicit CssComputedStyleEngine(const CssThemeSheet& sheet, CssEnvironment environment = {});
 
-  CssComputedStyle styleFor(const CssElement& element) const;
-  CssComputedStyle styleFor(const CssElement& element, const CssElementState& state) const;
-  CssComputedStyle styleFor(
-      const CssElement& element, const CssElementState& state,
-      const std::vector<CssDeclaration>& inlineDeclarations) const;
-  CssComputedStyle styleFor(
-      const CssElement& element, const CssElementState& state,
-      const std::vector<CssDeclaration>& inlineDeclarations,
-      const std::vector<CssDeclaration>& presentationDeclarations) const;
-  const CssSelectorFeatures& selectorFeatures() const { return selectorFeatures_; }
+ CssComputedStyle styleFor(const CssElement& element) const;
+ CssComputedStyle styleFor(const CssElement& element, const CssElementState& state) const;
+ CssComputedStyle styleFor(const CssElement& element, const CssElementState& state,
+                           const std::vector<CssDeclaration>& inlineDeclarations) const;
+ CssComputedStyle styleFor(const CssElement& element, const CssElementState& state, const std::vector<CssDeclaration>& inlineDeclarations,
+                           const std::vector<CssDeclaration>& presentationDeclarations) const;
+ const CssSelectorFeatures& selectorFeatures() const { return selectorFeatures_; }
 
 private:
-  void applyStyleForElement(const CssElement& element, const CssElementState& state,
-                            CssComputedStyle& style) const;
-  CssComputedStyle parentStyleFor(const CssElement* parent) const;
+ void applyStyleForElement(const CssElement& element, const CssElementState& state, CssComputedStyle& style,
+                           const std::vector<CssDeclaration>& inlineDeclarations = {},
+                           const std::vector<CssDeclaration>& presentationDeclarations = {}) const;
+ CssComputedStyle parentStyleFor(const CssElement* parent) const;
+ void computeValues(CssComputedStyle& style, const CssComputedStyle& parent, bool root) const;
 
-  const CssThemeSheet& sheet_;
-  std::vector<ParsedSelector> parsedSelectors_;          // every selector of every rule, flattened
-  std::vector<std::pair<int, int>> ruleSelectorRange_;   // per-rule [start,end) into parsedSelectors_
-  CssSelectorFeatures selectorFeatures_;
+ CssThemeSheet sheet_;
+ CssEnvironment environment_;
+ std::vector<ParsedSelector> parsedSelectors_;         // every selector of every rule, flattened
+ std::vector<std::pair<int, int>> ruleSelectorRange_;  // per-rule [start,end) into parsedSelectors_
+ CssSelectorFeatures selectorFeatures_;
 };
 
 }  // namespace muffin

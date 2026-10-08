@@ -8,6 +8,7 @@
 
 #include <memory>
 #include <vector>
+#include "theme/CssThemeParser.h"
 
 namespace muffin::html {
 
@@ -182,6 +183,11 @@ struct HtmlLayoutGeometry {
 // historical hardcoded values, so callers that don't care (the inline-HTML
 // path) keep rendering exactly as before.
 struct HtmlColorPalette {
+  std::shared_ptr<const CssThemeSheet> documentStyleSheet;
+  CssEnvironment cssEnvironment;
+  QHash<QString, QString> fontAliases;
+  qreal cssZoom = 1.0;
+  qreal parentFontPx = 0.0;
   QColor text;                   // default body text + <kbd>
   QColor background;             // <body> canvas
   QColor muted;                  // secondary text / soft borders (<button> border, placeholder alt)
@@ -211,76 +217,80 @@ struct HtmlColorPalette {
 
 class HtmlBox {
 public:
-  explicit HtmlBox(HtmlTag tag);
-  ~HtmlBox();
+ QString cssTag;
+ QString cssId;
+ QStringList cssClasses;
+ QString cssInlineStyle;
+ explicit HtmlBox(HtmlTag tag);
+ ~HtmlBox();
 
-  HtmlTag tag() const;
-  void setTag(HtmlTag tag);
+ HtmlTag tag() const;
+ void setTag(HtmlTag tag);
 
-  // Text content (TextRun only)
-  QString text() const;
-  void setText(QString text);
+ // Text content (TextRun only)
+ QString text() const;
+ void setText(QString text);
 
-  // Image attributes
-  QString src() const;
-  void setSrc(QString src);
-  QString alt() const;
-  void setAlt(QString alt);
+ // Image attributes
+ QString src() const;
+ void setSrc(QString src);
+ QString alt() const;
+ void setAlt(QString alt);
 
-  // Anchor attributes
-  QString href() const;
-  void setHref(QString href);
+ // Anchor attributes
+ QString href() const;
+ void setHref(QString href);
 
-  // List marker text (for <li>)
-  QString listMarker() const;
-  void setListMarker(QString marker);
+ // List marker text (for <li>)
+ QString listMarker() const;
+ void setListMarker(QString marker);
 
-  // Ordered list attributes (for <ol>)
-  int listStart() const;
-  void setListStart(int start);
-  HtmlListMarkerType listMarkerType() const;
-  void setListMarkerType(HtmlListMarkerType type);
-  bool listReversed() const;
-  void setListReversed(bool reversed);
+ // Ordered list attributes (for <ol>)
+ int listStart() const;
+ void setListStart(int start);
+ HtmlListMarkerType listMarkerType() const;
+ void setListMarkerType(HtmlListMarkerType type);
+ bool listReversed() const;
+ void setListReversed(bool reversed);
 
-  // Details open state (for <details>)
-  bool detailsOpen() const;
-  void setDetailsOpen(bool open);
+ // Details open state (for <details>)
+ bool detailsOpen() const;
+ void setDetailsOpen(bool open);
 
-  // Table cell span attributes (for <td>/<th>)
-  int colSpan() const;
-  void setColSpan(int span);
-  int rowSpan() const;
-  void setRowSpan(int span);
+ // Table cell span attributes (for <td>/<th>)
+ int colSpan() const;
+ void setColSpan(int span);
+ int rowSpan() const;
+ void setRowSpan(int span);
 
-  // Computed style
-  HtmlComputedStyle& style();
-  const HtmlComputedStyle& style() const;
-  void setStyle(HtmlComputedStyle style);
+ // Computed style
+ HtmlComputedStyle& style();
+ const HtmlComputedStyle& style() const;
+ void setStyle(HtmlComputedStyle style);
 
-  // Layout result
-  HtmlLayoutGeometry& geometry();
-  const HtmlLayoutGeometry& geometry() const;
-  void setGeometry(HtmlLayoutGeometry geo);
-  int textLayoutIndex() const;
-  void setTextLayoutIndex(int index);
-  bool ownsTextLayout() const;
+ // Layout result
+ HtmlLayoutGeometry& geometry();
+ const HtmlLayoutGeometry& geometry() const;
+ void setGeometry(HtmlLayoutGeometry geo);
+ int textLayoutIndex() const;
+ void setTextLayoutIndex(int index);
+ bool ownsTextLayout() const;
 
-  // Children
-  std::vector<std::unique_ptr<HtmlBox>>& children();
-  const std::vector<std::unique_ptr<HtmlBox>>& children() const;
-  void addChild(std::unique_ptr<HtmlBox> child);
-  HtmlBox* parent();
-  const HtmlBox* parent() const;
+ // Children
+ std::vector<std::unique_ptr<HtmlBox>>& children();
+ const std::vector<std::unique_ptr<HtmlBox>>& children() const;
+ void addChild(std::unique_ptr<HtmlBox> child);
+ HtmlBox* parent();
+ const HtmlBox* parent() const;
 
-  // Convenience queries
-  bool isTextRun() const;
-  bool isBlockLevel() const;
-  bool isInlineLevel() const;
-  bool hasTextContent() const;
+ // Convenience queries
+ bool isTextRun() const;
+ bool isBlockLevel() const;
+ bool isInlineLevel() const;
+ bool hasTextContent() const;
 
-  // Collect all text recursively (for inline formatting context)
-  QString collectedText() const;
+ // Collect all text recursively (for inline formatting context)
+ QString collectedText() const;
 
 private:
   HtmlTag tag_;

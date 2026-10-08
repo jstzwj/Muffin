@@ -1,5 +1,11 @@
 <RCC>
   <qresource prefix="/themes">
+    <file alias="document-base.css">../resources/themes/document-base.css</file>
+    <file alias="font-licenses/README.md">../resources/themes/font-licenses/README.md</file>
+    <file alias="font-licenses/PT-Serif-OFL.txt">../resources/themes/font-licenses/PT-Serif-OFL.txt</file>
+    <file alias="font-licenses/Open-Sans-Apache-2.0.txt">../resources/themes/font-licenses/Open-Sans-Apache-2.0.txt</file>
+    <file alias="font-licenses/Lato-OFL.txt">../resources/themes/font-licenses/Lato-OFL.txt</file>
+    <file alias="font-licenses/Merriweather-OFL.txt">../resources/themes/font-licenses/Merriweather-OFL.txt</file>
     <file alias="github.css">../resources/themes/github.css</file>
     <file alias="newsprint.css">../resources/themes/newsprint.css</file>
     <file alias="night.css">../resources/themes/night.css</file>

@@ -200,6 +200,7 @@ private:
   };
 
   struct HtmlFormatSpan {
+    QStringList fontFamilies;
     int layoutStart = 0;
     int layoutEnd = 0;
     bool bold = false;
@@ -217,6 +218,7 @@ private:
   void buildOffsetMapFromProjection();
   void buildLinkBeforeAtoms();
   void buildHtmlFormatSpans();
+  void buildInlineBoxSpacing(const RenderTheme& theme);
   void buildMathAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width);
   void buildImageAtoms(const QVector<InlineNode>& inlines, const RenderTheme& theme, qreal width, const QString& documentPath);
   QString texForInlineMathSpan(const QVector<InlineNode>& inlines, const InlineProjectionSpan& span) const;
@@ -321,6 +323,11 @@ private:
   qreal previewHeight_ = 0.0;         // Total height of image previews
   QVector<HtmlFormatSpan> htmlFormatSpans_;
   QVector<DisplayOffsetMapEntry> displayOffsetMap_;
+  struct InlineSpacer {
+    qsizetype start;
+    qreal width;
+  };
+  QVector<InlineSpacer> inlineSpacers_;
   InlineProjection projection_;
   math::MathRenderer mathRenderer_;
   std::function<bool(QStringView)> isMisspelled_;

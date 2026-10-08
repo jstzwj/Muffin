@@ -105,6 +105,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
                     QColor(), QTextCharFormat::AlignNormal, QString(), fontSize, fontSize);
 
   QFont baseFont;
+  baseFont.setFamilies(blockBox.style().font.families());
   baseFont.setPointSizeF(fontSize);
   // Apply letter-spacing from the block box style (inherited property)
   if (blockBox.style().letterSpacing != 0) {
@@ -148,6 +149,9 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
     }
     if (span.keyboard) {
       fmt.setFontFamily(QStringLiteral("Courier New"));
+    }
+    if (!span.fontFamilies.isEmpty()) {
+      fmt.setFontFamilies(span.fontFamilies);
     }
     if (span.color.isValid()) {
       fmt.setForeground(span.color);
@@ -330,6 +334,7 @@ void HtmlTextMeasurer::collectInlineText(
           start, offset - start, bold, italic, decoration, color, backgroundColor, mono, keyboard,
           (fontSize > 0 && !qFuzzyCompare(fontSize, baseFontSize)) ? fontSize : 0.0,
           verticalAlignment});
+      outSpans.back().fontFamilies = box.style().font.families();
     }
     if (!href.isEmpty() && offset > start) {
       outLinks.push_back(HtmlTextLayout::LinkSpan{start, offset - start, href});

@@ -358,7 +358,7 @@ QVector<qreal> tableColumnWidths(const MarkdownNode& table, const RenderTheme& t
         continue;
       }
       const MarkdownNode& cell = *row->children().at(static_cast<size_t>(column));
-      const QFont font = row->tableRowIsHeader() ? theme.headingFont(6) : theme.paragraphFont();
+      const QFont font = theme.textFontForElement(row->tableRowIsHeader() ? QStringLiteral("th") : QStringLiteral("td"), &cell);
       preferred = qMax(preferred, maxLiteralLineWidth(InlineProjection::plainTextForInlines(cell.inlines(), breakOnSingleNewline), font));
     }
     widths[column] = preferred + padding.left() + padding.right();
@@ -556,7 +556,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   const QString elementKey = node.type() == BlockType::Heading
       ? QStringLiteral("h%1").arg(node.headingLevel())
       : (isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("p"));
-  const QFont font = node.type() == BlockType::Heading ? theme.headingFont(node.headingLevel()) : theme.textFontForElement(elementKey, &node);
+  const QFont font = theme.textFontForElement(elementKey, &node);
   const QMarginsF headingPadding = node.type() == BlockType::Heading ? theme.headingPadding(node.headingLevel()) : QMarginsF();
   // A heading with an inline `::before` marker (h4/h5/h6) reserves left space for
   // it (headingBeforeAdvance); the text wraps within the remaining width. The
@@ -621,12 +621,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
     applyPreedit(options);
     inlineLayout->build(node.inlines(), editableSource, theme, textWidth, font, options);
   }
-  qreal height = inlineLayout->height();
-  if (node.type() == BlockType::Heading &&
-      ((theme.headingBorderBottomColor(node.headingLevel()).isValid() && theme.headingBorderBottomWidth(node.headingLevel()) > 0.0) ||
-       hasHeadingAfterDecoration(theme, node.headingLevel()))) {
-    height += theme.blockSpacing() * 0.35;
-  }
+  const qreal headingBorderBottom = node.type() == BlockType::Heading ? theme.headingBorderBottomWidth(node.headingLevel()) : 0.0;
+  qreal height = inlineLayout->height() + headingPadding.top() + headingPadding.bottom() + headingBorderBottom;
   layout->setContentSourceStart(projectionBase);
   const QRectF flowRect(x, y, width, height);
   layout->setRect(flowRect);
@@ -643,15 +639,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
       // the text's left side. (Exact for h1–h3, whose beforeAdvance is 0.)
       const qreal left = qBound(flowRect.left(), flowRect.left() + visual.left(), flowRect.right());
       const qreal right = qBound(left, flowRect.left() + headingPadding.left() + beforeAdvance + visual.right() + headingPadding.right(), flowRect.right());
-      box.borderBox = QRectF(left, flowRect.top(), qMax<qreal>(1.0, right - left), inlineLayout->height());
+      box.borderBox = QRectF(left, flowRect.top(), qMax<qreal>(1.0, right - left), height);
     }
-    box.paddingBox = box.borderBox.marginsRemoved(headingPadding);
-    box.contentBox = box.paddingBox;
+    box.paddingBox = box.borderBox.adjusted(0, 0, 0, -headingBorderBottom);
+    box.contentBox = box.paddingBox.marginsRemoved(headingPadding);
     // QTextLayout still lays out against the full heading content width so CSS
     // text-align:center/right works like a browser block. The fit-content border
     // box is paint/hover geometry only; tying the text origin to that shrunken box
     // double-applies the centred visual offset and pushes h1/h3 far right.
-    box.inlineTextOrigin = QPointF(flowRect.left() + headingPadding.left() + beforeAdvance, flowRect.top());
+    box.inlineTextOrigin = QPointF(flowRect.left() + headingPadding.left() + beforeAdvance, flowRect.top() + headingPadding.top());
     qreal overflow = 0.0;
     if (const ThemeElementStyle* hover = theme.elementStyle(box.hostKey + QStringLiteral(":hover"))) {
       overflow = qMax(overflow, hover->paint.boxShadowBlur);
@@ -1051,6 +1047,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
       BuildAccumTimer t(htmlRenderNs_, perfEnabled_);
       sanitizedHtml = HtmlSanitizer().sanitizedPreview(layout->literal());
       html::HtmlColorPalette htmlPalette;
+      htmlPalette.documentStyleSheet = theme.documentStyleSheet();
+      htmlPalette.fontAliases = theme.fontAliases();
+      htmlPalette.cssEnvironment = theme.documentCssEnvironment();
+      htmlPalette.cssZoom = theme.zoomPercent() / 100.0;
       htmlPalette.text = theme.textColor();
       htmlPalette.background = theme.backgroundColor();
       htmlPalette.muted = theme.mutedTextColor();
@@ -1122,6 +1122,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       cell.alternate = rowIndex % 2 == 1;
       cell.alignment = column < alignments.size() ? alignments.at(column) : TableAlignment::None;
       InlineLayout::BuildOptions options;
+      options.baseTextColor = theme.textColorForElement(cell.header ? QStringLiteral("th") : QStringLiteral("td"), cellNode.get());
       options.documentPath = documentPath_;
       options.sourceBase = sourceContentStartForEditableNode(*cellNode) - cellNode->topLevelBlock()->sourceRange().byteStart;
       if (selection_.focus.text.nodeId == cellNode->id()) {
@@ -1134,13 +1135,9 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
       {
         BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
         applyPreedit(options);  // only the focused cell has projectionState.cursorSourceOffset set
-        cell.text.build(
-            cellNode->inlines(),
-            sourceTextForEditableNode(*cellNode),
-            theme,
-            qMax<qreal>(1.0, columnWidth - padding.left() - padding.right()),
-            cell.header ? theme.headingFont(6) : theme.paragraphFont(),
-            options);
+        cell.text.build(cellNode->inlines(), sourceTextForEditableNode(*cellNode), theme,
+                        qMax<qreal>(1.0, columnWidth - padding.left() - padding.right()),
+                        theme.textFontForElement(cell.header ? QStringLiteral("th") : QStringLiteral("td"), cellNode.get()), options);
       }
       rowHeight = qMax(rowHeight, cell.text.height() + padding.top() + padding.bottom());
       cell.rect = QRectF(cellX, cursorY, columnWidth, 0);
@@ -1790,11 +1787,11 @@ BlockLayoutBuilder::EstimateResult BlockLayoutBuilder::estimateParagraphLike(con
   // Mirror buildParagraphLike: an inline ::before marker narrows the wrap width.
   const qreal beforeAdvance = isHeading ? theme.headingBeforeAdvance(node.headingLevel()) : 0.0;
   const qreal avgCharWidth = cachedAvgCharWidthForElement(theme, elementKey, isHeading, node.headingLevel());
-  const qreal charsPerLine = std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width - beforeAdvance) / avgCharWidth));
+  const QMarginsF padding = isHeading ? theme.headingPadding(node.headingLevel()) : QMarginsF();
+  const qreal charsPerLine =
+      std::max(qreal(1.0), std::floor(std::max<qreal>(1.0, width - beforeAdvance - padding.left() - padding.right()) / avgCharWidth));
   qreal height = estimateWrappedLinesFromCharCount(charCount, charsPerLine) * lineHeight;
-  if (isHeading && node.headingLevel() <= 2) {
-    height += theme.blockSpacing() * 0.35;
-  }
+  if (isHeading) height += padding.top() + padding.bottom() + theme.headingBorderBottomWidth(node.headingLevel());
   // mustMeasure dropped: DocumentLayout never reads EstimateResult.mustMeasure (promotion is purely
   // viewport-visibility-driven), so the inlinesContainSizedContent walk was pure waste on the
   // estimate path (~2s of the 250k-block open estimate).

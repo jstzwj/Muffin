@@ -18,6 +18,7 @@ class CssComputedStyleEngine;
 class CssThemeSheet;
 class NodeCssElementBuilder;  // sparse live-tree adapter for structural selectors
 struct CssElement;
+struct CssEnvironment;
 struct ThemeElementStyle;
 
 class RenderTheme {
@@ -45,6 +46,14 @@ public:
   // reduce wrapping without shrinking the type.
   int contentWidthPx() const;
   void setContentWidthPx(int px);
+  // Resolve retained responsive CSS for the editor viewport. Returns true when
+  // the environment changed and existing block estimates need rebuilding.
+  bool updateForViewport(qreal width, qreal height = 768.0);
+  bool hasDocumentCss() const { return bool(sourceSheet_); }
+  bool pageUsesBorderBox() const { return pageBorderBox_; }
+  std::shared_ptr<const CssThemeSheet> documentStyleSheet() const { return sourceSheet_; }
+  CssEnvironment documentCssEnvironment() const;
+  const QHash<QString, QString>& fontAliases() const { return fontAliases_; }
 
   qreal pageWidth() const;
   qreal topMargin() const;
@@ -73,6 +82,7 @@ public:
   qreal pageShadowOffsetY() const;
   qreal pageShadowSpread() const;
   QMarginsF blockMargin(BlockType type, int headingLevel = 0, const MarkdownNode* node = nullptr) const;
+  bool hasBlockMargin(BlockType type, int headingLevel = 0, const MarkdownNode* node = nullptr) const;
   QMarginsF headingPadding(int level) const;
   // Phase 4a: CSS `blockquote` box (flow-aware). blockquoteBoxThemed() is the
   // switch from the legacy accent-bar + 16px indent to the CSS-driven path.
@@ -131,6 +141,7 @@ public:
   void invalidateStructuralSiblingLinks() const;
   QFont headingFont(int level) const;
   QFont codeFont() const;
+  QFont inlineCodeFont() const;
   qreal codeLineHeight() const;
   QFont mathFont() const;
 
@@ -266,6 +277,7 @@ private:
   QMarginsF pageMargin_;
   bool pageMarginExplicit_ = false;  // theme declared a #write margin (or padding→default 0)
   qreal pageMaxWidth_ = 0.0;
+  bool pageBorderBox_ = false;
   int contentWidthPx_ = 0;
   QColor pageShadowColor_;
   qreal pageShadowOffsetX_ = 0.0;
@@ -289,6 +301,12 @@ private:
   bool hasNthOfType_ = false;  // some selector reads typeIndex (:*-of-type); else skip typeCounts
   qreal bodyFontPx_ = 16.0;
   std::shared_ptr<const CssThemeSheet> structuralSheet_;
+  std::shared_ptr<const CssThemeSheet> sourceSheet_;
+  QFont codeFontForElement(const QString& key) const;
+  QString sourceId_;
+  QHash<QString, QString> fontAliases_;
+  qreal cssViewportWidth_ = -1.0;
+  qreal cssViewportHeight_ = -1.0;
   std::shared_ptr<CssComputedStyleEngine> structuralEngine_;
   // Sparse live-node adapter for structural selector navigation. Shared (not unique)
   // so RenderTheme remains copyable; reset with the computed style cache on edits.

@@ -5,6 +5,7 @@ qt/6.11.1
 # (harfbuzz 12.3.0#a5fef06, ~2026-08) stopped generating configs for it as a
 # transitive-only dependency — fresh CI installs failed at find_package(Qt6).
 harfbuzz/12.3.0
+freetype/2.13.2
 icu/74.2
 libwebp/1.6.0
 dav1d/1.5.3

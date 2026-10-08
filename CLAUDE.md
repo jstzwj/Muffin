@@ -4,6 +4,10 @@
 
 This project uses Conan-generated CMake presets. Use the Release preset for local verification:
 
+Install the build-time font conversion dependencies once with
+`python -m pip install -r requirements-build.txt`. CMake converts the original
+WOFF/WOFF2 fonts into `build/theme-fonts/`; do not commit generated TTF files.
+
 ```powershell
 conan install . -s build_type=Release -s compiler.cppstd=20 --build=missing
 cmake --preset conan-default

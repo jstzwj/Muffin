@@ -622,8 +622,9 @@ bool EditorView::event(QEvent* event) {
 
 void EditorView::resizeEvent(QResizeEvent* event) {
   QAbstractScrollArea::resizeEvent(event);
+  const bool stylesChanged = theme_.updateForViewport(viewport()->width(), viewport()->height());
   bool relayouted = false;
-  if (layout_ && document_) {
+  if (layout_ && document_ && !stylesChanged) {
     layout_->setEditingHtmlBlock(editingHtmlBlockId_);
     const int oldValue = verticalScrollBar()->value();
     relayouted = layout_->relayoutForViewportWidth(theme_, viewport()->width());
@@ -1166,6 +1167,7 @@ QVariant EditorView::inputMethodQuery(Qt::InputMethodQuery query) const {
 }
 
 void EditorView::rebuildLayout() {
+  theme_.updateForViewport(viewport()->width(), viewport()->height());
   PerfTimer perf("view.rebuildLayout");
   if (!layout_) {
     layout_ = std::make_unique<DocumentLayout>();

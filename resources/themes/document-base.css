@@ -1,0 +1,16 @@
+/* Muffin's document host contract. Theme author rules follow this sheet. */
+html { font-size: 16px; }
+body { margin: 0; }
+#write { box-sizing: border-box; margin: 0 auto; padding: 36px 30px 70px; }
+p { margin: 0 0 1em; }
+h1 { font-size: 2em; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.17em; }
+h4, h5, h6 { font-size: 1em; }
+h1, h2, h3, h4, h5, h6 { font-weight: bold; }
+code, pre { font-family: Consolas, 'DejaVu Sans Mono', monospace; }
+code { font-size: .875em; padding: 0 2px; border: none; border-radius: 0; }
+kbd { font-family: Consolas, 'DejaVu Sans Mono', monospace; font-size: .8em;
+  color: #242729; background: white; padding: .1em .6em; border: 1px solid #adb3b9;
+  border-radius: 3px; box-shadow: 0 1px 0 rgba(12,13,14,.2); }
+table { border-collapse: collapse; }

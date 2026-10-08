@@ -134,6 +134,9 @@ Muffin 使用 [Conan](https://conan.io/) 管理依赖，使用 CMake 构建。�
 ### 构建
 
 ```bash
+# 安装构建时字体转换工具
+python -m pip install -r requirements-build.txt
+
 # 检测 Conan 配置
 conan profile detect --force
 

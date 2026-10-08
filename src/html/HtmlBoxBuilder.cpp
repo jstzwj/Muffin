@@ -179,10 +179,21 @@ std::unique_ptr<HtmlBox> HtmlBoxBuilder::buildNode(void* nodePtr) {
   // Extract inline style attribute if present
   auto* element = lxb_dom_interface_element(node);
   if (element) {
+    size_t tagLength = 0;
+    const auto* local = lxb_dom_element_local_name(element, &tagLength);
+    box->cssTag = QString::fromUtf8(reinterpret_cast<const char*>(local), static_cast<int>(tagLength));
+    const auto attribute = [&](const char* name, size_t length) {
+      size_t valueLength = 0;
+      const auto* value = lxb_dom_element_get_attribute(element, reinterpret_cast<const lxb_char_t*>(name), length, &valueLength);
+      return value ? QString::fromUtf8(reinterpret_cast<const char*>(value), static_cast<int>(valueLength)) : QString();
+    };
+    box->cssId = attribute("id", 2);
+    box->cssClasses = attribute("class", 5).split(QLatin1Char(' '), Qt::SkipEmptyParts);
     size_t styleLen = 0;
     const lxb_char_t* styleAttr = lxb_dom_element_get_attribute(
         element, reinterpret_cast<const lxb_char_t*>("style"), 5, &styleLen);
     if (styleAttr && styleLen > 0) {
+      box->cssInlineStyle = QString::fromUtf8(reinterpret_cast<const char*>(styleAttr), static_cast<int>(styleLen));
       extractInlineStyle(*box, reinterpret_cast<const char*>(styleAttr), styleLen);
     }
 

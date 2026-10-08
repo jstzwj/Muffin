@@ -668,14 +668,13 @@ void testPageWidthPercentDoesNotCollapse() {
   const ThemeDefinition capped = CssThemeMapper::fromCss(
       QStringLiteral("#write { width: 90%; max-width: 950px; color: #000; }"),
       QStringLiteral("capped"), QString());
-  require(qAbs(capped.page.pageMaxWidth - 950.0) < 0.01,
-          QStringLiteral("concrete max-width should cap width:90%, not lose to it"));
+  require(qAbs(capped.page.pageMaxWidth - 921.6) < 0.01,
+          QStringLiteral("width:90% resolves against the default 1024px viewport and remains below its cap"));
 
   const ThemeDefinition fill = CssThemeMapper::fromCss(
       QStringLiteral("#write { width: 90%; color: #000; }"),
       QStringLiteral("fill"), QString());
-  require(fill.page.pageMaxWidth > 10000.0,
-          QStringLiteral("width:90% should be viewport-fill sentinel, not em-relative tiny pixels"));
+  require(qAbs(fill.page.pageMaxWidth - 921.6) < 0.01, QStringLiteral("width:90% resolves to an actual containing-block width"));
 }
 
 // The chrome selection pair (combo popup selected row, dialog sidebar active tab, file-tree

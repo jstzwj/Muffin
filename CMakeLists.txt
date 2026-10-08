@@ -60,6 +60,7 @@ find_package(JPEG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(harfbuzz REQUIRED)
+find_package(Freetype REQUIRED)
 set(_muffin_harfbuzz_include_hints ${harfbuzz_INCLUDE_DIRS})
 if(DEFINED harfbuzz_PACKAGE_FOLDER_RELEASE)
   list(APPEND _muffin_harfbuzz_include_hints
@@ -72,7 +73,8 @@ find_path(MUFFIN_HARFBUZZ_INCLUDE_DIR
   REQUIRED
 )
 unset(_muffin_harfbuzz_include_hints)
-find_package(Python3 COMPONENTS Interpreter QUIET)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinThemeFonts.cmake)
 set(MUFFIN_QT_LINGUIST_BIN "" CACHE PATH "Optional Qt Linguist tool directory")
 set(MUFFIN_QT_TRANSLATION_SOURCE_DIR "" CACHE PATH "Optional directory containing Qt qtbase_*.qm translation files")
 set(MUFFIN_LOCAL_QT_LINGUIST_BIN "C:/Program Files/Qt Linguist/bin")
@@ -618,6 +620,10 @@ set(MUFFIN_CORE_SOURCES
   src/mermaid/text/LabelText.h
   src/theme/CssCalc.cpp
   src/theme/CssCalc.h
+  src/theme/CssValueParser.cpp
+  src/theme/CssValueParser.h
+  src/theme/ThemeFontDecoder.cpp
+  src/theme/ThemeFontDecoder.h
   src/theme/CssComputedStyleEngine.cpp
   src/theme/CssComputedStyleEngine.h
   src/theme/CssSelectorAnalysis.cpp
@@ -908,6 +914,7 @@ target_link_libraries(MuffinCore
     # Implementation detail of the library; no consumer includes hb.h directly.
     # (Under STATIC this still propagates as a LINK_ONLY requirement.)
     harfbuzz::harfbuzz
+    Freetype::Freetype
     Qt6::Concurrent
     Qt6::Gui
     Qt6::Svg
@@ -927,6 +934,7 @@ target_include_directories(MuffinCore
 )
 
 target_include_directories(MuffinCore SYSTEM PRIVATE
+  ${FREETYPE_INCLUDE_DIRS}
   ${MUFFIN_HARFBUZZ_INCLUDE_DIR}
 )
 
@@ -1017,7 +1025,7 @@ endif()
 add_executable(Muffin
   src/translations.qrc
   src/icons.qrc
-  src/themes.qrc
+  ${MUFFIN_THEMES_QRC}
   ${MUFFIN_HELP_QRC}
   ${MUFFIN_DICTS_QRC}
   ${MUFFIN_EMOJI_QRC}
@@ -1289,8 +1297,6 @@ set(MUFFIN_UI_SOURCES
   src/theme/CssDecorationExtractor.cpp
   src/theme/CssDecorationExtractor.h
   src/theme/CssFlatDecl.h
-  src/theme/CssValueParser.cpp
-  src/theme/CssValueParser.h
   src/theme/NodeCssElement.cpp
   src/theme/NodeCssElement.h
   src/theme/CssContent.cpp
@@ -1635,4 +1641,5 @@ if(APPLE)
   list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_QPA_PLATFORM=set:offscreen")
 endif()
 
+muffin_use_theme_fonts(Muffin)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTests.cmake)

@@ -5,7 +5,7 @@
 
 namespace muffin::html {
 
-InlineHtmlFormatResult InlineHtmlRenderer::render(const QString& htmlFragment, qreal baseFontSize) const {
+InlineHtmlFormatResult InlineHtmlRenderer::render(const QString& htmlFragment, qreal baseFontSize, const HtmlColorPalette& palette) const {
   InlineHtmlFormatResult result;
 
   if (htmlFragment.trimmed().isEmpty()) {
@@ -27,7 +27,7 @@ InlineHtmlFormatResult InlineHtmlRenderer::render(const QString& htmlFragment, q
 
   // 3. Resolve styles (tag defaults + inline styles)
   HtmlStyleResolver styleResolver;
-  styleResolver.resolve(*root, baseFontSize);
+  styleResolver.resolve(*root, baseFontSize, palette);
 
   // 4. Collect inline text + format spans from the box tree.
   //    The root is a Body box; iterate its children to find inline content.

@@ -134,11 +134,15 @@ qreal spacingAfterBlockPrototype(BlockType type, int headingLevel, const RenderT
   // paragraph margin, keep the legacy tight floor (slightly more than a soft break).
   if (type == BlockType::Paragraph) {
     const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, nullptr);
-    if (pm.bottom() > 0.0) { return pm.bottom(); }
+    if (theme.hasBlockMargin(type, headingLevel)) {
+      return pm.bottom();
+    }
     return theme.blockSpacing() * 0.4;
   }
   const QMarginsF css = theme.blockMargin(type, headingLevel, nullptr);
-  if (!css.isNull()) { return css.bottom(); }
+  if (theme.hasBlockMargin(type, headingLevel)) {
+    return css.bottom();
+  }
   if (type == BlockType::Heading) { return theme.blockSpacing() * 0.65; }
   return theme.blockSpacing();
 }
@@ -150,11 +154,15 @@ qreal spacingAfterBlock(const MarkdownNode& node, const RenderTheme& theme, bool
   const MarkdownNode* styleNode = &node;  // structural cascade
   if (node.type() == BlockType::Paragraph) {
     const QMarginsF pm = theme.blockMargin(BlockType::Paragraph, 0, styleNode);
-    if (pm.bottom() > 0.0) { return pm.bottom(); }
+    if (theme.hasBlockMargin(node.type(), node.headingLevel(), styleNode)) {
+      return pm.bottom();
+    }
     return theme.blockSpacing() * 0.4;
   }
   const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel(), styleNode);
-  if (!css.isNull()) { return css.bottom(); }
+  if (theme.hasBlockMargin(node.type(), node.headingLevel(), styleNode)) {
+    return css.bottom();
+  }
   if (node.type() == BlockType::Heading) { return theme.blockSpacing() * 0.65; }
   return theme.blockSpacing();
 }
@@ -168,7 +176,9 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
     return !pm.isNull() ? pm.top() : 0.0;
   }
   const QMarginsF css = theme.blockMargin(node.type(), node.headingLevel(), styleNode);
-  if (!css.isNull()) { return css.top(); }
+  if (theme.hasBlockMargin(node.type(), node.headingLevel(), styleNode)) {
+    return css.top();
+  }
   if (node.type() != BlockType::Heading || cursorY <= theme.topMargin()) {
     return 0;
   }
@@ -179,7 +189,7 @@ qreal spacingBeforeBlock(const MarkdownNode& node, const RenderTheme& theme, qre
 }
 
 bool hasCssBlockMargin(const MarkdownNode& node, const RenderTheme& theme, bool fast = false) {
-  return !theme.blockMargin(node.type(), node.headingLevel(), fast ? nullptr : &node).isNull();
+  return theme.hasBlockMargin(node.type(), node.headingLevel(), fast ? nullptr : &node);
 }
 
 qreal spacingBetweenBlocks(const MarkdownNode& prev, const MarkdownNode& next, const RenderTheme& theme, bool fast = false) {
@@ -189,7 +199,7 @@ qreal spacingBetweenBlocks(const MarkdownNode& prev, const MarkdownNode& next, c
   // not bottom+top. Keep the legacy additive rhythm only for blocks with no CSS
   // margins at all.
   if (hasCssBlockMargin(prev, theme, fast) || hasCssBlockMargin(next, theme, fast)) {
-    return qMax(after, before);
+    return qMax<qreal>(0, qMax(after, before)) + qMin<qreal>(0, qMin(after, before));
   }
   return after + before;
 }
@@ -219,7 +229,7 @@ struct PageMetrics {
 
 PageMetrics pageMetricsFor(const RenderTheme& theme, qreal viewportWidth) {
   const QMarginsF padding = theme.pagePadding();
-  const bool cssPageBox = !padding.isNull() || theme.pageBorderRadius() > 0.0 || theme.pageBorderWidth() > 0.0;
+  const bool cssPageBox = theme.hasDocumentCss() || !padding.isNull() || theme.pageBorderRadius() > 0.0 || theme.pageBorderWidth() > 0.0;
   // The card's horizontal gap to the viewport edge is the theme's OWN #write
   // margin — this is what `margin: 0 auto` means: the column fills the window
   // up to its max-width (margin 0 → no app-imposed gutter), and a theme that
@@ -231,12 +241,14 @@ PageMetrics pageMetricsFor(const RenderTheme& theme, qreal viewportWidth) {
   const qreal horizontalInset =
       cssPageBox ? qMax(margin.left(), margin.right())
                  : qMin<qreal>(64.0, qMax<qreal>(16.0, viewportWidth * 0.08));
-  const qreal maxOuter = qMax<qreal>(320.0, viewportWidth - horizontalInset * 2.0);
-  const qreal outerWidth = qMin(theme.pageWidth(), maxOuter);
+  const qreal maxOuter = qMax<qreal>(1.0, viewportWidth - horizontalInset * 2.0);
+  const qreal border = theme.pageBorderWidth();
+  const qreal extras = padding.left() + padding.right() + border * 2;
+  const qreal outerWidth = qMin(theme.pageWidth() + (theme.hasDocumentCss() && !theme.pageUsesBorderBox() ? extras : 0.0), maxOuter);
   const qreal outerLeft = cssPageBox ? qMax<qreal>(0.0, (viewportWidth - outerWidth) / 2.0)
                                     : qMax<qreal>(16.0, (viewportWidth - outerWidth) / 2.0 - 12.0);
-  const qreal contentLeft = outerLeft + padding.left();
-  const qreal contentWidth = qMax<qreal>(120.0, outerWidth - padding.left() - padding.right());
+  const qreal contentLeft = outerLeft + border + padding.left();
+  const qreal contentWidth = qMax<qreal>(1.0, outerWidth - extras);
   return {outerLeft, outerWidth, contentLeft, contentWidth};
 }
 
