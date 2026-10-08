@@ -74,6 +74,12 @@ void sameFresh(DocumentLayout& layout, const DocumentSession& session, const Ren
       if (expected) sameTree(*block, *expected);
     }
     if (pixels) {
+      // Qt's FreeType outline rasterizer can produce different edge coverage on
+      // its first draw of a large face (>64px), despite identical glyph IDs and
+      // positions. Prime both font/render paths before comparing layout output;
+      // geometry, caret/selection and the final pixels still compare exactly.
+      paint(layout, theme, width);
+      paint(fresh, theme, width);
       const auto actual = paint(layout, theme, width), expected = paint(fresh, theme, width);
       if (actual != expected) {
         QRect difference;

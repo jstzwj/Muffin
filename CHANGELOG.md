@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Resource layout pixel comparisons prime both Qt font raster paths before exact comparison, avoiding FreeType first-draw edge coverage differences for large headings. Geometry, caret and selection comparisons remain exact.
 - Retained native text layouts keep their shaping snapshot for painting and caret queries. Fontconfig overrides for browser geometry comparisons apply only to the Flex/Grid oracle tests, preserving the font environment of existing raster references.
 - CSS max-content widths use text advances rather than glyph ink overhang. Browser-reference tests share 96 logical DPI, and Timeline monospace fallback keeps the same metric and paint font hint for missing leading families.
 - HTML explicit line heights can be smaller than the font's natural metrics; mixed text and inline Flex/Grid still contribute their own line boxes and baselines.
