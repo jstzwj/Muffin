@@ -1003,6 +1003,13 @@ int BlockLayout::depth() const {
 
 void BlockLayout::setChildren(std::vector<std::unique_ptr<BlockLayout>> children) {
   children_ = std::move(children);
+  formattingPaintOrder_.clear();
+  if (cssBoxGeometry_.style.layout.establishesFormattingContext()) {
+    for (size_t i = 0; i < children_.size(); ++i) formattingPaintOrder_.push_back(i);
+    std::stable_sort(formattingPaintOrder_.begin(), formattingPaintOrder_.end(), [&](size_t a, size_t b) {
+      return children_[a]->formattingOrder() < children_[b]->formattingOrder();
+    });
+  }
 }
 
 std::vector<std::unique_ptr<BlockLayout>>& BlockLayout::children() {
@@ -1037,10 +1044,31 @@ QRectF BlockLayout::tableCellRect(int row, int column) const {
 }
 
 void BlockLayout::paint(QPainter& painter, const RenderTheme& theme, qreal scrollY, const CodeFenceScrollController* scroll, BlockPaintState hover) const {
+  painter.save();
+  const auto& overflow = cssBoxGeometry_.style.layout;
+  if (cssBoxGeometry_.valid && (overflow.clipsX() || overflow.clipsY())) {
+    auto clip = cssBoxGeometry_.paddingBox.translated(0, -scrollY);
+    if (!overflow.clipsX()) clip.setLeft(-1e9), clip.setRight(1e9);
+    if (!overflow.clipsY()) clip.setTop(-1e9), clip.setBottom(1e9);
+    // Overflow clips content at the padding edge, not the element's own border
+    // and shadow. paintSelf paints the part inside this clip below. Paint the
+    // complementary area once, preserving translucent decoration opacity.
+    QPainterPath visible, content;
+    visible.addRect(painter.hasClipping() ? painter.clipBoundingRect()
+                                         : painter.combinedTransform().inverted().mapRect(QRectF(painter.viewport())));
+    content.addRect(clip);
+    painter.save();
+    painter.setClipPath(visible.subtracted(content), Qt::IntersectClip);
+    paintLayoutBox(painter, cssBoxGeometry_, QPointF(0, -scrollY));
+    painter.restore();
+    painter.setClipRect(clip, Qt::IntersectClip);
+  }
   paintSelf(painter, theme, scrollY, scroll, hover);
-  for (const auto& child : children_) {
+  for (size_t i = 0; i < children_.size(); ++i) {
+    const auto& child = children_[formattingPaintOrder_.empty() ? i : formattingPaintOrder_[i]];
     child->paint(painter, theme, scrollY, scroll, hover);
   }
+  painter.restore();
 }
 
 bool BlockLayout::intersects(const QRectF& documentViewport) const {
@@ -1073,9 +1101,17 @@ HitTestResult BlockLayout::hitTest(
     QPointF documentPos, const RenderTheme& theme,
     const CodeFenceScrollController* scroll,
     const QSet<QString>* openSequenceMenus) const {
-  for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
-    const BlockLayout& child = **it;
-    if (child.rect().adjusted(-theme.blockSpacing(), -theme.blockSpacing(), theme.blockSpacing(), theme.blockSpacing()).contains(documentPos)) {
+  const auto& overflow = cssBoxGeometry_.style.layout;
+  const auto clip = cssBoxGeometry_.paddingBox;
+  if (cssBoxGeometry_.valid &&
+      ((overflow.clipsX() && (documentPos.x() < clip.left() || documentPos.x() > clip.right())) ||
+       (overflow.clipsY() && (documentPos.y() < clip.top() || documentPos.y() > clip.bottom())))) return {};
+  for (size_t i = children_.size(); i > 0; --i) {
+    const BlockLayout& child = *children_[formattingPaintOrder_.empty() ? i - 1 : formattingPaintOrder_[i - 1]];
+    const auto target = cssBoxGeometry_.style.layout.establishesFormattingContext() ? child.rect()
+                                                              : child.rect().adjusted(-theme.blockSpacing(), -theme.blockSpacing(),
+                                                                                      theme.blockSpacing(), theme.blockSpacing());
+    if (target.contains(documentPos)) {
       HitTestResult childHit =
           child.hitTest(documentPos, theme, scroll, openSequenceMenus);
       if (childHit.isValid()) {
@@ -1160,6 +1196,8 @@ void BlockLayout::paintSelf(QPainter& painter, const RenderTheme& theme, qreal s
       paintDefinition(painter, theme, viewRect);
       break;
     default:
+      if (cssBoxGeometry_.valid && cssBoxGeometry_.style.layout.establishesFormattingContext())
+        paintLayoutBox(painter, cssBoxGeometry_, QPointF(0, -scrollY));
       break;
   }
 }

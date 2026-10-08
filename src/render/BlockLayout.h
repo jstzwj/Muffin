@@ -135,6 +135,7 @@ public:
   void setRect(QRectF rect);
   void setCssBoxGeometry(CssBoxGeometry geometry);
   CssBoxGeometry cssBoxGeometry() const;
+  int formattingOrder() const { return cssBoxGeometry_.style.layout.order; }
   QRectF cssBorderBox() const;
   QPointF inlineTextOrigin() const;
   QRectF visualOverflowRect() const;
@@ -392,6 +393,7 @@ private:
   QVector<TocEntryLayout> tocEntries_;
   int depth_ = 0;
   std::vector<std::unique_ptr<BlockLayout>> children_;
+  std::vector<size_t> formattingPaintOrder_;
   std::vector<TableRowLayout> tableRows_;
 };
 

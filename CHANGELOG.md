@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Markdown and HTML Flex containers share a formatting entry point for direction, wrapping, ordering, alignment, gaps, grow/shrink and basis. Text is measured at the allocated width, intrinsic minimums participate in sizing, and root Flex layouts use geometric hit testing.
+- Grid containers use the same Markdown/HTML measurement and box geometry, with fixed, intrinsic and fractional tracks, numeric line placement and spans, implicit tracks, row/column auto-placement, dense packing, item alignment, `minmax()` and integer `repeat()`.
+- Grid supports one- and two-axis `subgrid`, inherited/local line names, shared gap and edge geometry, and descendant contributions to parent tracks. Nested intrinsic sizing uses the shared Grid algorithm, including `fit-content()` and indefinite fractional tracks.
+- Grid supports responsive `auto-fill`/`auto-fit`, case-sensitive named lines and repeated occurrences/spans, and rectangular `grid-template-areas`; resize, painting and editing retain shared allocated geometry.
 - Document themes use one computed-style pipeline and shared box snapshots for paragraphs, headings, inline code/keyboard boxes, code fences and table cells. The mapper's separate cascade and the replaced component geometry fallbacks have been removed; legacy theme fields are converted to CSS at the input boundary.
 - Native theme fonts are generated from the original WOFF/WOFF2 files in the build directory. Source and release builds no longer require duplicate committed TTF files.
 

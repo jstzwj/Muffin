@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QPainterPath>
 #include <QPen>
+#include <QScopeGuard>
 
 #include <utility>
 
@@ -117,15 +118,18 @@ HtmlLayoutResult::HitResult HtmlLayoutResult::hitTestBox(const HtmlBox& box, QPo
   const auto& geo = box.geometry();
   const QPointF boxOrigin = origin + QPointF(geo.left, geo.top);
   const QRectF boxRect(boxOrigin, QSizeF(geo.width, geo.height));
-  if (!boxRect.contains(localPos)) {
+  const auto& overflow = box.style().computed.layout;
+  const auto clip = box.layoutBox.paddingBox.translated(origin);
+  if ((overflow.clipsX() && (localPos.x() < clip.left() || localPos.x() > clip.right())) ||
+      (overflow.clipsY() && (localPos.y() < clip.top() || localPos.y() > clip.bottom()))) {
     return {};
   }
 
-  if (box.tag() == HtmlTag::Image) {
+  if (box.tag() == HtmlTag::Image && boxRect.contains(localPos)) {
     return HitResult{QString(), box.src()};
   }
 
-  if (box.ownsTextLayout()) {
+  if (box.ownsTextLayout() && boxRect.contains(localPos)) {
     const QRectF contentRect = box.layoutBox.contentBox.translated(origin);
     const QString href = linkHrefAtTextLayout(box, localPos - contentRect.topLeft());
     if (!href.isEmpty()) {
@@ -138,7 +142,10 @@ HtmlLayoutResult::HitResult HtmlLayoutResult::hitTestBox(const HtmlBox& box, QPo
   // them, and walking into them lets an invisible link intercept clicks meant for visible
   // content on top of it.
   const bool collapsedDetails = box.tag() == HtmlTag::Details && !box.detailsOpen();
-  for (const auto& child : box.children()) {
+  const bool formatting = box.style().computed.layout.establishesFormattingContext();
+  for (size_t i = 0; i < box.children().size(); ++i) {
+    const auto index = formatting && !box.formattingPaintOrder.empty() ? box.formattingPaintOrder[box.children().size() - 1 - i] : i;
+    const auto& child = box.children()[index];
     if (collapsedDetails && child->tag() != HtmlTag::Summary) {
       continue;
     }
@@ -194,6 +201,15 @@ void HtmlLayoutResult::paintBox(QPainter& painter, const HtmlBox& box, QPointF o
   const QRectF contentRect = box.layoutBox.contentBox.translated(origin);
 
   paintLayoutBox(painter, box.layoutBox, origin);
+  painter.save();
+  const auto restorePainter = qScopeGuard([&] { painter.restore(); });
+  const auto& overflow = box.style().computed.layout;
+  if (overflow.clipsX() || overflow.clipsY()) {
+    auto clip = box.layoutBox.paddingBox.translated(origin);
+    if (!overflow.clipsX()) clip.setLeft(-1e9), clip.setRight(1e9);
+    if (!overflow.clipsY()) clip.setTop(-1e9), clip.setBottom(1e9);
+    painter.setClipRect(clip, Qt::IntersectClip);
+  }
 
   if (box.tag() == HtmlTag::ListItem && !box.listMarker().isEmpty()) {
     paintListMarker(painter, box, contentRect);
@@ -230,8 +246,9 @@ void HtmlLayoutResult::paintBox(QPainter& painter, const HtmlBox& box, QPointF o
         break;
       }
 
-      for (const auto& child : box.children()) {
-        paintBox(painter, *child, boxOrigin);
+      for (size_t i = 0; i < box.children().size(); ++i) {
+        const auto index = box.formattingPaintOrder.empty() ? i : box.formattingPaintOrder[i];
+        paintBox(painter, *box.children()[index], boxOrigin);
       }
       break;
   }

@@ -1,4 +1,5 @@
 #pragma once
+#include "theme/CssLayoutStyle.h"
 
 #include "theme/CssCalc.h"
 
@@ -520,6 +521,7 @@ struct ThemeElementStyle {
   ThemeElementBoxStyle box;
   ThemeElementPaintStyle paint;
   ThemeElementTextStyle text;
+  CssLayoutStyle layout;
 };
 
 // A complete, serializable theme. Built-in themes are produced by builtIns();

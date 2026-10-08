@@ -9,6 +9,7 @@
 #include "math/MathRenderer.h"
 #include "render/BlockLayout.h"
 #include "render/TreeSitterHighlighter.h"
+#include "render/CssFormattingContext.h"
 #include "theme/RenderTheme.h"
 
 #include <QHash>
@@ -81,36 +82,47 @@ public:
   EstimateResult estimateHeight(const MarkdownNode& node, const RenderTheme& theme, qreal width, int depth = 0) const;
 
   std::unique_ptr<BlockLayout> build(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth = 0);
+  std::unique_ptr<BlockLayout> buildAllocated(const MarkdownNode& node, const RenderTheme& theme, QRectF allocation, qreal containingWidth,
+                                              int depth = 0, const CssGridInheritance& inherited = {});
+  CssIntrinsicMetrics intrinsicMetrics(const MarkdownNode& node, const RenderTheme& theme, qreal containingWidth);
+  CssFormattingItem formattingItem(const MarkdownNode& node, const RenderTheme& theme, qreal containingWidth, int depth = 0);
 
-private:
- mutable LayoutStyleCache inlineStyleCache_;
- // Copy the active preedit (if any) onto `options` when `options.projectionState` marks this block
- // as the caret block. Called at every inline-build site (paragraph / list item / table cell).
- void applyPreedit(InlineLayout::BuildOptions& options) const;
- std::unique_ptr<BlockLayout> buildParagraphLike(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+ private:
+  QHash<const MarkdownNode*, QPair<QSizeF, qreal>> allocations_;
+  QHash<const MarkdownNode*, CssGridInheritance> gridInheritance_;
+  ThemeElementBoxStyle boxFor(const MarkdownNode& node, const RenderTheme& theme, const QString& key, qreal containingWidth) const;
+  std::unique_ptr<BlockLayout> buildFormattingContainer(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                                  int depth);
+  mutable LayoutStyleCache inlineStyleCache_;
+  // Copy the active preedit (if any) onto `options` when `options.projectionState` marks this block
+  // as the caret block. Called at every inline-build site (paragraph / list item / table cell).
+  void applyPreedit(InlineLayout::BuildOptions& options) const;
+  std::unique_ptr<BlockLayout> buildParagraphLike(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                                  int depth);
+  // A `[TOC]` paragraph rendered as a generated indented link list of the cached
+  // document headings. Used only while the caret is outside the block; when the
+  // caret is inside, buildParagraphLike falls through to a normal paragraph build
+  // (showing the literal "[TOC]") so the marker stays editable.
+  std::unique_ptr<BlockLayout> buildTocPreview(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                               int depth);
+  std::unique_ptr<BlockLayout> buildContainer(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
+  std::unique_ptr<BlockLayout> buildListItem(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
+  std::unique_ptr<BlockLayout> buildLiteralBlock(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
                                                  int depth);
- // A `[TOC]` paragraph rendered as a generated indented link list of the cached
- // document headings. Used only while the caret is outside the block; when the
- // caret is inside, buildParagraphLike falls through to a normal paragraph build
- // (showing the literal "[TOC]") so the marker stays editable.
- std::unique_ptr<BlockLayout> buildTocPreview(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
- std::unique_ptr<BlockLayout> buildContainer(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
- std::unique_ptr<BlockLayout> buildListItem(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
- std::unique_ptr<BlockLayout> buildLiteralBlock(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
-                                                int depth);
- std::unique_ptr<BlockLayout> buildTable(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
- std::unique_ptr<BlockLayout> buildThematicBreak(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
-                                                 int depth);
- std::unique_ptr<BlockLayout> buildDefinition(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
+  std::unique_ptr<BlockLayout> buildTable(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width, int depth);
+  std::unique_ptr<BlockLayout> buildThematicBreak(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                                  int depth);
+  std::unique_ptr<BlockLayout> buildDefinition(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y, qreal width,
+                                               int depth);
 
- QString textForListMarker(const MarkdownNode& itemNode, const MarkdownNode& listNode, qsizetype index) const;
- BlockLayout::ListMarkerKind markerKindForListItem(const MarkdownNode& itemNode) const;
- // CSS `list-style-type`-aware marker: kind + text from the node's resolved li
- // style, falling back to the legacy depth/kind-based marker when unset.
- struct ResolvedMarker {
-   BlockLayout::ListMarkerKind kind = BlockLayout::ListMarkerKind::None;
-   QString text;
- };
+  QString textForListMarker(const MarkdownNode& itemNode, const MarkdownNode& listNode, qsizetype index) const;
+  BlockLayout::ListMarkerKind markerKindForListItem(const MarkdownNode& itemNode) const;
+  // CSS `list-style-type`-aware marker: kind + text from the node's resolved li
+  // style, falling back to the legacy depth/kind-based marker when unset.
+  struct ResolvedMarker {
+    BlockLayout::ListMarkerKind kind = BlockLayout::ListMarkerKind::None;
+    QString text;
+  };
   ResolvedMarker resolveListMarker(const MarkdownNode& itemNode, const RenderTheme& theme, qsizetype itemIndex) const;
   ListLineInfo authoredMarkerInfo(const MarkdownNode& itemNode) const;
   QVector<InlineNode> primaryInlinesForListItem(const MarkdownNode& node) const;

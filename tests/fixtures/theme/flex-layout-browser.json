@@ -1,0 +1,641 @@
+{
+  "browser": "153.0.8010.54",
+  "cases": [
+    {
+      "id": "grow-gap",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:320px;gap:10px\"><div id=\"a\" style=\"flex:1;height:40px\"></div><div id=\"b\" style=\"flex:2;height:40px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 103.328125,
+          "height": 40
+        },
+        "b": {
+          "x": 113.328125,
+          "y": 0,
+          "width": 206.671875,
+          "height": 40
+        }
+      }
+    },
+    {
+      "id": "reverse-order",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:320px;flex-direction:row-reverse;justify-content:space-between\"><div id=\"a\" style=\"width:40px;height:20px;order:2\"></div><div id=\"b\" style=\"width:50px;height:30px;order:-1\"></div><div id=\"c\" style=\"width:60px;height:40px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 320,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 40,
+          "height": 20
+        },
+        "b": {
+          "x": 270,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        },
+        "c": {
+          "x": 125,
+          "y": 0,
+          "width": 60,
+          "height": 40
+        }
+      }
+    },
+    {
+      "id": "wrap-gap",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:220px;flex-wrap:wrap;gap:11px 10px;align-items:flex-start\"><div id=\"a\" style=\"width:100px;height:30px\"></div><div id=\"b\" style=\"width:100px;height:40px\"></div><div id=\"c\" style=\"width:100px;height:50px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 220,
+          "height": 101
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        },
+        "b": {
+          "x": 110,
+          "y": 0,
+          "width": 100,
+          "height": 40
+        },
+        "c": {
+          "x": 0,
+          "y": 51,
+          "width": 100,
+          "height": 50
+        }
+      }
+    },
+    {
+      "id": "column-reverse",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:200px;height:200px;flex-direction:column-reverse;gap:10px;align-items:center\"><div id=\"a\" style=\"width:50px;height:30px\"></div><div id=\"b\" style=\"width:80px;height:40px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200
+        },
+        "a": {
+          "x": 75,
+          "y": 170,
+          "width": 50,
+          "height": 30
+        },
+        "b": {
+          "x": 60,
+          "y": 120,
+          "width": 80,
+          "height": 40
+        }
+      }
+    },
+    {
+      "id": "percent-basis",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:0 0 25%;height:20px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 75,
+          "height": 20
+        },
+        "b": {
+          "x": 85,
+          "y": 0,
+          "width": 215,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "auto-margin",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:flex-end;height:80px\"><div id=\"a\" style=\"width:60px;height:30px\"></div><div id=\"b\" style=\"width:40px;height:40px;margin-left:auto\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 50,
+          "width": 60,
+          "height": 30
+        },
+        "b": {
+          "x": 260,
+          "y": 40,
+          "width": 40,
+          "height": 40
+        }
+      }
+    },
+    {
+      "id": "border-box",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;padding:10px;border:2px solid black;box-sizing:border-box;gap:10px\"><div id=\"a\" style=\"flex:1;padding:5px;border:2px solid red;min-width:0;height:40px;box-sizing:border-box\"></div><div id=\"b\" style=\"flex:1;height:50px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 74
+        },
+        "a": {
+          "x": 12,
+          "y": 12,
+          "width": 140,
+          "height": 40
+        },
+        "b": {
+          "x": 162,
+          "y": 12,
+          "width": 126,
+          "height": 50
+        }
+      }
+    },
+    {
+      "id": "auto-minimum",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1\">x</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 140,
+          "height": 20
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 241.625,
+          "height": 20
+        },
+        "b": {
+          "x": 241.625,
+          "y": 0,
+          "width": 8,
+          "height": 20
+        }
+      }
+    },
+    {
+      "id": "zero-minimum",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1;min-width:0\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1;min-width:0\">x</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 140,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 70,
+          "height": 80
+        },
+        "b": {
+          "x": 70,
+          "y": 0,
+          "width": 70,
+          "height": 80
+        }
+      }
+    },
+    {
+      "id": "wrap-text",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:200px;gap:10px;align-items:flex-start\"><div id=\"a\" style=\"flex:1;min-width:0\">alpha beta gamma delta epsilon zeta</div><div id=\"b\" style=\"width:50px;flex-shrink:0\">B</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 140,
+          "height": 40
+        },
+        "b": {
+          "x": 150,
+          "y": 0,
+          "width": 50,
+          "height": 20
+        }
+      }
+    },
+    {
+      "id": "max-width-freeze",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:1;max-width:60px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 60,
+          "height": 30
+        },
+        "b": {
+          "x": 70,
+          "y": 0,
+          "width": 230,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "explicit-minimum",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px\"><div id=\"a\" style=\"flex:1;min-width:100px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 150,
+          "height": 30
+        },
+        "b": {
+          "x": 150,
+          "y": 0,
+          "width": 150,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "explicit-minimum-freeze",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:150px\"><div id=\"a\" style=\"flex:1;min-width:100px;height:30px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 150,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 30
+        },
+        "b": {
+          "x": 100,
+          "y": 0,
+          "width": 50,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "baseline",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:baseline\"><div id=\"a\" style=\"font-size:16px;line-height:20px\">Hello</div><div id=\"b\" style=\"font-size:32px;line-height:40px\">Hello</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 16,
+          "width": 36.46875,
+          "height": 20
+        },
+        "b": {
+          "x": 36.46875,
+          "y": 0,
+          "width": 72.921875,
+          "height": 40
+        }
+      }
+    },
+    {
+      "id": "intrinsic-width",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:flex-start\"><div id=\"a\" style=\"width:min-content\">alpha beta</div><div id=\"b\" style=\"width:max-content\">alpha beta</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 39.15625,
+          "height": 40
+        },
+        "b": {
+          "x": 39.15625,
+          "y": 0,
+          "width": 74.734375,
+          "height": 20
+        }
+      }
+    },
+    {
+      "id": "percent-padding",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:240px\"><div id=\"a\" style=\"flex:1;padding:10%;min-width:0\">A</div><div id=\"b\" style=\"flex:1;padding:10%;min-width:0\">B</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 240,
+          "height": 68
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 120,
+          "height": 68
+        },
+        "b": {
+          "x": 120,
+          "y": 0,
+          "width": 120,
+          "height": 68
+        }
+      }
+    },
+    {
+      "id": "calc-basis",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;gap:10px\"><div id=\"a\" style=\"flex:0 0 calc(50% - 20px);height:20px\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 130,
+          "height": 20
+        },
+        "b": {
+          "x": 140,
+          "y": 0,
+          "width": 160,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "calc-gap-margin",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;column-gap:calc(10% + 5px)\"><div id=\"a\" style=\"flex:1;height:20px;margin-left:calc(5% + 2px)\"></div><div id=\"b\" style=\"flex:1;height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 30
+        },
+        "a": {
+          "x": 17,
+          "y": 0,
+          "width": 124,
+          "height": 20
+        },
+        "b": {
+          "x": 176,
+          "y": 0,
+          "width": 124,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "percent-height",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:200px;height:200px;flex-direction:column\"><div id=\"a\" style=\"height:25%;flex-shrink:0\"></div><div id=\"b\" style=\"flex:1\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 200
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 50
+        },
+        "b": {
+          "x": 0,
+          "y": 50,
+          "width": 200,
+          "height": 150
+        }
+      }
+    },
+    {
+      "id": "hidden-minimum",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:140px\"><div id=\"a\" style=\"flex:1;overflow:hidden\">WWWWWWWWWWWWWWWW</div><div id=\"b\" style=\"flex:1\">x</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 140,
+          "height": 80
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 70,
+          "height": 80
+        },
+        "b": {
+          "x": 70,
+          "y": 0,
+          "width": 70,
+          "height": 80
+        }
+      }
+    },
+    {
+      "id": "wrap-reverse",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:220px;height:200px;flex-wrap:wrap-reverse;align-content:space-between;gap:10px\"><div id=\"a\" style=\"width:100px;height:30px\"></div><div id=\"b\" style=\"width:100px;height:40px\"></div><div id=\"c\" style=\"width:100px;height:50px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 220,
+          "height": 200
+        },
+        "a": {
+          "x": 0,
+          "y": 170,
+          "width": 100,
+          "height": 30
+        },
+        "b": {
+          "x": 110,
+          "y": 160,
+          "width": 100,
+          "height": 40
+        },
+        "c": {
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 50
+        }
+      }
+    },
+    {
+      "id": "intrinsic-border-box",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:flex-start\"><div id=\"a\" style=\"width:min-content;box-sizing:border-box;padding:5px;border:2px solid black\">alpha beta</div><div id=\"b\" style=\"width:max-content;box-sizing:border-box;padding:5px;border:2px solid black\">alpha beta</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 54
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 53.15625,
+          "height": 54
+        },
+        "b": {
+          "x": 53.15625,
+          "y": 0,
+          "width": 88.734375,
+          "height": 34
+        }
+      }
+    },
+    {
+      "id": "baseline-padding",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:300px;align-items:baseline\"><div id=\"a\" style=\"font-size:16px;line-height:20px;padding:7px 3px;border:2px solid red\">Hello</div><div id=\"b\" style=\"font-size:32px;line-height:40px;padding:3px\">Hello</div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 48
+        },
+        "a": {
+          "x": 0,
+          "y": 10,
+          "width": 46.46875,
+          "height": 38
+        },
+        "b": {
+          "x": 46.46875,
+          "y": 0,
+          "width": 78.921875,
+          "height": 46
+        }
+      }
+    },
+    {
+      "id": "display-none",
+      "html": "<div id=\"case\" style=\"display:flex;font-family:Arial;font-size:16px;line-height:20px;width:200px;gap:10px\"><div id=\"a\" style=\"flex:1;height:20px\"></div><div id=\"b\" style=\"display:none;width:100px;height:60px\"></div><div id=\"c\" style=\"flex:1;height:30px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 200,
+          "height": 30
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 95,
+          "height": 20
+        },
+        "b": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "c": {
+          "x": 105,
+          "y": 0,
+          "width": 95,
+          "height": 30
+        }
+      }
+    },
+    {
+      "id": "nested",
+      "html": "<div id=\"case\" style=\"display:flex;width:300px;gap:10px;font:16px Arial;line-height:20px\"><div id=\"a\" style=\"display:flex;flex:1;min-width:0;gap:5px\"><div id=\"c\" style=\"flex:1;height:20px\"></div><div id=\"d\" style=\"flex:2;height:30px\"></div></div><div id=\"b\" style=\"width:50px;height:40px\"></div></div>",
+      "expected": {
+        "case": {
+          "x": 0,
+          "y": 0,
+          "width": 300,
+          "height": 40
+        },
+        "a": {
+          "x": 0,
+          "y": 0,
+          "width": 240,
+          "height": 40
+        },
+        "c": {
+          "x": 0,
+          "y": 0,
+          "width": 78.328125,
+          "height": 20
+        },
+        "d": {
+          "x": 83.328125,
+          "y": 0,
+          "width": 156.671875,
+          "height": 30
+        },
+        "b": {
+          "x": 250,
+          "y": 0,
+          "width": 50,
+          "height": 40
+        }
+      }
+    }
+  ]
+}

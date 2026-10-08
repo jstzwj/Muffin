@@ -1,4 +1,5 @@
 #include "theme/CssComputedStyleEngine.h"
+#include "theme/CssGridStyle.h"
 
 #include "theme/CssThemeParser.h"
 #include "theme/CssSelectorUtils.h"
@@ -10,6 +11,7 @@
 #include <QStringView>
 
 #include <algorithm>
+#include <cmath>
 #include <functional>
 #include <vector>
 
@@ -37,7 +39,8 @@ const QSet<QString>& inheritedProperties() {
                                       QStringLiteral("visibility"),      QStringLiteral("letter-spacing"),
                                       QStringLiteral("word-spacing"),    QStringLiteral("text-transform"),
                                       QStringLiteral("list-style-type"), QStringLiteral("list-style-position"),
-                                      QStringLiteral("white-space")};
+                                      QStringLiteral("white-space"),     QStringLiteral("overflow-wrap"),
+                                      QStringLiteral("word-break")};
   return props;
 }
 
@@ -588,6 +591,101 @@ std::vector<CssDeclaration> expandDeclaration(const CssDeclaration& decl, const 
   const QStringList sides{QStringLiteral("top"), QStringLiteral("right"), QStringLiteral("bottom"), QStringLiteral("left")};
   const bool wide = value == QStringLiteral("inherit") || value == QStringLiteral("initial") || value == QStringLiteral("unset") ||
                     value == QLatin1String("revert") || value == QLatin1String("revert-layer");
+  if (property == "grid-column" || property == "grid-row" || property == "grid-area") {
+    const QStringList fields = property == "grid-area" ? QStringList{"grid-row-start", "grid-column-start", "grid-row-end", "grid-column-end"}
+                                                      : QStringList{property + "-start", property + "-end"};
+    if (wide) {
+      for (const auto& field : fields) add(field, value);
+    } else {
+      const auto parts = value.split('/');
+      if (parts.empty() || parts.size() > fields.size()) return {};
+      QStringList expanded;
+      for (int i = 0; i < fields.size(); ++i) {
+        if (i < parts.size()) expanded.push_back(parts[i].trimmed());
+        else {
+          const auto fallback = expanded[property == "grid-area" && i == 3 ? 1 : 0];
+          const auto line = parseCssGridLine(fallback);
+          expanded.push_back(line && !line->name.isEmpty() && !line->span && !line->number ? fallback : QStringLiteral("auto"));
+        }
+        add(fields[i], expanded.back());
+      }
+    }
+    return result;
+  }
+  if (property == "place-items" || property == "place-self" || property == "place-content") {
+    const auto suffix = property.mid(6);
+    if (wide) {
+      add("align-" + suffix, value);
+      add("justify-" + suffix, value);
+    } else {
+      const auto parts = splitTopLevelSpaces(value);
+      if (parts.empty() || parts.size() > 2) return {};
+      add("align-" + suffix, parts[0]);
+      add("justify-" + suffix, parts.size() == 1 ? parts[0] : parts[1]);
+    }
+    return result;
+  }
+  if (property == "flex" || property == "flex-flow" || property == "gap" || property == "overflow") {
+    const auto keywordValue = value.toLower();
+    if (wide) {
+      const QStringList fields = property == "flex"        ? QStringList{"flex-grow", "flex-shrink", "flex-basis"}
+                                 : property == "flex-flow" ? QStringList{"flex-direction", "flex-wrap"}
+                                 : property == "gap"       ? QStringList{"row-gap", "column-gap"}
+                                                           : QStringList{"overflow-x", "overflow-y"};
+      for (const auto& field : fields) add(field, value);
+    } else if (property == "flex") {
+      QString grow = "1", shrink = "1", basis = "0%";
+      const auto parts = splitTopLevelSpaces(value);
+      if (keywordValue == "none") {
+        grow = "0";
+        shrink = "0";
+        basis = "auto";
+      } else if (keywordValue == "auto")
+        basis = "auto";
+      else if (keywordValue == "initial") {
+        grow = "0";
+        basis = "auto";
+      } else {
+        int numbers = 0;
+        bool basisSeen = false;
+        for (const auto& part : parts) {
+          bool numeric = false;
+          part.toDouble(&numeric);
+          if (numeric && numbers < 2) {
+            (numbers++ == 0 ? grow : shrink) = part;
+          } else if (!basisSeen) {
+            basis = part;
+            basisSeen = true;
+          } else
+            return {};
+        }
+      }
+      add("flex-grow", grow);
+      add("flex-shrink", shrink);
+      add("flex-basis", basis);
+    } else if (property == "flex-flow") {
+      QString direction = "row", wrap = "nowrap";
+      bool directionSeen = false, wrapSeen = false;
+      for (const auto& part : splitTopLevelSpaces(keywordValue)) {
+        if (QStringList{"row", "row-reverse", "column", "column-reverse"}.contains(part) && !directionSeen) {
+          direction = part;
+          directionSeen = true;
+        } else if (QStringList{"nowrap", "wrap", "wrap-reverse"}.contains(part) && !wrapSeen) {
+          wrap = part;
+          wrapSeen = true;
+        } else
+          return {};
+      }
+      add("flex-direction", direction);
+      add("flex-wrap", wrap);
+    } else {
+      const auto parts = splitTopLevelSpaces(value);
+      if (parts.empty() || parts.size() > 2) return {};
+      add(property == "gap" ? "row-gap" : "overflow-x", parts[0]);
+      add(property == "gap" ? "column-gap" : "overflow-y", parts.size() == 2 ? parts[1] : parts[0]);
+    }
+    return result;
+  }
   if (wide && (property == QLatin1String("font") || property == QLatin1String("background") || property == QLatin1String("list-style") ||
                property == QLatin1String("text-decoration"))) {
     const QStringList fields =
@@ -722,6 +820,55 @@ bool validDeclarationValue(const QString& property, const QString& raw, const QH
   const QString value = raw.trimmed(), lower = value.toLower();
   if (value.isEmpty()) return false;
   if (cssWide(lower)) return true;
+  const auto oneOf = [&](std::initializer_list<const char*> values) {
+    return std::any_of(values.begin(), values.end(), [&](const char* v) { return lower == QLatin1String(v); });
+  };
+  if (property == "display")
+    return oneOf({"none", "block", "inline", "inline-block", "flex", "inline-flex", "grid", "inline-grid", "flow-root", "table",
+                  "table-row-group", "table-header-group", "table-footer-group", "table-row", "table-cell", "list-item"});
+  if (property == "grid-template-columns" || property == "grid-template-rows" || property == "grid-auto-columns" || property == "grid-auto-rows")
+    return (property.startsWith("grid-template") || !lower.contains("repeat(")) &&
+           parseCssGridTracks(raw, {}, property.startsWith("grid-template")).has_value();
+  if (property == "grid-template-areas") return parseCssGridAreas(raw).has_value();
+  if (property == "grid-column-start" || property == "grid-column-end" || property == "grid-row-start" || property == "grid-row-end")
+    return parseCssGridLine(raw).has_value();
+  if (property == "grid-auto-flow") {
+    auto parts = splitTopLevelSpaces(lower);
+    parts.removeDuplicates();
+    return parts.size() <= 2 && !parts.empty() && std::all_of(parts.begin(), parts.end(), [](const QString& part) {
+      return part == "row" || part == "column" || part == "dense";
+    }) && !(parts.contains("row") && parts.contains("column")) && parts.size() == splitTopLevelSpaces(lower).size();
+  }
+  if (property == "justify-items" || property == "justify-self")
+    return oneOf({"normal", "stretch", "start", "end", "flex-start", "flex-end", "center"}) || (property == "justify-self" && lower == "auto");
+  if (property == "flex-direction") return oneOf({"row", "row-reverse", "column", "column-reverse"});
+  if (property == "flex-wrap") return oneOf({"nowrap", "wrap", "wrap-reverse"});
+  if (property == "flex-grow" || property == "flex-shrink") {
+    bool ok = false;
+    const double n = lower.toDouble(&ok);
+    return ok && std::isfinite(n) && n >= 0;
+  }
+  if (property == "order") {
+    bool ok = false;
+    lower.toInt(&ok);
+    return ok;
+  }
+  if (property == "justify-content")
+    return oneOf({"normal", "start", "end", "flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly"});
+  if (property == "align-items" || property == "align-self")
+    return oneOf({"normal", "auto", "stretch", "start", "end", "flex-start", "flex-end", "center", "baseline"});
+  if (property == "align-content")
+    return oneOf(
+        {"normal", "stretch", "start", "end", "flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly"});
+  if (property == "overflow-x" || property == "overflow-y") return oneOf({"visible", "hidden", "clip", "auto", "scroll"});
+  if (property == "overflow-wrap") return oneOf({"normal", "break-word", "anywhere"});
+  if (property == "word-break") return oneOf({"normal", "break-all", "keep-all", "break-word"});
+  if (property == "flex-basis" || property == "row-gap" || property == "column-gap") {
+    if (property == "flex-basis" && oneOf({"auto", "content", "min-content", "max-content", "fit-content"})) return true;
+    if (property != "flex-basis" && lower == "normal") return true;
+    const auto length = parseCssLengthPercentage(QStringView(lower), {});
+    return length.status == CssLengthStatus::Valid && (lower.startsWith("calc(") || (length.px >= 0 && length.fraction >= 0));
+  }
   if (property == QLatin1String("color") || property.endsWith(QLatin1String("-color"))) {
     const auto parts = property == QLatin1String("border-color") ? splitTopLevelSpaces(value) : QStringList{value};
     return parts.size() <= 4 && std::all_of(parts.begin(), parts.end(), isCssColorValue);
@@ -927,6 +1074,33 @@ void CssComputedStyleEngine::computeValues(CssComputedStyle& style, const CssCom
                                                      {QStringLiteral("line-height"), QStringLiteral("normal")},
                                                      {QStringLiteral("visibility"), QStringLiteral("visible")},
                                                      {"box-sizing", "content-box"},
+                                                     {"display", "inline"},
+                                                     {"grid-template-columns", "none"},
+                                                     {"grid-template-rows", "none"},
+                                                     {"grid-template-areas", "none"},
+                                                     {"grid-auto-columns", "auto"},
+                                                     {"grid-auto-rows", "auto"},
+                                                     {"grid-auto-flow", "row"},
+                                                     {"grid-column-start", "auto"},
+                                                     {"grid-column-end", "auto"},
+                                                     {"grid-row-start", "auto"},
+                                                     {"grid-row-end", "auto"},
+                                                     {"justify-items", "normal"},
+                                                     {"justify-self", "auto"},
+                                                     {"flex-grow", "0"},
+                                                     {"flex-shrink", "1"},
+                                                     {"flex-basis", "auto"},
+                                                     {"flex-direction", "row"},
+                                                     {"flex-wrap", "nowrap"},
+                                                     {"order", "0"},
+                                                     {"align-items", "normal"},
+                                                     {"align-self", "auto"},
+                                                     {"align-content", "normal"},
+                                                     {"justify-content", "normal"},
+                                                     {"row-gap", "normal"},
+                                                     {"column-gap", "normal"},
+                                                     {"overflow-x", "visible"},
+                                                     {"overflow-y", "visible"},
                                                      {"background-color", "transparent"},
                                                      {"background-image", "none"},
                                                      {"font-family", "serif"},
@@ -961,6 +1135,7 @@ void CssComputedStyleEngine::computeValues(CssComputedStyle& style, const CssCom
       if (inherited != parent.properties_.cend()) {
         it.value() = inherited.value();
         if (parent.computedLengths_.contains(it.key())) style.computedLengths_.insert(it.key(), parent.computedLengths_.value(it.key()));
+        if (parent.computedGridTracks_.contains(it.key())) style.computedGridTracks_.insert(it.key(), parent.computedGridTracks_.value(it.key()));
         ++it;
       } else if (initialValues.contains(it.key())) {
         it.value() = initialValues.value(it.key());
@@ -1016,6 +1191,10 @@ void CssComputedStyleEngine::computeValues(CssComputedStyle& style, const CssCom
     const auto length = parseCssLengthPercentage(QStringView(it.value()), context);
     if (length.status == CssLengthStatus::Valid) style.computedLengths_.insert(it.key(), length);
   }
+  for (const auto* property : {"grid-template-columns", "grid-template-rows", "grid-auto-columns", "grid-auto-rows"}) {
+    if (style.computedGridTracks_.contains(property)) continue;
+    if (const auto tracks = parseCssGridTracks(style.resolvedValue(property), context)) style.computedGridTracks_.insert(property, *tracks);
+  }
 }
 
 quint64 CssComputedStyle::fingerprint() const {
@@ -1024,6 +1203,28 @@ quint64 CssComputedStyle::fingerprint() const {
   for (auto it = customProperties_.cbegin(); it != customProperties_.cend(); ++it) result += qHashMulti(size_t(0), it.key(), it.value());
   for (auto it = computedLengths_.cbegin(); it != computedLengths_.cend(); ++it)
     result += qHashMulti(size_t(0), it.key(), int(it->status), it->px, it->fraction, it->hasPercentage);
+  for (auto it = computedGridTracks_.cbegin(); it != computedGridTracks_.cend(); ++it) {
+    quint64 hash = qHashMulti(size_t(0), it.key(), it->subgrid);
+    if (it->nameRepeat) {
+      hash = qHashMulti(size_t(hash), it->nameRepeat->index);
+      for (const auto& names : it->nameRepeat->names) hash = qHashMulti(size_t(hash), names);
+    }
+    const auto hashTracks = [&](const auto& tracks, const auto& names) {
+      for (const auto& track : tracks) {
+        hash = qHashMulti(size_t(hash), track.fitContent);
+        for (const auto& value : {track.minimum, track.maximum})
+          hash = qHashMulti(size_t(hash), int(value.kind), value.length.px, value.length.fraction, value.length.hasPercentage, value.fraction);
+      }
+      for (const auto& line : names) for (const auto& name : line) hash = qHashMulti(size_t(hash), name);
+    };
+    hashTracks(it->tracks, it->lineNames);
+    if (it->automatic) {
+      hash = qHashMulti(size_t(hash), it->automatic->index, it->automatic->fit);
+      for (const auto& name : it->automatic->beforeNames) hash = qHashMulti(size_t(hash), name);
+      hashTracks(it->automatic->tracks, it->automatic->lineNames);
+    }
+    result += hash;
+  }
   return result;
 }
 

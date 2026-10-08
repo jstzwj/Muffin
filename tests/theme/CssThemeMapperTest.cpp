@@ -1406,10 +1406,9 @@ void testKeyframeSampling() {
   require(atQ.hasOpacity && qAbs(atQ.opacity - 0.65) < 0.01, QStringLiteral("phase 0.25 → opacity ~0.65 (lerp)"));
 }
 
-// Phase 2: `width: fit-content` on a heading flips headingFitContent so the
-// paint path renders the heading's own background as a shrink-to-text pill
-// (phycat's h2 "fusion glass") instead of a full-width bar. Auto/%/px widths
-// and absent width stay full-width (the legacy behaviour for every built-in).
+// Intrinsic widths retain distinct computed modes for the common layout path.
+// Only fit-content sets the compatibility box flag; max-content must remain
+// distinguishable because its used width does not clamp to available space.
 void testHeadingFitContentDetection() {
   const char* css = R"(
 #write { color:#d6deeb; }
@@ -1422,7 +1421,9 @@ void testHeadingFitContentDetection() {
   const ThemeDefinition d = CssThemeMapper::fromCss(QString::fromUtf8(css), QStringLiteral("t"), QString());
   require(elementStyleFor(d, QStringLiteral("h1"))->box.widthFitContent, QStringLiteral("h1 width:fit-content should set the flag"));
   require(elementStyleFor(d, QStringLiteral("h2"))->box.widthFitContent, QStringLiteral("h2 width:fit-content should set the flag"));
-  require(elementStyleFor(d, QStringLiteral("h3"))->box.widthFitContent, QStringLiteral("h3 width:max-content should set the flag"));
+  const auto* h3 = elementStyleFor(d, QStringLiteral("h3"));
+  require(h3->layout.sizes[0] == CssIntrinsicSize::MaxContent && !h3->box.widthFitContent,
+          QStringLiteral("h3 width:max-content retains its distinct intrinsic size mode"));
   require(!elementStyleFor(d, QStringLiteral("h4"))->box.widthFitContent, QStringLiteral("h4 width:90% must stay full-width"));
   require(!elementStyleFor(d, QStringLiteral("h5"))->box.widthFitContent, QStringLiteral("h5 width:300px must stay full-width"));
   require(!elementStyleFor(d, QStringLiteral("h6"))->box.widthFitContent, QStringLiteral("h6 with no width must stay full-width"));

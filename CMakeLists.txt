@@ -626,6 +626,10 @@ set(MUFFIN_CORE_SOURCES
   src/theme/ThemeFontDecoder.h
   src/theme/CssComputedStyleEngine.cpp
   src/theme/CssComputedStyleEngine.h
+  src/theme/CssLayoutStyle.cpp
+  src/theme/CssLayoutStyle.h
+  src/theme/CssGridStyle.cpp
+  src/theme/CssGridStyle.h
   src/theme/CssSelectorUtils.h
   src/theme/CssThemeParser.cpp
   src/theme/CssThemeParser.h
@@ -1253,6 +1257,9 @@ set(MUFFIN_UI_SOURCES
   src/render/BlockLayout.h
   src/render/LayoutBox.h
   src/render/LayoutBox.cpp
+  src/render/CssFormattingContext.cpp
+  src/render/CssFormattingContext.h
+  src/render/CssGridLayout.cpp
   src/render/CodeHighlight.h
   src/render/BlockLayoutBuilder.cpp
   src/render/BlockLayoutBuilder.h

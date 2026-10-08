@@ -58,7 +58,7 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildLayout(
 
   auto layout = std::make_unique<QTextLayout>(text, font);
   QTextOption option;
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  option.setWrapMode(QTextOption::WordWrap);
   option.setAlignment(alignment);
   layout->setTextOption(option);
   layout->beginLayout();
@@ -178,7 +178,11 @@ std::unique_ptr<HtmlTextLayout> HtmlTextMeasurer::buildInlineLayout(
   auto layout = std::make_unique<QTextLayout>(layoutText, baseFont);
 
   QTextOption option;
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  const auto& wrapping = blockBox.style().computed.layout;
+  option.setWrapMode(blockBox.style().whiteSpace == HtmlWhiteSpace::Pre ? QTextOption::NoWrap
+                     : wrapping.wordBreak == "break-all"                ? QTextOption::WrapAnywhere
+                     : wrapping.overflowWrap == "normal"                ? QTextOption::WordWrap
+                                                                        : QTextOption::WrapAtWordBoundaryOrAnywhere);
   option.setAlignment(alignment);
   layout->setTextOption(option);
 

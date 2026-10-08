@@ -127,6 +127,8 @@ class DocumentLayout {
  private:
   QRectF refreshDependentStyles(const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
   bool refreshingStyles_ = false;
+  bool formattingRoot_ = false;
+  qreal formattingHeight_ = 0;
   const MarkdownNode* topLevelBlockFor(NodeId id, const MarkdownDocument& document) const;
   void indexLayoutBlock(const BlockLayout& block);
   void removeLayoutIndexFor(const BlockLayout& block);

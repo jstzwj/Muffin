@@ -52,6 +52,8 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
       }
       if (box.tag() == HtmlTag::TextRun && parent) {
         target.computed = parent->computed;
+        target.computed.layout = {};
+        target.computed.box = {};
         target.display = HtmlDisplay::Inline;
         target.font = parent->font;
         target.fontSize = parent->fontSize;
@@ -66,6 +68,9 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
         const auto computed = engine.styleFor(element);
         const auto style = CssThemeMapper::projectComputedStyle(element.tag, computed);
         target.computed = style;
+        target.computed.layout.scaleLengths(zoom);
+        for (auto* length : {&target.computed.box.minHeightLength, &target.computed.box.maxHeightLength})
+          length->px *= zoom;
         if (style.paint.color.isValid()) target.color = style.paint.color;
         if (style.paint.backgroundColor.isValid()) target.backgroundColor = style.paint.backgroundColor;
         if (!style.text.fontFamily.isEmpty()) {
@@ -154,8 +159,10 @@ void HtmlStyleResolver::resolve(HtmlBox& root, qreal baseFontSize, const HtmlCol
           target.display = HtmlDisplay::Inline;
         else if (display == QLatin1String("inline-block"))
           target.display = HtmlDisplay::InlineBlock;
-        else if (display == QLatin1String("flex"))
+        else if (display == QLatin1String("flex") || display == QLatin1String("inline-flex"))
           target.display = HtmlDisplay::Flex;
+        else if (display == QLatin1String("grid") || display == QLatin1String("inline-grid"))
+          target.display = HtmlDisplay::Grid;
         else if (display == QLatin1String("table"))
           target.display = HtmlDisplay::Table;
         else if (display == QLatin1String("table-row-group"))

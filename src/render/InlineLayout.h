@@ -31,6 +31,8 @@ namespace muffin {
 class InlineLayout {
 public:
   struct BuildOptions {
+    QTextOption::WrapMode wrapMode = QTextOption::WrapAtWordBoundaryOrAnywhere;
+    bool anywhereMinimum = false;
     LayoutStyleCache* styleCache = nullptr;
     InlineProjectionState projectionState;
     const MarkdownNode* styleNode = nullptr;
@@ -94,6 +96,7 @@ public:
   QSizeF size() const;
   qreal height() const;
   QRectF visualTextBounds() const;
+  QPair<qreal, qreal> intrinsicWidths() const;
   // Baseline Y of the first text line, relative to the layout origin. Includes
   // the line-height centering offset (line.y()), so callers drawing decoration
   // that must align with the first line (placeholder text, list markers) land on
@@ -280,6 +283,8 @@ private:
   qreal lineHeightMultiplier_ = 0.0;
   qreal wordSpacing_ = 0.0;
   Qt::Alignment alignment_;
+  QTextOption::WrapMode wrapMode_ = QTextOption::WrapAtWordBoundaryOrAnywhere;
+  bool anywhereMinimum_ = false;
   TextShadow textShadow_;  // present=false ⇒ no shadow
   std::shared_ptr<const LayoutBox> codeStyle_;
   QVector<LayoutBox> inlineBoxes_;

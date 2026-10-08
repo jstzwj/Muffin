@@ -191,6 +191,7 @@ std::vector<CssDeclaration> parseDeclarationBlock(const QString& block) {
     // Normal property names are ASCII case-insensitive; custom property names
     // (`--Name`) are case-sensitive by CSS definition.
     if (!d.property.startsWith(QLatin1String("--"))) d.property = d.property.toLower();
+    if (d.property == QLatin1String("word-wrap")) d.property = QStringLiteral("overflow-wrap");
     QString val = raw.mid(colon + 1).trimmed();
     // peel trailing !important (case-insensitive)
     const int bang = val.lastIndexOf(QLatin1Char('!'));

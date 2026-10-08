@@ -1,4 +1,5 @@
 #include "render/InlineLayout.h"
+#include "render/CssFormattingContext.h"
 #include "render/RenderMetrics.h"
 
 #include "document/ImageSyntaxOps.h"
@@ -20,6 +21,11 @@
 #include <cmath>
 
 namespace muffin {
+QPair<qreal, qreal> InlineLayout::intrinsicWidths() const {
+  if (!textLayout_) return {};
+  const auto intrinsic = intrinsicTextWidths(*textLayout_, wrapMode_ == QTextOption::NoWrap, anywhereMinimum_);
+  return {intrinsic.minContent, intrinsic.maxContent};
+}
 namespace {
 
 constexpr QChar kInlineMathPlaceholder(0x00a0);
@@ -204,6 +210,8 @@ void InlineLayout::build(
   wordSpacing_ = options.wordSpacing;
   textShadow_ = options.textShadow;
   alignment_ = options.alignment;
+  wrapMode_ = options.wrapMode;
+  anywhereMinimum_ = options.anywhereMinimum;
   html::HtmlColorPalette htmlPalette = html::HtmlColorPalette::defaultLight();
   htmlPalette.documentStyleSheet = theme.documentStyleSheet();
   if (options.styleNode) {
@@ -1370,7 +1378,7 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
 
   textLayout_ = std::make_unique<QTextLayout>(layoutText_.isEmpty() ? QStringLiteral(" ") : layoutText_, baseFont);
   QTextOption option;
-  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  option.setWrapMode(wrapMode_);
   if (alignment_ != Qt::Alignment()) {
     option.setAlignment(alignment_);
   }

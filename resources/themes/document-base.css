@@ -1,7 +1,7 @@
 /* Muffin's document host contract. Theme author rules follow this sheet. */
 html { font-size: 16px; }
 body { margin: 0; }
-#write { box-sizing: border-box; margin: 0 auto; padding: 36px 30px 70px; }
+#write { box-sizing: border-box; margin: 0 auto; padding: 36px 30px 70px; overflow-wrap: break-word; }
 p { margin: 0 0 1em; }
 h1 { font-size: 2em; }
 h2 { font-size: 1.5em; }

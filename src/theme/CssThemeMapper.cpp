@@ -319,6 +319,7 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
   ThemeElementStyle out;
   out.fingerprint = style.fingerprint();
   out.key = key;
+  out.layout = CssLayoutStyle::fromComputed(style);
   out.box = styleBox(QStringLiteral("margin"));
   out.box.marginSpecified = out.box.present;
   const ThemeElementBoxStyle pad = styleBox(QStringLiteral("padding"));
@@ -385,7 +386,10 @@ ThemeElementStyle makeElementStyleForComputed(const QString& key, const CssCompu
     out.box.present = true;
   }
   const QString widthRaw = style.resolvedValue(QStringLiteral("width")).trimmed().toLower();
-  if (isIntrinsicPageWidthKeyword(widthRaw)) { out.box.widthFitContent = true; out.box.present = true; }
+  if (widthRaw == QStringLiteral("fit-content")) {
+    out.box.widthFitContent = true;
+    out.box.present = true;
+  }
   out.paint.color = styleColor(colorProps);
   out.paint.backgroundColor = styleColor(bgProps);
   out.paint.backgroundImage = parseGradientSpec(style.rawValue(QStringLiteral("background-image")), style.customProperties());

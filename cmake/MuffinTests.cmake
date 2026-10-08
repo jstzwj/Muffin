@@ -278,6 +278,10 @@ muffin_add_test(NAME MuffinMarkdownHtmlSerializerTest SOURCE tests/projection/Ma
 muffin_add_test(NAME MuffinCssComputedStyleEngineTest SOURCE tests/theme/CssComputedStyleEngineTest.cpp LINK MuffinUi)
 muffin_add_test(NAME MuffinDocumentStyleConformanceTest SOURCE tests/theme/DocumentStyleConformanceTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} RESOURCE_LOCK)
 target_compile_definitions(MuffinDocumentStyleConformanceTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+muffin_add_test(NAME MuffinCssFlexLayoutTest SOURCE tests/theme/CssFlexLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)
+target_compile_definitions(MuffinCssFlexLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+muffin_add_test(NAME MuffinCssGridLayoutTest SOURCE tests/theme/CssGridLayoutTest.cpp LINK MuffinUi RESOURCE_LOCK)
+target_compile_definitions(MuffinCssGridLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 muffin_add_test(NAME MuffinCssThemeMapperTest SOURCE tests/theme/CssThemeMapperTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} FIXTURE tests/fixtures/theme/mist-blue.css)
 muffin_add_test(NAME MuffinThemeAccessibilityTest SOURCE tests/theme/ThemeAccessibilityTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC})
 

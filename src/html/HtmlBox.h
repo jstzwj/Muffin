@@ -22,6 +22,7 @@ enum class HtmlDisplay {
   Inline,
   InlineBlock,
   Flex,
+  Grid,
   None,
   Table,
   TableRow,
@@ -232,7 +233,8 @@ struct HtmlColorPalette {
 
 class HtmlBox {
 public:
- LayoutBox layoutBox;
+  LayoutBox layoutBox;
+  std::vector<size_t> formattingPaintOrder;
  QString cssTag;
  QString cssId;
  QStringList cssClasses;

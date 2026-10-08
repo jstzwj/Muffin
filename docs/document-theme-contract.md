@@ -104,6 +104,98 @@ then registered through Qt; failed registrations do not enter the success cache.
 Font aliases belong to the theme, and successful registrations are deduplicated
 by content digest.
 
+## Flex formatting stage
+
+`CssLayoutStyle` is the common computed input for formatting. `CssFormattingContext`
+owns Yoga configuration and Flex allocation; the HTML and Markdown adapters only
+measure native content and materialize its final `LayoutBox`. It supports directions
+and reversals, wrapping, order, alignment, baseline alignment, gaps, auto margins,
+grow/shrink/basis, intrinsic width keywords and min/max constraints. Percentages
+use the flex content box, while percentage padding uses its containing width.
+Text reflows at the allocated width. Minimum violations freeze and redistribute
+space after allocation, avoiding Yoga's early minimum-size floor of flex bases.
+
+Markdown block containers and `#write` can establish a Flex context; paragraph
+and heading items retain their native text/source mapping. Markdown inline runs
+remain one inline formatting item rather than an arbitrary DOM of flex items. All items
+inside a root Flex context are materialized together even under Lazy policy:
+their geometry is interdependent. Editing rebuilds this context, while normal
+vertical documents keep sparse promotion and suffix shifts. Visible-block queries
+and clicking use actual rectangles because visual order may differ from source order.
+`overflow` controls clipping and automatic minimums; embedded containers do not
+yet provide their own interactive scrollbars. General inline formatting around an
+`inline-flex` atom, orthogonal writing modes, replaced-element aspect-ratio minimums,
+and full WPT compatibility remain follow-up work.
+
+`CssFlexLayoutTest` consumes `tests/fixtures/theme/flex-layout-browser.json`,
+generated with `node scripts/probe_flex_css.mjs`. It compares Chrome box geometry
+at 100% and 200% zoom and checks real edits, hit testing and eager/lazy convergence.
+Geometry tolerance is 0.8px, with 1.25px for baseline-dependent coordinates because
+the native Qt and Chrome font backends round ascent metrics differently.
+
+## Grid formatting stage
+
+`layoutFormattingItems` dispatches Flex and Grid from the same computed input.
+`CssGridLayout` owns line/area placement, intrinsic track contributions, free-space
+distribution and final item rectangles. Both document adapters use its returned
+Grid area widths for percentage padding, content reflow and final boxes. Grid
+tracks freeze font-relative lengths during computed-style resolution, including
+explicit inheritance; percentages resolve when the Grid area is known.
+
+The first stage supports length/percentage/`calc()` tracks, `auto`, `min-content`,
+`max-content`, `fr`, `minmax()` and integer `repeat()`. Numeric positive/negative
+lines, row/column spans, implicit track patterns, row/column auto-flow and dense
+packing share the same placement pass. Gaps, item/content alignment, auto margins,
+min/max item sizes and nested Grid/Flex use the common box snapshots. Root Grid
+uses the same atomic materialization/invalidation and XY hit testing as Flex.
+Track counts and authored line magnitudes are bounded at 1000 to keep malformed
+or adversarial CSS from allocating an unbounded grid.
+
+Automatic repetition (`auto-fill`/`auto-fit`) stays symbolic in computed styles.
+The shared layout resolves its count against the definite content axis and gap,
+with one repetition for an indefinite axis. `auto-fit` collapses only unoccupied
+repeated tracks and their gutters after placement, retaining the original explicit
+line numbering. Fixed siblings, repeated track patterns and percentage/calc fixed
+minimums participate in counting. Resizing re-expands the computed template rather
+than caching an old count, including when Markdown root layout uses Lazy policy.
+
+Named line lists retain case-sensitive names and merge adjacent repeat boundaries.
+Positive/negative occurrences, named spans and implicit named lines resolve before
+the common placement pass. `grid-template-areas` requires equal row lengths and
+rectangular named regions; its implicit `name-start`/`name-end` lines use the same
+resolver. Named shorthand omissions propagate custom identifiers according to
+the CSS rules. Empty area cells do not reserve placement slots. Syntax-invalid
+templates and areas are discarded by the common cascade.
+
+`CssGridLayoutTest` reads `tests/fixtures/theme/grid-layout-browser.json`, generated
+with `node scripts/probe_grid_css.mjs`. It checks Chrome geometry at 100% and 200%
+zoom, native Markdown editing, caret/selection coordinates and full/lazy agreement.
+Subgrid shares the parent's used tracks on one or both axes. `CssGridInheritance`
+travels with each allocated item; it is not computed style and is never cached by
+selector or NodeId. Shared tracks retain parent line names, with local names and
+integer/auto-fill name repetition added at layout time. Padding, borders and
+margins inset edge tracks; different subgrid gaps adjust both sides of each gutter.
+Subgridded axes stretch and clamp placement to the inherited span, without implicit
+tracks. Outside a grid item, `subgrid` behaves as `none` on that axis.
+
+Descendant intrinsic contributions are translated onto parent tracks recursively,
+then sized in global span order. A separate width query uses this same algorithm
+without laying out blocks or measuring text height. Nested grids therefore measure
+their actual tracks rather than summing widths as if they were Flex rows.
+Indefinite `fr` tracks include max-content and spanning contributions;
+`fit-content(length/percentage)` caps track growth without overriding its content
+minimum. Explicit `min-content`/`max-content` minima may exceed a smaller maximum
+in `minmax()`. Shared geometry is used by both adapters and native caret/selection;
+a descendant edit invalidates its owning formatting context and parent tracks.
+
+Masonry, orthogonal writing modes, Grid baseline groups and complete CSS Grid
+intrinsic sizing/WPT coverage remain future work, including cyclic percentage
+tracks/gaps in indefinite axes, automatic repetition under min/max-only containing
+sizes, and transferred aspect-ratio contributions from complex replaced content.
+General inline formatting of `inline-grid` has the same limitation as `inline-flex`; parsing these values does not promise browser-complete behavior.
+Escaped CSS custom identifiers and escaped area strings, and the full `grid` /
+`grid-template` shorthands are not yet supported.
+
 ## Verification
 
 `DocumentStyleConformanceTest` covers inheritance and font-relative geometry,

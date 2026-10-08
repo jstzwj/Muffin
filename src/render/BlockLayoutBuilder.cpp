@@ -503,6 +503,15 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::build(
     qreal y,
     qreal width,
     int depth) {
+  const auto key = cssTagForNode(node);
+  const auto* style = key.isEmpty() ? nullptr : theme.elementStyleForNode(node, key);
+  if (style && style->layout.display == "none") {
+    auto hidden = std::make_unique<BlockLayout>(node.id());
+    hidden->setType(node.type());
+    hidden->setRect({x, y, 0, 0});
+    return hidden;
+  }
+  if (style && style->layout.establishesFormattingContext() && !node.children().empty()) return buildFormattingContainer(node, theme, x, y, width, depth);
   switch (node.type()) {
     case BlockType::Paragraph:
     case BlockType::Heading:
@@ -567,7 +576,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
       ? QStringLiteral("h%1").arg(node.headingLevel())
       : (isInsideBlockquote(node) ? QStringLiteral("blockquote p") : QStringLiteral("p"));
   const qreal containingWidth = width;
-  const auto usedBox = theme.elementBoxStyle(elementKey, &node, containingWidth);
+  const auto usedBox = boxFor(node, theme, elementKey, containingWidth);
   const auto* resolvedStyle = theme.elementStyleForNode(node, elementKey);
   const auto margins = usedBox.margin;
   x += margins.left();
@@ -579,6 +588,10 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   const qreal beforeAdvance =
       node.type() == BlockType::Heading ? measuredHeadingBeforeAdvance(theme, node.headingLevel(), layout->headingBeforeText(), font) : 0;
   const qreal textWidth = qMax<qreal>(1, width - insets.left() - insets.right() - beforeAdvance);
+  const auto intrinsicKind = resolvedStyle ? resolvedStyle->layout.sizes[0] : CssIntrinsicSize::Auto;
+  const bool intrinsic =
+      !allocations_.contains(&node) && (intrinsicKind == CssIntrinsicSize::MinContent || intrinsicKind == CssIntrinsicSize::MaxContent ||
+                                        intrinsicKind == CssIntrinsicSize::FitContent);
   // A heading projects content-only: its `# ` prefix region [blockStart, contentStart) is never part
   // of the editable projection (it is empty for Setext headings, whose byteStart == contentStart).
   // The level is conveyed by font size and changed via the heading-level commands, so the prefix is
@@ -603,6 +616,12 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   options.breakOnSingleNewline = breakOnSingleNewline_;
   options.renderEmoji = renderEmoji_;
   options.styleNode = &node;
+  if (resolvedStyle) {
+    options.anywhereMinimum = resolvedStyle->layout.overflowWrap == "anywhere" || resolvedStyle->layout.wordBreak == "break-all";
+    options.wrapMode = resolvedStyle->layout.wordBreak == "break-all"   ? QTextOption::WrapAnywhere
+                       : resolvedStyle->layout.overflowWrap == "normal" ? QTextOption::WordWrap
+                                                                        : QTextOption::WrapAtWordBoundaryOrAnywhere;
+  }
   options.baseTextColor = theme.textColorForElement(elementKey, &node);
   if (const auto* hovered = theme.elementStyleForNode(node, elementKey + QStringLiteral(":hover")))
     options.hoverTextColor = hovered->paint.color;
@@ -616,10 +635,19 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   {
     BuildAccumTimer t(inlineLayoutNs_, perfEnabled_);
     applyPreedit(options);
-    inlineLayout->build(node.inlines(), editableSource, theme, textWidth, font, options);
+    inlineLayout->build(node.inlines(), editableSource, theme, intrinsic ? 1e6 : textWidth, font, options);
   }
-  if (usedBox.widthFitContent) {
-    width = LayoutBox::borderWidth(usedBox, availableWidth, inlineLayout->visualTextBounds().width() + beforeAdvance);
+  if (intrinsic) {
+    const auto metrics = inlineLayout->intrinsicWidths();
+    const qreal extra = insets.left() + insets.right() + beforeAdvance;
+    const qreal content = intrinsicKind == CssIntrinsicSize::MinContent ? metrics.first
+                          : intrinsicKind == CssIntrinsicSize::MaxContent
+                              ? metrics.second
+                              : qMax(metrics.first, qMin(metrics.second, availableWidth - extra));
+    auto intrinsicBox = usedBox;
+    intrinsicBox.widthFitContent = false;
+    intrinsicBox.widthLength = {CssLengthStatus::Valid, content + extra - (usedBox.borderBox ? 0 : extra)};
+    width = LayoutBox::borderWidth(intrinsicBox, availableWidth);
     inlineLayout->build(node.inlines(), editableSource, theme, qMax<qreal>(1, width - insets.left() - insets.right() - beforeAdvance), font,
                         options);
   }
@@ -641,13 +669,145 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildParagraphLike(
   return layout;
 }
 
-std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTocPreview(
-    const MarkdownNode& node,
-    const RenderTheme& theme,
-    qreal x,
-    qreal y,
-    qreal width,
-    int depth) {
+ThemeElementBoxStyle BlockLayoutBuilder::boxFor(const MarkdownNode& node, const RenderTheme& theme, const QString& key,
+                                                qreal containingWidth) const {
+  const auto allocation = allocations_.constFind(&node);
+  auto box = theme.elementBoxStyle(key, &node, allocation == allocations_.cend() ? containingWidth : allocation->second);
+  if (allocation == allocations_.cend()) return box;
+  box.margin = {};
+  box.marginLengths = {};
+  box.marginLeftAuto = box.marginRightAuto = false;
+  box.borderBox = true;
+  box.widthFitContent = false;
+  box.widthLength = {CssLengthStatus::Valid, allocation->first.width()};
+  box.minWidthLength = {};
+  box.maxWidthLength = {};
+  if (allocation->first.height() >= 0) {
+    box.heightLength = {CssLengthStatus::Valid, allocation->first.height()};
+    box.minHeightLength = {};
+    box.maxHeightLength = {};
+  }
+  return box;
+}
+
+std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildAllocated(const MarkdownNode& node, const RenderTheme& theme, QRectF allocation,
+                                                                qreal containingWidth, int depth, const CssGridInheritance& inherited) {
+  const auto savedGrid = gridInheritance_.value(&node);
+  const bool hadGrid = gridInheritance_.contains(&node);
+  gridInheritance_.insert(&node, inherited);
+  const auto saved = allocations_.value(&node);
+  const bool existed = allocations_.contains(&node);
+  allocations_.insert(&node, {allocation.size(), containingWidth});
+  auto result = build(node, theme, allocation.x(), allocation.y(), allocation.width(), depth);
+  if (existed)
+    allocations_.insert(&node, saved);
+  else
+    allocations_.remove(&node);
+  if (hadGrid)
+    gridInheritance_.insert(&node, savedGrid);
+  else
+    gridInheritance_.remove(&node);
+  return result;
+}
+
+CssIntrinsicMetrics BlockLayoutBuilder::intrinsicMetrics(const MarkdownNode& node, const RenderTheme& theme, qreal containingWidth) {
+  const auto* computed = theme.elementStyleForNode(node, cssTagForNode(node));
+  if (computed && computed->layout.isGrid() && !node.children().empty())
+    return formattingItem(node, theme, containingWidth).intrinsic;
+  const auto built = buildAllocated(node, theme, {0, 0, 1e6, -1}, containingWidth);
+  if (const auto* text = built->inlineLayout()) {
+    const auto widths = text->intrinsicWidths();
+    return {widths.first, widths.second};
+  }
+  if (!node.children().empty()) {
+    CssIntrinsicMetrics result;
+    const auto* style = theme.elementStyleForNode(node, cssTagForNode(node));
+    const bool row = style && style->layout.isFlex() && style->layout.direction.startsWith("row");
+    for (const auto& child : node.children()) {
+      const auto metrics = intrinsicMetrics(*child, theme, containingWidth);
+      result.minContent = qMax(result.minContent, metrics.minContent);
+      result.maxContent = row ? result.maxContent + metrics.maxContent : qMax(result.maxContent, metrics.maxContent);
+    }
+    return result;
+  }
+  return {built->codeMaxLineWidth(), built->codeMaxLineWidth()};
+}
+
+CssFormattingItem BlockLayoutBuilder::formattingItem(const MarkdownNode& node, const RenderTheme& theme, qreal containingWidth, int depth) {
+  const auto key = cssTagForNode(node);
+  const auto* style = theme.elementStyleForNode(node, key);
+  auto projected = style ? *style : ThemeElementStyle{};
+  projected.box = theme.elementBoxStyle(key, &node, containingWidth);
+  const qreal zoom = theme.zoomPercent() / 100.0;
+  for (auto* sides : {&projected.box.marginLengths, &projected.box.paddingLengths})
+    for (auto& length : sides->sides) length.px *= zoom;
+  projected.layout.scaleLengths(zoom);
+  CssFormattingItem item;
+  item.style = projected;
+  if (projected.layout.isGrid() && !node.children().empty()) {
+    item.children.emplace();
+    for (const auto& child : node.children()) {
+      if (!omitVirtualEmptyParagraphInRenderFlow(*child, selection_))
+        item.children->push_back(formattingItem(*child, theme, containingWidth, depth + 1));
+    }
+    item.intrinsic = intrinsicGridWidths(projected, *item.children);
+  } else
+    item.intrinsic = intrinsicMetrics(node, theme, containingWidth);
+  item.measure = [this, &node, &theme, key, depth](qreal width, qreal reference, const CssGridInheritance& inherited) {
+    const auto inset = LayoutBox::insets(theme.elementBoxStyle(key, &node, reference));
+    const auto built =
+        buildAllocated(node, theme, {0, 0, width < 0 ? 1e6 : width + inset.left() + inset.right(), -1}, reference, depth, inherited);
+    const auto* text = built->inlineLayout();
+    const qreal baseline = text ? text->firstLineBaselineY() : QFontMetricsF(theme.paragraphFont()).ascent();
+    const qreal measuredWidth = text ? text->visualTextBounds().width() : width;
+    return CssMeasuredContent{
+        {width < 0 ? measuredWidth : qMin(width, measuredWidth), qMax<qreal>(0, built->height() - inset.top() - inset.bottom())}, baseline};
+  };
+  return item;
+}
+
+std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFormattingContainer(const MarkdownNode& node, const RenderTheme& theme, qreal x,
+                                                                          qreal y, qreal width, int depth) {
+  auto result = std::make_unique<BlockLayout>(node.id());
+  result->setType(node.type());
+  result->setDepth(depth);
+  const auto key = cssTagForNode(node);
+  auto style = *theme.elementStyleForNode(node, key);
+  const auto used = boxFor(node, theme, key, width);
+  x += used.margin.left();
+  width = LayoutBox::borderWidth(used, width - used.margin.left() - used.margin.right());
+  const auto inset = LayoutBox::insets(used);
+  const qreal contentWidth = qMax<qreal>(0, width - inset.left() - inset.right());
+  const qreal contentHeight = used.heightLength.status == CssLengthStatus::Valid && !used.heightLength.hasPercentage
+                                  ? qMax<qreal>(0, used.heightLength.px - (used.borderBox ? inset.top() + inset.bottom() : 0))
+                                  : -1;
+  const qreal zoom = theme.zoomPercent() / 100.0;
+  style.layout.scaleLengths(zoom);
+  std::vector<const MarkdownNode*> nodes;
+  std::vector<CssFormattingItem> items;
+  for (const auto& child : node.children()) {
+    if (omitVirtualEmptyParagraphInRenderFlow(*child, selection_)) continue;
+    const auto* childStyle = theme.elementStyleForNode(*child, cssTagForNode(*child));
+    if (childStyle && childStyle->layout.display == "none") continue;
+    nodes.push_back(child.get());
+    items.push_back(formattingItem(*child, theme, contentWidth, depth + 1));
+  }
+  const auto formatted =
+      layoutFormattingItems(style, items, contentWidth, contentHeight, 1, contentGridInheritance(gridInheritance_.value(&node), inset));
+  std::vector<std::unique_ptr<BlockLayout>> children;
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    const auto allocation = formatted.items[i].translated(x + inset.left(), y + inset.top());
+    children.push_back(buildAllocated(*nodes[i], theme, allocation, formatted.containingWidths[i], depth + 1, formatted.inheritedGrids[i]));
+  }
+  const QRectF rect(x, y, width, LayoutBox::borderHeight(used, formatted.size.height()));
+  result->setRect(rect);
+  result->setCssBoxGeometry(LayoutBox::place(key, style, used, rect, theme.textFontForElement(key, &node)));
+  result->setChildren(std::move(children));
+  return result;
+}
+
+std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTocPreview(const MarkdownNode& node, const RenderTheme& theme, qreal x, qreal y,
+                                                                 qreal width, int depth) {
   // Generated, non-editable preview: one row per document heading, indented by
   // level, painted in the link colour (paintToc) and Ctrl+clickable to scroll to
   // the heading (hitSelf emits a `#toc:<nodeId>` href). Height = rows × line
@@ -911,7 +1071,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildLiteralBlock(
   }
   const QString styleKey = QStringLiteral("pre");
   const auto* resolvedStyle = theme.elementStyleForNode(node, styleKey);
-  const auto usedBox = theme.elementBoxStyle(styleKey, &node, width);
+  const auto usedBox = boxFor(node, theme, styleKey, width);
   const qreal availableWidth = qMax<qreal>(1, width - usedBox.margin.left() - usedBox.margin.right());
   x += usedBox.margin.left();
   width = LayoutBox::borderWidth(usedBox, availableWidth);
@@ -1070,7 +1230,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildTable(
 
   const QString tableKey = QStringLiteral("table");
   const auto* tableStyle = theme.elementStyleForNode(node, tableKey);
-  const auto tableBox = theme.elementBoxStyle(tableKey, &node, width);
+  const auto tableBox = boxFor(node, theme, tableKey, width);
   const auto tableInsets = LayoutBox::insets(tableBox);
   const qreal availableWidth = qMax<qreal>(1, width - tableBox.margin.left() - tableBox.margin.right());
   x += tableBox.margin.left();

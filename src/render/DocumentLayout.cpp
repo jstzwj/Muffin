@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cmath>
 #include <functional>
+#include <limits>
 
 namespace muffin {
 namespace {
@@ -309,6 +310,9 @@ void DocumentLayout::rebuild(
 
   const auto& children = document.root().children();
   slots_.reserve(children.size());
+  const auto* rootStyle = theme.elementStyle(QStringLiteral("#write"));
+  formattingRoot_ = rootStyle && rootStyle->layout.establishesFormattingContext();
+  formattingHeight_ = 0;
 
   RebuildPerfStats perf;
   qreal estimateMs = 0.0;
@@ -316,7 +320,34 @@ void DocumentLayout::rebuild(
   const QMarginsF pagePadding = theme.pagePadding();
   const QMarginsF pageMargin = theme.pageMargin();
   qreal cursorY = pageMargin.top() + pagePadding.top();
-  if (policy == BuildPolicy::Lazy) {
+  if (formattingRoot_) {
+    auto container = *rootStyle;
+    const qreal zoom = theme.zoomPercent() / 100.0;
+    container.layout.scaleLengths(zoom);
+    std::vector<CssFormattingItem> items;
+    for (const auto& child : children) items.push_back(builder_.formattingItem(*child, theme, pageWidth_));
+    const auto usedRoot = theme.elementBoxStyle(QStringLiteral("#write"), nullptr, pageOuterWidth_);
+    const auto rootInset = LayoutBox::insets(usedRoot);
+    const qreal rootHeight =
+        usedRoot.heightLength.status == CssLengthStatus::Valid && !usedRoot.heightLength.hasPercentage
+            ? qMax<qreal>(0, usedRoot.heightLength.px - (usedRoot.borderBox ? rootInset.top() + rootInset.bottom() : 0))
+            : -1;
+    const auto formatted = layoutFormattingItems(container, items, pageWidth_, rootHeight);
+    formattingHeight_ = formatted.size.height();
+    for (size_t i = 0; i < children.size(); ++i) {
+      const auto allocation = formatted.items[i].translated(pageLeft_, cursorY);
+      auto block = builder_.buildAllocated(*children[i], theme, allocation, formatted.containingWidths[i], 0, formatted.inheritedGrids[i]);
+      BlockSlot slot;
+      slot.nodeId = children[i]->id();
+      slot.type = children[i]->type();
+      slot.top = block->rect().top();
+      slot.height = block->height();
+      slot.measured = true;
+      indexLayoutBlock(*block);
+      slot.detail = std::move(block);
+      slots_.push_back(std::move(slot));
+    }
+  } else if (policy == BuildPolicy::Lazy) {
     QElapsedTimer estTimer;
     if (collectPerf) {
       estTimer.start();
@@ -464,6 +495,16 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
   if (!blockId.isValid() || document_ != &document || slots_.empty() || viewportWidth_ <= 0) {
     return result;
   }
+  if (formattingRoot_) {
+    result.blockId = blockId;
+    result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+    const qreal oldHeight = totalHeight_;
+    rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+    result.newRect = result.shiftedRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+    result.heightDelta = totalHeight_ - oldHeight;
+    result.rebuilt = true;
+    return result;
+  }
 
   // The edit starts one style generation. Dependent geometry rebuilds below
   // consume that generation without discarding the same shared caches again.
@@ -561,6 +602,15 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   result.first = range.first;
   result.oldCount = range.oldCount;
   result.newCount = range.newCount;
+  if (formattingRoot_ && range.isValid()) {
+    result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+    const qreal oldHeight = totalHeight_;
+    rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
+    result.newRect = result.shiftedRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
+    result.heightDelta = totalHeight_ - oldHeight;
+    result.rebuilt = true;
+    return result;
+  }
   theme.invalidateDocumentStyles();
   if (!range.isValid() || document_ != &document || viewportWidth_ <= 0) {
     return result;
@@ -849,6 +899,15 @@ qsizetype DocumentLayout::slotIndexAtY(qreal y) const {
 }
 
 QPair<qsizetype, qsizetype> DocumentLayout::slotRangeOverlappingY(qreal yTop, qreal yBottom) const {
+  if (formattingRoot_) {
+    qsizetype first = -1, last = -1;
+    for (qsizetype i = 0; i < static_cast<qsizetype>(slots_.size()); ++i) {
+      if (slotTop(i) + slots_[static_cast<size_t>(i)].height < yTop || slotTop(i) > yBottom) continue;
+      if (first < 0) first = i;
+      last = i;
+    }
+    return {first, last};
+  }
   if (slots_.empty()) {
     return {-1, -1};
   }
@@ -909,6 +968,7 @@ QVector<const BlockLayout*> DocumentLayout::promotedBlocks() const {
       result.push_back(slot.detail.get());
     }
   }
+  if (formattingRoot_) std::stable_sort(result.begin(), result.end(), [](const auto* a, const auto* b) { return a->formattingOrder() < b->formattingOrder(); });
   return result;
 }
 
@@ -928,6 +988,7 @@ QVector<const BlockLayout*> DocumentLayout::visibleBlocks(QRectF documentViewpor
       result.push_back(slot.detail.get());
     }
   }
+  if (formattingRoot_) std::stable_sort(result.begin(), result.end(), [](const auto* a, const auto* b) { return a->formattingOrder() < b->formattingOrder(); });
   return result;
 }
 
@@ -975,6 +1036,13 @@ NodeId DocumentLayout::topLevelBlockIdFor(NodeId id) const {
 }
 
 const BlockLayout* DocumentLayout::blockAt(QPointF documentPos, const RenderTheme& theme) {
+  if (formattingRoot_) {
+    const BlockLayout* topmost = nullptr;
+    for (const auto& slot : slots_)
+      if (slot.detail && slot.detail->rect().contains(documentPos) &&
+          (!topmost || slot.detail->formattingOrder() >= topmost->formattingOrder())) topmost = slot.detail.get();
+    return topmost;
+  }
   if (slots_.empty()) {
     return nullptr;
   }
@@ -988,6 +1056,22 @@ const BlockLayout* DocumentLayout::blockAt(QPointF documentPos, const RenderThem
 }
 
 HitTestResult DocumentLayout::hitTest(QPointF documentPos, const RenderTheme& theme) {
+  if (formattingRoot_ && !slots_.empty()) {
+    if (const auto* block = blockAt(documentPos, theme)) return block->hitTest(documentPos, theme, codeFenceScroll_);
+    const BlockLayout* nearest = nullptr;
+    qreal distance = std::numeric_limits<qreal>::max();
+    for (const auto& slot : slots_)
+      if (slot.detail) {
+        const auto rect = slot.detail->rect();
+        const qreal dx = qMax<qreal>(0, qMax(rect.left() - documentPos.x(), documentPos.x() - rect.right()));
+        const qreal dy = qMax<qreal>(0, qMax(rect.top() - documentPos.y(), documentPos.y() - rect.bottom()));
+        if (dx * dx + dy * dy < distance) {
+          distance = dx * dx + dy * dy;
+          nearest = slot.detail.get();
+        }
+      }
+    return nearest ? nearest->hitTest(documentPos, theme, codeFenceScroll_) : HitTestResult{};
+  }
   if (slots_.empty()) {
     return {};
   }
@@ -1278,6 +1362,12 @@ void DocumentLayout::recomputeTotalHeight(const RenderTheme& theme) {
   const QMarginsF pageMargin = theme.pageMargin();
   const QMarginsF pagePadding = theme.pagePadding();
   qreal cursorY = pageMargin.top() + pagePadding.top();
+  if (formattingRoot_) {
+    for (const auto& slot : slots_)
+      if (slot.detail) formattingHeight_ = qMax(formattingHeight_, slot.detail->bottom() - cursorY);
+    totalHeight_ = cursorY + formattingHeight_ + pagePadding.bottom() + pageMargin.bottom() + trailingHeightForLastBlock(nullptr, theme);
+    return;
+  }
   qreal trailingHeight = trailingHeightForLastBlock(nullptr, theme);
   if (!slots_.empty()) {
     const BlockSlot& last = slots_.back();

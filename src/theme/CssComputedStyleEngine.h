@@ -2,6 +2,7 @@
 
 #include "theme/CssThemeParser.h"
 #include "theme/CssCalc.h"
+#include "theme/CssGridStyle.h"
 
 #include <QChar>
 #include <QHash>
@@ -105,6 +106,7 @@ public:
  QHash<QString, QString> properties_;
  QHash<QString, QString> customProperties_;
  QHash<QString, CssLengthPercentage> computedLengths_;
+ QHash<QString, CssGridTrackList> computedGridTracks_;
  qreal fontSizePx = 16.0;
  qreal rootFontSizePx = 16.0;
  qreal containingWidthPx = -1.0;
