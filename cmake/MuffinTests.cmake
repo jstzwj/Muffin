@@ -287,6 +287,12 @@ target_compile_definitions(MuffinCssGridLayoutTest PRIVATE MUFFIN_SOURCE_DIR="${
 foreach(_browser_layout_test MuffinCssFlexLayoutTest MuffinCssGridLayoutTest)
   muffin_use_theme_fonts(${_browser_layout_test})
   target_compile_definitions(${_browser_layout_test} PRIVATE MUFFIN_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}")
+  if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")
+    # Scope this oracle's matching environment to the tests that require it.
+    # Unrelated raster fixtures keep their established font environment.
+    set_property(TEST ${_browser_layout_test} APPEND PROPERTY ENVIRONMENT_MODIFICATION
+      "FONTCONFIG_FILE=set:/etc/fonts/fonts.conf" "FONTCONFIG_PATH=set:/etc/fonts")
+  endif()
 endforeach()
 muffin_add_test(NAME MuffinCssThemeMapperTest SOURCE tests/theme/CssThemeMapperTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC} FIXTURE tests/fixtures/theme/mist-blue.css)
 muffin_add_test(NAME MuffinThemeAccessibilityTest SOURCE tests/theme/ThemeAccessibilityTest.cpp LINK MuffinUi EXTRA_SOURCES ${MUFFIN_THEMES_QRC})

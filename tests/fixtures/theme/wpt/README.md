@@ -20,8 +20,9 @@ files. The browser probes wait for all four faces before measuring and record
 the source WOFF2 SHA-256 hashes in each reference. Native tests verify those
 hashes, load the build-generated TTF versions and assert 96 logical DPI. Missing
 fonts fail explicitly instead of silently measuring a system fallback. Linux
-CTest uses the runner's `/etc/fonts/fonts.conf` when it exists, since Conan's
-Fontconfig build-time configuration path need not exist on the test machine.
+CTest uses the runner's `/etc/fonts/fonts.conf` for these two oracle tests when
+it exists, since Conan's Fontconfig build-time configuration path need not exist
+on the test machine. This override does not change unrelated raster fixtures.
 
 Additional native cases cover inline components and container baseline export,
 including occupied rows, shared baseline groups and row-major fallback order from

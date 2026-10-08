@@ -1560,6 +1560,10 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
   }
 
   textLayout_ = std::make_unique<QTextLayout>(layoutText_.isEmpty() ? QStringLiteral(" ") : layoutText_, baseFont);
+  // Retain the shaping snapshot together with the line geometry. Qt otherwise
+  // frees it at endLayout() and reshapes during paint/caret queries, which can
+  // resolve a different font-engine state after an incremental pass.
+  textLayout_->setCacheEnabled(true);
   QTextOption option;
   option.setWrapMode(wrapMode_);
   if (alignment_ != Qt::Alignment()) {

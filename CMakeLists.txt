@@ -1660,12 +1660,5 @@ endif()
 if(APPLE)
   list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS "QT_QPA_PLATFORM=set:offscreen")
 endif()
-if(UNIX AND NOT APPLE AND EXISTS "/etc/fonts/fonts.conf")
-  # Conan Fontconfig binaries can retain their build host's default config path.
-  # Use the installed runner configuration for native font matching.
-  list(APPEND MUFFIN_TEST_ENVIRONMENT_MODIFICATIONS
-    "FONTCONFIG_FILE=set:/etc/fonts/fonts.conf" "FONTCONFIG_PATH=set:/etc/fonts")
-endif()
-
 muffin_use_theme_fonts(Muffin)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/MuffinTests.cmake)
