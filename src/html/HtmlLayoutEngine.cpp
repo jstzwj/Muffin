@@ -9,6 +9,7 @@
 #include <QFontMetricsF>
 #include <QMap>
 #include <QVector>
+#include <QScopeGuard>
 
 #include <cmath>
 #include <numeric>
@@ -158,6 +159,7 @@ bool isRenderableChildFor(const HtmlBox& parent, const HtmlBox& child) {
 }
 
 bool containsReplacedInlineContent(const HtmlBox& box) {
+  if (box.style().computed.layout.display == "inline-flex" || box.style().computed.layout.display == "inline-grid") return false;
   if (box.tag() == HtmlTag::Image || box.style().display == HtmlDisplay::InlineBlock) {
     return true;
   }
@@ -174,7 +176,25 @@ bool containsReplacedInlineContent(const HtmlBox& box) {
 
 }  // namespace
 
-HtmlLayoutEngine::HtmlLayoutEngine() = default;
+HtmlLayoutEngine::HtmlLayoutEngine() {
+  measurer_.setAtomicLayout([this](HtmlBox& box, qreal width) { return layoutAtomicInline(box, width); });
+}
+HtmlTextLayout::AtomicInline HtmlLayoutEngine::layoutAtomicInline(HtmlBox& box, qreal width) {
+  const auto style = formattingStyle(box, width);
+  const auto inset = LayoutBox::insets(style.box);
+  const auto margin = style.box.marginLengths.used(style.box.margin, width);
+  const auto intrinsic = intrinsicMetrics(box);
+  qreal outerWidth =
+      style.box.widthLength.status == CssLengthStatus::Valid
+          ? style.box.widthLength.used(width) + (style.box.borderBox ? 0 : inset.left() + inset.right())
+          : qMax(intrinsic.minContent, qMin(intrinsic.maxContent, width - inset.left() - inset.right() - margin.left() - margin.right())) +
+                inset.left() + inset.right();
+  outerWidth = cssContentConstraints(style.box, 0, width).clamp(qMax<qreal>(0, outerWidth - inset.left() - inset.right())) + inset.left() +
+               inset.right();
+  const auto height = layoutAllocatedBox(box, {outerWidth, -1}, *activeTextLayouts_);
+  const qreal baseline = box.firstBaseline >= 0 ? box.firstBaseline : height;
+  return {&box, 0, {outerWidth, height}, baseline, margin, {}};
+}
 HtmlLayoutEngine::~HtmlLayoutEngine() = default;
 
 void HtmlLayoutEngine::layout(
@@ -185,11 +205,15 @@ void HtmlLayoutEngine::layout(
     const HtmlColorPalette& palette) {
   textLayouts.clear();
   measurer_.setDefaultTextColor(palette.text);
+  auto* previousLayouts = activeTextLayouts_;
+  activeTextLayouts_ = &textLayouts;
+  const auto restoreLayouts = qScopeGuard([&] { activeTextLayouts_ = previousLayouts; });
 
   YGNode* rootNode = createYogaNode(root, baseFontSize, availableWidth, textLayouts);
 
   YGNodeCalculateLayout(rootNode, static_cast<float>(availableWidth), YGUndefined, YGDirectionLTR);
 
+  activeTextLayouts_ = &textLayouts;
   readLayoutBack(root, rootNode);
   const auto snapshot = [&](auto&& self, HtmlBox& box) -> void {
     const auto& style = box.style();
@@ -219,6 +243,9 @@ YGNode* HtmlLayoutEngine::createYogaNode(
     qreal fontSize,
     qreal availableWidth,
     std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts) {
+  auto* previousLayouts = activeTextLayouts_;
+  activeTextLayouts_ = &textLayouts;
+  const auto restoreLayouts = qScopeGuard([&] { activeTextLayouts_ = previousLayouts; });
   YGNode* node = createCssLayoutNode();
 
   auto& style = box.style();
@@ -274,9 +301,8 @@ YGNode* HtmlLayoutEngine::createYogaNode(
       continue;
     }
     if (child->style().display == HtmlDisplay::Block ||
-        (child->style().display == HtmlDisplay::Flex || child->style().display == HtmlDisplay::Grid) ||
-        child->style().display == HtmlDisplay::Table ||
-        child->style().display == HtmlDisplay::ListItem) {
+        ((child->style().display == HtmlDisplay::Flex || child->style().display == HtmlDisplay::Grid) && !child->isInlineLevel()) ||
+        child->style().display == HtmlDisplay::Table || child->style().display == HtmlDisplay::ListItem) {
       hasBlockChildren = true;
     }
     if (child->isInlineLevel() || child->isTextRun()) {
@@ -429,6 +455,8 @@ void HtmlLayoutEngine::applyBoxStyle(YGNode* node, const HtmlComputedStyle& styl
   }
   if (style.height >= 0) {
     YGNodeStyleSetHeight(node, static_cast<float>(style.height));
+  } else if (style.heightLength.status == CssLengthStatus::Valid && style.heightLength.hasPercentage && style.heightLength.px == 0) {
+    YGNodeStyleSetHeightPercent(node, static_cast<float>(style.heightLength.fraction * 100));
   }
 
   if (style.display == HtmlDisplay::Table || style.display == HtmlDisplay::TableRowGroup) {
@@ -448,13 +476,19 @@ void HtmlLayoutEngine::applyBoxStyle(YGNode* node, const HtmlComputedStyle& styl
 }
 
 CssIntrinsicMetrics HtmlLayoutEngine::intrinsicMetrics(HtmlBox& box) {
-  if (box.style().computed.layout.isGrid()) {
+  const auto& width = box.style().widthLength;
+  if (width.status == CssLengthStatus::Valid && !width.hasPercentage) {
+    const auto value = qMax<qreal>(0, width.px - (box.style().borderBox ? horizontalBoxExtent(box.style()) : 0));
+    return {value, value};
+  }
+  if (box.style().computed.layout.establishesFormattingContext()) {
     std::vector<CssFormattingItem> items;
     for (const auto& child : box.children()) {
       if (isRenderableChildFor(box, *child) && !(child->isTextRun() && child->text().trimmed().isEmpty()))
         items.push_back(formattingItem(*child, 0));
     }
-    return intrinsicGridWidths(formattingStyle(box, 0), items);
+    return box.style().computed.layout.isGrid() ? intrinsicGridWidths(formattingStyle(box, 0), items)
+                                                : intrinsicFlexWidths(formattingStyle(box, 0), items);
   }
   bool blockChildren = false;
   for (const auto& child : box.children())
@@ -490,6 +524,9 @@ CssIntrinsicMetrics HtmlLayoutEngine::intrinsicMetrics(HtmlBox& box) {
 
 qreal HtmlLayoutEngine::layoutAllocatedBox(HtmlBox& box, QSizeF size, std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts,
                                            const CssGridInheritance& inherited) {
+  auto* previousLayouts = activeTextLayouts_;
+  activeTextLayouts_ = &textLayouts;
+  const auto restoreLayouts = qScopeGuard([&] { activeTextLayouts_ = previousLayouts; });
   const auto savedGrid = gridInheritance_.value(&box);
   const bool hadGrid = gridInheritance_.contains(&box);
   gridInheritance_.insert(&box, inherited);
@@ -534,13 +571,14 @@ CssFormattingItem HtmlLayoutEngine::formattingItem(HtmlBox& box, qreal containin
   auto* childPtr = &box;
   CssFormattingItem item;
   item.style = computed;
-  if (computed.layout.isGrid()) {
+  if (computed.layout.establishesFormattingContext() && !box.children().empty()) {
     item.children.emplace();
     for (const auto& child : box.children()) {
       if (isRenderableChildFor(box, *child) && !(child->isTextRun() && child->text().trimmed().isEmpty()))
         item.children->push_back(formattingItem(*child, containingWidth));
     }
-    item.intrinsic = intrinsicGridWidths(computed, *item.children);
+    item.intrinsic =
+        computed.layout.isGrid() ? intrinsicGridWidths(computed, *item.children) : intrinsicFlexWidths(computed, *item.children);
   } else
     item.intrinsic = intrinsicMetrics(box);
   if (box.tag() == HtmlTag::Image) item.naturalSize = naturalImageSize(box);
@@ -552,20 +590,35 @@ CssFormattingItem HtmlLayoutEngine::formattingItem(HtmlBox& box, qreal containin
                         qMax<qreal>(0, preferred.width() - inset.left() - inset.right())};
   }
   const auto intrinsic = item.intrinsic;
-  item.measure = [this, childPtr, intrinsic](qreal width, qreal reference, const CssGridInheritance& inherited) {
+  item.measure = [this, childPtr, intrinsic](const CssMeasureRequest& request) {
+    const auto width = request.width, reference = request.containingWidth;
+    const auto& inherited = request.inherited;
     auto& target = childPtr->style();
     target.padding = target.paddingLengths.used(target.padding, reference, true);
     const auto inset = target.padding + target.borderWidth;
     std::vector<std::unique_ptr<HtmlTextLayout>> measured;
-    const auto height = layoutAllocatedBox(*childPtr, {width < 0 ? 1e6 : width + inset.left() + inset.right(), -1}, measured, inherited);
-    qreal baseline = QFontMetricsF(childPtr->style().font).ascent();
+    qreal allocatedHeight = request.allocatedHeight;
+    if (allocatedHeight < 0 && request.containingHeight >= 0 && target.heightLength.status == CssLengthStatus::Valid)
+      allocatedHeight =
+          qMax<qreal>(0, target.heightLength.used(request.containingHeight)) + (target.borderBox ? 0 : inset.top() + inset.bottom());
+    const auto height =
+        layoutAllocatedBox(*childPtr, {width < 0 ? 1e6 : width + inset.left() + inset.right(), allocatedHeight}, measured, inherited);
+    qreal baseline = childPtr->hasTextContent()
+                         ? (childPtr->firstBaseline >= 0 ? childPtr->firstBaseline - inset.top() : height - inset.top() - inset.bottom())
+                         : -1;
+    qreal lastBaseline = childPtr->hasTextContent() && childPtr->lastBaseline >= 0 ? childPtr->lastBaseline - inset.top() : baseline;
     if (childPtr->textLayoutIndex() >= 0 && childPtr->textLayoutIndex() < static_cast<int>(measured.size())) {
       const auto& text = measured[static_cast<size_t>(childPtr->textLayoutIndex())];
-      if (text->layout && text->layout->lineCount()) baseline = text->layout->lineAt(0).y() + text->layout->lineAt(0).ascent();
+      if (text->layout && text->layout->lineCount()) {
+        baseline = text->layout->lineAt(0).y() + text->layout->lineAt(0).ascent();
+        const auto line = text->layout->lineAt(text->layout->lineCount() - 1);
+        lastBaseline = line.y() + line.ascent();
+      }
     }
     return CssMeasuredContent{
         {width < 0 ? intrinsic.maxContent : qMin(width, intrinsic.maxContent), qMax<qreal>(0, height - inset.top() - inset.bottom())},
-        baseline};
+        baseline,
+        lastBaseline};
   };
   return item;
 }
@@ -609,6 +662,8 @@ void HtmlLayoutEngine::layoutFormattingBox(HtmlBox& box, qreal availableWidth, s
   }
   box.geometry().width = outerWidth;
   box.geometry().height = result.size.height() + verticalBoxExtent(style);
+  box.firstBaseline = result.firstBaseline < 0 ? -1 : result.firstBaseline + style.padding.top() + style.borderWidth.top();
+  box.lastBaseline = result.lastBaseline < 0 ? -1 : result.lastBaseline + style.padding.top() + style.borderWidth.top();
   box.formattingPaintOrder.clear();
   for (size_t i = 0; i < box.children().size(); ++i) box.formattingPaintOrder.push_back(i);
   std::stable_sort(box.formattingPaintOrder.begin(), box.formattingPaintOrder.end(), [&](size_t a, size_t b) {
@@ -930,6 +985,15 @@ void HtmlLayoutEngine::readLayoutBack(HtmlBox& box, YGNode* node) {
     }
   }
 
+  if (box.ownsTextLayout() && activeTextLayouts_ && box.textLayoutIndex() >= 0 && box.textLayoutIndex() < int(activeTextLayouts_->size())) {
+    const auto& text = (*activeTextLayouts_)[box.textLayoutIndex()];
+    if (text->layout && text->layout->lineCount()) {
+      const auto first = text->layout->lineAt(0), last = text->layout->lineAt(text->layout->lineCount() - 1);
+      const qreal inset = box.style().padding.top() + box.style().borderWidth.top();
+      box.firstBaseline = inset + first.y() + first.ascent();
+      box.lastBaseline = inset + last.y() + last.ascent();
+    }
+  }
   // For inline context boxes, the text layout already has the correct height.
   // Override Yoga's height if text measurement was done.
   // (The measurement callback should have returned the correct size already.)

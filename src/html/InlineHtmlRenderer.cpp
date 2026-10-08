@@ -28,6 +28,13 @@ InlineHtmlFormatResult InlineHtmlRenderer::render(const QString& htmlFragment, q
   // 3. Resolve styles (tag defaults + inline styles)
   HtmlStyleResolver styleResolver;
   styleResolver.resolve(*root, baseFontSize, palette);
+  if (!root->children().empty()) {
+    const auto& display = root->children().front()->style().computed.layout.display;
+    if (display == "inline-flex" || display == "inline-grid") {
+      result.atomicHtml = htmlFragment;
+      result.palette = palette;
+    }
+  }
 
   // 4. Collect inline text + format spans from the box tree.
   //    The root is a Body box; iterate its children to find inline content.

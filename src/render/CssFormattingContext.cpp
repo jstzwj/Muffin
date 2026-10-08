@@ -7,8 +7,46 @@
 #include <numeric>
 #include <tuple>
 #include <QTextLayout>
+#include <QDataStream>
 
 namespace muffin {
+QByteArray cssMeasureKey(const CssMeasureRequest& request) {
+  QByteArray key;
+  QDataStream stream(&key, QIODevice::WriteOnly);
+  stream << request.width << request.containingWidth << request.containingHeight << request.allocatedHeight << int(request.phase);
+  for (const auto* axis : {&request.inherited.columns, &request.inherited.rows}) {
+    stream << bool(*axis);
+    if (!*axis) continue;
+    stream << (*axis)->gap << quint64((*axis)->starts.size());
+    for (auto v : (*axis)->starts) stream << v;
+    stream << quint64((*axis)->sizes.size());
+    for (auto v : (*axis)->sizes) stream << v;
+    stream << quint64((*axis)->lineNames.size());
+    for (const auto& names : (*axis)->lineNames) stream << names;
+    stream << quint64((*axis)->definitions.size());
+    for (const auto& track : (*axis)->definitions) {
+      for (const auto* breadth : {&track.minimum, &track.maximum})
+        stream << int(breadth->kind) << int(breadth->length.status) << breadth->length.px << breadth->length.fraction
+               << breadth->length.hasPercentage << breadth->fraction;
+      stream << track.fitContent;
+    }
+  }
+  return key;
+}
+CssMeasuredContent measureCssItem(const CssFormattingItem& item, const CssMeasureRequest& request) {
+  const auto key = cssMeasureKey(request);
+  auto& cache = *item.measurements;
+  for (const auto& entry : cache.entries)
+    if (entry.key == key) {
+      ++cache.hits;
+      return entry.value;
+    }
+  ++cache.misses;
+  const auto value = item.measure(request);
+  if (cache.entries.size() >= 64) cache.entries.erase(cache.entries.begin());
+  cache.entries.push_back({key, value});
+  return value;
+}
 CssFormattingResult layoutFormattingItems(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items,
                                           qreal contentWidth, qreal contentHeight, qreal scale, const CssGridInheritance& inherited) {
   return container.layout.isGrid() ? layoutGridItems(container, items, contentWidth, contentHeight, scale, inherited)
@@ -20,7 +58,7 @@ YGAlign alignment(const QString& value, YGAlign normal) {
   if (value == "start" || value == "flex-start") return YGAlignFlexStart;
   if (value == "end" || value == "flex-end") return YGAlignFlexEnd;
   if (value == "center") return YGAlignCenter;
-  if (value == "baseline") return YGAlignBaseline;
+  if (value == "baseline" || value == "first baseline") return YGAlignBaseline;
   if (value == "stretch") return YGAlignStretch;
   if (value == "space-between") return YGAlignSpaceBetween;
   if (value == "space-around") return YGAlignSpaceAround;
@@ -39,10 +77,13 @@ struct MeasureContext {
   const CssFormattingItem* item;
   qreal containingWidth = 0;
   qreal baseline = 0;
+  qreal containingHeight = -1;
+  qreal lastBaseline = -1;
 };
 YGSize measureItem(YGNodeConstRef node, float width, YGMeasureMode widthMode, float, YGMeasureMode) {
   auto& context = *static_cast<MeasureContext*>(YGNodeGetContext(node));
-  auto result = context.item->measure(widthMode == YGMeasureModeUndefined ? -1 : qMax<qreal>(0, width), context.containingWidth, {});
+  auto result = measureCssItem(
+      *context.item, {widthMode == YGMeasureModeUndefined ? -1 : qMax<qreal>(0, width), context.containingWidth, context.containingHeight});
   if (context.item->naturalSize || cssPreferredRatio(*context.item) > 0) {
     const auto& b = context.item->style.box;
     const auto padding = b.paddingLengths.used(b.padding, context.containingWidth, true);
@@ -58,6 +99,7 @@ YGSize measureItem(YGNodeConstRef node, float width, YGMeasureMode widthMode, fl
                                                     : qMax(result.size.height(), preferred.height() - vertical));
   }
   context.baseline = result.baseline;
+  context.lastBaseline = result.lastBaseline < 0 ? result.baseline : result.lastBaseline;
   return {static_cast<float>(widthMode == YGMeasureModeExactly  ? width
                              : widthMode == YGMeasureModeAtMost ? qMin<qreal>(width, result.size.width())
                                                                 : result.size.width()),
@@ -66,14 +108,15 @@ YGSize measureItem(YGNodeConstRef node, float width, YGMeasureMode widthMode, fl
 float baselineItem(YGNodeConstRef node, float, float) {
   auto& context = *static_cast<MeasureContext*>(YGNodeGetContext(node));
   const qreal inset = YGNodeLayoutGetPadding(node, YGEdgeTop) + YGNodeLayoutGetBorder(node, YGEdgeTop);
-  if (context.baseline == 0)
-    context.baseline =
-        context.item
-            ->measure(YGNodeLayoutGetWidth(node) - YGNodeLayoutGetPadding(node, YGEdgeLeft) - YGNodeLayoutGetPadding(node, YGEdgeRight) -
-                          YGNodeLayoutGetBorder(node, YGEdgeLeft) - YGNodeLayoutGetBorder(node, YGEdgeRight),
-                      context.containingWidth, {})
-            .baseline;
-  return static_cast<float>(context.baseline + inset);
+  if (context.baseline <= 0) {
+    const auto measured = measureCssItem(
+        *context.item, {YGNodeLayoutGetWidth(node) - YGNodeLayoutGetPadding(node, YGEdgeLeft) - YGNodeLayoutGetPadding(node, YGEdgeRight) -
+                            YGNodeLayoutGetBorder(node, YGEdgeLeft) - YGNodeLayoutGetBorder(node, YGEdgeRight),
+                        context.containingWidth, context.containingHeight});
+    context.baseline = measured.baseline;
+    context.lastBaseline = measured.lastBaseline < 0 ? measured.baseline : measured.lastBaseline;
+  }
+  return static_cast<float>(context.baseline < 0 ? YGNodeLayoutGetHeight(node) : context.baseline + inset);
 }
 }  // namespace
 CssIntrinsicMetrics intrinsicTextWidths(const QTextLayout& text, bool noWrap, bool anywhereMinimum) {
@@ -92,6 +135,31 @@ CssIntrinsicMetrics intrinsicTextWidths(const QTextLayout& text, bool noWrap, bo
   intrinsic.endLayout();
   const qreal maximum = intrinsic.maximumWidth();
   return {noWrap ? maximum : intrinsic.minimumWidth(), maximum};
+}
+CssIntrinsicMetrics intrinsicFlexWidths(const ThemeElementStyle& container, const std::vector<CssFormattingItem>& items) {
+  CssIntrinsicMetrics result;
+  const bool row = container.layout.direction.startsWith("row"), wrap = container.layout.wrap != "nowrap";
+  int count = 0;
+  for (const auto& item : items) {
+    if (item.style.layout.display == "none") continue;
+    const auto& b = item.style.box;
+    const auto padding = b.paddingLengths.used(b.padding, 0, true), margin = b.marginLengths.used(b.margin, 0);
+    const qreal inset = padding.left() + padding.right() + b.borderLeftWidth + b.borderRightWidth;
+    const auto constraints = cssContentConstraints(b, 0);
+    qreal minimum = constraints.clamp(item.intrinsic.minContent), maximum = constraints.clamp(item.intrinsic.maxContent);
+    if (b.widthLength.status == CssLengthStatus::Valid && !b.widthLength.hasPercentage)
+      minimum = maximum = constraints.clamp(qMax<qreal>(0, b.widthLength.px - (b.borderBox ? inset : 0)));
+    const qreal extra = inset + margin.left() + margin.right();
+    result.minContent = row && !wrap ? result.minContent + minimum + extra : qMax(result.minContent, minimum + extra);
+    result.maxContent = row ? result.maxContent + maximum + extra : qMax(result.maxContent, maximum + extra);
+    ++count;
+  }
+  if (row) {
+    const auto gaps = cssGap(container.layout.columnGap, -1) * qMax(0, count - 1);
+    result.maxContent += gaps;
+    if (!wrap) result.minContent += gaps;
+  }
+  return result;
 }
 YGNode* createCssLayoutNode() {
   static const auto config = [] {
@@ -186,7 +254,7 @@ CssFormattingResult layoutFlexItems(const ThemeElementStyle& container, const st
       else if (height &&
                (style.layout.sizes[index] == CssIntrinsicSize::MinContent || style.layout.sizes[index] == CssIntrinsicSize::MaxContent ||
                 style.layout.sizes[index] == CssIntrinsicSize::FitContent))
-        value = item.measure(contentWidth, contentWidth, {}).size.height();
+        value = measureCssItem(item, {contentWidth, contentWidth, contentHeight}).size.height();
       else if (style.layout.sizes[index] == CssIntrinsicSize::MinContent)
         value = item.intrinsic.minContent;
       else if (style.layout.sizes[index] == CssIntrinsicSize::MaxContent)
@@ -221,7 +289,7 @@ CssFormattingResult layoutFlexItems(const ThemeElementStyle& container, const st
           b.widthLength.status == CssLengthStatus::Valid
               ? qMax<qreal>(0, b.widthLength.px * scale + b.widthLength.fraction * contentWidth - (b.borderBox ? horizontal : 0))
               : qMax<qreal>(0, contentWidth - horizontal);
-      const auto measured = item.measure(measuredWidth, contentWidth, {});
+      const auto measured = measureCssItem(item, {measuredWidth, contentWidth, contentHeight});
       qreal minimum = measured.size.height();
       if (b.heightLength.status == CssLengthStatus::Valid && (!b.heightLength.hasPercentage || contentHeight >= 0))
         minimum = qMin(minimum,
@@ -264,7 +332,7 @@ CssFormattingResult layoutFlexItems(const ThemeElementStyle& container, const st
           (style.layout.overflowY == "visible" || style.layout.overflowY == "clip"))
         minimumHeights[i] = qMin(minimumHeights[i], preferred.height() - (b.borderBox ? 0 : vertical));
     }
-    contexts[i] = {&item, contentWidth};
+    contexts[i] = {&item, contentWidth, 0, contentHeight};
     YGNodeSetContext(node, &contexts[i]);
     YGNodeSetMeasureFunc(node, measureItem);
     YGNodeSetBaselineFunc(node, baselineItem);
@@ -337,6 +405,14 @@ CssFormattingResult layoutFlexItems(const ThemeElementStyle& container, const st
   result.size = {YGNodeLayoutGetWidth(root), YGNodeLayoutGetHeight(root)};
   for (auto* node : nodes)
     result.items.emplace_back(YGNodeLayoutGetLeft(node), YGNodeLayoutGetTop(node), YGNodeLayoutGetWidth(node), YGNodeLayoutGetHeight(node));
+  if (!order.empty()) {
+    const auto first = order.front(), last = order.back();
+    result.firstBaseline = result.items[first].top() + baselineItem(nodes[first], 0, 0);
+    result.lastBaseline = result.items[last].top() + baselineItem(nodes[last], 0, 0);
+    if (contexts[last].lastBaseline >= 0)
+      result.lastBaseline = result.items[last].top() + contexts[last].lastBaseline + YGNodeLayoutGetPadding(nodes[last], YGEdgeTop) +
+                            YGNodeLayoutGetBorder(nodes[last], YGEdgeTop);
+  }
   YGNodeFreeRecursive(root);
   return result;
 }

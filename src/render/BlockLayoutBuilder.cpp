@@ -19,6 +19,8 @@
 #include <QFontMetricsF>
 #include <QLoggingCategory>
 #include <QSettings>
+#include <QDataStream>
+#include <QCryptographicHash>
 #include <QStringList>
 #include <QStringView>
 #include <QTextLayout>
@@ -466,12 +468,18 @@ BlockLayoutBuilder::BlockLayoutBuilder() : perfEnabled_(blockBuildPerf().isDebug
 void BlockLayoutBuilder::refreshRenderSettings() {
   // One QSettings hit per setting per layout pass, not per block. See header note.
   QSettings s;
+  renderSettingsSignature_.clear();
+  QDataStream settingsStream(&renderSettingsSignature_, QIODevice::WriteOnly);
   breakOnSingleNewline_ = s.value(QStringLiteral("markdown/breakOnSingleNewline"), true).toBool();
   codeBlockWrap_ = s.value(QStringLiteral("markdown/codeBlockWrap"), true).toBool();
   showLineNumbers_ = s.value(QStringLiteral("markdown/showLineNumbers"), false).toBool();
   renderEmoji_ = s.value(QStringLiteral("markdown/renderEmoji"), true).toBool();
   renderDiagrams_ = s.value(QStringLiteral("markdown/diagrams"), true).toBool();
   showMermaidAsSource_ = s.value(QStringLiteral("editor/showMermaidAsSource"), false).toBool();
+  const auto punctuation = smartPunctRenderOptions();
+  settingsStream << breakOnSingleNewline_ << codeBlockWrap_ << showLineNumbers_ << renderEmoji_ << renderDiagrams_ << showMermaidAsSource_
+                 << punctuation.convertQuotes << punctuation.convertDashes << punctuation.convertEllipsis << punctuation.doubleQuoteStyle
+                 << punctuation.singleQuoteStyle;
   // The estimate caches are keyed by elementKey|headingLevel only (no theme dimension), so a theme
   // switch would otherwise keep serving the previous theme's lineHeight/avgCharWidth. Clearing here
   // (once per layout pass) keeps them fresh: they re-populate within a single estimate pass — many
@@ -712,7 +720,7 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildAllocated(const MarkdownNo
 
 CssIntrinsicMetrics BlockLayoutBuilder::intrinsicMetrics(const MarkdownNode& node, const RenderTheme& theme, qreal containingWidth) {
   const auto* computed = theme.elementStyleForNode(node, cssTagForNode(node));
-  if (computed && computed->layout.isGrid() && !node.children().empty())
+  if (computed && computed->layout.establishesFormattingContext() && !node.children().empty())
     return formattingItem(node, theme, containingWidth).intrinsic;
   const auto built = buildAllocated(node, theme, {0, 0, 1e6, -1}, containingWidth);
   if (const auto* text = built->inlineLayout()) {
@@ -733,6 +741,95 @@ CssIntrinsicMetrics BlockLayoutBuilder::intrinsicMetrics(const MarkdownNode& nod
   return {built->codeMaxLineWidth(), built->codeMaxLineWidth()};
 }
 
+void BlockLayoutBuilder::beginFormattingPass(bool incremental, QSet<NodeId> dirty) {
+  ++formattingPass_;
+  formattingSignatures_.clear();
+  formattingThemeSignature_.clear();
+  formattingDirty_ = std::move(dirty);
+  if (!incremental) formattingMeasurements_.clear();
+  for (auto& entry : formattingMeasurements_) entry->measurements->hits = entry->measurements->misses = 0;
+}
+
+QPair<quint64, quint64> BlockLayoutBuilder::finishFormattingPass() {
+  QPair<quint64, quint64> stats;
+  for (auto it = formattingMeasurements_.begin(); it != formattingMeasurements_.end();) {
+    if ((*it)->pass != formattingPass_)
+      it = formattingMeasurements_.erase(it);
+    else {
+      stats.first += (*it)->measurements->hits;
+      stats.second += (*it)->measurements->misses;
+      ++it;
+    }
+  }
+  return stats;
+}
+
+QByteArray BlockLayoutBuilder::formattingSignature(const MarkdownNode& node, const RenderTheme& theme) {
+  if (const auto it = formattingSignatures_.constFind(node.id()); it != formattingSignatures_.cend()) return it.value();
+  // Resource-driven content has independent invalidations (image completion,
+  // Mermaid renderReady, HTML descendants). Keep it fresh until those resources
+  // provide generation identities to this cache.
+  if (node.type() == BlockType::CodeFence || node.type() == BlockType::HtmlBlock || sourceTextForEditableNode(node).trimmed() == "[TOC]")
+    return {};
+  QByteArray data;
+  QDataStream stream(&data, QIODevice::WriteOnly);
+  if (formattingThemeSignature_.isEmpty()) {
+    QByteArray sheetData;
+    QDataStream sheetStream(&sheetData, QIODevice::WriteOnly);
+    if (const auto sheet = theme.documentStyleSheet()) {
+      sheetStream << quint64(sheet->rules().size());
+      for (const auto& rule : sheet->rules()) {
+        sheetStream << rule.selectors << rule.mediaQueries << rule.darkScope << quint64(rule.declarations.size());
+        for (const auto& declaration : rule.declarations) sheetStream << declaration.property << declaration.value << declaration.important;
+      }
+      auto variables = sheet->variables().keys();
+      variables.sort();
+      sheetStream << quint64(variables.size());
+      for (const auto& variable : variables) sheetStream << variable << sheet->variables().value(variable);
+      sheetStream << quint64(sheet->fontFaces().size());
+      for (const auto& face : sheet->fontFaces()) sheetStream << face.family << face.srcPath << face.weight << face.style;
+    }
+    formattingThemeSignature_ = QCryptographicHash::hash(sheetData, QCryptographicHash::Sha256);
+  }
+  stream << formattingThemeSignature_;
+  const auto range = node.sourceRange();
+  stream << node.id().toString() << int(node.type()) << md().mid(range.byteStart, qMax<qsizetype>(0, range.byteEnd - range.byteStart))
+         << node.literal() << theme.zoomPercent() << theme.fontSizePx() << renderSettingsSignature_ << documentPath_;
+  stream << theme.paragraphFont().key() << theme.codeFont().key();
+  const auto key = cssTagForNode(node);
+  for (const auto& state : {QString(), QString(":hover"), QString(":focus")}) {
+    const auto* style = theme.elementStyleForNode(node, key + state);
+    stream << (style ? style->fingerprint : quint64(0));
+  }
+  const auto projection = InlineProjectionState::forSelection(selection_, node.id(), sourceContentStartForEditableNode(node));
+  stream << projection.cursorSourceOffset << projection.cursorVisibleOffset << projection.revealMarkdownMarkers;
+  if (projection.cursorSourceOffset >= 0 || projection.cursorVisibleOffset >= 0) {
+    stream << preeditText_ << preeditCursor_;
+    for (const auto& format : preeditFormats_) stream << format.start << format.length << format.format;
+  }
+  if (headingCounterText_) stream << headingCounterText_->value(node.id());
+  if (formattingDirty_.contains(node.id())) stream << formattingPass_;
+  bool reusable = true;
+  const auto inlines = [&](const auto& self, const QVector<InlineNode>& nodes) -> void {
+    for (const auto& inlineNode : nodes) {
+      if (inlineNode.type() == InlineType::Image || inlineNode.type() == InlineType::HtmlInline) reusable = false;
+      const auto offset = inlineNode.contentRange().isValid() ? inlineNode.contentRange().start : inlineNode.sourceRange().start;
+      stream << int(inlineNode.type()) << inlineNode.text() << inlineNode.href() << inlineNode.title() << inlineNode.alt()
+             << theme.inlineStyleForNode(node, offset).fingerprint;
+      self(self, inlineNode.children());
+    }
+  };
+  inlines(inlines, node.inlines());
+  for (const auto& child : node.children()) {
+    const auto signature = formattingSignature(*child, theme);
+    if (signature.isEmpty()) reusable = false;
+    stream << signature;
+  }
+  const auto result = reusable ? QCryptographicHash::hash(data, QCryptographicHash::Sha256) : QByteArray();
+  formattingSignatures_.insert(node.id(), result);
+  return result;
+}
+
 CssFormattingItem BlockLayoutBuilder::formattingItem(const MarkdownNode& node, const RenderTheme& theme, qreal containingWidth, int depth) {
   const auto key = cssTagForNode(node);
   const auto* style = theme.elementStyleForNode(node, key);
@@ -744,24 +841,45 @@ CssFormattingItem BlockLayoutBuilder::formattingItem(const MarkdownNode& node, c
   projected.layout.scaleLengths(zoom);
   CssFormattingItem item;
   item.style = projected;
-  if (projected.layout.isGrid() && !node.children().empty()) {
+  const auto signature = formattingSignature(node, theme);
+  auto& entry = formattingMeasurements_[node.id()];
+  if (!entry || signature.isEmpty() || entry->signature != signature) {
+    entry = std::make_shared<FormattingMeasurement>();
+    entry->signature = signature;
+  }
+  const auto cached = entry;
+  cached->pass = formattingPass_;
+  item.measurements = cached->measurements;
+  if (projected.layout.establishesFormattingContext() && !node.children().empty()) {
     item.children.emplace();
     for (const auto& child : node.children()) {
       if (!omitVirtualEmptyParagraphInRenderFlow(*child, selection_))
         item.children->push_back(formattingItem(*child, theme, containingWidth, depth + 1));
     }
-    item.intrinsic = intrinsicGridWidths(projected, *item.children);
-  } else
-    item.intrinsic = intrinsicMetrics(node, theme, containingWidth);
-  item.measure = [this, &node, &theme, key, depth](qreal width, qreal reference, const CssGridInheritance& inherited) {
+    item.intrinsic =
+        projected.layout.isGrid() ? intrinsicGridWidths(projected, *item.children) : intrinsicFlexWidths(projected, *item.children);
+  } else {
+    if (!cached->intrinsicValid || cached->containingWidth != containingWidth) {
+      cached->intrinsic = intrinsicMetrics(node, theme, containingWidth);
+      cached->intrinsicValid = true;
+      cached->containingWidth = containingWidth;
+    }
+    item.intrinsic = cached->intrinsic;
+  }
+  item.measure = [this, &node, &theme, key, depth](const CssMeasureRequest& request) {
+    const auto width = request.width, reference = request.containingWidth;
+    const auto& inherited = request.inherited;
     const auto inset = LayoutBox::insets(theme.elementBoxStyle(key, &node, reference));
-    const auto built =
-        buildAllocated(node, theme, {0, 0, width < 0 ? 1e6 : width + inset.left() + inset.right(), -1}, reference, depth, inherited);
+    const auto built = buildAllocated(node, theme, {0, 0, width < 0 ? 1e6 : width + inset.left() + inset.right(), request.allocatedHeight},
+                                      reference, depth, inherited);
     const auto* text = built->inlineLayout();
-    const qreal baseline = text ? text->firstLineBaselineY() : QFontMetricsF(theme.paragraphFont()).ascent();
+    const qreal baseline = built->firstBaseline() < 0 ? -1 : built->firstBaseline() - inset.top();
+    const qreal lastBaseline = built->lastBaseline() < 0 ? -1 : built->lastBaseline() - inset.top();
     const qreal measuredWidth = text ? text->visualTextBounds().width() : width;
     return CssMeasuredContent{
-        {width < 0 ? measuredWidth : qMin(width, measuredWidth), qMax<qreal>(0, built->height() - inset.top() - inset.bottom())}, baseline};
+        {width < 0 ? measuredWidth : qMin(width, measuredWidth), qMax<qreal>(0, built->height() - inset.top() - inset.bottom())},
+        baseline,
+        lastBaseline};
   };
   return item;
 }
@@ -802,6 +920,8 @@ std::unique_ptr<BlockLayout> BlockLayoutBuilder::buildFormattingContainer(const 
   }
   const QRectF rect(x, y, width, formatted.size.height() + inset.top() + inset.bottom());
   result->setRect(rect);
+  result->setFormattingBaselines(formatted.firstBaseline < 0 ? -1 : formatted.firstBaseline + inset.top(),
+                                 formatted.lastBaseline < 0 ? -1 : formatted.lastBaseline + inset.top());
   result->setCssBoxGeometry(LayoutBox::place(key, style, used, rect, theme.textFontForElement(key, &node)));
   result->setChildren(std::move(children));
   return result;

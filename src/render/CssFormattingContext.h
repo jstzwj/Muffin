@@ -4,6 +4,8 @@
 #include <QSizeF>
 #include <QRectF>
 #include <functional>
+#include <memory>
+#include <QByteArray>
 #include <vector>
 
 struct YGNode;
@@ -16,6 +18,7 @@ struct CssIntrinsicMetrics {
 struct CssMeasuredContent {
   QSizeF size;
   qreal baseline = 0;
+  qreal lastBaseline = -1;
 };
 struct CssGridAxisGeometry {
   std::vector<qreal> starts, sizes;
@@ -26,6 +29,23 @@ struct CssGridAxisGeometry {
 struct CssGridInheritance {
   std::optional<CssGridAxisGeometry> columns, rows;
 };
+enum class CssLayoutPhase { Intrinsic, InlineAllocation, BlockAllocation, DependentAllocation, Final };
+struct CssMeasureRequest {
+  qreal width = -1;
+  qreal containingWidth = -1;
+  qreal containingHeight = -1;  // Negative means indefinite, never a frozen cyclic size.
+  qreal allocatedHeight = -1;
+  CssGridInheritance inherited;
+  CssLayoutPhase phase = CssLayoutPhase::BlockAllocation;
+};
+struct CssMeasurementCache {
+  struct Entry {
+    QByteArray key;
+    CssMeasuredContent value;
+  };
+  std::vector<Entry> entries;
+  quint64 hits = 0, misses = 0;
+};
 struct CssFormattingItem {
   ThemeElementStyle style;
   CssIntrinsicMetrics intrinsic;
@@ -33,18 +53,22 @@ struct CssFormattingItem {
   // A negative width requests the unconstrained preferred size.
   // containingWidth is the item's actual CSS containing block (its Grid area
   // or Flex content box), also used to resolve percentage padding.
-  std::function<CssMeasuredContent(qreal width, qreal containingWidth, const CssGridInheritance&)> measure;
+  std::function<CssMeasuredContent(const CssMeasureRequest&)> measure;
+  std::shared_ptr<CssMeasurementCache> measurements = std::make_shared<CssMeasurementCache>();
   // Present for a grid whose adapter exposes its formatting children. A leaf
   // still uses measure(), even when its CSS display happens to be grid.
   std::optional<std::vector<CssFormattingItem>> children;
   std::optional<QSizeF> naturalSize;  // replaced content, in layout pixels
 };
+CssMeasuredContent measureCssItem(const CssFormattingItem& item, const CssMeasureRequest& request);
+QByteArray cssMeasureKey(const CssMeasureRequest& request);
 struct CssGridContribution {
   int start = 0, span = 1;
   qreal minimum = 0, maximum = 0, automaticMinimum = 0;
 };
 struct CssFormattingResult {
   QSizeF size;
+  qreal firstBaseline = -1, lastBaseline = -1;
   std::vector<QRectF> items;            // source order, regardless of visual order
   std::vector<qreal> containingWidths;  // Flex content width or Grid area width
   std::vector<CssGridInheritance> inheritedGrids;
@@ -67,4 +91,5 @@ CssFormattingResult layoutFormattingItems(const ThemeElementStyle& container, co
                                           const CssGridInheritance& inherited = {});
 CssGridInheritance contentGridInheritance(CssGridInheritance inherited, QMarginsF insets);
 CssIntrinsicMetrics intrinsicGridWidths(const ThemeElementStyle& style, const std::vector<CssFormattingItem>& items);
+CssIntrinsicMetrics intrinsicFlexWidths(const ThemeElementStyle& style, const std::vector<CssFormattingItem>& items);
 }  // namespace muffin

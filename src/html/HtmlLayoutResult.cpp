@@ -10,6 +10,8 @@
 #include <QScopeGuard>
 
 #include <utility>
+#include <limits>
+#include <algorithm>
 
 namespace muffin::html {
 HtmlLayoutResult::HtmlLayoutResult() = default;
@@ -60,6 +62,86 @@ HtmlLayoutResult::HitResult HtmlLayoutResult::hitTest(QPointF localPos) const {
     return {};
   }
   return hitTestBox(*root_, localPos, QPointF());
+}
+
+void HtmlLayoutResult::visitTextLayouts(const HtmlBox& box, QPointF parent,
+                                        const std::function<void(const HtmlTextLayout&, QPointF)>& visitor) const {
+  if (!box.style().visible || box.style().display == HtmlDisplay::None) return;
+  const auto origin = parent + QPointF(box.geometry().left, box.geometry().top);
+  if (box.ownsTextLayout() && box.textLayoutIndex() >= 0 && box.textLayoutIndex() < int(textLayouts_.size())) {
+    const auto& text = *textLayouts_[box.textLayoutIndex()];
+    visitor(text, box.layoutBox.contentBox.translated(parent).topLeft());
+    for (const auto& atom : text.atoms) visitTextLayouts(*atom.box, origin, visitor);
+  } else {
+    for (const auto& child : box.children()) {
+      if (box.tag() == HtmlTag::Details && !box.detailsOpen() && child->tag() != HtmlTag::Summary) continue;
+      visitTextLayouts(*child, origin, visitor);
+    }
+  }
+}
+
+int HtmlLayoutResult::textOffsetAtPoint(QPointF point) const {
+  int result = 0;
+  qreal best = std::numeric_limits<qreal>::max();
+  if (root_)
+    visitTextLayouts(*root_, {}, [&](const HtmlTextLayout& text, QPointF origin) {
+      if (!text.layout) return;
+      for (const auto& span : text.sourceSpans)
+        for (int i = 0; i < text.layout->lineCount(); ++i) {
+          const auto line = text.layout->lineAt(i);
+          const int first = qMax(span.start, line.textStart()), last = qMin(span.start + span.length, line.textStart() + line.textLength());
+          if (first >= last) continue;
+          const auto left = line.cursorToX(first), right = line.cursorToX(last);
+          const QRectF rect = QRectF(qMin(left, right), line.y(), qAbs(right - left), line.height()).translated(origin);
+          const auto dx = std::max({rect.left() - point.x(), qreal(0), point.x() - rect.right()});
+          const auto dy = std::max({rect.top() - point.y(), qreal(0), point.y() - rect.bottom()});
+          const auto distance = dx * dx + dy * dy;
+          if (distance < best) {
+            best = distance;
+            result = span.textStart + qBound(first, line.xToCursor(point.x() - origin.x()), last) - span.start;
+          }
+        }
+    });
+  return result;
+}
+
+QRectF HtmlLayoutResult::cursorRectForTextOffset(int offset) const {
+  QRectF result;
+  bool exactStart = false;
+  if (root_)
+    visitTextLayouts(*root_, {}, [&](const HtmlTextLayout& text, QPointF origin) {
+      if (!text.layout) return;
+      for (const auto& span : text.sourceSpans) {
+        if (offset < span.textStart || offset > span.textStart + span.length) continue;
+        if (exactStart || (!result.isNull() && offset != span.textStart)) continue;
+        const auto position = span.start + offset - span.textStart;
+        const auto line = text.layout->lineForTextPosition(position);
+        if (line.isValid()) {
+          result = QRectF(line.cursorToX(position), line.y(), 1, line.height()).translated(origin);
+          exactStart = offset == span.textStart;
+        }
+      }
+    });
+  return result;
+}
+
+QVector<QRectF> HtmlLayoutResult::selectionRects(int start, int end) const {
+  QVector<QRectF> result;
+  if (root_)
+    visitTextLayouts(*root_, {}, [&](const HtmlTextLayout& text, QPointF origin) {
+      if (!text.layout) return;
+      for (const auto& span : text.sourceSpans)
+        for (int i = 0; i < text.layout->lineCount(); ++i) {
+          const auto line = text.layout->lineAt(i);
+          const int first = std::max({span.start + qMin(start, end) - span.textStart, span.start, line.textStart()});
+          const int last =
+              std::min({span.start + qMax(start, end) - span.textStart, span.start + span.length, line.textStart() + line.textLength()});
+          if (first >= last) continue;
+          const auto left = line.cursorToX(first), right = line.cursorToX(last);
+          result.push_back(QRectF(qMin(left, right), line.y(), qAbs(right - left), line.height()).translated(origin));
+        }
+    });
+  return result;
 }
 
 bool HtmlLayoutResult::boxHasVisibleContent(const HtmlBox& box) const {
@@ -271,6 +353,11 @@ void HtmlLayoutResult::paintTextRun(QPainter& painter, const HtmlBox& box, QPoin
   painter.save();
   for (const auto& fragment : textLayout->inlineBoxes) paintLayoutBox(painter, fragment, origin);
   textLayout->layout->draw(&painter, origin);
+  for (const auto& atom : textLayout->atoms) {
+    // Geometry already includes the text owner's content inset.
+    const auto& geo = atom.box->geometry();
+    paintBox(painter, *atom.box, origin + atom.rect.topLeft() - QPointF(geo.left, geo.top));
+  }
   painter.restore();
 }
 

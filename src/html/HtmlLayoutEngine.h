@@ -34,6 +34,8 @@ public:
       const HtmlColorPalette& palette = HtmlColorPalette::defaultLight());
 
 private:
+ std::vector<std::unique_ptr<HtmlTextLayout>>* activeTextLayouts_ = nullptr;
+ HtmlTextLayout::AtomicInline layoutAtomicInline(HtmlBox& box, qreal width);
  void layoutFormattingBox(HtmlBox& box, qreal availableWidth, std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts);
  qreal layoutAllocatedBox(HtmlBox& box, QSizeF size, std::vector<std::unique_ptr<HtmlTextLayout>>& textLayouts, const CssGridInheritance& inherited = {});
  CssIntrinsicMetrics intrinsicMetrics(HtmlBox& box);

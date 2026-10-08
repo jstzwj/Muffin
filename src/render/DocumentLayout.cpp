@@ -282,6 +282,16 @@ void DocumentLayout::rebuild(
     totalTimer.start();
   }
 
+  const bool reuseFormatting = incrementalFormatting_ && formattingRoot_ && document_ == &document;
+  incrementalFormatting_ = false;
+  formattingReuseStats_ = {};
+  std::vector<BlockSlot> previousSlots;
+  QHash<NodeId, size_t> previousIndices;
+  if (reuseFormatting) {
+    for (qsizetype i = 0; i < qsizetype(slots_.size()); ++i) ensureSlotDetailPosition(i);
+    previousSlots = std::move(slots_);
+    for (size_t i = 0; i < previousSlots.size(); ++i) previousIndices.insert(previousSlots[i].nodeId, i);
+  }
   // Style snapshots and the sparse tree belong to this document generation.
   theme.invalidateDocumentStyles();
   document_ = &document;
@@ -303,7 +313,7 @@ void DocumentLayout::rebuild(
   pageLeft_ = metrics.contentLeft;
   pageWidth_ = metrics.contentWidth;
 
-  configureBuilder(selection);
+  configureBuilder(selection, reuseFormatting);
   // Full rebuild ⇒ recompute every heading's counter text from a clean document-order
   // walk. The build loop below then reads headingCounterText_ by NodeId.
   recomputeHeadingCounters(document, theme);
@@ -337,8 +347,28 @@ void DocumentLayout::rebuild(
     formattingHeight_ = formatted.size.height();
     for (size_t i = 0; i < children.size(); ++i) {
       const auto allocation = formatted.items[i].translated(pageLeft_, cursorY);
-      auto block = builder_.buildAllocated(*children[i], theme, allocation, formatted.containingWidths[i], 0, formatted.inheritedGrids[i]);
+      const auto signature = builder_.formattingSignature(*children[i], theme);
+      const auto key = signature + cssMeasureKey({allocation.width(), formatted.containingWidths[i], rootHeight, allocation.height(),
+                                                  formatted.inheritedGrids[i], CssLayoutPhase::Final});
+      std::unique_ptr<BlockLayout> block;
+      const auto old = previousIndices.constFind(children[i]->id());
+      if (!signature.isEmpty() && old != previousIndices.cend()) {
+        auto& previous = previousSlots[old.value()];
+        if (previous.detail && previous.formattingKey == key && previous.detail->stylesMatch(theme, document)) {
+          block = std::move(previous.detail);
+          const auto shift = allocation.topLeft() - block->rect().topLeft();
+          block->translate(shift.x(), shift.y());
+          block->shiftSourceOffsets(children[i]->sourceRange().byteStart - previous.sourceStart);
+          ++formattingReuseStats_.reusedBlocks;
+        }
+      }
+      if (!block) {
+        block = builder_.buildAllocated(*children[i], theme, allocation, formatted.containingWidths[i], 0, formatted.inheritedGrids[i]);
+        ++formattingReuseStats_.builtBlocks;
+      }
       BlockSlot slot;
+      slot.formattingKey = key;
+      slot.sourceStart = children[i]->sourceRange().byteStart;
       slot.nodeId = children[i]->id();
       slot.type = children[i]->type();
       slot.top = block->rect().top();
@@ -400,6 +430,9 @@ void DocumentLayout::rebuild(
     }
   }
 
+  const auto measurementStats = builder_.finishFormattingPass();
+  formattingReuseStats_.measurementHits = measurementStats.first;
+  formattingReuseStats_.measurementMisses = measurementStats.second;
   const QVector<LayoutPositionToken*> positionTokens =
       positionIndex_.reset(static_cast<qsizetype>(slots_.size()));
   for (qsizetype i = 0; i < static_cast<qsizetype>(slots_.size()); ++i) {
@@ -500,6 +533,8 @@ DocumentLayout::BlockRebuildResult DocumentLayout::rebuildBlock(
     result.blockId = blockId;
     result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
     const qreal oldHeight = totalHeight_;
+    incrementalFormatting_ = true;
+    formattingDirty_.insert(blockId);
     rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
     result.newRect = result.shiftedRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
     result.heightDelta = totalHeight_ - oldHeight;
@@ -606,6 +641,10 @@ DocumentLayout::RangeRebuildResult DocumentLayout::rebuildTopLevelRange(
   if (formattingRoot_ && range.isValid()) {
     result.oldRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
     const qreal oldHeight = totalHeight_;
+    incrementalFormatting_ = true;
+    const auto& current = document.root().children();
+    for (qsizetype i = qMax<qsizetype>(0, range.first); i < qMin<qsizetype>(current.size(), range.first + range.newCount); ++i)
+      formattingDirty_.insert(current[size_t(i)]->id());
     rebuild(document, theme, viewportWidth_, selection, documentPath_, buildPolicy_);
     result.newRect = result.shiftedRect = QRectF(pageLeft_, 0, pageWidth_, totalHeight_);
     result.heightDelta = totalHeight_ - oldHeight;
@@ -1279,7 +1318,9 @@ void DocumentLayout::ensureSlotDetailPosition(qsizetype index) const {
   slot.detailShift = shift;
 }
 
-void DocumentLayout::configureBuilder(SelectionRange selection) {
+void DocumentLayout::configureBuilder(SelectionRange selection, bool reuseFormatting) {
+  builder_.beginFormattingPass(reuseFormatting, std::move(formattingDirty_));
+  formattingDirty_.clear();
   if (!refreshingStyles_) builder_.resetStyleCache();
   selection_ = selection;
   if (document_) {

@@ -11,6 +11,9 @@
 #include "render/ImageDecoder.h"
 #include "render/ImageLoader.h"
 #include "render/ImagePlaceholder.h"
+#include "html/HtmlRenderer.h"
+#include <QFileInfo>
+#include <QTextDocumentFragment>
 
 #include <QPainter>
 #include <QPen>
@@ -149,6 +152,7 @@ void InlineLayout::build(
   offsetMap_.clear();
   mathAtoms_.clear();
   imageAtoms_.clear();
+  htmlAtoms_.clear();
   previewAtoms_.clear();
   previewHeight_ = 0.0;
   htmlFormatSpans_.clear();
@@ -226,6 +230,7 @@ void InlineLayout::build(
   buildOffsetMapFromProjection();
   buildMathAtoms(inlines, theme, width);
   buildImageAtoms(inlines, theme, width, options.documentPath);
+  buildHtmlAtoms(width, baseFont, options.documentPath);
   // Phase 3c: reserve inline flow for `a::before` icons (must run before the
   // HTML-span / text-layout passes, which consume the shifted offset maps).
   {
@@ -244,7 +249,7 @@ void InlineLayout::build(
   // Genuinely empty: no text glyphs and no rendered image. Checking the image
   // atoms (not just plainText) matters because an image with blank alt text
   // flattens to empty text but is still visible content.
-  isEmpty_ = plainText_.isEmpty() && imageAtoms_.isEmpty();
+  isEmpty_ = plainText_.isEmpty() && imageAtoms_.isEmpty() && htmlAtoms_.isEmpty();
 }
 
 QSizeF InlineLayout::size() const {
@@ -299,6 +304,12 @@ qreal InlineLayout::firstLineBaselineY() const {
   return line.isValid() ? (line.y() + line.ascent()) : 0.0;
 }
 
+qreal InlineLayout::lastLineBaselineY() const {
+  if (!textLayout_ || textLayout_->lineCount() == 0) return 0;
+  const auto line = textLayout_->lineAt(textLayout_->lineCount() - 1);
+  return line.y() + line.ascent();
+}
+
 void InlineLayout::paint(QPainter& painter, QPointF origin, qreal hoverPhase, qreal focusPhase) const {
   if (!textLayout_) {
     return;
@@ -346,15 +357,25 @@ void InlineLayout::paint(QPainter& painter, QPointF origin, qreal hoverPhase, qr
   }
   paintTextLayoutMathAtoms(painter, origin);
   paintTextLayoutImageAtoms(painter, origin);
+  for (const auto& atom : htmlAtoms_)
+    atom.layout->paintBoxFragment(painter, *atom.layout->root()->children().front(), origin + atom.rect.topLeft() - atom.crop.topLeft());
   paintImagePreview(painter, origin);
   painter.restore();
 }
 
 qsizetype InlineLayout::hitTestTextOffset(QPointF localPos) const {
+  for (const auto& atom : htmlAtoms_)
+    if (atom.rect.contains(localPos))
+      return atom.visibleStart + atom.layout->textOffsetAtPoint(localPos - atom.rect.topLeft() + atom.crop.topLeft());
   return visibleOffsetForDisplayOffset(textLayoutDisplayOffsetForPoint(localPos));
 }
 
 qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
+  for (const auto& atom : htmlAtoms_)
+    if (atom.rect.contains(localPos)) {
+      const auto offset = atom.layout->textOffsetAtPoint(localPos - atom.rect.topLeft() + atom.crop.topLeft());
+      return atom.sourceOffsets.value(offset, atom.sourceEnd);
+    }
   const TextLayoutPointHit hit = textLayoutHitForPoint(localPos);
   const qsizetype position = hit.displayOffset;
   for (const MathAtom& atom : mathAtoms_) {
@@ -408,10 +429,18 @@ qsizetype InlineLayout::hitTestSourceOffset(QPointF localPos) const {
 }
 
 QRectF InlineLayout::hitTestCursorRect(QPointF localPos) const {
+  for (const auto& atom : htmlAtoms_)
+    if (atom.rect.contains(localPos)) {
+      const auto point = localPos - atom.rect.topLeft() + atom.crop.topLeft();
+      return atom.layout->cursorRectForTextOffset(atom.layout->textOffsetAtPoint(point))
+          .translated(atom.rect.topLeft() - atom.crop.topLeft());
+    }
   return textLayoutHitForPoint(localPos).cursorRect;
 }
 
 QString InlineLayout::linkHrefAtLocalPos(QPointF localPos) const {
+  for (const auto& atom : htmlAtoms_)
+    if (atom.rect.contains(localPos)) return atom.layout->hitTest(localPos - atom.rect.topLeft() + atom.crop.topLeft()).linkHref;
   if (!textLayout_) return {};
   const qsizetype layoutOffset = textLayoutDisplayOffsetForPoint(localPos);
   const qsizetype projOffset = projectionDisplayOffsetForLayoutOffset(layoutOffset, InlineProjectionBias::Backward);
@@ -419,6 +448,8 @@ QString InlineLayout::linkHrefAtLocalPos(QPointF localPos) const {
 }
 
 QString InlineLayout::imageSrcAtLocalPos(QPointF localPos) const {
+  for (const auto& atom : htmlAtoms_)
+    if (atom.rect.contains(localPos)) return atom.layout->hitTest(localPos - atom.rect.topLeft() + atom.crop.topLeft()).imageSrc;
   if (!textLayout_) return {};
   const qsizetype position = textLayoutDisplayOffsetForPoint(localPos);
   for (const ImageAtom& atom : imageAtoms_) {
@@ -430,6 +461,9 @@ QString InlineLayout::imageSrcAtLocalPos(QPointF localPos) const {
 }
 
 QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
+  for (const auto& atom : htmlAtoms_)
+    if (textOffset > atom.visibleStart && textOffset < atom.visibleEnd)
+      return atom.layout->cursorRectForTextOffset(textOffset - atom.visibleStart).translated(atom.rect.topLeft() - atom.crop.topLeft());
   for (const MathAtom& atom : mathAtoms_) {
     if (textOffset > atom.visibleStart && textOffset < atom.visibleEnd) {
       textOffset = textOffset - atom.visibleStart < atom.visibleEnd - textOffset ? atom.visibleStart : atom.visibleEnd;
@@ -446,6 +480,13 @@ QRectF InlineLayout::cursorRect(qsizetype textOffset) const {
 }
 
 QRectF InlineLayout::cursorRectForSourceOffset(qsizetype sourceOffset) const {
+  for (const auto& atom : htmlAtoms_)
+    if (sourceOffset > atom.sourceStart && sourceOffset < atom.sourceEnd) {
+      const auto found = std::lower_bound(atom.sourceOffsets.begin(), atom.sourceOffsets.end(), sourceOffset);
+      const auto offset = int(found - atom.sourceOffsets.begin());
+      const auto rect = atom.layout->cursorRectForTextOffset(offset);
+      if (!rect.isNull()) return rect.translated(atom.rect.topLeft() - atom.crop.topLeft());
+    }
   for (const MathAtom& atom : mathAtoms_) {
     if (sourceOffset > atom.sourceStart && sourceOffset < atom.sourceEnd) {
       const qsizetype displayOffset = sourceOffset - atom.sourceStart < atom.sourceEnd - sourceOffset ? atom.displayStart : atom.displayEnd;
@@ -599,7 +640,14 @@ QVector<QRectF> InlineLayout::mathAtomRects(QPointF origin) const {
 QVector<QRectF> InlineLayout::selectionRects(qsizetype startOffset, qsizetype endOffset) const {
   const qsizetype startDisplayOffset = displayOffsetForVisibleOffset(qMin(startOffset, endOffset));
   const qsizetype endDisplayOffset = displayOffsetForVisibleOffset(qMax(startOffset, endOffset));
-  return selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset);
+  auto rects = selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset);
+  for (const auto& atom : htmlAtoms_) {
+    if (qMax(startOffset, endOffset) <= atom.visibleStart || qMin(startOffset, endOffset) >= atom.visibleEnd) continue;
+    for (const auto& rect : atom.layout->selectionRects(qMax<qsizetype>(0, qMin(startOffset, endOffset) - atom.visibleStart),
+                                                        qMin(atom.visibleEnd, qMax(startOffset, endOffset)) - atom.visibleStart))
+      rects.push_back(rect.translated(atom.rect.topLeft() - atom.crop.topLeft()));
+  }
+  return rects;
 }
 
 QVector<QRectF> InlineLayout::selectionRectsForSourceOffsets(qsizetype startSourceOffset, qsizetype endSourceOffset) const {
@@ -609,7 +657,20 @@ QVector<QRectF> InlineLayout::selectionRectsForSourceOffsets(qsizetype startSour
       !layoutDisplayOffsetForSourceOffset(qMax(startSourceOffset, endSourceOffset), InlineProjectionBias::Forward, endDisplayOffset)) {
     return {};
   }
-  return selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset);
+  auto rects = selectionRectsForDisplayOffsets(startDisplayOffset, endDisplayOffset);
+  for (const auto& atom : htmlAtoms_) {
+    const auto first = qMin(startSourceOffset, endSourceOffset), last = qMax(startSourceOffset, endSourceOffset);
+    if (last <= atom.sourceStart || first >= atom.sourceEnd) continue;
+    if (first <= atom.sourceStart && last >= atom.sourceEnd)
+      rects.push_back(atom.rect);
+    else {
+      const auto begin = std::lower_bound(atom.sourceOffsets.begin(), atom.sourceOffsets.end(), first) - atom.sourceOffsets.begin();
+      const auto end = std::lower_bound(atom.sourceOffsets.begin(), atom.sourceOffsets.end(), last) - atom.sourceOffsets.begin();
+      for (const auto& rect : atom.layout->selectionRects(begin, end))
+        rects.push_back(rect.translated(atom.rect.topLeft() - atom.crop.topLeft()));
+    }
+  }
+  return rects;
 }
 
 QVector<QRectF> InlineLayout::selectionRectsForDisplayOffsets(qsizetype startDisplayOffset, qsizetype endDisplayOffset) const {
@@ -901,6 +962,11 @@ void InlineLayout::buildLinkBeforeAtoms() {
     atom.displayStart += s;
     atom.displayEnd += s;
   }
+  for (auto& atom : htmlAtoms_) {
+    const auto s = atomShift(atom.displayStart);
+    atom.displayStart += s;
+    atom.displayEnd += s;
+  }
 }
 
 void InlineLayout::buildInlineBoxSpacing() {
@@ -990,6 +1056,10 @@ void InlineLayout::buildInlineBoxSpacing() {
     atom.displayEnd = before(atom.displayEnd);
     atom.displayStart = after(atom.displayStart);
   }
+  for (auto& atom : htmlAtoms_) {
+    atom.displayEnd = before(atom.displayEnd);
+    atom.displayStart = after(atom.displayStart);
+  }
   for (auto& atom : linkBeforeAtoms_) {
     atom.displayEnd = before(atom.displayEnd);
     atom.displayStart = after(atom.displayStart);
@@ -1001,6 +1071,7 @@ void InlineLayout::buildHtmlFormatSpans(const RenderTheme& theme, qreal width) {
   htmlInlineBoxRuns_.clear();
   const auto& data = projection_.htmlFormatData();
   for (const auto& hd : data) {
+    if (!hd.atomicHtml.isEmpty()) continue;
     quintptr previousBoxId = 0;
     for (const auto& fs : hd.formatSpans) {
       // Map projection display offsets → layout display offsets
@@ -1165,9 +1236,16 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
 
     const bool isImageAtom = span.type == InlineType::Image && span.kind == InlineSpanKind::Atom;
     if (!isImageAtom) {
-      const QString spanText = projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
+      const auto previous = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+      const QString spanText = previous.valid ? displayText_.mid(previous.start, previous.end - previous.start)
+                                              : projectedDisplay.mid(span.displayStart, span.displayEnd - span.displayStart);
       const qsizetype displayStart = rebuiltDisplay.size();
       rebuiltDisplay += spanText;
+      for (auto& atom : mathAtoms_)
+        if (previous.valid && atom.displayStart == previous.start) {
+          atom.displayStart = displayStart;
+          atom.displayEnd = rebuiltDisplay.size();
+        }
       rebuiltMap.push_back(OffsetMapEntry{displayStart, rebuiltDisplay.size(), span.visibleStart, span.visibleEnd});
       rebuiltDisplayMap.push_back(DisplayOffsetMapEntry{span.displayStart, span.displayEnd, displayStart, rebuiltDisplay.size()});
       continue;
@@ -1315,6 +1393,130 @@ void InlineLayout::buildImageAtoms(const QVector<InlineNode>& inlines, const Ren
   }
 }
 
+void InlineLayout::buildHtmlAtoms(qreal width, const QFont& font, const QString& documentPath) {
+  html::HtmlRenderer renderer;
+  for (auto it = projection_.htmlFormatData().crbegin(); it != projection_.htmlFormatData().crend(); ++it) {
+    const auto& data = *it;
+    if (data.atomicHtml.isEmpty()) continue;
+    for (const auto& span : projection_.spans()) {
+      if (span.kind != InlineSpanKind::HtmlContent || span.displayStart != data.displayStart) continue;
+      const auto range = layoutDisplayRangeForProjectionRange(span.displayStart, span.displayEnd);
+      if (!range.valid || range.end <= range.start) continue;
+      auto layout = std::make_shared<html::HtmlLayoutResult>(
+          renderer.render(data.atomicHtml, font.pointSizeF(), width, QFileInfo(documentPath).absolutePath(), data.palette));
+      if (!layout->valid() || !layout->root() || layout->root()->children().empty()) continue;
+      const auto& box = *layout->root()->children().front();
+      const auto& geo = box.geometry();
+      HtmlAtom atom;
+      atom.displayStart = range.start;
+      atom.displayEnd = range.start + 1;
+      atom.sourceStart = span.sourceStart;
+      atom.sourceEnd = span.sourceEnd;
+      atom.visibleStart = span.visibleStart;
+      atom.visibleEnd = span.visibleEnd;
+      atom.crop = QRectF(geo.left, geo.top, geo.width, geo.height);
+      atom.baseline = box.firstBaseline >= 0 ? box.firstBaseline : geo.height;
+      atom.margin = box.style().margin;
+      atom.layout = std::move(layout);
+      // Match DOM text runs in source order, including hidden runs, before
+      // projecting their source positions into the visible fragment.
+      QString decoded;
+      QVector<qsizetype> decodedSource;
+      for (qsizetype p = 0; p < data.atomicHtml.size();) {
+        if (data.atomicHtml.mid(p, 4) == "<!--") {
+          const auto end = data.atomicHtml.indexOf("-->", p + 4);
+          p = end < 0 ? data.atomicHtml.size() : end + 3;
+        } else if (data.atomicHtml[p] == QLatin1Char('<')) {
+          const auto start = p++;
+          QChar quote;
+          for (; p < data.atomicHtml.size(); ++p) {
+            const auto c = data.atomicHtml[p];
+            if (!quote.isNull()) {
+              if (c == quote) quote = {};
+            } else if (c == QLatin1Char('\'') || c == QLatin1Char('"'))
+              quote = c;
+            else if (c == QLatin1Char('>')) {
+              ++p;
+              break;
+            }
+          }
+          if (isStandaloneBrTag(data.atomicHtml.mid(start, p - start))) {
+            decoded += QChar::LineSeparator;
+            decodedSource += atom.sourceStart + start;
+          }
+        } else {
+          const auto start = p;
+          QString text = data.atomicHtml.mid(p++, 1);
+          bool literal = true;
+          if (text == "&") {
+            const auto end = data.atomicHtml.indexOf(';', p);
+            if (end >= p && end - p < 32) {
+              text = QTextDocumentFragment::fromHtml(data.atomicHtml.mid(start, end - start + 1)).toPlainText();
+              p = end + 1;
+              literal = text == data.atomicHtml.mid(start, p - start);
+            }
+          }
+          if (text == "\r") {
+            if (p < data.atomicHtml.size() && data.atomicHtml[p] == QLatin1Char('\n')) ++p;
+            text = "\n";
+            literal = false;
+          }
+          decoded += text;
+          for (qsizetype n = 0; n < text.size(); ++n) decodedSource += atom.sourceStart + start + (literal ? n : 0);
+        }
+      }
+      atom.sourceOffsets.fill(atom.sourceEnd, qMax<qsizetype>(1, span.visibleEnd - span.visibleStart) + 1);
+      qsizetype search = 0;
+      const auto mapText = [&](const auto& self, const html::HtmlBox& child, bool visible) -> void {
+        visible = visible && child.style().visible && child.style().display != html::HtmlDisplay::None;
+        const auto text = child.isTextRun()                     ? child.text()
+                          : child.tag() == html::HtmlTag::Break ? QString(QChar::LineSeparator)
+                                                                : QString();
+        if (!text.isEmpty()) {
+          const auto at = decoded.indexOf(text, search);
+          if (at >= 0) {
+            if (visible)
+              for (qsizetype n = 0; n < text.size() && child.plainTextStart + n < atom.sourceOffsets.size() - 1; ++n)
+                atom.sourceOffsets[child.plainTextStart + n] = decodedSource[at + n];
+            search = at + text.size();
+          }
+        }
+        for (const auto& nested : child.children()) self(self, *nested, visible);
+      };
+      mapText(mapText, *atom.layout->root(), true);
+      const qsizetype delta = 1 - (range.end - range.start);
+      displayText_.replace(range.start, range.end - range.start, QChar(0xfffc));
+      for (auto& entry : offsetMap_) {
+        if (entry.displayStart == range.start && entry.displayEnd == range.end)
+          entry.displayEnd = range.start + 1;
+        else if (entry.displayStart >= range.end) {
+          entry.displayStart += delta;
+          entry.displayEnd += delta;
+        }
+      }
+      for (auto& entry : displayOffsetMap_) {
+        if (entry.layoutStart == range.start && entry.layoutEnd == range.end)
+          entry.layoutEnd = range.start + 1;
+        else if (entry.layoutStart >= range.end) {
+          entry.layoutStart += delta;
+          entry.layoutEnd += delta;
+        }
+      }
+      const auto shift = [&](auto& atoms) {
+        for (auto& other : atoms)
+          if (other.displayStart >= range.end) {
+            other.displayStart += delta;
+            other.displayEnd += delta;
+          }
+      };
+      shift(mathAtoms_);
+      shift(imageAtoms_);
+      shift(htmlAtoms_);
+      htmlAtoms_.push_back(std::move(atom));
+    }
+  }
+}
+
 void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const QFont& baseFont) {
   layoutText_ = layoutTextForDisplayText(displayText_);
   QVector<QTextLayout::FormatRange> formats = textLayoutFormats(theme, baseFont);
@@ -1411,6 +1613,15 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
     qreal requiredAscent = line.ascent(), requiredDescent = line.descent();
     const int lineStart = line.textStart();
     const int lineEnd = lineStart + line.textLength();
+    for (const auto& atom : htmlAtoms_) {
+      const auto start = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (start < lineStart || start >= lineEnd) continue;
+      const QFontMetricsF strut(baseFont);
+      const auto nominal = lineHeightMultiplier_ > 0 ? cssLineHeightPx(baseFont.pointSizeF(), lineHeightMultiplier_) : strut.height();
+      const auto leading = (nominal - strut.height()) * .5;
+      requiredAscent = std::max({requiredAscent, strut.ascent() + leading, atom.baseline + atom.margin.top()});
+      requiredDescent = std::max({requiredDescent, strut.descent() + leading, atom.crop.height() - atom.baseline + atom.margin.bottom()});
+    }
     for (const ImageAtom& atom : imageAtoms_) {
       const int atomStart = toLayoutOffset(static_cast<int>(atom.displayStart));
       if (atom.loaded && atomStart >= lineStart && atomStart <= lineEnd) {
@@ -1434,6 +1645,11 @@ void InlineLayout::buildTextLayout(const RenderTheme& theme, qreal width, const 
       lineHeight = std::ceil(qMax(minLineHeight, cssLineHeightPx(baseFont.pointSizeF(), lineHeightMultiplier_)));
     }
     line.setPosition(QPointF(0.0, height + (lineHeight - minLineHeight) * 0.5 + requiredAscent - line.ascent()));
+    for (auto& atom : htmlAtoms_) {
+      const auto start = toLayoutOffset(static_cast<int>(atom.displayStart));
+      if (start >= lineStart && start < lineEnd)
+        atom.rect = QRectF(QPointF(line.cursorToX(start) + atom.margin.left(), line.y() + line.ascent() - atom.baseline), atom.crop.size());
+    }
     height += lineHeight;
     maxWidth = qMax(maxWidth, line.naturalTextWidth());
   }
@@ -1782,6 +1998,16 @@ QVector<QTextLayout::FormatRange> InlineLayout::textLayoutFormats(const RenderTh
     formats.push_back(range);
   }
 
+  for (const auto& atom : htmlAtoms_) {
+    QFont font = baseFont;
+    font.setLetterSpacing(QFont::AbsoluteSpacing, 0);
+    font.setLetterSpacing(QFont::AbsoluteSpacing, atom.crop.width() + atom.margin.left() + atom.margin.right() -
+                                                      QFontMetricsF(font).horizontalAdvance(QChar(0xfffc)));
+    QTextCharFormat format;
+    format.setFont(font);
+    format.setForeground(Qt::transparent);
+    formats.push_back({static_cast<int>(atom.displayStart), 1, format});
+  }
   // Phase 3c: `a::before` flow-reserved placeholders. Transparent (the icon is
   // painted over them) and widened to the icon advance via letter spacing, so
   // QTextLayout reserves real horizontal flow and wraps accordingly.

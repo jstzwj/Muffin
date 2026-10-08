@@ -64,7 +64,10 @@ const HtmlBox* HtmlBox::parent() const { return parent_; }
 
 bool HtmlBox::isTextRun() const { return tag_ == HtmlTag::TextRun; }
 bool HtmlBox::isBlockLevel() const { return isBlockTag(tag_); }
-bool HtmlBox::isInlineLevel() const { return isInlineTag(tag_); }
+bool HtmlBox::isInlineLevel() const {
+  const auto& display = style_.computed.layout.display;
+  return isTextRun() || display == "inline" || display == "inline-block" || display == "inline-flex" || display == "inline-grid";
+}
 
 bool HtmlBox::hasTextContent() const {
   if (tag_ == HtmlTag::TextRun && !text_.isEmpty()) {

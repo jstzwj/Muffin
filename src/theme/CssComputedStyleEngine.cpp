@@ -858,7 +858,8 @@ bool validDeclarationValue(const QString& property, const QString& raw, const QH
   if (property == "justify-content")
     return oneOf({"normal", "start", "end", "flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly"});
   if (property == "align-items" || property == "align-self")
-    return oneOf({"normal", "auto", "stretch", "start", "end", "flex-start", "flex-end", "center", "baseline"});
+    return oneOf(
+        {"normal", "auto", "stretch", "start", "end", "flex-start", "flex-end", "center", "baseline", "first baseline", "last baseline"});
   if (property == "align-content")
     return oneOf(
         {"normal", "stretch", "start", "end", "flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly"});

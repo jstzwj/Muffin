@@ -46,6 +46,8 @@ struct HtmlInlineFormatData {
   std::vector<html::TextFormatSpan> formatSpans;
   std::vector<html::HtmlTextLayout::LinkSpan> links;
   qsizetype displayStart = 0;
+  QString atomicHtml;
+  html::HtmlColorPalette palette;
 };
 
 struct InlineProjectionSpan {

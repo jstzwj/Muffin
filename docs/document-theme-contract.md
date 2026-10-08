@@ -119,13 +119,13 @@ Markdown block containers and `#write` can establish a Flex context; paragraph
 and heading items retain their native text/source mapping. Markdown inline runs
 remain one inline formatting item rather than an arbitrary DOM of flex items. All items
 inside a root Flex context are materialized together even under Lazy policy:
-their geometry is interdependent. Editing rebuilds this context, while normal
+their geometry is interdependent. Editing recomputes container allocation and
+reuses unchanged measurements and allocated children, while normal
 vertical documents keep sparse promotion and suffix shifts. Visible-block queries
 and clicking use actual rectangles because visual order may differ from source order.
 `overflow` controls clipping and automatic minimums; embedded containers do not
-yet provide their own interactive scrollbars. General inline formatting around an
-`inline-flex` atom, orthogonal writing modes and full WPT compatibility remain
-follow-up work.
+yet provide their own interactive scrollbars. Orthogonal writing modes and full
+WPT compatibility remain follow-up work.
 
 `CssFlexLayoutTest` consumes `tests/fixtures/theme/flex-layout-browser.json`,
 generated with `node scripts/probe_flex_css.mjs`. It compares Chrome box geometry
@@ -211,7 +211,7 @@ overridable by authored CSS. `aspect-ratio: auto <ratio>` retains an available n
 an authored ratio follows `box-sizing`, while natural ratios use the content box.
 Min/max constraints may transfer to the automatic opposite axis or break the ratio
 when required. Flex automatic minimums and Grid track contributions use these
-sizes. A bounded dependency pass revisits columns after a definite row allocation
+sizes. A directed dependency phase revisits columns after a definite row allocation
 changes a stretched item's ratio contribution; column Flex likewise transfers its
 allocated main size back to an automatic cross size.
 
@@ -226,12 +226,62 @@ image ratios, transferred constraints and both box-sizing modes at 100%/200% zoo
 Image cases additionally compare painted content rectangles. Native tests exercise
 Markdown image hit testing and caret coordinates, resizing and full/lazy convergence.
 
-Masonry, orthogonal writing modes, Grid baseline groups and complete CSS Grid
-intrinsic sizing/WPT coverage remain future work. The bounded size-dependency passes
-do not establish full browser compatibility for arbitrary nested cyclic constraints.
-General inline formatting of `inline-grid` has the same limitation as `inline-flex`; parsing these values does not promise browser-complete behavior.
+Masonry, orthogonal writing modes and complete CSS Grid intrinsic sizing/WPT
+coverage remain future work. The directed size-dependency phases do not establish
+full browser compatibility for arbitrary nested cyclic constraints.
 Escaped CSS custom identifiers and escaped area strings, and the full `grid` /
 `grid-template` shorthands are not yet supported.
+
+### Measurement phases and invalidation
+
+`CssMeasureRequest` distinguishes intrinsic measurement, inline allocation,
+block allocation, dependent allocation and final materialization. A negative
+containing height is indefinite; a frozen cyclic intrinsic height does not become
+a definite percentage reference. Fixed rows and inherited subgrid rows can
+provide definite references during column contribution measurement. The Grid
+scheduler processes row-to-column ratio transfers in a dependent phase rather
+than recursively calling its own layout entry with a retry counter. Each nested
+formatting context owns its phases and inherited references.
+
+`measureCssItem` is the common memoized measurement entry. Its bounded request
+key includes width, containing width/height, allocated height, phase and inherited
+track geometry, names and definitions. Thus equal rectangles with different
+percentage references or subgrid definitions cannot alias. Root edits retain
+measurements only after validating a content/style/projection signature. The
+signature covers descendants, resolved inline links, computed structural styles,
+the stylesheet including pseudo-element rules, font/zoom, render settings and
+active composition. Changed item identities and
+changed signatures invalidate the item and its enclosing contribution query.
+
+Container track allocation still runs for the whole affected context. Expensive
+text measurement and final block materialization are reused where those validated
+inputs and final allocations agree; movement alone translates the existing box
+and updates its absolute source positions. Removed entries are pruned after a
+pass. Explicit full refreshes clear persistent measurements. Images, embedded
+HTML, code/Mermaid and generated TOC content conservatively rebuild until their
+independent resource generations are available to this cache.
+
+### Inline formatting contexts and baselines
+
+`inline-flex` and `inline-grid` reserve an atomic inline box in the surrounding
+native text layout. Its shrink-to-fit width, margins and baseline come from the
+shared Flex/Grid formatter. The same rectangle determines wrapping, painting and
+pointer coordinates. Line boxes include the text strut as well as the component's
+ascent/descent. Grid first/last baseline groups participate in track contribution
+and final item alignment; container baselines propagate to nested inline boxes.
+Container baseline export uses occupied rows, shared baseline groups and row-major
+grid order; empty leading/trailing rows do not force a synthesized bottom baseline.
+
+Markdown keeps each inactive HTML component's source and visible ranges while
+collapsing its display buffer to one placeholder. Child text has source mappings
+through nested tags and entities, so child links, caret hits and selections use
+the retained HTML text layouts. Entering the group reveals editable source using
+the existing projection policy. This does not add orthogonal writing modes,
+arbitrary `vertical-align` values or browser-complete inline formatting.
+
+Selected WPT sources are pinned with their revision, checksums and license under
+`tests/fixtures/theme/wpt`. Adaptations document their scope; the ordinary native
+tests consume committed Chromium geometry without a network or browser dependency.
 
 ## Verification
 

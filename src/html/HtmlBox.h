@@ -234,8 +234,10 @@ struct HtmlColorPalette {
 
 class HtmlBox {
 public:
-  LayoutBox layoutBox;
-  std::vector<size_t> formattingPaintOrder;
+ int plainTextStart = 0;
+ qreal firstBaseline = -1, lastBaseline = -1;
+ LayoutBox layoutBox;
+ std::vector<size_t> formattingPaintOrder;
  QString cssTag;
  QString cssId;
  QStringList cssClasses;

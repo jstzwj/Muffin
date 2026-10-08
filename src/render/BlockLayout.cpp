@@ -534,6 +534,37 @@ void BlockLayout::translateY(qreal dy) {
   translate(0, dy);
 }
 
+qreal BlockLayout::firstBaseline() const {
+  if (formattingBaselines_.first >= 0) return formattingBaselines_.first;
+  if (inlineLayout_) return inlineTextOrigin().y() - rect_.y() + inlineLayout_->firstLineBaselineY();
+  for (const auto& child : children_)
+    if (const auto baseline = child->firstBaseline(); baseline >= 0) return child->rect().y() - rect_.y() + baseline;
+  return -1;
+}
+qreal BlockLayout::lastBaseline() const {
+  if (formattingBaselines_.second >= 0) return formattingBaselines_.second;
+  if (inlineLayout_) return inlineTextOrigin().y() - rect_.y() + inlineLayout_->lastLineBaselineY();
+  for (auto child = children_.rbegin(); child != children_.rend(); ++child)
+    if (const auto baseline = (*child)->lastBaseline(); baseline >= 0) return (*child)->rect().y() - rect_.y() + baseline;
+  return -1;
+}
+
+void BlockLayout::shiftSourceOffsets(qsizetype delta) {
+  if (contentSourceStart_ >= 0) contentSourceStart_ += delta;
+  for (auto& child : children_) child->shiftSourceOffsets(delta);
+  for (auto& row : tableRows_)
+    for (auto& cell : row.cells)
+      if (cell.contentSourceStart >= 0) cell.contentSourceStart += delta;
+  for (auto& slot : definitionSlots_) {
+    if (slot.sourceStart >= 0) slot.sourceStart += delta;
+    if (slot.sourceEnd >= 0) slot.sourceEnd += delta;
+  }
+  for (auto& token : definitionTokens_) {
+    if (token.sourceStart >= 0) token.sourceStart += delta;
+    if (token.sourceEnd >= 0) token.sourceEnd += delta;
+  }
+}
+
 qreal BlockLayout::height() const {
   return rect_.height();
 }

@@ -1,0 +1,34 @@
+{
+  "repository": "https://github.com/web-platform-tests/wpt",
+  "revision": "43ef4ddccb4bfd1ca2194d0a9a7dc86f8b7ffb21",
+  "files": [
+    {
+      "path": "css/css-grid/subgrid/row-subgrid-intrinsic-size-transfer-001.html",
+      "sha256": "0773f64a898d892a7eac74e140c4760cf63d740accacd4e220ddacec187c821a"
+    },
+    {
+      "path": "css/css-grid/subgrid/percentage-track-sizing.html",
+      "sha256": "a1af114a330ca76dc1cdd4fa8321f2567af4277c41df59e45061a2bedce0fe71"
+    },
+    {
+      "path": "css/css-grid/grid-items/grid-item-children-percentage-resolution-001.html",
+      "sha256": "8dd4b2dad2a6ba19e497719420a84f477f866ff33fed30797b2b1da1c90da7f8"
+    },
+    {
+      "path": "css/css-grid/grid-items/aspect-ratio-001.html",
+      "sha256": "5ab016a0d48ceb2770a2f9b74a0965a0e0fc9c4810f6eb73e6353f46f99af85e"
+    },
+    {
+      "path": "css/css-flexbox/flex-item-percentage-in-nested-flex-bsize-001.html",
+      "sha256": "1944bf8fb000d33969dc817741d7c18fe384b834ecada0f0853813e3cd633de1"
+    },
+    {
+      "path": "css/css-flexbox/flex-aspect-ratio-percentage-height-stale-width.html",
+      "sha256": "ee840d316dd6d28530f882c3e0100a9df0141df9db55a72fcd23788b3196985a"
+    },
+    {
+      "path": "LICENSE.md",
+      "sha256": "5fac07febb0e2a97fb0d7b0def149ec08b642e1ba4b9c345283ab1cbd2af6570"
+    }
+  ]
+}

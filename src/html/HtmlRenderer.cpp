@@ -81,6 +81,18 @@ HtmlLayoutResult HtmlRenderer::render(const QString& html, qreal baseFontSize, q
   // 3. Resolve styles
   HtmlStyleResolver styleResolver;
   styleResolver.resolve(*root, baseFontSize, palette);
+  int textOffset = 0;
+  const auto indexText = [&](const auto& self, HtmlBox& box) -> void {
+    box.plainTextStart = textOffset;
+    if (!box.style().visible || box.style().display == HtmlDisplay::None) return;
+    if (box.isTextRun())
+      textOffset += box.text().size();
+    else if (box.tag() == HtmlTag::Break)
+      ++textOffset;
+    else
+      for (auto& child : box.children()) self(self, *child);
+  };
+  indexText(indexText, *root);
 
   // 4. Run layout
   HtmlLayoutEngine layoutEngine;

@@ -1025,13 +1025,15 @@ void InlineProjection::appendHtmlInlineContent(BuildState& state, const QVector<
     if (midStart < 0) {
       midStart = state.sourceText->indexOf(midMd, contentSourceStart);
     }
-    if (midStart >= 0 && midStart + midMd.size() <= closeNodeStart) {
+    const auto midEnd = midStart == midParserRange.start && rangeWithin(midParserRange, openEnd, closeNodeStart) ? midParserRange.end
+                                                                                                                 : midStart + midMd.size();
+    if (midStart >= 0 && midEnd <= closeNodeStart) {
       if (midStart > contentSourceStart) {
         appendTextSpan(state, InlineType::Text, InlineSpanKind::Text, contentSourceStart, midStart,
                        state.sourceText->mid(contentSourceStart, midStart - contentSourceStart), true);
       }
-      appendInline(state, mid, midStart, midStart + midMd.size(), htmlFormatData);
-      contentSourceStart = midStart + midMd.size();
+      appendInline(state, mid, midStart, midEnd, htmlFormatData);
+      contentSourceStart = midEnd;
     }
   }
 }
@@ -1053,10 +1055,14 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
 
   // Scan forward for matching closing tag
   int closeIndex = -1;
+  int depth = 1;
   for (int j = index + 1; j < inlines.size(); ++j) {
     if (inlines[j].type() == InlineType::HtmlInline) {
+      if (extractOpeningTagName(inlines[j].textView()).compare(tagName, Qt::CaseInsensitive) == 0 &&
+          !inlines[j].textView().trimmed().endsWith(u"/>"))
+        ++depth;
       const QStringView closingName = extractClosingTagName(inlines[j].textView());
-      if (closingName.compare(tagName, Qt::CaseInsensitive) == 0) {
+      if (closingName.compare(tagName, Qt::CaseInsensitive) == 0 && --depth == 0) {
         closeIndex = j;
         break;
       }
@@ -1093,11 +1099,17 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
   // Simple tags (b, i, u, s, strong, em, del, ins, etc.) map to boolean state flags,
   // so Markdown formatting inside them (e.g. <u>**bold**</u>) is preserved.
   const auto formatEffect = htmlFormatEffectForTag(tagName);
-  const bool isSimple = formatEffect.has_value();
+  bool isSimple = formatEffect.has_value();
 
   // Compute the visible text size for active-state determination.
   qsizetype visibleSize = 0;
   html::InlineHtmlFormatResult rendered;
+  if (isSimple && (state.htmlPalette.documentStyleSheet || openText.contains(QLatin1Char('=')))) {
+    auto palette = state.htmlPalette;
+    if (palette.documentParentForOffset) palette.documentParent = palette.documentParentForOffset(openStart);
+    rendered = html::InlineHtmlRenderer().render(state.sourceText->mid(openStart, closeEnd - openStart), state.baseFontSize, palette);
+    if (!rendered.atomicHtml.isEmpty()) isSimple = false;
+  }
   if (isSimple) {
     // Simple tags: visible text comes from intermediate nodes only (no HTML markers).
     for (int j = index + 1; j < closeIndex; ++j) {
@@ -1105,10 +1117,7 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
     }
   } else {
     // Complex tags: build HTML fragment and render via InlineHtmlRenderer.
-    QString htmlFragment;
-    for (int j = index; j <= closeIndex; ++j) {
-      htmlFragment += inlines[j].text();
-    }
+    const QString htmlFragment = state.sourceText->mid(openStart, closeEnd - openStart);
     static const html::InlineHtmlRenderer renderer;
     auto palette = state.htmlPalette;
     if (palette.documentParentForOffset) palette.documentParent = palette.documentParentForOffset(openStart);
@@ -1175,7 +1184,7 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
     // Check for image-only content (e.g., <a href="..."><img src="..."></a>)
     // InlineHtmlRenderer produces empty text for <img> since it has no text children.
     // Detect this case and emit an Atom span so the existing image pipeline handles it.
-    if (rendered.text.trimmed().isEmpty()) {
+    if (rendered.text.trimmed().isEmpty() && rendered.atomicHtml.isEmpty()) {
       bool appendedImage = false;
       for (int j = index + 1; j < closeIndex; ++j) {
         const InlineNode& mid = inlines[j];
@@ -1194,15 +1203,18 @@ int InlineProjection::tryAppendHtmlInlineGroup(BuildState& state, const QVector<
 
     // HtmlContent span (visible rendered text)
     const qsizetype contentDisplayStart = state.displayOffset;
+    if (rendered.text.isEmpty() && !rendered.atomicHtml.isEmpty()) rendered.text = QChar(0xfffc);
     appendTextSpan(state, InlineType::HtmlInline, InlineSpanKind::HtmlContent, openStart, closeEnd,
                    openEnd, closeNodeStart, rendered.text, true);
 
     // Register format data
-    if (!rendered.formatSpans.empty() || !rendered.links.empty()) {
+    if (!rendered.formatSpans.empty() || !rendered.links.empty() || !rendered.atomicHtml.isEmpty()) {
       HtmlInlineFormatData data;
       data.formatSpans = std::move(rendered.formatSpans);
       data.links = std::move(rendered.links);
       data.displayStart = contentDisplayStart;
+      data.atomicHtml = std::move(rendered.atomicHtml);
+      data.palette = std::move(rendered.palette);
       htmlFormatData.push_back(std::move(data));
     }
 

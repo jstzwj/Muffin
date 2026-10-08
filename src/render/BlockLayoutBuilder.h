@@ -86,8 +86,25 @@ public:
                                               int depth = 0, const CssGridInheritance& inherited = {});
   CssIntrinsicMetrics intrinsicMetrics(const MarkdownNode& node, const RenderTheme& theme, qreal containingWidth);
   CssFormattingItem formattingItem(const MarkdownNode& node, const RenderTheme& theme, qreal containingWidth, int depth = 0);
+  void beginFormattingPass(bool incremental, QSet<NodeId> dirty);
+  QPair<quint64, quint64> finishFormattingPass();
+  QByteArray formattingSignature(const MarkdownNode& node, const RenderTheme& theme);
 
  private:
+  struct FormattingMeasurement {
+    QByteArray signature;
+    CssIntrinsicMetrics intrinsic;
+    bool intrinsicValid = false;
+    qreal containingWidth = -1;
+    std::shared_ptr<CssMeasurementCache> measurements = std::make_shared<CssMeasurementCache>();
+    quint64 pass = 0;
+  };
+  QHash<NodeId, std::shared_ptr<FormattingMeasurement>> formattingMeasurements_;
+  QHash<NodeId, QByteArray> formattingSignatures_;
+  QSet<NodeId> formattingDirty_;
+  quint64 formattingPass_ = 0;
+  QByteArray renderSettingsSignature_;
+  QByteArray formattingThemeSignature_;
   QHash<const MarkdownNode*, QPair<QSizeF, qreal>> allocations_;
   QHash<const MarkdownNode*, CssGridInheritance> gridInheritance_;
   ThemeElementBoxStyle boxFor(const MarkdownNode& node, const RenderTheme& theme, const QString& key, qreal containingWidth) const;

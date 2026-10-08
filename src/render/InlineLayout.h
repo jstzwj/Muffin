@@ -5,6 +5,7 @@
 #include "projection/InlineProjection.h"
 #include "editor/CursorPosition.h"
 #include "html/HtmlTextMeasurer.h"
+#include "html/HtmlLayoutResult.h"
 #include "math/MathRenderer.h"
 #include "math/MathRenderNode.h"
 #include "theme/RenderTheme.h"
@@ -103,6 +104,7 @@ public:
   // the same baseline as the painted text and the caret — which otherwise drift
   // apart under a large theme line-height.
   qreal firstLineBaselineY() const;
+  qreal lastLineBaselineY() const;
   // Paint the laid-out text + atoms at `origin`. When a hover and/or focus colour
   // was supplied at build and the corresponding phase > 0, the heading's OWN text
   // runs are recoloured toward a blended target (focus applied first, then hover)
@@ -129,6 +131,11 @@ public:
   // Painted rects (document space, origin-relative) of the inline math atoms — the same rects
   // paintTextLayoutMathAtoms draws. Exposed so tests can verify atoms shift with the spliced preedit.
   QVector<QRectF> mathAtomRects(QPointF origin) const;
+  QVector<QRectF> htmlAtomRects() const {
+    QVector<QRectF> result;
+    for (const auto& atom : htmlAtoms_) result.push_back(atom.rect);
+    return result;
+  }
   int visualLineCount() const;
   int visualLineIndexForTextOffset(qsizetype textOffset) const;
   int visualLineIndexForSourceOffset(qsizetype sourceOffset) const;
@@ -184,6 +191,16 @@ private:
     QImage image;
     bool loaded = false;
   };
+
+  struct HtmlAtom {
+    qsizetype displayStart = 0, displayEnd = 0, sourceStart = 0, sourceEnd = 0, visibleStart = 0, visibleEnd = 0;
+    std::shared_ptr<html::HtmlLayoutResult> layout;
+    QRectF crop, rect;
+    qreal baseline = 0;
+    QMarginsF margin;
+    QVector<qsizetype> sourceOffsets;
+  };
+  void buildHtmlAtoms(qreal width, const QFont& font, const QString& documentPath);
 
   struct DisplayOffsetMapEntry {
     qsizetype projectionStart = 0;
@@ -318,6 +335,7 @@ private:
   QVector<OffsetMapEntry> offsetMap_;
   QVector<MathAtom> mathAtoms_;
   QVector<ImageAtom> imageAtoms_;
+  QVector<HtmlAtom> htmlAtoms_;
   QVector<ImageAtom> previewAtoms_;   // Active images rendered as block preview below text
   qreal previewHeight_ = 0.0;         // Total height of image previews
   QVector<HtmlFormatSpan> htmlFormatSpans_;

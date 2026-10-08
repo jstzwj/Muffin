@@ -49,9 +49,14 @@ public:
   void setPalette(HtmlColorPalette palette);
 
   void paint(QPainter& painter, QPointF origin) const;
+  void paintBoxFragment(QPainter& painter, const HtmlBox& box, QPointF origin) const { paintBox(painter, box, origin); }
   HitResult hitTest(QPointF localPos) const;
+  int textOffsetAtPoint(QPointF localPos) const;
+  QRectF cursorRectForTextOffset(int offset) const;
+  QVector<QRectF> selectionRects(int start, int end) const;
 
-private:
+ private:
+  void visitTextLayouts(const HtmlBox& box, QPointF parent, const std::function<void(const HtmlTextLayout&, QPointF)>& visitor) const;
   HitResult hitTestBox(const HtmlBox& box, QPointF localPos, QPointF origin) const;
   bool boxHasVisibleContent(const HtmlBox& box) const;
   QString linkHrefAtTextLayout(const HtmlBox& box, QPointF localPos) const;

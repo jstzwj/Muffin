@@ -86,6 +86,7 @@ for (const [id, container, image] of [
   ['image-column-ratio', 'height:200px', 'aspect-ratio:1;max-height:70px'],
 ]) cases.push({id, html:`<div id="case" style="display:flex;flex-direction:column;width:300px;align-items:start;gap:10px;${container}"><img id="a" src="${imageSource}" style="${image}"><div id="b" style="width:50px;height:30px;flex-shrink:0"></div></div>`});
 const base = fs.readFileSync(path.join(root,"resources/themes/document-base.css"),"utf8");
+cases.push(...JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/theme/wpt/cases.json'),'utf8')).cases.filter(c => c.kind === 'flex'));
 try {
   const page = await browser.newPage({viewport:{width:800,height:700}});
   for (const c of cases) {
@@ -98,6 +99,9 @@ try {
         const r=el.getBoundingClientRect();return [el.id,{x:r.left-outer.left,y:r.top-outer.top,width:r.width,height:r.height}];
       }));
     });
+    for (const [id, values] of Object.entries(c.assertions ?? {})) for (const [property, value] of Object.entries(values)) {
+      if (Math.abs(c.expected[id][property] - value) > .05) throw new Error(`${c.id}: WPT ${id}.${property} assertion differs`);
+    }
     delete c.container; delete c.children; delete c.texts;
   }
   fs.writeFileSync(process.argv[2] ?? path.join(root,"tests/fixtures/theme/flex-layout-browser.json"),JSON.stringify({browser:await browser.version(),cases},null,2)+"\n");

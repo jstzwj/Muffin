@@ -63,7 +63,14 @@ class DocumentLayout {
     qreal detailShift = 0.0;
     bool measured = false;
     std::unique_ptr<BlockLayout> detail;
+    QByteArray formattingKey;
+    qsizetype sourceStart = 0;
   };
+  struct FormattingReuseStats {
+    qsizetype reusedBlocks = 0, builtBlocks = 0;
+    quint64 measurementHits = 0, measurementMisses = 0;
+  };
+  const FormattingReuseStats& formattingReuseStats() const { return formattingReuseStats_; }
 
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, QString documentPath = {});
   void rebuild(const MarkdownDocument& document, const RenderTheme& theme, qreal viewportWidth, SelectionRange selection, QString documentPath = {});
@@ -128,6 +135,9 @@ class DocumentLayout {
   QRectF refreshDependentStyles(const MarkdownDocument& document, const RenderTheme& theme, SelectionRange selection);
   bool refreshingStyles_ = false;
   bool formattingRoot_ = false;
+  bool incrementalFormatting_ = false;
+  QSet<NodeId> formattingDirty_;
+  FormattingReuseStats formattingReuseStats_;
   qreal formattingHeight_ = 0;
   const MarkdownNode* topLevelBlockFor(NodeId id, const MarkdownDocument& document) const;
   void indexLayoutBlock(const BlockLayout& block);
@@ -142,7 +152,7 @@ class DocumentLayout {
   qreal slotShift(qsizetype index) const;
   void ensureSlotDetailPosition(qsizetype index) const;
 
-  void configureBuilder(SelectionRange selection);
+  void configureBuilder(SelectionRange selection, bool reuseFormatting = false);
   qreal promoteSlot(qsizetype index, const RenderTheme& theme);  // returns height delta
   void shiftSuffixFrom(qsizetype index, qreal delta);
   void recomputeTotalHeight(const RenderTheme& theme);

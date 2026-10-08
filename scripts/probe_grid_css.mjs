@@ -220,6 +220,7 @@ for (const [id, rows, image, extra] of [
   ['image-stretch-row-max-width', '80px', 'align-self:stretch;max-width:120px', ''],
 ]) cases.push({id, html:`<div id="case" style="display:grid;width:300px;grid-template-columns:auto 50px;grid-template-rows:${rows};gap:10px;${extra}"><img id="a" src="${imageSource}" style="${image}"><div id="b" style="height:30px"></div></div>`});
 try {
+  cases.push(...JSON.parse(fs.readFileSync(path.join(root,'tests/fixtures/theme/wpt/cases.json'),'utf8')).cases.filter(c => c.kind === 'grid'));
   const page = await browser.newPage({viewport:{width:800,height:700}});
   const base = fs.readFileSync(path.join(root,'resources/themes/document-base.css'),'utf8');
   for (const c of cases) {
@@ -242,6 +243,9 @@ try {
         const r=el.getBoundingClientRect();return [el.id,{x:r.left-outer.left,y:r.top-outer.top,width:r.width,height:r.height}];
       }));
     });
+    for (const [id, values] of Object.entries(c.assertions ?? {})) for (const [property, value] of Object.entries(values)) {
+      if (Math.abs(c.expected[id][property] - value) > .05) throw new Error(`${c.id}: WPT ${id}.${property} assertion differs`);
+    }
     if (c.html.includes('<img')) c.imageContent = await page.evaluate(() => {
       const image = document.querySelector('#case img');
       const rect = image.getBoundingClientRect(), outer = document.querySelector('#case').getBoundingClientRect();

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Flex/Grid measurements carry explicit sizing phases, definite containing sizes and inherited tracks. Selected upstream WPT cases and browser fixtures cover nested percentage, aspect-ratio and subgrid dependencies.
+- Inline Flex/Grid components participate in paragraph wrapping and baseline layout through the shared formatting engine, including native painting, links, source caret mapping and selection. Grid supports first/last baseline alignment.
+- Root Flex/Grid edits reuse unchanged content measurements and allocated block layouts. Content, computed styles, projection state and size dependencies invalidate reuse; full refreshes retain resource invalidation.
 - Markdown and HTML Flex containers share a formatting entry point for direction, wrapping, ordering, alignment, gaps, grow/shrink and basis. Text is measured at the allocated width, intrinsic minimums participate in sizing, and root Flex layouts use geometric hit testing.
 - Grid containers use the same Markdown/HTML measurement and box geometry, with fixed, intrinsic and fractional tracks, numeric line placement and spans, implicit tracks, row/column auto-placement, dense packing, item alignment, `minmax()` and integer `repeat()`.
 - Grid supports one- and two-axis `subgrid`, inherited/local line names, shared gap and edge geometry, and descendant contributions to parent tracks. Nested intrinsic sizing uses the shared Grid algorithm, including `fit-content()` and indefinite fractional tracks.
@@ -20,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Editing text inside paired inline HTML preserves parser source ranges, including entity spellings whose source and displayed lengths differ.
 - Percentage gaps in auto-height Flex containers no longer acquire a circular height dependency; mixed `calc()` gaps retain their absolute component. HTML line breaks contribute separate lines during intrinsic measurement, and formatted containers no longer count padding twice.
 - Grid intrinsic sizing applies zoomed constraints once and revisits image ratio contributions after definite row allocation. HTML image dimension attributes follow document zoom, and Markdown image sizing no longer imposes a hardcoded height limit outside the theme's CSS constraints.
 - Tall inline formulas reserve their actual content height beyond KaTeX's outer strut, keeping math painting and selection inside the measured paragraph.

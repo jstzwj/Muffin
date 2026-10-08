@@ -141,6 +141,10 @@ public:
   QRectF visualOverflowRect() const;
   bool stylesMatch(const RenderTheme& theme, const MarkdownDocument& document) const;
   void translate(qreal dx, qreal dy);
+  void shiftSourceOffsets(qsizetype delta);
+  void setFormattingBaselines(qreal first, qreal last) { formattingBaselines_ = {first, last}; }
+  qreal firstBaseline() const;
+  qreal lastBaseline() const;
   void translateY(qreal dy);
 
   qreal height() const;
@@ -382,6 +386,7 @@ private:
   ListMarkerKind listMarkerKind_ = ListMarkerKind::None;
   qreal listContentIndent_ = 0.0;
   qsizetype contentSourceStart_ = -1;
+  QPair<qreal, qreal> formattingBaselines_{-1, -1};
   QString placeholderText_;
   DefinitionBlock definition_;
   QVector<DefinitionSlotLayout> definitionSlots_;

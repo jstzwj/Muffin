@@ -12,6 +12,8 @@ struct InlineHtmlFormatResult {
   QString text;
   std::vector<TextFormatSpan> formatSpans;
   std::vector<HtmlTextLayout::LinkSpan> links;
+  QString atomicHtml;
+  HtmlColorPalette palette;
 };
 
 class InlineHtmlRenderer {
